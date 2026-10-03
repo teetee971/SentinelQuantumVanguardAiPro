@@ -21,8 +21,10 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
+import com.sentinel.quantum.data.OsintPublicationTime
 import com.sentinel.quantum.data.OsintRepository
 import com.sentinel.quantum.data.OsintSource
+import com.sentinel.quantum.data.OsintTransientItemStore
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -32,6 +34,12 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
+private enum class OsintDisplayedSnapshot {
+    NONE,
+    COMPLETE,
+    PARTIAL
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OsintFeedScreen(navController: NavController) {
@@ -39,6 +47,7 @@ fun OsintFeedScreen(navController: NavController) {
     val cache = remember(context) { OsintFeedCache(context) }
     val repository = remember(context) { OsintRepository(cache) }
     var feedItems by remember { mutableStateOf<List<OsintFeedItem>>(emptyList()) }
+    var displayedSnapshot by remember { mutableStateOf(OsintDisplayedSnapshot.NONE) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var coverageMessage by remember { mutableStateOf<String?>(null) }
@@ -52,36 +61,69 @@ fun OsintFeedScreen(navController: NavController) {
         scope.launch {
             isLoading = true
             errorMessage = null
-            coverageMessage = null
             try {
                 val result = repository.fetchAllFeedsResult()
                 when {
                     result.isComplete && result.items.isNotEmpty() -> {
                         cache.save(result.items)
+                        OsintTransientItemStore.clear()
                         feedItems = result.items
+                        displayedSnapshot = OsintDisplayedSnapshot.COMPLETE
                         cachedAtMs = null
+                        coverageMessage = null
                     }
-                    !result.isComplete -> {
-                        coverageMessage =
-                            "Actualisation partielle : ${result.successfulSourceCount}/${result.totalSourceCount} sources ont répondu."
-                        // Preserve a previously loaded complete cache instead of replacing it with
-                        // an incomplete network snapshot. If there is no cache at all, partial data
-                        // remains useful but is always shown with the explicit coverage warning.
-                        if (feedItems.isEmpty() && result.items.isNotEmpty()) {
-                            feedItems = result.items
+
+                    result.isComplete -> {
+                        OsintTransientItemStore.clear()
+                        if (
+                            displayedSnapshot == OsintDisplayedSnapshot.COMPLETE &&
+                            feedItems.isNotEmpty()
+                        ) {
+                            coverageMessage = context.getString(R.string.osint_complete_empty_cached)
+                        } else {
+                            feedItems = emptyList()
+                            displayedSnapshot = OsintDisplayedSnapshot.NONE
                             cachedAtMs = null
-                        } else if (feedItems.isEmpty()) {
-                            errorMessage = "Aucune donnée complète disponible"
+                            coverageMessage = null
+                            errorMessage = context.getString(R.string.osint_no_data)
                         }
                     }
-                    feedItems.isEmpty() -> {
-                        errorMessage = "Aucune donnée disponible"
+
+                    else -> {
+                        coverageMessage = context.getString(
+                            R.string.osint_partial_coverage,
+                            result.successfulSourceCount,
+                            result.totalSourceCount
+                        )
+
+                        if (displayedSnapshot == OsintDisplayedSnapshot.COMPLETE) {
+                            // Keep the last complete snapshot visible. A partial refresh must not
+                            // replace complete cached/fresh truth with an incomplete network view.
+                            OsintTransientItemStore.clear()
+                        } else if (result.items.isNotEmpty()) {
+                            // No complete snapshot exists. Partial data is useful only while its
+                            // exact coverage remains visible, and every later partial refresh must
+                            // replace it so the displayed items match the displayed coverage.
+                            feedItems = result.items
+                            displayedSnapshot = OsintDisplayedSnapshot.PARTIAL
+                            cachedAtMs = null
+                            OsintTransientItemStore.replace(result.items)
+                        } else {
+                            feedItems = emptyList()
+                            displayedSnapshot = OsintDisplayedSnapshot.NONE
+                            cachedAtMs = null
+                            OsintTransientItemStore.clear()
+                            errorMessage = context.getString(R.string.osint_partial_no_complete)
+                        }
                     }
                 }
             } catch (_: Exception) {
                 if (feedItems.isEmpty()) {
-                    errorMessage = "Erreur de chargement"
+                    errorMessage = context.getString(R.string.osint_error)
                 }
+                // Do not clear an existing partial-coverage warning here: keeping the warning is
+                // more truthful than leaving an old partial snapshot looking complete after a
+                // failed refresh.
             } finally {
                 isLoading = false
             }
@@ -90,9 +132,12 @@ fun OsintFeedScreen(navController: NavController) {
     }
 
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) { repository.loadCached() }?.let { cached ->
+        val cached = withContext(Dispatchers.IO) { repository.loadCached() }
+        if (cached != null) {
             feedItems = cached.items
             cachedAtMs = cached.fetchedAtMs
+            displayedSnapshot = OsintDisplayedSnapshot.COMPLETE
+            OsintTransientItemStore.clear()
         }
         loadFeeds()
     }
@@ -193,6 +238,7 @@ fun OsintFeedScreen(navController: NavController) {
                     isLoading && feedItems.isEmpty() -> {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
+
                     errorMessage != null && feedItems.isEmpty() -> {
                         Column(
                             modifier = Modifier.align(Alignment.Center).padding(16.dp),
@@ -209,6 +255,7 @@ fun OsintFeedScreen(navController: NavController) {
                             }
                         }
                     }
+
                     feedItems.isEmpty() -> {
                         Text(
                             text = stringResource(R.string.osint_no_data),
@@ -217,6 +264,7 @@ fun OsintFeedScreen(navController: NavController) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
                     filteredItems.isEmpty() -> {
                         Text(
                             text = stringResource(R.string.osint_no_match),
@@ -225,6 +273,7 @@ fun OsintFeedScreen(navController: NavController) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
                     else -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
@@ -253,11 +302,11 @@ fun OsintFeedScreen(navController: NavController) {
 @Composable
 fun OsintFeedCard(item: OsintFeedItem, isRead: Boolean = false, onOpen: () -> Unit = {}) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
-    val publicationLabel = if (item.pubDate.time <= 0L) {
-        "Date inconnue"
-    } else {
-        dateFormat.format(item.pubDate)
-    }
+    val publicationLabel = OsintPublicationTime.format(
+        item.pubDate,
+        dateFormat,
+        stringResource(R.string.osint_date_unknown)
+    )
 
     Card(
         modifier = Modifier
