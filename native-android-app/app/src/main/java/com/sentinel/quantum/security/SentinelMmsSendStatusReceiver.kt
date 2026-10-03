@@ -32,10 +32,14 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
             SubscriptionManager.INVALID_SUBSCRIPTION_ID
         )
         if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
+
+        // Keep callbacks created by an older installed build processable. They do not carry the
+        // provider correlation id introduced with the provider projection. Such a callback may
+        // still update transport truth/timeline, but it cannot claim a provider projection write.
         val providerMessageId = intent.getLongExtra(
             SentinelMmsSender.EXTRA_PROVIDER_MESSAGE_ID,
             -1L
-        ).takeIf { it > 0L } ?: return
+        ).takeIf { it > 0L }
 
         val androidResultCode = resultCode
         val httpStatus = intent.getIntExtra(SmsManager.EXTRA_MMS_HTTP_STATUS, Int.MIN_VALUE)
@@ -67,7 +71,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         token: String,
         fileName: String,
         subscriptionId: Int,
-        providerMessageId: Long,
+        providerMessageId: Long?,
         androidResultCode: Int,
         httpStatus: Int?
     ) {
@@ -84,25 +88,35 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
 
         MmsSendPduStager.delete(context, fileName)
         val outcome = MmsSendResultClassifier.classify(androidResultCode, httpStatus)
-        val providerStore = MmsConversationStore(context)
-        val providerUpdated = providerStore.applyTransportResult(
-            token = token,
-            providerMessageId = providerMessageId,
-            successful = outcome.success
-        )
-        if (!providerUpdated) {
+
+        var providerUpdated = false
+        if (providerMessageId != null) {
+            val providerStore = MmsConversationStore(context)
+            providerUpdated = providerStore.applyTransportResult(
+                token = token,
+                providerMessageId = providerMessageId,
+                successful = outcome.success
+            )
+            if (!providerUpdated) {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsProvider",
+                    "Callback MMS reçu mais projection provider non confirmée; réparation journalisée"
+                )
+                runCatching {
+                    WORKER.schedule(
+                        { runCatching { providerStore.repairJournal() } },
+                        PROVIDER_REPAIR_DELAY_SECONDS,
+                        TimeUnit.SECONDS
+                    )
+                }
+            }
+        } else {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsProvider",
-                "Callback MMS reçu mais projection provider non confirmée; réparation journalisée"
+                "Callback MMS antérieur à la corrélation provider; transport traité sans revendiquer de mise à jour provider"
             )
-            runCatching {
-                WORKER.schedule(
-                    { runCatching { providerStore.repairJournal() } },
-                    PROVIDER_REPAIR_DELAY_SECONDS,
-                    TimeUnit.SECONDS
-                )
-            }
         }
 
         runCatching {
@@ -122,12 +136,16 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
             )
         }
 
+        val providerState = when {
+            providerMessageId == null -> "legacy_uncorrelated"
+            providerUpdated -> "applied"
+            else -> "pending_repair"
+        }
         LocalLogger(context).log(
             if (outcome.success) LocalLogger.LogLevel.SECURITY else LocalLogger.LogLevel.WARNING,
             "MmsSend",
             "Callback transport MMS; state=${outcome.diagnostic}; code=$androidResultCode; " +
-                "http=${httpStatus ?: "none"}; subscription=$subscriptionId; " +
-                "provider=${if (providerUpdated) "applied" else "pending_repair"}"
+                "http=${httpStatus ?: "none"}; subscription=$subscriptionId; provider=$providerState"
         )
         SmsNotificationHelper.notifyMessage(
             context,
