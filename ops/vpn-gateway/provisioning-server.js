@@ -70,6 +70,27 @@ async function persistCurrentLeaseState({ core, stateStore, sequenceAuthority })
   throw lastError ?? new Error("VPN_LEASE_STATE_PERSIST_FAILED");
 }
 
+/**
+ * A destructive runtime revocation must never leave an older active snapshot trusted after restart.
+ * If the revoked state cannot be durably persisted, advance the external monotonic floor by one as
+ * a fail-closed tombstone. The old snapshot then falls below the authority and restore rejects it.
+ * This is best-effort because the request is already failing; if the authority is unavailable,
+ * operators must keep the service stopped until storage/authority consistency is re-established.
+ */
+async function invalidateStaleRestoreAfterRevocationFailure({ core, sequenceAuthority }) {
+  if (sequenceAuthority === null) return false;
+  try {
+    const current = await sequenceAuthority.readMinimumSequence(core.gatewayId);
+    if (!Number.isSafeInteger(current) || current < 1 || current >= Number.MAX_SAFE_INTEGER) {
+      return false;
+    }
+    await sequenceAuthority.commitSequence(core.gatewayId, current + 1);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function handleVpnProvisioningRequest({
   method,
   url,
@@ -172,6 +193,7 @@ export async function handleVpnProvisioningRequest({
       try {
         await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
       } catch {
+        await invalidateStaleRestoreAfterRevocationFailure({ core, sequenceAuthority });
         return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
       }
     }
@@ -267,4 +289,5 @@ export const vpnProvisioningServerInternals = Object.freeze({
   constantTimeTokenMatch,
   validateLeasePersistenceConfiguration,
   persistCurrentLeaseState,
+  invalidateStaleRestoreAfterRevocationFailure,
 });
