@@ -104,7 +104,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                     "Callback MMS reçu mais projection provider non confirmée; réparation journalisée"
                 )
                 runCatching {
-                    WORKER.schedule(
+                    REPAIR_WORKER.schedule(
                         { runCatching { providerStore.repairJournal() } },
                         PROVIDER_REPAIR_DELAY_SECONDS,
                         TimeUnit.SECONDS
@@ -157,8 +157,11 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
 
     private companion object {
         const val PROVIDER_REPAIR_DELAY_SECONDS = 60L
-        val WORKER = Executors.newSingleThreadScheduledExecutor { task ->
+        val WORKER = Executors.newSingleThreadExecutor { task ->
             Thread(task, "sentinel-mms-send").apply { isDaemon = true }
+        }
+        val REPAIR_WORKER = Executors.newSingleThreadScheduledExecutor { task ->
+            Thread(task, "sentinel-mms-provider-repair").apply { isDaemon = true }
         }
         val TOKEN = Regex(
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
