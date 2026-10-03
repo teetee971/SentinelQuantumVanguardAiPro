@@ -53,10 +53,12 @@ class CommunityReportClient(
         requireEgressAllowed(protectionMode, explicitConsent)
         val normalized = CallRuleEngine.normalizeNumber(callerNumber)
             ?: throw IllegalArgumentException("Invalid caller number")
+        val country = CallerReputationClient.normalizeRecipientCountry(recipientCountry)
+            ?: throw IllegalArgumentException("Invalid recipient country")
 
         val payload = JSONObject()
             .put("caller_number", normalized)
-            .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
+            .put("recipient_country", country)
             .put("category", category.name)
             .put("client_nonce", UUID.randomUUID().toString())
             .toString()
