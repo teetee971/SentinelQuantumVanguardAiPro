@@ -85,6 +85,14 @@ test('process-death recovery reconstructs the original incoming MMS cleanup dead
   assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
 });
 
+test('startup recovery retries failures and prunes legacy incoming MMS staging', () => {
+  assert.match(sendWorker, /val recovered = runCatching \{/);
+  assert.match(sendWorker, /MmsDownloadCoordinator\.pruneExpired\(applicationContext\)/);
+  assert.match(sendWorker, /MmsDownloadRecoveryWorker\.schedulePendingNow\(applicationContext\)/);
+  assert.match(sendWorker, /if \(!recovered\)[\s\S]*return Result\.retry\(\)/);
+  assert.match(sendWorker, /fun scheduleStartupRecovery\([\s\S]*setBackoffCriteria\(BackoffPolicy\.EXPONENTIAL, 30L, TimeUnit\.SECONDS\)/);
+});
+
 test('incoming callback retires cleanup only after provider success or explicit quarantine and confirmed deletion', () => {
   const providerRejectIndex = downloadReceiver.indexOf(
     'providerResult is IncomingMmsConversationStore.ProjectResult.Rejected'
