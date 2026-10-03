@@ -44,11 +44,34 @@ class MmsDecodeBoundaryTest {
         )
         assertEquals("DECODED_MESSAGE_TOO_LARGE", (MmsDecodeBoundary.validate(parts) as MmsDecodeBoundary.Result.Rejected).reason)
     }
+
     @Test fun rejectsNullByteTextPayload() {
         val result = MmsDecodeBoundary.validate(listOf(
             MmsDecodeBoundary.DecodedPart("text/plain", "message.txt", byteArrayOf('o'.code.toByte(), 0, 'k'.code.toByte()))
         ))
         assertEquals("CONTENT_SIGNATURE_MISMATCH", (result as MmsDecodeBoundary.Result.Rejected).reason)
+    }
+
+    @Test fun rejectsMalformedUtf8TextPayloadBeforeProviderOrRendering() {
+        val result = MmsDecodeBoundary.validate(listOf(
+            MmsDecodeBoundary.DecodedPart(
+                "text/plain",
+                "message.txt",
+                byteArrayOf(0xC3.toByte(), 0x28)
+            )
+        ))
+        assertEquals(
+            "CONTENT_SIGNATURE_MISMATCH",
+            (result as MmsDecodeBoundary.Result.Rejected).reason
+        )
+    }
+
+    @Test fun acceptsWellFormedMultibyteUtf8TextPayload() {
+        val text = "Sécurité MMS — Guadeloupe"
+        val result = MmsDecodeBoundary.validate(listOf(
+            MmsDecodeBoundary.DecodedPart("text/plain", "message.txt", text.toByteArray(Charsets.UTF_8))
+        )) as MmsDecodeBoundary.Result.Accepted
+        assertEquals(text, result.parts.single().payload.toString(Charsets.UTF_8))
     }
 
     @Test fun rejectsTruncatedImageSignatures() {
@@ -72,5 +95,4 @@ class MmsDecodeBoundaryTest {
         source[0] = 'X'.code.toByte()
         assertEquals("safe text", result.parts.single().payload.toString(Charsets.UTF_8))
     }
-
 }

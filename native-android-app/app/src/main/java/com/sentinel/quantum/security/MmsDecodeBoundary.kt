@@ -1,5 +1,8 @@
 package com.sentinel.quantum.security
 
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
+
 /**
  * Pure, fail-closed boundary between untrusted MMS decoder output and any future renderer.
  *
@@ -47,7 +50,7 @@ object MmsDecodeBoundary {
     }
 
     private fun contentMatchesMime(mime: String, bytes: ByteArray): Boolean = when (mime) {
-        "text/plain" -> bytes.none { it == 0.toByte() }
+        "text/plain" -> isStrictUtf8Text(bytes)
         "image/jpeg" -> bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()
         "image/png" -> bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
         "image/gif" -> bytes.size >= 6 && (String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF87a" || String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF89a")
@@ -55,6 +58,17 @@ object MmsDecodeBoundary {
             String(bytes.copyOfRange(0, 4), Charsets.US_ASCII) == "RIFF" &&
             String(bytes.copyOfRange(8, 12), Charsets.US_ASCII) == "WEBP"
         else -> false
+    }
+
+    private fun isStrictUtf8Text(bytes: ByteArray): Boolean {
+        if (bytes.any { it == 0.toByte() }) return false
+        return runCatching {
+            Charsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+            true
+        }.getOrDefault(false)
     }
 
     private const val MAX_PARTS = 32
