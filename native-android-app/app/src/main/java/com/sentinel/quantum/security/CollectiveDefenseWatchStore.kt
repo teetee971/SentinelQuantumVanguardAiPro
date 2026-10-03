@@ -57,8 +57,7 @@ class CollectiveDefenseWatchStore(context: Context) {
             riskState = sanitizeToken(result.riskState),
             signals = result.signals.coerceIn(0, MAX_SIGNALS),
             communityIntelligence = sanitizeToken(result.communityIntelligence),
-            reputationExpiresAtMs = result.reputationTtlMs?.takeIf { it in 1L..(180L * 86400000L) && it <= Long.MAX_VALUE - effectiveNow }
-                ?.let { effectiveNow + it }
+            reputationExpiresAtMs = reputationDeadline(result, effectiveNow)
         )
         val values = existing
             .filterNot {
@@ -122,6 +121,14 @@ class CollectiveDefenseWatchStore(context: Context) {
         private const val MAX_SIGNALS = 1_000_000
         private val FINGERPRINT = Regex("^[a-f0-9]{64}$")
         private val TOKEN = Regex("^[A-Za-z0-9_:-]{1,32}$")
+
+        internal fun reputationDeadline(result: CollectiveDefenseClient.ReputationResult, now: Long): Long? {
+            val received = result.receivedAtMs.takeIf { it >= 0L && it <= now } ?: return null
+            val ttl = result.reputationTtlMs?.takeIf {
+                it in 1L..(180L * 86400000L) && it <= Long.MAX_VALUE - received
+            } ?: return null
+            return (received + ttl).takeIf { it > now }
+        }
 
         private fun sanitizeToken(value: String): String =
             value.takeIf(TOKEN::matches) ?: "UNKNOWN"

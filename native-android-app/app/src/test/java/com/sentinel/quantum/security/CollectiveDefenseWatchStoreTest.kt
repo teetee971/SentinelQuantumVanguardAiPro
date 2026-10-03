@@ -70,4 +70,13 @@ class CollectiveDefenseWatchStoreTest {
         assertEquals(item, CollectiveDefenseWatchStore.decode(CollectiveDefenseWatchStore.encode(item)))
         assertEquals("UNKNOWN", item.copy(reputationExpiresAtMs = null).activeRiskState(2999L))
     }
+    @Test fun storingAnOldResponseCannotRenewItsRemainingTtl() {
+        val response = CollectiveDefenseClient.ReputationResult(
+            CollectiveDefenseClient.IndicatorType.EMAIL, "a".repeat(64), "SUSPICIOUS", 3,
+            emptyList(), "available", 900L, 1000L, false, "", receivedAtMs = 1000L
+        )
+        assertEquals(2000L, CollectiveDefenseWatchStore.reputationDeadline(response, 1500L))
+        assertNull(CollectiveDefenseWatchStore.reputationDeadline(response, 2000L))
+        assertNull(CollectiveDefenseWatchStore.reputationDeadline(response, 999L))
+    }
 }

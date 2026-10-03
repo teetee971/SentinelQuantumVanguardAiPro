@@ -138,3 +138,17 @@ test('expiry, issuer revocation, artifact substitution and signature tampering a
     assert.ok(validateProductCapabilities(fixture.registry, fixture.dir, fixture).some(error => error.includes('evidence rejected')));
   } finally { fs.rmSync(fixture.dir, { recursive: true, force: true }); }
 });
+
+import { renderCapabilityConsumers } from './render-product-capabilities.js';
+test('public and Android availability expire when an operational dependency expires', () => {
+  const fixture = signedFixture();
+  try {
+    fs.writeFileSync(path.join(fixture.dir, 'dependency.json'), JSON.stringify({ payload: { expires_at: new Date(fixture.now + 5000).toISOString() } }));
+    fixture.registry.capabilities.push({ ...structuredClone(fixture.registry.capabilities[0]), id: 'dependency', dependencies: [], verification_evidence: { deployed: 'dependency.json' } });
+    fixture.registry.capabilities[0].dependencies = [{ id: 'dependency', required_stages: ['deployed'] }];
+    const outputs = renderCapabilityConsumers(fixture.registry, fixture.dir);
+    const state = JSON.parse(outputs['public/product-capabilities.json']).capabilities[0];
+    assert.equal(state.expires_at_ms, fixture.now + 5000);
+    assert.ok(outputs['native-android-app/app/src/main/java/com/sentinel/quantum/security/GeneratedProductCapabilities.kt'].includes(`${fixture.now + 5000}L`));
+  } finally { fs.rmSync(fixture.dir, { recursive: true, force: true }); }
+});

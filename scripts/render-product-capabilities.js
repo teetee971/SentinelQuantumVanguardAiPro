@@ -52,16 +52,29 @@ export function renderProductCapabilities(registry) {
   return `${lines.join('\n').trim()}\n`;
 }
 
-export function renderCapabilityConsumers(registry) {
-  const states = registry.capabilities.map(capability => {
+export function renderCapabilityConsumers(registry, baseDir = rootDir) {
+  const byId = new Map(registry.capabilities.map(capability => [capability.id, capability]));
+  function expiryFor(capability, visiting = new Set()) {
+    if (!capability || visiting.has(capability.id)) return null;
+    const next = new Set(visiting).add(capability.id);
     const expiries = Object.values(capability.verification_evidence).map(location => {
-      try { return Date.parse(JSON.parse(fs.readFileSync(path.join(rootDir, location), 'utf8')).payload.expires_at); }
+      try { return Date.parse(JSON.parse(fs.readFileSync(path.join(baseDir, location), 'utf8')).payload.expires_at); }
       catch { return NaN; }
-    }).filter(Number.isFinite);
+    });
+    for (const dependency of capability.dependencies) {
+      if (dependency.required_stages.some(stage => ['deployed', 'runtime_verified', 'physically_validated', 'release_signed', 'customer_available'].includes(stage))) {
+        const expiry = expiryFor(byId.get(dependency.id), next);
+        if (expiry === null) return null;
+        expiries.push(expiry);
+      }
+    }
+    return expiries.length && expiries.every(Number.isFinite) ? Math.min(...expiries) : null;
+  }
+  const states = registry.capabilities.map(capability => {
     return { id: capability.id, surface: capability.surface, status: statusFor(capability),
       implemented: capability.implemented, customer_available: capability.customer_available,
       evidence_sha: capability.evidence_sha, evidence_at: capability.evidence_at,
-      expires_at_ms: expiries.length ? Math.min(...expiries) : null };
+      expires_at_ms: expiryFor(capability) };
   });
   const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
   const html = `<!doctype html>
