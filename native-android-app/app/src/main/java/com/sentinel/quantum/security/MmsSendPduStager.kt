@@ -69,7 +69,7 @@ object MmsSendPduStager {
         }
 
         val cleanupScheduled = runCatching {
-            MmsSendCleanupWorker.schedule(context.applicationContext)
+            MmsSendCleanupWorker.schedule(context.applicationContext, token)
             true
         }.getOrDefault(false)
         if (!cleanupScheduled) {
@@ -86,7 +86,12 @@ object MmsSendPduStager {
             ?: return false
         val file = runCatching { File(directory, fileName).canonicalFile }.getOrNull() ?: return false
         if (file.parentFile != directory) return false
-        return !file.exists() || runCatching { file.delete() }.getOrDefault(false)
+        val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
+        if (removed) {
+            val token = fileName.removeSuffix(".pdu")
+            runCatching { MmsSendCleanupWorker.cancel(context.applicationContext, token) }
+        }
+        return removed
     }
 
     /**
