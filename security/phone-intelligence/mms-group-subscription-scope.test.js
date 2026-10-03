@@ -14,7 +14,7 @@ const plan = fs.readFileSync(
 test('incoming MMS group self identity is scoped to the receiving subscription', () => {
   assert.match(store, /readSelfAddresses\(plan\.subscriptionId\)/);
   assert.match(store, /private fun readSelfAddresses\(subscriptionId: Int\): Set<String>/);
-  assert.match(store, /SubscriptionManager\.isValidSubscriptionId\(subscriptionId\)/);
+  assert.match(store, /MmsSubscriptionResolver\.isValidSubscriptionId\(subscriptionId\)/);
   assert.match(store, /subscriptionManager\.getPhoneNumber\(subscriptionId\)/);
   assert.match(store, /firstOrNull \{ it\.subscriptionId == subscriptionId \}/);
   assert.match(store, /createForSubscriptionId\(subscriptionId\)\.line1Number/);
