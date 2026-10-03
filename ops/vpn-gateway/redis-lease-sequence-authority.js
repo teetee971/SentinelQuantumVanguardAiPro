@@ -1,11 +1,13 @@
-import { validateVpnLeaseCommitBoundary, VpnLeaseSequenceAuthority } from "./lease-sequence-authority.js";
+import {
+  validateVpnLeaseCommitBoundary,
+  validateVpnLeaseInvalidationBoundary,
+  VpnLeaseSequenceAuthority,
+} from "./lease-sequence-authority.js";
 
 const SAFE_SEGMENT = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const SNAPSHOT_DIGEST = /^[a-f0-9]{64}$/;
 
-// Atomic compare-and-set over the exact committed snapshot identity. Decimal strings are compared
-// without tonumber so corrupted/out-of-safe-range Redis values can never be normalized silently.
-const COMMIT_SCRIPT = `
+const LUA_VALIDATORS = `
 local MAX_SAFE = '9007199254740991'
 
 local function validSequence(value)
@@ -29,6 +31,20 @@ local function compareDecimal(left, right)
   return 0
 end
 
+local function parseRecord(value)
+  if type(value) ~= 'string' then return nil, nil end
+  local separator = string.find(value, ':', 1, true)
+  if not separator then return nil, nil end
+  local sequence = string.sub(value, 1, separator - 1)
+  local digest = string.sub(value, separator + 1)
+  if not validSequence(sequence) or not validDigest(digest) then return nil, nil end
+  return sequence, digest
+end
+`;
+
+// Atomic compare-and-set over the exact committed snapshot identity. Decimal strings are compared
+// without tonumber so corrupted/out-of-safe-range Redis values can never be normalized silently.
+const COMMIT_SCRIPT = `${LUA_VALIDATORS}
 local proposedSequence = ARGV[1]
 local proposedDigest = ARGV[2]
 if not validSequence(proposedSequence) or not validDigest(proposedDigest) then
@@ -37,13 +53,8 @@ end
 
 local current = redis.call('GET', KEYS[1])
 if current then
-  local separator = string.find(current, ':', 1, true)
-  if not separator then
-    return {'PROTOCOL_ERROR', '', ''}
-  end
-  local currentSequence = string.sub(current, 1, separator - 1)
-  local currentDigest = string.sub(current, separator + 1)
-  if not validSequence(currentSequence) or not validDigest(currentDigest) then
+  local currentSequence, currentDigest = parseRecord(current)
+  if not currentSequence then
     return {'PROTOCOL_ERROR', '', ''}
   end
 
@@ -61,6 +72,41 @@ end
 
 redis.call('SET', KEYS[1], proposedSequence .. ':' .. proposedDigest)
 return {'OK', proposedSequence, proposedDigest}
+`.trim();
+
+// Replace only the exact currently trusted digest at the same sequence. This invalidates a stale
+// local snapshot after a destructive runtime revocation without consuming the next sequence.
+const INVALIDATE_SCRIPT = `${LUA_VALIDATORS}
+local expectedSequence = ARGV[1]
+local expectedDigest = ARGV[2]
+local invalidationDigest = ARGV[3]
+if not validSequence(expectedSequence) or
+   not validDigest(expectedDigest) or
+   not validDigest(invalidationDigest) or
+   expectedDigest == invalidationDigest then
+  return {'PROTOCOL_ERROR', '', ''}
+end
+
+local current = redis.call('GET', KEYS[1])
+if not current then
+  return {'MISSING', '', ''}
+end
+local currentSequence, currentDigest = parseRecord(current)
+if not currentSequence then
+  return {'PROTOCOL_ERROR', '', ''}
+end
+if currentSequence ~= expectedSequence then
+  return {'STALE', currentSequence, currentDigest}
+end
+if currentDigest == invalidationDigest then
+  return {'OK', currentSequence, currentDigest}
+end
+if currentDigest ~= expectedDigest then
+  return {'CONFLICT', currentSequence, currentDigest}
+end
+
+redis.call('SET', KEYS[1], expectedSequence .. ':' .. invalidationDigest)
+return {'OK', expectedSequence, invalidationDigest}
 `.trim();
 
 function parseStoredCommit(raw) {
@@ -87,6 +133,33 @@ function parseCommitReply(reply) {
   if (status === "ROLLBACK") {
     const current = parseStoredCommit(rawRecord);
     const error = new Error("VPN_SEQUENCE_AUTHORITY_ROLLBACK_REJECTED");
+    error.currentCommit = current;
+    throw error;
+  }
+  if (status === "CONFLICT") {
+    const current = parseStoredCommit(rawRecord);
+    const error = new Error("VPN_SEQUENCE_AUTHORITY_SNAPSHOT_CONFLICT");
+    error.currentCommit = current;
+    throw error;
+  }
+  if (status !== "OK") {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_PROTOCOL_ERROR");
+  }
+  return parseStoredCommit(rawRecord);
+}
+
+function parseInvalidationReply(reply) {
+  if (!Array.isArray(reply) || reply.length !== 3) {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_PROTOCOL_ERROR");
+  }
+  const [status, rawSequence, rawDigest] = reply;
+  if (status === "MISSING") {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_SEQUENCE_MISSING");
+  }
+  const rawRecord = `${String(rawSequence)}:${String(rawDigest)}`;
+  if (status === "STALE") {
+    const current = parseStoredCommit(rawRecord);
+    const error = new Error("VPN_SEQUENCE_AUTHORITY_INVALIDATION_STALE");
     error.currentCommit = current;
     throw error;
   }
@@ -186,6 +259,46 @@ export class RedisVpnLeaseSequenceAuthority extends VpnLeaseSequenceAuthority {
     }
     return committed;
   }
+
+  async invalidateSnapshot(gatewayId, sequence, expectedDigest, invalidationDigest) {
+    const boundary = validateVpnLeaseInvalidationBoundary({
+      gatewayId,
+      sequence,
+      expectedDigest,
+      invalidationDigest,
+    });
+    const key = this.keyFor(boundary.gatewayId);
+
+    let reply;
+    try {
+      reply = await this.evalScript({
+        script: INVALIDATE_SCRIPT,
+        keys: [key],
+        args: [
+          String(boundary.sequence),
+          boundary.expectedDigest,
+          boundary.invalidationDigest,
+        ],
+      });
+    } catch {
+      throw new Error("VPN_SEQUENCE_AUTHORITY_STORE_UNAVAILABLE");
+    }
+
+    const invalidated = parseInvalidationReply(reply);
+    if (
+      invalidated.sequence !== boundary.sequence ||
+      invalidated.snapshotDigest !== boundary.invalidationDigest
+    ) {
+      throw new Error("VPN_SEQUENCE_AUTHORITY_INVALIDATION_UNVERIFIED");
+    }
+    return invalidated;
+  }
 }
 
-export { COMMIT_SCRIPT, parseCommitReply, parseStoredCommit };
+export {
+  COMMIT_SCRIPT,
+  INVALIDATE_SCRIPT,
+  parseCommitReply,
+  parseInvalidationReply,
+  parseStoredCommit,
+};
