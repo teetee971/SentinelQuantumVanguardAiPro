@@ -11,7 +11,7 @@ This file is generated. Do not promote a capability by editing this document; up
 | Voice Studio transformed calls | IMPLEMENTED_NOT_CONFIGURED | NO | 3 |
 | GeoIntel USGS earthquakes | IMPLEMENTED_NOT_VERIFIED | NO | 1 |
 | GeoIntel conflicts/hotspots/sanctions/weather/outages | NOT_IMPLEMENTED | NO | 1 |
-| Collective Defense API | AVAILABLE | YES | 0 |
+| Collective Defense API | IMPLEMENTED_NOT_VERIFIED | NO | 1 |
 | Collective Defense Android center | IMPLEMENTED_NOT_VERIFIED | NO | 2 |
 | Signed Phone Intelligence reputation feed | IMPLEMENTED_NOT_CONFIGURED | NO | 3 |
 | Phone Intelligence moderation service | IMPLEMENTED_NOT_CONFIGURED | NO | 2 |
@@ -71,12 +71,12 @@ Evidence:
 
 ### Collective Defense API
 
-- None.
+- Historical Render evidence exists, but fresh deployment and live health evidence for the current revision is not recorded
 
 Evidence:
 - `backend/wangiri-api/README.md`
 - `backend/wangiri-api/collective_intel.py`
-- `docs/FEATURE_INVENTORY.md`
+- `render.yaml`
 
 ### Collective Defense Android center
 
@@ -86,7 +86,7 @@ Evidence:
 Evidence:
 - `native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseClient.kt`
 - `native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CollectiveDefenseScreen.kt`
-- `docs/FEATURE_INVENTORY.md`
+- `native-android-app/app/src/main/java/com/sentinel/quantum/background/CollectiveDefenseWorkScheduler.kt`
 
 ### Signed Phone Intelligence reputation feed
 
@@ -97,7 +97,6 @@ Evidence:
 Evidence:
 - `security/phone-intelligence/call-rule-publication.js`
 - `config/module-continuity-inventory.json`
-- `docs/FEATURE_INVENTORY.md`
 
 ### Phone Intelligence moderation service
 
@@ -116,7 +115,7 @@ Evidence:
 
 Evidence:
 - `native-android-app/app/src/main/res/values/strings.xml`
-- `docs/FEATURE_INVENTORY.md`
+- `native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt`
 
 ### Public signed Android release
 
