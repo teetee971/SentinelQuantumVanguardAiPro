@@ -1,0 +1,114 @@
+name: Android Instrumentation
+
+on:
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-instrumentation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  connected-tests:
+    name: Compose instrumentation on Android 16
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+
+      - name: Run connected Android tests
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+
+          SDK_PACKAGES=("emulator" "platforms;android-36" "system-images;android-36;google_apis;x86_64")
+          SDK_READY=0
+          for attempt in 1 2 3; do
+            if timeout 600s sdkmanager "${SDK_PACKAGES[@]}"; then
+              SDK_READY=1
+              break
+            fi
+            echo "Android SDK package installation failed on attempt ${attempt}; cleaning partial emulator payloads."
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-36/google_apis/x86_64"
+            if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 5)); fi
+          done
+          if [[ "$SDK_READY" != "1" ]]; then
+            echo "Unable to install Android emulator packages."
+            exit 1
+          fi
+
+          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_instrumentation_api36 --package "system-images;android-36;google_apis;x86_64"'
+
+          EMULATOR_ACCEL_ARGS=(-no-accel)
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            EMULATOR_ACCEL_ARGS=(-accel on)
+          fi
+
+          "$ANDROID_HOME/emulator/emulator" \
+            -avd sentinel_instrumentation_api36 \
+            -no-window -no-audio -no-boot-anim \
+            -no-snapshot-load -no-snapshot-save \
+            "${EMULATOR_ACCEL_ARGS[@]}" \
+            -gpu swiftshader_indirect \
+            > "$RUNNER_TEMP/sentinel-instrumentation-emulator.log" 2>&1 &
+          EMULATOR_PID=$!
+          trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+
+          adb wait-for-device
+          BOOTED=0
+          for _ in $(seq 1 120); do
+            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" == "1" ]]; then
+              BOOTED=1
+              break
+            fi
+            if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
+              cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [[ "$BOOTED" != "1" ]]; then
+            cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+            exit 1
+          fi
+
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+
+          ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
+
+      - name: Upload instrumentation reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Android-Instrumentation-${{ github.sha }}
+          path: |
+            native-android-app/app/build/reports/androidTests/connected/
+            native-android-app/app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
+          retention-days: 14
