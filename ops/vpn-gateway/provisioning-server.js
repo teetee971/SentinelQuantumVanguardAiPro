@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import http from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
 import { VpnGatewayPeerRuntime } from "./peer-runtime.js";
 import { VpnLeaseStateStore } from "./lease-state-store.js";
@@ -14,7 +15,6 @@ export { RedisVpnLeaseSequenceAuthority } from "./redis-lease-sequence-authority
 
 const MAX_BODY_BYTES = 8 * 1024;
 const ADMIN_TOKEN = /^[A-Za-z0-9._~-]{32,2048}$/;
-const MAX_PERSIST_ATTEMPTS = 2;
 
 function json(status, body) {
   return {
@@ -59,35 +59,80 @@ function validateLeasePersistenceConfiguration(stateStore, sequenceAuthority) {
 
 async function persistCurrentLeaseState({ core, stateStore, sequenceAuthority }) {
   if (stateStore === null) return null;
-  let lastError = null;
-  for (let attempt = 1; attempt <= MAX_PERSIST_ATTEMPTS; attempt += 1) {
-    try {
-      return await persistVpnLeaseState({ core, stateStore, sequenceAuthority });
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError ?? new Error("VPN_LEASE_STATE_PERSIST_FAILED");
+  return persistVpnLeaseState({ core, stateStore, sequenceAuthority });
+}
+
+function revocationInvalidationDigest(gatewayId, sequence, snapshotDigest) {
+  return createHash("sha256")
+    .update("sentinel-vpn-revocation-invalidation:v1\0", "utf8")
+    .update(gatewayId, "utf8")
+    .update("\0", "utf8")
+    .update(String(sequence), "utf8")
+    .update("\0", "utf8")
+    .update(snapshotDigest, "utf8")
+    .digest("hex");
 }
 
 /**
  * A destructive runtime revocation must never leave an older active snapshot trusted after restart.
- * If the revoked state cannot be durably persisted, advance the external monotonic floor by one as
- * a fail-closed tombstone. The old snapshot then falls below the authority and restore rejects it.
- * This is best-effort because the request is already failing; if the authority is unavailable,
- * operators must keep the service stopped until storage/authority consistency is re-established.
+ *
+ * - If local snapshot and authority already differ, exact-digest restore fails closed naturally.
+ * - If they match and the local state already equals the revoked in-memory state, persistence
+ *   actually reached a safe durable state despite the reported failure.
+ * - Otherwise invalidate only that exact committed digest, at the same sequence. The next valid
+ *   local save can then advance to N+1 without colliding with an artificial sequence tombstone.
  */
-async function invalidateStaleRestoreAfterRevocationFailure({ core, sequenceAuthority }) {
-  if (sequenceAuthority === null) return false;
+async function invalidateStaleRestoreAfterRevocationFailure({
+  core,
+  stateStore,
+  sequenceAuthority,
+}) {
+  if (stateStore === null || sequenceAuthority === null) return false;
+
+  let local;
+  let authorityCommit;
   try {
-    const current = await sequenceAuthority.readMinimumSequence(core.gatewayId);
-    if (!Number.isSafeInteger(current) || current < 1 || current >= Number.MAX_SAFE_INTEGER) {
-      return false;
-    }
-    await sequenceAuthority.commitSequence(core.gatewayId, current + 1);
-    return true;
+    local = await stateStore.loadWithReceipt();
+    authorityCommit = await sequenceAuthority.readCommit(core.gatewayId);
   } catch {
     return false;
+  }
+
+  if (
+    local.sequence !== authorityCommit.sequence ||
+    local.snapshotDigest !== authorityCommit.snapshotDigest
+  ) {
+    return true;
+  }
+
+  if (isDeepStrictEqual(local.state, core.exportState())) {
+    return true;
+  }
+
+  const invalidationDigest = revocationInvalidationDigest(
+    core.gatewayId,
+    local.sequence,
+    local.snapshotDigest
+  );
+
+  try {
+    await sequenceAuthority.invalidateSnapshot(
+      core.gatewayId,
+      local.sequence,
+      local.snapshotDigest,
+      invalidationDigest
+    );
+    const confirmed = await sequenceAuthority.readCommit(core.gatewayId);
+    return confirmed.sequence === local.sequence &&
+      confirmed.snapshotDigest === invalidationDigest;
+  } catch {
+    try {
+      const latest = await sequenceAuthority.readCommit(core.gatewayId);
+      return latest.sequence !== local.sequence ||
+        latest.snapshotDigest !== local.snapshotDigest;
+    } catch {
+      return false;
+    }
   }
 }
 
@@ -161,14 +206,20 @@ export async function handleVpnProvisioningRequest({
       try {
         await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
       } catch {
-        await peerRuntime.remove(body.devicePublicKey);
-        core.revoke(body.devicePublicKey);
-        try {
-          await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
-        } catch {
-          // Request already fails. Exact-sequence restore will reject any uncommitted snapshot.
+        const removed = await peerRuntime.remove(body.devicePublicKey);
+        if (removed.accepted) {
+          core.revoke(body.devicePublicKey);
+          try {
+            await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
+          } catch {
+            // Request already fails. Exact sequence+digest restore rejects uncommitted snapshots.
+          }
         }
-        return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
+        return json(503, {
+          error: removed.accepted
+            ? "VPN_LEASE_STATE_PERSIST_FAILED"
+            : "VPN_PEER_ROLLBACK_FAILED",
+        });
       }
     }
     return json(result.reason === "VPN_PROVISIONING_CREATED" ? 201 : 200, result.response);
@@ -193,7 +244,11 @@ export async function handleVpnProvisioningRequest({
       try {
         await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
       } catch {
-        await invalidateStaleRestoreAfterRevocationFailure({ core, sequenceAuthority });
+        await invalidateStaleRestoreAfterRevocationFailure({
+          core,
+          stateStore,
+          sequenceAuthority,
+        });
         return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
       }
     }
@@ -289,5 +344,6 @@ export const vpnProvisioningServerInternals = Object.freeze({
   constantTimeTokenMatch,
   validateLeasePersistenceConfiguration,
   persistCurrentLeaseState,
+  revocationInvalidationDigest,
   invalidateStaleRestoreAfterRevocationFailure,
 });
