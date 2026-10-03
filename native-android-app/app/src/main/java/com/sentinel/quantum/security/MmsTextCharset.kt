@@ -46,6 +46,27 @@ internal object MmsTextCharset {
         return Decoded(text)
     }
 
+    fun mibEnumForName(value: String): Int? = when (
+        value.trim().lowercase().replace('_', '-')
+    ) {
+        "us-ascii", "ascii" -> US_ASCII
+        "iso-8859-1", "latin1", "latin-1" -> ISO_8859_1
+        "iso-8859-2" -> ISO_8859_2
+        "iso-8859-3" -> ISO_8859_3
+        "iso-8859-4" -> ISO_8859_4
+        "iso-8859-5" -> ISO_8859_5
+        "iso-8859-6" -> ISO_8859_6
+        "iso-8859-7" -> ISO_8859_7
+        "iso-8859-8" -> ISO_8859_8
+        "iso-8859-9" -> ISO_8859_9
+        "shift-jis", "shift-jis", "sjis" -> SHIFT_JIS
+        "utf-8", "utf8" -> UTF_8
+        "big5" -> BIG5
+        "iso-10646-ucs-2", "ucs-2", "ucs2", "utf-16be" -> UCS2
+        "utf-16", "utf16" -> UTF_16
+        else -> null
+    }
+
     const val US_ASCII = 0x03
     const val ISO_8859_1 = 0x04
     const val ISO_8859_2 = 0x05
