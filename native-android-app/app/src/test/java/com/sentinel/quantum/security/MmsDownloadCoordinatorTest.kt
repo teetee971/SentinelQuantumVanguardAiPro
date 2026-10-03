@@ -12,6 +12,34 @@ class MmsDownloadCoordinatorTest {
         assertFalse(MmsDownloadCleanupWorker.WORK_TAG.isBlank())
     }
 
+    @Test fun reconstructedCleanupKeepsOriginalDeadlineInsteadOfGrantingFreshTtl() {
+        val requestedAt = 1_000_000L
+        val ttl = MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+
+        assertEquals(
+            ttl,
+            MmsDownloadCleanupWorker.remainingDelayMs(requestedAt, requestedAt)
+        )
+        assertEquals(
+            ttl / 2L,
+            MmsDownloadCleanupWorker.remainingDelayMs(requestedAt, requestedAt + ttl / 2L)
+        )
+        assertEquals(
+            0L,
+            MmsDownloadCleanupWorker.remainingDelayMs(requestedAt, requestedAt + ttl)
+        )
+        assertEquals(
+            0L,
+            MmsDownloadCleanupWorker.remainingDelayMs(requestedAt, requestedAt + ttl + 1L)
+        )
+    }
+
+    @Test fun reconstructedCleanupDelayIsOverflowSafe() {
+        val requestedAt = Long.MAX_VALUE - 10L
+        val now = Long.MAX_VALUE - 5L
+        assertEquals(5L, MmsDownloadCleanupWorker.remainingDelayMs(requestedAt, now))
+    }
+
     @Test fun lostCallbackRecoveryRunsBeforeFinalCleanupDeadline() {
         assertTrue(MmsDownloadRecoveryWorker.RECOVERY_DELAY_MS > 0L)
         assertTrue(MmsDownloadRecovery.STABLE_FILE_GRACE_MS > 0L)
