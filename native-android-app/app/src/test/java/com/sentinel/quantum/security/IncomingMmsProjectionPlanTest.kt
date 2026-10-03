@@ -121,12 +121,34 @@ class IncomingMmsProjectionPlanTest {
         assertEquals(2L, result.plan.messageSizeBytes)
     }
 
+    @Test
+    fun relatedAndAlternativeStayPrivateUntilPresentationMetadataIsPreserved() {
+        val parts = listOf(safe("text/plain", "x".toByteArray()))
+        for (contentType in listOf(
+            "application/vnd.wap.multipart.related",
+            "application/vnd.wap.multipart.alternative"
+        )) {
+            val result = IncomingMmsProjectionPlan.build(
+                "2".repeat(64),
+                envelope(
+                    sender = "+33612345678",
+                    messageId = "msg-rich",
+                    contentType = contentType
+                ),
+                parts,
+                0
+            )
+            assertQuarantined(result, "PRESENTATION_METADATA_NOT_PRESERVED")
+        }
+    }
+
     private fun envelope(
         sender: String?,
         senderDisposition: MmsRetrieveEnvelopeParser.SenderDisposition =
             MmsRetrieveEnvelopeParser.SenderDisposition.ADDRESS,
         messageId: String? = null,
-        transactionId: String? = null
+        transactionId: String? = null,
+        contentType: String = "application/vnd.wap.multipart.mixed"
     ) = MmsRetrieveEnvelopeParser.Envelope(
         messageType = 0x84,
         mmsVersion = 0x12,
@@ -135,7 +157,7 @@ class IncomingMmsProjectionPlanTest {
         senderAddress = sender,
         messageId = messageId,
         transactionId = transactionId,
-        contentType = "application/vnd.wap.multipart.mixed",
+        contentType = contentType,
         bodyOffset = 20
     )
 
