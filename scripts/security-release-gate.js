@@ -1,24 +1,29 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
 
-// Release gate: deterministic repository controls first, then the production web build.
-// Android signing/artifact verification remains a separate gate because this script
-// cannot prove possession of signing credentials or the provenance of an APK.
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+// Release gate: product truth and deterministic repository controls first, then the
+// production web build. Android signing/artifact verification remains a separate gate because
+// this script cannot prove possession of signing credentials or the provenance of an APK.
 const checks = [
-  ['isolation', ['run', 'test:isolation']],
-  ['static-links', ['run', 'test:static-links']],
-  ['client-security', ['run', 'test:client-security']],
-  ['public-claims', ['run', 'test:public-claims']],
-  ['android-manifest', ['run', 'test:android-manifest']],
-  ['action-pinning', ['run', 'test:ci-supply-chain']],
-  ['security-governance', ['run', 'test:security-governance']],
-  ['production-build', ['run', 'build']],
+  ['product-capability-truth', process.execPath, ['scripts/check-product-capabilities.js']],
+  ['product-capability-tests', process.execPath, ['--test', 'scripts/check-product-capabilities.test.js']],
+  ['product-capability-doc', process.execPath, ['scripts/render-product-capabilities.js', '--check']],
+  ['isolation', npmCommand, ['run', 'test:isolation']],
+  ['static-links', npmCommand, ['run', 'test:static-links']],
+  ['client-security', npmCommand, ['run', 'test:client-security']],
+  ['public-claims', npmCommand, ['run', 'test:public-claims']],
+  ['android-manifest', npmCommand, ['run', 'test:android-manifest']],
+  ['action-pinning', npmCommand, ['run', 'test:ci-supply-chain']],
+  ['security-governance', npmCommand, ['run', 'test:security-governance']],
+  ['production-build', npmCommand, ['run', 'build']],
 ];
 
 let failed = false;
-for (const [name, args] of checks) {
+for (const [name, command, args] of checks) {
   console.log(`\n=== ${name} ===`);
-  const result = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', args, {
+  const result = spawnSync(command, args, {
     stdio: 'inherit',
     shell: false,
     env: { ...process.env, CI: '1' },

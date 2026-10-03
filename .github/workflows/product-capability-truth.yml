@@ -1,0 +1,46 @@
+name: Product Capability Truth
+
+on:
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  product-truth:
+    name: Validate product capability truth
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Validate capability registry invariants
+        run: node scripts/check-product-capabilities.js
+
+      - name: Run capability truth regression tests
+        run: node --test scripts/check-product-capabilities.test.js
+
+      - name: Reject stale generated capability status
+        run: node scripts/render-product-capabilities.js --check
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo '## Product capability truth'
+            echo ''
+            echo 'The canonical capability registry, evidence paths, release invariants and generated status document were checked.'
+            echo 'Customer availability cannot be asserted by this gate unless all declared prerequisites are true and blockers are empty.'
+          } >> "$GITHUB_STEP_SUMMARY"
