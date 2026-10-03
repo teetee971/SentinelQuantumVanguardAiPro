@@ -26,12 +26,3 @@ export function validateVpnLeaseSequenceBoundary({ gatewayId, sequence }) {
   }
   return Object.freeze({ gatewayId, sequence });
 }
-
-/**
- * Lazy factory avoids coupling the abstract trust boundary to any Redis client package while
- * keeping the concrete adapter part of the reviewed production module graph.
- */
-export async function createRedisVpnLeaseSequenceAuthority(options) {
-  const { RedisVpnLeaseSequenceAuthority } = await import("./redis-lease-sequence-authority.js");
-  return new RedisVpnLeaseSequenceAuthority(options);
-}
