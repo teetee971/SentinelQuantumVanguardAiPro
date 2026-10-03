@@ -5,10 +5,10 @@ package com.sentinel.quantum.security
  * projection.
  *
  * It deliberately supports the subset needed by the existing boundary: text/plain, SMIL metadata
- * and common image parts inside WAP multipart mixed/related/alternative messages. Content-ID and
- * Content-Location are preserved when encoded as standard part headers; bounded
- * Content-Disposition is skipped without interpretation so later references remain reachable.
- * Unknown encodings, ambiguous bodies and malformed lengths fail closed.
+ * and common image parts inside WAP multipart mixed/related/alternative messages. Content-ID,
+ * Content-Location and supported charset metadata are preserved. Bounded Content-Disposition is
+ * skipped without interpretation so later references remain reachable. Unknown encodings,
+ * ambiguous bodies and malformed lengths fail closed.
  */
 object SentinelMmsPduDecoder : MmsPduDecoder {
     override fun decode(pdu: ByteArray): MmsPduDecoder.DecodeResult {
@@ -16,14 +16,11 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
             return MmsPduDecoder.DecodeResult.Rejected("INVALID_PDU_SIZE")
         }
 
-        // Legacy/general preview path. It remains intentionally conservative because callers that
-        // do not possess a parsed MMS envelope cannot safely assume which 0x84 byte is top-level
-        // Content-Type. Incoming M-Retrieve.conf projection must use decodeRetrieveBody() below.
         val candidates = ArrayList<List<MmsDecodeBoundary.DecodedPart>>(2)
         for (offset in 0 until pdu.lastIndex) {
             if (u(pdu[offset]) != CONTENT_TYPE_HEADER) continue
             val cursor = Cursor(pdu, offset + 1, pdu.size)
-            val topLevelType = parseContentType(cursor) ?: continue
+            val topLevelType = parseContentType(cursor)?.mimeType ?: continue
             if (topLevelType !in MULTIPART_TYPES) continue
             val parts = parseMultipart(cursor) ?: continue
             if (cursor.position != pdu.size || parts.isEmpty()) continue
@@ -38,13 +35,6 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         return MmsPduDecoder.DecodeResult.Decoded(parts)
     }
 
-    /**
-     * Authoritative M-Retrieve.conf body decoder.
-     *
-     * [MmsRetrieveEnvelopeParser] has already consumed the top-level Content-Type and returns the
-     * exact first body byte. Starting there prevents a 0x84 byte inside text/image payload from
-     * being misinterpreted as a second candidate top-level header.
-     */
     internal fun decodeRetrieveBody(
         pdu: ByteArray,
         envelope: MmsRetrieveEnvelopeParser.Envelope
@@ -76,6 +66,11 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         val contentLocation: String?
     )
 
+    private data class ParsedContentType(
+        val mimeType: String,
+        val charsetMibEnum: Int?
+    )
+
     private fun parseMultipart(cursor: Cursor): List<MmsDecodeBoundary.DecodedPart>? {
         val count = readUintvar(cursor) ?: return null
         if (count !in 1..MAX_PARTS) return null
@@ -90,7 +85,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
 
             val headerEnd = cursor.position + headerLength
             val headerCursor = Cursor(cursor.bytes, cursor.position, headerEnd)
-            val mime = parseContentType(headerCursor) ?: return null
+            val contentType = parseContentType(headerCursor) ?: return null
             val references = parsePartReferences(headerCursor) ?: return null
             cursor.position = headerEnd
 
@@ -101,21 +96,17 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
             cursor.position = dataEnd
 
             parts += MmsDecodeBoundary.DecodedPart(
-                mimeType = mime,
+                mimeType = contentType.mimeType,
                 fileName = null,
                 payload = payload,
                 contentId = references.contentId,
-                contentLocation = references.contentLocation
+                contentLocation = references.contentLocation,
+                charsetMibEnum = contentType.charsetMibEnum
             )
         }
         return parts
     }
 
-    /**
-     * Parses only reference metadata required to preserve multipart/related semantics. Standard
-     * Content-Disposition is skipped by its declared bounded value length. Unknown headers stop
-     * interpretation rather than guessing their value shape, preventing unsafe re-synchronization.
-     */
     private fun parsePartReferences(cursor: Cursor): PartReferences? {
         var contentId: String? = null
         var contentLocation: String? = null
@@ -134,9 +125,6 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
                     if (!skipLengthDelimitedValue(cursor)) return null
                 }
                 else -> {
-                    // The full part-header block is already length-bounded. Do not guess how to
-                    // skip an unsupported WSP value because doing so could re-synchronize on bytes
-                    // inside that value and manufacture reference metadata.
                     cursor.position += cursor.remaining
                 }
             }
@@ -156,7 +144,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         return true
     }
 
-    private fun parseContentType(cursor: Cursor): String? {
+    private fun parseContentType(cursor: Cursor): ParsedContentType? {
         val first = cursor.peek() ?: return null
         return when {
             first in 0..30 -> {
@@ -168,19 +156,74 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
                 val length = readUintvar(cursor) ?: return null
                 parseGeneralForm(cursor, length)
             }
-            else -> parseMediaType(cursor)
+            else -> parseMediaType(cursor)?.let { ParsedContentType(it, null) }
         }
     }
 
-    private fun parseGeneralForm(cursor: Cursor, declaredLength: Int): String? {
+    private fun parseGeneralForm(cursor: Cursor, declaredLength: Int): ParsedContentType? {
         if (declaredLength <= 0 || declaredLength > cursor.remaining || declaredLength > MAX_CONTENT_TYPE_BYTES) {
             return null
         }
         val end = cursor.position + declaredLength
         val nested = Cursor(cursor.bytes, cursor.position, end)
         val mime = parseMediaType(nested) ?: return null
-        cursor.position = end // Skip bounded Content-Type parameters.
-        return mime
+        var charsetMibEnum: Int? = null
+        var stopParsingParameters = false
+        while (nested.remaining > 0 && !stopParsingParameters) {
+            when (nested.read() ?: return null) {
+                PARAM_CHARSET -> {
+                    if (charsetMibEnum != null) return null
+                    charsetMibEnum = readCharset(nested) ?: return null
+                }
+                PARAM_DEP_NAME,
+                PARAM_DEP_FILENAME,
+                PARAM_NAME,
+                PARAM_FILENAME -> {
+                    if (readTextString(nested) == null) return null
+                }
+                else -> {
+                    // Do not guess the shape of an unsupported parameter. Remaining bytes are
+                    // still bounded by the declared Content-Type value; charset then stays absent
+                    // and text validation falls back to strict UTF-8 rather than inventing metadata.
+                    nested.position += nested.remaining
+                    stopParsingParameters = true
+                }
+            }
+        }
+        cursor.position = end
+        return ParsedContentType(mime, charsetMibEnum)
+    }
+
+    private fun readCharset(cursor: Cursor): Int? {
+        val first = cursor.peek() ?: return null
+        return when {
+            first >= 0x80 -> {
+                cursor.read()
+                first and 0x7f
+            }
+            first in 1..MAX_INTEGER_BYTES -> {
+                val length = cursor.read() ?: return null
+                if (length > cursor.remaining) return null
+                var value = 0L
+                repeat(length) {
+                    value = (value shl 8) or (cursor.read() ?: return null).toLong()
+                    if (value > Int.MAX_VALUE) return null
+                }
+                value.toInt()
+            }
+            first in 0x20..0x7e -> {
+                val name = readTextString(cursor)?.lowercase() ?: return null
+                when (name) {
+                    "us-ascii" -> MmsTextCharset.US_ASCII
+                    "iso-8859-1" -> MmsTextCharset.ISO_8859_1
+                    "utf-8" -> MmsTextCharset.UTF_8
+                    "iso-10646-ucs-2" -> MmsTextCharset.UCS2
+                    "utf-16" -> MmsTextCharset.UTF_16
+                    else -> return null
+                }
+            }
+            else -> null
+        }
     }
 
     private fun parseMediaType(cursor: Cursor): String? {
@@ -260,6 +303,11 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
     private const val PART_DEP_CONTENT_DISPOSITION = 0xae
     private const val PART_CONTENT_ID = 0xc0
     private const val PART_CONTENT_DISPOSITION = 0xc5
+    private const val PARAM_CHARSET = 0x81
+    private const val PARAM_DEP_NAME = 0x85
+    private const val PARAM_DEP_FILENAME = 0x86
+    private const val PARAM_NAME = 0x97
+    private const val PARAM_FILENAME = 0x98
     private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
@@ -269,6 +317,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
     private const val MAX_MIME_CHARS = 128
     private const val MAX_REFERENCE_CHARS = 512
     private const val MAX_UINTVAR_BYTES = 5
+    private const val MAX_INTEGER_BYTES = 4
 
     private val MULTIPART_TYPES = setOf(
         "application/vnd.wap.multipart.mixed",
@@ -276,7 +325,6 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
         "application/vnd.wap.multipart.related"
     )
 
-    // WSP well-known media indexes used by the safe preview path.
     private val WELL_KNOWN_TYPES = mapOf(
         0x03 to "text/plain",
         0x1d to "image/gif",
