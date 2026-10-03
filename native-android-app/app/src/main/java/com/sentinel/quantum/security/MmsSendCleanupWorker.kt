@@ -29,7 +29,14 @@ class MmsSendCleanupWorker(
                 .setInitialDelay(MmsSendPduStager.STAGED_PDU_TTL_MS, TimeUnit.MILLISECONDS)
                 .addTag(WORK_TAG)
                 .build()
-            WorkManager.getInstance(context.applicationContext).enqueue(request)
+            // One delayed cleanup is sufficient because each new stage prunes old payloads first.
+            // REPLACE moves the safety-net deadline to one TTL after the newest staged PDU without
+            // accumulating one WorkManager row per MMS.
+            WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(
+                WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
+                request
+            )
         }
 
         fun scheduleStartupRecovery(context: Context) {
@@ -46,6 +53,7 @@ class MmsSendCleanupWorker(
 
         internal const val WORK_TAG = "sentinel-mms-send-cleanup"
         internal const val STARTUP_WORK_TAG = "sentinel-mms-startup-recovery"
+        private const val WORK_NAME = "sentinel-mms-send-cleanup-v1"
         private const val STARTUP_WORK_NAME = "sentinel-mms-startup-recovery-v1"
         private const val KEY_PROCESS_RESTART = "mms.process_restart"
     }
