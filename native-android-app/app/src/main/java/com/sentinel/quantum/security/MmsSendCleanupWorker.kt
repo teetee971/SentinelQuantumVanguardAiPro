@@ -9,7 +9,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
-/** Durable safety net for staged outgoing MMS payloads and provider recovery metadata. */
+/** Durable safety net for staged MMS payloads and incoming/outgoing provider recovery metadata. */
 class MmsSendCleanupWorker(
     appContext: Context,
     workerParams: WorkerParameters
@@ -21,7 +21,10 @@ class MmsSendCleanupWorker(
         if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
             MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
             MmsSendPduStager.pruneExpired(applicationContext)
+            MmsDownloadCoordinator.pruneExpired(applicationContext)
+            IncomingMmsPrivateStore.prune(applicationContext)
             runCatching { MmsConversationStore(applicationContext).repairJournal() }
+            runCatching { IncomingMmsConversationStore(applicationContext).repairJournal() }
         }
         return Result.success()
     }
@@ -70,7 +73,7 @@ class MmsSendCleanupWorker(
         internal const val STARTUP_WORK_TAG = "sentinel-mms-startup-recovery"
         private const val WORK_PREFIX = "sentinel-mms-send-cleanup-v2-"
         private const val FILE_TAG_PREFIX = "sentinel-mms-send-file-"
-        private const val STARTUP_WORK_NAME = "sentinel-mms-startup-recovery-v1"
+        private const val STARTUP_WORK_NAME = "sentinel-mms-startup-recovery-v2"
         private const val KEY_PROCESS_RESTART = "mms.process_restart"
         private const val KEY_FILE_NAME = "mms.file_name"
 
