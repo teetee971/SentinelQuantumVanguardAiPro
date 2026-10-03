@@ -68,6 +68,47 @@ class MmsRetrieveInteropContractTest {
     }
 
     @Test
+    fun relatedDecoderPreservesSmilAndMediaReferencesWithoutRenderingThem() {
+        val smilPayload = "<smil><body><img src=\"cid:img1\"/></body></smil>".toByteArray()
+        val imagePayload = byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte(), 0x01)
+        val smilHeader =
+            "application/smil".toByteArray(Charsets.US_ASCII) + byteArrayOf(0x00, 0x8e.toByte()) +
+                "presentation.smil".toByteArray(Charsets.US_ASCII) + byteArrayOf(0x00)
+        val imageHeader = byteArrayOf(0x9e.toByte(), 0xc0.toByte()) +
+            "<img1>".toByteArray(Charsets.US_ASCII) + byteArrayOf(0x00, 0x8e.toByte()) +
+            "photo.jpg".toByteArray(Charsets.US_ASCII) + byteArrayOf(0x00)
+        val body = byteArrayOf(0x02) +
+            encodedPart(smilHeader, smilPayload) + encodedPart(imageHeader, imagePayload)
+        val pdu = byteArrayOf(0x00) + body
+        val envelope = MmsRetrieveEnvelopeParser.Envelope(
+            messageType = 0x84,
+            mmsVersion = 0x12,
+            dateSeconds = 1_700_000_000L,
+            senderDisposition = MmsRetrieveEnvelopeParser.SenderDisposition.ADDRESS,
+            senderAddress = "+590690123456",
+            messageId = "msg-related",
+            transactionId = "tx-related",
+            contentType = "application/vnd.wap.multipart.related",
+            bodyOffset = 1
+        )
+
+        val decoded = SentinelMmsPduDecoder.decodeRetrieveBody(pdu, envelope)
+        assertTrue(decoded is MmsPduDecoder.DecodeResult.Decoded)
+        val decodedParts = (decoded as MmsPduDecoder.DecodeResult.Decoded).parts
+        assertEquals(2, decodedParts.size)
+        assertEquals("application/smil", decodedParts[0].mimeType)
+        assertEquals("presentation.smil", decodedParts[0].contentLocation)
+        assertEquals("<img1>", decodedParts[1].contentId)
+        assertEquals("photo.jpg", decodedParts[1].contentLocation)
+
+        val boundary = MmsDecodeBoundary.validate(decodedParts)
+        assertTrue(boundary is MmsDecodeBoundary.Result.Accepted)
+        val safe = (boundary as MmsDecodeBoundary.Result.Accepted).parts
+        assertEquals("<img1>", safe[1].contentId)
+        assertEquals("photo.jpg", safe[1].contentLocation)
+    }
+
+    @Test
     fun anchoredDecoderRejectsForgedBodyOffset() {
         val body = multipartTextBody("safe")
         val pdu = retrieveConf(ByteArray(0), body)
@@ -120,5 +161,10 @@ class MmsRetrieveInteropContractTest {
         return byteArrayOf(
             0x01, 0x01, payload.size.toByte(), 0x9e.toByte() // image/jpeg
         ) + payload
+    }
+
+    private fun encodedPart(header: ByteArray, payload: ByteArray): ByteArray {
+        require(header.size < 128 && payload.size < 128)
+        return byteArrayOf(header.size.toByte(), payload.size.toByte()) + header + payload
     }
 }
