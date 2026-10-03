@@ -17,15 +17,23 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
     'utf8'
   );
   const roadmap = readFileSync(resolve('docs/ROADMAP.md'), 'utf8');
+  const registry = readFileSync(resolve('config/product-capabilities.json'), 'utf8');
   const publicRoadmap = readFileSync(resolve('public/roadmap.html'), 'utf8');
 
   assert.match(source, /CERTIFICATION_SCHEMA_VERSION\s*=\s*5/);
   const required = source.match(/requiredCount:\s*Int\s*get\(\)\s*=\s*(\d+)/)?.[1];
   assert.equal(required, '14');
 
-  assert.match(roadmap, /Phone Core v5 structurée en 14 preuves/);
-  assert.match(roadmap, /Wi-Fi[^\n]*diagnostic réseau séparé/);
-  assert.match(roadmap, /ne compte pas dans le certificat Phone Core/);
+  assert.match(roadmap, /certificat Phone Core v5 comporte \*\*exactement 14 preuves\*\*/);
+  assert.match(roadmap, /Wi-Fi reste un diagnostic réseau indépendant/);
+  assert.match(roadmap, /ne modifie jamais le compteur 14\/14/);
+
+  const parsedRegistry = JSON.parse(registry);
+  const phoneCore = parsedRegistry.capabilities.find((entry) => entry.id === 'phone_core_android');
+  assert.ok(phoneCore, 'phone_core_android capability must be registered');
+  assert.equal(phoneCore.requires_physical_validation, true);
+  assert.equal(phoneCore.physically_validated, false);
+  assert.equal(phoneCore.customer_available, false);
 
   assert.match(publicRoadmap, /certificat Phone Core v5 porte sur 14 preuves distinctes/);
   assert.match(publicRoadmap, /scanner Wi-Fi reste un diagnostic réseau séparé/);

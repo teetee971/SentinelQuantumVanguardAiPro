@@ -1,79 +1,124 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 1 octobre 2026**
+**Dernière mise à jour : 3 octobre 2026**
 
-Cette feuille de route distingue strictement ce qui existe dans le dépôt de ce qui reste à démontrer sur appareil physique. Une capacité logicielle prête ne constitue jamais, à elle seule, une preuve de fonctionnement opérateur/appareil.
+La source canonique des états produit est désormais `config/product-capabilities.json`. Le fichier généré `docs/PRODUCT_CAPABILITY_STATUS.md` donne la lecture humaine correspondante. Cette roadmap décrit l’ordre de finalisation ; elle ne duplique plus les statuts de déploiement ou de disponibilité qui vieillissaient sans preuve.
 
-## Phone Core — état consolidé
+## Règle de vérité
 
-### Implémentation présente — validation sur le commit exact requise
+Une capacité ne devient jamais « disponible client » parce que son code existe ou parce qu’une CI est verte. Selon la capacité, la chaîne de preuve exigée est :
 
-- Application Android native sous `native-android-app/`.
-- Parcours d’activation séparant explicitement prérequis logiciels et validation physique.
-- Composeur Sentinel et surface InCall pour l’application téléphone sélectionnée par l’utilisateur.
-- Filtrage local via `CallScreeningService` et fiche Caller ID locale après la réponse obligatoire à Android.
-- Accès local aux contacts avec `READ_CONTACTS`, et historique système avec rôle téléphone + `READ_CALL_LOG`.
-- Client SMS par défaut : réception `SMS_DELIVER`, envoi via `SmsManager`, conversations locales et suivi multiparties SENT/DELIVERED.
-- Sélection multi-SIM explicite pour les appels et SMS lorsque plusieurs lignes sont disponibles ; aucun choix arbitraire de ligne n’est présenté comme validé.
-- MMS/WAP_PUSH borné : rôle SMS obligatoire, décodage fail-closed, aperçu sécurisé, quarantaine locale et téléchargement opérateur associé à une souscription.
-- Notifications appels/SMS soumises uniquement lorsque permissions et canaux Android l’autorisent.
-- Scanner Wi-Fi local respectant les permissions, l’état de localisation et les limitations/throttling Android. Dans le schéma Phone Core v5, ce signal reste un diagnostic réseau séparé et ne compte pas dans le certificat Phone Core.
-- Validation physique Phone Core v5 structurée en 14 preuves, bornée à l’installation courante. Les preuves incluent appels entrants/sortants réellement actifs, filtrage observé, providers contacts/historique, SMS entrant, SMS envoyé/livré, MMS sécurisé, notifications et surfaces Caller ID/InCall réellement affichées.
-- CI Android : tests unitaires, lint, build APK, contrôle package/alignment/signature et installation/lancement sur émulateur Android 10.
+`implémentation → configuration → déploiement → vérification runtime → validation physique → signature de release → disponibilité client`
 
-### Non démontré — bloque le statut « Phone Core 100 % fonctionnel »
+Les étapes non applicables sont déclarées explicitement dans le registre canonique. Un bloqueur ouvert interdit la promotion `customer_available=true`.
 
-- Appels opérateur entrants et sortants sur appareil physique.
-- Comportement réel du Dialer/InCall/Caller ID sur les variantes constructeur/opérateur ciblées.
-- Contacts et historique sur appareil utilisateur avec rôles/permissions réellement accordés.
-- SMS entrants/sortants et agrégation SENT/DELIVERED sur réseau mobile réel.
-- MMS sur réseau opérateur réel, y compris téléchargement et aperçu sécurisé.
-- Multi-SIM réel avec deux lignes actives et changements de disponibilité ; ce scénario de compatibilité ne remplace aucune des 14 preuves du certificat v4.
-- Notifications réelles selon réglages utilisateur/constructeur.
-**Hors certificat Phone Core v5 — diagnostic réseau séparé :** un scan Wi-Fi réellement frais reste à tester sur appareil physique dans les limites de throttling/localisation Android. Son succès ou son échec ne doit pas modifier le compteur 14/14 Phone Core.
+## Priorité 1 — Phone Core Android
 
-**Règle de sortie Phone Core :** ne jamais déclarer « 100 % fonctionnel » avant réussite documentée de ces tests physiques. Une APK installable ou des prérequis logiciels à 100 % ne remplacent pas cette preuve.
+Le socle logiciel est présent : composeur Sentinel, InCall, filtrage `CallScreeningService`, Caller ID local, contacts, historique, SMS, MMS, notifications, multi-SIM et diagnostic séparé du Wi-Fi.
 
-## Sécurité et limites Android
+Le certificat Phone Core v5 comporte **exactement 14 preuves** définies par `PhoneCorePhysicalValidation.kt` et détaillées dans `PHONE_CORE_PHYSICAL_VALIDATION.md`. Les deux sondes provider et les douze observations opérationnelles doivent appartenir au périmètre d’installation courant.
 
-- Les rôles Téléphone, Filtrage d’appels et SMS restent des choix explicites de l’utilisateur ; Sentinel ne les contourne pas.
-- Android peut limiter ou refuser certaines opérations selon version, constructeur, opérateur, permissions, rôle, SIM, état réseau, localisation et politiques système.
-- Le scanner Wi-Fi n’implique aucune interception de trafic, cassage de clé, déchiffrement ou surveillance d’un réseau tiers.
-- Aucun résultat de Caller ID ne doit inventer une identité, une société, une réputation ou l’opérateur actuel d’un numéro porté.
-- Les données de validation physique restent minimisées : elles ne doivent pas conserver numéro, contact, corps de message, URL ou identifiant de souscription comme preuve.
+Condition de sortie :
 
-## Après Phone Core
+- 14/14 preuves physiques documentées sur l’APK exact ;
+- scénarios complémentaires double-SIM, retrait/rétablissement des rôles et permissions, notifications et erreurs transport examinés ;
+- aucun résultat Wi-Fi compté dans les 14 preuves ;
+- APK/AAB public signé, checksum/provenance reliés au commit ;
+- publication observée sur le canal choisi.
 
-Les autres programmes Sentinel (VPN, réseau défensif, veille, Email Security, Digital Exposure, Social Intelligence, Investigations et autres modules) restent séparés de ce jalon. CTEM ne doit pas être engagé comme phase de finalisation tant que Phone Core n’a pas franchi son protocole physique.
+Tant que ces éléments ne sont pas réunis, `Phone Core 100 % fonctionnel` reste interdit comme statut.
+
+## Priorité 2 — Release Android publique
+
+Le build debug/installabilité et les validations CI ne remplacent pas une release publique signée. La clôture exige la custody de la clé de release, APK/AAB signés, empreintes vérifiées, SBOM/provenance, lien au commit et publication réellement observée.
+
+Le pipeline doit conserver la distinction entre :
+
+- artefact de test physique ;
+- AAB de validation ;
+- artefact public signé ;
+- preuve de publication.
+
+## Priorité 3 — Vérité OSINT et GeoIntel
+
+Les vues OSINT doivent conserver trois propriétés : fraîcheur explicite, couverture des sources explicite et absence de date inventée. Une source manquante ne doit jamais être transformée en « aucun événement » ni une entrée sans date en événement récent.
+
+GeoIntel reste séparé en deux niveaux :
+
+- couche séismes USGS effectivement câblée dans le code ;
+- couches conflits, points chauds, sanctions, météo et coupures non disponibles tant que leurs sources de production ne sont pas vérifiées et branchées.
+
+Chaque nouvelle couche doit fournir provenance, fraîcheur, limites de taille/temps, comportement dégradé et tests de source avant promotion dans le registre produit.
+
+## Priorité 4 — Collective Defense
+
+Le backend Collective Defense et le centre Android sont deux capacités distinctes. Un backend observé en production ne constitue pas une preuve de release Android.
+
+Pour le client Android, la sortie exige :
+
+- APK/AAB du même commit que le client audité ;
+- tests réels lookup/report/watch ;
+- recheck WorkManager ;
+- notification de hausse de risque réellement observée ;
+- vérification du comportement hors réseau et des erreurs serveur ;
+- release signée avant disponibilité client.
+
+## Priorité 5 — Réputation téléphonique communautaire
+
+La logique de vérification de paquet signé, modération, stockage PostgreSQL et rate limiting Redis ne doit pas être confondue avec un service opérationnel.
+
+La sortie exige notamment : clés de signature de production et issuer mapping, custody/rotation/révocation, séquence monotone durable, scheduler, stockage/publication, identité authentifiée, modération durable, rate limiting partagé et synchronisation Android end-to-end.
+
+## Priorité 6 — VPN Sentinel
+
+Le client WireGuard Android n’est pas, à lui seul, un service VPN. La sortie exige :
+
+- passerelle Sentinel réelle ;
+- TLS/identité/provisionnement opérationnels ;
+- autorité monotone de séquence pour la persistance anti-rollback ;
+- tunnel réel validé ;
+- DNS, IPv4, IPv6, MTU, coupure, reprise et révocation vérifiés ;
+- aucune adresse/pays/IP de sortie affiché sans preuve runtime.
+
+## Priorité 7 — Voice Studio / appels transformés
+
+Le moteur DSP et le pipeline LiveKit/WebRTC côté client sont des prérequis, pas une preuve de service téléphonique transformé.
+
+La sortie exige : serveur LiveKit/signaling, émetteur de jetons éphémères, passerelle VoIP/PSTN, appel réel de bout en bout, mesures de latence/écho, Bluetooth/haut-parleur/écouteur, mute/hold/reconnexion/interruption, Data Safety et entitlement commercial.
+
+La transformation d’un appel SIM natif ne doit jamais être revendiquée : Android ne fournit pas à une application ordinaire un pipeline public de capture/transformation/réinjection de l’uplink opérateur.
+
+## Priorité 8 — Internationalisation
+
+La présence de quelques ressources `values-en` ne signifie pas que l’application est multilingue. Le sélecteur de langue global reste hors production tant que :
+
+- les chaînes utilisateur Android sont externalisées ;
+- les écrans critiques ont une couverture de traduction cohérente ;
+- les erreurs backend et contenus juridiques ont une stratégie locale ;
+- une gate détecte les nouvelles chaînes utilisateur codées en dur.
+
+## Tests Android
+
+Les tests unitaires, lint et smoke tests émulateur restent nécessaires mais ne couvrent pas tout. Une couche d’instrumentation `androidTest` doit compléter les scénarios UI/état qui peuvent être automatisés sans fabriquer les preuves physiques opérateur.
+
+Les tests instrumentés ne doivent jamais remplir artificiellement les 14 critères de validation physique.
+
+## Diagnostic Wi-Fi
+
+Le Wi-Fi reste un diagnostic réseau indépendant du certificat Phone Core. La validation terrain doit couvrir fraîcheur, cache, permissions, localisation et throttling Android. Son résultat ne modifie jamais le compteur 14/14.
+
+## Dossier de preuve obligatoire
+
+Pour toute promotion d’une capacité :
+
+- commit exact ;
+- date et environnement ;
+- workflow/artefact concernés ;
+- résultat runtime ou physique attendu et observé ;
+- écarts et nouvelle vérification ;
+- mise à jour de `config/product-capabilities.json` ;
+- régénération de `docs/PRODUCT_CAPABILITY_STATUS.md`.
+
+Aucun jalon opérationnel n’est fermé par une modification documentaire seule.
 
 Sentinel reste strictement séparé de **A KI PRI SA YÉ**.
-
-## Plan de finalisation — jalons et preuves de sortie
-
-Référence examinée : `main` au commit `0d894c1bef9404de649822ab878ab2e65e7e74a5`, le 1 octobre 2026. La [PR #1435](https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1435), au commit `9f7103d227f3a5bd8ca0afbdcd1019dffe0e262a`, reste ouverte ; ses changements ne sont pas encore intégrés à cette référence.
-
-| Ordre | Jalon | État constaté | Condition de clôture |
-| --- | --- | --- | --- |
-| 1 | Clôture logicielle Phone Core v5 | Implémentation présente ; séparation Wi-Fi finale proposée en #1435 | Corriger le nom de test obsolète signalé par la revue ; examiner l’échec du contrôle Android et obtenir tous les contrôles requis réussis sur le dernier commit ; intégrer la PR après revue. |
-| 2 | Validation physique Phone Core | Non démontrée | Documenter les 14 preuves sur l’installation courante, avec appareil, version Android, date, commit et résultat ; tester également double-SIM, retrait des rôles/permissions et réversibilité. |
-| 3 | Release Android signée | Pipeline présent ; publication non attestée | Appliquer [RELEASE_CHECKLIST.md](../RELEASE_CHECKLIST.md) : APK/AAB signés, signatures et SHA-256 vérifiés, SBOM et preuves liées au commit ; décider la stratégie de signature Play/canal direct et vérifier les exigences de distribution. |
-| 4 | Diagnostic Wi-Fi indépendant | Scanner présent ; terrain non attesté | Tester fraîcheur, cache, permissions, localisation et throttling sur appareil ; ne jamais modifier le certificat Phone Core 14/14. |
-| 5 | VPN défensif | Client présent ; passerelle non attestée | Provisionner une passerelle réelle et vérifier tunnel, DNS, IPv4/IPv6, MTU, coupures et reprise avant de déclarer le service disponible. |
-| 6 | Veille et modules ultérieurs | Dépendances et programmes séparés | Pour la veille, configurer et vérifier la signature Ed25519 de production ; pour chaque autre module, définir périmètre, sources autorisées, tests et preuve de sortie avant réalisation. CTEM reste après validation physique Phone Core. |
-
-### Lecture des contrôles examinés
-
-Sur le commit de la PR #1435 cité ci-dessus, 17 contrôles sont réussis et le contrôle « Analyze Android (Java/Kotlin) » est en échec. Ses journaux indiquent une analyse CodeQL achevée, puis un échec lors de l’attente du workflow Android natif. Le contrôle de build natif affiche ensuite un succès. Cette divergence exige un examen des exécutions et de leurs tentatives ; elle ne permet pas de déclarer tous les contrôles verts.
-
-### Protocole du prochain jalon
-
-Le [protocole physique Phone Core v5](PHONE_CORE_PHYSICAL_VALIDATION.md) décrit les 13 critères du code, les scénarios, le relevé de session et les essais complémentaires. Tous ses résultats terrain sont initialement non exécutés.
-
-### Dossier de preuve à conserver par jalon
-
-- Commit exact, date, environnement/appareil et scénario exécuté.
-- Résultat observé, liens vers les exécutions et artefacts pertinents.
-- Écarts, corrections et résultat de la nouvelle vérification.
-- Décision de clôture après examen des preuves ; aucun jalon terrain n’est fermé par une simple modification documentaire.
-
-La feuille de route est consolidée ; la validation opérationnelle reste soumise aux conditions ci-dessus. Aucune date de disponibilité n’est annoncée sans preuve.
