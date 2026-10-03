@@ -1,10 +1,12 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
 /** Durable safety net for staged outgoing MMS payloads and provider recovery metadata. */
@@ -13,6 +15,9 @@ class MmsSendCleanupWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
+        if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
+            MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
+        }
         MmsSendPduStager.pruneExpired(applicationContext)
         runCatching { MmsConversationStore(applicationContext).repairJournal() }
         return Result.success()
@@ -27,6 +32,21 @@ class MmsSendCleanupWorker(
             WorkManager.getInstance(context.applicationContext).enqueue(request)
         }
 
+        fun scheduleStartupRecovery(context: Context) {
+            val request = OneTimeWorkRequestBuilder<MmsSendCleanupWorker>()
+                .setInputData(workDataOf(KEY_PROCESS_RESTART to true))
+                .addTag(STARTUP_WORK_TAG)
+                .build()
+            WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(
+                STARTUP_WORK_NAME,
+                ExistingWorkPolicy.KEEP,
+                request
+            )
+        }
+
         internal const val WORK_TAG = "sentinel-mms-send-cleanup"
+        internal const val STARTUP_WORK_TAG = "sentinel-mms-startup-recovery"
+        private const val STARTUP_WORK_NAME = "sentinel-mms-startup-recovery-v1"
+        private const val KEY_PROCESS_RESTART = "mms.process_restart"
     }
 }
