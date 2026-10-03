@@ -80,8 +80,23 @@ object MmsSendPduStager {
         return !file.exists() || runCatching { file.delete() }.getOrDefault(false)
     }
 
-    private fun prune(directory: File) {
+    /**
+     * Removes stale/oversized/malformed staged payloads without creating the directory.
+     * Called at process start as well as before every new stage so the one-hour TTL is real even
+     * when the previous send ended with an unknown synchronous platform outcome.
+     */
+    fun pruneExpired(context: Context): Int {
+        val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return 0
+        val directory = File(canonicalCache, SEND_DIRECTORY)
+        if (!directory.exists() || !directory.isDirectory) return 0
+        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return 0
+        if (canonicalDirectory.parentFile != canonicalCache) return 0
+        return prune(canonicalDirectory)
+    }
+
+    private fun prune(directory: File): Int {
         val cutoff = System.currentTimeMillis() - SEND_TTL_MS
+        var deleted = 0
         directory.listFiles().orEmpty()
             .filter {
                 it.isFile && (
@@ -90,7 +105,8 @@ object MmsSendPduStager {
                     !(FILE_NAME.matches(it.name) || TEMP_NAME.matches(it.name))
                 )
             }
-            .forEach { runCatching { it.delete() } }
+            .forEach { if (runCatching { it.delete() }.getOrDefault(false)) deleted++ }
+        return deleted
     }
 
     const val MAX_STAGED_PDU_BYTES = 11L * 1024L * 1024L
