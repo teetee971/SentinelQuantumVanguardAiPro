@@ -85,3 +85,12 @@ test('incoming callback retires cleanup only after provider success or explicit 
     /internal fun expire\(context: Context, fileName: String\): Boolean =[\s\S]*cancelCleanup = false/
   );
 });
+
+test('secondary prune uses the same final recovery lifecycle instead of raw-unlinking valid staged MMS', () => {
+  assert.match(
+    downloadCoordinator,
+    /MmsDownloadRecoveryJournal\(context\)\.read\(file\.name\)[\s\S]*MmsDownloadRecovery\.recover\([\s\S]*allowQuarantine = true/
+  );
+  assert.match(downloadCoordinator, /expire\(context, file\.name\)/);
+  assert.match(downloadCoordinator, /!isValidStagedFileName\(it\.name\)/);
+});
