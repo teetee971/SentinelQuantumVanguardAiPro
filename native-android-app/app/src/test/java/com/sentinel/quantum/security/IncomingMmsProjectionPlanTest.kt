@@ -122,24 +122,100 @@ class IncomingMmsProjectionPlanTest {
     }
 
     @Test
-    fun relatedAndAlternativeStayPrivateUntilPresentationMetadataIsPreserved() {
-        val parts = listOf(safe("text/plain", "x".toByteArray()))
-        for (contentType in listOf(
-            "application/vnd.wap.multipart.related",
-            "application/vnd.wap.multipart.alternative"
-        )) {
-            val result = IncomingMmsProjectionPlan.build(
-                "2".repeat(64),
-                envelope(
-                    sender = "+33612345678",
-                    messageId = "msg-rich",
-                    contentType = contentType
-                ),
-                parts,
-                0
-            )
-            assertQuarantined(result, "PRESENTATION_METADATA_NOT_PRESERVED")
-        }
+    fun alternativeMultipartStaysPrivateUntilTopLevelPresentationChoiceIsPreserved() {
+        val result = IncomingMmsProjectionPlan.build(
+            "2".repeat(64),
+            envelope(
+                sender = "+33612345678",
+                messageId = "msg-alt",
+                contentType = "application/vnd.wap.multipart.alternative"
+            ),
+            listOf(safe("text/plain", "x".toByteArray())),
+            0
+        )
+        assertQuarantined(result, "PRESENTATION_METADATA_NOT_PRESERVED")
+    }
+
+    @Test
+    fun relatedMultipartRequiresOneSmilAndReferencesForEveryMediaPart() {
+        val withoutSmil = IncomingMmsProjectionPlan.build(
+            "3".repeat(64),
+            envelope(
+                sender = "+33612345678",
+                messageId = "msg-related-1",
+                contentType = "application/vnd.wap.multipart.related"
+            ),
+            listOf(safe("image/jpeg", jpeg(), contentId = "<img1>")),
+            0
+        )
+        assertQuarantined(withoutSmil, "RELATED_SMIL_REQUIRED")
+
+        val withoutReference = IncomingMmsProjectionPlan.build(
+            "4".repeat(64),
+            envelope(
+                sender = "+33612345678",
+                messageId = "msg-related-2",
+                contentType = "application/vnd.wap.multipart.related"
+            ),
+            listOf(
+                safe("application/smil", "<smil><body/></smil>".toByteArray()),
+                safe("image/jpeg", jpeg())
+            ),
+            0
+        )
+        assertQuarantined(withoutReference, "RELATED_PART_REFERENCE_REQUIRED")
+    }
+
+    @Test
+    fun boundedReferencedRelatedPresentationProducesFaithfulProviderPlan() {
+        val smil = "<smil><body><img src=\"cid:img1\"/></body></smil>".toByteArray()
+        val result = IncomingMmsProjectionPlan.build(
+            "5".repeat(64),
+            envelope(
+                sender = "+33612345678",
+                messageId = "msg-related-ok",
+                contentType = "application/vnd.wap.multipart.related"
+            ),
+            listOf(
+                safe("application/smil", smil, contentLocation = "presentation.smil"),
+                safe("image/jpeg", jpeg(), contentId = "<img1>", contentLocation = "photo.jpg")
+            ),
+            0
+        )
+
+        assertTrue(result is IncomingMmsProjectionPlan.Result.Ready)
+        val plan = (result as IncomingMmsProjectionPlan.Result.Ready).plan
+        assertFalse(plan.textOnly)
+        assertEquals(2, plan.parts.size)
+        val smilPart = plan.parts[0] as IncomingMmsProjectionPlan.Part.Smil
+        val imagePart = plan.parts[1] as IncomingMmsProjectionPlan.Part.Binary
+        assertEquals("presentation.smil", smilPart.contentLocation)
+        assertEquals("<img1>", imagePart.contentId)
+        assertEquals("photo.jpg", imagePart.contentLocation)
+    }
+
+    @Test
+    fun messageSizeMustCoverDecodedPayloadAndStayWithinProviderBound() {
+        val payload = "abcd".toByteArray()
+        val tooSmall = IncomingMmsProjectionPlan.build(
+            "6".repeat(64),
+            envelope(sender = "+33612345678", messageId = "msg-size-small", messageSizeBytes = 3L),
+            listOf(safe("text/plain", payload)),
+            0
+        )
+        assertQuarantined(tooSmall, "INVALID_MESSAGE_SIZE")
+
+        val absurd = IncomingMmsProjectionPlan.build(
+            "7".repeat(64),
+            envelope(
+                sender = "+33612345678",
+                messageId = "msg-size-huge",
+                messageSizeBytes = 17L * 1024L * 1024L + 1L
+            ),
+            listOf(safe("text/plain", payload)),
+            0
+        )
+        assertQuarantined(absurd, "INVALID_MESSAGE_SIZE")
     }
 
     private fun envelope(
@@ -148,7 +224,8 @@ class IncomingMmsProjectionPlanTest {
             MmsRetrieveEnvelopeParser.SenderDisposition.ADDRESS,
         messageId: String? = null,
         transactionId: String? = null,
-        contentType: String = "application/vnd.wap.multipart.mixed"
+        contentType: String = "application/vnd.wap.multipart.mixed",
+        messageSizeBytes: Long? = null
     ) = MmsRetrieveEnvelopeParser.Envelope(
         messageType = 0x84,
         mmsVersion = 0x12,
@@ -158,11 +235,18 @@ class IncomingMmsProjectionPlanTest {
         messageId = messageId,
         transactionId = transactionId,
         contentType = contentType,
-        bodyOffset = 20
+        bodyOffset = 20,
+        messageSizeBytes = messageSizeBytes
     )
 
-    private fun safe(mime: String, payload: ByteArray) =
-        MmsDecodeBoundary.SafePart(mime, null, payload)
+    private fun safe(
+        mime: String,
+        payload: ByteArray,
+        contentId: String? = null,
+        contentLocation: String? = null
+    ) = MmsDecodeBoundary.SafePart(mime, null, payload, contentId, contentLocation)
+
+    private fun jpeg() = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 1)
 
     private fun assertQuarantined(result: IncomingMmsProjectionPlan.Result, reason: String) {
         assertTrue(result is IncomingMmsProjectionPlan.Result.Quarantined)
