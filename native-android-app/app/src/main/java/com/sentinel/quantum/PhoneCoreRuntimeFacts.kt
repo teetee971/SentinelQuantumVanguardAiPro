@@ -16,13 +16,45 @@ import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsNotificationHelper
 
 /**
- * Read-only runtime snapshot for the Phone Core setup contract.
+ * Read-only runtime snapshot for Phone Core.
  *
- * This collector never requests a role or permission and never trusts persisted wizard completion.
- * It exists so every UI surface derives setup readiness from the same Android facts.
+ * Setup completeness and individual capabilities are deliberately separate: a macro wizard step
+ * must not be reused as proof that one particular capability (for example call control) is ready.
  */
 internal object PhoneCoreRuntimeFacts {
-    fun read(context: Context): PhoneCoreSetupWizardStore.Facts {
+    data class CapabilityFacts(
+        val callPermissionGranted: Boolean,
+        val phoneStatePermissionGranted: Boolean,
+        val contactsPermissionGranted: Boolean,
+        val notificationPermissionGranted: Boolean,
+        val dialerRoleHeld: Boolean,
+        val dialerRoleAvailable: Boolean,
+        val callScreeningRoleHeld: Boolean,
+        val callScreeningRoleAvailable: Boolean,
+        val callLogPermissionGranted: Boolean,
+        val smsRoleHeld: Boolean,
+        val smsRoleAvailable: Boolean,
+        val smsRuntimePermissionsReady: Boolean,
+        val mmsPermissionsReady: Boolean,
+        val notificationChannelsReady: Boolean
+    ) {
+        /** Call placement + in-call ownership + call screening. Contacts/history are separate. */
+        val callControlReady: Boolean
+            get() = callPermissionGranted &&
+                phoneStatePermissionGranted &&
+                dialerRoleHeld &&
+                callScreeningRoleHeld
+
+        val contactsReady: Boolean get() = contactsPermissionGranted
+
+        val callHistoryReady: Boolean
+            get() = dialerRoleHeld && callLogPermissionGranted
+
+        val messagingReady: Boolean
+            get() = smsRoleHeld && smsRuntimePermissionsReady && mmsPermissionsReady
+    }
+
+    fun readCapabilities(context: Context): CapabilityFacts {
         val sms = SmsActivationDiagnostics(context).snapshot()
         val smsRoleHeld = sms.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
         val notificationPermissionGranted =
@@ -34,12 +66,11 @@ internal object PhoneCoreRuntimeFacts {
             Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                 context.getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
 
-        return PhoneCoreSetupWizardStore.Facts(
-            corePermissionsReady =
-                hasPermission(context, Manifest.permission.CALL_PHONE) &&
-                    hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
-                    hasPermission(context, Manifest.permission.READ_CONTACTS) &&
-                    notificationPermissionGranted,
+        return CapabilityFacts(
+            callPermissionGranted = hasPermission(context, Manifest.permission.CALL_PHONE),
+            phoneStatePermissionGranted = hasPermission(context, Manifest.permission.READ_PHONE_STATE),
+            contactsPermissionGranted = hasPermission(context, Manifest.permission.READ_CONTACTS),
+            notificationPermissionGranted = notificationPermissionGranted,
             dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
             dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
             callScreeningRoleHeld =
@@ -64,6 +95,30 @@ internal object PhoneCoreRuntimeFacts {
                     SentinelCallNotificationHelper.isChannelEnabled(context) &&
                     SmsNotificationHelper.isChannelEnabled(context) &&
                     fullScreenIntentReady
+        )
+    }
+
+    fun read(context: Context): PhoneCoreSetupWizardStore.Facts {
+        val capability = readCapabilities(context)
+        return PhoneCoreSetupWizardStore.Facts(
+            // Preserve the existing setup contract: Contacts and notification runtime consent are
+            // still required for complete Phone Core activation. Individual feature surfaces must
+            // use CapabilityFacts instead of this aggregate.
+            corePermissionsReady =
+                capability.callPermissionGranted &&
+                    capability.phoneStatePermissionGranted &&
+                    capability.contactsPermissionGranted &&
+                    capability.notificationPermissionGranted,
+            dialerRoleHeld = capability.dialerRoleHeld,
+            dialerRoleAvailable = capability.dialerRoleAvailable,
+            callScreeningRoleHeld = capability.callScreeningRoleHeld,
+            callScreeningRoleAvailable = capability.callScreeningRoleAvailable,
+            callLogPermissionGranted = capability.callLogPermissionGranted,
+            smsRoleHeld = capability.smsRoleHeld,
+            smsRoleAvailable = capability.smsRoleAvailable,
+            smsRuntimePermissionsReady = capability.smsRuntimePermissionsReady,
+            mmsPermissionsReady = capability.mmsPermissionsReady,
+            notificationChannelsReady = capability.notificationChannelsReady
         )
     }
 
@@ -109,6 +164,4 @@ internal object PhoneCoreRuntimeFacts {
                 manager.isRoleAvailable(role) && manager.isRoleHeld(role)
             }
         }
-
 }
-
