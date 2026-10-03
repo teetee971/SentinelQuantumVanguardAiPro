@@ -32,7 +32,9 @@ test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable 
   assert.match(sendWorker, /setInputData\(workDataOf\(KEY_FILE_NAME to fileName\)\)/);
   assert.match(sendWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(sendWorker, /ExistingWorkPolicy\.REPLACE/);
-  assert.match(sendWorker, /MmsSendPduStager\.expire\(applicationContext, fileName\)/);
+  assert.match(sendWorker, /val expired = MmsSendPduStager\.expire\(applicationContext, fileName\)/);
+  assert.match(sendWorker, /if \(!expired\)[\s\S]*return Result\.retry\(\)/);
+  assert.match(sendWorker, /setBackoffCriteria\(BackoffPolicy\.EXPONENTIAL, 30L, TimeUnit\.SECONDS\)/);
   assert.match(sendStager, /deleteInternal\(context, fileName, cancelCleanup = false\)/);
 });
 
@@ -54,7 +56,9 @@ test('incoming MMS persists recovery metadata and both safety nets before Androi
   assert.match(downloadCoordinator, /MMS_DOWNLOAD_RECOVERY_SCHEDULE_FAILED/);
   assert.match(downloadWorker, /setInputData\(workDataOf\(KEY_FILE_NAME to fileName\)\)/);
   assert.match(downloadWorker, /allowQuarantine = true/);
-  assert.match(downloadWorker, /MmsDownloadCoordinator\.expire\(applicationContext, fileName\)/);
+  assert.match(downloadWorker, /val expired = MmsDownloadCoordinator\.expire\(applicationContext, fileName\)/);
+  assert.match(downloadWorker, /if \(!expired\)[\s\S]*return Result\.retry\(\)/);
+  assert.match(downloadWorker, /setBackoffCriteria\(BackoffPolicy\.EXPONENTIAL, 30L, TimeUnit\.SECONDS\)/);
   assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(downloadWorker, /ExistingWorkPolicy\.REPLACE/);
   assert.match(downloadRecoveryWorker, /allowQuarantine = false/);
