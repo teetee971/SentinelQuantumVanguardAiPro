@@ -4,6 +4,7 @@ import android.content.Context
 import android.telephony.SubscriptionManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.Locale
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -76,5 +77,46 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
                 requestedAtMs = -1L
             )
         )
+    }
+
+    @Test
+    fun corruptEntriesCannotPermanentlyConsumeRecoveryCapacity() {
+        val preferences = context.getSharedPreferences(
+            MmsDownloadRecoveryJournal.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        val editor = preferences.edit()
+
+        repeat(MmsDownloadRecoveryJournal.MAX_RECORDS) { index ->
+            val fileName = String.format(
+                Locale.US,
+                "00000000-0000-0000-0000-%012x.pdu",
+                index
+            )
+            createdFiles += fileName
+            val key = MmsDownloadRecoveryJournal.KEY_PREFIX + fileName
+            if (index == 0) editor.putInt(key, 7) else editor.putString(key, "{")
+        }
+        assertTrue(editor.commit())
+        assertEquals(
+            MmsDownloadRecoveryJournal.MAX_RECORDS,
+            preferences.all.keys.count { it.startsWith(MmsDownloadRecoveryJournal.KEY_PREFIX) }
+        )
+
+        val validFile = "ffffffff-ffff-ffff-ffff-ffffffffffff.pdu"
+        createdFiles += validFile
+        assertTrue(
+            MmsDownloadRecoveryJournal(context).record(
+                fileName = validFile,
+                subscriptionId = 1,
+                requestedAtMs = 99L
+            )
+        )
+
+        assertEquals(
+            1,
+            preferences.all.keys.count { it.startsWith(MmsDownloadRecoveryJournal.KEY_PREFIX) }
+        )
+        assertEquals(validFile, MmsDownloadRecoveryJournal(context).read(validFile)?.fileName)
     }
 }
