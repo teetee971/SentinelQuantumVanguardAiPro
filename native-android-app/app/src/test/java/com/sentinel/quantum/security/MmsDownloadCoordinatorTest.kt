@@ -12,6 +12,20 @@ class MmsDownloadCoordinatorTest {
         assertFalse(MmsDownloadCleanupWorker.WORK_TAG.isBlank())
     }
 
+    @Test fun lostCallbackRecoveryRunsBeforeFinalCleanupDeadline() {
+        assertTrue(MmsDownloadRecoveryWorker.RECOVERY_DELAY_MS > 0L)
+        assertTrue(MmsDownloadRecovery.STABLE_FILE_GRACE_MS > 0L)
+        assertTrue(
+            MmsDownloadRecoveryWorker.RECOVERY_DELAY_MS >
+                MmsDownloadRecovery.STABLE_FILE_GRACE_MS
+        )
+        assertTrue(
+            MmsDownloadRecoveryWorker.RECOVERY_DELAY_MS <
+                MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+        )
+        assertFalse(MmsDownloadRecoveryWorker.WORK_TAG.isBlank())
+    }
+
     @Test fun stagedDownloadNamesAreStrictlyUuidBound() {
         assertTrue(
             MmsDownloadCoordinator.isValidStagedFileName(

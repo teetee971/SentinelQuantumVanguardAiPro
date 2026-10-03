@@ -64,13 +64,20 @@ object MmsDownloadCoordinator {
             return Result.Rejected("MMS_DOWNLOAD_URI_FAILED")
         }
 
-        val cleanupScheduled = runCatching {
+        val recoveryJournal = MmsDownloadRecoveryJournal(context.applicationContext)
+        if (!recoveryJournal.record(canonicalFile.name, subscriptionId)) {
+            canonicalFile.delete()
+            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED")
+        }
+
+        val safetyNetScheduled = runCatching {
             MmsDownloadCleanupWorker.schedule(context.applicationContext, canonicalFile.name)
+            MmsDownloadRecoveryWorker.schedule(context.applicationContext, canonicalFile.name)
             true
         }.getOrDefault(false)
-        if (!cleanupScheduled) {
-            canonicalFile.delete()
-            return Result.Rejected("MMS_DOWNLOAD_CLEANUP_SCHEDULE_FAILED")
+        if (!safetyNetScheduled) {
+            delete(context, canonicalFile.name)
+            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_SCHEDULE_FAILED")
         }
 
         return try {
@@ -103,13 +110,45 @@ object MmsDownloadCoordinator {
     }
 
     fun delete(context: Context, fileName: String): Boolean =
-        deleteInternal(context, fileName, cancelCleanup = true)
+        deleteInternal(
+            context = context,
+            fileName = fileName,
+            cancelCleanup = true,
+            cancelRecovery = true,
+            removeRecoveryMetadata = true
+        )
 
-    /** Called only by the durable worker for this file; never cancels the running worker itself. */
+    /** Called only by the durable cleanup worker; never cancels that running worker itself. */
     internal fun expire(context: Context, fileName: String): Boolean =
-        deleteInternal(context, fileName, cancelCleanup = false)
+        deleteInternal(
+            context = context,
+            fileName = fileName,
+            cancelCleanup = false,
+            cancelRecovery = true,
+            removeRecoveryMetadata = true
+        )
 
-    private fun deleteInternal(context: Context, fileName: String, cancelCleanup: Boolean): Boolean {
+    /** Called after durable private persistence/provider handling succeeded. */
+    internal fun finishRecovery(
+        context: Context,
+        fileName: String,
+        cancelCleanupWorker: Boolean = true
+    ): Boolean =
+        deleteInternal(
+            context = context,
+            fileName = fileName,
+            cancelCleanup = cancelCleanupWorker,
+            cancelRecovery = false,
+            removeRecoveryMetadata = true
+        )
+
+    private fun deleteInternal(
+        context: Context,
+        fileName: String,
+        cancelCleanup: Boolean,
+        cancelRecovery: Boolean,
+        removeRecoveryMetadata: Boolean
+    ): Boolean {
         if (!isValidStagedFileName(fileName)) return false
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull()
             ?: return false
@@ -120,10 +159,17 @@ object MmsDownloadCoordinator {
             ?: return false
         if (file.parentFile != canonicalDirectory) return false
         val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
-        if (removed && cancelCleanup) {
+        if (!removed) return false
+        if (cancelCleanup) {
             runCatching { MmsDownloadCleanupWorker.cancel(context.applicationContext, fileName) }
         }
-        return removed
+        if (cancelRecovery) {
+            runCatching { MmsDownloadRecoveryWorker.cancel(context.applicationContext, fileName) }
+        }
+        if (removeRecoveryMetadata) {
+            MmsDownloadRecoveryJournal(context.applicationContext).remove(fileName)
+        }
+        return true
     }
 
     /** Secondary recovery path for stale, oversized or malformed files. */

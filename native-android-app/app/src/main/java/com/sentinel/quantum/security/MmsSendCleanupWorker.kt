@@ -23,6 +23,9 @@ class MmsSendCleanupWorker(
             MmsSendPduStager.pruneExpired(applicationContext)
             runCatching { MmsConversationStore(applicationContext).repairJournal() }
             runCatching { IncomingMmsConversationStore(applicationContext).repairJournal() }
+            // WorkManager survives process death, but an explicit startup nudge removes the delay
+            // for a downloaded PDU whose Android callback was lost with the dead process.
+            runCatching { MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext) }
         }
         return Result.success()
     }

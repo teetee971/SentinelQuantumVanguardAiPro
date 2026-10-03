@@ -131,16 +131,18 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
+        // Do not remove the only downloaded copy before the private durable anchor exists. If the
+        // read or private persistence fails, the staged file remains under its already-scheduled
+        // bounded cleanup deadline instead of being destroyed before recovery is possible.
         val data = runCatching { target.readBytes() }.getOrNull()
-        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
-        if (!temporaryDeleted) {
+        if (data == null || data.isEmpty()) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
-                "Échec de suppression du PDU MMS temporaire; le nettoyage durable reste planifié"
+                "Lecture du PDU MMS téléchargé impossible; copie temporaire conservée jusqu’au nettoyage durable"
             )
+            return
         }
-        if (data == null || data.isEmpty()) return
 
         // Private persistence is the recovery anchor. Canonical provider state is never attempted if
         // the durable local identity itself could not be established.
@@ -150,9 +152,18 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "MmsDownload",
-                "Persistance MMS privée refusée fail-closed"
+                "Persistance MMS privée refusée fail-closed; copie temporaire conservée jusqu’au nettoyage durable"
             )
             return
+        }
+
+        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
+        if (!temporaryDeleted) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échec de suppression du PDU MMS temporaire après persistance; le nettoyage durable reste planifié"
+            )
         }
 
         val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
