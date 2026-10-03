@@ -40,6 +40,7 @@ export async function handleMeshRequest({
   if (!(controlPlane instanceof MeshControlPlane)) throw new TypeError("controlPlane required");
   if (transport !== null && !(transport instanceof MeshTransportCoordinator)) throw new TypeError("transport invalid");
   if (pathNegotiator !== null && !(pathNegotiator instanceof MeshPathNegotiator)) throw new TypeError("pathNegotiator invalid");
+  relayGrantBroker?.bindControlPlane(controlPlane);
   const parsed = new URL(url, "http://localhost");
 
   if (method === "GET" && parsed.pathname === "/health/live") {
@@ -66,8 +67,7 @@ export async function handleMeshRequest({
     if (!claim.accepted) {
       return json(400, { error: "enrollment_rejected", reason: claim.reason });
     }
-    const credential = controlPlane.issueNodeCredential(node.id);
-    if (persist) await persist(controlPlane.exportState());
+    const credential = await controlPlane.commitMutation(cp => cp.issueNodeCredential(node.id), persist);
     return json(201, credential);
   }
 
@@ -204,6 +204,9 @@ export async function handleMeshRequest({
     }
     const session = pathNegotiator.get(body?.sessionId);
     if (!session || session.sourceNodeId !== nodeId) return json(404, { error: "session_not_found" });
+    if (!controlPlane.isConnectionAuthorized(session.sourceNodeId, session.targetNodeId)) {
+      return json(403, { error: "policy_denied" });
+    }
     const updated = pathNegotiator.recordDirectAttempt(body.sessionId, {
       endpoint: body?.endpoint,
       success: body?.success === true,
@@ -222,6 +225,9 @@ export async function handleMeshRequest({
     }
     const session = pathNegotiator.get(body?.sessionId);
     if (!session || session.sourceNodeId !== nodeId) return json(404, { error: "session_not_found" });
+    if (!controlPlane.isConnectionAuthorized(session.sourceNodeId, session.targetNodeId)) {
+      return json(403, { error: "policy_denied" });
+    }
     const finalized = pathNegotiator.finalize(body.sessionId);
     if (finalized.state === "RELAY_REQUIRED") {
       if (!relayGrantBroker || !relayEndpoint) {
@@ -273,6 +279,9 @@ export async function handleMeshRequest({
     }
     const session = pathNegotiator.get(body?.sessionId);
     if (!session || session.sourceNodeId !== nodeId) return json(404, { error: "session_not_found" });
+    if (!controlPlane.isConnectionAuthorized(session.sourceNodeId, session.targetNodeId)) {
+      return json(403, { error: "policy_denied" });
+    }
     return json(200, pathNegotiator.keepAlive(body.sessionId));
   }
 
@@ -283,18 +292,15 @@ export async function handleMeshRequest({
 
   try {
     if (method === "POST" && parsed.pathname === "/v1/nodes") {
-      const enrolled = controlPlane.enrollNode(body);
-      if (persist) await persist(controlPlane.exportState());
+      const enrolled = await controlPlane.commitMutation(cp => cp.enrollNode(body), persist);
       return json(201, enrolled);
     }
     if (method === "POST" && parsed.pathname === "/v1/node-credentials") {
-      const credential = controlPlane.issueNodeCredential(body?.nodeId);
-      if (persist) await persist(controlPlane.exportState());
+      const credential = await controlPlane.commitMutation(cp => cp.issueNodeCredential(body?.nodeId), persist);
       return json(201, credential);
     }
     if (method === "POST" && parsed.pathname === "/v1/node-mesh-addresses") {
-      const node = controlPlane.setNodeMeshAddresses(body?.nodeId, body?.meshAddresses);
-      if (persist) await persist(controlPlane.exportState());
+      const node = await controlPlane.commitMutation(cp => cp.setNodeMeshAddresses(body?.nodeId, body?.meshAddresses), persist);
       return json(200, {
         nodeId: node.id,
         meshAddresses: node.meshAddresses || [],
@@ -321,27 +327,23 @@ export async function handleMeshRequest({
       return json(revoked ? 200 : 404, { revoked });
     }
     if (method === "POST" && parsed.pathname === "/v1/node-credentials/revoke") {
-      const revoked = controlPlane.revokeNodeCredential(body?.nodeId);
-      if (revoked && persist) await persist(controlPlane.exportState());
+      const revoked = await controlPlane.commitMutation(cp => cp.revokeNodeCredential(body?.nodeId), persist);
       return json(revoked ? 200 : 404, { revoked });
     }
     if (method === "POST" && parsed.pathname === "/v1/policies") {
-      const count = controlPlane.replacePolicies(body?.rules);
-      if (persist) await persist(controlPlane.exportState());
+      const count = await controlPlane.commitMutation(cp => cp.replacePolicies(body?.rules), persist);
       return json(200, { count });
     }
     if (method === "POST" && parsed.pathname === "/v1/integrations") {
-      const integration = controlPlane.registerIntegration(body);
-      if (persist) await persist(controlPlane.exportState());
+      const integration = await controlPlane.commitMutation(cp => cp.registerIntegration(body), persist);
       return json(201, integration);
     }
     if (method === "POST" && parsed.pathname === "/v1/spiffe/trust-bundle") {
-      const installed = controlPlane.installSpiffeTrustBundle({
+      const installed = await controlPlane.commitMutation(cp => cp.installSpiffeTrustBundle({
         trustDomain: body?.trustDomain,
         sequence: body?.sequence,
         anchorsPem: body?.anchorsPem,
-      });
-      if (persist) await persist(controlPlane.exportState());
+      }), persist);
       return json(201, {
         trustDomain: installed.trustDomain,
         sequence: installed.sequence,
@@ -364,8 +366,7 @@ export async function handleMeshRequest({
       });
     }
     if (method === "POST" && parsed.pathname === "/v1/revoke") {
-      const revoked = controlPlane.revokeNode(body?.nodeId, body?.reason);
-      if (revoked && persist) await persist(controlPlane.exportState());
+      const revoked = await controlPlane.commitMutation(cp => cp.revokeNode(body?.nodeId, body?.reason), persist);
       return json(revoked ? 200 : 404, { revoked });
     }
     if (method === "GET" && parsed.pathname === "/v1/peers") {
@@ -422,7 +423,7 @@ export async function handleMeshRequest({
     }
     return json(404, { error: "not_found" });
   } catch (error) {
-    return json(400, { error: String(error?.message || "invalid_request").slice(0, 512) });
+    return json(error?.code === "MESH_PERSIST_FAILED" ? 503 : 400, { error: String(error?.message || "invalid_request").slice(0, 512) });
   }
 }
 
@@ -464,7 +465,7 @@ export function createMeshServer({ adminToken, controlPlane = new MeshControlPla
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
     } catch (error) {
-      res.writeHead(400, { "content-type": "application/json; charset=utf-8" });
+      res.writeHead(error?.code === "MESH_PERSIST_FAILED" ? 503 : 400, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ error: String(error?.message || "bad_request").slice(0, 512) }));
     }
   });

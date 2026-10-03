@@ -408,3 +408,37 @@ test("control plane verifies SVID against current bundle and CRL state", () => {
   assert.ok(cp.getAudit().some(event => event.type === "SPIFFE_X509_SVID_VERIFIED"));
   assert.equal(cp.getSpiffeCrlSet().sequence, 2);
 });
+
+
+test("failed persistence never publishes a candidate and later mutations recover", async () => {
+  const cp = new MeshControlPlane({ clock: () => 1000 });
+  await assert.rejects(cp.commitMutation(candidate => candidate.enrollNode({
+    id: "device:failed", type: "device", publicKey: WG_KEY_A,
+  }), async () => { throw new Error("disk unavailable"); }), { code: "MESH_PERSIST_FAILED" });
+  assert.equal(cp.getNode("device:failed"), null);
+  await cp.commitMutation(candidate => candidate.enrollNode({
+    id: "device:committed", type: "device", publicKey: WG_KEY_B,
+  }));
+  assert.ok(cp.getNode("device:committed"));
+});
+
+test("pending durable mutations stay invisible and serialize without lost updates", async () => {
+  const cp = new MeshControlPlane({ clock: () => 1000 });
+  let release;
+  let started;
+  const persistenceStarted = new Promise(resolve => { started = resolve; });
+  const persistenceBlocked = new Promise(resolve => { release = resolve; });
+  const first = cp.commitMutation(candidate => candidate.enrollNode({
+    id: "device:first", type: "device", publicKey: WG_KEY_A,
+  }), async () => { started(); await persistenceBlocked; });
+  await persistenceStarted;
+  const second = cp.commitMutation(candidate => candidate.enrollNode({
+    id: "device:second", type: "device", publicKey: WG_KEY_B,
+  }));
+  assert.equal(cp.getNode("device:first"), null);
+  assert.equal(cp.getNode("device:second"), null);
+  release();
+  await Promise.all([first, second]);
+  assert.ok(cp.getNode("device:first"));
+  assert.ok(cp.getNode("device:second"));
+});

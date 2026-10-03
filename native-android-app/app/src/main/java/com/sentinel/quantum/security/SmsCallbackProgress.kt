@@ -112,6 +112,17 @@ object SmsCallbackProgress {
         )
     }
 
+    /** Replays only the idempotent provider projection of an already recorded transition. */
+    fun pendingProviderOutcome(state: State): Outcome {
+        val failed = state.sentFailed.isNotEmpty()
+        val allSent = state.sentOk.size == state.partCount && !failed
+        val deliveryComplete = state.deliveredOk.size + state.deliveryFailed.size == state.partCount
+        val allDelivered = allSent && deliveryComplete && state.deliveryFailed.isEmpty()
+        return Outcome(state, failed, state.deliveryFailed.isNotEmpty(), allSent, allDelivered,
+            (failed && state.sentOk.size + state.sentFailed.size == state.partCount) || (allSent && deliveryComplete),
+            false, false)
+    }
+
     const val MAX_PARTS = 256
 }
 

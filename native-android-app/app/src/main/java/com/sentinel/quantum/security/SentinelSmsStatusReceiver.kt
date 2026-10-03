@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Records only delivery state; no destination or message body is logged.
@@ -96,9 +98,10 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                 if (successful) "DELIVERED_OK" else "DELIVERY_ERROR_" + androidResultCode
         }
 
+        val progressStore = SmsCallbackProgressStore(context)
         var progressPersistenceFailed = false
         val progress = runCatching {
-            SmsCallbackProgressStore(context).record(
+            progressStore.record(
                 sendToken = sendToken,
                 providerMessageId = providerMessageId,
                 partIndex = partIndex,
@@ -132,7 +135,13 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             markSent = { conversationStore.markOutgoingSent(providerMessageId) },
             markDelivery = { conversationStore.markDeliveryResult(providerMessageId, it) }
         )
+        if (providerUpdated && !runCatching {
+                progressStore.markProviderApplied(sendToken, providerMessageId, progress.state)
+            }.getOrDefault(false)) {
+            progressPersistenceFailed = true
+        }
         if (!providerUpdated) {
+            queueProviderRepair(context)
             LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Écriture du statut dans le provider SMS non confirmée")
         }
 
@@ -187,10 +196,39 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         }
     }
 
-    private companion object {
+    companion object {
+        private val repairQueued = AtomicBoolean(false)
+
+        fun queueProviderRepair(context: Context) {
+            if (!repairQueued.compareAndSet(false, true)) return
+            val appContext = context.applicationContext
+            CALLBACK_EXECUTOR.schedule({
+                repairQueued.set(false)
+                val store = SmsCallbackProgressStore(appContext)
+                var retry = false
+                val pending = runCatching { store.pendingProviderWrites() }.getOrElse {
+                    retry = true
+                    emptyList()
+                }
+                val conversations = SmsConversationStore(appContext)
+                for (write in pending) {
+                    val id = write.providerMessageId
+                    val applied = SmsProviderPersistence.persist(write.outcome,
+                        { conversations.markOutgoingFailed(id) },
+                        { conversations.markOutgoingSent(id) },
+                        { conversations.markDeliveryResult(id, it) })
+                    if (!applied || !runCatching {
+                            store.markProviderApplied(write.sendToken, id, write.outcome.state)
+                        }.getOrDefault(false)) retry = true
+                }
+                // Repair is a provider projection only; it must never manufacture physical proofs.
+                if (retry) queueProviderRepair(appContext)
+            }, 60L, TimeUnit.SECONDS)
+        }
+
         const val CALLBACK_URI_SCHEME = "sentinel-sms-status"
         const val CALLBACK_URI_HOST = "callback"
-        val CALLBACK_EXECUTOR = Executors.newSingleThreadExecutor { runnable ->
+        private val CALLBACK_EXECUTOR = Executors.newSingleThreadScheduledExecutor { runnable ->
             Thread(runnable, "SentinelSmsStatus").apply { isDaemon = true }
         }
     }

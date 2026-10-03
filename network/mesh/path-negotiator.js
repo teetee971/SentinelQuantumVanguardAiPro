@@ -35,6 +35,7 @@ export class MeshPathNegotiator {
     relay = null,
     ttlMs = DEFAULT_SESSION_TTL_MS,
   }) {
+    this.pruneExpired();
     if (this.#sessions.size >= MAX_SESSIONS) throw new Error("session capacity exceeded");
     const source = id(sourceNodeId, "source node id");
     const target = id(targetNodeId, "target node id");

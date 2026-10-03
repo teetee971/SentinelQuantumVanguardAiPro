@@ -250,3 +250,19 @@ test("PermissionDenied redacts all active bundles, persists redaction, and never
     1
   );
 });
+
+test("PermissionDenied still removes live trust when persistence fails", async () => {
+  const cp = new MeshControlPlane();
+  cp.observeSpiffeTrustBundleSet([{ trustDomain: "prod.example.test", anchorsPem: [CA] }]);
+  const transport = new SequenceTransport([
+    new SpiffeWorkloadGrpcError("permission denied", { grpcStatus: 7, retryable: false }),
+  ]);
+  const sync = new SpiffeWorkloadBundleSync({
+    controlPlane: cp,
+    persist: async () => { throw new Error("disk unavailable"); },
+    transport, env: {}, sleep: async () => {}, random: () => 0.5,
+  });
+  await assert.rejects(() => sync.run({ maxRetries: 5 }), /disk unavailable/);
+  assert.equal(cp.getSpiffeTrustBundle("prod.example.test"), null);
+  assert.equal(transport.calls, 1);
+});

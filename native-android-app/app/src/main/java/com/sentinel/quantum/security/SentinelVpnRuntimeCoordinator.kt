@@ -130,8 +130,13 @@ class SentinelVpnRuntimeCoordinator internal constructor(
                 catalogSequence = catalog.sequence
             )
 
+        val expiresAtMs = built.plan?.expiresAtMs
+        if (expiresAtMs == null || expiresAtMs <= now) {
+            configuration.fill(0)
+            return ConnectResult(false, "VPN_RUNTIME_LEASE_DEADLINE_MISSING")
+        }
         return try {
-            val result = tunnelBridge.connect(gateway.toControllerDescriptor(), configuration)
+            val result = tunnelBridge.connect(gateway.toControllerDescriptor(), configuration, expiresAtMs)
             ConnectResult(
                 accepted = result.state == SentinelVpnController.RuntimeState.PROTECTED,
                 reason = result.reason,
@@ -199,7 +204,8 @@ class SentinelVpnRuntimeCoordinator internal constructor(
     internal interface TunnelBridge {
         suspend fun connect(
             gateway: SentinelVpnController.GatewayDescriptor,
-            configuration: ByteArray
+            configuration: ByteArray,
+            leaseExpiresAtMs: Long
         ): SentinelVpnController.OperationResult
 
         suspend fun disconnect(): SentinelVpnController.OperationResult
@@ -255,9 +261,10 @@ class SentinelVpnRuntimeCoordinator internal constructor(
     ) : TunnelBridge {
         override suspend fun connect(
             gateway: SentinelVpnController.GatewayDescriptor,
-            configuration: ByteArray
+            configuration: ByteArray,
+            leaseExpiresAtMs: Long
         ): SentinelVpnController.OperationResult =
-            controller.connect(gateway, configuration)
+            controller.connect(gateway, configuration, leaseExpiresAtMs)
 
         override suspend fun disconnect(): SentinelVpnController.OperationResult =
             controller.disconnect()

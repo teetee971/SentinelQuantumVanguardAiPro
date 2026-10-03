@@ -184,12 +184,12 @@
     "ops/vpn-gateway/trusted-state-restore.js": {
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
-      "reason": "Fail-closed restore coordinator that requires an explicit VpnLeaseSequenceAuthority before loading an authenticated lease snapshot and restoring provisioning state. The repository provides no production authority implementation or runtime wiring, so restart restore remains disabled until an external monotonic authority is separately deployed and verified."
+      "reason": "Fail-closed lease state coordinator tested with an independently injected monotonic authority. A PostgreSQL authority adapter and schema now exist, but no production executor, independent database, exclusive gateway writer, credential custody or runtime wiring has been provisioned or verified."
     },
     "ops/vpn-gateway/trusted-state-persist.js": {
       "status": "DORMANT_LIBRARY",
       "owner": "network-security",
-      "reason": "Fail-closed persistence coordinator that writes the authenticated lease snapshot before committing its sequence to an injected external monotonic authority. It is not runtime-wired and the repository provides no production authority implementation, so it does not establish restart-safe anti-rollback by itself."
+      "reason": "Fail-closed lease state coordinator tested with an independently injected monotonic authority. A PostgreSQL authority adapter and schema now exist, but no production executor, independent database, exclusive gateway writer, credential custody or runtime wiring has been provisioned or verified."
     },
     "security/phone-intelligence/fsma-warning-adapter.js": {
       "status": "DORMANT_LIBRARY",

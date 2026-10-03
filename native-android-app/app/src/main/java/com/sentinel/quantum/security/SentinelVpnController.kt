@@ -1,6 +1,12 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import android.os.SystemClock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import android.content.Intent
 import android.net.VpnService
 import com.wireguard.android.backend.Backend
@@ -70,7 +76,6 @@ class SentinelVpnController(
     )
 
     private val appContext = context.applicationContext
-    private val operationMutex = Mutex()
 
     @Volatile
     private var runtimeState: RuntimeState = RuntimeState.DISCONNECTED
@@ -97,8 +102,15 @@ class SentinelVpnController(
 
     suspend fun connect(
         gateway: GatewayDescriptor,
-        configuration: ByteArray
+        configuration: ByteArray,
+        leaseExpiresAtMs: Long? = null
     ): OperationResult = operationMutex.withLock {
+        // A new attempt must not release another live controller's reservation or deadline.
+        // Replacement requires a confirmed disconnect first.
+        if (SentinelVpnModeArbiter.current() == SentinelVpnModeArbiter.Mode.INTERNET_VPN) {
+            configuration.fill(0)
+            return OperationResult(RuntimeState.FAILED, "VPN_ALREADY_ACTIVE")
+        }
         if (gateway.status != GatewayStatus.AVAILABLE) {
             runtimeState = RuntimeState.READY_NO_GATEWAY
             configuration.fill(0)
@@ -130,6 +142,14 @@ class SentinelVpnController(
             configuration.fill(0)
         }
 
+        val leaseDuration = leaseExpiresAtMs?.let { it - System.currentTimeMillis() }
+        if (leaseDuration != null && leaseDuration !in 1L..(15L * 60L * 1000L)) {
+            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
+            runtimeState = RuntimeState.FAILED
+            return OperationResult(runtimeState, "VPN_LEASE_EXPIRED_OR_INVALID")
+        }
+        leaseExpiryJob?.cancel()
+        leaseExpiryJob = null
         runtimeState = RuntimeState.CONNECTING
         return try {
             val backendState = withContext(Dispatchers.IO) {
@@ -137,6 +157,28 @@ class SentinelVpnController(
             }
             if (backendState == Tunnel.State.UP) {
                 runtimeState = RuntimeState.PROTECTED
+                if (leaseExpiresAtMs != null && leaseDuration != null) {
+                    val monotonicDeadline = SystemClock.elapsedRealtime() + leaseDuration
+                    leaseExpiryJob = expiryScope.launch {
+                        while (System.currentTimeMillis() < leaseExpiresAtMs && SystemClock.elapsedRealtime() < monotonicDeadline) {
+                            delay(minOf(1000L, (monotonicDeadline - SystemClock.elapsedRealtime()).coerceAtLeast(1L)))
+                        }
+                        var stopped = false
+                        while (!stopped) {
+                            stopped = operationMutex.withLock {
+                                try {
+                                    val state = backend.setState(tunnel, Tunnel.State.DOWN, null)
+                                    if (state == Tunnel.State.DOWN) {
+                                        runtimeState = RuntimeState.DISCONNECTED
+                                        SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
+                                        true
+                                    } else { runtimeState = RuntimeState.FAILED; false }
+                                } catch (_: Exception) { runtimeState = RuntimeState.FAILED; false }
+                            }
+                            if (!stopped) delay(1000L)
+                        }
+                    }
+                }
                 OperationResult(runtimeState, "TUNNEL_UP")
             } else {
                 SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
@@ -155,8 +197,10 @@ class SentinelVpnController(
             val backendState = withContext(Dispatchers.IO) {
                 backend.setState(tunnel, Tunnel.State.DOWN, null)
             }
-            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
             if (backendState == Tunnel.State.DOWN) {
+                leaseExpiryJob?.cancel()
+                leaseExpiryJob = null
+                SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
                 runtimeState = RuntimeState.DISCONNECTED
                 OperationResult(runtimeState, "TUNNEL_DOWN")
             } else {
@@ -164,13 +208,16 @@ class SentinelVpnController(
                 OperationResult(runtimeState, "BACKEND_DID_NOT_REPORT_DOWN")
             }
         } catch (_: Exception) {
-            SentinelVpnModeArbiter.release(SentinelVpnModeArbiter.Mode.INTERNET_VPN)
+            // Keep the lease deadline and mode reservation while shutdown remains unconfirmed.
             runtimeState = RuntimeState.FAILED
             OperationResult(runtimeState, "BACKEND_STOP_FAILED")
         }
     }
 
     companion object {
+        private val operationMutex = Mutex()
+        private val expiryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        private var leaseExpiryJob: Job? = null
         private const val TUNNEL_NAME = "sentinel"
         internal const val MAX_CONFIG_BYTES = 64 * 1024
         internal const val MAX_GATEWAY_DNS_SERVERS = 4

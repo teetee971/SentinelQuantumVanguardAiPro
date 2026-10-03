@@ -1,6 +1,9 @@
 package com.sentinel.quantum.ui.screens
 
 import android.content.Intent
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.R
+import com.sentinel.quantum.security.GeneratedProductCapabilities
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -48,6 +51,7 @@ private data class HomeTool(
     val keywords: Set<String>,
     val domain: HomeDomain,
     val featured: Boolean = false,
+    val capabilityId: String? = null,
     val onClick: () -> Unit
 )
 
@@ -92,6 +96,7 @@ fun HomeScreen(navController: NavController) {
             Icons.Default.Phone,
             setOf("appel", "appeler", "telephone", "téléphone", "contact", "contacts", "recent", "récents"),
             HomeDomain.COMMUNICATIONS,
+            capabilityId = "phone_core_android",
             featured = true
         ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
         HomeTool(
@@ -113,6 +118,7 @@ fun HomeScreen(navController: NavController) {
             Icons.Default.Sms,
             setOf("sms", "message", "messages", "conversation", "mms"),
             HomeDomain.COMMUNICATIONS,
+            capabilityId = "phone_core_android",
             featured = true
         ) { context.startActivity(Intent(context, SmsComposeActivity::class.java)) },
         HomeTool(
@@ -187,6 +193,7 @@ fun HomeScreen(navController: NavController) {
             Icons.Default.Groups,
             setOf("defense", "défense", "collective", "phishing", "malware", "url", "email", "sha256"),
             HomeDomain.ANALYSIS,
+            capabilityId = "collective_defense_android",
             featured = true
         ) { navController.navigate(Screen.CollectiveDefense.route) },
         HomeTool(
@@ -194,7 +201,8 @@ fun HomeScreen(navController: NavController) {
             "Protection réseau défensive et configuration du tunnel",
             Icons.Default.VpnLock,
             setOf("vpn", "wireguard", "tunnel", "reseau", "réseau"),
-            HomeDomain.NETWORK
+            HomeDomain.NETWORK,
+            capabilityId = "sentinel_vpn_service",
         ) { navController.navigate(Screen.Vpn.route) },
         HomeTool(
             "Maison & objets connectés",
@@ -324,7 +332,7 @@ fun HomeScreen(navController: NavController) {
                         rowTools.forEach { tool ->
                             QuickToolCard(
                                 title = tool.title,
-                                subtitle = tool.subtitle,
+                                subtitle = capabilitySubtitle(tool),
                                 icon = tool.icon,
                                 onClick = tool.onClick,
                                 modifier = Modifier.weight(1f)
@@ -335,7 +343,7 @@ fun HomeScreen(navController: NavController) {
                 }
             } else if (normalizedQuery.isNotBlank()) {
                 matchingTools.forEach { tool ->
-                    DashboardCard(tool.title, tool.subtitle, tool.icon, tool.onClick)
+                    DashboardCard(tool.title, capabilitySubtitle(tool), tool.icon, tool.onClick)
                 }
             } else {
                 HomeDomain.entries.forEach { domain ->
@@ -346,7 +354,7 @@ fun HomeScreen(navController: NavController) {
                             subtitle = domain.description
                         )
                         domainTools.forEach { tool ->
-                            DashboardCard(tool.title, tool.subtitle, tool.icon, tool.onClick)
+                            DashboardCard(tool.title, capabilitySubtitle(tool), tool.icon, tool.onClick)
                         }
                     }
                 }
@@ -516,4 +524,16 @@ private fun DashboardCard(
             )
         }
     }
+}
+
+@Composable
+private fun capabilitySubtitle(tool: HomeTool): String {
+    val id = tool.capabilityId ?: return tool.subtitle
+    val state = GeneratedProductCapabilities.states[id]
+    val label = when {
+        state?.availableAt() == true -> R.string.product_capability_available
+        state?.implemented == false -> R.string.product_capability_not_implemented
+        else -> R.string.product_capability_unverified
+    }
+    return stringResource(label) + " · " + tool.subtitle
 }

@@ -146,7 +146,7 @@ if (declaredSmsRolePermissions.length > 0) {
       !smsStatusReceiver.includes('partIndex != uriPartIndex') ||
       !smsStatusReceiver.includes('partCount != uriPartCount') ||
       !smsStatusReceiver.includes('val pendingResult = goAsync()') ||
-      !smsStatusReceiver.includes('Executors.newSingleThreadExecutor') ||
+      !/Executors\.newSingleThread(?:Scheduled)?Executor\s*[({]/.test(smsStatusReceiver) ||
       !smsDeliveryBus.includes('CALLBACK_REPLAY_CAPACITY = SmsCallbackProgress.MAX_PARTS * 4')) {
     errors.push('SMS status callbacks must be explicit, immutable, identity-bound, serial off-main, and replay-safe for fast multipart callbacks.');
   }

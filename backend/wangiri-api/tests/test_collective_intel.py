@@ -138,7 +138,8 @@ def test_single_observation_never_becomes_high_confidence():
     assert _confidence_tier(2) == "OBSERVED"
     assert _confidence_tier(3) == "SUSPICIOUS"
     assert _confidence_tier(9) == "SUSPICIOUS"
-    assert _confidence_tier(10) == "HIGH_CONFIDENCE"
+    assert _confidence_tier(10) == "SUSPICIOUS"
+    assert _confidence_tier(1000000) == "SUSPICIOUS"
 
 
 def test_moderation_approval_promotes_exactly_one_pending_signal():
@@ -509,3 +510,27 @@ def test_self_relationship_is_rejected_before_graph_write(monkeypatch):
         )
         assert response.status_code == 422
         assert response.json()["detail"] == "self_relationship_forbidden"
+
+
+def test_public_report_does_not_write_when_rate_limit_storage_fails(monkeypatch):
+    from redis.exceptions import RedisError
+    monkeypatch.setenv("INDICATOR_HASH_PEPPER", "test-only-pepper")
+
+    class UnavailableLimiter:
+        async def aclose(self):
+            pass
+
+        def pipeline(self, transaction=True):
+            raise RedisError("unavailable")
+
+        async def eval(self, *args):
+            raise AssertionError("an unprotected public report must never be written")
+
+    with TestClient(app) as client:
+        app.state.redis = UnavailableLimiter()
+        response = client.post("/v1/intelligence/report-public", json={
+            "indicator_type": "DOMAIN", "value": "example.com", "category": "PHISHING",
+            "client_nonce": "0123456789abcdef",
+        })
+        assert response.status_code == 503
+        assert "anti-abus" in response.json()["detail"]

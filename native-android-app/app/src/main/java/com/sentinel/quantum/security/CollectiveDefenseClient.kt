@@ -50,7 +50,8 @@ class CollectiveDefenseClient(
         val reputationObservedAtMs: Long?,
         val reputationTtlMs: Long?,
         val enforcementAllowed: Boolean,
-        val warning: String
+        val warning: String,
+        val receivedAtMs: Long = System.currentTimeMillis()
     )
 
     data class ReportResult(

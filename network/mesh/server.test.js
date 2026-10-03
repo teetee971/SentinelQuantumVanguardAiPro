@@ -1001,3 +1001,31 @@ test("SPIFFE trust bundle admin API is never node-authenticated", async () => {
   });
   assert.equal(denied.status, 401);
 });
+
+test("API returns unavailable on persistence failure without enrolling the node", async () => {
+  const cp = new MeshControlPlane();
+  const result = await handleMeshRequest({
+    method: "POST", url: "/v1/nodes",
+    headers: { authorization: `Bearer ${TOKEN}` },
+    body: { id: "device:uncommitted", type: "device", publicKey: KEY },
+    controlPlane: cp, adminToken: TOKEN,
+    persist: async () => { throw new Error("disk unavailable"); },
+  });
+  assert.equal(result.status, 503);
+  assert.equal(cp.getNode("device:uncommitted"), null);
+});
+
+test('finalization refuses a target revoked after negotiation creation', async () => {
+  const cp = new MeshControlPlane();
+  cp.enrollNode({ id: 'device:a', type: 'device', publicKey: KEY });
+  cp.enrollNode({ id: 'device:b', type: 'device', publicKey: Buffer.alloc(32, 2).toString('base64'), tags: ['peer'] });
+  cp.replacePolicies([{ id: 'allow', effect: 'allow', resourceTags: ['peer'] }]);
+  const credential = cp.issueNodeCredential('device:a');
+  const pathNegotiator = new MeshPathNegotiator();
+  const session = pathNegotiator.createSession({ sourceNodeId: 'device:a', targetNodeId: 'device:b' });
+  cp.revokeNode('device:b', 'lost');
+  const response = await handleMeshRequest({ method: 'POST', url: '/v1/node/negotiations/finalize',
+    headers: { authorization: `Bearer ${credential.token}`, 'x-sentinel-node-id': 'device:a' },
+    body: { sessionId: session.id }, controlPlane: cp, adminToken: TOKEN, pathNegotiator });
+  assert.equal(response.status, 403);
+});

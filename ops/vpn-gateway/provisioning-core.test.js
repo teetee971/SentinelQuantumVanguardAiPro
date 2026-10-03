@@ -226,3 +226,17 @@ test("restored state is bound to schema, gateway and catalog sequence", () => {
     );
   }
 });
+
+test('expired address reuse always exports a bounded restorable snapshot', () => {
+  let now = 2_000_000_000_000;
+  const service = core({ clock: () => now, maxClients: 1, leaseMs: 60_000 });
+  for (let iteration = 0; iteration < 300; iteration++) {
+    const bytes = Buffer.alloc(32); bytes.writeUInt32BE(iteration + 1);
+    assert.equal(service.provision({ gatewayId: 'fr-par-01', devicePublicKey: bytes.toString('base64'), catalogSequence: 7, accessToken: TOKEN }).accepted, true);
+    const snapshot = service.exportState();
+    assert.equal(snapshot.leases.length, 1);
+    const restored = core({ clock: () => now, maxClients: 1, leaseMs: 60_000 });
+    assert.doesNotThrow(() => restored.restoreState(snapshot));
+    now += 60_000;
+  }
+});

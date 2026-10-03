@@ -31,15 +31,20 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         val key = key(sendToken, providerMessageId)
         val raw = preferences.getString(key, null)
         val existing = decode(raw, nowMs)
-        if (existing?.terminal == true) return@synchronized null
+        if (existing?.terminal == true && existing.providerApplied) return@synchronized null
+        if (existing != null && existing.state.partCount != partCount) return@synchronized null
 
-        val outcome = SmsCallbackProgress.record(
+        val outcome = if (existing?.terminal == true) {
+            SmsCallbackProgress.pendingProviderOutcome(existing.state)
+        } else SmsCallbackProgress.record(
             current = existing?.state,
             partIndex = partIndex,
             partCount = partCount,
             stage = stage,
             successful = successful
-        ) ?: return@synchronized null
+        ) ?: existing?.takeIf { !it.providerApplied && partIndex in 0 until partCount }
+            ?.let { SmsCallbackProgress.pendingProviderOutcome(it.state) }
+            ?: return@synchronized null
 
         val createdAtMs = existing?.createdAtMs ?: nowMs
         val persisted = Persisted(
@@ -56,6 +61,29 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
             onPersistenceFailure()
         }
         outcome
+    }
+
+    data class PendingProviderWrite(val sendToken: Int, val providerMessageId: Long,
+                                    val outcome: SmsCallbackProgress.Outcome)
+
+    fun pendingProviderWrites(nowMs: Long = System.currentTimeMillis()): List<PendingProviderWrite> = synchronized(LOCK) {
+        preferences.all.entries.mapNotNull { (key, value) ->
+            val record = decode(value as? String, nowMs) ?: return@mapNotNull null
+            if (record.providerApplied) return@mapNotNull null
+            val ids = key.split(":", limit = 2)
+            if (ids.size != 2) return@mapNotNull null
+            val sendToken = ids[0].toIntOrNull()?.takeIf { it > 0 } ?: return@mapNotNull null
+            val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L } ?: return@mapNotNull null
+            PendingProviderWrite(sendToken, providerId, SmsCallbackProgress.pendingProviderOutcome(record.state))
+        }.take(MAX_TRACKED)
+    }
+
+    fun markProviderApplied(sendToken: Int, providerMessageId: Long, state: SmsCallbackProgress.State,
+                            nowMs: Long = System.currentTimeMillis()): Boolean = synchronized(LOCK) {
+        val storageKey = key(sendToken, providerMessageId)
+        val current = decode(preferences.getString(storageKey, null), nowMs) ?: return@synchronized false
+        if (current.state != state) return@synchronized false
+        preferences.edit().putString(storageKey, encode(current.copy(providerApplied = true))).commit()
     }
 
     private fun prune(nowMs: Long): Boolean {
@@ -88,7 +116,8 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
     private data class Persisted(
         val createdAtMs: Long,
         val terminal: Boolean,
-        val state: SmsCallbackProgress.State
+        val state: SmsCallbackProgress.State,
+        val providerApplied: Boolean = false
     )
 
     private fun encode(persisted: Persisted): String = listOf(
@@ -98,7 +127,8 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         persisted.state.sentOk.sorted().joinToString(","),
         persisted.state.sentFailed.sorted().joinToString(","),
         persisted.state.deliveredOk.sorted().joinToString(","),
-        persisted.state.deliveryFailed.sorted().joinToString(",")
+        persisted.state.deliveryFailed.sorted().joinToString(","),
+        if (persisted.providerApplied) "1" else "0"
     ).joinToString("|")
 
     private fun decode(
@@ -107,8 +137,8 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         enforceTtl: Boolean = true
     ): Persisted? {
         if (raw.isNullOrBlank()) return null
-        val parts = raw.split("|", limit = 7)
-        if (parts.size != 7) return null
+        val parts = raw.split("|", limit = 8)
+        if (parts.size !in 7..8) return null
         val created = parts[0].toLongOrNull() ?: return null
         if (created <= 0L || created > nowMs + MAX_CLOCK_SKEW_MS) return null
         if (enforceTtl && nowMs - created > TTL_MS) return null
@@ -137,6 +167,7 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         return Persisted(
             createdAtMs = created,
             terminal = terminal,
+            providerApplied = parts.getOrNull(7) == "1",
             state = SmsCallbackProgress.State(
                 partCount = partCount,
                 sentOk = sentOk,

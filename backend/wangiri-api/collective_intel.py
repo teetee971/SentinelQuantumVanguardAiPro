@@ -303,6 +303,8 @@ async def _rate_limit(
     per_client_limit = _positive_int_env(per_client_env, per_client_default)
     global_limit = _positive_int_env("GLOBAL_RATE_LIMIT_PER_MINUTE", 120)
     if per_client_limit <= 0 and global_limit <= 0:
+        if fail_closed:
+            raise HTTPException(status_code=503, detail="Protection anti-abus non configurée")
         return
     if client is None:
         if fail_closed:
@@ -329,6 +331,8 @@ async def _rate_limit(
             pipe.expire(key, 120)
         results = await pipe.execute()
         counts = [int(results[index * 2]) for index in range(len(counters))]
+        if any(count < 1 for count in counts):
+            raise ValueError("invalid rate-limit counters")
         if any(count > limit for count, (_, limit) in zip(counts, counters, strict=True)):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -337,7 +341,7 @@ async def _rate_limit(
             )
     except HTTPException:
         raise
-    except (RedisError, TimeoutError, ValueError) as exc:
+    except (RedisError, TimeoutError, ValueError, TypeError, IndexError) as exc:
         if fail_closed:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -357,8 +361,7 @@ def _category_codes(data: dict[str, Any]) -> list[str]:
 
 
 def _confidence_tier(signals: int) -> str:
-    if signals >= 10:
-        return "HIGH_CONFIDENCE"
+    # Counts do not establish independent corroboration or verified attribution.
     if signals >= 3:
         return "SUSPICIOUS"
     if signals >= 1:
@@ -410,11 +413,17 @@ if redis.call('EXISTS', KEYS[2]) == 1 then
 end
 redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
 redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
+local first_seen = tonumber(redis.call('HGET', KEYS[3], 'first_seen') or '0')
+if first_seen <= 0 or tonumber(ARGV[3]) - first_seen >= tonumber(ARGV[5]) then
+  redis.call('DEL', KEYS[3])
+end
 redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
 redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
 redis.call('HINCRBY', KEYS[3], 'signals', 1)
 redis.call('HINCRBY', KEYS[3], ARGV[4], 1)
-redis.call('EXPIRE', KEYS[3], ARGV[5])
+if redis.call('TTL', KEYS[3]) < 0 then
+  redis.call('EXPIRE', KEYS[3], ARGV[5])
+end
 return 1
 """
 
@@ -492,11 +501,17 @@ redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
 local remaining = redis.call('HINCRBY', KEYS[1], 'signals', -1)
 
 if ARGV[2] == 'APPROVE' then
+  local first_seen = tonumber(redis.call('HGET', KEYS[3], 'first_seen') or '0')
+  if first_seen <= 0 or tonumber(ARGV[3]) - first_seen >= tonumber(ARGV[4]) then
+    redis.call('DEL', KEYS[3])
+  end
   redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
   redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
   redis.call('HINCRBY', KEYS[3], 'signals', 1)
   redis.call('HINCRBY', KEYS[3], ARGV[1], 1)
-  redis.call('EXPIRE', KEYS[3], ARGV[4])
+  if redis.call('TTL', KEYS[3]) < 0 then
+    redis.call('EXPIRE', KEYS[3], ARGV[4])
+  end
 end
 
 if remaining <= 0 then
@@ -805,15 +820,16 @@ def create_collective_intel_router() -> APIRouter:
         payload: IndicatorReport,
         request: Request,
     ) -> dict[str, str]:
+        secret = _public_report_secret()
+        if not secret:
+            raise HTTPException(status_code=503, detail="Signalement intelligence non configuré")
         await _rate_limit(
             request,
             endpoint="intel-report-public",
             per_client_env="INTEL_PUBLIC_REPORT_RATE_LIMIT_PER_MINUTE",
             per_client_default=5,
+            fail_closed=True,
         )
-        secret = _public_report_secret()
-        if not secret:
-            raise HTTPException(status_code=503, detail="Signalement intelligence non configuré")
         try:
             normalized = normalize_indicator(payload.indicator_type, payload.value)
         except ValueError as exc:

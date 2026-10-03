@@ -1,5 +1,9 @@
 package com.sentinel.quantum.ui.screens
 
+import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.delay
+import com.sentinel.quantum.R
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -524,6 +528,14 @@ private fun WatchItemCard(
     onRecheck: () -> Unit,
     onRemove: () -> Unit
 ) {
+    var displayNow by remember(item.lastCheckedAtMs) { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(item.reputationExpiresAtMs, item.lastCheckedAtMs) {
+        val deadline = item.reputationExpiresAtMs ?: return@LaunchedEffect
+        while (displayNow < deadline) {
+            delay(minOf(1000L, (deadline - displayNow).coerceAtLeast(1L)))
+            displayNow = System.currentTimeMillis()
+        }
+    }
     ElevatedCard(
         colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card),
         shape = RoundedCornerShape(18.dp)
@@ -537,7 +549,7 @@ private fun WatchItemCard(
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        typeLabel(item.indicatorType) + " · " + riskLabel(item.riskState),
+                        typeLabel(item.indicatorType) + " · " + riskLabel(item.activeRiskState(displayNow)),
                         fontWeight = FontWeight.Bold
                     )
                     Text(
@@ -547,6 +559,14 @@ private fun WatchItemCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+            Text(
+                stringResource(R.string.collective_watch_checked_at,
+                    java.text.DateFormat.getDateTimeInstance().format(java.util.Date(item.lastCheckedAtMs))),
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (item.activeRiskState(displayNow) == "UNKNOWN" && item.riskState != "UNKNOWN") {
+                Text(stringResource(R.string.collective_watch_expired), style = MaterialTheme.typography.bodySmall)
             }
             Row(
                 Modifier.fillMaxWidth(),

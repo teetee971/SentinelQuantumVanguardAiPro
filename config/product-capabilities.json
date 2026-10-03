@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "updated_at": "2026-10-03",
   "capabilities": [
     {
@@ -23,6 +23,38 @@
         "native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt",
         "docs/PHONE_CORE_PHYSICAL_VALIDATION.md",
         ".github/workflows/build-native-android.yml"
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [
+        {
+          "id": "public_android_release",
+          "required_stages": [
+            "release_signed",
+            "deployed"
+          ]
+        }
+      ],
+      "source_scope": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt",
+        ".github/workflows/build-native-android.yml"
+      ],
+      "required_physical_criteria": [
+        "incoming_call_connected",
+        "outgoing_call_connected",
+        "call_screening_observed",
+        "contacts_provider_ready",
+        "call_history_provider_ready",
+        "incoming_sms_received",
+        "outgoing_sms_submitted",
+        "outgoing_sms_delivered",
+        "incoming_mms_safe_preview",
+        "outgoing_mms_sent",
+        "incoming_call_notification",
+        "incoming_sms_notification",
+        "caller_id_ui_shown",
+        "in_call_ui_shown"
       ]
     },
     {
@@ -40,13 +72,45 @@
       "customer_available": false,
       "blockers": [
         "Production Sentinel exit gateway is not provisioned",
-        "External monotonic VPN lease sequence authority is not implemented or deployed",
+        "Independent PostgreSQL lease sequence authority is implemented but not configured, deployed or runtime-verified",
         "End-to-end tunnel, DNS, IPv4/IPv6, MTU and recovery evidence is missing"
       ],
       "evidence": [
         "docs/security/SENTINEL-VPN-ARCHITECTURE.md",
         "ops/vpn-gateway/lease-sequence-authority.js",
         "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt"
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [
+        {
+          "id": "vpn_sequence_authority",
+          "required_stages": [
+            "deployed",
+            "runtime_verified"
+          ]
+        },
+        {
+          "id": "public_android_release",
+          "required_stages": [
+            "release_signed",
+            "deployed"
+          ]
+        }
+      ],
+      "source_scope": [
+        "ops/vpn-gateway/lease-sequence-authority.js",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt"
+      ],
+      "required_physical_criteria": [
+        "tunnel_connected",
+        "dns_verified",
+        "ipv4_verified",
+        "ipv6_verified",
+        "mtu_verified",
+        "recovery_verified",
+        "revocation_verified"
       ]
     },
     {
@@ -71,6 +135,36 @@
         "docs/VOICE-STUDIO-ADDON.md",
         "native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt",
         "native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt"
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [
+        {
+          "id": "voice_call_infrastructure",
+          "required_stages": [
+            "deployed",
+            "runtime_verified"
+          ]
+        },
+        {
+          "id": "public_android_release",
+          "required_stages": [
+            "release_signed",
+            "deployed"
+          ]
+        }
+      ],
+      "source_scope": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt"
+      ],
+      "required_physical_criteria": [
+        "transformed_call_connected",
+        "latency_verified",
+        "echo_verified",
+        "bluetooth_verified",
+        "reconnection_verified"
       ]
     },
     {
@@ -93,7 +187,17 @@
         "public/geointel.html",
         "public/geointel-source-usgs.js",
         ".github/workflows/frontend-validation.yml"
-      ]
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [],
+      "source_scope": [
+        "public/geointel.html",
+        "public/geointel-source-usgs.js",
+        ".github/workflows/frontend-validation.yml"
+      ],
+      "required_physical_criteria": []
     },
     {
       "id": "geointel_multisource",
@@ -114,7 +218,16 @@
       "evidence": [
         "public/geointel.html",
         "public/geointel-core.js"
-      ]
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [],
+      "source_scope": [
+        "public/geointel.html",
+        "public/geointel-core.js"
+      ],
+      "required_physical_criteria": []
     },
     {
       "id": "collective_defense_backend",
@@ -136,7 +249,16 @@
         "backend/wangiri-api/README.md",
         "backend/wangiri-api/collective_intel.py",
         "render.yaml"
-      ]
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [],
+      "source_scope": [
+        "backend/wangiri-api/collective_intel.py",
+        "render.yaml"
+      ],
+      "required_physical_criteria": []
     },
     {
       "id": "collective_defense_android",
@@ -159,6 +281,38 @@
         "native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseClient.kt",
         "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CollectiveDefenseScreen.kt",
         "native-android-app/app/src/main/java/com/sentinel/quantum/background/CollectiveDefenseWorkScheduler.kt"
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [
+        {
+          "id": "collective_defense_backend",
+          "required_stages": [
+            "deployed",
+            "runtime_verified"
+          ]
+        },
+        {
+          "id": "public_android_release",
+          "required_stages": [
+            "release_signed",
+            "deployed"
+          ]
+        }
+      ],
+      "source_scope": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseClient.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CollectiveDefenseScreen.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/background/CollectiveDefenseWorkScheduler.kt"
+      ],
+      "required_physical_criteria": [
+        "lookup_verified",
+        "report_verified",
+        "watch_verified",
+        "background_recheck_verified",
+        "notification_verified",
+        "network_failure_verified"
       ]
     },
     {
@@ -182,6 +336,27 @@
       "evidence": [
         "security/phone-intelligence/call-rule-publication.js",
         "config/module-continuity-inventory.json"
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [
+        {
+          "id": "phone_moderation_backend",
+          "required_stages": [
+            "deployed",
+            "runtime_verified"
+          ]
+        }
+      ],
+      "source_scope": [
+        "security/phone-intelligence/call-rule-publication.js",
+        "config/module-continuity-inventory.json"
+      ],
+      "required_physical_criteria": [
+        "signed_feed_synchronization_verified",
+        "expiry_verified",
+        "revocation_verified"
       ]
     },
     {
@@ -205,7 +380,17 @@
         "security/phone-intelligence/moderation-core.js",
         "security/phone-intelligence/postgres-moderation-store.js",
         "security/phone-intelligence/redis-rate-limiter.js"
-      ]
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [],
+      "source_scope": [
+        "security/phone-intelligence/moderation-core.js",
+        "security/phone-intelligence/postgres-moderation-store.js",
+        "security/phone-intelligence/redis-rate-limiter.js"
+      ],
+      "required_physical_criteria": []
     },
     {
       "id": "repository_i18n",
@@ -227,7 +412,16 @@
       "evidence": [
         "native-android-app/app/src/main/res/values/strings.xml",
         "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt"
-      ]
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [],
+      "source_scope": [
+        "native-android-app/app/src/main/res/values/strings.xml",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt"
+      ],
+      "required_physical_criteria": []
     },
     {
       "id": "public_android_release",
@@ -250,6 +444,174 @@
         ".github/workflows/android-release.yml",
         ".github/workflows/build-aab-playconsole.yml",
         "RELEASE_CHECKLIST.md"
+      ],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [],
+      "source_scope": [
+        ".github/workflows/android-release.yml",
+        ".github/workflows/build-aab-playconsole.yml"
+      ],
+      "required_physical_criteria": [
+        "signed_artifact_installed",
+        "launch_verified",
+        "publication_channel_observed"
+      ]
+    },
+    {
+      "id": "saas_identity",
+      "surface": "SaaS customer identity and authorization",
+      "implemented": false,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Production tenant identity, roles, revocation and authorization are not provisioned"
+      ],
+      "evidence": [
+        "public/espace-client.html"
+      ],
+      "source_scope": [
+        "public/espace-client.html"
+      ],
+      "required_physical_criteria": [],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": []
+    },
+    {
+      "id": "voice_call_infrastructure",
+      "surface": "Voice signaling, token issuer and VoIP/PSTN gateway",
+      "implemented": false,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Production signaling, token issuance and telephony gateway are not provisioned"
+      ],
+      "evidence": [
+        "docs/VOICE-STUDIO-ADDON.md"
+      ],
+      "source_scope": [
+        "docs/VOICE-STUDIO-ADDON.md"
+      ],
+      "required_physical_criteria": [],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": []
+    },
+    {
+      "id": "vpn_sequence_authority",
+      "surface": "Independent monotonic VPN lease sequence authority",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Independent PostgreSQL deployment, restricted runtime credentials, exclusive gateway writer and rollback-safe backup policy are not provisioned or observed"
+      ],
+      "evidence": [
+        "ops/vpn-gateway/lease-sequence-authority.js",
+        "ops/vpn-gateway/lease-sequence-schema.sql",
+        "docs/VPN_SEQUENCE_AUTHORITY.md"
+      ],
+      "source_scope": [
+        "ops/vpn-gateway/lease-sequence-authority.js",
+        "ops/vpn-gateway/lease-sequence-schema.sql",
+        "ops/vpn-gateway/trusted-state-persist.js",
+        "ops/vpn-gateway/trusted-state-restore.js"
+      ],
+      "required_physical_criteria": [],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": []
+    },
+    {
+      "id": "mesh_runtime",
+      "surface": "Mesh control plane and relay runtime",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Production identity, relay runtime and revocation/data-plane acceptance evidence are not recorded"
+      ],
+      "evidence": [
+        "network/mesh/server.js",
+        "network/mesh/relay.js"
+      ],
+      "source_scope": [
+        "network/mesh/server.js",
+        "network/mesh/relay.js"
+      ],
+      "required_physical_criteria": [],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": []
+    },
+    {
+      "id": "osint_android_feeds",
+      "surface": "Android public-source OSINT feeds",
+      "implemented": true,
+      "configured": true,
+      "requires_deployment": false,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": true,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Revision-bound runtime and signed Android distribution evidence are missing"
+      ],
+      "evidence": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintRepository.kt"
+      ],
+      "source_scope": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintRepository.kt"
+      ],
+      "required_physical_criteria": [],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [
+        {
+          "id": "public_android_release",
+          "required_stages": [
+            "release_signed",
+            "deployed"
+          ]
+        }
       ]
     }
   ]

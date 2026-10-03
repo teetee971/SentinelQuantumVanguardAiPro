@@ -60,4 +60,23 @@ class CollectiveDefenseWatchStoreTest {
             )
         )
     }
+    @Test fun watchReputationExpiresWithoutDeletingTheWatchedFingerprint() {
+        val item = CollectiveDefenseWatchStore.WatchItem(
+            CollectiveDefenseClient.IndicatorType.EMAIL, "a".repeat(64), 1000L, 2000L, 2000L,
+            "SUSPICIOUS", 3, "available", reputationExpiresAtMs = 3000L
+        )
+        assertEquals("SUSPICIOUS", item.activeRiskState(2999L))
+        assertEquals("UNKNOWN", item.activeRiskState(3000L))
+        assertEquals(item, CollectiveDefenseWatchStore.decode(CollectiveDefenseWatchStore.encode(item)))
+        assertEquals("UNKNOWN", item.copy(reputationExpiresAtMs = null).activeRiskState(2999L))
+    }
+    @Test fun storingAnOldResponseCannotRenewItsRemainingTtl() {
+        val response = CollectiveDefenseClient.ReputationResult(
+            CollectiveDefenseClient.IndicatorType.EMAIL, "a".repeat(64), "SUSPICIOUS", 3,
+            emptyList(), "available", 900L, 1000L, false, "", receivedAtMs = 1000L
+        )
+        assertEquals(2000L, CollectiveDefenseWatchStore.reputationDeadline(response, 1500L))
+        assertNull(CollectiveDefenseWatchStore.reputationDeadline(response, 2000L))
+        assertNull(CollectiveDefenseWatchStore.reputationDeadline(response, 999L))
+    }
 }

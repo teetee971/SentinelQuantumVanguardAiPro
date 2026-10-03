@@ -1,0 +1,166 @@
+{
+  "schema_version": 2,
+  "updated_at": "2026-10-03",
+  "capabilities": [
+    {
+      "id": "phone_core_android",
+      "surface": "Android Phone Core",
+      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "sentinel_vpn_service",
+      "surface": "Sentinel VPN",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "voice_transform_calls",
+      "surface": "Voice Studio transformed calls",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "geointel_usgs",
+      "surface": "GeoIntel USGS earthquakes",
+      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "geointel_multisource",
+      "surface": "GeoIntel conflicts/hotspots/sanctions/weather/outages",
+      "status": "NOT_IMPLEMENTED",
+      "implemented": false,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "collective_defense_backend",
+      "surface": "Collective Defense API",
+      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "collective_defense_android",
+      "surface": "Collective Defense Android center",
+      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "signed_phone_reputation_feed",
+      "surface": "Signed Phone Intelligence reputation feed",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "phone_moderation_backend",
+      "surface": "Phone Intelligence moderation service",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "repository_i18n",
+      "surface": "Repository-wide internationalization",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "public_android_release",
+      "surface": "Public signed Android release",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "saas_identity",
+      "surface": "SaaS customer identity and authorization",
+      "status": "NOT_IMPLEMENTED",
+      "implemented": false,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "voice_call_infrastructure",
+      "surface": "Voice signaling, token issuer and VoIP/PSTN gateway",
+      "status": "NOT_IMPLEMENTED",
+      "implemented": false,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "vpn_sequence_authority",
+      "surface": "Independent monotonic VPN lease sequence authority",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "mesh_runtime",
+      "surface": "Mesh control plane and relay runtime",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "osint_android_feeds",
+      "surface": "Android public-source OSINT feeds",
+      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    }
+  ]
+}
