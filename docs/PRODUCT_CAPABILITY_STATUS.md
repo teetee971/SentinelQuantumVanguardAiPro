@@ -38,7 +38,7 @@ Evidence:
 ### Sentinel VPN
 
 - Production Sentinel exit gateway is not provisioned
-- External monotonic VPN lease sequence authority is not implemented or deployed
+- Independent PostgreSQL lease sequence authority is implemented but not configured, deployed or runtime-verified
 - End-to-end tunnel, DNS, IPv4/IPv6, MTU and recovery evidence is missing
 
 Evidence:
