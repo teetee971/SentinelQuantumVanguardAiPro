@@ -59,7 +59,7 @@ internal object MmsTextCharset {
         "iso-8859-7" -> ISO_8859_7
         "iso-8859-8" -> ISO_8859_8
         "iso-8859-9" -> ISO_8859_9
-        "shift-jis", "shift-jis", "sjis" -> SHIFT_JIS
+        "shift-jis", "sjis" -> SHIFT_JIS
         "utf-8", "utf8" -> UTF_8
         "big5" -> BIG5
         "iso-10646-ucs-2", "ucs-2", "ucs2", "utf-16be" -> UCS2
