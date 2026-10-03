@@ -182,6 +182,7 @@ jobs:
             "sentinel-isolation.yml"
             "integrity-check.yml"
             "preproduction-final-gate.yml"
+            "product-capability-truth.yml"
             "lighthouse-preproduction.yml"
           )
 
