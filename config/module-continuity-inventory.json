@@ -1,210 +1,45 @@
 {
   "schema_version": 1,
   "entries": {
-    "ai-governance/orchestration/audited-model-evaluation.js": {
-      "status": "INTENTIONALLY_DORMANT",
-      "owner": "ai-governance",
-      "reason": "Bounded governance orchestration connects exact model evaluation/approval to the canonical tamper-evident audit chain; it performs no model invocation, registry mutation, deployment, promotion, or external persistence and has no production entrypoint."
-    },
-    "ai-governance/orchestration/trusted-model-selection.js": {
-      "status": "INTENTIONALLY_DORMANT",
-      "owner": "ai-governance",
-      "reason": "Bounded selection orchestration connects explicit trust assessment to canonical model routing while preserving approval, evaluation, data-class and locality gates; it invokes no model and has no production entrypoint."
-    },
-    "ai-governance/red-team/red-team-suite.js": {
-      "status": "CI_TOOLING",
-      "owner": "ai-governance",
-      "reason": "Adversarial validation component intended for assurance/testing rather than production runtime execution."
-    },
-    "config/logging.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "platform",
-      "reason": "Logging configuration exists as a reusable utility but is not currently imported by production modules."
-    },
-    "decision-plane/action-verification/postgres-replay-guard.js": {
-      "status": "INTENTIONALLY_DORMANT",
-      "owner": "decision-plane",
-      "reason": "Replay guard is validated, including PostgreSQL integration, but is not enabled in an autonomous privileged runtime."
-    },
-    "decision-plane/orchestration/bounded-execution-orchestrator.js": {
-      "status": "INTENTIONALLY_DORMANT",
-      "owner": "decision-plane",
-      "reason": "Bounded orchestration library now connects policy evaluation, canonical action validation, action-plan validation, deterministic impact preflight and the signed final execution boundary, but it has no production entrypoint and performs no privileged side effect."
-    },
-    "decision-plane/policy/owner-access.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "decision-plane",
-      "reason": "OWNER authorization contract is a reusable policy library validated by CI; production identity binding must occur through a trusted server-side IdP/backend before runtime use."
-    },
-    "decision-plane/policy/owner-device-verifier.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "decision-plane",
-      "reason": "OWNER device challenge verifier is a fail-closed cryptographic policy library validated by CI; production use still requires a trusted device registry, durable anti-replay store, attestation verifier and identity backend."
-    },
-    "decision-plane/policy/owner-recovery.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "decision-plane",
-      "reason": "OWNER lost-device recovery policy is validated by CI but requires a trusted production identity backend, device registry, revocation store and secret-management system before runtime use."
-    },
-    "decision-plane/policy/proof-trust-config.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "decision-plane",
-      "reason": "Fail-closed proof-trust configuration builder validates issuer inventories, Ed25519 verification keys and revocation metadata, but it is not wired to a production runtime entrypoint and provisions no real production keys or signing material."
-    },
-    "osint-intelligence/foreign-influence/registry-intelligence.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "osint-intelligence",
-      "reason": "Normalizes unverified public registry observations with HTTPS provenance and record-scoped graph edges; no source is elevated to a declared fact until a separate trusted verification boundary exists, and no automatic interference or hostile attribution is performed."
-    },
-    "osint-intelligence/orchestration/campaign-analysis.js": {
-      "status": "INTENTIONALLY_DORMANT",
-      "owner": "osint-intelligence",
-      "reason": "Bounded analyst-review orchestration connects propagation graph construction to candidate campaign correlation for observed public/authorized events; it performs no attribution or external side effect and has no production entrypoint."
-    },
-    "scripts/check-legal-readiness.js": {
-      "status": "CI_TOOLING",
-      "owner": "security",
-      "reason": "Fail-closed release-readiness validator for externally supplied verified legal publisher metadata; it is invoked as tooling and is intentionally not imported by the production runtime."
-    },
-    "security-digital-twin/orchestration/evidence-view.js": {
-      "status": "INTENTIONALLY_DORMANT",
-      "owner": "security-digital-twin",
-      "reason": "Bounded orchestration connects immutable digital-twin records to the evidence graph and trace view with hard resource limits; it performs no discovery, attribution, enforcement, remediation, or external side effect and has no production entrypoint."
-    },
-    "security/foreign-interference/evidence-core.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Fail-closed foreign-interference evidence and attribution-governance library validated by CI; it has no production collection or enforcement entrypoint and autonomous attribution/sanction remain prohibited by invariant."
-    },
-    "security/phone-intelligence/call-rule-publication.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Bounded P-256 call-reputation package publisher/verifier matches the Android offline trust contract, but production signing keys, authorized sources, scheduling, durable sequence allocation and publication storage are not provisioned."
-    },
-    "security/phone-intelligence/moderation-core.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Bounded reference moderation, appeal, rate-limit and anti-abuse library defines service contracts for testing; it has no deployed backend, durable shared storage or production identity binding."
-    },
-    "security/phone-intelligence/postgres-moderation-store.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Fail-closed PostgreSQL persistence adapter uses parameterized atomic state-and-audit statements, but requires an injected production database executor, deployment-specific least-privilege roles and a real PostgreSQL integration run before operational use."
-    },
-    "security/phone-intelligence/redis-rate-limiter.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Atomic Redis Lua rate-limit adapter enforces global, pseudonymized-IP, user and sensitive-endpoint windows with Redis server time, but requires an injected production Redis executor, authenticated identity binding and a real concurrent integration run before operational use."
-    },
-    "security/soc/redis-replay-guard.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Atomic Redis SET NX PX replay-guard adapter is validated with an injected executor and hashed environment-scoped keys, but no production Redis client, credential, deployment binding or live Upstash integration is provisioned by this repository."
-    },
-    "security/threat-intelligence/daily-brief.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Bounded daily threat brief library consolidates supplied observations, extracts public indicators and accepts an optional limited LLM summary; no production RSS collector, scheduler, delivery channel or autonomous action is connected."
-    },
-    "security/threat-intelligence/malwarebazaar-adapter.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Bounded MalwareBazaar Community API metadata adapter supports authenticated get_info hash lookups only; no production Auth-Key is provisioned, redirects and oversized responses fail closed, and malware sample download, actor attribution, blocking, remediation, and enforcement remain disabled."
-    },
-    "security/threat-intelligence/query-gate.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Bounded in-memory threat-intelligence query gate provides per-source minimum intervals, identical-request coalescing and TTL caching with bounded capacity; it activates no feed by itself and has no scheduler, persistence or production secret integration."
-    },
-    "security/threat-intelligence/virusshare-adapter.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Bounded VirusShare API v2 metadata adapter uses file-report lookups only; no production API key is provisioned, the download endpoint is excluded, and sample retrieval, actor attribution, blocking, remediation, and enforcement remain disabled."
-    },
-    "vite.config.js": {
-      "status": "TOOLING_ENTRYPOINT",
-      "owner": "frontend",
-      "reason": "Vite consumes this configuration implicitly; it is an external-tool entrypoint rather than an imported application module."
-    },
-    "network/mesh/x509-svid-test-fixtures.js": {
-      "status": "CI_TOOLING",
-      "owner": "network-security",
-      "reason": "Static X.509 certificate fixtures are imported only by Mesh SPIFFE/SVID tests to exercise cryptographic trust, expiry and SAN edge cases; they are not production runtime modules or secret material."
-    },
-    "network/mesh/x509-crl-test-fixtures.js": {
-      "status": "CI_TOOLING",
-      "owner": "network-security",
-      "reason": "Static X.509 CRL and certificate fixtures are imported only by Mesh SPIFFE CRL/SVID tests to exercise revocation, signature and validity edge cases; they are not production runtime modules or secret material."
-    },
-    "network/mesh/x509-svid-chain-test-fixtures.js": {
-      "status": "CI_TOOLING",
-      "owner": "network-security",
-      "reason": "Static X.509 root, intermediate and leaf certificates are imported only by Mesh SPIFFE chain-validation tests; they contain no private keys and are not production trust material."
-    },
-    "network/mesh/x509-svid-intermediate-crl-test-fixtures.js": {
-      "status": "CI_TOOLING",
-      "owner": "network-security",
-      "reason": "Static X.509 root, intermediate, leaf and intermediate-issued CRL fixtures are used only to test issuer-aware SPIFFE revocation; no private keys or production trust material are stored."
-    },
-    "network/mesh/x509-svid-leaf-policy-test-fixtures.js": {
-      "status": "CI_TOOLING",
-      "owner": "network-security",
-      "reason": "Static X.509 certificates exercise negative SPIFFE leaf key-usage and EKU validation cases; no private keys or production trust material are stored."
-    },
-    "network/mesh/x509-crl-unsupported-test-fixtures.js": {
-      "status": "CI_TOOLING",
-      "owner": "network-security",
-      "reason": "Static signed X.509 CRLs exercise explicit rejection of unsupported delta and issuing-distribution-point semantics; no private keys or production trust material are stored."
-    },
-    "network/mesh/x509-crl-rsa-pss-test-fixtures.js": {
-      "status": "CI_TOOLING",
-      "owner": "network-security",
-      "reason": "Static X.509 CA certificate and RSA-PSS SHA-256 CRL fixture validate bounded PSS verification; no private keys or production trust material are stored."
-    },
-    "ops/vpn-gateway/provisioning-server.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Bounded HTTP service wrapper for the Sentinel VPN provisioning core. It enforces JSON size/content type, no-store responses, separate client/admin bearer authentication and strict request schemas, but is not yet bound to a production listener, TLS termination, durable store, rate limiter or deployed gateway runtime."
-    },
-    "ops/vpn-gateway/gateway-acceptance.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Fail-closed VPN gateway acceptance library evaluates externally supplied operational evidence and can only return AVAILABLE when all required checks are present, fresh, successful and country-consistent. It does not collect evidence, mutate the signed catalog or deploy infrastructure by itself."
-    },
-    "ops/vpn-gateway/catalog-publication.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "P-256/SHA-256 publisher for the Android Sentinel VPN gateway catalog format. It requires externally injected signing material and refuses AVAILABLE records without a matching positive gateway-acceptance result. Production signing key custody, durable sequence allocation, publication storage and deployed endpoint remain external."
-    },
-    "ops/vpn-gateway/provisioning-runtime-config.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Pure fail-closed parser for bounded VPN provisioning runtime configuration. It opens no socket, executes no WireGuard command, performs no network activity, and has no production entrypoint."
-    },
-    "ops/vpn-gateway/trusted-state-restore.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Fail-closed lease state coordinator tested with an independently injected monotonic authority. A PostgreSQL authority adapter and schema now exist, but no production executor, independent database, exclusive gateway writer, credential custody or runtime wiring has been provisioned or verified."
-    },
-    "ops/vpn-gateway/trusted-state-persist.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "network-security",
-      "reason": "Fail-closed lease state coordinator tested with an independently injected monotonic authority. A PostgreSQL authority adapter and schema now exist, but no production executor, independent database, exclusive gateway writer, credential custody or runtime wiring has been provisioned or verified."
-    },
-    "security/phone-intelligence/fsma-warning-adapter.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Bounded FSMA Belgium regulatory-warning CSV adapter normalizes official public warning metadata and domains for advisory intelligence only; it has no production scheduler, fetch entrypoint, Android wiring, automatic blocking, or enforcement, and remains dormant until a reviewed ingestion/publication path is connected."
-    },
-    "decision-plane/policy/soc-automation-policy.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "decision-plane",
-      "reason": "Fail-closed SOC policy library is test-covered but has no production entrypoint; it evaluates bounded eligibility, forbids offensive actions, requires human controls for high-impact hand-off, and performs no side effect."
-    },
-    "security/soc/passive-pipeline.js": {
-      "status": "DORMANT_LIBRARY",
-      "owner": "security",
-      "reason": "Fail-closed passive SOC normalization and deduplication library is test-covered but has no production entrypoint; it requires injected trust and replay protection and never requests a privileged action."
-    }
+    "ai-governance/orchestration/audited-model-evaluation.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded governance orchestration connects exact model evaluation/approval to the canonical tamper-evident audit chain; it performs no model invocation, registry mutation, deployment, promotion, or external persistence and has no production entrypoint."},
+    "ai-governance/orchestration/trusted-model-selection.js": {"status":"INTENTIONALLY_DORMANT","owner":"ai-governance","reason":"Bounded selection orchestration connects explicit trust assessment to canonical model routing while preserving approval, evaluation, data-class and locality gates; it invokes no model and has no production entrypoint."},
+    "ai-governance/red-team/red-team-suite.js": {"status":"CI_TOOLING","owner":"ai-governance","reason":"Adversarial validation component intended for assurance/testing rather than production runtime execution."},
+    "config/logging.js": {"status":"DORMANT_LIBRARY","owner":"platform","reason":"Logging configuration exists as a reusable utility but is not currently imported by production modules."},
+    "decision-plane/action-verification/postgres-replay-guard.js": {"status":"INTENTIONALLY_DORMANT","owner":"decision-plane","reason":"Replay guard is validated, including PostgreSQL integration, but is not enabled in an autonomous privileged runtime."},
+    "decision-plane/orchestration/bounded-execution-orchestrator.js": {"status":"INTENTIONALLY_DORMANT","owner":"decision-plane","reason":"Bounded orchestration library now connects policy evaluation, canonical action validation, action-plan validation, deterministic impact preflight and the signed final execution boundary, but it has no production entrypoint and performs no privileged side effect."},
+    "decision-plane/policy/owner-access.js": {"status":"DORMANT_LIBRARY","owner":"decision-plane","reason":"OWNER authorization contract is a reusable policy library validated by CI; production identity binding must occur through a trusted server-side IdP/backend before runtime use."},
+    "decision-plane/policy/owner-device-verifier.js": {"status":"DORMANT_LIBRARY","owner":"decision-plane","reason":"OWNER device challenge verifier is a fail-closed cryptographic policy library validated by CI; production use still requires a trusted device registry, durable anti-replay store, attestation verifier and identity backend."},
+    "decision-plane/policy/owner-recovery.js": {"status":"DORMANT_LIBRARY","owner":"decision-plane","reason":"OWNER lost-device recovery policy is validated by CI but requires a trusted production identity backend, device registry, revocation store and secret-management system before runtime use."},
+    "decision-plane/policy/proof-trust-config.js": {"status":"DORMANT_LIBRARY","owner":"decision-plane","reason":"Fail-closed proof-trust configuration builder validates issuer inventories, Ed25519 verification keys and revocation metadata, but it is not wired to a production runtime entrypoint and provisions no real production keys or signing material."},
+    "osint-intelligence/foreign-influence/registry-intelligence.js": {"status":"DORMANT_LIBRARY","owner":"osint-intelligence","reason":"Normalizes unverified public registry observations with HTTPS provenance and record-scoped graph edges; no source is elevated to a declared fact until a separate trusted verification boundary exists, and no automatic interference or hostile attribution is performed."},
+    "osint-intelligence/orchestration/campaign-analysis.js": {"status":"INTENTIONALLY_DORMANT","owner":"osint-intelligence","reason":"Bounded analyst-review orchestration connects propagation graph construction to candidate campaign correlation for observed public/authorized events; it performs no attribution or external side effect and has no production entrypoint."},
+    "scripts/check-legal-readiness.js": {"status":"CI_TOOLING","owner":"security","reason":"Fail-closed release-readiness validator for externally supplied verified legal publisher metadata; it is invoked as tooling and is intentionally not imported by the production runtime."},
+    "security-digital-twin/orchestration/evidence-view.js": {"status":"INTENTIONALLY_DORMANT","owner":"security-digital-twin","reason":"Bounded orchestration connects immutable digital-twin records to the evidence graph and trace view with hard resource limits; it performs no discovery, attribution, enforcement, remediation, or external side effect and has no production entrypoint."},
+    "security/foreign-interference/evidence-core.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Fail-closed foreign-interference evidence and attribution-governance library validated by CI; it has no production collection or enforcement entrypoint and autonomous attribution/sanction remain prohibited by invariant."},
+    "security/phone-intelligence/call-rule-publication.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Bounded P-256 call-reputation package publisher/verifier matches the Android offline trust contract, but production signing keys, authorized sources, scheduling, durable sequence allocation and publication storage are not provisioned."},
+    "security/phone-intelligence/moderation-core.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Bounded reference moderation, appeal, rate-limit and anti-abuse library defines service contracts for testing; it has no deployed backend, durable shared storage or production identity binding."},
+    "security/phone-intelligence/postgres-moderation-store.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Fail-closed PostgreSQL persistence adapter uses parameterized atomic state-and-audit statements, but requires an injected production database executor, deployment-specific least-privilege roles and a real PostgreSQL integration run before operational use."},
+    "security/phone-intelligence/redis-rate-limiter.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Atomic Redis Lua rate-limit adapter enforces global, pseudonymized-IP, user and sensitive-endpoint windows with Redis server time, but requires an injected production Redis executor, authenticated identity binding and a real concurrent integration run before operational use."},
+    "security/soc/redis-replay-guard.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Atomic Redis SET NX PX replay-guard adapter is validated with an injected executor and hashed environment-scoped keys, but no production Redis client, credential, deployment binding or live Upstash integration is provisioned by this repository."},
+    "security/threat-intelligence/daily-brief.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Bounded daily threat brief library consolidates supplied observations, extracts public indicators and accepts an optional limited LLM summary; no production RSS collector, scheduler, delivery channel or autonomous action is connected."},
+    "security/threat-intelligence/malwarebazaar-adapter.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Bounded MalwareBazaar Community API metadata adapter supports authenticated get_info hash lookups only; no production Auth-Key is provisioned, redirects and oversized responses fail closed, and malware sample download, actor attribution, blocking, remediation, and enforcement remain disabled."},
+    "security/threat-intelligence/query-gate.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Bounded in-memory threat-intelligence query gate provides per-source minimum intervals, identical-request coalescing and TTL caching with bounded capacity; it activates no feed by itself and has no scheduler, persistence or production secret integration."},
+    "security/threat-intelligence/virusshare-adapter.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Bounded VirusShare API v2 metadata adapter uses file-report lookups only; no production API key is provisioned, the download endpoint is excluded, and sample retrieval, actor attribution, blocking, remediation, and enforcement remain disabled."},
+    "vite.config.js": {"status":"TOOLING_ENTRYPOINT","owner":"frontend","reason":"Vite consumes this configuration implicitly; it is an external-tool entrypoint rather than an imported application module."},
+    "network/mesh/x509-svid-test-fixtures.js": {"status":"CI_TOOLING","owner":"network-security","reason":"Static X.509 certificate fixtures are imported only by Mesh SPIFFE/SVID tests to exercise cryptographic trust, expiry and SAN edge cases; they are not production runtime modules or secret material."},
+    "network/mesh/x509-crl-test-fixtures.js": {"status":"CI_TOOLING","owner":"network-security","reason":"Static X.509 CRL and certificate fixtures are imported only by Mesh SPIFFE CRL/SVID tests to exercise revocation, signature and validity edge cases; they are not production runtime modules or secret material."},
+    "network/mesh/x509-svid-chain-test-fixtures.js": {"status":"CI_TOOLING","owner":"network-security","reason":"Static X.509 root, intermediate and leaf certificates are imported only by Mesh SPIFFE chain-validation tests; they contain no private keys and are not production trust material."},
+    "network/mesh/x509-svid-intermediate-crl-test-fixtures.js": {"status":"CI_TOOLING","owner":"network-security","reason":"Static X.509 root, intermediate, leaf and intermediate-issued CRL fixtures are used only to test issuer-aware SPIFFE revocation; no private keys or production trust material are stored."},
+    "network/mesh/x509-svid-leaf-policy-test-fixtures.js": {"status":"CI_TOOLING","owner":"network-security","reason":"Static X.509 certificates exercise negative SPIFFE leaf key-usage and EKU validation cases; no private keys or production trust material are stored."},
+    "network/mesh/x509-crl-unsupported-test-fixtures.js": {"status":"CI_TOOLING","owner":"network-security","reason":"Static signed X.509 CRLs exercise explicit rejection of unsupported delta and issuing-distribution-point semantics; no private keys or production trust material are stored."},
+    "network/mesh/x509-crl-rsa-pss-test-fixtures.js": {"status":"CI_TOOLING","owner":"network-security","reason":"Static X.509 CA certificate and RSA-PSS SHA-256 CRL fixture validate bounded PSS verification; no private keys or production trust material are stored."},
+    "ops/vpn-gateway/provisioning-server.js": {"status":"DORMANT_LIBRARY","owner":"network-security","reason":"Bounded HTTP service wrapper for the Sentinel VPN provisioning core. It enforces JSON size/content type, no-store responses, separate client/admin bearer authentication and strict request schemas, but is not yet bound to a production listener, TLS termination, durable store, rate limiter or deployed gateway runtime."},
+    "ops/vpn-gateway/gateway-acceptance.js": {"status":"DORMANT_LIBRARY","owner":"network-security","reason":"Fail-closed VPN gateway acceptance library evaluates externally supplied operational evidence and can only return AVAILABLE when all required checks are present, fresh, successful and country-consistent. It does not collect evidence, mutate the signed catalog or deploy infrastructure by itself."},
+    "ops/vpn-gateway/catalog-publication.js": {"status":"DORMANT_LIBRARY","owner":"network-security","reason":"P-256/SHA-256 publisher for the Android Sentinel VPN gateway catalog format. It requires externally injected signing material and refuses AVAILABLE records without a matching positive gateway-acceptance result. Production signing key custody, durable sequence allocation, publication storage and deployed endpoint remain external."},
+    "ops/vpn-gateway/provisioning-runtime-config.js": {"status":"DORMANT_LIBRARY","owner":"network-security","reason":"Pure fail-closed parser for bounded VPN provisioning runtime configuration. It opens no socket, executes no WireGuard command, performs no network activity, and has no production entrypoint."},
+    "ops/vpn-gateway/trusted-state-restore.js": {"status":"DORMANT_LIBRARY","owner":"network-security","reason":"Fail-closed lease state coordinator tested with an independently injected monotonic authority. A PostgreSQL authority adapter and schema now exist, but no production executor, independent database, exclusive gateway writer, credential custody or runtime wiring has been provisioned or verified."},
+    "security/phone-intelligence/fsma-warning-adapter.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Bounded FSMA Belgium regulatory-warning CSV adapter normalizes official public warning metadata and domains for advisory intelligence only; it has no production scheduler, fetch entrypoint, Android wiring, automatic blocking, or enforcement, and remains dormant until a reviewed ingestion/publication path is connected."},
+    "decision-plane/policy/soc-automation-policy.js": {"status":"DORMANT_LIBRARY","owner":"decision-plane","reason":"Fail-closed SOC policy library is test-covered but has no production entrypoint; it evaluates bounded eligibility, forbids offensive actions, requires human controls for high-impact hand-off, and performs no side effect."},
+    "security/soc/passive-pipeline.js": {"status":"DORMANT_LIBRARY","owner":"security","reason":"Fail-closed passive SOC normalization and deduplication library is test-covered but has no production entrypoint; it requires injected trust and replay protection and never requests a privileged action."}
   }
 }

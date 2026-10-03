@@ -58,7 +58,6 @@ test('concurrent consumers can consume a replay key only once', async () => {
   assert.equal(results.filter((result) => result.reason === 'REPLAY_DETECTED').length, 7);
 });
 
-
 import { randomUUID } from 'node:crypto';
 import { PostgresVpnLeaseSequenceAuthority } from '../../ops/vpn-gateway/lease-sequence-authority.js';
 
@@ -72,15 +71,27 @@ async function executeVpnSequence(query) {
     assert.match(query.values[2], /^[a-f0-9]{64}$/);
     values.push(`'${query.values[2]}'`);
   }
-  const { stdout } = await psql(`PREPARE vpn_sequence_query (${types}) AS ${query.text}; EXECUTE vpn_sequence_query (${values.join(',')});`, { tuplesOnly: true });
-  return { rows: stdout.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => { const [sequence, state_digest] = line.split("|"); return { sequence, state_digest }; }) };
+  const { stdout } = await psql(
+    `PREPARE vpn_sequence_query (${types}) AS ${query.text}; EXECUTE vpn_sequence_query (${values.join(',')});`,
+    { tuplesOnly: true },
+  );
+  return {
+    rows: stdout
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => {
+        const [sequence, state_digest, invalidated] = line.split('|');
+        return { sequence, state_digest, invalidated: invalidated === 't' };
+      }),
+  };
 }
 
 before(async () => {
   await psql(await readFile(new URL('../../ops/vpn-gateway/lease-sequence-schema.sql', import.meta.url), 'utf8'));
 });
 
-test('real PostgreSQL VPN authority survives adapter recreation and rejects rollback', async () => {
+test('real PostgreSQL VPN authority survives adapter recreation, invalidation and rollback attempts', async () => {
   const gateway = `test-${randomUUID()}`;
   try {
     const first = new PostgresVpnLeaseSequenceAuthority({ execute: executeVpnSequence });
@@ -95,6 +106,23 @@ test('real PostgreSQL VPN authority survives adapter recreation and rejects roll
     await assert.rejects(restarted.commitSequence(gateway, 6, "a".repeat(64)), /COMMIT_UNVERIFIED/);
     await assert.rejects(psql(`UPDATE sentinel_vpn_lease_sequences SET sequence = 6 WHERE gateway_id = '${gateway}'`), /ROLLBACK_REJECTED/);
     assert.equal(await restarted.readMinimumSequence(gateway), 7);
+
+    assert.equal(await restarted.invalidateSnapshot(gateway, 7, "a".repeat(64)), true);
+    assert.equal((await restarted.readCommit(gateway)).invalidated, true);
+    await assert.rejects(
+      restarted.assertCommittedSnapshot(gateway, 7, "a".repeat(64)),
+      /SNAPSHOT_UNCONFIRMED/
+    );
+    await assert.rejects(
+      restarted.commitSequence(gateway, 7, "a".repeat(64)),
+      /COMMIT_UNVERIFIED/
+    );
+    await assert.rejects(
+      psql(`UPDATE sentinel_vpn_lease_sequences SET invalidated = false WHERE gateway_id = '${gateway}'`),
+      /REVALIDATION_REJECTED/
+    );
+    assert.equal(await restarted.commitSequence(gateway, 8, "c".repeat(64)), 8);
+    assert.equal((await restarted.readCommit(gateway)).invalidated, false);
   } finally { await psql(`DELETE FROM sentinel_vpn_lease_sequences WHERE gateway_id = '${gateway}'`); }
 });
 
@@ -110,7 +138,6 @@ test('concurrent PostgreSQL VPN authority writers preserve the maximum committed
     assert.equal(await authority.readMinimumSequence(gateway), 9);
   } finally { await psql(`DELETE FROM sentinel_vpn_lease_sequences WHERE gateway_id = '${gateway}'`); }
 });
-
 
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
