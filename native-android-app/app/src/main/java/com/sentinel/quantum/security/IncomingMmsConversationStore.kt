@@ -89,7 +89,7 @@ internal class IncomingMmsConversationStore(context: Context) {
         }
 
         val selfAddresses = if (plan.toAddresses.size > 1 || plan.ccAddresses.isNotEmpty()) {
-            readSelfAddresses()
+            readSelfAddresses(plan.subscriptionId)
         } else {
             emptySet()
         }
@@ -431,35 +431,38 @@ internal class IncomingMmsConversationStore(context: Context) {
     }
 
     @Suppress("DEPRECATION")
-    private fun readSelfAddresses(): Set<String> = runCatching {
+    private fun readSelfAddresses(subscriptionId: Int): Set<String> = runCatching {
+        if (!SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
+            return@runCatching emptySet()
+        }
         val subscriptionManager = appContext.getSystemService(SubscriptionManager::class.java)
             ?: return@runCatching emptySet()
         val telephonyManager = appContext.getSystemService(TelephonyManager::class.java)
             ?: return@runCatching emptySet()
         val addresses = LinkedHashSet<String>()
 
-        subscriptionManager.activeSubscriptionInfoList.orEmpty().forEach { info ->
-            fun addCandidate(value: String?) {
-                value?.trim()?.takeIf { it.isNotEmpty() }?.let(addresses::add)
-            }
+        fun addCandidate(value: String?) {
+            value?.trim()?.takeIf { it.isNotEmpty() }?.let(addresses::add)
+        }
 
-            // Android 13+ can aggregate carrier/UICC/IMS phone-number sources. Some devices gate
-            // this API more strictly than the default-SMS role, so it remains a best-effort source
-            // and never widens the permission surface.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                runCatching {
-                    subscriptionManager.getPhoneNumber(info.subscriptionId)
-                }.getOrNull()?.let(::addCandidate)
-            }
-
-            // Default SMS apps are allowed to read these legacy sources on supported releases.
-            // Operators/OEMs frequently leave one source empty while another is populated, so all
-            // available values are retained and normalized before group-thread resolution.
-            runCatching { info.number }.getOrNull()?.let(::addCandidate)
+        // Identity must be scoped to the subscription that actually received this MMS. Aggregating
+        // every active SIM can remove another SIM's number from a real group conversation and
+        // silently collapse the thread.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             runCatching {
-                telephonyManager.createForSubscriptionId(info.subscriptionId).line1Number
+                subscriptionManager.getPhoneNumber(subscriptionId)
             }.getOrNull()?.let(::addCandidate)
         }
+
+        subscriptionManager.activeSubscriptionInfoList.orEmpty()
+            .firstOrNull { it.subscriptionId == subscriptionId }
+            ?.let { info ->
+                runCatching { info.number }.getOrNull()?.let(::addCandidate)
+            }
+
+        runCatching {
+            telephonyManager.createForSubscriptionId(subscriptionId).line1Number
+        }.getOrNull()?.let(::addCandidate)
 
         addresses
     }.getOrDefault(emptySet())
