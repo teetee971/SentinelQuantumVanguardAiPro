@@ -22,7 +22,7 @@ class OsintPublicationTimeTest {
     fun positiveTimestampUsesFormatter() {
         assertEquals(
             "2026-10-03 05:00",
-            OsintPublicationTime.format(Date(1_759_467_600_000L), formatter(), "UNKNOWN")
+            OsintPublicationTime.format(Date(1_791_003_600_000L), formatter(), "UNKNOWN")
         )
     }
 }
