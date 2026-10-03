@@ -17,4 +17,10 @@ class MmsSendPduStagerTest {
         assertEquals(11L * 1024L * 1024L, MmsSendPduStager.MAX_STAGED_PDU_BYTES)
         assertFalse(MmsSendPduStager.MAX_STAGED_PDU_BYTES >= 17L * 1024L * 1024L)
     }
+
+    @Test fun stagedPduRetentionIsBoundedToOneHour() {
+        assertEquals(60L * 60L * 1000L, MmsSendPduStager.STAGED_PDU_TTL_MS)
+        assertTrue(MmsSendPduStager.STAGED_PDU_TTL_MS > 0L)
+        assertFalse(MmsSendCleanupWorker.WORK_TAG.isBlank())
+    }
 }
