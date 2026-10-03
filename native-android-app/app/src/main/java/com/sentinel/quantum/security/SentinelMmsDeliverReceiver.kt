@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import android.telephony.SubscriptionManager
 import java.util.concurrent.Executors
 
 /**
@@ -114,7 +113,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         }
 
         val subscriptionId = MmsSubscriptionResolver.resolve(context, intent)
-        val prepared = if (SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
+        val prepared = if (MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) {
             IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
         } else {
             IncomingMmsProjectionPipeline.Result.Quarantined("PLAN:INVALID_SUBSCRIPTION")
