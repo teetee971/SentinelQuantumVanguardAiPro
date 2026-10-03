@@ -8,11 +8,12 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.ByteArrayInputStream
+import java.util.Date
 import java.util.concurrent.TimeUnit
 
 /**
- * @param cache optional local, bounded cache. When provided, a successful fetch is persisted
- * and can be read back via [loadCached] (e.g. when the app opens offline).
+ * @param cache optional local, bounded cache. When provided, a successful complete fetch is
+ * persisted and can be read back via [loadCached] (e.g. when the app opens offline).
  */
 class OsintRepository(private val cache: OsintFeedCache? = null) {
 
@@ -20,6 +21,7 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
         const val MAX_FEED_BYTES = 5 * 1024 * 1024
         const val MAX_FEED_ENTRIES = 500
         const val REQUEST_TIMEOUT_SECONDS = 20L
+        const val UNKNOWN_PUBLISHED_AT_MS = 0L
     }
 
     private val client = OkHttpClient.Builder()
@@ -85,7 +87,9 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
                             description = entry.description?.value ?: "",
                             link = entry.link ?: "",
                             source = source.displayName,
-                            pubDate = entry.publishedDate ?: java.util.Date(),
+                            // Missing publication time must never be promoted to "now". Epoch is
+                            // an explicit unknown sentinel; the UI renders it as "Date inconnue".
+                            pubDate = entry.publishedDate ?: Date(UNKNOWN_PUBLISHED_AT_MS),
                             category = entry.categories.firstOrNull()?.name ?: ""
                         )
                     }
@@ -103,11 +107,17 @@ class OsintRepository(private val cache: OsintFeedCache? = null) {
         FetchResult(items, results.count { it.succeeded }, results.size)
     }
 
+    /**
+     * Compatibility path for callers that only consume a list. A partial refresh is never
+     * returned as if it were a complete fresh snapshot. Callers needing partial visibility must
+     * use [fetchAllFeedsResult] and surface source coverage explicitly.
+     */
     suspend fun fetchAllFeeds(): List<OsintFeedItem> = withContext(Dispatchers.IO) {
         val result = fetchAllFeedsResult()
-        if (result.isComplete && result.items.isNotEmpty()) {
-            cache?.save(result.items)
+        if (!result.isComplete || result.items.isEmpty()) {
+            return@withContext emptyList()
         }
+        cache?.save(result.items)
         result.items
     }
 
