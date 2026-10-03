@@ -1,0 +1,53 @@
+name: Production Merge Gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-merge-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-merge-gate:
+    name: Production Merge Gate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Test production merge gate policy
+        run: node --test scripts/production-merge-gate.test.js
+
+      - name: Require exact-head production evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/production-merge-gate.js
+
+      - name: Record merge qualification boundary
+        if: success()
+        run: |
+          {
+            echo '## Production Merge Gate'
+            echo ''
+            echo "Exact PR head: ${{ github.event.pull_request.head.sha }}"
+            echo 'All workflow evidence required by the versioned path policy completed successfully for this exact head.'
+            echo 'This merge gate does not replace signed-release provenance, deployment evidence, operator/OEM physical validation, or commercial compliance evidence.'
+          } >> "$GITHUB_STEP_SUMMARY"
