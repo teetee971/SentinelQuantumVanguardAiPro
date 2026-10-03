@@ -518,7 +518,7 @@
     {
       "id": "vpn_sequence_authority",
       "surface": "Independent monotonic VPN lease sequence authority",
-      "implemented": false,
+      "implemented": true,
       "configured": false,
       "requires_deployment": true,
       "deployed": false,
@@ -529,13 +529,18 @@
       "release_signed": false,
       "customer_available": false,
       "blockers": [
-        "An independent monotonic authority service has not been implemented, configured or observed"
+        "Independent PostgreSQL deployment, restricted runtime credentials, exclusive gateway writer and rollback-safe backup policy are not provisioned or observed"
       ],
       "evidence": [
-        "ops/vpn-gateway/lease-sequence-authority.js"
+        "ops/vpn-gateway/lease-sequence-authority.js",
+        "ops/vpn-gateway/lease-sequence-schema.sql",
+        "docs/VPN_SEQUENCE_AUTHORITY.md"
       ],
       "source_scope": [
-        "ops/vpn-gateway/lease-sequence-authority.js"
+        "ops/vpn-gateway/lease-sequence-authority.js",
+        "ops/vpn-gateway/lease-sequence-schema.sql",
+        "ops/vpn-gateway/trusted-state-persist.js",
+        "ops/vpn-gateway/trusted-state-restore.js"
       ],
       "required_physical_criteria": [],
       "evidence_sha": null,

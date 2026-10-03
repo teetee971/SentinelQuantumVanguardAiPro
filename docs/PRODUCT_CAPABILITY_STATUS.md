@@ -19,7 +19,7 @@ This file is generated. Do not promote a capability by editing this document; up
 | Public signed Android release | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
 | SaaS customer identity and authorization | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
 | Voice signaling, token issuer and VoIP/PSTN gateway | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
-| Independent monotonic VPN lease sequence authority | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
+| Independent monotonic VPN lease sequence authority | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
 | Mesh control plane and relay runtime | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
 | Android public-source OSINT feeds | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
 
@@ -148,10 +148,12 @@ Evidence:
 
 ### Independent monotonic VPN lease sequence authority
 
-- An independent monotonic authority service has not been implemented, configured or observed
+- Independent PostgreSQL deployment, restricted runtime credentials, exclusive gateway writer and rollback-safe backup policy are not provisioned or observed
 
 Evidence:
 - `ops/vpn-gateway/lease-sequence-authority.js`
+- `ops/vpn-gateway/lease-sequence-schema.sql`
+- `docs/VPN_SEQUENCE_AUTHORITY.md`
 
 ### Mesh control plane and relay runtime
 

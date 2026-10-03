@@ -1,6 +1,7 @@
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
 import { VpnLeaseStateStore } from "./lease-state-store.js";
 import {
+  vpnLeaseSnapshotDigest,
   VpnLeaseSequenceAuthority,
   assertVpnLeaseSequenceAuthority,
   validateVpnLeaseSequenceBoundary,
@@ -25,6 +26,11 @@ export async function restoreVpnLeaseState({
 
   const snapshot = await stateStore.load({ minimumSequence });
   validateVpnLeaseSequenceBoundary({ gatewayId, sequence: snapshot.sequence });
+  if (snapshot.sequence !== minimumSequence ||
+      await sequenceAuthority.readMinimumSequence(gatewayId) !== snapshot.sequence) {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_RESTORE_UNCONFIRMED");
+  }
+  await sequenceAuthority.assertCommittedSnapshot(gatewayId, snapshot.sequence, vpnLeaseSnapshotDigest(snapshot.state));
   core.restoreState(snapshot.state);
 
   return Object.freeze({

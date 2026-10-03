@@ -20,7 +20,7 @@ object GeneratedProductCapabilities {
         "public_android_release" to State(true, false, null),
         "saas_identity" to State(false, false, null),
         "voice_call_infrastructure" to State(false, false, null),
-        "vpn_sequence_authority" to State(false, false, null),
+        "vpn_sequence_authority" to State(true, false, null),
         "mesh_runtime" to State(true, false, null),
         "osint_android_feeds" to State(true, false, null)
     )

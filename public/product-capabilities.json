@@ -135,8 +135,8 @@
     {
       "id": "vpn_sequence_authority",
       "surface": "Independent monotonic VPN lease sequence authority",
-      "status": "NOT_IMPLEMENTED",
-      "implemented": false,
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
       "evidence_at": null,

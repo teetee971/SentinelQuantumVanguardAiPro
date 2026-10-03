@@ -23,11 +23,15 @@ function core() {
 class RecordingAuthority extends VpnLeaseSequenceAuthority {
   commits = [];
   sequence = 0;
-  async commitSequence(gatewayId, sequence) {
+  async commitSequence(gatewayId, sequence, digest) {
+    this.digest = digest;
     this.commits.push({ gatewayId, sequence });
     this.sequence = sequence;
   }
   async readMinimumSequence() { return this.sequence; }
+  async assertCommittedSnapshot(_gateway, sequence, digest) {
+    assert.equal(sequence, this.sequence); assert.equal(digest, this.digest);
+  }
 }
 
 test("persists authenticated state before committing the external sequence", async () => {

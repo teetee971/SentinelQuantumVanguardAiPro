@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
 import { VpnLeaseStateStore } from "./lease-state-store.js";
-import { VpnLeaseSequenceAuthority } from "./lease-sequence-authority.js";
+import { VpnLeaseSequenceAuthority, vpnLeaseSnapshotDigest } from "./lease-sequence-authority.js";
 import { restoreVpnLeaseState } from "./trusted-state-restore.js";
 
 const TOKEN = "A".repeat(32);
@@ -30,7 +30,10 @@ function core() {
 }
 
 class FixedAuthority extends VpnLeaseSequenceAuthority {
-  constructor(sequence) { super(); this.sequence = sequence; }
+  constructor(sequence, state) { super(); this.sequence = sequence; this.digest = state ? vpnLeaseSnapshotDigest(state) : null; }
+  async assertCommittedSnapshot(_gateway, sequence, digest) {
+    assert.equal(sequence, this.sequence); assert.equal(digest, this.digest);
+  }
   async readMinimumSequence(gatewayId) {
     assert.equal(gatewayId, "fr-par-01");
     return this.sequence;
@@ -50,7 +53,7 @@ test("trusted restore accepts an authenticated snapshot at the external sequence
     const result = await restoreVpnLeaseState({
       core: target,
       stateStore: new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" }),
-      sequenceAuthority: new FixedAuthority(1),
+      sequenceAuthority: new FixedAuthority(1, source.exportState()),
     });
     assert.deepEqual(result, { gatewayId: "fr-par-01", sequence: 1, restored: true });
     assert.deepEqual(target.exportState(), source.exportState());
@@ -97,4 +100,20 @@ test("trusted restore fails closed with the unimplemented authority", async () =
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+
+test("trusted restore rejects an authenticated but uncommitted newer snapshot", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-vpn-uncommitted-"));
+  try {
+    const path = join(dir, "leases.json");
+    const store = new VpnLeaseStateStore({ path, secret: SECRET, gatewayId: "fr-par-01" });
+    await store.save(core().exportState());
+    await store.save(core().exportState());
+    const target = core();
+    const before = target.exportState();
+    await assert.rejects(restoreVpnLeaseState({ core: target, stateStore: store,
+      sequenceAuthority: new FixedAuthority(1) }), /RESTORE_UNCONFIRMED/);
+    assert.deepEqual(target.exportState(), before);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

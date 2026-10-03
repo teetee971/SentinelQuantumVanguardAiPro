@@ -21,7 +21,7 @@ The production trust configuration intentionally contains no issuer: no producti
 ## Operational blockers still requiring evidence or separate integration
 
 - Real device execution of all Phone Core scenarios; signed APK/AAB installation and publication evidence.
-- Provisioned Sentinel VPN gateway, durable sequence authority, and reviewed server-side WireGuard peer retirement. Client expiry does not prove server expiry enforcement or behavior after process death.
+- Provisioned Sentinel VPN gateway, independently deployed PostgreSQL sequence authority, and reviewed server-side WireGuard peer retirement. The PostgreSQL adapter is implemented and database-tested; provisioning and runtime wiring remain absent. Client expiry does not prove server expiry enforcement or behavior after process death.
 - Mesh direct WireGuard peer-policy deployment/revocation; relay authorization alone does not revoke a previously installed direct peer.
 - LiveKit/token issuer/VoIP-PSTN infrastructure and real transformed-call latency, echo, Bluetooth and reconnection validation.
 - Additional GeoIntel sources, SaaS identity/authorization, production moderation/publishing keys/storage/schedulers, full translated resources and device journeys.

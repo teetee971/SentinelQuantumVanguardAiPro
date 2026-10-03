@@ -42,3 +42,27 @@ test("sequence authority type boundary rejects duck-typed local substitutes", ()
     /VpnLeaseSequenceAuthority required/
   );
 });
+
+
+import { PostgresVpnLeaseSequenceAuthority } from "./lease-sequence-authority.js";
+test("PostgreSQL authority requires an executor and parameterizes all identities", async () => {
+  assert.throws(() => new PostgresVpnLeaseSequenceAuthority(), /EXECUTOR_REQUIRED/);
+  const queries = [];
+  const authority = new PostgresVpnLeaseSequenceAuthority({ execute: async query => {
+    queries.push(query); return { rows: [{ sequence: "7", state_digest: "a".repeat(64) }] };
+  }});
+  assert.equal(await authority.commitSequence("fr-par-01", 7, "a".repeat(64)), 7);
+  assert.equal(await authority.readMinimumSequence("fr-par-01"), 7);
+  assert.deepEqual(queries[0].values, ["fr-par-01", 7, "a".repeat(64)]);
+  assert.ok(!queries[0].text.includes("fr-par-01"));
+  await assert.rejects(authority.commitSequence("../bad", 7, "a".repeat(64)), /GATEWAY_INVALID/);
+  assert.equal(queries.length, 2);
+});
+test("PostgreSQL authority rejects missing, malformed or inconsistent confirmations", async () => {
+  for (const rows of [[], [{ sequence: "07" }], [{ sequence: "9007199254740992" }], [{ sequence: 6 }], [{ sequence: 7 }, { sequence: 7 }]]) {
+    const authority = new PostgresVpnLeaseSequenceAuthority({ execute: async () => ({ rows }) });
+    await assert.rejects(authority.commitSequence("fr-par-01", 7, "a".repeat(64)), /VPN_SEQUENCE_AUTHORITY_/);
+  }
+  const unavailable = new PostgresVpnLeaseSequenceAuthority({ execute: async () => { throw Error("private connection details"); } });
+  await assert.rejects(unavailable.readMinimumSequence("fr-par-01"), /^Error: VPN_SEQUENCE_AUTHORITY_STORE_UNAVAILABLE$/);
+});
