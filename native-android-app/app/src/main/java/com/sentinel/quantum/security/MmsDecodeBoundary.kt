@@ -1,15 +1,11 @@
 package com.sentinel.quantum.security
 
-import java.nio.ByteBuffer
-import java.nio.charset.CodingErrorAction
-
 /**
  * Pure, fail-closed boundary between untrusted MMS decoder output and any future renderer/provider.
  *
  * Payload bytes are never exposed unless metadata passes [MmsPartSafetyPolicy] and all aggregate
- * bounds remain valid. Content-ID/Content-Location are preserved as inert provider metadata so a
- * validated multipart/related SMIL presentation can keep its original references without Sentinel
- * interpreting or executing the SMIL document.
+ * bounds remain valid. Content-ID/Content-Location and supported charset metadata are preserved as
+ * inert provider metadata. SMIL is validated as text but never rendered or executed by Sentinel.
  */
 object MmsDecodeBoundary {
     data class DecodedPart(
@@ -17,7 +13,8 @@ object MmsDecodeBoundary {
         val fileName: String?,
         val payload: ByteArray,
         val contentId: String? = null,
-        val contentLocation: String? = null
+        val contentLocation: String? = null,
+        val charsetMibEnum: Int? = null
     )
 
     data class SafePart(
@@ -25,7 +22,8 @@ object MmsDecodeBoundary {
         val fileName: String?,
         val payload: ByteArray,
         val contentId: String? = null,
-        val contentLocation: String? = null
+        val contentLocation: String? = null,
+        val charsetMibEnum: Int? = null
     )
 
     sealed class Result {
@@ -49,7 +47,16 @@ object MmsDecodeBoundary {
             }
             val mime = part.mimeType?.trim()?.lowercase().orEmpty()
             if (mime.isEmpty()) return Result.Rejected("MISSING_MIME")
-            if (!contentMatchesMime(mime, part.payload)) return Result.Rejected("CONTENT_SIGNATURE_MISMATCH")
+            val isText = mime == "text/plain" || mime == "application/smil"
+            if (!isText && part.charsetMibEnum != null) {
+                return Result.Rejected("UNEXPECTED_CHARSET")
+            }
+            if (isText && MmsTextCharset.decode(part.payload, part.charsetMibEnum) == null) {
+                return Result.Rejected("TEXT_CHARSET_UNSUPPORTED")
+            }
+            if (!contentMatchesMime(mime, part.payload, part.charsetMibEnum)) {
+                return Result.Rejected("CONTENT_SIGNATURE_MISMATCH")
+            }
             val contentId = normalizeReference(part.contentId)
                 ?: if (part.contentId == null) null else return Result.Rejected("UNSAFE_CONTENT_ID")
             val contentLocation = normalizeReference(part.contentLocation)
@@ -59,35 +66,34 @@ object MmsDecodeBoundary {
                 fileName = part.fileName?.trim()?.takeIf { it.isNotEmpty() },
                 payload = part.payload.copyOf(),
                 contentId = contentId,
-                contentLocation = contentLocation
+                contentLocation = contentLocation,
+                charsetMibEnum = part.charsetMibEnum
             )
         }
         return Result.Accepted(safe)
     }
 
-    private fun contentMatchesMime(mime: String, bytes: ByteArray): Boolean = when (mime) {
-        "text/plain" -> bytes.none { it == 0.toByte() }
-        "application/smil" -> isBoundedSmil(bytes)
-        "image/jpeg" -> bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()
-        "image/png" -> bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
-        "image/gif" -> bytes.size >= 6 && (String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF87a" || String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF89a")
-        "image/webp" -> bytes.size >= 12 &&
-            String(bytes.copyOfRange(0, 4), Charsets.US_ASCII) == "RIFF" &&
-            String(bytes.copyOfRange(8, 12), Charsets.US_ASCII) == "WEBP"
-        else -> false
-    }
-
-    private fun isBoundedSmil(bytes: ByteArray): Boolean {
-        if (bytes.isEmpty() || bytes.size > MAX_SMIL_BYTES || bytes.any { it == 0.toByte() }) return false
-        val text = runCatching {
-            Charsets.UTF_8.newDecoder()
-                .onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT)
-                .decode(ByteBuffer.wrap(bytes))
-                .toString()
-        }.getOrNull() ?: return false
-        return text.indexOf("<smil", ignoreCase = true) >= 0
-    }
+    private fun contentMatchesMime(mime: String, bytes: ByteArray, charsetMibEnum: Int?): Boolean =
+        when (mime) {
+            "text/plain" -> MmsTextCharset.decode(bytes, charsetMibEnum) != null
+            "application/smil" -> {
+                val decoded = MmsTextCharset.decode(bytes, charsetMibEnum) ?: return false
+                bytes.size <= MAX_SMIL_BYTES && decoded.text.indexOf("<smil", ignoreCase = true) >= 0
+            }
+            "image/jpeg" -> bytes.size >= 3 &&
+                bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()
+            "image/png" -> bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(
+                byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+            )
+            "image/gif" -> bytes.size >= 6 && (
+                String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF87a" ||
+                    String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF89a"
+                )
+            "image/webp" -> bytes.size >= 12 &&
+                String(bytes.copyOfRange(0, 4), Charsets.US_ASCII) == "RIFF" &&
+                String(bytes.copyOfRange(8, 12), Charsets.US_ASCII) == "WEBP"
+            else -> false
+        }
 
     private fun normalizeReference(value: String?): String? {
         if (value == null) return null
