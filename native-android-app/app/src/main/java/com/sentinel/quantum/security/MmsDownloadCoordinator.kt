@@ -23,7 +23,7 @@ object MmsDownloadCoordinator {
         val notification = MmsNotificationParser.parse(notificationPdu) ?: return Result.NotNotification
         if (!holdsSmsRole(context)) return Result.Rejected("SMS_ROLE_NOT_HELD")
 
-        val subscriptionId = MmsSubscriptionResolver.resolve(sourceIntent)
+        val subscriptionId = MmsSubscriptionResolver.resolve(context, sourceIntent)
         if (!SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
             return Result.Rejected("MMS_SUBSCRIPTION_REQUIRED")
         }
