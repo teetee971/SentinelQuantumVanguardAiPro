@@ -32,7 +32,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID,
             android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID
         )
-        if (!android.telephony.SubscriptionManager.isValidSubscriptionId(subscriptionId)) return
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) return
 
         val deliveredResultCode = resultCode
         val pendingResult = goAsync()
@@ -81,7 +81,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             fileName != "$token.pdu" ||
             !MmsDownloadCoordinator.isValidStagedFileName(fileName)
         ) return
-        if (!android.telephony.SubscriptionManager.isValidSubscriptionId(subscriptionId)) return
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) return
 
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return
         val directory = java.io.File(canonicalCache, MmsDownloadCoordinator.DOWNLOAD_DIRECTORY)
