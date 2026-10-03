@@ -7,6 +7,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import com.sentinel.quantum.BuildConfig
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
@@ -48,9 +49,11 @@ class CallerReputationClient(
         requireEgressAllowed(privacyMode, explicitConsent)
         val normalized = CallRuleEngine.normalizeNumber(callerNumber)
             ?: throw IllegalArgumentException("Invalid caller number")
+        val country = normalizeRecipientCountry(recipientCountry)
+            ?: throw IllegalArgumentException("Invalid recipient country")
         val body = JSONObject()
             .put("caller_number", normalized)
-            .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
+            .put("recipient_country", country)
             .put("ring_duration_ms", JSONObject.NULL)
             .put("verification_status", verificationStatus.take(64))
             .toString()
@@ -71,6 +74,11 @@ class CallerReputationClient(
     }
 
     companion object {
+        internal fun normalizeRecipientCountry(raw: String): String? =
+            raw.trim()
+                .uppercase(Locale.ROOT)
+                .takeIf { it.matches(Regex("^[A-Z]{2}$")) }
+
         internal fun requireEgressAllowed(
             mode: PhonePrivacyFirewall.Mode,
             explicitConsent: Boolean
