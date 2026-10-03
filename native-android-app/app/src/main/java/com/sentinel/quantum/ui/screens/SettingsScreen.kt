@@ -37,6 +37,9 @@ import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +72,7 @@ fun SettingsScreen(
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
     var externalLinkStatus by remember { mutableStateOf<String?>(null) }
+    val ioScope = rememberCoroutineScope()
 
     fun openExternalPage(url: String) {
         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
@@ -90,25 +94,29 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
-            val snapshot = SentinelPreferencesBackup.Snapshot(
-                themeMode = themeMode,
-                protectionMode = settingsStore.protectionMode,
-                familySafetyProfile = settingsStore.familySafetyProfile,
-                callerReputationEnrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled,
-                osintRefreshIntervalHours = settingsStore.osintRefreshIntervalHours,
-                osintNotificationsEnabled = settingsStore.osintNotificationsEnabled,
-                smsNotificationPreviewEnabled = settingsStore.smsNotificationPreviewEnabled,
-                blockedPrefixes = blocklistStore.snapshot().blockedPrefixes.sorted()
-            )
-            backupStatus = runCatching {
-                val output = context.contentResolver.openOutputStream(uri, "wt")
-                    ?: error("BACKUP_OUTPUT_UNAVAILABLE")
-                output.bufferedWriter(Charsets.UTF_8).use {
-                    it.write(SentinelPreferencesBackup.encode(snapshot))
+            ioScope.launch {
+                backupStatus = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val snapshot = SentinelPreferencesBackup.Snapshot(
+                            themeMode = themeMode,
+                            protectionMode = settingsStore.protectionMode,
+                            familySafetyProfile = settingsStore.familySafetyProfile,
+                            callerReputationEnrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled,
+                            osintRefreshIntervalHours = settingsStore.osintRefreshIntervalHours,
+                            osintNotificationsEnabled = settingsStore.osintNotificationsEnabled,
+                            smsNotificationPreviewEnabled = settingsStore.smsNotificationPreviewEnabled,
+                            blockedPrefixes = blocklistStore.snapshot().blockedPrefixes.sorted()
+                        )
+                        val output = context.contentResolver.openOutputStream(uri, "wt")
+                            ?: error("BACKUP_OUTPUT_UNAVAILABLE")
+                        output.bufferedWriter(Charsets.UTF_8).use {
+                            it.write(SentinelPreferencesBackup.encode(snapshot))
+                        }
+                        "Sauvegarde locale exportée."
+                    }.getOrElse {
+                        "Échec de l’export de la sauvegarde locale."
+                    }
                 }
-                "Sauvegarde locale exportée."
-            }.getOrElse {
-                "Échec de l’export de la sauvegarde locale."
             }
         }
     }
@@ -116,61 +124,68 @@ fun SettingsScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
-            backupStatus = runCatching {
-                val input = context.contentResolver.openInputStream(uri)
-                    ?: error("BACKUP_INPUT_UNAVAILABLE")
-                val raw = input.bufferedReader(Charsets.UTF_8).use { reader ->
-                    readBoundedBackupText(reader)
-                }
-                val restored = SentinelPreferencesBackup.decode(raw)
-                    ?: error("BACKUP_INVALID")
-                val previousPrefixes = blocklistStore.snapshot().blockedPrefixes
-                if (!blocklistStore.replaceBlockedPrefixes(restored.blockedPrefixes)) {
-                    error("PREFIX_RESTORE_FAILED")
-                }
-                val settingsCommitted = settingsStore.applyRestorablePreferences(
-                    SettingsStore.RestorablePreferences(
-                        themeMode = restored.themeMode,
-                        protectionMode = restored.protectionMode,
-                        familySafetyProfile = restored.familySafetyProfile,
-                        callerReputationEnrichmentEnabled =
-                            restored.callerReputationEnrichmentEnabled,
-                        osintRefreshIntervalHours = restored.osintRefreshIntervalHours,
-                        osintNotificationsEnabled = restored.osintNotificationsEnabled,
-                        smsNotificationPreviewEnabled = restored.smsNotificationPreviewEnabled
-                    )
-                )
-                if (!settingsCommitted) {
-                    val prefixesRolledBack =
-                        blocklistStore.replaceBlockedPrefixes(previousPrefixes)
-                    if (!prefixesRolledBack) {
-                        error("SETTINGS_RESTORE_FAILED_PREFIX_ROLLBACK_FAILED")
+            ioScope.launch {
+                val (restored, message) = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val input = context.contentResolver.openInputStream(uri)
+                            ?: error("BACKUP_INPUT_UNAVAILABLE")
+                        val raw = input.bufferedReader(Charsets.UTF_8).use { reader ->
+                            readBoundedBackupText(reader)
+                        }
+                        val decoded = SentinelPreferencesBackup.decode(raw)
+                            ?: error("BACKUP_INVALID")
+                        val previousPrefixes = blocklistStore.snapshot().blockedPrefixes
+                        if (!blocklistStore.replaceBlockedPrefixes(decoded.blockedPrefixes)) {
+                            error("PREFIX_RESTORE_FAILED")
+                        }
+                        val settingsCommitted = settingsStore.applyRestorablePreferences(
+                            SettingsStore.RestorablePreferences(
+                                themeMode = decoded.themeMode,
+                                protectionMode = decoded.protectionMode,
+                                familySafetyProfile = decoded.familySafetyProfile,
+                                callerReputationEnrichmentEnabled =
+                                    decoded.callerReputationEnrichmentEnabled,
+                                osintRefreshIntervalHours = decoded.osintRefreshIntervalHours,
+                                osintNotificationsEnabled = decoded.osintNotificationsEnabled,
+                                smsNotificationPreviewEnabled = decoded.smsNotificationPreviewEnabled
+                            )
+                        )
+                        if (!settingsCommitted) {
+                            val prefixesRolledBack =
+                                blocklistStore.replaceBlockedPrefixes(previousPrefixes)
+                            if (!prefixesRolledBack) {
+                                error("SETTINGS_RESTORE_FAILED_PREFIX_ROLLBACK_FAILED")
+                            }
+                            error("SETTINGS_RESTORE_FAILED")
+                        }
+                        val schedulingFailed = runCatching {
+                            WorkScheduler.schedule(context, decoded.osintRefreshIntervalHours)
+                        }.isFailure
+                        decoded to if (schedulingFailed) {
+                            "Sauvegarde restaurée, mais la planification de veille devra être resynchronisée au prochain démarrage."
+                        } else {
+                            "Sauvegarde restaurée. Les numéros exacts bloqués ne sont pas importés car leur protection cryptographique est liée à l’appareil."
+                        }
+                    }.getOrElse { failure ->
+                        null to if (failure.message == "SETTINGS_RESTORE_FAILED_PREFIX_ROLLBACK_FAILED") {
+                            "Restauration interrompue : vérifiez les règles de préfixe bloquées avant de continuer."
+                        } else {
+                            "Sauvegarde invalide, trop volumineuse ou impossible à restaurer."
+                        }
                     }
-                    error("SETTINGS_RESTORE_FAILED")
                 }
-                familySafetyProfile = restored.familySafetyProfile
-                onThemeModeChange(restored.themeMode)
-                intervalHours = restored.osintRefreshIntervalHours
-                notificationsEnabled = restored.osintNotificationsEnabled &&
-                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.POST_NOTIFICATIONS
-                        ) == PackageManager.PERMISSION_GRANTED)
-                val schedulingFailed = runCatching {
-                    WorkScheduler.schedule(context, restored.osintRefreshIntervalHours)
-                }.isFailure
-                if (schedulingFailed) {
-                    "Sauvegarde restaurée, mais la planification de veille devra être resynchronisée au prochain démarrage."
-                } else {
-                    "Sauvegarde restaurée. Les numéros exacts bloqués ne sont pas importés car leur protection cryptographique est liée à l’appareil."
+                if (restored != null) {
+                    familySafetyProfile = restored.familySafetyProfile
+                    onThemeModeChange(restored.themeMode)
+                    intervalHours = restored.osintRefreshIntervalHours
+                    notificationsEnabled = restored.osintNotificationsEnabled &&
+                        (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) == PackageManager.PERMISSION_GRANTED)
                 }
-            }.getOrElse { failure ->
-                if (failure.message == "SETTINGS_RESTORE_FAILED_PREFIX_ROLLBACK_FAILED") {
-                    "Restauration interrompue : vérifiez les règles de préfixe bloquées avant de continuer."
-                } else {
-                    "Sauvegarde invalide, trop volumineuse ou impossible à restaurer."
-                }
+                backupStatus = message
             }
         }
     }
@@ -395,8 +410,10 @@ fun SettingsScreen(
             )
             OutlinedButton(
                 onClick = {
-                    logger.clearLogs()
-                    statusMessageRes = R.string.settings_reset_logs_done
+                    ioScope.launch {
+                        withContext(Dispatchers.IO) { logger.clearLogs() }
+                        statusMessageRes = R.string.settings_reset_logs_done
+                    }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.settings_reset_logs)) }
