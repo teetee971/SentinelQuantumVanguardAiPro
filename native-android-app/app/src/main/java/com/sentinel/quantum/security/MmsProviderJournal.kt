@@ -33,22 +33,55 @@ internal class MmsProviderJournal(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    fun begin(token: String, transactionId: String, nowMs: Long = System.currentTimeMillis()): Boolean {
-        if (!validToken(token) || !validTransactionId(transactionId) || nowMs < 0L) return false
-        return write(Record(token, transactionId, null, Phase.BUILDING, nowMs))
-    }
+    fun begin(token: String, transactionId: String, nowMs: Long = System.currentTimeMillis()): Boolean =
+        synchronized(PROCESS_LOCK) {
+            if (!validToken(token) || !validTransactionId(transactionId) || nowMs < 0L) {
+                return@synchronized false
+            }
+            val recordKey = key(token)
+            if (preferences.contains(recordKey)) return@synchronized false
+            val recordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
+            if (recordCount >= MAX_RECORDS) return@synchronized false
+            writeUnsafe(Record(token, transactionId, null, Phase.BUILDING, nowMs))
+        }
 
     fun recordRoot(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
-        transition(token, providerMessageId, Phase.ROOT_INSERTED, nowMs)
+        transition(
+            token,
+            providerMessageId,
+            Phase.ROOT_INSERTED,
+            nowMs,
+            allowedFrom = setOf(Phase.BUILDING)
+        )
 
     fun markReady(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
-        transition(token, providerMessageId, Phase.READY, nowMs)
+        transition(
+            token,
+            providerMessageId,
+            Phase.READY,
+            nowMs,
+            allowedFrom = setOf(Phase.ROOT_INSERTED)
+        )
 
     fun markSubmitted(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
-        transition(token, providerMessageId, Phase.SUBMITTED, nowMs)
+        transition(
+            token,
+            providerMessageId,
+            Phase.SUBMITTED,
+            nowMs,
+            allowedFrom = setOf(Phase.READY),
+            terminalAlreadyWins = true
+        )
 
     fun markSubmissionUnknown(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
-        transition(token, providerMessageId, Phase.SUBMISSION_UNKNOWN, nowMs)
+        transition(
+            token,
+            providerMessageId,
+            Phase.SUBMISSION_UNKNOWN,
+            nowMs,
+            allowedFrom = setOf(Phase.READY, Phase.SUBMITTED),
+            terminalAlreadyWins = true
+        )
 
     fun markResult(
         token: String,
@@ -59,35 +92,54 @@ internal class MmsProviderJournal(context: Context) {
         token,
         providerMessageId,
         if (successful) Phase.RESULT_SENT else Phase.RESULT_FAILED,
-        nowMs
+        nowMs,
+        allowedFrom = setOf(Phase.READY, Phase.SUBMITTED, Phase.SUBMISSION_UNKNOWN)
     )
 
-    fun remove(token: String): Boolean =
+    fun remove(token: String): Boolean = synchronized(PROCESS_LOCK) {
         validToken(token) && preferences.edit().remove(key(token)).commit()
-
-    fun read(token: String): Record? = if (validToken(token)) decode(
-        token,
-        preferences.getString(key(token), null)
-    ) else null
-
-    fun all(): List<Record> = preferences.all.asSequence()
-        .filter { (name, value) -> name.startsWith(KEY_PREFIX) && value is String }
-        .mapNotNull { (name, value) ->
-            val token = name.removePrefix(KEY_PREFIX)
-            decode(token, value as String)
-        }
-        .sortedBy { it.updatedAtMs }
-        .take(MAX_RECORDS)
-        .toList()
-
-    private fun transition(token: String, providerMessageId: Long, phase: Phase, nowMs: Long): Boolean {
-        if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return false
-        val current = read(token) ?: return false
-        if (current.providerMessageId != null && current.providerMessageId != providerMessageId) return false
-        return write(current.copy(providerMessageId = providerMessageId, phase = phase, updatedAtMs = nowMs))
     }
 
-    private fun write(record: Record): Boolean {
+    fun read(token: String): Record? = synchronized(PROCESS_LOCK) {
+        readUnsafe(token)
+    }
+
+    fun all(): List<Record> = synchronized(PROCESS_LOCK) {
+        preferences.all.asSequence()
+            .filter { (name, value) -> name.startsWith(KEY_PREFIX) && value is String }
+            .mapNotNull { (name, value) ->
+                val token = name.removePrefix(KEY_PREFIX)
+                decode(token, value as String)
+            }
+            .sortedBy { it.updatedAtMs }
+            .take(MAX_RECORDS)
+            .toList()
+    }
+
+    private fun transition(
+        token: String,
+        providerMessageId: Long,
+        phase: Phase,
+        nowMs: Long,
+        allowedFrom: Set<Phase>,
+        terminalAlreadyWins: Boolean = false
+    ): Boolean = synchronized(PROCESS_LOCK) {
+        if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return@synchronized false
+        val current = readUnsafe(token) ?: return@synchronized false
+        if (current.providerMessageId != null && current.providerMessageId != providerMessageId) {
+            return@synchronized false
+        }
+        if (current.phase == phase) return@synchronized true
+        if (terminalAlreadyWins && current.phase in TERMINAL_PHASES) return@synchronized true
+        if (current.phase in TERMINAL_PHASES || current.phase !in allowedFrom) return@synchronized false
+        writeUnsafe(current.copy(providerMessageId = providerMessageId, phase = phase, updatedAtMs = nowMs))
+    }
+
+    private fun readUnsafe(token: String): Record? = if (validToken(token)) {
+        decode(token, preferences.getString(key(token), null))
+    } else null
+
+    private fun writeUnsafe(record: Record): Boolean {
         val encoded = JSONObject()
             .put("schema", SCHEMA_VERSION)
             .put("transaction", record.transactionId)
@@ -122,6 +174,8 @@ internal class MmsProviderJournal(context: Context) {
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 1024
         private const val MAX_RECORDS = 256
+        private val PROCESS_LOCK = Any()
+        private val TERMINAL_PHASES = setOf(Phase.RESULT_SENT, Phase.RESULT_FAILED)
         private val TOKEN = Regex(
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
         )
