@@ -4,9 +4,15 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { VpnGatewayProvisioningCore } from "./provisioning-core.js";
 import { VpnGatewayPeerRuntime } from "./peer-runtime.js";
 import { VpnLeaseStateStore } from "./lease-state-store.js";
+import {
+  VpnLeaseSequenceAuthority,
+  assertVpnLeaseSequenceAuthority,
+} from "./lease-sequence-authority.js";
+import { persistVpnLeaseState } from "./trusted-state-persist.js";
 
 const MAX_BODY_BYTES = 8 * 1024;
 const ADMIN_TOKEN = /^[A-Za-z0-9._~-]{32,2048}$/;
+const MAX_PERSIST_ATTEMPTS = 2;
 
 function json(status, body) {
   return {
@@ -36,6 +42,32 @@ function constantTimeTokenMatch(candidate, expectedDigest) {
     timingSafeEqual(digest, expectedDigest);
 }
 
+function validateLeasePersistenceConfiguration(stateStore, sequenceAuthority) {
+  if (stateStore !== null && !(stateStore instanceof VpnLeaseStateStore)) {
+    throw new TypeError("VpnLeaseStateStore invalid");
+  }
+  if (sequenceAuthority !== null && !(sequenceAuthority instanceof VpnLeaseSequenceAuthority)) {
+    throw new TypeError("VpnLeaseSequenceAuthority invalid");
+  }
+  if ((stateStore === null) !== (sequenceAuthority === null)) {
+    throw new TypeError("VPN_LEASE_PERSISTENCE_REQUIRES_STORE_AND_SEQUENCE_AUTHORITY");
+  }
+  if (sequenceAuthority !== null) assertVpnLeaseSequenceAuthority(sequenceAuthority);
+}
+
+async function persistCurrentLeaseState({ core, stateStore, sequenceAuthority }) {
+  if (stateStore === null) return null;
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_PERSIST_ATTEMPTS; attempt += 1) {
+    try {
+      return await persistVpnLeaseState({ core, stateStore, sequenceAuthority });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError ?? new Error("VPN_LEASE_STATE_PERSIST_FAILED");
+}
+
 export async function handleVpnProvisioningRequest({
   method,
   url,
@@ -45,6 +77,7 @@ export async function handleVpnProvisioningRequest({
   adminTokenDigest = null,
   peerRuntime = null,
   stateStore = null,
+  sequenceAuthority = null,
 }) {
   if (!(core instanceof VpnGatewayProvisioningCore)) {
     throw new TypeError("VpnGatewayProvisioningCore required");
@@ -52,9 +85,7 @@ export async function handleVpnProvisioningRequest({
   if (peerRuntime !== null && !(peerRuntime instanceof VpnGatewayPeerRuntime)) {
     throw new TypeError("VpnGatewayPeerRuntime invalid");
   }
-  if (stateStore !== null && !(stateStore instanceof VpnLeaseStateStore)) {
-    throw new TypeError("VpnLeaseStateStore invalid");
-  }
+  validateLeasePersistenceConfiguration(stateStore, sequenceAuthority);
   const parsed = new URL(url, "http://localhost");
 
   if (method === "GET" && parsed.pathname === "/health/live") {
@@ -102,12 +133,22 @@ export async function handleVpnProvisioningRequest({
       core.revoke(body.devicePublicKey);
       return json(503, { error: applied.reason });
     }
+
     if (stateStore) {
       try {
-        await stateStore.save(core.exportState());
+        await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
       } catch {
+        // The peer must not remain active if durable trusted state cannot be established.
         await peerRuntime.remove(body.devicePublicKey);
         core.revoke(body.devicePublicKey);
+        // Best-effort compensation records the revoked state under a later monotonic sequence.
+        // If the authority remains unavailable, exact-sequence restore will fail closed.
+        try {
+          await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
+        } catch {
+          // Deliberately ignored here: request already fails and restart cannot trust a sequence
+          // that does not exactly match the external authority.
+        }
         return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
       }
     }
@@ -131,7 +172,7 @@ export async function handleVpnProvisioningRequest({
     const revoked = core.revoke(body.devicePublicKey);
     if (revoked && stateStore) {
       try {
-        await stateStore.save(core.exportState());
+        await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
       } catch {
         return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
       }
@@ -179,6 +220,7 @@ export function createVpnProvisioningServer({
   adminToken = null,
   peerRuntime,
   stateStore = null,
+  sequenceAuthority = null,
 }) {
   if (!(core instanceof VpnGatewayProvisioningCore)) {
     throw new TypeError("VpnGatewayProvisioningCore required");
@@ -186,9 +228,7 @@ export function createVpnProvisioningServer({
   if (!(peerRuntime instanceof VpnGatewayPeerRuntime)) {
     throw new TypeError("VpnGatewayPeerRuntime required");
   }
-  if (stateStore !== null && !(stateStore instanceof VpnLeaseStateStore)) {
-    throw new TypeError("VpnLeaseStateStore invalid");
-  }
+  validateLeasePersistenceConfiguration(stateStore, sequenceAuthority);
   const adminTokenDigest = adminToken === null ? null : tokenDigest(adminToken);
   if (adminToken !== null && !adminTokenDigest) {
     throw new Error("VPN_PROVISIONING_ADMIN_TOKEN_INVALID");
@@ -207,6 +247,7 @@ export function createVpnProvisioningServer({
         adminTokenDigest,
         peerRuntime,
         stateStore,
+        sequenceAuthority,
       });
       res.writeHead(result.status, result.headers);
       res.end(JSON.stringify(result.body));
@@ -226,4 +267,6 @@ export function createVpnProvisioningServer({
 export const vpnProvisioningServerInternals = Object.freeze({
   tokenDigest,
   constantTimeTokenMatch,
+  validateLeasePersistenceConfiguration,
+  persistCurrentLeaseState,
 });
