@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SentinelMmsSender
+import com.sentinel.quantum.security.MmsAttachmentLoader
 import com.sentinel.quantum.security.MmsSendEligibilityPolicy
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsCallbackProgress
@@ -128,7 +129,10 @@ class SmsComposeActivity : ComponentActivity() {
         ).orEmpty()
         val initialBody = intent?.getStringExtra("sms_body")
             .orEmpty()
-            .take(SentinelSmsSender.MAX_BODY_CHARS)
+            .take(
+                if (initialMmsIntent) MmsSendEligibilityPolicy.MAX_TEXT_CHARS
+                else SentinelSmsSender.MAX_BODY_CHARS
+            )
         val openConversationsOnLaunch =
             intent?.getBooleanExtra(EXTRA_OPEN_CONVERSATIONS, false) == true ||
                 (
@@ -146,6 +150,10 @@ class SmsComposeActivity : ComponentActivity() {
                 val scrollState = rememberScrollState()
                 var destination by rememberSaveable { mutableStateOf(initialDestination) }
                 var body by rememberSaveable { mutableStateOf(initialBody) }
+                var mmsComposeMode by rememberSaveable { mutableStateOf(initialMmsIntent) }
+                var selectedMmsAttachments by remember {
+                    mutableStateOf(emptyList<MmsAttachmentLoader.LoadedAttachment>())
+                }
                 var status by remember { mutableStateOf<String?>(null) }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
@@ -210,6 +218,34 @@ class SmsComposeActivity : ComponentActivity() {
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val ioScope = rememberCoroutineScope()
+                val attachmentLoader = remember { MmsAttachmentLoader(applicationContext) }
+                val mmsAttachmentLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.GetMultipleContents()
+                ) { uris ->
+                    if (uris.isEmpty()) return@rememberLauncherForActivityResult
+                    ioScope.launch {
+                        when (val loaded = withContext(Dispatchers.IO) { attachmentLoader.load(uris) }) {
+                            is MmsAttachmentLoader.Result.Loaded -> {
+                                selectedMmsAttachments = loaded.attachments
+                                val total = loaded.attachments.sumOf { it.sizeBytes }
+                                status = "${loaded.attachments.size} image(s) prête(s) · $total octets"
+                            }
+                            is MmsAttachmentLoader.Result.Rejected -> {
+                                selectedMmsAttachments = emptyList()
+                                status = when (loaded.reason) {
+                                    "TOO_MANY_ATTACHMENTS" -> "Trop de pièces jointes sélectionnées."
+                                    "UNSUPPORTED_MIME_TYPE" -> "Type d’image non pris en charge."
+                                    "ATTACHMENT_FORMAT_MISMATCH" -> "Le contenu du fichier ne correspond pas au type d’image annoncé."
+                                    "ATTACHMENT_EMPTY" -> "Une image sélectionnée est vide."
+                                    "TOTAL_ATTACHMENT_SIZE_REJECTED" -> "La taille cumulée des images dépasse la limite MMS."
+                                    "ATTACHMENT_READ_FAILED" -> "Impossible de lire une image sélectionnée."
+                                    "ATTACHMENT_URI_REJECTED" -> "Source de pièce jointe refusée par sécurité."
+                                    else -> "Pièce jointe MMS refusée."
+                                }
+                            }
+                        }
+                    }
+                }
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
                 var mmsItems by remember { mutableStateOf(emptyList<MmsLocalInbox.Item>()) }
                 LaunchedEffect(mmsDirectory) {
@@ -266,13 +302,21 @@ class SmsComposeActivity : ComponentActivity() {
                         }
                     }
                 }
-                fun submitMms(recipient: String, message: String, onAccepted: () -> Unit) {
+                fun submitMms(
+                    recipient: String,
+                    message: String,
+                    attachments: List<MmsAttachmentLoader.LoadedAttachment>,
+                    onAccepted: () -> Unit
+                ) {
                     ioScope.launch {
                         val result = withContext(Dispatchers.IO) {
                             mmsSender.send(
                                 destination = recipient,
                                 text = message,
-                                requestedSubscriptionId = selectedSubscriptionId
+                                requestedSubscriptionId = selectedSubscriptionId,
+                                attachments = attachments.map {
+                                    SentinelMmsSender.Attachment(it.mimeType, it.payload)
+                                }
                             )
                         }
                         status = when (result.reason) {
@@ -297,7 +341,7 @@ class SmsComposeActivity : ComponentActivity() {
                             "INVALID_DESTINATION" ->
                                 "Numéro destinataire invalide."
                             "EMPTY_MMS" ->
-                                "Ajoutez un message avant l’envoi."
+                                "Ajoutez un message ou une image avant l’envoi."
                             "TEXT_TOO_LARGE" ->
                                 "Le texte du MMS dépasse la limite de sécurité."
                             "MMS_SUBMISSION_OUTCOME_UNKNOWN" ->
@@ -452,12 +496,33 @@ class SmsComposeActivity : ComponentActivity() {
                         }
                         if (showComposer) {
                             Text(
-                                if (initialMmsIntent) "Nouveau MMS" else "Nouveau SMS",
+                                if (mmsComposeMode) "Nouveau MMS" else "Nouveau SMS",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold
                             )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    selected = !mmsComposeMode,
+                                    onClick = {
+                                        if (!initialMmsIntent) {
+                                            mmsComposeMode = false
+                                            selectedMmsAttachments = emptyList()
+                                        }
+                                    },
+                                    enabled = !initialMmsIntent,
+                                    label = { Text("SMS") }
+                                )
+                                FilterChip(
+                                    selected = mmsComposeMode,
+                                    onClick = { mmsComposeMode = true },
+                                    label = { Text("MMS") }
+                                )
+                            }
                             Text(
-                                if (initialMmsIntent)
+                                if (mmsComposeMode)
                                     "MMS opérateur · PDU local borné · résultat réseau distinct de la soumission"
                                 else
                                     "Analyse locale · SMS opérateur sans chiffrement de bout en bout",
@@ -465,7 +530,7 @@ class SmsComposeActivity : ComponentActivity() {
                             )
                         }
 
-                        if (initialMmsIntent) {
+                        if (mmsComposeMode && showComposer) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = androidx.compose.material3.CardDefaults.cardColors(
@@ -482,7 +547,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Text(
-                                        "Sentinel compose un PDU borné puis le confie à la pile MMS Android sur la SIM sélectionnée. La prise en charge logicielle ne vaut pas preuve de livraison : la validation réelle appareil/opérateur reste obligatoire.",
+                                        "Sentinel compose un PDU borné puis le confie à la pile MMS Android sur la SIM sélectionnée. Les images sont lues localement depuis le sélecteur Android, bornées et validées avant envoi. La prise en charge logicielle ne vaut pas preuve de livraison.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -533,7 +598,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                 }
                             }
-    
+
                             }
                         if (showComposer) {
                             OutlinedTextField(
@@ -548,7 +613,7 @@ class SmsComposeActivity : ComponentActivity() {
                             OutlinedTextField(
                                 value = body,
                                 onValueChange = {
-                                    val maxChars = if (initialMmsIntent) {
+                                    val maxChars = if (mmsComposeMode) {
                                         MmsSendEligibilityPolicy.MAX_TEXT_CHARS
                                     } else {
                                         SentinelSmsSender.MAX_BODY_CHARS
@@ -558,7 +623,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Message") },
                                 supportingText = {
-                                    val maxChars = if (initialMmsIntent) {
+                                    val maxChars = if (mmsComposeMode) {
                                         MmsSendEligibilityPolicy.MAX_TEXT_CHARS
                                     } else {
                                         SentinelSmsSender.MAX_BODY_CHARS
@@ -568,6 +633,42 @@ class SmsComposeActivity : ComponentActivity() {
                                 minLines = 2,
                                 maxLines = 6
                             )
+                            if (mmsComposeMode) {
+                                OutlinedButton(
+                                    onClick = { mmsAttachmentLauncher.launch("image/*") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = selectedMmsAttachments.size < MmsSendEligibilityPolicy.MAX_ATTACHMENTS
+                                ) {
+                                    Text(
+                                        if (selectedMmsAttachments.isEmpty()) "Ajouter des images"
+                                        else "Remplacer les images sélectionnées"
+                                    )
+                                }
+                                Text(
+                                    "${selectedMmsAttachments.size} / ${MmsSendEligibilityPolicy.MAX_ATTACHMENTS} pièce(s) jointe(s)",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                selectedMmsAttachments.forEachIndexed { index, attachment ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            "${attachment.mimeType} · ${attachment.sizeBytes} octets",
+                                            modifier = Modifier.weight(1f),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        TextButton(
+                                            onClick = {
+                                                selectedMmsAttachments = selectedMmsAttachments.filterIndexed { itemIndex, _ ->
+                                                    itemIndex != index
+                                                }
+                                            }
+                                        ) { Text("Retirer") }
+                                    }
+                                }
+                            }
                             if (activeSubscriptions.size > 1) {
                                 Text("Ligne d’envoi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                 activeSubscriptions.forEachIndexed { index, info ->
@@ -603,11 +704,14 @@ class SmsComposeActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
-    
+
                             Button(
                                 onClick = {
-                                    if (initialMmsIntent) {
-                                        submitMms(destination, body) { body = "" }
+                                    if (mmsComposeMode) {
+                                        submitMms(destination, body, selectedMmsAttachments) {
+                                            body = ""
+                                            selectedMmsAttachments = emptyList()
+                                        }
                                     } else {
                                         submitSms(destination, body) { body = "" }
                                     }
@@ -618,20 +722,21 @@ class SmsComposeActivity : ComponentActivity() {
                                     activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
                                     selectedSubscriptionId = selectedSubscriptionId,
                                     destinationPresent = destination.isNotBlank(),
-                                    bodyPresent = body.isNotBlank()
+                                    bodyPresent = body.isNotBlank() || (mmsComposeMode && selectedMmsAttachments.isNotEmpty())
                                 )
                             ) {
                                 Icon(Icons.Default.Send, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     when {
+                                        mmsComposeMode && body.isBlank() && selectedMmsAttachments.isEmpty() -> "Ajouter un message ou une image"
+                                        mmsComposeMode -> "Envoyer le MMS"
                                         body.isBlank() -> "Écrire un message"
-                                        initialMmsIntent -> "Envoyer le MMS"
                                         else -> "Envoyer"
                                     }
                                 )
                             }
-    
+
                             if (!sender.holdsSmsRole()) {
                                 Text(
                                     "Envoi, lecture et export restent verrouillés tant que Sentinel n’est pas l’application SMS par défaut choisie par l’utilisateur.",
@@ -711,8 +816,8 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                 }
                             }
-    
-    
+
+
                         }
 
                         }
@@ -789,7 +894,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         }
                                     }
                                 }
-    
+
                                 if (selectedThreadId == null) {
                                     Text(
                                         "Organisation locale indicative · classement fondé uniquement sur l’aperçu du dernier SMS.",
@@ -984,7 +1089,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                 ) {
                                                     Text("Supprimer ce message")
                                                 }
-    
+
                                             }
                                         }
                                     }
@@ -1036,8 +1141,8 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                 }
                             }
-    
-    
+
+
                         }
 
 
@@ -1053,4 +1158,3 @@ class SmsComposeActivity : ComponentActivity() {
     }
 
 }
-
