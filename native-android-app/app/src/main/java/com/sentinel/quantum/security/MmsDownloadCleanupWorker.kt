@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -44,7 +45,15 @@ class MmsDownloadCleanupWorker(
             )
         }
 
-        MmsDownloadCoordinator.expire(applicationContext, fileName)
+        val expired = MmsDownloadCoordinator.expire(applicationContext, fileName)
+        if (!expired) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Nettoyage MMS temporaire non confirmé : nouvelle tentative durable planifiée"
+            )
+            return Result.retry()
+        }
         return Result.success()
     }
 
@@ -55,6 +64,7 @@ class MmsDownloadCleanupWorker(
             }
             val request = OneTimeWorkRequestBuilder<MmsDownloadCleanupWorker>()
                 .setInitialDelay(MmsDownloadCoordinator.DOWNLOAD_TTL_MS, TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
                 .setInputData(workDataOf(KEY_FILE_NAME to fileName))
                 .addTag(WORK_TAG)
                 .addTag(fileTag(fileName))
