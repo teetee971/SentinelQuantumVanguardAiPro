@@ -131,9 +131,10 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
-        // Do not remove the only downloaded copy before the private durable anchor exists. If the
-        // read or private persistence fails, the staged file remains under its already-scheduled
-        // bounded cleanup deadline instead of being destroyed before recovery is possible.
+        // Keep the staged copy and its recovery metadata alive until private persistence AND the
+        // provider/quarantine decision complete. Otherwise a process death after private persist
+        // but before provider projection would strand a durable PDU with no subscription metadata
+        // available to the recovery worker.
         val data = runCatching { target.readBytes() }.getOrNull()
         if (data == null || data.isEmpty()) {
             LocalLogger(context).log(
@@ -144,8 +145,6 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
-        // Private persistence is the recovery anchor. Canonical provider state is never attempted if
-        // the durable local identity itself could not be established.
         val persistence = IncomingMmsPrivateStore.persist(context.filesDir, data)
         val digest = persistence.digestHex
         if (persistence.state == IncomingMmsPrivateStore.State.FAILED || digest == null) {
@@ -155,15 +154,6 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 "Persistance MMS privée refusée fail-closed; copie temporaire conservée jusqu’au nettoyage durable"
             )
             return
-        }
-
-        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
-        if (!temporaryDeleted) {
-            LocalLogger(context).log(
-                LocalLogger.LogLevel.WARNING,
-                "MmsDownload",
-                "Échec de suppression du PDU MMS temporaire après persistance; le nettoyage durable reste planifié"
-            )
         }
 
         val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
@@ -186,8 +176,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsProvider",
-                "MMS entrant conservé privé mais projection provider refusée; raison=${providerResult.reason}"
+                "Projection provider MMS différée; la copie staged et le journal de reprise restent actifs; raison=${providerResult.reason}"
             )
+            return
         }
 
         val providerInserted =
@@ -236,6 +227,17 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                     "Chronologie privée indisponible; le traitement MMS téléchargé continue"
                 )
             }
+        }
+
+        // Recovery metadata is retired only after provider success/replay or an explicit quarantine
+        // outcome. A crash before this point leaves the staged PDU+journal available to WorkManager.
+        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
+        if (!temporaryDeleted) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échec de suppression du PDU MMS temporaire après traitement; le nettoyage durable reste planifié"
+            )
         }
 
         SmsNotificationHelper.notifyMessage(
