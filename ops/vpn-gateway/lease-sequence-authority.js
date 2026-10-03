@@ -9,6 +9,10 @@ export class VpnLeaseSequenceAuthority {
   async commitSnapshot(_gatewayId, _sequence, _snapshotDigest) {
     throw new Error("VPN_SEQUENCE_AUTHORITY_NOT_IMPLEMENTED");
   }
+
+  async invalidateSnapshot(_gatewayId, _sequence, _expectedDigest, _invalidationDigest) {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_NOT_IMPLEMENTED");
+  }
 }
 
 export function assertVpnLeaseSequenceAuthority(authority) {
@@ -37,5 +41,30 @@ export function validateVpnLeaseCommitBoundary({ gatewayId, sequence, snapshotDi
     gatewayId: boundary.gatewayId,
     sequence: boundary.sequence,
     snapshotDigest,
+  });
+}
+
+export function validateVpnLeaseInvalidationBoundary({
+  gatewayId,
+  sequence,
+  expectedDigest,
+  invalidationDigest,
+}) {
+  const expected = validateVpnLeaseCommitBoundary({
+    gatewayId,
+    sequence,
+    snapshotDigest: expectedDigest,
+  });
+  if (!SNAPSHOT_DIGEST.test(String(invalidationDigest || ""))) {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_INVALIDATION_DIGEST_INVALID");
+  }
+  if (invalidationDigest === expected.snapshotDigest) {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_INVALIDATION_DIGEST_REUSED");
+  }
+  return Object.freeze({
+    gatewayId: expected.gatewayId,
+    sequence: expected.sequence,
+    expectedDigest: expected.snapshotDigest,
+    invalidationDigest,
   });
 }
