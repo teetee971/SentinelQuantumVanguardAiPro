@@ -462,7 +462,7 @@ internal class IncomingMmsConversationStore(context: Context) {
     @Suppress("DEPRECATION")
     @android.annotation.SuppressLint("MissingPermission")
     private fun readSelfAddresses(subscriptionId: Int): Set<String> = runCatching {
-        if (!SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) {
             return@runCatching emptySet()
         }
         val subscriptionManager = appContext.getSystemService(SubscriptionManager::class.java)
