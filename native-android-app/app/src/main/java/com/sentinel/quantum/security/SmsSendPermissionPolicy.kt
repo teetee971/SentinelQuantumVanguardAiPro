@@ -21,6 +21,29 @@ object SmsSendPermissionPolicy {
 }
 
 /**
+ * Staged least-privilege policy for the Phone Core SMS activation wizard.
+ *
+ * The SMS role must already be held. Runtime permissions are then requested in two distinct
+ * phases: first the send/SIM path, and only after that path is complete the inbox path. This
+ * prevents the activation UI from aggregating SEND_SMS, READ_PHONE_STATE, READ_SMS and RECEIVE_SMS
+ * into one broad request and keeps the Android permission prompts aligned with the capability the
+ * user is activating.
+ */
+object SmsActivationPermissionPolicy {
+    fun permissionsFor(
+        roleState: SmsActivationDiagnostics.SmsRoleState,
+        blockers: Set<SmsActivationDiagnostics.Blocker>,
+    ): Array<String> {
+        if (roleState != SmsActivationDiagnostics.SmsRoleState.HELD) return emptyArray()
+
+        val sendPermissions = SmsSendPermissionPolicy.permissionsFor(blockers)
+        if (sendPermissions.isNotEmpty()) return sendPermissions
+
+        return SmsInboxPermissionPolicy.permissionsFor(roleState, blockers)
+    }
+}
+
+/**
  * Least-privilege policy for SMS inbox/conversation activation.
  *
  * The SMS default-role state is part of the pure policy so the fail-closed role boundary is
