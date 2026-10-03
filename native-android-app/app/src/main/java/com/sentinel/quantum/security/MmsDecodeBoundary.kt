@@ -73,8 +73,12 @@ object MmsDecodeBoundary {
         return Result.Accepted(safe)
     }
 
-    private fun contentMatchesMime(mime: String, bytes: ByteArray, charsetMibEnum: Int?): Boolean =
-        when (mime) {
+    private fun contentMatchesMime(
+        mime: String,
+        bytes: ByteArray,
+        charsetMibEnum: Int?
+    ): Boolean {
+        return when (mime) {
             "text/plain" -> MmsTextCharset.decode(bytes, charsetMibEnum) != null
             "application/smil" -> {
                 val decoded = MmsTextCharset.decode(bytes, charsetMibEnum) ?: return false
@@ -94,6 +98,7 @@ object MmsDecodeBoundary {
                 String(bytes.copyOfRange(8, 12), Charsets.US_ASCII) == "WEBP"
             else -> false
         }
+    }
 
     private fun normalizeReference(value: String?): String? {
         if (value == null) return null
