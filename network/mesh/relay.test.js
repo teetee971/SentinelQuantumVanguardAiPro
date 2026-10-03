@@ -130,3 +130,41 @@ test("relay grant broker gives each node only its own one-time credential", () =
   assert.equal(broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:a" }), null);
   assert.equal(broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:other" }), null);
 });
+
+test("creating a relay reclaims expired session entries", () => {
+  let now = 1000;
+  const registry = new MeshRelayRegistry({ clock: () => now });
+  registry.createSession({ sourceNodeId: "device:a", targetNodeId: "device:b", ttlMs: 10000 });
+  now = 11000;
+  const fresh = registry.createSession({ sourceNodeId: "device:a", targetNodeId: "device:b", ttlMs: 10000 });
+  assert.equal(registry.pruneExpired(), 0);
+  assert.ok(registry.authenticate(fresh.sessionId, fresh.source.token));
+});
+
+import { MeshControlPlane } from './control-plane.js';
+
+test('revocation and policy withdrawal invalidate tokens already claimed for a live relay', () => {
+  for (const revoke of [true, false]) {
+    const cp = new MeshControlPlane();
+    cp.enrollNode({ id: 'device:a', type: 'device', publicKey: Buffer.alloc(32, 1).toString('base64') });
+    cp.enrollNode({ id: 'device:b', type: 'device', publicKey: Buffer.alloc(32, 2).toString('base64'), tags: ['peer'] });
+    cp.replacePolicies([{ id: 'allow', effect: 'allow', resourceTags: ['peer'] }]);
+    const registry = new MeshRelayRegistry(); registry.bindControlPlane(cp);
+    const issued = registry.createSession({ sourceNodeId: 'device:a', targetNodeId: 'device:b' });
+    registry.registerPeer(issued.sessionId, issued.source.token, { address: '127.0.0.1', port: 10001, family: 'IPv4' });
+    registry.registerPeer(issued.sessionId, issued.target.token, { address: '127.0.0.1', port: 10002, family: 'IPv4' });
+    assert.ok(registry.routePacket(issued.sessionId, issued.source.token, 0, Buffer.from('test')));
+    if (revoke) cp.revokeNode('device:b', 'lost'); else cp.replacePolicies([]);
+    assert.equal(registry.authenticate(issued.sessionId, issued.source.token), null);
+    assert.throws(() => registry.routePacket(issued.sessionId, issued.source.token, 1, Buffer.from('test')), /unavailable/);
+  }
+});
+
+test('expired grants cannot reveal unclaimed relay tokens', () => {
+  let now = 1000;
+  const registry = new MeshRelayRegistry({ clock: () => now });
+  const broker = new MeshRelayGrantBroker({ registry });
+  broker.ensureNegotiationGrant({ negotiationId: 'negotiation:test', sourceNodeId: 'device:a', targetNodeId: 'device:b', relayEndpoint: '127.0.0.1:3480', ttlMs: 10000 });
+  now = 11000;
+  assert.equal(broker.claim({ negotiationId: 'negotiation:test', nodeId: 'device:a' }), null);
+});

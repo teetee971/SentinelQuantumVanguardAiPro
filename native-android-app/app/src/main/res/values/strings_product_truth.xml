@@ -1,0 +1,7 @@
+<resources>
+    <string name="collective_watch_checked_at">Dernière vérification : %1$s</string>
+    <string name="collective_watch_expired">Réputation expirée ou sans durée de validité ; recontrôle nécessaire.</string>
+    <string name="product_capability_unverified">Service non validé</string>
+    <string name="product_capability_available">Service disponible</string>
+    <string name="product_capability_not_implemented">Service prévu</string>
+</resources>

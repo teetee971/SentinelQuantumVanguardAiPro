@@ -174,6 +174,9 @@ export class VpnGatewayProvisioningCore {
       return Object.freeze({ accepted: false, reason: "VPN_PROVISIONING_CLOCK_INVALID" });
     }
 
+    for (const [key, lease] of this.#leasesByKey) {
+      if (lease.expiresAtMs <= now) this.#leasesByKey.delete(key);
+    }
     const existing = this.#leasesByKey.get(publicKey);
     if (existing && !existing.revoked && existing.expiresAtMs > now) {
       return Object.freeze({
@@ -190,6 +193,10 @@ export class VpnGatewayProvisioningCore {
     const index = this.#allocateIndex(now);
     if (index === null) {
       return Object.freeze({ accepted: false, reason: "VPN_PROVISIONING_ADDRESS_EXHAUSTED" });
+    }
+    // Reusing an address must not leave an inactive owner in the next snapshot.
+    for (const [key, previous] of this.#leasesByKey) {
+      if (previous.index === index) this.#leasesByKey.delete(key);
     }
     const lease = {
       index,
@@ -271,9 +278,6 @@ export class VpnGatewayProvisioningCore {
         expiresAtMs: item.expiresAtMs,
         revoked: item.revoked,
       });
-    }
-    if (indexes.has(state.nextIndex) && state.leases.length < 253) {
-      throw new Error("VPN_PROVISIONING_STATE_INVALID");
     }
     this.#leasesByKey = restored;
     this.#nextIndex = state.nextIndex;

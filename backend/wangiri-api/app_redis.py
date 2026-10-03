@@ -314,7 +314,9 @@ redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
 redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
 redis.call('HINCRBY', KEYS[3], 'signals', 1)
 redis.call('HINCRBY', KEYS[3], ARGV[4], 1)
-redis.call('EXPIRE', KEYS[3], ARGV[5])
+if redis.call('TTL', KEYS[3]) < 0 then
+  redis.call('EXPIRE', KEYS[3], ARGV[5])
+end
 return 1
 """
 
@@ -416,7 +418,9 @@ if ARGV[2] == 'APPROVE' then
   redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
   redis.call('HINCRBY', KEYS[3], 'signals', 1)
   redis.call('HINCRBY', KEYS[3], ARGV[1], 1)
-  redis.call('EXPIRE', KEYS[3], ARGV[4])
+  if redis.call('TTL', KEYS[3]) < 0 then
+    redis.call('EXPIRE', KEYS[3], ARGV[4])
+  end
 end
 
 if remaining <= 0 then

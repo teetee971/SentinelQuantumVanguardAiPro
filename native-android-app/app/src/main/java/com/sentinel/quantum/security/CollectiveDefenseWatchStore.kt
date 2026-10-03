@@ -20,8 +20,12 @@ class CollectiveDefenseWatchStore(context: Context) {
         val lastAttemptedAtMs: Long,
         val riskState: String,
         val signals: Int,
-        val communityIntelligence: String
-    )
+        val communityIntelligence: String,
+        val reputationExpiresAtMs: Long? = null
+    ) {
+        fun activeRiskState(now: Long = System.currentTimeMillis()): String =
+            if (reputationExpiresAtMs != null && now >= lastCheckedAtMs && now < reputationExpiresAtMs) riskState else "UNKNOWN"
+    }
 
     fun snapshot(): List<WatchItem> = synchronized(LOCK) {
         preferences.getStringSet(ITEMS, emptySet()).orEmpty()
@@ -52,7 +56,9 @@ class CollectiveDefenseWatchStore(context: Context) {
             lastAttemptedAtMs = effectiveNow,
             riskState = sanitizeToken(result.riskState),
             signals = result.signals.coerceIn(0, MAX_SIGNALS),
-            communityIntelligence = sanitizeToken(result.communityIntelligence)
+            communityIntelligence = sanitizeToken(result.communityIntelligence),
+            reputationExpiresAtMs = result.reputationTtlMs?.takeIf { it in 1L..(180L * 86400000L) && it <= Long.MAX_VALUE - effectiveNow }
+                ?.let { effectiveNow + it }
         )
         val values = existing
             .filterNot {
@@ -128,12 +134,13 @@ class CollectiveDefenseWatchStore(context: Context) {
             item.lastAttemptedAtMs.toString(),
             sanitizeToken(item.riskState),
             item.signals.coerceIn(0, MAX_SIGNALS).toString(),
-            sanitizeToken(item.communityIntelligence)
+            sanitizeToken(item.communityIntelligence),
+            item.reputationExpiresAtMs?.toString().orEmpty()
         ).joinToString("|")
 
         internal fun decode(raw: String): WatchItem? {
             val parts = raw.split("|")
-            if (parts.size !in 7..8) return null
+            if (parts.size !in 7..9) return null
             val type = runCatching {
                 CollectiveDefenseClient.IndicatorType.valueOf(parts[0])
             }.getOrNull() ?: return null
@@ -141,14 +148,14 @@ class CollectiveDefenseWatchStore(context: Context) {
             if (!FINGERPRINT.matches(fingerprint)) return null
             val addedAt = parts[2].toLongOrNull()?.takeIf { it >= 0L } ?: return null
             val checkedAt = parts[3].toLongOrNull()?.takeIf { it >= addedAt } ?: return null
-            val attemptedAt = if (parts.size == 8) {
+            val attemptedAt = if (parts.size >= 8) {
                 parts[4].toLongOrNull()?.takeIf { it >= checkedAt } ?: return null
             } else {
                 checkedAt
             }
-            val riskIndex = if (parts.size == 8) 5 else 4
-            val signalsIndex = if (parts.size == 8) 6 else 5
-            val intelligenceIndex = if (parts.size == 8) 7 else 6
+            val riskIndex = if (parts.size >= 8) 5 else 4
+            val signalsIndex = if (parts.size >= 8) 6 else 5
+            val intelligenceIndex = if (parts.size >= 8) 7 else 6
             val risk = parts[riskIndex].takeIf(TOKEN::matches) ?: return null
             val signals = parts[signalsIndex].toIntOrNull()
                 ?.takeIf { it in 0..MAX_SIGNALS } ?: return null
@@ -161,7 +168,8 @@ class CollectiveDefenseWatchStore(context: Context) {
                 lastAttemptedAtMs = attemptedAt,
                 riskState = risk,
                 signals = signals,
-                communityIntelligence = intelligence
+                communityIntelligence = intelligence,
+                reputationExpiresAtMs = parts.getOrNull(8)?.toLongOrNull()?.takeIf { it >= checkedAt }
             )
         }
     }

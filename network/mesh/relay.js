@@ -43,12 +43,20 @@ function renderPeer(rinfo) {
 export class MeshRelayRegistry {
   #sessions = new Map();
   #clock;
+  #controlPlane = null;
+
+  bindControlPlane(controlPlane) {
+    if (this.#controlPlane && this.#controlPlane !== controlPlane) throw new Error("relay control plane binding mismatch");
+    if (typeof controlPlane?.isConnectionAuthorized !== "function") throw new Error("relay authorization required");
+    this.#controlPlane = controlPlane;
+  }
 
   constructor({ clock = () => Date.now() } = {}) {
     this.#clock = clock;
   }
 
   createSession({ sourceNodeId, targetNodeId, ttlMs = 120000 }) {
+    this.pruneExpired();
     if (this.#sessions.size >= MAX_SESSIONS) throw new Error("relay session capacity exceeded");
     const source = boundedId(sourceNodeId, "source node id");
     const target = boundedId(targetNodeId, "target node id");
@@ -61,6 +69,7 @@ export class MeshRelayRegistry {
     const sourceToken = randomBytes(32).toString("base64url");
     const targetToken = randomBytes(32).toString("base64url");
     const now = this.#clock();
+    if (this.#controlPlane && !this.#controlPlane.isConnectionAuthorized(source, target)) throw new Error("relay policy denied");
 
     this.#sessions.set(sessionId, {
       id: sessionId,
@@ -193,6 +202,10 @@ export class MeshRelayRegistry {
     const id = String(sessionId || "");
     const session = this.#sessions.get(id);
     if (!session || session.closed) return null;
+    if (this.#controlPlane && !this.#controlPlane.isConnectionAuthorized(session.sourceNodeId, session.targetNodeId)) {
+      this.close(id);
+      return null;
+    }
     if (session.expiresAt <= this.#clock()) {
       this.#sessions.delete(id);
       return null;
@@ -211,7 +224,10 @@ export class MeshRelayGrantBroker {
     this.#registry = registry;
   }
 
+  bindControlPlane(controlPlane) { this.#registry.bindControlPlane(controlPlane); }
+
   ensureNegotiationGrant({ negotiationId, sourceNodeId, targetNodeId, relayEndpoint, ttlMs = 120000 }) {
+    this.pruneExpired();
     const key = boundedSessionKey(negotiationId, "negotiation id");
     const existing = this.#grants.get(key);
     if (existing) {
@@ -250,6 +266,7 @@ export class MeshRelayGrantBroker {
   }
 
   claim({ negotiationId, nodeId }) {
+    this.pruneExpired();
     const key = boundedSessionKey(negotiationId, "negotiation id");
     const claimant = boundedId(nodeId, "node id");
     const grant = this.#grants.get(key);
@@ -288,10 +305,11 @@ export class MeshRelayGrantBroker {
     return null;
   }
 
-  pruneExpired(now = Date.now()) {
+  pruneExpired(now = null) {
     let removed = 0;
     for (const [id, grant] of this.#grants.entries()) {
-      if (grant.expiresAt <= now) {
+      if ((now !== null && grant.expiresAt <= now) || !this.#registry.describe(grant.relaySessionId)) {
+        this.#registry.close(grant.relaySessionId);
         this.#grants.delete(id);
         removed += 1;
       }

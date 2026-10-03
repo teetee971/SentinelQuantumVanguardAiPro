@@ -20,13 +20,15 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintLinkPolicy
+import com.sentinel.quantum.data.OsintPublicationTime
+import com.sentinel.quantum.data.OsintTransientItemStore
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 
 /**
- * Read-only detail of a locally cached OSINT alert. No network access is performed here:
- * the item is resolved from [OsintFeedCache]. The original link can be opened in the user's
- * browser, which is an explicit user action.
+ * Read-only detail of an OSINT alert already visible to the user. Complete snapshots are resolved
+ * from [OsintFeedCache]; a currently displayed partial snapshot can be resolved from the bounded
+ * process-local [OsintTransientItemStore]. No network access is performed here.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +36,8 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
     val context = LocalContext.current
     val cache = remember(context) { OsintFeedCache(context.applicationContext) }
     val item: OsintFeedItem? = remember(itemId) {
-        cache.load()?.items?.firstOrNull { it.id == itemId }
+        OsintTransientItemStore.find(itemId)
+            ?: cache.load()?.items?.firstOrNull { it.id == itemId }
     }
 
     LaunchedEffect(itemId) {
@@ -69,6 +72,11 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
         }
 
         val dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+        val publicationLabel = OsintPublicationTime.format(
+            item.pubDate,
+            dateFormat,
+            stringResource(R.string.osint_date_unknown)
+        )
 
         Column(
             modifier = Modifier
@@ -87,7 +95,7 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
             Text(
                 text = stringResource(
                     R.string.osint_detail_date_value,
-                    dateFormat.format(item.pubDate)
+                    publicationLabel
                 ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

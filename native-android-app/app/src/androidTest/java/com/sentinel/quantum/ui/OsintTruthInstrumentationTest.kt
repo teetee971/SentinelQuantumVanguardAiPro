@@ -33,4 +33,15 @@ class OsintTruthInstrumentationTest {
         composeRule.onNodeWithText("Alerte instrumentation").assertIsDisplayed()
         composeRule.onNodeWithText("Description de test").assertIsDisplayed()
     }
+    @Test
+    fun missingPublicationDateIsShownAsUnknown() {
+        val unknownLabel = androidx.test.platform.app.InstrumentationRegistry
+            .getInstrumentation().targetContext.getString(com.sentinel.quantum.R.string.osint_date_unknown)
+        composeRule.setContent {
+            MaterialTheme {
+                OsintFeedCard(OsintFeedItem("Sans date", "Description", "https://example.org", "Source", Date(0L)))
+            }
+        }
+        composeRule.onNodeWithText(unknownLabel).assertIsDisplayed()
+    }
 }

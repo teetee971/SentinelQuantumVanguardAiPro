@@ -102,7 +102,8 @@ export class SpiffeWorkloadBundleSync {
         }
 
         if (error?.grpcStatus === 7) {
-          const redacted = this.#controlPlane.observeSpiffeTrustBundleSet([]);
+          // PermissionDenied must remove live trust even when durable storage is unavailable.
+          const redacted = await this.#controlPlane.commitMutation(cp => cp.observeSpiffeTrustBundleSet([]));
           if (redacted.removedDomains.length > 0) {
             await this.#persist(this.#controlPlane.exportState());
           }

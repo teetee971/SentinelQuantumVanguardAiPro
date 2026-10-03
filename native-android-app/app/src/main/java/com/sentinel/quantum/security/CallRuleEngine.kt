@@ -41,6 +41,7 @@ class CallRuleEngine(
         const val MAX_REPUTATION_RULES = 500
         private val HASH_PATTERN = Regex("(?:v[1-9][0-9]*:)?[a-f0-9]{64}")
 
+        /** National 0xxxxxxxxx input is scoped to France; other regions require explicit E.164. */
         fun normalizeNumber(raw: String?): String? {
             val input = raw?.trim()?.takeIf { it.isNotBlank() && it.length <= 64 } ?: return null
             if (!input.all { it.isDigit() || it in setOf('+', ' ', '-', '(', ')', '.') }) return null

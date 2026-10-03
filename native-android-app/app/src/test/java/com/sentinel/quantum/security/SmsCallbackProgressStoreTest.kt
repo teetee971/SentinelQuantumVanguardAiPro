@@ -87,9 +87,23 @@ class SmsCallbackProgressStoreTest {
             true
         }, { true }))
         assertTrue(providerUpdated)
+        assertTrue(store.markProviderApplied(42, 101L, outcome.state, nowMs = 1_000_000L))
         // Retained memory/tombstone cannot justify throwing away the first transition:
         // a repeated callback is correctly ignored.
         assertNull(store.record(42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true, nowMs = 1_000_000L))
+    }
+    @Test fun duplicateCallbackRepairsUnconfirmedProviderWriteEvenAfterTerminalState() {
+        val store = SmsCallbackProgressStore(Preferences(emptySet()).preferences)
+        store.record(7, 8L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true, nowMs = 1000L)
+        val delivered = store.record(7, 8L, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, true, nowMs = 1001L)!!
+        assertTrue(delivered.terminal)
+        val retry = store.record(7, 8L, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, true, nowMs = 1002L)!!
+        assertTrue(retry.allDelivered)
+        assertTrue(retry.certificationSignals.isEmpty())
+        assertEquals(1, store.pendingProviderWrites(nowMs = 1002L).size)
+        assertTrue(store.markProviderApplied(7, 8L, retry.state, nowMs = 1002L))
+        assertNull(store.record(7, 8L, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, true, nowMs = 1003L))
+        assertTrue(store.pendingProviderWrites(nowMs = 1003L).isEmpty())
     }
 }
 

@@ -47,6 +47,8 @@ class SentinelVpnRuntimeCoordinatorTest {
                 VpnProvisioningContract.Result(
                     accepted = true,
                     reason = "VPN_PROVISIONING_READY",
+                    plan = VpnProvisioningContract.ProvisioningPlan(selected.id, "fixture-gateway-key",
+                        requireNotNull(selected.endpointHostname), requireNotNull(selected.endpointPort), listOf("10.73.0.2/32"), selected.dnsServerAddresses, now + 600000L),
                     configuration = config
                 )
             },
@@ -61,6 +63,7 @@ class SentinelVpnRuntimeCoordinatorTest {
         )
 
         assertTrue(result.accepted)
+        assertEquals(now + 600000L, tunnel.leaseDeadline)
         assertEquals(SentinelVpnController.RuntimeState.PROTECTED, result.state)
         assertEquals("fr-par-01", result.gatewayId)
         assertEquals(4L, result.catalogSequence)
@@ -290,11 +293,14 @@ class SentinelVpnRuntimeCoordinatorTest {
 
     private class FakeTunnel : SentinelVpnRuntimeCoordinator.TunnelBridge {
         var lastGateway: SentinelVpnController.GatewayDescriptor? = null
+        var leaseDeadline: Long? = null
 
         override suspend fun connect(
             gateway: SentinelVpnController.GatewayDescriptor,
-            configuration: ByteArray
+            configuration: ByteArray,
+            leaseExpiresAtMs: Long
         ): SentinelVpnController.OperationResult {
+            leaseDeadline = leaseExpiresAtMs
             lastGateway = gateway
             return SentinelVpnController.OperationResult(
                 SentinelVpnController.RuntimeState.PROTECTED,

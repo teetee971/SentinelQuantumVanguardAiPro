@@ -85,7 +85,10 @@ cd backend/wangiri-api
 python -m venv .venv
 . .venv/bin/activate
 pip install -r requirements-dev.txt
-pytest -q
+# Start a disposable local Redis; tests use database 15 and their own unique keys.
+docker run --rm -d --name sentinel-test-redis -p 127.0.0.1:6379:6379 redis:7-alpine
+SENTINEL_TEST_REDIS_URL=redis://127.0.0.1:6379/15 pytest -q
+docker stop sentinel-test-redis
 uvicorn app_redis:app --reload
 ```
 

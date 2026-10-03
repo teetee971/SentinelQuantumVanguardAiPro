@@ -23,7 +23,7 @@ Le socle téléphone doit rester gratuit sur le Web et Android :
 - recherche par numéro et préfixe dans l’index officiel ARCEP ;
 - recherche autrichienne dans un index local RTR de 73 749 plages : attribution publiée, catégorie, zone et statuts, sans identification de l’appelant ni garantie de l’opérateur actuel ;
 - analyse locale de texte SMS, sans ouverture automatique des liens ;
-- listes personnelles avec priorité à la liste blanche ;
+- listes personnelles Web avec priorité à leur liste blanche locale ; blocage Android géré séparément ;
 - filtrage d’appels Android et historique local privé lorsque l’application sera distribuée.
 
 Les fonctions payantes sont des add-ons séparés : Threat Brief Pro, Sentinel Investigations, FIMI / DISARM-FR, Purple Team Workspace, Organization Pack, connecteurs validés, exports professionnels et support contractualisé. Aucun paiement réel n’est actuellement traité par le dépôt.
@@ -194,7 +194,7 @@ Le module Android inclut désormais un contrôle manuel de mot de passe exposé 
 
 La surface web contient un index généré depuis les exports officiels `MAJNUM.csv` et `identifiants_CE.csv`. La recherche accepte un numéro complet ou un préfixe français de 4 à 10 chiffres et affiche l’opérateur attributaire, la tranche, le territoire, la date d’attribution et les informations publiques de l’opérateur. Un enrichissement SIRENE facultatif, déclenché explicitement par l’utilisateur, complète la fiche avec code NAF/APE, état administratif et nombre d’établissements. Elle ne permet pas de connaître l’opérateur actuel après portabilité et ne constitue pas un score de réputation. Un workflow hebdomadaire propose les mises à jour sous forme de pull request révisable.
 
-Les listes suivent un ordre de type pare-feu : liste blanche personnelle, liste de blocage personnelle, futures listes communautaires signées, puis sources réglementaires de référence. Une future base de signalements exige un backend durable, de l’anti-abus, une modération humaine, des seuils multi-sources, un recours, une conservation limitée et une publication signée ; elle n’est pas déployée aujourd’hui.
+Dans l’espace Web Phone Intelligence, les listes suivent cet ordre : liste blanche locale, liste de blocage locale, futures listes communautaires signées, puis sources réglementaires de référence. Cette liste blanche Web n’est pas synchronisée avec le filtrage Android. Sur Android, les règles exactes et les préfixes bloqués appartiennent à l’utilisateur ; les favoris ne constituent pas des exceptions au filtrage. Les numéros nationaux français de dix chiffres commençant par 0 sont interprétés avec +33 : pour un autre pays, saisir le format international explicite. Une future base de signalements exige un backend durable, de l’anti-abus, une modération humaine, des seuils multi-sources, un recours, une conservation limitée et une publication signée ; elle n’est pas déployée aujourd’hui.
 
 ## Sécurité du navigateur
 

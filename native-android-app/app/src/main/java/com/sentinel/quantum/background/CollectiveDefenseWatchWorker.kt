@@ -37,7 +37,7 @@ class CollectiveDefenseWatchWorker(
                 store.markAttempted(previous.indicatorType, previous.fingerprint)
                 return@forEach
             }
-            if (riskRank(refreshed.riskState) > riskRank(previous.riskState)) {
+            if (riskRank(refreshed.riskState) > riskRank(previous.activeRiskState())) {
                 escalated += refreshed
             }
             store.upsert(refreshed)

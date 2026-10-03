@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 
 /**
  * Process-level initialization for exact-number call blocking.
@@ -16,6 +17,7 @@ import com.sentinel.quantum.security.CallBlocklistStore
 class SentinelApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        SentinelSmsStatusReceiver.queueProviderRepair(this)
         val store = CallBlocklistStore(this)
         val screeningSnapshot = store.prepareScreeningSnapshot()
         if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {

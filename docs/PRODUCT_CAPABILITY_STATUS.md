@@ -4,19 +4,24 @@ Source: `config/product-capabilities.json` · updated 2026-10-03.
 
 This file is generated. Do not promote a capability by editing this document; update the canonical registry with evidence and let CI validate the invariants.
 
-| Capability | Status | Customer available | Open blockers |
-|---|---|---:|---:|
-| Android Phone Core | IMPLEMENTED_NOT_VERIFIED | NO | 2 |
-| Sentinel VPN | IMPLEMENTED_NOT_CONFIGURED | NO | 3 |
-| Voice Studio transformed calls | IMPLEMENTED_NOT_CONFIGURED | NO | 3 |
-| GeoIntel USGS earthquakes | IMPLEMENTED_NOT_VERIFIED | NO | 1 |
-| GeoIntel conflicts/hotspots/sanctions/weather/outages | NOT_IMPLEMENTED | NO | 1 |
-| Collective Defense API | IMPLEMENTED_NOT_VERIFIED | NO | 1 |
-| Collective Defense Android center | IMPLEMENTED_NOT_VERIFIED | NO | 2 |
-| Signed Phone Intelligence reputation feed | IMPLEMENTED_NOT_CONFIGURED | NO | 3 |
-| Phone Intelligence moderation service | IMPLEMENTED_NOT_CONFIGURED | NO | 2 |
-| Repository-wide internationalization | IMPLEMENTED_NOT_CONFIGURED | NO | 2 |
-| Public signed Android release | IMPLEMENTED_NOT_CONFIGURED | NO | 2 |
+| Capability | Status | Customer available | Open blockers | Evidence revision | Observed at |
+|---|---|---:|---:|---|---|
+| Android Phone Core | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
+| Sentinel VPN | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
+| Voice Studio transformed calls | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
+| GeoIntel USGS earthquakes | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
+| GeoIntel conflicts/hotspots/sanctions/weather/outages | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
+| Collective Defense API | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
+| Collective Defense Android center | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
+| Signed Phone Intelligence reputation feed | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
+| Phone Intelligence moderation service | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
+| Repository-wide internationalization | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
+| Public signed Android release | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
+| SaaS customer identity and authorization | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
+| Voice signaling, token issuer and VoIP/PSTN gateway | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
+| Independent monotonic VPN lease sequence authority | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
+| Mesh control plane and relay runtime | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
+| Android public-source OSINT feeds | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
 
 ## Blocking details
 
@@ -126,3 +131,39 @@ Evidence:
 - `.github/workflows/android-release.yml`
 - `.github/workflows/build-aab-playconsole.yml`
 - `RELEASE_CHECKLIST.md`
+
+### SaaS customer identity and authorization
+
+- Production tenant identity, roles, revocation and authorization are not provisioned
+
+Evidence:
+- `public/espace-client.html`
+
+### Voice signaling, token issuer and VoIP/PSTN gateway
+
+- Production signaling, token issuance and telephony gateway are not provisioned
+
+Evidence:
+- `docs/VOICE-STUDIO-ADDON.md`
+
+### Independent monotonic VPN lease sequence authority
+
+- An independent monotonic authority service has not been implemented, configured or observed
+
+Evidence:
+- `ops/vpn-gateway/lease-sequence-authority.js`
+
+### Mesh control plane and relay runtime
+
+- Production identity, relay runtime and revocation/data-plane acceptance evidence are not recorded
+
+Evidence:
+- `network/mesh/server.js`
+- `network/mesh/relay.js`
+
+### Android public-source OSINT feeds
+
+- Revision-bound runtime and signed Android distribution evidence are missing
+
+Evidence:
+- `native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintRepository.kt`
