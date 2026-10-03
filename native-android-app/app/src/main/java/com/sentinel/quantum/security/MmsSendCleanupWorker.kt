@@ -28,13 +28,26 @@ class MmsSendCleanupWorker(
             }
         }
         if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
-            MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
-            MmsSendPduStager.pruneExpired(applicationContext)
-            runCatching { MmsConversationStore(applicationContext).repairJournal() }
-            runCatching { IncomingMmsConversationStore(applicationContext).repairJournal() }
-            // WorkManager survives process death, but an explicit startup nudge removes the delay
-            // for a downloaded PDU whose Android callback was lost with the dead process.
-            runCatching { MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext) }
+            val recovered = runCatching {
+                MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
+                MmsSendPduStager.pruneExpired(applicationContext)
+                MmsDownloadCoordinator.pruneExpired(applicationContext)
+                MmsConversationStore(applicationContext).repairJournal()
+                IncomingMmsConversationStore(applicationContext).repairJournal()
+                // WorkManager survives process death, but an explicit startup nudge removes the
+                // delay for a downloaded PDU whose Android callback was lost with the dead process.
+                // schedulePendingNow also reconstructs the original bounded cleanup deadline.
+                MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext)
+                true
+            }.getOrDefault(false)
+            if (!recovered) {
+                LocalLogger(applicationContext).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsRecovery",
+                    "Reprise MMS au redémarrage incomplète : nouvelle tentative durable planifiée"
+                )
+                return Result.retry()
+            }
         }
         return Result.success()
     }
@@ -70,6 +83,7 @@ class MmsSendCleanupWorker(
 
         fun scheduleStartupRecovery(context: Context) {
             val request = OneTimeWorkRequestBuilder<MmsSendCleanupWorker>()
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
                 .setInputData(workDataOf(KEY_PROCESS_RESTART to true))
                 .addTag(STARTUP_WORK_TAG)
                 .build()
