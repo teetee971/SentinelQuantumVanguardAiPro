@@ -105,6 +105,12 @@ class SentinelVpnController(
         configuration: ByteArray,
         leaseExpiresAtMs: Long? = null
     ): OperationResult = operationMutex.withLock {
+        // A new attempt must not release another live controller's reservation or deadline.
+        // Replacement requires a confirmed disconnect first.
+        if (SentinelVpnModeArbiter.current() == SentinelVpnModeArbiter.Mode.INTERNET_VPN) {
+            configuration.fill(0)
+            return OperationResult(RuntimeState.FAILED, "VPN_ALREADY_ACTIVE")
+        }
         if (gateway.status != GatewayStatus.AVAILABLE) {
             runtimeState = RuntimeState.READY_NO_GATEWAY
             configuration.fill(0)
