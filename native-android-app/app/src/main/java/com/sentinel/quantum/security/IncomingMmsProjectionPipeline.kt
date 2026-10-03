@@ -56,14 +56,22 @@ internal object IncomingMmsProjectionPipeline {
             }
         }
 
+        if (relatedPresentation != null) {
+            val presentationError = MmsRelatedPresentationValidator.validate(
+                safeParts,
+                relatedPresentation
+            )
+            if (presentationError != null) {
+                return Result.Quarantined("PRESENTATION:${presentationError.take(MAX_REASON_CHARS)}")
+            }
+        }
+
         return when (
             val planned = IncomingMmsProjectionPlan.build(
                 digestHex = digestHex,
                 envelope = envelope,
                 safeParts = safeParts,
-                subscriptionId = subscriptionId,
-                relatedRootContentType = relatedPresentation?.rootContentType,
-                relatedRootStartContentId = relatedPresentation?.startContentId
+                subscriptionId = subscriptionId
             )
         ) {
             is IncomingMmsProjectionPlan.Result.Quarantined ->
