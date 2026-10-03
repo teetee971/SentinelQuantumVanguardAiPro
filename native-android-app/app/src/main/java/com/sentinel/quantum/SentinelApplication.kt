@@ -2,8 +2,7 @@ package com.sentinel.quantum
 
 import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
-import com.sentinel.quantum.security.MmsConversationStore
-import com.sentinel.quantum.security.MmsSendPduStager
+import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 
 /**
@@ -13,8 +12,8 @@ import com.sentinel.quantum.security.SentinelSmsStatusReceiver
  * creates the Application before CallScreeningService, so the service can remain strictly
  * cache-only without the previous asynchronous cold-start race.
  *
- * MMS provider recovery and stale private PDU cleanup are also triggered here so process death does
- * not leave their repair dependent on a future send action.
+ * MMS provider recovery and stale private PDU cleanup are delegated to WorkManager so ContentResolver
+ * and file I/O never run on the Application main thread.
  *
  * If AndroidKeyStore itself is unavailable, exact matching still fails open rather than risking a
  * false block; prefix and signed-prefix rules remain available.
@@ -23,8 +22,7 @@ class SentinelApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         SentinelSmsStatusReceiver.queueProviderRepair(this)
-        runCatching { MmsSendPduStager.pruneExpired(this) }
-        runCatching { MmsConversationStore(this).repairJournal() }
+        runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(this) }
 
         val store = CallBlocklistStore(this)
         val screeningSnapshot = store.prepareScreeningSnapshot()
