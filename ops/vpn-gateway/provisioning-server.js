@@ -10,6 +10,8 @@ import {
 } from "./lease-sequence-authority.js";
 import { persistVpnLeaseState } from "./trusted-state-persist.js";
 
+export { RedisVpnLeaseSequenceAuthority } from "./redis-lease-sequence-authority.js";
+
 const MAX_BODY_BYTES = 8 * 1024;
 const ADMIN_TOKEN = /^[A-Za-z0-9._~-]{32,2048}$/;
 const MAX_PERSIST_ATTEMPTS = 2;
@@ -138,16 +140,12 @@ export async function handleVpnProvisioningRequest({
       try {
         await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
       } catch {
-        // The peer must not remain active if durable trusted state cannot be established.
         await peerRuntime.remove(body.devicePublicKey);
         core.revoke(body.devicePublicKey);
-        // Best-effort compensation records the revoked state under a later monotonic sequence.
-        // If the authority remains unavailable, exact-sequence restore will fail closed.
         try {
           await persistCurrentLeaseState({ core, stateStore, sequenceAuthority });
         } catch {
-          // Deliberately ignored here: request already fails and restart cannot trust a sequence
-          // that does not exactly match the external authority.
+          // Request already fails. Exact-sequence restore will reject any uncommitted snapshot.
         }
         return json(503, { error: "VPN_LEASE_STATE_PERSIST_FAILED" });
       }
