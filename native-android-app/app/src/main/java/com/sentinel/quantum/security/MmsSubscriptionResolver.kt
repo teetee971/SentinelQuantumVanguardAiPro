@@ -1,8 +1,11 @@
 package com.sentinel.quantum.security
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.telephony.SubscriptionManager
+import androidx.core.content.ContextCompat
 
 /**
  * Single fail-closed source for the SIM/subscription attached to an incoming WAP/MMS broadcast.
@@ -53,12 +56,20 @@ internal object MmsSubscriptionResolver {
         return slotIndexFromNumber(numericExtra(intent, LEGACY_SLOT_KEY))
     }
 
-    private fun activeSubscriptions(context: Context) = runCatching {
-        context.getSystemService(SubscriptionManager::class.java)
-            ?.activeSubscriptionInfoList
-            .orEmpty()
-            .filter { SubscriptionManager.isValidSubscriptionId(it.subscriptionId) }
-    }.getOrDefault(emptyList())
+    private fun activeSubscriptions(context: Context): List<android.telephony.SubscriptionInfo> {
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return emptyList()
+        }
+        return runCatching {
+            context.getSystemService(SubscriptionManager::class.java)
+                ?.activeSubscriptionInfoList
+                .orEmpty()
+                .filter { SubscriptionManager.isValidSubscriptionId(it.subscriptionId) }
+        }.getOrDefault(emptyList())
+    }
 
     @Suppress("DEPRECATION")
     private fun numericExtra(intent: Intent, key: String): Number? = runCatching {
