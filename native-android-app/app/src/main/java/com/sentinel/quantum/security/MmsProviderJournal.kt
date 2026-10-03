@@ -35,6 +35,11 @@ internal class MmsProviderJournal(context: Context) {
 
     fun begin(token: String, transactionId: String, nowMs: Long = System.currentTimeMillis()): Boolean {
         if (!validToken(token) || !validTransactionId(transactionId) || nowMs < 0L) return false
+        val recordKey = key(token)
+        if (!preferences.contains(recordKey)) {
+            val persistedCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
+            if (persistedCount >= MAX_RECORDS) return false
+        }
         return write(Record(token, transactionId, null, Phase.BUILDING, nowMs))
     }
 
