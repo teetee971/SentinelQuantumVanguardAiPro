@@ -60,6 +60,8 @@ jobs:
             exit 1
           fi
 
+          test -x "$ANDROID_HOME/emulator/emulator"
+          test -f "$ANDROID_HOME/system-images/android-36/google_apis/x86_64/package.xml"
           timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_instrumentation_api36 --package "system-images;android-36;google_apis;x86_64"'
 
           EMULATOR_ACCEL_ARGS=(-no-accel)
@@ -78,7 +80,26 @@ jobs:
           EMULATOR_PID=$!
           trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
 
-          adb wait-for-device
+          DEVICE_READY=0
+          for _ in $(seq 1 90); do
+            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+              DEVICE_READY=1
+              break
+            fi
+            if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
+              echo "Android emulator exited before becoming available to adb."
+              cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [[ "$DEVICE_READY" != "1" ]]; then
+            echo "Android instrumentation emulator did not become available to adb within 180 seconds."
+            adb devices -l || true
+            cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+            exit 1
+          fi
+
           BOOTED=0
           for _ in $(seq 1 120); do
             if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" == "1" ]]; then
@@ -86,12 +107,14 @@ jobs:
               break
             fi
             if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
+              echo "Android emulator exited before boot completion."
               cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
               exit 1
             fi
             sleep 2
           done
           if [[ "$BOOTED" != "1" ]]; then
+            echo "Android instrumentation emulator did not finish booting."
             cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
             exit 1
           fi
