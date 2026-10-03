@@ -173,6 +173,11 @@ internal object IncomingMmsProjectionPlan {
             }
         }
 
+        val messageSizeBytes = envelope.messageSizeBytes ?: total
+        if (messageSizeBytes < total || messageSizeBytes > MAX_PROVIDER_MESSAGE_SIZE_BYTES) {
+            return Result.Quarantined("INVALID_MESSAGE_SIZE")
+        }
+
         return Result.Ready(
             Plan(
                 digestHex = digest,
@@ -186,7 +191,7 @@ internal object IncomingMmsProjectionPlan {
                 mmsVersion = envelope.mmsVersion,
                 contentType = envelope.contentType,
                 subscriptionId = subscriptionId,
-                messageSizeBytes = envelope.messageSizeBytes ?: total,
+                messageSizeBytes = messageSizeBytes,
                 textOnly = projected.size <= 2 && projected.all {
                     it is Part.Text || it is Part.Smil
                 },
@@ -231,6 +236,7 @@ internal object IncomingMmsProjectionPlan {
     private const val MAX_PARTS = 32
     private const val MAX_PART_BYTES = 8 * 1024 * 1024
     private const val MAX_TOTAL_BYTES = 16L * 1024L * 1024L
+    private const val MAX_PROVIDER_MESSAGE_SIZE_BYTES = 17L * 1024L * 1024L
     private const val SMIL_MIME = "application/smil"
     private const val MULTIPART_MIXED = "application/vnd.wap.multipart.mixed"
     private const val MULTIPART_ALTERNATIVE = "application/vnd.wap.multipart.alternative"
