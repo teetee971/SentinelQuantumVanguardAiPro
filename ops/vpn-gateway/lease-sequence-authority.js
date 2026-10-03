@@ -1,11 +1,12 @@
 const GATEWAY_ID = /^[a-z0-9][a-z0-9-]{1,62}$/;
+const SNAPSHOT_DIGEST = /^[a-f0-9]{64}$/;
 
 export class VpnLeaseSequenceAuthority {
-  async readMinimumSequence(_gatewayId) {
+  async readCommit(_gatewayId) {
     throw new Error("VPN_SEQUENCE_AUTHORITY_NOT_IMPLEMENTED");
   }
 
-  async commitSequence(_gatewayId, _sequence) {
+  async commitSnapshot(_gatewayId, _sequence, _snapshotDigest) {
     throw new Error("VPN_SEQUENCE_AUTHORITY_NOT_IMPLEMENTED");
   }
 }
@@ -25,4 +26,16 @@ export function validateVpnLeaseSequenceBoundary({ gatewayId, sequence }) {
     throw new Error("VPN_SEQUENCE_AUTHORITY_SEQUENCE_INVALID");
   }
   return Object.freeze({ gatewayId, sequence });
+}
+
+export function validateVpnLeaseCommitBoundary({ gatewayId, sequence, snapshotDigest }) {
+  const boundary = validateVpnLeaseSequenceBoundary({ gatewayId, sequence });
+  if (!SNAPSHOT_DIGEST.test(String(snapshotDigest || ""))) {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_DIGEST_INVALID");
+  }
+  return Object.freeze({
+    gatewayId: boundary.gatewayId,
+    sequence: boundary.sequence,
+    snapshotDigest,
+  });
 }
