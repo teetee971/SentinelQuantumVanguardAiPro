@@ -64,6 +64,55 @@ class SentinelMmsPduDecoderTest {
         assertTrue(result is MmsDecodePipeline.Result.Accepted)
     }
 
+    @Test fun canonicalBodyOffsetAvoidsCompetingHeaderInterpretation() {
+        val fakeMultipartInsideSubject = byteArrayOf(
+            0x84.toByte(), 0xa3.toByte(),
+            0x01, 0x01, 0x01, 0x83.toByte(), 'x'.code.toByte(), 0x00
+        )
+        val subjectPayload = byteArrayOf(0xea.toByte()) + fakeMultipartInsideSubject
+        val realPayload = "bonjour canonique".toByteArray(Charsets.UTF_8)
+        val realBody = byteArrayOf(
+            0x01,
+            0x01,
+            realPayload.size.toByte(),
+            0x83.toByte()
+        ) + realPayload
+        val pdu = byteArrayOf(
+            0x8c.toByte(), 0x84.toByte(), // M-Retrieve.conf
+            0x8d.toByte(), 0x92.toByte(), // MMS 1.2
+            0x85.toByte(), 0x01, 0x01,    // Date=1
+            0x96.toByte(), subjectPayload.size.toByte()
+        ) + subjectPayload + byteArrayOf(
+            0x84.toByte(), 0xa3.toByte()  // real top-level multipart/mixed
+        ) + realBody
+
+        val envelope = MmsRetrieveEnvelopeParser.parse(pdu)
+        assertTrue(envelope is MmsRetrieveEnvelopeParser.Result.Accepted)
+        val bodyOffset = (envelope as MmsRetrieveEnvelopeParser.Result.Accepted).envelope.bodyOffset
+        val decoded = SentinelMmsPduDecoder.decodeMultipartBody(pdu, bodyOffset)
+        assertTrue(decoded is MmsPduDecoder.DecodeResult.Decoded)
+        val part = (decoded as MmsPduDecoder.DecodeResult.Decoded).parts.single()
+        assertEquals("text/plain", part.mimeType)
+        assertEquals("bonjour canonique", part.payload.toString(Charsets.UTF_8))
+    }
+
+    @Test fun canonicalBodyOffsetFailsClosedOnInvalidOrTrailingBody() {
+        val pdu = byteArrayOf(
+            0x84.toByte(), 0xa3.toByte(),
+            0x01, 0x01, 0x01, 0x83.toByte(), 'x'.code.toByte()
+        )
+        assertEquals(
+            "INVALID_BODY_OFFSET",
+            (SentinelMmsPduDecoder.decodeMultipartBody(pdu, 0) as MmsPduDecoder.DecodeResult.Rejected).reason
+        )
+
+        val withTrailing = pdu + byteArrayOf(0x00)
+        assertEquals(
+            "MALFORMED_MULTIPART_BODY",
+            (SentinelMmsPduDecoder.decodeMultipartBody(withTrailing, 2) as MmsPduDecoder.DecodeResult.Rejected).reason
+        )
+    }
+
     @Test fun malformedMultipartFailsClosed() {
         val malformed = byteArrayOf(
             0x84.toByte(),
