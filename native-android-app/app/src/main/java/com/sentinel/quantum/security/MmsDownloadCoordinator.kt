@@ -4,14 +4,13 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.Telephony
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import androidx.core.content.FileProvider
 import java.io.File
 import java.util.UUID
 
-/** Uses Android's public MMS transport API to retrieve a Notification.ind payload. */
+/** Uses Android's public MMS transport API to retrieve a validated Notification.ind payload. */
 object MmsDownloadCoordinator {
     sealed class Result {
         data class Requested(val subscriptionId: Int, val fileName: String) : Result()
@@ -20,7 +19,11 @@ object MmsDownloadCoordinator {
     }
 
     fun request(context: Context, notificationPdu: ByteArray, sourceIntent: Intent): Result {
-        val notification = MmsNotificationParser.parse(notificationPdu) ?: return Result.NotNotification
+        val notification = when (val inspection = MmsNotificationParser.inspect(notificationPdu)) {
+            is MmsNotificationParser.Inspection.Accepted -> inspection.notification
+            is MmsNotificationParser.Inspection.Rejected -> return Result.Rejected(inspection.reason)
+            MmsNotificationParser.Inspection.NotNotification -> return Result.NotNotification
+        }
         if (!holdsSmsRole(context)) return Result.Rejected("SMS_ROLE_NOT_HELD")
 
         val subscriptionId = resolveSubscriptionId(sourceIntent)
@@ -79,6 +82,13 @@ object MmsDownloadCoordinator {
                 .setData(Uri.parse("sentinel-mms-download://result/$token"))
                 .putExtra(EXTRA_FILE_NAME, canonicalFile.name)
                 .putExtra(EXTRA_SUBSCRIPTION_ID, subscriptionId)
+                .putExtra(EXTRA_TRANSACTION_ID, notification.transactionId)
+            when (val senderIdentity = notification.senderIdentity) {
+                is MmsNotificationParser.SenderIdentity.Verified ->
+                    callbackIntent.putExtra(EXTRA_VERIFIED_SENDER, senderIdentity.address)
+                is MmsNotificationParser.SenderIdentity.Unavailable ->
+                    callbackIntent.putExtra(EXTRA_SENDER_UNAVAILABLE_REASON, senderIdentity.reason)
+            }
             val callback = PendingIntent.getBroadcast(
                 context,
                 token.hashCode(),
@@ -173,6 +183,9 @@ object MmsDownloadCoordinator {
     const val ACTION_DOWNLOAD_COMPLETE = "com.sentinel.quantum.MMS_DOWNLOAD_COMPLETE"
     const val EXTRA_FILE_NAME = "mms.download.file"
     const val EXTRA_SUBSCRIPTION_ID = "mms.download.subscription"
+    const val EXTRA_TRANSACTION_ID = "mms.download.transaction_id"
+    const val EXTRA_VERIFIED_SENDER = "mms.download.verified_sender"
+    const val EXTRA_SENDER_UNAVAILABLE_REASON = "mms.download.sender_unavailable_reason"
 
     const val MAX_DOWNLOADED_PDU_BYTES = 17L * 1024L * 1024L
     const val DOWNLOAD_TTL_MS = 24L * 60L * 60L * 1000L
