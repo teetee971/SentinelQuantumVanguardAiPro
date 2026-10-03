@@ -206,11 +206,17 @@ class SentinelMmsSender(private val context: Context) {
                 providerMessageId = providerMessageId
             )
         } catch (_: Exception) {
-            MmsSendPduStager.delete(context, staged.fileName)
             if (transportInvocationStarted) {
-                // The Android telephony call was entered. Keep OUTBOX and record uncertainty;
-                // deleting or failing the row here could contradict a late carrier callback.
-                providerStore.markSubmissionUnknown(staged.token, providerMessageId)
+                // The Android telephony call was entered. Keep both OUTBOX and staged PDU because
+                // a synchronous exception does not prove Android stopped consuming the content URI.
+                // The callback or the bounded cache-prune path owns PDU cleanup from this point.
+                if (!providerStore.markSubmissionUnknown(staged.token, providerMessageId)) {
+                    LocalLogger(context).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "MmsProvider",
+                        "Issue de soumission MMS inconnue et journal SUBMISSION_UNKNOWN non confirmé"
+                    )
+                }
                 SendResult(
                     accepted = false,
                     reason = "MMS_SUBMISSION_OUTCOME_UNKNOWN",
@@ -219,6 +225,7 @@ class SentinelMmsSender(private val context: Context) {
                     providerMessageId = providerMessageId
                 )
             } else {
+                MmsSendPduStager.delete(context, staged.fileName)
                 // No transport invocation happened. Compensate the provider row instead of leaving
                 // a fake pending message. If cleanup cannot be proven the recovery journal remains.
                 val cleanupConfirmed = providerStore.abandonBeforeTransport(
