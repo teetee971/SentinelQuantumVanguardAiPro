@@ -59,11 +59,29 @@ class MmsDownloadCleanupWorker(
 
     companion object {
         fun schedule(context: Context, fileName: String) {
+            scheduleAtDeadline(
+                context = context,
+                fileName = fileName,
+                requestedAtMs = System.currentTimeMillis()
+            )
+        }
+
+        /**
+         * Reconstructs the original retention deadline after process death. The delay is anchored to
+         * the durable request timestamp; a restart must never grant a fresh 24-hour staging window.
+         */
+        internal fun scheduleAtDeadline(
+            context: Context,
+            fileName: String,
+            requestedAtMs: Long,
+            nowMs: Long = System.currentTimeMillis()
+        ) {
             require(MmsDownloadCoordinator.isValidStagedFileName(fileName)) {
                 "invalid MMS download file"
             }
+            require(requestedAtMs >= 0L) { "invalid MMS request timestamp" }
             val request = OneTimeWorkRequestBuilder<MmsDownloadCleanupWorker>()
-                .setInitialDelay(MmsDownloadCoordinator.DOWNLOAD_TTL_MS, TimeUnit.MILLISECONDS)
+                .setInitialDelay(remainingDelayMs(requestedAtMs, nowMs), TimeUnit.MILLISECONDS)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
                 .setInputData(workDataOf(KEY_FILE_NAME to fileName))
                 .addTag(WORK_TAG)
@@ -74,6 +92,19 @@ class MmsDownloadCleanupWorker(
                 ExistingWorkPolicy.KEEP,
                 request
             )
+        }
+
+        internal fun remainingDelayMs(requestedAtMs: Long, nowMs: Long): Long {
+            if (requestedAtMs < 0L) return 0L
+            val deadlineMs = if (
+                requestedAtMs > Long.MAX_VALUE - MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+            ) {
+                Long.MAX_VALUE
+            } else {
+                requestedAtMs + MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+            }
+            if (nowMs < 0L) return deadlineMs
+            return if (deadlineMs <= nowMs) 0L else deadlineMs - nowMs
         }
 
         fun cancel(context: Context, fileName: String) {
