@@ -90,14 +90,20 @@ object MmsDecodeBoundary {
                 byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
             )
             "image/gif" -> bytes.size >= 6 && (
-                String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF87a" ||
-                    String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF89a"
+                hasAscii(bytes, 0, "GIF87a") || hasAscii(bytes, 0, "GIF89a")
                 )
             "image/webp" -> bytes.size >= 12 &&
-                String(bytes.copyOfRange(0, 4), Charsets.US_ASCII) == "RIFF" &&
-                String(bytes.copyOfRange(8, 12), Charsets.US_ASCII) == "WEBP"
+                hasAscii(bytes, 0, "RIFF") && hasAscii(bytes, 8, "WEBP")
             else -> false
         }
+    }
+
+    private fun hasAscii(bytes: ByteArray, offset: Int, expected: String): Boolean {
+        if (offset < 0 || expected.isEmpty() || offset + expected.length > bytes.size) return false
+        for (index in expected.indices) {
+            if (bytes[offset + index].toInt() and 0xff != expected[index].code) return false
+        }
+        return true
     }
 
     private fun normalizeReference(value: String?): String? {
