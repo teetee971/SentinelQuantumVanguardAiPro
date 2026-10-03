@@ -1,8 +1,28 @@
 package com.sentinel.quantum.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -10,13 +30,15 @@ import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
 import com.sentinel.quantum.security.CallBlocklistStore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ArcepVerifiedPrefixSection(
     store: CallBlocklistStore,
     onRulesChanged: (CallBlocklistStore.Snapshot, String) -> Unit
 ) {
     var enabled by remember { mutableStateOf(store.isArcepVerifiedBlockingEnabled()) }
-    var expanded by remember { mutableStateOf(false) }
+    var showSheet by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
 
     HorizontalDivider()
     Text("Protection ARCEP contre les appels automatisés", fontWeight = FontWeight.Bold)
@@ -24,7 +46,7 @@ internal fun ArcepVerifiedPrefixSection(
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -33,11 +55,15 @@ internal fun ArcepVerifiedPrefixSection(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (enabled) "Blocage ARCEP activé" else "Blocage ARCEP désactivé",
+                        if (enabled) "Protection ARCEP active" else "Protection ARCEP inactive",
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "${ArcepVerifiedPrefixCatalog.entries.size} plages officielles · activation volontaire",
+                        if (enabled) {
+                            "${ArcepVerifiedPrefixCatalog.entries.size} plages sont appliquées au filtrage local."
+                        } else {
+                            "${ArcepVerifiedPrefixCatalog.entries.size} plages disponibles · aucune n’est appliquée automatiquement."
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -50,7 +76,7 @@ internal fun ArcepVerifiedPrefixSection(
                             onRulesChanged(
                                 store.snapshot(),
                                 if (requested) {
-                                    "Protection ARCEP activée : les plages affichées sont maintenant bloquées."
+                                    "Protection ARCEP activée : les plages officielles sont maintenant appliquées au filtrage local."
                                 } else {
                                     "Protection ARCEP désactivée : vos préfixes personnels restent inchangés."
                                 }
@@ -66,47 +92,122 @@ internal fun ArcepVerifiedPrefixSection(
             }
 
             Text(
-                "Ces racines correspondent aux numéros polyvalents vérifiés pouvant être utilisés par des systèmes automatisés d’appels ou de messages. Elles ne prouvent ni une fraude ni l’identité de l’appelant.",
+                "Ces plages sont des racines réglementaires pouvant servir à des appels automatisés. Elles ne prouvent ni une fraude, ni l’identité, ni la localisation réelle de l’appelant.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             OutlinedButton(
-                onClick = { expanded = !expanded },
+                onClick = { showSheet = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (expanded) "Masquer les préfixes ARCEP" else "Afficher les préfixes ARCEP")
+                Text("Voir les ${ArcepVerifiedPrefixCatalog.entries.size} préfixes ARCEP")
             }
+        }
+    }
 
-            if (expanded) {
-                ArcepVerifiedPrefixCatalog.entries.forEach { entry ->
-                    HorizontalDivider()
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                listOf(entry.flag, entry.territory)
-                                    .filter { it.isNotBlank() }
-                                    .joinToString(" "),
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                "National ${entry.nationalRoot} · moteur ${entry.e164Prefix}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showSheet = false
+                query = ""
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.86f)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Préfixes ARCEP", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    if (enabled) "Protection active · ces plages sont actuellement appliquées." else "Protection inactive · liste informative uniquement.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it.take(40) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Rechercher") },
+                    placeholder = { Text("Guadeloupe, 09475, +590…") }
+                )
+
+                val normalizedQuery = query.trim().lowercase()
+                val entries = remember(normalizedQuery) {
+                    ArcepVerifiedPrefixCatalog.entries.filter { entry ->
+                        normalizedQuery.isBlank() ||
+                            entry.territory.lowercase().contains(normalizedQuery) ||
+                            entry.nationalRoot.contains(normalizedQuery) ||
+                            entry.e164Prefix.contains(normalizedQuery)
+                    }
+                }
+                Text(
+                    "${entries.size} résultat(s)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(entries, key = { it.e164Prefix }) { entry ->
+                        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.medium,
+                                    color = MaterialTheme.colorScheme.secondaryContainer
+                                ) {
+                                    Text(
+                                        territoryCode(entry.territory),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(entry.territory, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "${entry.nationalRoot}  →  ${entry.e164Prefix}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Surface(
+                                    shape = MaterialTheme.shapes.large,
+                                    color = if (enabled) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                ) {
+                                    Text(
+                                        if (enabled) "Actif" else "Inactif",
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            }
                         }
-                        AssistChip(
-                            onClick = {},
-                            enabled = false,
-                            label = { Text(if (enabled) "Bloqué" else "Inactif") }
-                        )
                     }
                 }
             }
         }
     }
+}
+
+private fun territoryCode(territory: String): String = when {
+    territory.startsWith("France métropolitaine") -> "FR"
+    territory.startsWith("Guadeloupe") -> "GP"
+    territory.startsWith("Guyane") -> "GF"
+    territory.startsWith("Martinique") -> "MQ"
+    territory.startsWith("La Réunion") -> "RE"
+    territory.startsWith("Mayotte") -> "YT"
+    else -> "FR"
 }
