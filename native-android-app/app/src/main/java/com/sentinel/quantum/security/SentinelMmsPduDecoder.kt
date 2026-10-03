@@ -42,7 +42,7 @@ object SentinelMmsPduDecoder : MmsPduDecoder {
      * exact first body byte. Starting there prevents a 0x84 byte inside text/image payload from
      * being misinterpreted as a second candidate top-level header.
      */
-    fun decodeRetrieveBody(
+    internal fun decodeRetrieveBody(
         pdu: ByteArray,
         envelope: MmsRetrieveEnvelopeParser.Envelope
     ): MmsPduDecoder.DecodeResult {
