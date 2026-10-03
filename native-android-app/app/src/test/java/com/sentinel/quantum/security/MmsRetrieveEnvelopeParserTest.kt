@@ -168,7 +168,7 @@ class MmsRetrieveEnvelopeParserTest {
         if (sender != null) {
             headers += 0x89.toByte()
             if (sender == INSERT_ADDRESS_SENTINEL) {
-                headers += 0x01
+                headers += 0x01.toByte()
                 headers += 0x81.toByte()
             } else {
                 val encoded = sender.toByteArray(Charsets.US_ASCII) + byteArrayOf(0)
@@ -181,12 +181,12 @@ class MmsRetrieveEnvelopeParserTest {
         if (messageId != null) {
             headers += 0x8b.toByte()
             headers += messageId.toByteArray(Charsets.US_ASCII).toList()
-            headers += 0x00
+            headers += 0x00.toByte()
         }
         if (transactionId != null) {
             headers += 0x98.toByte()
             headers += transactionId.toByteArray(Charsets.US_ASCII).toList()
-            headers += 0x00
+            headers += 0x00.toByte()
         }
         headers += optionalHeaders.toList()
         headers += 0x84.toByte()
