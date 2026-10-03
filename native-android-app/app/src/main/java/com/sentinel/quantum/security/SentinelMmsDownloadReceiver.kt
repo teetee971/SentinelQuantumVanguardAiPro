@@ -256,11 +256,25 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             }
         }
 
+        // The receiver worker is serialized. Any `.part` here is therefore residue from a previous
+        // crash, not a concurrently valid writer. Refuse to continue if residue cannot be removed.
+        for (partial in canonicalDirectory.listFiles().orEmpty().filter { it.isFile && it.extension == "part" }) {
+            if (!runCatching { partial.delete() }.getOrDefault(false)) {
+                return PrivatePduPersistence.FAILED
+            }
+        }
+
+        // Leave at most MAX_STORED_MMS - 1 completed files before creating a new one. Storage bound
+        // is fail-closed: a deletion failure cannot silently grow the private inbox indefinitely.
         val files = canonicalDirectory.listFiles()
             ?.filter { it.isFile && it.extension == "pdu" }
             ?.sortedByDescending { it.lastModified() }
             .orEmpty()
-        files.drop(MAX_STORED_MMS - 1).forEach { runCatching { it.delete() } }
+        for (old in files.drop(MAX_STORED_MMS - 1)) {
+            if (!runCatching { old.delete() }.getOrDefault(false)) {
+                return PrivatePduPersistence.FAILED
+            }
+        }
 
         if (canonicalPartial.exists() && !runCatching { canonicalPartial.delete() }.getOrDefault(false)) {
             return PrivatePduPersistence.FAILED
