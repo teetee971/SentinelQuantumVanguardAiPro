@@ -6,6 +6,7 @@ on:
       - "v*"
 
 permissions:
+  actions: read
   contents: write
 
 concurrency:
@@ -20,6 +21,7 @@ jobs:
     environment:
       name: android-production
     permissions:
+      actions: read
       contents: write
 
     steps:
@@ -66,6 +68,102 @@ jobs:
             exit 1
           fi
           echo "Release provenance validated: $TAG -> $SHA -> current main"
+
+      - name: Require qualified main before signing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Workflows without path filters must have a successful push run for the
+          # exact release SHA. Path-scoped workflows instead require their latest
+          # successful main run to be an ancestor of the release SHA. Requiring an
+          # exact run for a path-scoped workflow would deadlock valid Android-only
+          # releases because GitHub legitimately skips that workflow.
+          EXACT_WORKFLOWS=(
+            "build-native-android.yml"
+            "build-aab-playconsole.yml"
+            "android-instrumentation.yml"
+            "security-governance-validation.yml"
+            "ai-governance-validation.yml"
+            "sentinel-isolation.yml"
+            "integrity-check.yml"
+            "preproduction-final-gate.yml"
+            "product-capability-truth.yml"
+            "codeql-analysis.yml"
+          )
+          PATH_SCOPED_WORKFLOWS=(
+            "frontend-validation.yml"
+            "lighthouse-preproduction.yml"
+          )
+
+          api_get() {
+            curl --fail --silent --show-error --location --retry 3 \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" "$@"
+          }
+
+          require_successful_run() {
+            local workflow="$1"
+            local mode="$2"
+            local api="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}/runs"
+            local response latest status conclusion run_id run_url run_sha
+            if [[ "$mode" == "exact" ]]; then
+              response="$(api_get --get \
+                --data-urlencode "head_sha=${GITHUB_SHA}" \
+                --data-urlencode "event=push" \
+                --data-urlencode "per_page=10" \
+                "$api")"
+            else
+              response="$(api_get --get \
+                --data-urlencode "branch=main" \
+                --data-urlencode "event=push" \
+                --data-urlencode "per_page=20" \
+                "$api")"
+            fi
+
+            latest="$(jq -c '[.workflow_runs[]] | sort_by(.run_number) | last // empty' <<<"$response")"
+            if [[ -z "$latest" ]]; then
+              echo "ERROR ${workflow}: no qualifying push run found"
+              exit 1
+            fi
+
+            status="$(jq -r '.status' <<<"$latest")"
+            conclusion="$(jq -r '.conclusion // ""' <<<"$latest")"
+            run_id="$(jq -r '.id' <<<"$latest")"
+            run_url="$(jq -r '.html_url' <<<"$latest")"
+            run_sha="$(jq -r '.head_sha' <<<"$latest")"
+            if [[ "$status" != "completed" || "$conclusion" != "success" ]]; then
+              echo "ERROR ${workflow}: run ${run_id} is status=${status} conclusion=${conclusion}: ${run_url}"
+              exit 1
+            fi
+
+            if [[ "$mode" == "exact" ]]; then
+              if [[ "$run_sha" != "$GITHUB_SHA" ]]; then
+                echo "ERROR ${workflow}: expected exact SHA ${GITHUB_SHA}, got ${run_sha}"
+                exit 1
+              fi
+            else
+              compare_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/compare/${run_sha}...${GITHUB_SHA}"
+              compare_status="$(api_get "$compare_url" | jq -r '.status // ""')"
+              if [[ "$compare_status" != "ahead" && "$compare_status" != "identical" ]]; then
+                echo "ERROR ${workflow}: latest successful path-scoped run ${run_id} (${run_sha}) is not an ancestor of release SHA ${GITHUB_SHA}; compare status=${compare_status}"
+                exit 1
+              fi
+            fi
+            echo "PASS ${workflow}: run ${run_id} (${run_sha})"
+          }
+
+          for workflow in "${EXACT_WORKFLOWS[@]}"; do
+            require_successful_run "$workflow" exact
+          done
+          for workflow in "${PATH_SCOPED_WORKFLOWS[@]}"; do
+            require_successful_run "$workflow" ancestor
+          done
+
+          echo "All release qualification workflows are green for the release tree."
 
       - name: Validate signing secrets
         env:
