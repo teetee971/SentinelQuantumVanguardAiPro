@@ -184,6 +184,29 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    /**
+     * Read-only provenance for the protection-list UI. No raw phone number or prefix value is
+     * returned: only non-sensitive package identifiers, timestamps, sequence and bounded counts.
+     */
+    fun signedRuleMetadata(): SignedRuleMetadata {
+        val sequence = preferences.getLong(SIGNED_SEQUENCE, 0L)
+        val issuedAt = preferences.getLong(SIGNED_ISSUED_AT, 0L)
+        val expiresAt = preferences.getLong(SIGNED_EXPIRES_AT, 0L)
+        val count = preferences.getStringSet(SIGNED_PREFIXES, emptySet()).orEmpty()
+            .take(CallRuleEngine.MAX_REPUTATION_RULES)
+            .size
+        return SignedRuleMetadata(
+            packageId = preferences.getString(SIGNED_PACKAGE_ID, null),
+            issuerId = preferences.getString(SIGNED_ISSUER_ID, null),
+            keyId = preferences.getString(SIGNED_KEY_ID, null),
+            acceptedSequence = sequence.takeIf { it > 0L },
+            issuedAtMs = issuedAt.takeIf { it > 0L },
+            expiresAtMs = expiresAt.takeIf { it > 0L },
+            storedPrefixCount = count,
+            persistedAfterVerification = sequence > 0L && expiresAt > 0L && count > 0
+        )
+    }
+
     fun installSignedSilenceRules(
         envelope: String,
         verifier: SignedCallRulePackageVerifier,
@@ -194,7 +217,11 @@ class CallBlocklistStore(context: Context) {
         if (!result.accepted || result.rulePackage == null) return@synchronized result
         val rulePackage = result.rulePackage
         val committed = preferences.edit()
+            .putString(SIGNED_PACKAGE_ID, rulePackage.packageId)
+            .putString(SIGNED_ISSUER_ID, rulePackage.issuerId)
+            .putString(SIGNED_KEY_ID, rulePackage.keyId)
             .putLong(SIGNED_SEQUENCE, rulePackage.sequence)
+            .putLong(SIGNED_ISSUED_AT, rulePackage.issuedAtMs)
             .putLong(SIGNED_EXPIRES_AT, rulePackage.expiresAtMs)
             .putStringSet(SIGNED_PREFIXES, rulePackage.silencePrefixes)
             .commit()
@@ -203,6 +230,17 @@ class CallBlocklistStore(context: Context) {
             result
         } else SignedCallRulePackageVerifier.Result(false, "SIGNED_RULE_STORAGE_FAILED")
     }
+
+    data class SignedRuleMetadata(
+        val packageId: String?,
+        val issuerId: String?,
+        val keyId: String?,
+        val acceptedSequence: Long?,
+        val issuedAtMs: Long?,
+        val expiresAtMs: Long?,
+        val storedPrefixCount: Int,
+        val persistedAfterVerification: Boolean
+    )
 
     data class Snapshot(
         val blockedNumberHashes: Set<String>,
@@ -244,7 +282,11 @@ class CallBlocklistStore(context: Context) {
         const val EXACT_METADATA = "blocked_number_metadata_v1"
         const val PREFIXES = "blocked_prefixes"
         const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
+        const val SIGNED_PACKAGE_ID = "signed_rule_package_id"
+        const val SIGNED_ISSUER_ID = "signed_rule_issuer_id"
+        const val SIGNED_KEY_ID = "signed_rule_key_id"
         const val SIGNED_SEQUENCE = "signed_rule_sequence"
+        const val SIGNED_ISSUED_AT = "signed_rule_issued_at"
         const val SIGNED_EXPIRES_AT = "signed_rule_expires_at"
         const val SIGNED_PREFIXES = "signed_silence_prefixes"
         val INSTALL_LOCK = Any()

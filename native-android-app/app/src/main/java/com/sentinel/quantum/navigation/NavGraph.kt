@@ -47,6 +47,9 @@ fun NavGraph(
         composable(Screen.CallBlocking.route) {
             CallBlockingScreen(navController = navController)
         }
+        composable(Screen.PhoneLists.route) {
+            PhoneProtectionListsScreen(navController = navController)
+        }
         composable(Screen.CallFilterHistory.route) {
             CallFilterHistoryScreen(navController = navController)
         }

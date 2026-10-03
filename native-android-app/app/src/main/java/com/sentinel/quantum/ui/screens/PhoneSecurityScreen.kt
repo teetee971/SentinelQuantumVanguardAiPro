@@ -180,6 +180,10 @@ fun PhoneSecurityScreen(navController: NavController) {
                         onClick = { navController.navigate(Screen.CallBlocking.route) },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Configurer le filtrage et l’identification d’appel") }
+                    OutlinedButton(
+                        onClick = { navController.navigate(Screen.PhoneLists.route) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Listes de protection") }
                 }
             }
 
