@@ -1,0 +1,238 @@
+package com.sentinel.quantum.security
+
+/**
+ * Pure trust boundary between a validated M-Retrieve.conf and Android provider mutation.
+ *
+ * Source text is decoded with its declared bounded charset, then represented as a Kotlin String.
+ * The provider writer deliberately stores that Unicode text with Android's canonical UTF-8 MIB
+ * enum instead of claiming that the decoded String still contains the source byte encoding.
+ */
+internal object IncomingMmsProjectionPlan {
+    sealed interface Part {
+        val mimeType: String
+        val sizeBytes: Int
+        val contentId: String?
+        val contentLocation: String?
+
+        data class Text(
+            override val mimeType: String,
+            override val sizeBytes: Int,
+            val text: String,
+            override val contentId: String? = null,
+            override val contentLocation: String? = null
+        ) : Part
+
+        data class Smil(
+            override val mimeType: String,
+            override val sizeBytes: Int,
+            val text: String,
+            override val contentId: String? = null,
+            override val contentLocation: String? = null
+        ) : Part
+
+        data class Binary(
+            override val mimeType: String,
+            override val sizeBytes: Int,
+            val payload: ByteArray,
+            override val contentId: String? = null,
+            override val contentLocation: String? = null
+        ) : Part
+    }
+
+    data class Plan(
+        val digestHex: String,
+        val sender: String,
+        val messageId: String?,
+        val transactionId: String?,
+        val toAddresses: List<String>,
+        val ccAddresses: List<String>,
+        val bccAddresses: List<String>,
+        val dateSeconds: Long,
+        val mmsVersion: Int,
+        val contentType: String,
+        val subscriptionId: Int,
+        val messageSizeBytes: Long,
+        val textOnly: Boolean,
+        val parts: List<Part>
+    )
+
+    sealed interface Result {
+        data class Ready(val plan: Plan) : Result
+        data class Quarantined(val reason: String) : Result
+    }
+
+    fun build(
+        digestHex: String,
+        envelope: MmsRetrieveEnvelopeParser.Envelope,
+        safeParts: List<MmsDecodeBoundary.SafePart>,
+        subscriptionId: Int
+    ): Result {
+        val digest = digestHex.lowercase().takeIf { DIGEST.matches(it) }
+            ?: return Result.Quarantined("INVALID_PRIVATE_IDENTITY")
+        if (subscriptionId < 0) return Result.Quarantined("INVALID_SUBSCRIPTION")
+        if (envelope.messageType != MESSAGE_TYPE_RETRIEVE_CONF) {
+            return Result.Quarantined("NOT_RETRIEVE_CONF")
+        }
+        if (envelope.dateSeconds < 0L) return Result.Quarantined("INVALID_DATE")
+        if (envelope.senderDisposition != MmsRetrieveEnvelopeParser.SenderDisposition.ADDRESS) {
+            return Result.Quarantined("SENDER_NOT_EXPLICIT")
+        }
+        val sender = envelope.senderAddress
+            ?.trim()
+            ?.takeIf(::isSaneAddress)
+            ?: return Result.Quarantined("INVALID_SENDER")
+        val toAddresses = validateAddressList(envelope.toAddresses)
+            ?: return Result.Quarantined("INVALID_TO_ADDRESSES")
+        val ccAddresses = validateAddressList(envelope.ccAddresses)
+            ?: return Result.Quarantined("INVALID_CC_ADDRESSES")
+        val bccAddresses = validateAddressList(envelope.bccAddresses)
+            ?: return Result.Quarantined("INVALID_BCC_ADDRESSES")
+        val messageId = envelope.messageId?.takeIf(::isSaneProtocolId)
+        val transactionId = envelope.transactionId?.takeIf(::isSaneProtocolId)
+        if (messageId == null && transactionId == null) {
+            return Result.Quarantined("MISSING_RECOVERY_IDENTITY")
+        }
+        if (envelope.messageId != null && messageId == null) {
+            return Result.Quarantined("INVALID_MESSAGE_ID")
+        }
+        if (envelope.transactionId != null && transactionId == null) {
+            return Result.Quarantined("INVALID_TRANSACTION_ID")
+        }
+        if (envelope.contentType !in MULTIPART_TYPES) {
+            return Result.Quarantined("UNSUPPORTED_CONTENT_TYPE")
+        }
+        if (envelope.contentType == MULTIPART_ALTERNATIVE) {
+            return Result.Quarantined("PRESENTATION_METADATA_NOT_PRESERVED")
+        }
+        if (safeParts.isEmpty() || safeParts.size > MAX_PARTS) {
+            return Result.Quarantined("INVALID_PART_COUNT")
+        }
+        if (envelope.contentType == MULTIPART_RELATED) {
+            val smilCount = safeParts.count { it.mimeType == SMIL_MIME }
+            if (smilCount != 1) return Result.Quarantined("RELATED_SMIL_REQUIRED")
+            if (safeParts.any {
+                    it.mimeType != SMIL_MIME && it.contentId == null && it.contentLocation == null
+                }
+            ) {
+                return Result.Quarantined("RELATED_PART_REFERENCE_REQUIRED")
+            }
+        }
+
+        var total = 0L
+        val projected = ArrayList<Part>(safeParts.size)
+        for (part in safeParts) {
+            val size = part.payload.size
+            if (size <= 0 || size > MAX_PART_BYTES) {
+                return Result.Quarantined("INVALID_PART_SIZE")
+            }
+            total += size.toLong()
+            if (total > MAX_TOTAL_BYTES) return Result.Quarantined("MESSAGE_TOO_LARGE")
+            when (part.mimeType) {
+                "text/plain" -> {
+                    val decoded = MmsTextCharset.decode(part.payload, part.charsetMibEnum)
+                        ?: return Result.Quarantined("TEXT_CHARSET_UNSUPPORTED")
+                    projected += Part.Text(
+                        mimeType = part.mimeType,
+                        sizeBytes = size,
+                        text = decoded.text,
+                        contentId = part.contentId,
+                        contentLocation = part.contentLocation
+                    )
+                }
+                SMIL_MIME -> {
+                    val decoded = MmsTextCharset.decode(part.payload, part.charsetMibEnum)
+                        ?: return Result.Quarantined("SMIL_CHARSET_UNSUPPORTED")
+                    if (decoded.text.indexOf("<smil", ignoreCase = true) < 0) {
+                        return Result.Quarantined("INVALID_SMIL_PRESENTATION")
+                    }
+                    projected += Part.Smil(
+                        mimeType = part.mimeType,
+                        sizeBytes = size,
+                        text = decoded.text,
+                        contentId = part.contentId,
+                        contentLocation = part.contentLocation
+                    )
+                }
+                "image/jpeg", "image/png", "image/gif", "image/webp" -> {
+                    if (part.charsetMibEnum != null) {
+                        return Result.Quarantined("UNEXPECTED_BINARY_CHARSET")
+                    }
+                    projected += Part.Binary(
+                        mimeType = part.mimeType,
+                        sizeBytes = size,
+                        payload = part.payload.copyOf(),
+                        contentId = part.contentId,
+                        contentLocation = part.contentLocation
+                    )
+                }
+                else -> return Result.Quarantined("UNSUPPORTED_SAFE_PART")
+            }
+        }
+
+        val messageSizeBytes = envelope.messageSizeBytes ?: total
+        if (messageSizeBytes < total || messageSizeBytes > MAX_PROVIDER_MESSAGE_SIZE_BYTES) {
+            return Result.Quarantined("INVALID_MESSAGE_SIZE")
+        }
+
+        return Result.Ready(
+            Plan(
+                digestHex = digest,
+                sender = sender,
+                messageId = messageId,
+                transactionId = transactionId,
+                toAddresses = toAddresses,
+                ccAddresses = ccAddresses,
+                bccAddresses = bccAddresses,
+                dateSeconds = envelope.dateSeconds,
+                mmsVersion = envelope.mmsVersion,
+                contentType = envelope.contentType,
+                subscriptionId = subscriptionId,
+                messageSizeBytes = messageSizeBytes,
+                textOnly = projected.size <= 2 && projected.all {
+                    it is Part.Text || it is Part.Smil
+                },
+                parts = projected
+            )
+        )
+    }
+
+    private fun validateAddressList(values: List<String>): List<String>? {
+        if (values.size > MAX_ADDRESSES_PER_FIELD) return null
+        val result = ArrayList<String>(values.size)
+        for (value in values) {
+            val normalized = value.trim().takeIf(::isSaneAddress) ?: return null
+            result += normalized
+        }
+        return result
+    }
+
+    private fun isSaneAddress(value: String): Boolean =
+        value.isNotBlank() &&
+            value.length <= MAX_ADDRESS_CHARS &&
+            value.all { it.code in 0x20..0x7e } &&
+            value.none { it == '/' || it == '\u0000' }
+
+    private fun isSaneProtocolId(value: String): Boolean =
+        value.isNotBlank() &&
+            value.length <= MAX_PROTOCOL_ID_CHARS &&
+            value.all { it.code in 0x21..0x7e }
+
+    private const val MESSAGE_TYPE_RETRIEVE_CONF = 0x84
+    private const val MAX_ADDRESS_CHARS = 256
+    private const val MAX_ADDRESSES_PER_FIELD = 32
+    private const val MAX_PROTOCOL_ID_CHARS = 256
+    private const val MAX_PARTS = 32
+    private const val MAX_PART_BYTES = 8 * 1024 * 1024
+    private const val MAX_TOTAL_BYTES = 16L * 1024L * 1024L
+    private const val MAX_PROVIDER_MESSAGE_SIZE_BYTES = 17L * 1024L * 1024L
+    private const val SMIL_MIME = "application/smil"
+    private const val MULTIPART_MIXED = "application/vnd.wap.multipart.mixed"
+    private const val MULTIPART_ALTERNATIVE = "application/vnd.wap.multipart.alternative"
+    private const val MULTIPART_RELATED = "application/vnd.wap.multipart.related"
+    private val DIGEST = Regex("^[0-9a-f]{64}$")
+    private val MULTIPART_TYPES = setOf(
+        MULTIPART_MIXED,
+        MULTIPART_ALTERNATIVE,
+        MULTIPART_RELATED
+    )
+}

@@ -23,8 +23,8 @@ object MmsDownloadCoordinator {
         val notification = MmsNotificationParser.parse(notificationPdu) ?: return Result.NotNotification
         if (!holdsSmsRole(context)) return Result.Rejected("SMS_ROLE_NOT_HELD")
 
-        val subscriptionId = resolveSubscriptionId(sourceIntent)
-        if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+        val subscriptionId = MmsSubscriptionResolver.resolve(context, sourceIntent)
+        if (!SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
             return Result.Rejected("MMS_SUBSCRIPTION_REQUIRED")
         }
 
@@ -39,7 +39,7 @@ object MmsDownloadCoordinator {
         if (canonicalDirectory.parentFile != canonicalCache) {
             return Result.Rejected("MMS_CACHE_PATH_REJECTED")
         }
-        prune(canonicalDirectory)
+        prune(context.applicationContext, canonicalDirectory)
 
         val token = UUID.randomUUID().toString()
         val fileName = "$token.pdu"
@@ -64,13 +64,20 @@ object MmsDownloadCoordinator {
             return Result.Rejected("MMS_DOWNLOAD_URI_FAILED")
         }
 
-        val cleanupScheduled = runCatching {
+        val recoveryJournal = MmsDownloadRecoveryJournal(context.applicationContext)
+        if (!recoveryJournal.record(canonicalFile.name, subscriptionId)) {
+            canonicalFile.delete()
+            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED")
+        }
+
+        val safetyNetScheduled = runCatching {
             MmsDownloadCleanupWorker.schedule(context.applicationContext, canonicalFile.name)
+            MmsDownloadRecoveryWorker.schedule(context.applicationContext, canonicalFile.name)
             true
         }.getOrDefault(false)
-        if (!cleanupScheduled) {
-            canonicalFile.delete()
-            return Result.Rejected("MMS_DOWNLOAD_CLEANUP_SCHEDULE_FAILED")
+        if (!safetyNetScheduled) {
+            delete(context, canonicalFile.name)
+            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_SCHEDULE_FAILED")
         }
 
         return try {
@@ -103,13 +110,45 @@ object MmsDownloadCoordinator {
     }
 
     fun delete(context: Context, fileName: String): Boolean =
-        deleteInternal(context, fileName, cancelCleanup = true)
+        deleteInternal(
+            context = context,
+            fileName = fileName,
+            cancelCleanup = true,
+            cancelRecovery = true,
+            removeRecoveryMetadata = true
+        )
 
-    /** Called only by the durable worker for this file; never cancels the running worker itself. */
+    /** Called only by the durable cleanup worker; never cancels that running worker itself. */
     internal fun expire(context: Context, fileName: String): Boolean =
-        deleteInternal(context, fileName, cancelCleanup = false)
+        deleteInternal(
+            context = context,
+            fileName = fileName,
+            cancelCleanup = false,
+            cancelRecovery = true,
+            removeRecoveryMetadata = true
+        )
 
-    private fun deleteInternal(context: Context, fileName: String, cancelCleanup: Boolean): Boolean {
+    /** Called after durable private persistence/provider handling succeeded. */
+    internal fun finishRecovery(
+        context: Context,
+        fileName: String,
+        cancelCleanupWorker: Boolean = true
+    ): Boolean =
+        deleteInternal(
+            context = context,
+            fileName = fileName,
+            cancelCleanup = cancelCleanupWorker,
+            cancelRecovery = false,
+            removeRecoveryMetadata = true
+        )
+
+    private fun deleteInternal(
+        context: Context,
+        fileName: String,
+        cancelCleanup: Boolean,
+        cancelRecovery: Boolean,
+        removeRecoveryMetadata: Boolean
+    ): Boolean {
         if (!isValidStagedFileName(fileName)) return false
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull()
             ?: return false
@@ -120,39 +159,45 @@ object MmsDownloadCoordinator {
             ?: return false
         if (file.parentFile != canonicalDirectory) return false
         val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
-        if (removed && cancelCleanup) {
+        if (!removed) return false
+
+        // Do not cancel the durable safety nets until the recovery journal is durably retired.
+        // Otherwise a SharedPreferences commit failure can strand phantom recovery metadata with no
+        // worker left to revisit it. A failed metadata retirement therefore stays fail-closed and
+        // leaves the existing workers scheduled for a later cleanup/recovery pass.
+        if (removeRecoveryMetadata) {
+            val metadataRemoved = MmsDownloadRecoveryJournal(context.applicationContext).remove(fileName)
+            if (!metadataRemoved) return false
+        }
+        if (cancelCleanup) {
             runCatching { MmsDownloadCleanupWorker.cancel(context.applicationContext, fileName) }
         }
-        return removed
+        if (cancelRecovery) {
+            runCatching { MmsDownloadRecoveryWorker.cancel(context.applicationContext, fileName) }
+        }
+        return true
     }
 
-    /** Secondary recovery path for stale, oversized or malformed files. */
+    /**
+     * Secondary final-deadline recovery for stale, oversized or malformed staging files.
+     *
+     * Valid staged MMS files are never unlinked raw: if durable routing metadata exists, they get
+     * the same final private/provider recovery attempt as the cleanup worker before staging is
+     * retired. This also removes the matching recovery journal and worker state instead of leaving
+     * phantom work behind. Invalid filenames cannot have valid journal entries and are deleted raw.
+     */
     fun pruneExpired(context: Context): Int {
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return 0
         val directory = File(canonicalCache, DOWNLOAD_DIRECTORY)
         if (!directory.exists() || !directory.isDirectory) return 0
         val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return 0
         if (canonicalDirectory.parentFile != canonicalCache) return 0
-        return prune(canonicalDirectory)
+        return prune(context.applicationContext, canonicalDirectory)
     }
 
-    private fun resolveSubscriptionId(intent: Intent): Int {
-        val fromPlatform = intent.getIntExtra(
-            SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX,
-            SubscriptionManager.INVALID_SUBSCRIPTION_ID
-        )
-        if (fromPlatform != SubscriptionManager.INVALID_SUBSCRIPTION_ID) return fromPlatform
-
-        // Older telephony stacks used this extra name for WAP push delivery.
-        val legacy = intent.getIntExtra("subscription", SubscriptionManager.INVALID_SUBSCRIPTION_ID)
-        if (legacy != SubscriptionManager.INVALID_SUBSCRIPTION_ID) return legacy
-
-        return SubscriptionManager.getDefaultSmsSubscriptionId()
-    }
-
-    private fun prune(directory: File): Int {
+    private fun prune(context: Context, directory: File): Int {
         val cutoff = System.currentTimeMillis() - DOWNLOAD_TTL_MS
-        var deleted = 0
+        var retired = 0
         directory.listFiles().orEmpty()
             .filter {
                 it.isFile && (
@@ -161,8 +206,27 @@ object MmsDownloadCoordinator {
                     !isValidStagedFileName(it.name)
                 )
             }
-            .forEach { if (runCatching { it.delete() }.getOrDefault(false)) deleted++ }
-        return deleted
+            .forEach { file ->
+                val existedBefore = file.exists()
+                if (isValidStagedFileName(file.name)) {
+                    if (MmsDownloadRecoveryJournal(context).read(file.name) != null) {
+                        runCatching {
+                            MmsDownloadRecovery.recover(
+                                context = context,
+                                fileName = file.name,
+                                allowQuarantine = true
+                            )
+                        }
+                    }
+                    // Mirror the cleanup deadline even if final recovery could not complete: retire
+                    // the staged file, its recovery metadata and any pending recovery worker.
+                    expire(context, file.name)
+                } else {
+                    runCatching { file.delete() }
+                }
+                if (existedBefore && !file.exists()) retired++
+            }
+        return retired
     }
 
     private fun holdsSmsRole(context: Context): Boolean =

@@ -9,13 +9,41 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
-/** Durable per-file cleanup for temporary MMS download payloads when Android never calls back. */
+/**
+ * Durable per-file deadline for temporary MMS downloads.
+ *
+ * Before the final bounded deletion, one last recovery pass is attempted. This preserves the
+ * original privacy guarantee (temporary cache cannot live forever) without confusing cleanup with
+ * product recovery when Android's callback was lost.
+ */
 class MmsDownloadCleanupWorker(
     appContext: Context,
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
         val fileName = inputData.getString(KEY_FILE_NAME) ?: return Result.success()
+        val outcome = runCatching {
+            MmsDownloadRecovery.recover(
+                context = applicationContext,
+                fileName = fileName,
+                allowQuarantine = true
+            )
+        }.getOrDefault(MmsDownloadRecovery.Outcome.RETRY)
+
+        if (outcome == MmsDownloadRecovery.Outcome.RETRY) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échéance de reprise MMS atteinte : restauration automatique non terminée avant suppression du staging"
+            )
+            SmsNotificationHelper.notifyMessage(
+                applicationContext,
+                title = "MMS à vérifier",
+                preview = "Le MMS n’a pas pu être restauré automatiquement dans la conversation avant l’expiration de sa copie temporaire.",
+                notificationId = fileName.hashCode()
+            )
+        }
+
         MmsDownloadCoordinator.expire(applicationContext, fileName)
         return Result.success()
     }

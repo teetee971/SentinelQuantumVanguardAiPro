@@ -9,7 +9,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
-/** Durable safety net for staged outgoing MMS payloads and provider recovery metadata. */
+/** Durable safety net for staged MMS payloads and outgoing/incoming provider recovery metadata. */
 class MmsSendCleanupWorker(
     appContext: Context,
     workerParams: WorkerParameters
@@ -22,6 +22,10 @@ class MmsSendCleanupWorker(
             MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
             MmsSendPduStager.pruneExpired(applicationContext)
             runCatching { MmsConversationStore(applicationContext).repairJournal() }
+            runCatching { IncomingMmsConversationStore(applicationContext).repairJournal() }
+            // WorkManager survives process death, but an explicit startup nudge removes the delay
+            // for a downloaded PDU whose Android callback was lost with the dead process.
+            runCatching { MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext) }
         }
         return Result.success()
     }

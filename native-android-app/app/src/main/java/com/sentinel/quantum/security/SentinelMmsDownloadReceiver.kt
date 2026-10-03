@@ -10,9 +10,9 @@ import java.util.concurrent.Executors
  * Handles the explicit callback from Android's MMS download transport.
  *
  * The callback identity and BroadcastReceiver result code are captured synchronously. File reads,
- * decode/quarantine work, durable private persistence, timeline persistence and notifications are
- * then serialized on a private worker under goAsync(). The SMS-role boundary is revalidated on that
- * worker immediately before the downloaded PDU is touched.
+ * quarantine validation, durable private persistence, canonical provider projection, timeline
+ * persistence and notifications are serialized on a private worker under goAsync(). The SMS-role
+ * boundary is revalidated immediately before downloaded bytes and again by provider projection.
  */
 class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -32,10 +32,8 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID,
             android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID
         )
-        if (subscriptionId == android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
+        if (!android.telephony.SubscriptionManager.isValidSubscriptionId(subscriptionId)) return
 
-        // BroadcastReceiver.resultCode is callback-scoped state. Capture it before onReceive exits;
-        // the worker must never read resultCode after the broadcast callback has returned.
         val deliveredResultCode = resultCode
         val pendingResult = goAsync()
         val appContext = context.applicationContext
@@ -83,7 +81,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             fileName != "$token.pdu" ||
             !MmsDownloadCoordinator.isValidStagedFileName(fileName)
         ) return
-        if (subscriptionId == android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
+        if (!android.telephony.SubscriptionManager.isValidSubscriptionId(subscriptionId)) return
 
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return
         val directory = java.io.File(canonicalCache, MmsDownloadCoordinator.DOWNLOAD_DIRECTORY)
@@ -133,28 +131,60 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
+        // Keep the staged copy and its recovery metadata alive until private persistence AND the
+        // provider/quarantine decision complete. Otherwise a process death after private persist
+        // but before provider projection would strand a durable PDU with no subscription metadata
+        // available to the recovery worker.
         val data = runCatching { target.readBytes() }.getOrNull()
-        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
-        if (!temporaryDeleted) {
+        if (data == null || data.isEmpty()) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
-                "Échec de suppression du PDU MMS temporaire; le nettoyage durable reste planifié"
-            )
-        }
-        if (data == null || data.isEmpty()) return
-
-        val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
-        val persistence = IncomingMmsPrivateStore.persist(context.filesDir, data)
-        if (persistence.state == IncomingMmsPrivateStore.State.FAILED) {
-            LocalLogger(context).log(
-                LocalLogger.LogLevel.SECURITY,
-                "MmsDownload",
-                "Persistance MMS privée refusée fail-closed"
+                "Lecture du PDU MMS téléchargé impossible; copie temporaire conservée jusqu’au nettoyage durable"
             )
             return
         }
 
+        val persistence = IncomingMmsPrivateStore.persist(context.filesDir, data)
+        val digest = persistence.digestHex
+        if (persistence.state == IncomingMmsPrivateStore.State.FAILED || digest == null) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.SECURITY,
+                "MmsDownload",
+                "Persistance MMS privée refusée fail-closed; copie temporaire conservée jusqu’au nettoyage durable"
+            )
+            return
+        }
+
+        val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
+        val safePreview: MmsDecodePipeline.Result = when (prepared) {
+            is IncomingMmsProjectionPipeline.Result.Ready ->
+                MmsDecodePipeline.Result.Accepted(prepared.safeParts)
+            is IncomingMmsProjectionPipeline.Result.Quarantined ->
+                MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
+        }
+
+        val providerResult = when (prepared) {
+            is IncomingMmsProjectionPipeline.Result.Ready -> {
+                val store = IncomingMmsConversationStore(context)
+                runCatching { store.repairJournal() }
+                store.project(prepared.plan)
+            }
+            is IncomingMmsProjectionPipeline.Result.Quarantined -> null
+        }
+        if (providerResult is IncomingMmsConversationStore.ProjectResult.Rejected) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsProvider",
+                "Projection provider MMS différée; la copie staged et le journal de reprise restent actifs; raison=${providerResult.reason}"
+            )
+            return
+        }
+
+        val providerInserted =
+            providerResult is IncomingMmsConversationStore.ProjectResult.Ready && !providerResult.replay
+        val providerReplay =
+            providerResult is IncomingMmsConversationStore.ProjectResult.Ready && providerResult.replay
         val replay = persistence.state == IncomingMmsPrivateStore.State.EXISTING
         if (replay) {
             LocalLogger(context).log(
@@ -163,11 +193,17 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 "Replay MMS reconnu par identité SHA-256; aucune copie privée ni chronologie dupliquée"
             )
         } else {
+            val previewState =
+                if (safePreview is MmsDecodePipeline.Result.Accepted) "SAFE" else "QUARANTINED"
+            val providerState = when {
+                providerInserted -> "INSERTED"
+                providerReplay -> "REPLAY_NO_DUPLICATE"
+                else -> "PRIVATE_ONLY"
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
-                "MMS téléchargé conservé localement; taille=${data.size}; preview=" +
-                    if (safePreview is MmsDecodePipeline.Result.Accepted) "SAFE" else "QUARANTINED"
+                "MMS téléchargé conservé localement; taille=${data.size}; preview=$previewState; provider=$providerState"
             )
             runCatching {
                 PhonePrivateTimelineStore(context).append(
@@ -175,10 +211,12 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                         kind = PhonePrivateTimeline.Kind.MMS,
                         timestampMs = System.currentTimeMillis(),
                         direction = "INCOMING",
-                        signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                            "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
-                        } else {
-                            "MMS_DOWNLOAD_QUARANTINED"
+                        signal = when {
+                            providerInserted -> "MMS_DOWNLOAD_PROVIDER_READY"
+                            providerReplay -> "MMS_DOWNLOAD_PROVIDER_REPLAY_NO_DUPLICATE"
+                            safePreview is MmsDecodePipeline.Result.Accepted ->
+                                "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+                            else -> "MMS_DOWNLOAD_QUARANTINED"
                         }
                     )
                 )
@@ -191,18 +229,28 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             }
         }
 
-        // The notification id is content-stable. Replays update the same notification instead of
-        // creating duplicates, while still recovering the user-visible signal after process death.
+        // Recovery metadata is retired only after provider success/replay or an explicit quarantine
+        // outcome. A crash before this point leaves the staged PDU+journal available to WorkManager.
+        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
+        if (!temporaryDeleted) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échec de suppression du PDU MMS temporaire après traitement; le nettoyage durable reste planifié"
+            )
+        }
+
         SmsNotificationHelper.notifyMessage(
             context,
             title = "MMS reçu",
-            preview = when (safePreview) {
-                is MmsDecodePipeline.Result.Accepted ->
-                    "Téléchargé par Android · ${safePreview.parts.size} partie(s) validée(s) pour aperçu sécurisé."
-                is MmsDecodePipeline.Result.Rejected ->
-                    "Téléchargé puis conservé en quarantaine locale."
+            preview = when {
+                providerInserted -> "MMS ajouté à la conversation Android."
+                providerReplay -> "MMS déjà traité; aucun doublon n’a été ajouté à la conversation Android."
+                safePreview is MmsDecodePipeline.Result.Accepted ->
+                    "Téléchargé et conservé localement · ${safePreview.parts.size} partie(s) validée(s)."
+                else -> "Téléchargé puis conservé en quarantaine locale."
             },
-            notificationId = persistence.digestHex?.take(16)?.hashCode() ?: fileName.hashCode()
+            notificationId = digest.take(16).hashCode()
         )
     }
 

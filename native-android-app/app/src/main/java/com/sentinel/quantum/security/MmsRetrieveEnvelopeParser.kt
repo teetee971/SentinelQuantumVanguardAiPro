@@ -8,8 +8,9 @@ package com.sentinel.quantum.security
  * [SentinelMmsPduDecoder] + [MmsDecodeBoundary]. Header parsing and body safety are separate trust
  * boundaries: neither one makes the other safe.
  *
- * Unsupported/ambiguous headers fail closed. We do not scan arbitrary bytes for header markers and
- * we never synthesize a sender, message id or transaction id when the protocol omitted them.
+ * Standard MMS headers that are not needed for provider identity are still consumed according to
+ * their WSP wire type and strict bounds. Unknown application headers and malformed values fail
+ * closed. We never scan arbitrary bytes for header markers and never synthesize sender/message ids.
  */
 internal object MmsRetrieveEnvelopeParser {
     enum class SenderDisposition {
@@ -26,8 +27,12 @@ internal object MmsRetrieveEnvelopeParser {
         val senderAddress: String?,
         val messageId: String?,
         val transactionId: String?,
+        val toAddresses: List<String> = emptyList(),
+        val ccAddresses: List<String> = emptyList(),
+        val bccAddresses: List<String> = emptyList(),
         val contentType: String,
-        val bodyOffset: Int
+        val bodyOffset: Int,
+        val messageSizeBytes: Long? = null
     )
 
     sealed interface Result {
@@ -47,17 +52,24 @@ internal object MmsRetrieveEnvelopeParser {
         var senderSeen = false
         var messageId: String? = null
         var transactionId: String? = null
+        var messageSizeBytes: Long? = null
         var contentType: String? = null
         var bodyOffset: Int? = null
+        val toAddresses = ArrayList<String>()
+        val ccAddresses = ArrayList<String>()
+        val bccAddresses = ArrayList<String>()
         val singletons = HashSet<Int>()
 
         fun markSingleton(header: Int): Boolean = singletons.add(header)
+        fun appendAddress(target: MutableList<String>, address: String): Boolean {
+            if (target.size >= MAX_ADDRESSES_PER_FIELD) return false
+            target += address
+            return true
+        }
 
         while (cursor.remaining > 0) {
             val header = cursor.read() ?: return Result.Rejected("TRUNCATED_HEADER")
-            if (header < 0x80) {
-                return Result.Rejected("APPLICATION_HEADER_UNSUPPORTED")
-            }
+            if (header < 0x80) return Result.Rejected("APPLICATION_HEADER_UNSUPPORTED")
 
             when (header) {
                 HEADER_MESSAGE_TYPE -> {
@@ -105,17 +117,56 @@ internal object MmsRetrieveEnvelopeParser {
                         ?: return Result.Rejected("INVALID_TRANSACTION_ID")
                 }
 
-                HEADER_TO, HEADER_CC, HEADER_BCC -> {
-                    if (!skipEncodedStringValue(cursor)) {
-                        return Result.Rejected("INVALID_ADDRESSING_HEADER")
+                HEADER_TO -> {
+                    val address = readAddressValue(cursor)
+                        ?: return Result.Rejected("INVALID_TO_ADDRESS")
+                    if (!appendAddress(toAddresses, address)) {
+                        return Result.Rejected("TO_ADDRESS_LIMIT_EXCEEDED")
+                    }
+                }
+
+                HEADER_CC -> {
+                    val address = readAddressValue(cursor)
+                        ?: return Result.Rejected("INVALID_CC_ADDRESS")
+                    if (!appendAddress(ccAddresses, address)) {
+                        return Result.Rejected("CC_ADDRESS_LIMIT_EXCEEDED")
+                    }
+                }
+
+                HEADER_BCC -> {
+                    val address = readAddressValue(cursor)
+                        ?: return Result.Rejected("INVALID_BCC_ADDRESS")
+                    if (!appendAddress(bccAddresses, address)) {
+                        return Result.Rejected("BCC_ADDRESS_LIMIT_EXCEEDED")
                     }
                 }
 
                 HEADER_SUBJECT, HEADER_RETRIEVE_TEXT, HEADER_RESPONSE_TEXT,
-                HEADER_STATUS_TEXT, HEADER_STORE_STATUS_TEXT -> {
+                HEADER_STATUS_TEXT, HEADER_STORE_STATUS_TEXT,
+                HEADER_RECOMMENDED_RETRIEVAL_MODE_TEXT -> {
+                    if (!markSingleton(header)) return Result.Rejected("DUPLICATE_ENCODED_STRING_HEADER")
                     if (!skipEncodedStringValue(cursor)) {
                         return Result.Rejected("INVALID_ENCODED_STRING_HEADER")
                     }
+                }
+
+                HEADER_CONTENT_LOCATION -> {
+                    if (!markSingleton(header)) return Result.Rejected("DUPLICATE_CONTENT_LOCATION")
+                    if (readRawTextString(cursor, MAX_LOCATION_BYTES) == null) {
+                        return Result.Rejected("INVALID_CONTENT_LOCATION")
+                    }
+                }
+
+                HEADER_MESSAGE_SIZE -> {
+                    if (!markSingleton(header)) return Result.Rejected("DUPLICATE_MESSAGE_SIZE")
+                    messageSizeBytes = readLongInteger(cursor)
+                        ?: return Result.Rejected("INVALID_MESSAGE_SIZE")
+                }
+
+                HEADER_DELIVERY_TIME, HEADER_EXPIRY,
+                HEADER_REPLY_CHARGING_DEADLINE -> {
+                    if (!markSingleton(header)) return Result.Rejected("DUPLICATE_TIME_HEADER")
+                    if (!skipTimeValue(cursor)) return Result.Rejected("INVALID_TIME_HEADER")
                 }
 
                 HEADER_MESSAGE_CLASS -> {
@@ -124,10 +175,28 @@ internal object MmsRetrieveEnvelopeParser {
                 }
 
                 HEADER_PRIORITY, HEADER_DELIVERY_REPORT, HEADER_READ_REPLY,
-                HEADER_REPORT_ALLOWED, HEADER_SENDER_VISIBILITY, HEADER_RETRIEVE_STATUS,
-                HEADER_CONTENT_CLASS, HEADER_DRM_CONTENT, HEADER_ADAPTATION_ALLOWED -> {
+                HEADER_REPORT_ALLOWED, HEADER_RESPONSE_STATUS, HEADER_SENDER_VISIBILITY,
+                HEADER_STATUS, HEADER_RETRIEVE_STATUS, HEADER_READ_STATUS,
+                HEADER_REPLY_CHARGING, HEADER_STORE, HEADER_MM_STATE, HEADER_STORE_STATUS,
+                HEADER_STORED, HEADER_DISTRIBUTION_INDICATOR, HEADER_RECOMMENDED_RETRIEVAL_MODE,
+                HEADER_CONTENT_CLASS, HEADER_DRM_CONTENT, HEADER_ADAPTATION_ALLOWED,
+                HEADER_CANCEL_STATUS -> {
                     if (!markSingleton(header)) return Result.Rejected("DUPLICATE_OCTET_HEADER")
                     if (cursor.read() == null) return Result.Rejected("TRUNCATED_OCTET_HEADER")
+                }
+
+                HEADER_REPLY_CHARGING_SIZE, HEADER_MESSAGE_COUNT,
+                HEADER_START, HEADER_LIMIT -> {
+                    if (!markSingleton(header)) return Result.Rejected("DUPLICATE_INTEGER_HEADER")
+                    if (readLongInteger(cursor) == null) return Result.Rejected("INVALID_INTEGER_HEADER")
+                }
+
+                HEADER_REPLY_CHARGING_ID, HEADER_APPLIC_ID, HEADER_REPLY_APPLIC_ID,
+                HEADER_AUX_APPLIC_INFO, HEADER_REPLACE_ID, HEADER_CANCEL_ID -> {
+                    if (!markSingleton(header)) return Result.Rejected("DUPLICATE_TEXT_HEADER")
+                    if (readRawTextString(cursor, MAX_TOKEN_TEXT_BYTES) == null) {
+                        return Result.Rejected("INVALID_TEXT_HEADER")
+                    }
                 }
 
                 HEADER_CONTENT_TYPE -> {
@@ -165,8 +234,12 @@ internal object MmsRetrieveEnvelopeParser {
                 senderAddress = senderAddress,
                 messageId = messageId,
                 transactionId = transactionId,
+                toAddresses = toAddresses.toList(),
+                ccAddresses = ccAddresses.toList(),
+                bccAddresses = bccAddresses.toList(),
                 contentType = mediaType,
-                bodyOffset = offset
+                bodyOffset = offset,
+                messageSizeBytes = messageSizeBytes
             )
         )
     }
@@ -197,6 +270,9 @@ internal object MmsRetrieveEnvelopeParser {
         }
     }
 
+    private fun readAddressValue(cursor: Cursor): String? =
+        readEncodedStringBytes(cursor, MAX_ADDRESS_CHARS)?.let(::normalizeAddress)
+
     private fun normalizeAddress(raw: ByteArray): String? {
         if (raw.isEmpty() || raw.size > MAX_ADDRESS_CHARS) return null
         if (raw.any { (it.toInt() and 0xff) !in 0x20..0x7e }) return null
@@ -215,7 +291,6 @@ internal object MmsRetrieveEnvelopeParser {
             cursor.read()
             return ByteArray(0)
         }
-
         if (first < TEXT_MIN) {
             val length = readValueLength(cursor) ?: return null
             if (length <= 0 || length > MAX_ENCODED_STRING_BYTES || length > cursor.remaining) return null
@@ -226,7 +301,6 @@ internal object MmsRetrieveEnvelopeParser {
             if (nested.remaining != 0) return null
             return value
         }
-
         return readRawTextString(cursor, maxChars)
     }
 
@@ -243,6 +317,17 @@ internal object MmsRetrieveEnvelopeParser {
             return true
         }
         return readRawTextString(cursor, MAX_ENCODED_STRING_BYTES) != null
+    }
+
+    private fun skipTimeValue(cursor: Cursor): Boolean {
+        val length = readValueLength(cursor) ?: return false
+        if (length !in 2..MAX_TIME_VALUE_BYTES || length > cursor.remaining) return false
+        val nested = Cursor(cursor.bytes, cursor.position, cursor.position + length)
+        cursor.position += length
+        val token = nested.read() ?: return false
+        if (token != TIME_ABSOLUTE_TOKEN && token != TIME_RELATIVE_TOKEN) return false
+        if (readLongInteger(nested) == null) return false
+        return nested.remaining == 0
     }
 
     private fun skipMessageClass(cursor: Cursor): Boolean {
@@ -332,7 +417,7 @@ internal object MmsRetrieveEnvelopeParser {
     private fun readLongInteger(cursor: Cursor): Long? {
         val count = cursor.read() ?: return null
         if (count !in 1..8 || count > cursor.remaining) return null
-        if (count > 1 && cursor.peek() == 0) return null // WSP requires minimal unsigned encoding.
+        if (count > 1 && cursor.peek() == 0) return null
         var result = 0L
         repeat(count) {
             val next = cursor.read() ?: return null
@@ -381,10 +466,13 @@ internal object MmsRetrieveEnvelopeParser {
 
     private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_ADDRESS_CHARS = 256
+    private const val MAX_ADDRESSES_PER_FIELD = 32
     private const val MAX_ID_CHARS = 256
     private const val MAX_FROM_VALUE_BYTES = 1024
     private const val MAX_ENCODED_STRING_BYTES = 4096
-    private const val MAX_TOKEN_TEXT_BYTES = 256
+    private const val MAX_TOKEN_TEXT_BYTES = 512
+    private const val MAX_LOCATION_BYTES = 4096
+    private const val MAX_TIME_VALUE_BYTES = 16
     private const val MAX_CONTENT_TYPE_BYTES = 1024
     private const val MAX_MIME_CHARS = 128
     private const val MAX_UINTVAR_BYTES = 5
@@ -393,32 +481,61 @@ internal object MmsRetrieveEnvelopeParser {
     private const val QUOTE = 0x7f
     private const val SHORT_LENGTH_MAX = 30
     private const val LENGTH_QUOTE = 31
+    private const val TIME_ABSOLUTE_TOKEN = 0x80
+    private const val TIME_RELATIVE_TOKEN = 0x81
 
     private const val HEADER_BCC = 0x81
     private const val HEADER_CC = 0x82
+    private const val HEADER_CONTENT_LOCATION = 0x83
     private const val HEADER_CONTENT_TYPE = 0x84
     private const val HEADER_DATE = 0x85
     private const val HEADER_DELIVERY_REPORT = 0x86
+    private const val HEADER_DELIVERY_TIME = 0x87
+    private const val HEADER_EXPIRY = 0x88
     private const val HEADER_FROM = 0x89
     private const val HEADER_MESSAGE_CLASS = 0x8a
     private const val HEADER_MESSAGE_ID = 0x8b
     private const val HEADER_MESSAGE_TYPE = 0x8c
     private const val HEADER_MMS_VERSION = 0x8d
+    private const val HEADER_MESSAGE_SIZE = 0x8e
     private const val HEADER_PRIORITY = 0x8f
     private const val HEADER_READ_REPLY = 0x90
     private const val HEADER_REPORT_ALLOWED = 0x91
+    private const val HEADER_RESPONSE_STATUS = 0x92
     private const val HEADER_RESPONSE_TEXT = 0x93
     private const val HEADER_SENDER_VISIBILITY = 0x94
+    private const val HEADER_STATUS = 0x95
     private const val HEADER_SUBJECT = 0x96
     private const val HEADER_TO = 0x97
     private const val HEADER_TRANSACTION_ID = 0x98
     private const val HEADER_RETRIEVE_STATUS = 0x99
     private const val HEADER_RETRIEVE_TEXT = 0x9a
+    private const val HEADER_READ_STATUS = 0x9b
+    private const val HEADER_REPLY_CHARGING = 0x9c
+    private const val HEADER_REPLY_CHARGING_DEADLINE = 0x9d
+    private const val HEADER_REPLY_CHARGING_ID = 0x9e
+    private const val HEADER_REPLY_CHARGING_SIZE = 0x9f
+    private const val HEADER_STORE = 0xa2
+    private const val HEADER_MM_STATE = 0xa3
+    private const val HEADER_STORE_STATUS = 0xa5
     private const val HEADER_STORE_STATUS_TEXT = 0xa6
+    private const val HEADER_STORED = 0xa7
+    private const val HEADER_MESSAGE_COUNT = 0xad
+    private const val HEADER_START = 0xaf
+    private const val HEADER_DISTRIBUTION_INDICATOR = 0xb1
+    private const val HEADER_LIMIT = 0xb3
+    private const val HEADER_RECOMMENDED_RETRIEVAL_MODE = 0xb4
+    private const val HEADER_RECOMMENDED_RETRIEVAL_MODE_TEXT = 0xb5
     private const val HEADER_STATUS_TEXT = 0xb6
+    private const val HEADER_APPLIC_ID = 0xb7
+    private const val HEADER_REPLY_APPLIC_ID = 0xb8
+    private const val HEADER_AUX_APPLIC_INFO = 0xb9
     private const val HEADER_CONTENT_CLASS = 0xba
     private const val HEADER_DRM_CONTENT = 0xbb
     private const val HEADER_ADAPTATION_ALLOWED = 0xbc
+    private const val HEADER_REPLACE_ID = 0xbd
+    private const val HEADER_CANCEL_ID = 0xbe
+    private const val HEADER_CANCEL_STATUS = 0xbf
 
     private const val FROM_ADDRESS_PRESENT_TOKEN = 0x80
     private const val FROM_INSERT_ADDRESS_TOKEN = 0x81

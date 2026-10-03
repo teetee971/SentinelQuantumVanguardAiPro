@@ -9,6 +9,22 @@ class MmsPartSafetyPolicyTest {
         assertEquals(MmsPartSafetyPolicy.Decision.ALLOW_PREVIEW, result.decision)
     }
 
+    @Test fun allowsBoundedSmilOnlyAsProviderMetadata() {
+        val result = MmsPartSafetyPolicy.evaluate(
+            MmsPartSafetyPolicy.PartMetadata("application/smil", "presentation.smil", 1024)
+        )
+        assertEquals(MmsPartSafetyPolicy.Decision.ALLOW_PROVIDER_METADATA, result.decision)
+        assertEquals("SAFE_PROVIDER_METADATA", result.reason)
+    }
+
+    @Test fun quarantinesOversizedSmil() {
+        val result = MmsPartSafetyPolicy.evaluate(
+            MmsPartSafetyPolicy.PartMetadata("application/smil", "presentation.smil", 256L * 1024L + 1L)
+        )
+        assertEquals(MmsPartSafetyPolicy.Decision.QUARANTINE, result.decision)
+        assertEquals("SMIL_TOO_LARGE", result.reason)
+    }
+
     @Test fun quarantinesExecutableAndMimeMismatch() {
         val executable = MmsPartSafetyPolicy.evaluate(MmsPartSafetyPolicy.PartMetadata("application/octet-stream", "payload.exe", 20))
         val mismatch = MmsPartSafetyPolicy.evaluate(MmsPartSafetyPolicy.PartMetadata("image/jpeg", "photo.exe", 20))

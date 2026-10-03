@@ -1,22 +1,29 @@
 package com.sentinel.quantum.security
 
 /**
- * Pure, fail-closed boundary between untrusted MMS decoder output and any future renderer.
+ * Pure, fail-closed boundary between untrusted MMS decoder output and any future renderer/provider.
  *
- * A platform/library decoder may eventually populate [DecodedPart], but payload bytes are never
- * exposed here unless metadata passes MmsPartSafetyPolicy and all aggregate bounds remain valid.
+ * Payload bytes are never exposed unless metadata passes [MmsPartSafetyPolicy] and all aggregate
+ * bounds remain valid. Content-ID/Content-Location and supported charset metadata are preserved as
+ * inert provider metadata. SMIL is validated as text but never rendered or executed by Sentinel.
  */
 object MmsDecodeBoundary {
     data class DecodedPart(
         val mimeType: String?,
         val fileName: String?,
-        val payload: ByteArray
+        val payload: ByteArray,
+        val contentId: String? = null,
+        val contentLocation: String? = null,
+        val charsetMibEnum: Int? = null
     )
 
     data class SafePart(
         val mimeType: String,
         val fileName: String?,
-        val payload: ByteArray
+        val payload: ByteArray,
+        val contentId: String? = null,
+        val contentLocation: String? = null,
+        val charsetMibEnum: Int? = null
     )
 
     sealed class Result {
@@ -35,28 +42,81 @@ object MmsDecodeBoundary {
             val policy = MmsPartSafetyPolicy.evaluate(
                 MmsPartSafetyPolicy.PartMetadata(part.mimeType, part.fileName, size)
             )
-            if (policy.decision != MmsPartSafetyPolicy.Decision.ALLOW_PREVIEW) {
+            if (policy.decision == MmsPartSafetyPolicy.Decision.QUARANTINE) {
                 return Result.Rejected(policy.reason)
             }
             val mime = part.mimeType?.trim()?.lowercase().orEmpty()
             if (mime.isEmpty()) return Result.Rejected("MISSING_MIME")
-            if (!contentMatchesMime(mime, part.payload)) return Result.Rejected("CONTENT_SIGNATURE_MISMATCH")
-            safe += SafePart(mime, part.fileName?.trim()?.takeIf { it.isNotEmpty() }, part.payload.copyOf())
+            val isText = mime == "text/plain" || mime == "application/smil"
+            if (!isText && part.charsetMibEnum != null) {
+                return Result.Rejected("UNEXPECTED_CHARSET")
+            }
+            if (isText && MmsTextCharset.decode(part.payload, part.charsetMibEnum) == null) {
+                return Result.Rejected("TEXT_CHARSET_UNSUPPORTED")
+            }
+            if (!contentMatchesMime(mime, part.payload, part.charsetMibEnum)) {
+                return Result.Rejected("CONTENT_SIGNATURE_MISMATCH")
+            }
+            val contentId = normalizeReference(part.contentId)
+                ?: if (part.contentId == null) null else return Result.Rejected("UNSAFE_CONTENT_ID")
+            val contentLocation = normalizeReference(part.contentLocation)
+                ?: if (part.contentLocation == null) null else return Result.Rejected("UNSAFE_CONTENT_LOCATION")
+            safe += SafePart(
+                mimeType = mime,
+                fileName = part.fileName?.trim()?.takeIf { it.isNotEmpty() },
+                payload = part.payload.copyOf(),
+                contentId = contentId,
+                contentLocation = contentLocation,
+                charsetMibEnum = part.charsetMibEnum
+            )
         }
         return Result.Accepted(safe)
     }
 
-    private fun contentMatchesMime(mime: String, bytes: ByteArray): Boolean = when (mime) {
-        "text/plain" -> bytes.none { it == 0.toByte() }
-        "image/jpeg" -> bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()
-        "image/png" -> bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A))
-        "image/gif" -> bytes.size >= 6 && (String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF87a" || String(bytes.copyOfRange(0, 6), Charsets.US_ASCII) == "GIF89a")
-        "image/webp" -> bytes.size >= 12 &&
-            String(bytes.copyOfRange(0, 4), Charsets.US_ASCII) == "RIFF" &&
-            String(bytes.copyOfRange(8, 12), Charsets.US_ASCII) == "WEBP"
-        else -> false
+    private fun contentMatchesMime(
+        mime: String,
+        bytes: ByteArray,
+        charsetMibEnum: Int?
+    ): Boolean {
+        return when (mime) {
+            "text/plain" -> MmsTextCharset.decode(bytes, charsetMibEnum) != null
+            "application/smil" -> {
+                val decoded = MmsTextCharset.decode(bytes, charsetMibEnum) ?: return false
+                bytes.size <= MAX_SMIL_BYTES && decoded.text.indexOf("<smil", ignoreCase = true) >= 0
+            }
+            "image/jpeg" -> bytes.size >= 3 &&
+                bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()
+            "image/png" -> bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(
+                byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+            )
+            "image/gif" -> bytes.size >= 6 && (
+                hasAscii(bytes, 0, "GIF87a") || hasAscii(bytes, 0, "GIF89a")
+                )
+            "image/webp" -> bytes.size >= 12 &&
+                hasAscii(bytes, 0, "RIFF") && hasAscii(bytes, 8, "WEBP")
+            else -> false
+        }
+    }
+
+    private fun hasAscii(bytes: ByteArray, offset: Int, expected: String): Boolean {
+        if (offset < 0 || expected.isEmpty() || offset + expected.length > bytes.size) return false
+        for (index in expected.indices) {
+            if (bytes[offset + index].toInt() and 0xff != expected[index].code) return false
+        }
+        return true
+    }
+
+    private fun normalizeReference(value: String?): String? {
+        if (value == null) return null
+        val normalized = value.trim()
+        if (normalized.isEmpty() || normalized.length > MAX_REFERENCE_CHARS) return null
+        if (!normalized.all { it.code in 0x20..0x7e }) return null
+        if (normalized.any { it == '\u0000' || it == '\r' || it == '\n' }) return null
+        return normalized
     }
 
     private const val MAX_PARTS = 32
     private const val MAX_TOTAL_DECODED_BYTES = 16L * 1024L * 1024L
+    private const val MAX_SMIL_BYTES = 256 * 1024
+    private const val MAX_REFERENCE_CHARS = 512
 }
