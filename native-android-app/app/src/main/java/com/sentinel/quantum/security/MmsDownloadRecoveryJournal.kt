@@ -29,6 +29,12 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         requestedAtMs: Long = System.currentTimeMillis()
     ): Boolean {
         if (!validRecordFields(fileName, subscriptionId, requestedAtMs)) return false
+
+        // Malformed/stale metadata must not consume the bounded recovery budget forever. Sanitize
+        // first; if SharedPreferences cannot commit the cleanup, fail closed rather than pretending
+        // capacity became available.
+        if (!sanitizeInvalidEntries()) return false
+
         val recordKey = key(fileName)
         val existing = preferences.contains(recordKey)
         val activeRecordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
@@ -46,7 +52,47 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
     @Synchronized
     fun read(fileName: String): Record? {
         if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null
-        val encoded = preferences.getString(key(fileName), null) ?: return null
+        return decode(fileName, preferences.all[key(fileName)])
+    }
+
+    @Synchronized
+    fun remove(fileName: String): Boolean =
+        MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
+            preferences.edit().remove(key(fileName)).commit()
+
+    @Synchronized
+    fun all(): List<Record> {
+        sanitizeInvalidEntries()
+        return preferences.all.asSequence()
+            .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
+            .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value) }
+            .sortedBy { it.requestedAtMs }
+            .take(MAX_RECORDS)
+            .toList()
+    }
+
+    /**
+     * Removes malformed journal values, wrong SharedPreferences value types and invalid filenames.
+     * Returns false only when a required cleanup commit failed, so callers can remain fail-closed.
+     */
+    private fun sanitizeInvalidEntries(): Boolean {
+        val invalidKeys = preferences.all.asSequence()
+            .filter { (name, value) ->
+                name.startsWith(KEY_PREFIX) &&
+                    decode(name.removePrefix(KEY_PREFIX), value) == null
+            }
+            .map { it.key }
+            .toList()
+        if (invalidKeys.isEmpty()) return true
+
+        val editor = preferences.edit()
+        invalidKeys.forEach(editor::remove)
+        return editor.commit()
+    }
+
+    private fun decode(fileName: String, rawValue: Any?): Record? {
+        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null
+        val encoded = rawValue as? String ?: return null
         if (encoded.length > MAX_ENCODED_CHARS) return null
         return runCatching {
             val json = JSONObject(encoded)
@@ -62,24 +108,11 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         }.getOrNull()
     }
 
-    @Synchronized
-    fun remove(fileName: String): Boolean =
-        MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
-            preferences.edit().remove(key(fileName)).commit()
-
-    @Synchronized
-    fun all(): List<Record> = preferences.all.asSequence()
-        .filter { (name, value) -> name.startsWith(KEY_PREFIX) && value is String }
-        .mapNotNull { (name, _) -> read(name.removePrefix(KEY_PREFIX)) }
-        .sortedBy { it.requestedAtMs }
-        .take(MAX_RECORDS)
-        .toList()
-
     private fun key(fileName: String) = KEY_PREFIX + fileName
 
     companion object {
-        private const val PREFS_NAME = "sentinel_mms_download_recovery_v1"
-        private const val KEY_PREFIX = "record."
+        internal const val PREFS_NAME = "sentinel_mms_download_recovery_v1"
+        internal const val KEY_PREFIX = "record."
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 512
         internal const val MAX_RECORDS = 64
