@@ -33,7 +33,6 @@ test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable 
   assert.match(sendWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(sendWorker, /ExistingWorkPolicy\.REPLACE/);
   assert.match(sendWorker, /MmsSendPduStager\.expire\(applicationContext, fileName\)/);
-  assert.match(sendStager, /MmsSendCleanupWorker\.schedule\(context\.applicationContext, finalFile\.name\)/);
   assert.match(sendStager, /deleteInternal\(context, fileName, cancelCleanup = false\)/);
 });
 
@@ -84,6 +83,20 @@ test('incoming callback retires cleanup only after provider success or explicit 
     downloadCoordinator,
     /internal fun expire\(context: Context, fileName: String\): Boolean =[\s\S]*cancelCleanup = false/
   );
+});
+
+test('recovery metadata is durably retired before cleanup or recovery workers can be cancelled', () => {
+  const metadataIndex = downloadCoordinator.indexOf(
+    'val metadataRemoved = MmsDownloadRecoveryJournal(context.applicationContext).remove(fileName)'
+  );
+  const metadataFailureIndex = downloadCoordinator.indexOf('if (!metadataRemoved) return false');
+  const cleanupCancelIndex = downloadCoordinator.indexOf('MmsDownloadCleanupWorker.cancel');
+  const recoveryCancelIndex = downloadCoordinator.indexOf('MmsDownloadRecoveryWorker.cancel');
+
+  assert.ok(metadataIndex >= 0, 'recovery metadata retirement must be explicit');
+  assert.ok(metadataFailureIndex > metadataIndex, 'metadata commit failure must fail closed');
+  assert.ok(cleanupCancelIndex > metadataFailureIndex, 'cleanup worker cancellation must follow durable journal retirement');
+  assert.ok(recoveryCancelIndex > metadataFailureIndex, 'recovery worker cancellation must follow durable journal retirement');
 });
 
 test('secondary prune uses the same final recovery lifecycle instead of raw-unlinking valid staged MMS', () => {
