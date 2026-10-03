@@ -48,7 +48,7 @@ class MmsDecodeBoundaryTest {
         val result = MmsDecodeBoundary.validate(listOf(
             MmsDecodeBoundary.DecodedPart("text/plain", "message.txt", byteArrayOf('o'.code.toByte(), 0, 'k'.code.toByte()))
         ))
-        assertEquals("CONTENT_SIGNATURE_MISMATCH", (result as MmsDecodeBoundary.Result.Rejected).reason)
+        assertEquals("TEXT_CHARSET_UNSUPPORTED", (result as MmsDecodeBoundary.Result.Rejected).reason)
     }
 
     @Test fun rejectsTruncatedImageSignatures() {
