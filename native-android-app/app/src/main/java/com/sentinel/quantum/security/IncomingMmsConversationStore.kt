@@ -168,6 +168,7 @@ internal class IncomingMmsConversationStore(context: Context) {
             override fun insertParts(providerMessageId: Long): Boolean {
                 if (!holdsSmsRole()) return false
                 var sequence = 0
+                var insertedCount = 0
                 for (part in plan.parts) {
                     when (part) {
                         is IncomingMmsProjectionPlan.Part.Text -> {
@@ -176,16 +177,35 @@ internal class IncomingMmsConversationStore(context: Context) {
                                 put(Telephony.Mms.Part.CONTENT_TYPE, part.mimeType)
                                 put(Telephony.Mms.Part.CHARSET, UTF_8_MIB_ENUM)
                                 put(Telephony.Mms.Part.TEXT, part.text)
+                                putPartReferenceMetadata(this, part)
                             }
                             if (runCatching {
                                     appContext.contentResolver.insert(partsUri(providerMessageId), values)
                                 }.getOrNull() == null
                             ) return false
+                            insertedCount++
+                        }
+                        is IncomingMmsProjectionPlan.Part.Smil -> {
+                            val values = ContentValues().apply {
+                                // Android/AOSP PduPersister convention: presentation root precedes
+                                // normal body parts and is identified with sequence -1.
+                                put(Telephony.Mms.Part.SEQ, SMIL_SEQUENCE)
+                                put(Telephony.Mms.Part.CONTENT_TYPE, part.mimeType)
+                                put(Telephony.Mms.Part.CHARSET, UTF_8_MIB_ENUM)
+                                put(Telephony.Mms.Part.TEXT, part.text)
+                                putPartReferenceMetadata(this, part)
+                            }
+                            if (runCatching {
+                                    appContext.contentResolver.insert(partsUri(providerMessageId), values)
+                                }.getOrNull() == null
+                            ) return false
+                            insertedCount++
                         }
                         is IncomingMmsProjectionPlan.Part.Binary -> {
                             val values = ContentValues().apply {
                                 put(Telephony.Mms.Part.SEQ, sequence++)
                                 put(Telephony.Mms.Part.CONTENT_TYPE, part.mimeType)
+                                putPartReferenceMetadata(this, part)
                             }
                             val partUri = runCatching {
                                 appContext.contentResolver.insert(partsUri(providerMessageId), values)
@@ -198,10 +218,11 @@ internal class IncomingMmsConversationStore(context: Context) {
                                 } ?: false
                             }.getOrDefault(false)
                             if (!written) return false
+                            insertedCount++
                         }
                     }
                 }
-                return sequence == plan.parts.size && sequence > 0
+                return insertedCount == plan.parts.size && insertedCount > 0
             }
 
             override fun markReady(providerMessageId: Long): Boolean =
@@ -430,6 +451,14 @@ internal class IncomingMmsConversationStore(context: Context) {
         }.getOrDefault(false)
     }
 
+    private fun putPartReferenceMetadata(
+        values: ContentValues,
+        part: IncomingMmsProjectionPlan.Part
+    ) {
+        part.contentId?.let { values.put(Telephony.Mms.Part.CONTENT_ID, it) }
+        part.contentLocation?.let { values.put(Telephony.Mms.Part.CONTENT_LOCATION, it) }
+    }
+
     @Suppress("DEPRECATION")
     @android.annotation.SuppressLint("MissingPermission")
     private fun readSelfAddresses(subscriptionId: Int): Set<String> = runCatching {
@@ -549,5 +578,6 @@ internal class IncomingMmsConversationStore(context: Context) {
         const val ADDRESS_TYPE_FROM = 0x89
         const val ADDRESS_TYPE_TO = 0x97
         const val UTF_8_MIB_ENUM = 106
+        const val SMIL_SEQUENCE = -1
     }
 }
