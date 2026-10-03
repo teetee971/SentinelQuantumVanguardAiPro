@@ -29,6 +29,9 @@ from app_redis import (
 
 
 class ReputationReadRedis:
+    async def ttl(self, _key):
+        return 120
+
     async def hgetall(self, _key):
         return {
             "signals": "5",
@@ -65,7 +68,7 @@ def test_reputation_read_does_not_fabricate_recency_or_burst():
     assert status == "available"
     assert categories == ["BANK_IMPERSONATION", "ROBOCALL"]
     assert observed_at_ms == 100_000
-    assert ttl_ms == 180 * 86_400 * 1_000
+    assert ttl_ms == 120_000
 
 
 def test_approved_category_codes_are_structured_ranked_and_bounded():
@@ -514,3 +517,12 @@ def test_moderation_endpoint_requires_separate_admin_key(monkeypatch):
             },
         )
         assert response.status_code == 401
+
+
+def test_phone_reputation_without_a_live_expiry_is_not_usable():
+    import asyncio
+    class ExpiredReputation(ReputationReadRedis):
+        async def ttl(self, _key):
+            return -1
+    fake_app = SimpleNamespace(state=SimpleNamespace(redis=ExpiredReputation()))
+    assert asyncio.run(_redis_reputation(fake_app, "a" * 64)) == (0, "degraded", [], None, None)

@@ -219,10 +219,15 @@ async def _redis_reputation(
     reputation_key = f"phone:spam:v2:{fingerprint}"
     try:
         spam_data = await client.hgetall(reputation_key)
+        ttl_seconds = int(await client.ttl(reputation_key))
+        if not spam_data:
+            return 0, "available", [], None, None
         signals = int(spam_data.get("signals", 0) or 0)
         last_seen_seconds = int(spam_data.get("last_seen", 0) or 0)
         observed_at_ms = last_seen_seconds * 1_000 if signals > 0 and last_seen_seconds > 0 else None
-        ttl_ms = _REPUTATION_TTL_SECONDS * 1_000 if observed_at_ms is not None else None
+        if observed_at_ms is None or ttl_seconds <= 0 or ttl_seconds > _REPUTATION_TTL_SECONDS + 1:
+            return 0, "degraded", [], None, None
+        ttl_ms = ttl_seconds * 1_000
         return (
             signals,
             "available",
@@ -230,7 +235,7 @@ async def _redis_reputation(
             observed_at_ms,
             ttl_ms,
         )
-    except (RedisError, TimeoutError, ValueError):
+    except (RedisError, TimeoutError, ValueError, TypeError):
         return 0, "degraded", [], None, None
 
 
@@ -310,6 +315,10 @@ if redis.call('EXISTS', KEYS[2]) == 1 then
 end
 redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
 redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
+local first_seen = tonumber(redis.call('HGET', KEYS[3], 'first_seen') or '0')
+if first_seen <= 0 or tonumber(ARGV[3]) - first_seen >= tonumber(ARGV[5]) then
+  redis.call('DEL', KEYS[3])
+end
 redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
 redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
 redis.call('HINCRBY', KEYS[3], 'signals', 1)
@@ -414,6 +423,10 @@ redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
 local remaining = redis.call('HINCRBY', KEYS[1], 'signals', -1)
 
 if ARGV[2] == 'APPROVE' then
+  local first_seen = tonumber(redis.call('HGET', KEYS[3], 'first_seen') or '0')
+  if first_seen <= 0 or tonumber(ARGV[3]) - first_seen >= tonumber(ARGV[4]) then
+    redis.call('DEL', KEYS[3])
+  end
   redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
   redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
   redis.call('HINCRBY', KEYS[3], 'signals', 1)

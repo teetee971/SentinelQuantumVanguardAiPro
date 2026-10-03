@@ -413,6 +413,10 @@ if redis.call('EXISTS', KEYS[2]) == 1 then
 end
 redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
 redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
+local first_seen = tonumber(redis.call('HGET', KEYS[3], 'first_seen') or '0')
+if first_seen <= 0 or tonumber(ARGV[3]) - first_seen >= tonumber(ARGV[5]) then
+  redis.call('DEL', KEYS[3])
+end
 redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
 redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
 redis.call('HINCRBY', KEYS[3], 'signals', 1)
@@ -497,6 +501,10 @@ redis.call('HINCRBY', KEYS[1], ARGV[1], -1)
 local remaining = redis.call('HINCRBY', KEYS[1], 'signals', -1)
 
 if ARGV[2] == 'APPROVE' then
+  local first_seen = tonumber(redis.call('HGET', KEYS[3], 'first_seen') or '0')
+  if first_seen <= 0 or tonumber(ARGV[3]) - first_seen >= tonumber(ARGV[4]) then
+    redis.call('DEL', KEYS[3])
+  end
   redis.call('HSETNX', KEYS[3], 'first_seen', ARGV[3])
   redis.call('HSET', KEYS[3], 'last_seen', ARGV[3])
   redis.call('HINCRBY', KEYS[3], 'signals', 1)

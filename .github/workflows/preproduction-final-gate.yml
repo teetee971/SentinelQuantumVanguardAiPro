@@ -1,4 +1,4 @@
-name: Pre-production Final Gate
+name: Repository Pre-production Validation
 
 on:
   push:
