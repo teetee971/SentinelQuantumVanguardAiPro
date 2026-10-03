@@ -29,12 +29,18 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         requestedAtMs: Long = System.currentTimeMillis()
     ): Boolean {
         if (!validRecordFields(fileName, subscriptionId, requestedAtMs)) return false
+        val recordKey = key(fileName)
+        val existing = preferences.contains(recordKey)
+        val activeRecordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
+        if (!canAcceptRecord(existing = existing, activeRecordCount = activeRecordCount)) {
+            return false
+        }
         val encoded = JSONObject()
             .put("schema", SCHEMA_VERSION)
             .put("subscription_id", subscriptionId)
             .put("requested_at_ms", requestedAtMs)
             .toString()
-        return preferences.edit().putString(key(fileName), encoded).commit()
+        return preferences.edit().putString(recordKey, encoded).commit()
     }
 
     @Synchronized
@@ -76,7 +82,10 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         private const val KEY_PREFIX = "record."
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 512
-        private const val MAX_RECORDS = 64
+        internal const val MAX_RECORDS = 64
+
+        internal fun canAcceptRecord(existing: Boolean, activeRecordCount: Int): Boolean =
+            activeRecordCount >= 0 && (existing || activeRecordCount < MAX_RECORDS)
 
         internal fun validRecordFields(
             fileName: String,
