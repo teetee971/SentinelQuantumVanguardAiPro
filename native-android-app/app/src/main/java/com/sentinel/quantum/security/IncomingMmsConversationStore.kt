@@ -119,6 +119,8 @@ internal class IncomingMmsConversationStore(context: Context) {
 
                 val id = runCatching { ContentUris.parseId(uri) }.getOrNull()?.takeIf { it > 0L }
                 if (id == null) {
+                    // A non-null URI proves that provider mutation may have happened. The exact URI
+                    // is the only safe cleanup handle when no numeric provider id can be parsed.
                     rootInsertCleanupFailed = !cleanupExactUri(uri)
                     return null
                 }
@@ -204,11 +206,13 @@ internal class IncomingMmsConversationStore(context: Context) {
                 when (val lookup = lookupRoot(identity(record))) {
                     is RootLookup.Found -> {
                         if (lookup.ownedByApp) {
-                            cleanupRoot(lookup.id, lookup.uri, identity(record)) && journal.remove(record.digestHex)
+                            cleanupRoot(lookup.id, lookup.uri, identity(record)) &&
+                                journal.remove(record.digestHex)
                         } else {
-                            // A matching external row is already canonical. Retain it and convert the
-                            // interrupted preflight ledger write directly to READY.
-                            journal.markReady(record.digestHex, lookup.id)
+                            // BUILDING contains no provider id. If another canonical app already has
+                            // this exact message, there is no app-owned root to delete. Clearing the
+                            // incomplete marker is safe; a replay will recreate the READY ledger.
+                            journal.remove(record.digestHex)
                         }
                     }
                     RootLookup.Absent -> journal.remove(record.digestHex)
@@ -217,13 +221,13 @@ internal class IncomingMmsConversationStore(context: Context) {
             }
             IncomingMmsProviderJournal.Phase.ROOT_INSERTED -> {
                 val id = record.providerMessageId ?: return false
-                when (val ownership = verifyRoot(id, identity(record))) {
+                when (verifyRoot(id, identity(record), requireAddress = false)) {
                     RootVerification.Owned ->
                         cleanupRoot(id, null, identity(record)) && journal.remove(record.digestHex)
-                    RootVerification.ExternalExact ->
-                        journal.markReady(record.digestHex, id)
                     RootVerification.Absent -> journal.remove(record.digestHex)
-                    RootVerification.Mismatch, RootVerification.Error -> false
+                    RootVerification.ExternalExact,
+                    RootVerification.Mismatch,
+                    RootVerification.Error -> false
                 }
             }
             IncomingMmsProviderJournal.Phase.READY -> true
@@ -285,8 +289,8 @@ internal class IncomingMmsConversationStore(context: Context) {
             add(Telephony.Mms.MESSAGE_BOX_INBOX.toString())
             add(identity.subscriptionId.toString())
             add(identity.dateSeconds.toString())
-            identity.messageId?.let(::add)
-            identity.transactionId?.let(::add)
+            identity.messageId?.let { add(it) }
+            identity.transactionId?.let { add(it) }
         }.toTypedArray()
 
         appContext.contentResolver.query(
@@ -307,14 +311,23 @@ internal class IncomingMmsConversationStore(context: Context) {
                     uri = ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, id),
                     ownedByApp = cursor.getString(creatorIndex) == appContext.packageName
                 )
-                if (found != null && found?.id != candidate.id) return@use RootLookup.Ambiguous
+                if (found != null && found.id != candidate.id) return@use RootLookup.Ambiguous
                 found = candidate
             }
             found ?: RootLookup.Absent
         } ?: RootLookup.Error
     }.getOrDefault(RootLookup.Error)
 
-    private fun verifyRoot(providerMessageId: Long, identity: RootIdentity): RootVerification {
+    /**
+     * `requireAddress=false` is used only for rollback/recovery. A failure can happen immediately
+     * after root insertion, before the FROM row exists, so requiring that row would make cleanup
+     * impossible exactly when compensation is most important.
+     */
+    private fun verifyRoot(
+        providerMessageId: Long,
+        identity: RootIdentity,
+        requireAddress: Boolean
+    ): RootVerification {
         if (providerMessageId <= 0L) return RootVerification.Mismatch
         val uri = ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId)
         return runCatching {
@@ -344,9 +357,11 @@ internal class IncomingMmsConversationStore(context: Context) {
                     sub != identity.subscriptionId ||
                     date != identity.dateSeconds ||
                     messageId != identity.messageId ||
-                    transactionId != identity.transactionId ||
-                    !addressMatches(providerMessageId, identity.sender)
+                    transactionId != identity.transactionId
                 ) return@use RootVerification.Mismatch
+                if (requireAddress && !addressMatches(providerMessageId, identity.sender)) {
+                    return@use RootVerification.Mismatch
+                }
                 val creator = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Mms.CREATOR))
                 if (creator == appContext.packageName) RootVerification.Owned
                 else RootVerification.ExternalExact
@@ -390,7 +405,7 @@ internal class IncomingMmsConversationStore(context: Context) {
         knownUri: Uri?,
         identity: RootIdentity
     ): Boolean {
-        when (verifyRoot(providerMessageId, identity)) {
+        when (verifyRoot(providerMessageId, identity, requireAddress = false)) {
             RootVerification.Absent -> return true
             RootVerification.Owned -> Unit
             RootVerification.ExternalExact,
@@ -401,7 +416,7 @@ internal class IncomingMmsConversationStore(context: Context) {
         val deleted = runCatching { appContext.contentResolver.delete(uri, null, null) }.getOrNull()
             ?: return false
         if (deleted > 0) return true
-        return verifyRoot(providerMessageId, identity) == RootVerification.Absent
+        return verifyRoot(providerMessageId, identity, requireAddress = false) == RootVerification.Absent
     }
 
     private fun cleanupExactUri(uri: Uri): Boolean {
