@@ -113,7 +113,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             return
         }
 
-        val subscriptionId = MmsSubscriptionResolver.resolve(intent)
+        val subscriptionId = MmsSubscriptionResolver.resolve(context, intent)
         val prepared = if (SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
             IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
         } else {
