@@ -3,9 +3,10 @@ package com.sentinel.quantum.security
 /**
  * Pure preparation pipeline for canonical incoming MMS provider projection.
  *
- * Raw bytes cross three independent fail-closed boundaries before Android provider mutation:
- * envelope grammar -> body decoder/safety policy -> provider projection plan. A failure at any
- * stage leaves the PDU in the private/quarantine path and never manufactures canonical state.
+ * Raw bytes cross independent fail-closed boundaries before Android provider mutation:
+ * envelope grammar -> related-presentation metadata -> body decoder/safety policy -> provider plan.
+ * A failure at any stage leaves the PDU in the private/quarantine path and never manufactures
+ * canonical state.
  */
 internal object IncomingMmsProjectionPipeline {
     sealed interface Result {
@@ -26,6 +27,16 @@ internal object IncomingMmsProjectionPipeline {
             is MmsRetrieveEnvelopeParser.Result.Accepted -> parsed.envelope
             is MmsRetrieveEnvelopeParser.Result.Rejected ->
                 return Result.Quarantined("ENVELOPE:${parsed.reason.take(MAX_REASON_CHARS)}")
+        }
+
+        val relatedPresentation = if (envelope.contentType == MULTIPART_RELATED) {
+            when (val inspected = MmsRelatedPresentationInspector.inspect(pdu, envelope)) {
+                is MmsRelatedPresentationInspector.Result.Ready -> inspected.metadata
+                is MmsRelatedPresentationInspector.Result.Rejected ->
+                    return Result.Quarantined("PRESENTATION:${inspected.reason.take(MAX_REASON_CHARS)}")
+            }
+        } else {
+            null
         }
 
         val decoded = try {
@@ -50,7 +61,9 @@ internal object IncomingMmsProjectionPipeline {
                 digestHex = digestHex,
                 envelope = envelope,
                 safeParts = safeParts,
-                subscriptionId = subscriptionId
+                subscriptionId = subscriptionId,
+                relatedRootContentType = relatedPresentation?.rootContentType,
+                relatedRootStartContentId = relatedPresentation?.startContentId
             )
         ) {
             is IncomingMmsProjectionPlan.Result.Quarantined ->
@@ -61,4 +74,5 @@ internal object IncomingMmsProjectionPipeline {
     }
 
     private const val MAX_REASON_CHARS = 96
+    private const val MULTIPART_RELATED = "application/vnd.wap.multipart.related"
 }
