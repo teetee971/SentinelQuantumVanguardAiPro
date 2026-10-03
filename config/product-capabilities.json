@@ -122,18 +122,20 @@
       "implemented": true,
       "configured": true,
       "requires_deployment": true,
-      "deployed": true,
-      "runtime_verified": true,
+      "deployed": false,
+      "runtime_verified": false,
       "requires_physical_validation": false,
       "physically_validated": false,
       "requires_signed_release": false,
       "release_signed": false,
-      "customer_available": true,
-      "blockers": [],
+      "customer_available": false,
+      "blockers": [
+        "Historical Render evidence exists, but fresh deployment and live health evidence for the current revision is not recorded"
+      ],
       "evidence": [
         "backend/wangiri-api/README.md",
         "backend/wangiri-api/collective_intel.py",
-        "docs/FEATURE_INVENTORY.md"
+        "render.yaml"
       ]
     },
     {
@@ -156,7 +158,7 @@
       "evidence": [
         "native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseClient.kt",
         "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CollectiveDefenseScreen.kt",
-        "docs/FEATURE_INVENTORY.md"
+        "native-android-app/app/src/main/java/com/sentinel/quantum/background/CollectiveDefenseWorkScheduler.kt"
       ]
     },
     {
@@ -179,8 +181,7 @@
       ],
       "evidence": [
         "security/phone-intelligence/call-rule-publication.js",
-        "config/module-continuity-inventory.json",
-        "docs/FEATURE_INVENTORY.md"
+        "config/module-continuity-inventory.json"
       ]
     },
     {
@@ -225,7 +226,7 @@
       ],
       "evidence": [
         "native-android-app/app/src/main/res/values/strings.xml",
-        "docs/FEATURE_INVENTORY.md"
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt"
       ]
     },
     {
