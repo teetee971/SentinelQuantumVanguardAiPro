@@ -15,7 +15,7 @@ class OsintTruthInstrumentationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun osintCardRendersVisibleSourceAndTitle() {
+    fun osintCardRendersVisibleContent() {
         val item = OsintFeedItem(
             title = "Alerte instrumentation",
             description = "Description de test",
@@ -31,6 +31,6 @@ class OsintTruthInstrumentationTest {
         }
 
         composeRule.onNodeWithText("Alerte instrumentation").assertIsDisplayed()
-        composeRule.onNodeWithText("Source : Source test").assertIsDisplayed()
+        composeRule.onNodeWithText("Description de test").assertIsDisplayed()
     }
 }
