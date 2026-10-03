@@ -37,7 +37,7 @@ export const usgsEarthquakeAdapter=createAdapter({
       confidence:null,
       occurredAt:new Date(occurred).toISOString(),
       detectedAt:new Date(updated).toISOString(),
-      sourceUrl:typeof p.url==="string"?p.url:null,
+      sourceUrl:(()=>{if(typeof p.url!=="string") return null;const url=new URL(p.url);if(url.protocol!=="https:"||url.hostname!=="earthquake.usgs.gov") throw new RangeError("USGS source URL must use official HTTPS host");return url.href;})(),
       status:p.status==="reviewed"?"verified":"unverified"
     };
   }
