@@ -1,9 +1,9 @@
 package com.sentinel.quantum.security
 
-import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import java.util.concurrent.Executors
 
@@ -32,6 +32,8 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
 
         val androidResultCode = resultCode
+        val httpStatus = intent.getIntExtra(SmsManager.EXTRA_MMS_HTTP_STATUS, Int.MIN_VALUE)
+            .takeUnless { it == Int.MIN_VALUE }
         val pendingResult = goAsync()
         val appContext = context.applicationContext
         val scheduled = runCatching {
@@ -42,7 +44,8 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                         token,
                         fileName,
                         subscriptionId,
-                        androidResultCode
+                        androidResultCode,
+                        httpStatus
                     )
                 } finally {
                     pendingResult.finish()
@@ -57,7 +60,8 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         token: String,
         fileName: String,
         subscriptionId: Int,
-        androidResultCode: Int
+        androidResultCode: Int,
+        httpStatus: Int?
     ) {
         val acceptedOnce = MmsSendCallbackReplayGuard(context).acceptOnce(token)
         if (!acceptedOnce) {
@@ -71,8 +75,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         }
 
         MmsSendPduStager.delete(context, fileName)
-        val success = androidResultCode == Activity.RESULT_OK
-        val signal = if (success) PhoneCorePhysicalValidation.SIGNAL_MMS_SENT_OK else "MMS_SEND_ERROR_$androidResultCode"
+        val outcome = MmsSendResultClassifier.classify(androidResultCode, httpStatus)
 
         runCatching {
             PhonePrivateTimelineStore(context).append(
@@ -80,7 +83,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                     kind = PhonePrivateTimeline.Kind.MMS,
                     timestampMs = System.currentTimeMillis(),
                     direction = "OUTGOING",
-                    signal = signal
+                    signal = outcome.signal
                 )
             )
         }.onFailure {
@@ -92,22 +95,15 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         }
 
         LocalLogger(context).log(
-            if (success) LocalLogger.LogLevel.SECURITY else LocalLogger.LogLevel.WARNING,
+            if (outcome.success) LocalLogger.LogLevel.SECURITY else LocalLogger.LogLevel.WARNING,
             "MmsSend",
-            if (success) {
-                "MMS accepté par la pile opérateur Android; subscription=$subscriptionId"
-            } else {
-                "Échec MMS signalé par Android; code=$androidResultCode; subscription=$subscriptionId"
-            }
+            "Callback transport MMS; state=${outcome.diagnostic}; code=$androidResultCode; " +
+                "http=${httpStatus ?: "none"}; subscription=$subscriptionId"
         )
         SmsNotificationHelper.notifyMessage(
             context,
-            title = if (success) "MMS envoyé" else "Échec d’envoi MMS",
-            preview = if (success) {
-                "Android a confirmé l’envoi du MMS."
-            } else {
-                "La pile téléphonie a refusé ou échoué à envoyer le MMS."
-            },
+            title = outcome.title,
+            preview = outcome.preview,
             notificationId = fileName.hashCode()
         )
     }
