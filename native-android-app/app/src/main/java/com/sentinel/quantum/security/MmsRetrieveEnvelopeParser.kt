@@ -27,6 +27,9 @@ internal object MmsRetrieveEnvelopeParser {
         val senderAddress: String?,
         val messageId: String?,
         val transactionId: String?,
+        val toAddresses: List<String> = emptyList(),
+        val ccAddresses: List<String> = emptyList(),
+        val bccAddresses: List<String> = emptyList(),
         val contentType: String,
         val bodyOffset: Int
     )
@@ -50,9 +53,17 @@ internal object MmsRetrieveEnvelopeParser {
         var transactionId: String? = null
         var contentType: String? = null
         var bodyOffset: Int? = null
+        val toAddresses = ArrayList<String>()
+        val ccAddresses = ArrayList<String>()
+        val bccAddresses = ArrayList<String>()
         val singletons = HashSet<Int>()
 
         fun markSingleton(header: Int): Boolean = singletons.add(header)
+        fun appendAddress(target: MutableList<String>, address: String): Boolean {
+            if (target.size >= MAX_ADDRESSES_PER_FIELD) return false
+            target += address
+            return true
+        }
 
         while (cursor.remaining > 0) {
             val header = cursor.read() ?: return Result.Rejected("TRUNCATED_HEADER")
@@ -104,9 +115,27 @@ internal object MmsRetrieveEnvelopeParser {
                         ?: return Result.Rejected("INVALID_TRANSACTION_ID")
                 }
 
-                HEADER_TO, HEADER_CC, HEADER_BCC -> {
-                    if (!skipEncodedStringValue(cursor)) {
-                        return Result.Rejected("INVALID_ADDRESSING_HEADER")
+                HEADER_TO -> {
+                    val address = readAddressValue(cursor)
+                        ?: return Result.Rejected("INVALID_TO_ADDRESS")
+                    if (!appendAddress(toAddresses, address)) {
+                        return Result.Rejected("TO_ADDRESS_LIMIT_EXCEEDED")
+                    }
+                }
+
+                HEADER_CC -> {
+                    val address = readAddressValue(cursor)
+                        ?: return Result.Rejected("INVALID_CC_ADDRESS")
+                    if (!appendAddress(ccAddresses, address)) {
+                        return Result.Rejected("CC_ADDRESS_LIMIT_EXCEEDED")
+                    }
+                }
+
+                HEADER_BCC -> {
+                    val address = readAddressValue(cursor)
+                        ?: return Result.Rejected("INVALID_BCC_ADDRESS")
+                    if (!appendAddress(bccAddresses, address)) {
+                        return Result.Rejected("BCC_ADDRESS_LIMIT_EXCEEDED")
                     }
                 }
 
@@ -202,6 +231,9 @@ internal object MmsRetrieveEnvelopeParser {
                 senderAddress = senderAddress,
                 messageId = messageId,
                 transactionId = transactionId,
+                toAddresses = toAddresses.toList(),
+                ccAddresses = ccAddresses.toList(),
+                bccAddresses = bccAddresses.toList(),
                 contentType = mediaType,
                 bodyOffset = offset
             )
@@ -233,6 +265,9 @@ internal object MmsRetrieveEnvelopeParser {
             else -> null
         }
     }
+
+    private fun readAddressValue(cursor: Cursor): String? =
+        readEncodedStringBytes(cursor, MAX_ADDRESS_CHARS)?.let(::normalizeAddress)
 
     private fun normalizeAddress(raw: ByteArray): String? {
         if (raw.isEmpty() || raw.size > MAX_ADDRESS_CHARS) return null
@@ -427,6 +462,7 @@ internal object MmsRetrieveEnvelopeParser {
 
     private const val MAX_PDU_BYTES = 17 * 1024 * 1024
     private const val MAX_ADDRESS_CHARS = 256
+    private const val MAX_ADDRESSES_PER_FIELD = 32
     private const val MAX_ID_CHARS = 256
     private const val MAX_FROM_VALUE_BYTES = 1024
     private const val MAX_ENCODED_STRING_BYTES = 4096
