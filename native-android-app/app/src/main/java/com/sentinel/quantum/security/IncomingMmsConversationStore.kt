@@ -431,6 +431,7 @@ internal class IncomingMmsConversationStore(context: Context) {
     }
 
     @Suppress("DEPRECATION")
+    @android.annotation.SuppressLint("MissingPermission")
     private fun readSelfAddresses(subscriptionId: Int): Set<String> = runCatching {
         if (!SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
             return@runCatching emptySet()
@@ -447,7 +448,8 @@ internal class IncomingMmsConversationStore(context: Context) {
 
         // Identity must be scoped to the subscription that actually received this MMS. Aggregating
         // every active SIM can remove another SIM's number from a real group conversation and
-        // silently collapse the thread.
+        // silently collapse the thread. Permission/carrier-privilege failures remain fail-closed:
+        // every identity probe is wrapped and missing access yields an empty address set.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             runCatching {
                 subscriptionManager.getPhoneNumber(subscriptionId)
