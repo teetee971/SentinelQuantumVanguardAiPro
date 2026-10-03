@@ -1,5 +1,5 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { mkdir, open, readFile, rename } from "node:fs/promises";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { dirname } from "node:path";
 
 const SCHEMA_VERSION = 1;
@@ -23,6 +23,7 @@ export class MeshStateStore {
   #path;
   #secret;
   #lastSequence = 0;
+  #pendingSave = Promise.resolve();
 
   constructor({ path, secret }) {
     if (typeof path !== "string" || !path.trim()) throw new Error("state path required");
@@ -32,6 +33,14 @@ export class MeshStateStore {
   }
 
   async save(state) {
+    // Capture the request before queueing; callers may mutate their own state later.
+    const snapshot = JSON.parse(JSON.stringify(state));
+    const result = this.#pendingSave.then(() => this.#save(snapshot));
+    this.#pendingSave = result.catch(() => {});
+    return result;
+  }
+
+  async #save(state) {
     const sequence = this.#lastSequence + 1;
     const envelope = {
       schemaVersion: SCHEMA_VERSION,
@@ -45,20 +54,25 @@ export class MeshStateStore {
     }
 
     await mkdir(dirname(this.#path), { recursive: true, mode: 0o700 });
-    const temp = `${this.#path}.tmp-${process.pid}`;
-    const handle = await open(temp, "w", 0o600);
+    const temp = `${this.#path}.tmp-${process.pid}-${randomUUID()}`;
     try {
-      await handle.writeFile(encoded, "utf8");
-      await handle.sync();
+      const handle = await open(temp, "wx", 0o600);
+      try {
+        await handle.writeFile(encoded, "utf8");
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      await rename(temp, this.#path);
     } finally {
-      await handle.close();
+      await rm(temp, { force: true });
     }
-    await rename(temp, this.#path);
     this.#lastSequence = sequence;
     return sequence;
   }
 
   async load() {
+    await this.#pendingSave;
     const raw = await readFile(this.#path);
     if (raw.length > MAX_FILE_BYTES) throw new Error("mesh state file too large");
     const envelope = JSON.parse(raw.toString("utf8"));

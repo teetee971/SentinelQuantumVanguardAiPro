@@ -168,3 +168,20 @@ test("invalid trusted minimum sequence fails closed", async () => {
     /VPN_LEASE_STORE_MINIMUM_SEQUENCE_INVALID/
   );
 });
+
+
+test("concurrent saves preserve every sequence and capture the requested snapshot", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "sentinel-concurrent-store-"));
+  try {
+    const store = new VpnLeaseStateStore({ path: join(dir, "state.json"), secret: SECRET, gatewayId: "fr-par-01" });
+    const snapshots = Array.from({ length: 24 }, (_, index) => ({ marker: index }));
+    const pending = snapshots.map(state => store.save(state));
+    snapshots.forEach(state => { state.marker = -1; });
+    assert.deepEqual(await Promise.all(pending), Array.from({ length: 24 }, (_, i) => i + 1));
+    const loaded = await store.load();
+    assert.equal(loaded.sequence, 24);
+    assert.equal(loaded.state.marker, 23);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

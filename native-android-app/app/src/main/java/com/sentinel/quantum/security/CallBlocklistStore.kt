@@ -25,7 +25,11 @@ class CallBlocklistStore(context: Context) {
                 preferences.getStringSet(SIGNED_PREFIXES, emptySet()).orEmpty().toSet()
                     .take(CallRuleEngine.MAX_REPUTATION_RULES).toSet()
             } else emptySet(),
-            arcepVerifiedBlockingEnabled = isArcepVerifiedBlockingEnabled()
+            arcepVerifiedBlockingEnabled = isArcepVerifiedBlockingEnabled(),
+            blockedNumberExpiresAtMs = metadataByHash.values
+                .filter { it.fingerprint in blockedHashes && it.expiresAtEpochMs != null }
+                .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
+            signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L)
         )
     }
 
@@ -56,7 +60,8 @@ class CallBlocklistStore(context: Context) {
         snapshot(now).also { SCREENING_SNAPSHOT = it }
 
     /** Screening-critical path: memory-only and fail-open until Application preload completes. */
-    fun cachedScreeningSnapshot(): Snapshot = SCREENING_SNAPSHOT
+    fun cachedScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
+        SCREENING_SNAPSHOT.activeAt(now)
 
     private fun refreshScreeningSnapshotAfterCommit() {
         SCREENING_SNAPSHOT = snapshot()
@@ -246,8 +251,18 @@ class CallBlocklistStore(context: Context) {
         val blockedNumberHashes: Set<String>,
         val blockedPrefixes: Set<String>,
         val signedSilencePrefixes: Set<String>,
-        val arcepVerifiedBlockingEnabled: Boolean = false
+        val arcepVerifiedBlockingEnabled: Boolean = false,
+        val blockedNumberExpiresAtMs: Map<String, Long> = emptyMap(),
+        val signedExpiresAtMs: Long = 0L
     ) {
+        /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
+        fun activeAt(now: Long): Snapshot = copy(
+            blockedNumberHashes = blockedNumberHashes.filter { hash ->
+                blockedNumberExpiresAtMs[hash]?.let { now < it } ?: true
+            }.toSet(),
+            signedSilencePrefixes = if (now < signedExpiresAtMs) signedSilencePrefixes else emptySet()
+        )
+
         val effectiveBlockedPrefixes: Set<String>
             get() = if (arcepVerifiedBlockingEnabled) {
                 linkedSetOf<String>().apply {

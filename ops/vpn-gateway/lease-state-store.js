@@ -1,5 +1,5 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { mkdir, open, readFile, rename } from "node:fs/promises";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
 import { dirname } from "node:path";
 
 const SCHEMA_VERSION = 1;
@@ -32,6 +32,7 @@ export class VpnLeaseStateStore {
   #secret;
   #gatewayId;
   #lastSequence = 0;
+  #pendingSave = Promise.resolve();
 
   constructor({ path, secret, gatewayId }) {
     if (typeof path !== "string" || !path.trim() || path.includes("\0")) {
@@ -47,6 +48,14 @@ export class VpnLeaseStateStore {
   }
 
   async save(state) {
+    // Capture the request before queueing; callers may mutate their own state later.
+    const snapshot = JSON.parse(JSON.stringify(state));
+    const result = this.#pendingSave.then(() => this.#save(snapshot));
+    this.#pendingSave = result.catch(() => {});
+    return result;
+  }
+
+  async #save(state) {
     if (!state || typeof state !== "object" || Array.isArray(state)) {
       throw new Error("VPN_LEASE_STORE_STATE_INVALID");
     }
@@ -65,20 +74,25 @@ export class VpnLeaseStateStore {
     }
 
     await mkdir(dirname(this.#path), { recursive: true, mode: 0o700 });
-    const temporary = `${this.#path}.tmp-${process.pid}`;
-    const handle = await open(temporary, "w", 0o600);
+    const temporary = `${this.#path}.tmp-${process.pid}-${randomUUID()}`;
     try {
-      await handle.writeFile(encoded, "utf8");
-      await handle.sync();
+      const handle = await open(temporary, "wx", 0o600);
+      try {
+        await handle.writeFile(encoded, "utf8");
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      await rename(temporary, this.#path);
     } finally {
-      await handle.close();
+      await rm(temporary, { force: true });
     }
-    await rename(temporary, this.#path);
     this.#lastSequence = sequence;
     return sequence;
   }
 
   async load({ minimumSequence = null } = {}) {
+    await this.#pendingSave;
     if (minimumSequence !== null &&
         (!Number.isSafeInteger(minimumSequence) || minimumSequence < 1)) {
       throw new Error("VPN_LEASE_STORE_MINIMUM_SEQUENCE_INVALID");

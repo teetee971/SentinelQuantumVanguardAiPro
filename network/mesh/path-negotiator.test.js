@@ -75,3 +75,13 @@ test("expired sessions are fail-closed", () => {
   now = 11001;
   assert.equal(n.get(s.id), null);
 });
+
+test("creating a negotiation reclaims expired session entries", () => {
+  let now = 1000;
+  const negotiator = new MeshPathNegotiator({ clock: () => now });
+  negotiator.createSession({ sourceNodeId: "device:a", targetNodeId: "device:b", ttlMs: 10000 });
+  now = 11000;
+  const fresh = negotiator.createSession({ sourceNodeId: "device:a", targetNodeId: "device:b", ttlMs: 10000 });
+  assert.equal(negotiator.pruneExpired(), 0);
+  assert.ok(negotiator.get(fresh.id));
+});

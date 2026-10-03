@@ -49,6 +49,7 @@ export class MeshRelayRegistry {
   }
 
   createSession({ sourceNodeId, targetNodeId, ttlMs = 120000 }) {
+    this.pruneExpired();
     if (this.#sessions.size >= MAX_SESSIONS) throw new Error("relay session capacity exceeded");
     const source = boundedId(sourceNodeId, "source node id");
     const target = boundedId(targetNodeId, "target node id");

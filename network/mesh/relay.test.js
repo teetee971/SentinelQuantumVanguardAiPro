@@ -130,3 +130,13 @@ test("relay grant broker gives each node only its own one-time credential", () =
   assert.equal(broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:a" }), null);
   assert.equal(broker.claim({ negotiationId: metadata.negotiationId, nodeId: "device:other" }), null);
 });
+
+test("creating a relay reclaims expired session entries", () => {
+  let now = 1000;
+  const registry = new MeshRelayRegistry({ clock: () => now });
+  registry.createSession({ sourceNodeId: "device:a", targetNodeId: "device:b", ttlMs: 10000 });
+  now = 11000;
+  const fresh = registry.createSession({ sourceNodeId: "device:a", targetNodeId: "device:b", ttlMs: 10000 });
+  assert.equal(registry.pruneExpired(), 0);
+  assert.ok(registry.authenticate(fresh.sessionId, fresh.source.token));
+});

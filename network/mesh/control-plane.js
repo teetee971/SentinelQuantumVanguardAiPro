@@ -108,6 +108,7 @@ export class MeshControlPlane {
   #audit = [];
   #clock;
   #spiffeTrustBundle;
+  #pendingMutation = Promise.resolve();
 
   constructor({ clock = () => Date.now(), spiffeTrustBundle = new SpiffeTrustBundleManager() } = {}) {
     if (!(spiffeTrustBundle instanceof SpiffeTrustBundleManager)) {
@@ -115,6 +116,43 @@ export class MeshControlPlane {
     }
     this.#clock = clock;
     this.#spiffeTrustBundle = spiffeTrustBundle;
+  }
+
+  /** Publish security state only after its candidate snapshot has been persisted.
+   * Runtime writers must share this boundary; callbacks are synchronous mutations of the candidate.
+   */
+  async commitMutation(mutate, persist = null) {
+    const pending = this.#pendingMutation.then(async () => {
+      const candidate = new MeshControlPlane({ clock: this.#clock });
+      candidate.restoreState(this.exportState());
+      // Cloning is not an operational restore and must not create an audit event.
+      candidate.#audit = immutableClone(this.#audit);
+      const lastAuditSequence = this.#audit.at(-1)?.sequence || 0;
+      const result = mutate(candidate);
+      if (result && typeof result.then === "function") throw new Error("mesh mutation must be synchronous");
+      if (persist) {
+        try {
+          await persist(candidate.exportState(), result);
+        } catch (cause) {
+          const error = new Error("mesh state persistence failed", { cause });
+          error.code = "MESH_PERSIST_FAILED";
+          throw error;
+        }
+      }
+      // Discovery can append read-only audit observations while persistence is pending.
+      for (const event of this.#audit.filter(item => item.sequence > lastAuditSequence)) {
+        candidate.#audit.push({ ...event, sequence: (candidate.#audit.at(-1)?.sequence || 0) + 1 });
+      }
+      this.#nodes = candidate.#nodes;
+      this.#policies = candidate.#policies;
+      this.#integrations = candidate.#integrations;
+      this.#nodeCredentialHashes = candidate.#nodeCredentialHashes;
+      this.#spiffeTrustBundle = candidate.#spiffeTrustBundle;
+      this.#audit = candidate.#audit.slice(-MAX_AUDIT);
+      return result;
+    });
+    this.#pendingMutation = pending.catch(() => {});
+    return pending;
   }
 
   enrollNode(input) {

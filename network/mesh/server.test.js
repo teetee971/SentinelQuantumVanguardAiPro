@@ -1001,3 +1001,16 @@ test("SPIFFE trust bundle admin API is never node-authenticated", async () => {
   });
   assert.equal(denied.status, 401);
 });
+
+test("API returns unavailable on persistence failure without enrolling the node", async () => {
+  const cp = new MeshControlPlane();
+  const result = await handleMeshRequest({
+    method: "POST", url: "/v1/nodes",
+    headers: { authorization: `Bearer ${TOKEN}` },
+    body: { id: "device:uncommitted", type: "device", publicKey: KEY },
+    controlPlane: cp, adminToken: TOKEN,
+    persist: async () => { throw new Error("disk unavailable"); },
+  });
+  assert.equal(result.status, 503);
+  assert.equal(cp.getNode("device:uncommitted"), null);
+});
