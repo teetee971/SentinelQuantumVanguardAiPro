@@ -14,6 +14,10 @@ const downloadWorker = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadCleanupWorker.kt',
   'utf8'
 );
+const downloadRecoveryWorker = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadRecoveryWorker.kt',
+  'utf8'
+);
 const downloadCoordinator = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadCoordinator.kt',
   'utf8'
@@ -33,22 +37,51 @@ test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable 
   assert.match(sendStager, /deleteInternal\(context, fileName, cancelCleanup = false\)/);
 });
 
-test('incoming MMS registers durable cleanup before crossing the Android download boundary', () => {
-  const scheduleIndex = downloadCoordinator.indexOf('MmsDownloadCleanupWorker.schedule');
+test('incoming MMS persists recovery metadata and both safety nets before Android transport starts', () => {
+  const journalIndex = downloadCoordinator.indexOf('recoveryJournal.record');
+  const cleanupIndex = downloadCoordinator.indexOf('MmsDownloadCleanupWorker.schedule');
+  const recoveryIndex = downloadCoordinator.indexOf('MmsDownloadRecoveryWorker.schedule');
   const transportIndex = downloadCoordinator.indexOf('downloadMultimediaMessage');
-  assert.ok(scheduleIndex >= 0, 'download cleanup scheduling must exist');
+
+  assert.ok(journalIndex >= 0, 'download recovery journal must exist');
+  assert.ok(cleanupIndex >= 0, 'download cleanup scheduling must exist');
+  assert.ok(recoveryIndex >= 0, 'download lost-callback recovery scheduling must exist');
   assert.ok(transportIndex >= 0, 'Android MMS download transport must exist');
-  assert.ok(scheduleIndex < transportIndex, 'cleanup must be durable before Android transport starts');
-  assert.match(downloadCoordinator, /MMS_DOWNLOAD_CLEANUP_SCHEDULE_FAILED/);
+  assert.ok(journalIndex < transportIndex, 'recovery metadata must be durable before Android transport starts');
+  assert.ok(cleanupIndex < transportIndex, 'cleanup deadline must be durable before Android transport starts');
+  assert.ok(recoveryIndex < transportIndex, 'lost-callback recovery must be scheduled before Android transport starts');
+
+  assert.match(downloadCoordinator, /MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED/);
+  assert.match(downloadCoordinator, /MMS_DOWNLOAD_RECOVERY_SCHEDULE_FAILED/);
   assert.match(downloadWorker, /setInputData\(workDataOf\(KEY_FILE_NAME to fileName\)\)/);
+  assert.match(downloadWorker, /allowQuarantine = true/);
   assert.match(downloadWorker, /MmsDownloadCoordinator\.expire\(applicationContext, fileName\)/);
   assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(downloadWorker, /ExistingWorkPolicy\.REPLACE/);
+  assert.match(downloadRecoveryWorker, /allowQuarantine = false/);
 });
 
-test('incoming callback keeps cleanup scheduled until temporary deletion is confirmed', () => {
-  assert.match(downloadReceiver, /val temporaryDeleted = MmsDownloadCoordinator\.delete\(context, fileName\)/);
+test('incoming callback retires cleanup only after provider success or explicit quarantine and confirmed deletion', () => {
+  const providerRejectIndex = downloadReceiver.indexOf(
+    'providerResult is IncomingMmsConversationStore.ProjectResult.Rejected'
+  );
+  const temporaryDeleteIndex = downloadReceiver.indexOf(
+    'val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)'
+  );
+
+  assert.ok(providerRejectIndex >= 0, 'provider rejection branch must exist');
+  assert.ok(temporaryDeleteIndex > providerRejectIndex, 'staging deletion must happen after provider decision');
+  assert.match(
+    downloadReceiver,
+    /providerResult is IncomingMmsConversationStore\.ProjectResult\.Rejected\)[\s\S]*copie staged et le journal de reprise restent actifs[\s\S]*return/
+  );
   assert.match(downloadReceiver, /if \(!temporaryDeleted\)[\s\S]*nettoyage durable reste planifié/);
-  assert.match(downloadCoordinator, /if \(removed && cancelCleanup\)[\s\S]*MmsDownloadCleanupWorker\.cancel/);
-  assert.match(downloadCoordinator, /internal fun expire\(context: Context, fileName: String\): Boolean =[\s\S]*cancelCleanup = false/);
+  assert.match(
+    downloadCoordinator,
+    /val removed =[\s\S]*if \(!removed\) return false[\s\S]*if \(cancelCleanup\)[\s\S]*MmsDownloadCleanupWorker\.cancel/
+  );
+  assert.match(
+    downloadCoordinator,
+    /internal fun expire\(context: Context, fileName: String\): Boolean =[\s\S]*cancelCleanup = false/
+  );
 });
