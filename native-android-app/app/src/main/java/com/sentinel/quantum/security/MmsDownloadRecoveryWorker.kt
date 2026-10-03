@@ -143,7 +143,7 @@ internal object MmsDownloadRecovery {
 
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return Outcome.RETRY
         val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, record.subscriptionId)
-        if (prepared is IncomingMmsProjectionPipeline.Result.Quarantined && !allowQuarantine) {
+        if (shouldRetryQuarantine(prepared, allowQuarantine)) {
             return Outcome.RETRY
         }
 
@@ -233,6 +233,20 @@ internal object MmsDownloadRecovery {
         finish(appContext, fileName, allowQuarantine)
         return Outcome.RECOVERED
     }
+
+    /**
+     * PLAN:* means the envelope, multipart body and safety boundary all succeeded and only the
+     * canonical-provider plan refused projection. The staged file is therefore complete enough for
+     * immediate private quarantine. Earlier ENVELOPE/BODY/SAFETY failures can still represent a
+     * partially written lost-callback file, so they retry until the bounded final deadline.
+     */
+    internal fun shouldRetryQuarantine(
+        prepared: IncomingMmsProjectionPipeline.Result,
+        allowQuarantine: Boolean
+    ): Boolean =
+        prepared is IncomingMmsProjectionPipeline.Result.Quarantined &&
+            !allowQuarantine &&
+            !prepared.reason.startsWith("PLAN:")
 
     internal fun shouldRetryProviderProjection(
         providerResult: IncomingMmsConversationStore.ProjectResult?,
