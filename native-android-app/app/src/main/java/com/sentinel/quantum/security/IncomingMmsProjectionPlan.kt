@@ -81,6 +81,13 @@ internal object IncomingMmsProjectionPlan {
         if (envelope.contentType !in MULTIPART_TYPES) {
             return Result.Quarantined("UNSUPPORTED_CONTENT_TYPE")
         }
+        // The current safety decoder deliberately strips SMIL and per-part relation metadata.
+        // Projecting multipart/related or multipart/alternative after that loss would manufacture a
+        // canonical provider representation that is not faithful to the carrier PDU. Keep those
+        // messages private until Content-ID/Content-Location/SMIL preservation is implemented.
+        if (envelope.contentType !in PROVIDER_PROJECTABLE_TYPES) {
+            return Result.Quarantined("PRESENTATION_METADATA_NOT_PRESERVED")
+        }
         if (safeParts.isEmpty() || safeParts.size > MAX_PARTS) {
             return Result.Quarantined("INVALID_PART_COUNT")
         }
@@ -154,5 +161,8 @@ internal object IncomingMmsProjectionPlan {
         "application/vnd.wap.multipart.mixed",
         "application/vnd.wap.multipart.alternative",
         "application/vnd.wap.multipart.related"
+    )
+    private val PROVIDER_PROJECTABLE_TYPES = setOf(
+        "application/vnd.wap.multipart.mixed"
     )
 }
