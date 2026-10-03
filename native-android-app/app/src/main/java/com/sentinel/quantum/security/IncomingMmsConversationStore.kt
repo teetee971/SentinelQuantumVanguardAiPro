@@ -436,17 +436,32 @@ internal class IncomingMmsConversationStore(context: Context) {
             ?: return@runCatching emptySet()
         val telephonyManager = appContext.getSystemService(TelephonyManager::class.java)
             ?: return@runCatching emptySet()
-        subscriptionManager.activeSubscriptionInfoList.orEmpty()
-            .asSequence()
-            .mapNotNull { info ->
-                runCatching {
-                    telephonyManager.createForSubscriptionId(info.subscriptionId)
-                        .line1Number
-                        ?.trim()
-                        ?.takeIf { it.isNotEmpty() }
-                }.getOrNull()
+        val addresses = LinkedHashSet<String>()
+
+        subscriptionManager.activeSubscriptionInfoList.orEmpty().forEach { info ->
+            fun addCandidate(value: String?) {
+                value?.trim()?.takeIf { it.isNotEmpty() }?.let(addresses::add)
             }
-            .toSet()
+
+            // Android 13+ can aggregate carrier/UICC/IMS phone-number sources. Some devices gate
+            // this API more strictly than the default-SMS role, so it remains a best-effort source
+            // and never widens the permission surface.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                runCatching {
+                    subscriptionManager.getPhoneNumber(info.subscriptionId)
+                }.getOrNull()?.let(::addCandidate)
+            }
+
+            // Default SMS apps are allowed to read these legacy sources on supported releases.
+            // Operators/OEMs frequently leave one source empty while another is populated, so all
+            // available values are retained and normalized before group-thread resolution.
+            runCatching { info.number }.getOrNull()?.let(::addCandidate)
+            runCatching {
+                telephonyManager.createForSubscriptionId(info.subscriptionId).line1Number
+            }.getOrNull()?.let(::addCandidate)
+        }
+
+        addresses
     }.getOrDefault(emptySet())
 
     private fun sameAddress(actual: String, expected: String): Boolean =
