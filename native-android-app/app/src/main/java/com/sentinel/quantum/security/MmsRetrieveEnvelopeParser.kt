@@ -31,7 +31,8 @@ internal object MmsRetrieveEnvelopeParser {
         val ccAddresses: List<String> = emptyList(),
         val bccAddresses: List<String> = emptyList(),
         val contentType: String,
-        val bodyOffset: Int
+        val bodyOffset: Int,
+        val messageSizeBytes: Long? = null
     )
 
     sealed interface Result {
@@ -51,6 +52,7 @@ internal object MmsRetrieveEnvelopeParser {
         var senderSeen = false
         var messageId: String? = null
         var transactionId: String? = null
+        var messageSizeBytes: Long? = null
         var contentType: String? = null
         var bodyOffset: Int? = null
         val toAddresses = ArrayList<String>()
@@ -157,7 +159,8 @@ internal object MmsRetrieveEnvelopeParser {
 
                 HEADER_MESSAGE_SIZE -> {
                     if (!markSingleton(header)) return Result.Rejected("DUPLICATE_MESSAGE_SIZE")
-                    if (readLongInteger(cursor) == null) return Result.Rejected("INVALID_MESSAGE_SIZE")
+                    messageSizeBytes = readLongInteger(cursor)
+                        ?: return Result.Rejected("INVALID_MESSAGE_SIZE")
                 }
 
                 HEADER_DELIVERY_TIME, HEADER_EXPIRY,
@@ -235,7 +238,8 @@ internal object MmsRetrieveEnvelopeParser {
                 ccAddresses = ccAddresses.toList(),
                 bccAddresses = bccAddresses.toList(),
                 contentType = mediaType,
-                bodyOffset = offset
+                bodyOffset = offset,
+                messageSizeBytes = messageSizeBytes
             )
         )
     }
