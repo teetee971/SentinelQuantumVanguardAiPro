@@ -20,11 +20,19 @@ export async function restoreVpnLeaseState({
   assertVpnLeaseSequenceAuthority(sequenceAuthority);
 
   const gatewayId = core.gatewayId;
-  const minimumSequence = await sequenceAuthority.readMinimumSequence(gatewayId);
-  validateVpnLeaseSequenceBoundary({ gatewayId, sequence: minimumSequence });
+  const authoritativeSequence = await sequenceAuthority.readMinimumSequence(gatewayId);
+  validateVpnLeaseSequenceBoundary({ gatewayId, sequence: authoritativeSequence });
 
-  const snapshot = await stateStore.load({ minimumSequence });
+  const snapshot = await stateStore.load({ minimumSequence: authoritativeSequence });
   validateVpnLeaseSequenceBoundary({ gatewayId, sequence: snapshot.sequence });
+
+  // The external monotonic authority is the commit record, not merely a loose lower bound.
+  // Accepting a locally signed snapshot ahead of it would allow a snapshot written before a
+  // failed authority commit to become trusted after restart. Exact equality closes that window.
+  if (snapshot.sequence !== authoritativeSequence) {
+    throw new Error("VPN_SEQUENCE_AUTHORITY_STATE_MISMATCH");
+  }
+
   core.restoreState(snapshot.state);
 
   return Object.freeze({
