@@ -68,6 +68,15 @@ object MmsSendPduStager {
             return Result.Rejected("MMS_SEND_URI_FAILED")
         }
 
+        val cleanupScheduled = runCatching {
+            MmsSendCleanupWorker.schedule(context.applicationContext)
+            true
+        }.getOrDefault(false)
+        if (!cleanupScheduled) {
+            finalFile.delete()
+            return Result.Rejected("MMS_PDU_CLEANUP_SCHEDULE_FAILED")
+        }
+
         return Result.Staged(token, finalFile.name, uri)
     }
 
@@ -82,8 +91,7 @@ object MmsSendPduStager {
 
     /**
      * Removes stale/oversized/malformed staged payloads without creating the directory.
-     * Called at process start as well as before every new stage so the one-hour TTL is real even
-     * when the previous send ended with an unknown synchronous platform outcome.
+     * Called at process start, by durable cleanup work, and before every new stage.
      */
     fun pruneExpired(context: Context): Int {
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return 0
@@ -95,7 +103,7 @@ object MmsSendPduStager {
     }
 
     private fun prune(directory: File): Int {
-        val cutoff = System.currentTimeMillis() - SEND_TTL_MS
+        val cutoff = System.currentTimeMillis() - STAGED_PDU_TTL_MS
         var deleted = 0
         directory.listFiles().orEmpty()
             .filter {
@@ -110,9 +118,9 @@ object MmsSendPduStager {
     }
 
     const val MAX_STAGED_PDU_BYTES = 11L * 1024L * 1024L
+    const val STAGED_PDU_TTL_MS = 60L * 60L * 1000L
 
     private const val SEND_DIRECTORY = "sentinel_mms_send"
-    private const val SEND_TTL_MS = 60L * 60L * 1000L
     private val FILE_NAME = Regex("^[0-9a-fA-F-]{36}\\.pdu$")
     private val TEMP_NAME = Regex("^[0-9a-fA-F-]{36}\\.tmp$")
 }
