@@ -16,6 +16,7 @@
       "release_signed": false,
       "customer_available": false,
       "blockers": [
+        "Incoming MMS provider projection is not yet complete end-to-end",
         "14/14 physical Phone Core evidence has not been recorded on the current install scope",
         "No signed public Android release artifact is demonstrated"
       ],
