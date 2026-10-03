@@ -6,7 +6,7 @@ This file is generated. Do not promote a capability by editing this document; up
 
 | Capability | Status | Customer available | Open blockers | Evidence revision | Observed at |
 |---|---|---:|---:|---|---|
-| Android Phone Core | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
+| Android Phone Core | IMPLEMENTED_NOT_VERIFIED | NO | 3 | Not attested | Not observed |
 | Sentinel VPN | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | Voice Studio transformed calls | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | GeoIntel USGS earthquakes | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
@@ -27,6 +27,7 @@ This file is generated. Do not promote a capability by editing this document; up
 
 ### Android Phone Core
 
+- Incoming MMS provider projection is not yet complete end-to-end
 - 14/14 physical Phone Core evidence has not been recorded on the current install scope
 - No signed public Android release artifact is demonstrated
 
