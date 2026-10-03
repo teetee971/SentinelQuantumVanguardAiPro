@@ -1,7 +1,6 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
-import android.telephony.SubscriptionManager
 import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -111,7 +110,7 @@ internal object MmsDownloadRecovery {
             finish(appContext, fileName, allowQuarantine)
             return Outcome.TERMINAL
         }
-        if (!SubscriptionManager.isValidSubscriptionId(record.subscriptionId)) {
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)) {
             finish(appContext, fileName, allowQuarantine)
             return Outcome.TERMINAL
         }
