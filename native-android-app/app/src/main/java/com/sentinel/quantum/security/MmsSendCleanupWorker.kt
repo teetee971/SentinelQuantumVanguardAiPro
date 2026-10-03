@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -16,7 +17,15 @@ class MmsSendCleanupWorker(
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
         inputData.getString(KEY_FILE_NAME)?.let { fileName ->
-            MmsSendPduStager.expire(applicationContext, fileName)
+            val expired = MmsSendPduStager.expire(applicationContext, fileName)
+            if (!expired) {
+                LocalLogger(applicationContext).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsSend",
+                    "Nettoyage du PDU MMS sortant non confirmé : nouvelle tentative durable planifiée"
+                )
+                return Result.retry()
+            }
         }
         if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
             MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
@@ -42,6 +51,7 @@ class MmsSendCleanupWorker(
             require(MmsSendPduStager.isValidStagedFileName(fileName)) { "invalid MMS staged file" }
             val request = OneTimeWorkRequestBuilder<MmsSendCleanupWorker>()
                 .setInitialDelay(MmsSendPduStager.STAGED_PDU_TTL_MS, TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
                 .setInputData(workDataOf(KEY_FILE_NAME to fileName))
                 .addTag(WORK_TAG)
                 .addTag(fileTag(fileName))
