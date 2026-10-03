@@ -23,8 +23,8 @@ object MmsDownloadCoordinator {
         val notification = MmsNotificationParser.parse(notificationPdu) ?: return Result.NotNotification
         if (!holdsSmsRole(context)) return Result.Rejected("SMS_ROLE_NOT_HELD")
 
-        val subscriptionId = resolveSubscriptionId(sourceIntent)
-        if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+        val subscriptionId = MmsSubscriptionResolver.resolve(sourceIntent)
+        if (!SubscriptionManager.isValidSubscriptionId(subscriptionId)) {
             return Result.Rejected("MMS_SUBSCRIPTION_REQUIRED")
         }
 
@@ -134,20 +134,6 @@ object MmsDownloadCoordinator {
         val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return 0
         if (canonicalDirectory.parentFile != canonicalCache) return 0
         return prune(canonicalDirectory)
-    }
-
-    private fun resolveSubscriptionId(intent: Intent): Int {
-        val fromPlatform = intent.getIntExtra(
-            SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX,
-            SubscriptionManager.INVALID_SUBSCRIPTION_ID
-        )
-        if (fromPlatform != SubscriptionManager.INVALID_SUBSCRIPTION_ID) return fromPlatform
-
-        // Older telephony stacks used this extra name for WAP push delivery.
-        val legacy = intent.getIntExtra("subscription", SubscriptionManager.INVALID_SUBSCRIPTION_ID)
-        if (legacy != SubscriptionManager.INVALID_SUBSCRIPTION_ID) return legacy
-
-        return SubscriptionManager.getDefaultSmsSubscriptionId()
     }
 
     private fun prune(directory: File): Int {
