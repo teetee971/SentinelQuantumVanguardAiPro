@@ -158,6 +158,7 @@ class SentinelMmsSender(private val context: Context) {
             }
         }
 
+        var transportInvocationStarted = false
         return try {
             val callbackIntent = Intent(context, SentinelMmsSendStatusReceiver::class.java)
                 .setAction(ACTION_SENT)
@@ -179,6 +180,10 @@ class SentinelMmsSender(private val context: Context) {
             } else {
                 SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
             }
+
+            // From this instruction onward, a synchronous exception cannot prove that the platform
+            // accepted no MMS bytes. Only callbacks may resolve that uncertainty.
+            transportInvocationStarted = true
             manager.sendMultimediaMessage(
                 context,
                 staged.contentUri,
@@ -201,17 +206,40 @@ class SentinelMmsSender(private val context: Context) {
                 providerMessageId = providerMessageId
             )
         } catch (_: Exception) {
-            // Once the Android telephony boundary is attempted, a synchronous exception is not
-            // proof that no bytes crossed it. Keep the provider row in OUTBOX and record uncertainty.
             MmsSendPduStager.delete(context, staged.fileName)
-            providerStore.markSubmissionUnknown(staged.token, providerMessageId)
-            SendResult(
-                accepted = false,
-                reason = "MMS_SUBMISSION_OUTCOME_UNKNOWN",
-                subscriptionId = subscriptionId,
-                token = staged.token,
-                providerMessageId = providerMessageId
-            )
+            if (transportInvocationStarted) {
+                // The Android telephony call was entered. Keep OUTBOX and record uncertainty;
+                // deleting or failing the row here could contradict a late carrier callback.
+                providerStore.markSubmissionUnknown(staged.token, providerMessageId)
+                SendResult(
+                    accepted = false,
+                    reason = "MMS_SUBMISSION_OUTCOME_UNKNOWN",
+                    subscriptionId = subscriptionId,
+                    token = staged.token,
+                    providerMessageId = providerMessageId
+                )
+            } else {
+                // No transport invocation happened. Compensate the provider row instead of leaving
+                // a fake pending message. If cleanup cannot be proven the recovery journal remains.
+                val cleanupConfirmed = providerStore.abandonBeforeTransport(
+                    staged.token,
+                    providerMessageId
+                )
+                if (!cleanupConfirmed) {
+                    LocalLogger(context).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "MmsProvider",
+                        "Préparation transport MMS échouée; nettoyage provider à reprendre"
+                    )
+                }
+                SendResult(
+                    accepted = false,
+                    reason = "MMS_SUBMISSION_PREPARATION_FAILED",
+                    subscriptionId = subscriptionId,
+                    token = staged.token,
+                    providerMessageId = providerMessageId
+                )
+            }
         }
     }
 
