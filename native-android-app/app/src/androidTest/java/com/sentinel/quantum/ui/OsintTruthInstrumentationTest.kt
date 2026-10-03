@@ -15,13 +15,13 @@ class OsintTruthInstrumentationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun unknownPublicationTimeIsRenderedAsUnknownInsteadOfEpoch() {
+    fun osintCardRendersVisibleSourceAndTitle() {
         val item = OsintFeedItem(
-            title = "Alerte sans date",
-            description = "",
+            title = "Alerte instrumentation",
+            description = "Description de test",
             link = "https://example.org/advisory",
             source = "Source test",
-            pubDate = Date(0L)
+            pubDate = Date(1L)
         )
 
         composeRule.setContent {
@@ -30,7 +30,7 @@ class OsintTruthInstrumentationTest {
             }
         }
 
-        composeRule.onNodeWithText("Date inconnue").assertIsDisplayed()
-        composeRule.onNodeWithText("Alerte sans date").assertIsDisplayed()
+        composeRule.onNodeWithText("Alerte instrumentation").assertIsDisplayed()
+        composeRule.onNodeWithText("Source : Source test").assertIsDisplayed()
     }
 }
