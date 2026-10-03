@@ -73,8 +73,14 @@ class SystemCallLogReader(private val context: Context) {
                 val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
                 val durationIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
                 val cachedNameIndex = cursor.getColumnIndex(CallLog.Calls.CACHED_NAME)
-                while (cursor.moveToNext() && result.size < boundedLimit) {
-                    result += Entry(
+                var scannedRows = 0
+                while (
+                    cursor.moveToNext() &&
+                    result.size < boundedLimit &&
+                    scannedRows < MAX_SCAN_ROWS
+                ) {
+                    scannedRows++
+                    val entry = Entry(
                         number = if (numberIndex >= 0 && !cursor.isNull(numberIndex)) {
                             cursor.getString(numberIndex)?.take(MAX_NUMBER_CHARS)
                         } else null,
@@ -91,6 +97,18 @@ class SystemCallLogReader(private val context: Context) {
                                 ?.takeIf { it.isNotBlank() }
                         } else null
                     )
+                    val previous = result.lastOrNull()
+                    val duplicate = previous != null && CallLogDeduplicationPolicy.sameVisibleCall(
+                        previous.number,
+                        previous.type,
+                        previous.dateMillis,
+                        previous.durationSeconds,
+                        entry.number,
+                        entry.type,
+                        entry.dateMillis,
+                        entry.durationSeconds
+                    )
+                    if (!duplicate) result += entry
                 }
             }
             result
@@ -115,6 +133,7 @@ class SystemCallLogReader(private val context: Context) {
 
     private companion object {
         const val MAX_ROWS = 500
+        const val MAX_SCAN_ROWS = 1_500
         const val MAX_NUMBER_CHARS = 64
         const val MAX_CACHED_NAME_CHARS = 160
     }
