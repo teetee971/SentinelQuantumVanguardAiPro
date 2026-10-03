@@ -150,36 +150,38 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         val safePreview = MmsDecodePipeline.decodeAndValidate(data, SentinelMmsPduDecoder)
         val persistence = persistPrivatePdu(context, data, safePreview)
         if (persistence == PrivatePduPersistence.FAILED) return
-        if (persistence == PrivatePduPersistence.EXISTING) {
+        val replay = persistence == PrivatePduPersistence.EXISTING
+        if (replay) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.INFO,
                 "MmsDownload",
-                "Replay MMS reconnu par identité SHA-256; aucune copie privée ni notification dupliquée"
+                "Replay MMS reconnu par identité SHA-256; aucune copie privée ni chronologie dupliquée"
             )
-            return
-        }
-
-        runCatching {
-            PhonePrivateTimelineStore(context).append(
-                PhonePrivateTimeline.Event(
-                    kind = PhonePrivateTimeline.Kind.MMS,
-                    timestampMs = System.currentTimeMillis(),
-                    direction = "INCOMING",
-                    signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
-                        "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
-                    } else {
-                        "MMS_DOWNLOAD_QUARANTINED"
-                    }
+        } else {
+            runCatching {
+                PhonePrivateTimelineStore(context).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.MMS,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "INCOMING",
+                        signal = if (safePreview is MmsDecodePipeline.Result.Accepted) {
+                            "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+                        } else {
+                            "MMS_DOWNLOAD_QUARANTINED"
+                        }
+                    )
                 )
-            )
-        }.onFailure {
-            LocalLogger(context).log(
-                LocalLogger.LogLevel.WARNING,
-                "MmsDownload",
-                "Chronologie privée indisponible; le traitement MMS téléchargé continue"
-            )
+            }.onFailure {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsDownload",
+                    "Chronologie privée indisponible; le traitement MMS téléchargé continue"
+                )
+            }
         }
 
+        // The notification id is content-stable. Replays update the same notification instead of
+        // creating duplicates, while still recovering the user-visible signal after process death.
         SmsNotificationHelper.notifyMessage(
             context,
             title = "MMS reçu",
@@ -205,7 +207,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
      *
      * A `.part` file is fsynced before rename so process death cannot leave a truncated file at the
      * stable `.pdu` identity. The worker is single-threaded, so one digest has at most one writer in
-     * this process. Replayed callbacks return EXISTING and do not duplicate timeline/notification.
+     * this process. Replayed callbacks return EXISTING and do not duplicate private storage.
      */
     private fun persistPrivatePdu(
         context: Context,
