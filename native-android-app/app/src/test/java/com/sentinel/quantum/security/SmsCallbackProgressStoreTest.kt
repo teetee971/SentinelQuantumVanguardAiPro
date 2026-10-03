@@ -58,7 +58,8 @@ class SmsCallbackProgressStoreTest {
         val preferences = Preferences(setOf(2))
         repeat(129) { preferences.values["old:$it"] = "1000|0|2||||" }
         verifyTransitionSurvives(preferences)
-        assertEquals(2, preferences.commits)
+        // Record, failed trim, then persisted provider acknowledgment.
+        assertEquals(3, preferences.commits)
         assertEquals(128, preferences.values.size)
     }
 
