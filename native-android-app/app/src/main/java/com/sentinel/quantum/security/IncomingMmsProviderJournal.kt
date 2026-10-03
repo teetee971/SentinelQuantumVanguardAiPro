@@ -10,6 +10,10 @@ import org.json.JSONObject
  * message that the user later deleted from the Android provider. Old READY records are pruned to a
  * bounded window, while incomplete records are never silently evicted because they may own a
  * provider root that still requires recovery.
+ *
+ * Sender/date/subscription and protocol identifiers are retained only as app-private recovery
+ * metadata. They let recovery distinguish the exact root inserted before a possible process death;
+ * no private SHA is written into an MMS protocol column just to make recovery convenient.
  */
 internal class IncomingMmsProviderJournal(context: Context) {
     enum class Phase {
@@ -20,8 +24,10 @@ internal class IncomingMmsProviderJournal(context: Context) {
 
     data class Record(
         val digestHex: String,
+        val sender: String,
         val messageId: String?,
         val transactionId: String?,
+        val dateSeconds: Long,
         val subscriptionId: Int,
         val providerMessageId: Long?,
         val phase: Phase,
@@ -36,7 +42,9 @@ internal class IncomingMmsProviderJournal(context: Context) {
     @Synchronized
     fun begin(plan: IncomingMmsProjectionPlan.Plan, nowMs: Long = System.currentTimeMillis()): Boolean {
         if (!validDigest(plan.digestHex) ||
+            !validSender(plan.sender) ||
             !validCorrelation(plan.messageId, plan.transactionId) ||
+            plan.dateSeconds < 0L ||
             plan.subscriptionId < 0 ||
             nowMs < 0L
         ) return false
@@ -50,8 +58,10 @@ internal class IncomingMmsProviderJournal(context: Context) {
         return write(
             Record(
                 digestHex = plan.digestHex,
+                sender = plan.sender,
                 messageId = plan.messageId,
                 transactionId = plan.transactionId,
+                dateSeconds = plan.dateSeconds,
                 subscriptionId = plan.subscriptionId,
                 providerMessageId = null,
                 phase = Phase.BUILDING,
@@ -132,8 +142,10 @@ internal class IncomingMmsProviderJournal(context: Context) {
         if (!validRecord(record)) return false
         val encoded = JSONObject()
             .put("schema", SCHEMA_VERSION)
+            .put("sender", record.sender)
             .put("message_id", record.messageId ?: JSONObject.NULL)
             .put("transaction_id", record.transactionId ?: JSONObject.NULL)
+            .put("date_seconds", record.dateSeconds)
             .put("subscription_id", record.subscriptionId)
             .put("provider_id", record.providerMessageId ?: JSONObject.NULL)
             .put("phase", record.phase.name)
@@ -150,16 +162,20 @@ internal class IncomingMmsProviderJournal(context: Context) {
         return runCatching {
             val json = JSONObject(encoded)
             if (json.optInt("schema", -1) != SCHEMA_VERSION) return@runCatching null
+            val sender = json.getString("sender")
             val messageId = nullableString(json, "message_id")
             val transactionId = nullableString(json, "transaction_id")
+            val dateSeconds = json.getLong("date_seconds")
             val subscriptionId = json.getInt("subscription_id")
             val providerId = if (json.isNull("provider_id")) null else json.getLong("provider_id")
             val phase = Phase.valueOf(json.getString("phase"))
             val updatedAt = json.getLong("updated_at_ms")
             val record = Record(
                 digestHex = digestHex,
+                sender = sender,
                 messageId = messageId,
                 transactionId = transactionId,
+                dateSeconds = dateSeconds,
                 subscriptionId = subscriptionId,
                 providerMessageId = providerId,
                 phase = phase,
@@ -174,7 +190,9 @@ internal class IncomingMmsProviderJournal(context: Context) {
 
     private fun validRecord(record: Record): Boolean =
         validDigest(record.digestHex) &&
+            validSender(record.sender) &&
             validCorrelation(record.messageId, record.transactionId) &&
+            record.dateSeconds >= 0L &&
             record.subscriptionId >= 0 &&
             (record.providerMessageId == null || record.providerMessageId > 0L) &&
             record.updatedAtMs >= 0L &&
@@ -189,12 +207,17 @@ internal class IncomingMmsProviderJournal(context: Context) {
         private const val PREFS_NAME = "sentinel_incoming_mms_provider_journal_v1"
         private const val KEY_PREFIX = "record."
         private const val SCHEMA_VERSION = 1
-        private const val MAX_ENCODED_CHARS = 2048
+        private const val MAX_ENCODED_CHARS = 3072
         private const val MAX_RECORDS = 512
         private const val TARGET_AFTER_PRUNE = 384
         private val DIGEST = Regex("^[0-9a-f]{64}$")
 
         internal fun validDigest(value: String): Boolean = DIGEST.matches(value)
+
+        internal fun validSender(value: String): Boolean =
+            value.isNotBlank() &&
+                value.length <= 256 &&
+                value.all { it.code in 0x20..0x7e }
 
         internal fun validProtocolId(value: String?): Boolean =
             value == null || (
