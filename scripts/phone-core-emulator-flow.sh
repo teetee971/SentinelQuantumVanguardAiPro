@@ -59,6 +59,20 @@ PY
   read -r FLOW_X FLOW_Y <<< "$coordinates"
   adb shell input tap "$FLOW_X" "$FLOW_Y"
 }
+wait_reply_focus() {
+  for _ in $(seq 1 15); do
+    if fresh_ui && python3 - "$FLOW_XML" <<'PYFOCUS'
+import sys, xml.etree.ElementTree as ET
+sys.exit(0 if any(n.get('class') == 'android.widget.EditText' and n.get('focused') == 'true'
+                  for n in ET.parse(sys.argv[1]).iter('node')) else 1)
+PYFOCUS
+    then return 0; fi
+    sleep 1
+  done
+  capture failure
+  echo "Inline reply input did not receive focus."
+  return 1
+}
 capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
 adb shell am force-stop "$FLOW_PACKAGE"
@@ -117,6 +131,8 @@ tap_text "Sentinel emulator reply test"
 wait_text "Répondre"
 capture 06-thread
 tap_text "Répondre"
+# A tap returns before Compose/IME focus settles; typing immediately can lose the first key.
+wait_reply_focus
 adb shell input text ReplyFromSentinel
 wait_text "ReplyFromSentinel"
 tap_text "Envoyer"
