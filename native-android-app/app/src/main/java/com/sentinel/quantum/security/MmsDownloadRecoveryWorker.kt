@@ -163,20 +163,38 @@ internal object MmsDownloadRecovery {
             is IncomingMmsProjectionPipeline.Result.Quarantined -> null
         }
 
-        // A private PDU is durable, but it is not equivalent to a message visible in the canonical
-        // Android conversation. Keep staged bytes + recovery metadata active on provider failure so
-        // transient provider/process conditions can be retried instead of silently degrading to a
-        // permanently private-only message before the bounded cleanup deadline.
-        if (providerResult is IncomingMmsConversationStore.ProjectResult.Rejected) {
-            return Outcome.RETRY
-        }
-
         val providerInserted =
             providerResult is IncomingMmsConversationStore.ProjectResult.Ready && !providerResult.replay
         val providerReplay =
             providerResult is IncomingMmsConversationStore.ProjectResult.Ready && providerResult.replay
+        val providerRejected =
+            providerResult is IncomingMmsConversationStore.ProjectResult.Rejected
 
-        if (persistence.state == IncomingMmsPrivateStore.State.CREATED) {
+        // A private PDU is durable, but it is not equivalent to a message visible in the canonical
+        // Android conversation. Keep staged bytes + recovery metadata active on provider failure so
+        // transient provider/process conditions can be retried. At the bounded cleanup deadline,
+        // however, private durability is accepted explicitly and staging is retired as quarantine.
+        if (shouldRetryProviderProjection(providerResult, allowQuarantine)) {
+            if (persistence.state == IncomingMmsPrivateStore.State.CREATED) {
+                runCatching {
+                    PhonePrivateTimelineStore(appContext).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.MMS,
+                            timestampMs = nowMs,
+                            direction = "INCOMING",
+                            signal = "MMS_DOWNLOAD_RECOVERED_PROVIDER_RETRY_PENDING"
+                        )
+                    )
+                }
+            }
+            return Outcome.RETRY
+        }
+
+        if (
+            persistence.state == IncomingMmsPrivateStore.State.CREATED ||
+            providerInserted ||
+            (providerRejected && allowQuarantine)
+        ) {
             runCatching {
                 PhonePrivateTimelineStore(appContext).append(
                     PhonePrivateTimeline.Event(
@@ -186,6 +204,7 @@ internal object MmsDownloadRecovery {
                         signal = when {
                             providerInserted -> "MMS_DOWNLOAD_RECOVERED_PROVIDER_READY"
                             providerReplay -> "MMS_DOWNLOAD_RECOVERED_PROVIDER_REPLAY"
+                            providerRejected -> "MMS_DOWNLOAD_RECOVERED_PRIVATE_FINAL"
                             else -> "MMS_DOWNLOAD_RECOVERED_PRIVATE_ONLY"
                         }
                     )
@@ -195,7 +214,8 @@ internal object MmsDownloadRecovery {
 
         if (
             persistence.state == IncomingMmsPrivateStore.State.CREATED ||
-            providerInserted
+            providerInserted ||
+            (providerRejected && allowQuarantine)
         ) {
             SmsNotificationHelper.notifyMessage(
                 appContext,
@@ -203,6 +223,7 @@ internal object MmsDownloadRecovery {
                 preview = when {
                     providerInserted -> "Le MMS a été restauré dans la conversation Android après reprise."
                     providerReplay -> "Le MMS avait déjà été restauré; aucun doublon n’a été ajouté."
+                    providerRejected -> "Le MMS a été conservé localement; la projection Android n’a pas abouti avant le délai final."
                     else -> "Le MMS a été conservé en quarantaine locale après reprise."
                 },
                 notificationId = digest.take(16).hashCode()
@@ -212,6 +233,12 @@ internal object MmsDownloadRecovery {
         finish(appContext, fileName, allowQuarantine)
         return Outcome.RECOVERED
     }
+
+    internal fun shouldRetryProviderProjection(
+        providerResult: IncomingMmsConversationStore.ProjectResult?,
+        allowQuarantine: Boolean
+    ): Boolean =
+        providerResult is IncomingMmsConversationStore.ProjectResult.Rejected && !allowQuarantine
 
     private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean) {
         MmsDownloadCoordinator.finishRecovery(
