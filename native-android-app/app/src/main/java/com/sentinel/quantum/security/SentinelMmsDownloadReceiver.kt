@@ -27,7 +27,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             ?.takeIf { TOKEN.matches(it) }
             ?: return
         val fileName = intent.getStringExtra(MmsDownloadCoordinator.EXTRA_FILE_NAME)
-            ?.takeIf { it == "$token.pdu" && FILE_NAME.matches(it) }
+            ?.takeIf {
+                it == "$token.pdu" && MmsDownloadCoordinator.isValidStagedFileName(it)
+            }
             ?: return
         val subscriptionId = intent.getIntExtra(
             MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID,
@@ -79,11 +81,15 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         subscriptionId: Int,
         deliveredResultCode: Int
     ) {
-        if (!TOKEN.matches(token) || fileName != "$token.pdu" || !FILE_NAME.matches(fileName)) return
+        if (
+            !TOKEN.matches(token) ||
+            fileName != "$token.pdu" ||
+            !MmsDownloadCoordinator.isValidStagedFileName(fileName)
+        ) return
         if (subscriptionId == android.telephony.SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
 
-        val directory = File(context.cacheDir, DOWNLOAD_DIRECTORY)
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return
+        val directory = File(canonicalCache, MmsDownloadCoordinator.DOWNLOAD_DIRECTORY)
         val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return
         if (canonicalDirectory.parentFile != canonicalCache) return
 
@@ -94,7 +100,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             context.readSmsRoleStateFailClosed() !=
                 SmsActivationDiagnostics.SmsRoleState.HELD
         ) {
-            runCatching { target.delete() }
+            MmsDownloadCoordinator.delete(context, fileName)
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
@@ -104,7 +110,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }
 
         if (deliveredResultCode != Activity.RESULT_OK) {
-            runCatching { target.delete() }
+            MmsDownloadCoordinator.delete(context, fileName)
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "DefaultSms",
@@ -121,7 +127,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
 
         val size = target.length()
         if (size !in 1..MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            runCatching { target.delete() }
+            MmsDownloadCoordinator.delete(context, fileName)
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
@@ -131,11 +137,12 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }
 
         val data = runCatching { target.readBytes() }.getOrNull()
-        runCatching { target.delete() }.onFailure {
+        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
+        if (!temporaryDeleted) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
-                "Échec de suppression du PDU MMS temporaire; le traitement téléchargé continue"
+                "Échec de suppression du PDU MMS temporaire; le nettoyage durable reste planifié"
             )
         }
         if (data == null || data.isEmpty()) return
@@ -225,8 +232,6 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             Thread(task, "sentinel-mms-download").apply { isDaemon = true }
         }
         val TOKEN = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-        val FILE_NAME = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.pdu$")
-        const val DOWNLOAD_DIRECTORY = "sentinel_mms_download"
         const val MAX_STORED_MMS = 50
     }
 }

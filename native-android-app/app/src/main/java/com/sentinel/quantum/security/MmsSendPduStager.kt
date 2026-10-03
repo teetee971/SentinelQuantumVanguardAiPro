@@ -69,7 +69,7 @@ object MmsSendPduStager {
         }
 
         val cleanupScheduled = runCatching {
-            MmsSendCleanupWorker.schedule(context.applicationContext)
+            MmsSendCleanupWorker.schedule(context.applicationContext, finalFile.name)
             true
         }.getOrDefault(false)
         if (!cleanupScheduled) {
@@ -80,18 +80,32 @@ object MmsSendPduStager {
         return Result.Staged(token, finalFile.name, uri)
     }
 
-    fun delete(context: Context, fileName: String): Boolean {
-        if (!FILE_NAME.matches(fileName)) return false
-        val directory = runCatching { File(context.cacheDir, SEND_DIRECTORY).canonicalFile }.getOrNull()
+    fun delete(context: Context, fileName: String): Boolean =
+        deleteInternal(context, fileName, cancelCleanup = true)
+
+    /** Called only by the durable worker for this file; never cancels the running worker itself. */
+    internal fun expire(context: Context, fileName: String): Boolean =
+        deleteInternal(context, fileName, cancelCleanup = false)
+
+    private fun deleteInternal(context: Context, fileName: String, cancelCleanup: Boolean): Boolean {
+        if (!isValidStagedFileName(fileName)) return false
+        val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull()
             ?: return false
+        val directory = runCatching { File(canonicalCache, SEND_DIRECTORY).canonicalFile }.getOrNull()
+            ?: return false
+        if (directory.parentFile != canonicalCache) return false
         val file = runCatching { File(directory, fileName).canonicalFile }.getOrNull() ?: return false
         if (file.parentFile != directory) return false
-        return !file.exists() || runCatching { file.delete() }.getOrDefault(false)
+        val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
+        if (removed && cancelCleanup) {
+            runCatching { MmsSendCleanupWorker.cancel(context.applicationContext, fileName) }
+        }
+        return removed
     }
 
     /**
      * Removes stale/oversized/malformed staged payloads without creating the directory.
-     * Called at process start, by durable cleanup work, and before every new stage.
+     * Called at process start and before every new stage as a second safety net.
      */
     fun pruneExpired(context: Context): Int {
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return 0
@@ -116,6 +130,8 @@ object MmsSendPduStager {
             .forEach { if (runCatching { it.delete() }.getOrDefault(false)) deleted++ }
         return deleted
     }
+
+    internal fun isValidStagedFileName(fileName: String): Boolean = FILE_NAME.matches(fileName)
 
     const val MAX_STAGED_PDU_BYTES = 11L * 1024L * 1024L
     const val STAGED_PDU_TTL_MS = 60L * 60L * 1000L
