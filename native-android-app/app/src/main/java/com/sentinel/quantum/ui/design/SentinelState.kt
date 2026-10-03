@@ -42,8 +42,8 @@ object PhoneCoreUiState {
 
     fun phoneCoreHeadline(state: SentinelState): String = when (state) {
         SentinelState.TO_CONFIGURE -> "Configuration Phone Core incomplète"
-        SentinelState.READY -> "Phone Core prêt pour les tests"
-        SentinelState.TO_TEST -> "Validation locale en cours"
+        SentinelState.READY -> "Configuration prête · tests terrain à effectuer"
+        SentinelState.TO_TEST -> "Tests terrain Phone Core en cours"
         SentinelState.VALIDATED -> "Phone Core validé sur cet appareil"
         SentinelState.PARTIAL -> "Phone Core partiellement disponible"
         SentinelState.DEGRADED -> "Phone Core en mode dégradé"
@@ -64,4 +64,3 @@ object PhoneCoreUiState {
         SentinelState.UNAVAILABLE -> "Non disponible"
     }
 }
-
