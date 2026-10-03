@@ -19,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -31,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -39,6 +41,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.sentinel.quantum.PhoneCoreActivationActivity
 import com.sentinel.quantum.PhoneCoreRuntimeFacts
+import com.sentinel.quantum.R
+import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncConfig
@@ -67,7 +71,7 @@ fun PhoneProtectionListsScreen(navController: NavController) {
 
     val now = System.currentTimeMillis()
     var snapshot by remember(postureEpoch) { mutableStateOf(store.snapshot(now)) }
-    var signedMetadata by remember(postureEpoch) { mutableStateOf(store.signedRuleMetadata()) }
+    val signedMetadata = remember(postureEpoch) { store.signedRuleMetadata() }
     val runtimeFacts = remember(postureEpoch) { PhoneCoreRuntimeFacts.read(context.applicationContext) }
     val contactsReady = remember(postureEpoch) {
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
@@ -95,11 +99,15 @@ fun PhoneProtectionListsScreen(navController: NavController) {
         now
     )
 
+    val arcepEnabledResult = stringResource(R.string.phone_lists_arcep_enabled_result)
+    val arcepDisabledResult = stringResource(R.string.phone_lists_arcep_disabled_result)
+    val arcepChangeFailed = stringResource(R.string.phone_lists_arcep_change_failed)
+
     Scaffold(
         topBar = {
             SentinelTopBar(
-                title = "Listes de protection",
-                subtitle = "Règles, provenance et état réel",
+                title = stringResource(R.string.phone_lists_title),
+                subtitle = stringResource(R.string.phone_lists_subtitle),
                 onBack = { navController.navigateUp() }
             )
         }
@@ -114,31 +122,49 @@ fun PhoneProtectionListsScreen(navController: NavController) {
         ) {
             SentinelHero(
                 eyebrow = "Phone Core",
-                title = "Ce qui protège réellement vos appels",
-                body = "Chaque état ci-dessous est calculé depuis les données locales et les rôles Android observés. Une source absente, expirée ou non vérifiée n'est jamais affichée comme active.",
+                title = stringResource(R.string.phone_lists_hero_title),
+                body = stringResource(R.string.phone_lists_hero_body),
                 badges = listOf(
-                    "Zéro faux vert" to SentinelD1.Cyan,
-                    "Données privées locales" to SentinelD1.Success
+                    stringResource(R.string.phone_lists_badge_truth) to SentinelD1.Cyan,
+                    stringResource(R.string.phone_lists_badge_local) to SentinelD1.Success
                 )
             )
 
-            SectionTitle("Vos règles privées")
+            SectionTitle(stringResource(R.string.phone_lists_private_section))
             ProtectionListCard(
-                title = "Numéros bloqués par vous",
-                type = "BLOQUER",
-                status = if (snapshot.blockedNumberHashes.isEmpty()) "VIDE" else "LOCAL",
+                title = stringResource(R.string.phone_lists_exact_title),
+                type = stringResource(R.string.phone_lists_type_block),
+                status = stringResource(
+                    if (snapshot.blockedNumberHashes.isEmpty()) {
+                        R.string.phone_lists_status_empty
+                    } else {
+                        R.string.phone_lists_status_local
+                    }
+                ),
                 itemCount = snapshot.blockedNumberHashes.size,
-                details = "Les numéros exacts ne sont pas conservés en clair. Sentinel n'affiche ici que le nombre d'empreintes actives."
+                details = stringResource(R.string.phone_lists_exact_details)
             )
             ProtectionListCard(
-                title = "Préfixes bloqués par vous",
-                type = "BLOQUER",
-                status = if (manualPrefixes.isEmpty()) "VIDE" else "LOCAL",
+                title = stringResource(R.string.phone_lists_prefix_title),
+                type = stringResource(R.string.phone_lists_type_block),
+                status = stringResource(
+                    if (manualPrefixes.isEmpty()) {
+                        R.string.phone_lists_status_empty
+                    } else {
+                        R.string.phone_lists_status_local
+                    }
+                ),
                 itemCount = manualPrefixes.size,
-                details = "Règles explicitement créées sur cet appareil. Elles peuvent bloquer les appels correspondants."
+                details = stringResource(R.string.phone_lists_prefix_details)
             )
+            OutlinedButton(
+                onClick = { navController.navigate(Screen.CallBlocking.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.phone_lists_manage_rules))
+            }
 
-            SectionTitle("Sources de confiance")
+            SectionTitle(stringResource(R.string.phone_lists_trusted_section))
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -146,29 +172,40 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
-                            Text("ARCEP · numéros polyvalents vérifiés", fontWeight = FontWeight.Bold)
-                            Text("BLOQUER · Téléphone · source officielle intégrée", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.phone_lists_arcep_title), fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.phone_lists_arcep_meta), style = MaterialTheme.typography.bodySmall)
                         }
                         StatusText(arcepStatus)
                     }
-                    Text("Version source : plan de numérotation effectif au 01/01/2026", style = MaterialTheme.typography.bodySmall)
-                    Text("${ArcepVerifiedPrefixCatalog.entries.size} préfixe(s) officiel(s)", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.phone_lists_arcep_version), style = MaterialTheme.typography.bodySmall)
                     Text(
-                        "L'appartenance à une tranche ARCEP ne prouve ni une fraude ni l'identité de l'appelant. Le blocage reste volontaire.",
+                        stringResource(R.string.phone_lists_arcep_count, ArcepVerifiedPrefixCatalog.entries.size),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        stringResource(R.string.phone_lists_arcep_disclaimer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(if (snapshot.arcepVerifiedBlockingEnabled) "Blocage ARCEP activé" else "Blocage ARCEP désactivé")
+                        Text(
+                            stringResource(
+                                if (snapshot.arcepVerifiedBlockingEnabled) {
+                                    R.string.phone_lists_arcep_enabled
+                                } else {
+                                    R.string.phone_lists_arcep_disabled
+                                }
+                            )
+                        )
                         Switch(
                             checked = snapshot.arcepVerifiedBlockingEnabled,
                             onCheckedChange = { enabled ->
                                 val changed = store.setArcepVerifiedBlockingEnabled(enabled)
                                 snapshot = store.snapshot()
                                 actionStatus = if (changed) {
-                                    if (enabled) "Liste ARCEP activée." else "Liste ARCEP désactivée."
+                                    if (enabled) arcepEnabledResult else arcepDisabledResult
                                 } else {
-                                    "Impossible de modifier la liste ARCEP."
+                                    arcepChangeFailed
                                 }
                             }
                         )
@@ -183,53 +220,81 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
-                            Text("Réputation Sentinel signée", fontWeight = FontWeight.Bold)
-                            Text("SILENCIER · Téléphone · paquet signé", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.phone_lists_signed_title), fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.phone_lists_signed_meta), style = MaterialTheme.typography.bodySmall)
                         }
                         StatusText(signedStatus)
                     }
-                    Text("Éléments stockés : ${signedMetadata.storedPrefixCount}", style = MaterialTheme.typography.bodySmall)
-                    signedMetadata.acceptedSequence?.let { Text("Séquence acceptée : $it", style = MaterialTheme.typography.bodySmall) }
-                    signedMetadata.packageId?.let { Text("Paquet : $it", style = MaterialTheme.typography.bodySmall) }
-                    signedMetadata.issuerId?.let { Text("Émetteur : $it", style = MaterialTheme.typography.bodySmall) }
-                    signedMetadata.keyId?.let { Text("Clé : $it", style = MaterialTheme.typography.bodySmall) }
-                    signedMetadata.issuedAtMs?.let { Text("Émis : ${formatDate(it)}", style = MaterialTheme.typography.bodySmall) }
-                    signedMetadata.expiresAtMs?.let { Text("Expire : ${formatDate(it)}", style = MaterialTheme.typography.bodySmall) }
                     Text(
-                        if (CallRuleSyncConfig.SYNC_ENABLED && CallRuleSyncConfig.TRUSTED_KEYS.isNotEmpty()) {
-                            "Canal de mise à jour configuré."
-                        } else {
-                            "Canal de mise à jour non provisionné : aucune source distante n'est présentée comme active."
-                        },
+                        stringResource(R.string.phone_lists_signed_stored, signedMetadata.storedPrefixCount),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    signedMetadata.acceptedSequence?.let {
+                        Text(stringResource(R.string.phone_lists_signed_sequence, it), style = MaterialTheme.typography.bodySmall)
+                    }
+                    signedMetadata.packageId?.let {
+                        Text(stringResource(R.string.phone_lists_signed_package, it), style = MaterialTheme.typography.bodySmall)
+                    }
+                    signedMetadata.issuerId?.let {
+                        Text(stringResource(R.string.phone_lists_signed_issuer, it), style = MaterialTheme.typography.bodySmall)
+                    }
+                    signedMetadata.keyId?.let {
+                        Text(stringResource(R.string.phone_lists_signed_key, it), style = MaterialTheme.typography.bodySmall)
+                    }
+                    signedMetadata.issuedAtMs?.let {
+                        Text(
+                            stringResource(R.string.phone_lists_signed_issued, formatDate(it)),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    signedMetadata.expiresAtMs?.let {
+                        Text(
+                            stringResource(R.string.phone_lists_signed_expires, formatDate(it)),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Text(
+                        stringResource(
+                            if (CallRuleSyncConfig.SYNC_ENABLED && CallRuleSyncConfig.TRUSTED_KEYS.isNotEmpty()) {
+                                R.string.phone_lists_signed_channel_ready
+                            } else {
+                                R.string.phone_lists_signed_channel_missing
+                            }
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "Une réputation signée peut seulement mettre en silencieux. Elle ne devient jamais, à elle seule, un blocage automatique.",
+                        stringResource(R.string.phone_lists_signed_disclaimer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            SectionTitle("Réputation communautaire")
+            SectionTitle(stringResource(R.string.phone_lists_community_section))
             ProtectionListCard(
-                title = "Consensus communautaire",
-                type = "IDENTIFIER / ALERTER",
-                status = "NON ÉVALUÉ",
+                title = stringResource(R.string.phone_lists_community_title),
+                type = stringResource(R.string.phone_lists_type_identify_alert),
+                status = stringResource(R.string.phone_lists_status_not_evaluated),
                 itemCount = 0,
-                details = "Le consensus n'est affiché que pour un numéro réellement interrogé. Un signal isolé reste 'Signalement insuffisant' et ne peut jamais déclencher un blocage automatique."
+                details = stringResource(R.string.phone_lists_community_details)
             )
 
             HorizontalDivider()
-            SectionTitle("Dépendances Android observées")
-            SystemFactRow("Rôle Dialer", runtimeFacts.dialerRoleHeld)
-            SystemFactRow("Rôle Call Screening", runtimeFacts.callScreeningRoleHeld)
-            SystemFactRow("Rôle SMS", runtimeFacts.smsRoleHeld)
-            SystemFactRow("Contacts", contactsReady)
-            SystemFactRow("Notifications Phone Core", runtimeFacts.notificationChannelsReady)
+            SectionTitle(stringResource(R.string.phone_lists_android_section))
             Text(
-                "Optimisation batterie : non utilisée comme prérequis pour le filtrage CallScreening de cet écran.",
+                stringResource(R.string.phone_lists_android_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            SystemFactRow(stringResource(R.string.phone_lists_fact_dialer), runtimeFacts.dialerRoleHeld)
+            SystemFactRow(stringResource(R.string.phone_lists_fact_screening), runtimeFacts.callScreeningRoleHeld)
+            SystemFactRow(stringResource(R.string.phone_lists_fact_sms), runtimeFacts.smsRoleHeld)
+            SystemFactRow(stringResource(R.string.phone_lists_fact_contacts), contactsReady)
+            SystemFactRow(stringResource(R.string.phone_lists_fact_notifications), runtimeFacts.notificationChannelsReady)
+            Text(
+                stringResource(R.string.phone_lists_battery_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -237,7 +302,7 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Configurer les prérequis Phone Core")
+                Text(stringResource(R.string.phone_lists_configure_phone_core))
             }
 
             actionStatus?.let {
@@ -270,7 +335,10 @@ private fun ProtectionListCard(
                 Text(title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 Text(status, style = MaterialTheme.typography.labelMedium)
             }
-            Text("$type · Téléphone · $itemCount élément(s)", style = MaterialTheme.typography.bodySmall)
+            Text(
+                "$type · ${stringResource(R.string.phone_lists_item_count, itemCount)}",
+                style = MaterialTheme.typography.bodySmall
+            )
             Text(details, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -278,12 +346,14 @@ private fun ProtectionListCard(
 
 @Composable
 private fun StatusText(status: PhoneProtectionListTruth.ListStatus) {
-    val label = when (status) {
-        PhoneProtectionListTruth.ListStatus.ACTIVE -> "ACTIF"
-        PhoneProtectionListTruth.ListStatus.DISABLED -> "DÉSACTIVÉ"
-        PhoneProtectionListTruth.ListStatus.EXPIRED -> "EXPIRÉ"
-        PhoneProtectionListTruth.ListStatus.UNAVAILABLE -> "INDISPONIBLE"
-    }
+    val label = stringResource(
+        when (status) {
+            PhoneProtectionListTruth.ListStatus.ACTIVE -> R.string.phone_lists_status_active
+            PhoneProtectionListTruth.ListStatus.DISABLED -> R.string.phone_lists_status_disabled
+            PhoneProtectionListTruth.ListStatus.EXPIRED -> R.string.phone_lists_status_expired
+            PhoneProtectionListTruth.ListStatus.UNAVAILABLE -> R.string.phone_lists_status_unavailable
+        }
+    )
     Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
 }
 
@@ -292,7 +362,9 @@ private fun SystemFactRow(label: String, ready: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label)
         Text(
-            if (ready) "PRÊT" else "À CONFIGURER",
+            stringResource(
+                if (ready) R.string.phone_lists_fact_active else R.string.phone_lists_fact_inactive
+            ),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold
         )
