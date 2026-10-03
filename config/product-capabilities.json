@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-03",
+  "capabilities": [
+    {
+      "id": "phone_core_android",
+      "surface": "Android Phone Core",
+      "implemented": true,
+      "configured": true,
+      "requires_deployment": false,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": true,
+      "physically_validated": false,
+      "requires_signed_release": true,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "14/14 physical Phone Core evidence has not been recorded on the current install scope",
+        "No signed public Android release artifact is demonstrated"
+      ],
+      "evidence": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt",
+        "docs/PHONE_CORE_PHYSICAL_VALIDATION.md",
+        ".github/workflows/build-native-android.yml"
+      ]
+    },
+    {
+      "id": "sentinel_vpn_service",
+      "surface": "Sentinel VPN",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": true,
+      "physically_validated": false,
+      "requires_signed_release": true,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Production Sentinel exit gateway is not provisioned",
+        "External monotonic VPN lease sequence authority is not implemented or deployed",
+        "End-to-end tunnel, DNS, IPv4/IPv6, MTU and recovery evidence is missing"
+      ],
+      "evidence": [
+        "docs/security/SENTINEL-VPN-ARCHITECTURE.md",
+        "ops/vpn-gateway/lease-sequence-authority.js",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt"
+      ]
+    },
+    {
+      "id": "voice_transform_calls",
+      "surface": "Voice Studio transformed calls",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": true,
+      "physically_validated": false,
+      "requires_signed_release": true,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Production LiveKit signaling/token issuer is not provisioned",
+        "VoIP/PSTN gateway is not provisioned",
+        "No real transformed call has passed end-to-end physical validation"
+      ],
+      "evidence": [
+        "docs/VOICE-STUDIO-ADDON.md",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/voice/LiveVoiceTransformEngine.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/voice/SentinelVoipVoicePipeline.kt"
+      ]
+    },
+    {
+      "id": "geointel_usgs",
+      "surface": "GeoIntel USGS earthquakes",
+      "implemented": true,
+      "configured": true,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Fresh deployment/runtime evidence is not bound to the current repository revision"
+      ],
+      "evidence": [
+        "public/geointel.html",
+        "public/geointel-source-usgs.js",
+        ".github/workflows/frontend-validation.yml"
+      ]
+    },
+    {
+      "id": "geointel_multisource",
+      "surface": "GeoIntel conflicts/hotspots/sanctions/weather/outages",
+      "implemented": false,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Verified production sources are not wired for conflicts, hotspots, sanctions, weather or outages"
+      ],
+      "evidence": [
+        "public/geointel.html",
+        "public/geointel-core.js"
+      ]
+    },
+    {
+      "id": "collective_defense_backend",
+      "surface": "Collective Defense API",
+      "implemented": true,
+      "configured": true,
+      "requires_deployment": true,
+      "deployed": true,
+      "runtime_verified": true,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": true,
+      "blockers": [],
+      "evidence": [
+        "backend/wangiri-api/README.md",
+        "backend/wangiri-api/collective_intel.py",
+        "docs/FEATURE_INVENTORY.md"
+      ]
+    },
+    {
+      "id": "collective_defense_android",
+      "surface": "Collective Defense Android center",
+      "implemented": true,
+      "configured": true,
+      "requires_deployment": false,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": true,
+      "physically_validated": false,
+      "requires_signed_release": true,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Merged signed Android release evidence is missing",
+        "Real-device lookup/report/watch/background-notification evidence is missing"
+      ],
+      "evidence": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseClient.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CollectiveDefenseScreen.kt",
+        "docs/FEATURE_INVENTORY.md"
+      ]
+    },
+    {
+      "id": "signed_phone_reputation_feed",
+      "surface": "Signed Phone Intelligence reputation feed",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": true,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Production signing keys and issuer mapping are not provisioned",
+        "Durable sequence allocation, scheduler and publication endpoint are not operational",
+        "Android end-to-end synchronization evidence is missing"
+      ],
+      "evidence": [
+        "security/phone-intelligence/call-rule-publication.js",
+        "config/module-continuity-inventory.json",
+        "docs/FEATURE_INVENTORY.md"
+      ]
+    },
+    {
+      "id": "phone_moderation_backend",
+      "surface": "Phone Intelligence moderation service",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Durable PostgreSQL moderation storage is not deployed",
+        "Distributed Redis rate limiting and production identity binding are not deployed"
+      ],
+      "evidence": [
+        "security/phone-intelligence/moderation-core.js",
+        "security/phone-intelligence/postgres-moderation-store.js",
+        "security/phone-intelligence/redis-rate-limiter.js"
+      ]
+    },
+    {
+      "id": "repository_i18n",
+      "surface": "Repository-wide internationalization",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": false,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": false,
+      "physically_validated": false,
+      "requires_signed_release": false,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Android and other product surfaces still contain hard-coded user-facing strings",
+        "Repository-wide locale coverage gate is not complete"
+      ],
+      "evidence": [
+        "native-android-app/app/src/main/res/values/strings.xml",
+        "docs/FEATURE_INVENTORY.md"
+      ]
+    },
+    {
+      "id": "public_android_release",
+      "surface": "Public signed Android release",
+      "implemented": true,
+      "configured": false,
+      "requires_deployment": true,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": true,
+      "physically_validated": false,
+      "requires_signed_release": true,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Release keystore custody and signed APK/AAB provenance are not demonstrated",
+        "Observed publication channel evidence is missing"
+      ],
+      "evidence": [
+        ".github/workflows/android-release.yml",
+        ".github/workflows/build-aab-playconsole.yml",
+        "RELEASE_CHECKLIST.md"
+      ]
+    }
+  ]
+}
