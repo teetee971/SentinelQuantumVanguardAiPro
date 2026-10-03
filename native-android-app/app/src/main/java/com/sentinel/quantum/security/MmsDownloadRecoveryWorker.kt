@@ -42,6 +42,11 @@ class MmsDownloadRecoveryWorker(
 
         fun schedulePendingNow(context: Context) {
             MmsDownloadRecoveryJournal(context).all().forEach { record ->
+                MmsDownloadCleanupWorker.scheduleAtDeadline(
+                    context = context,
+                    fileName = record.fileName,
+                    requestedAtMs = record.requestedAtMs
+                )
                 enqueue(context, record.fileName, 0L, ExistingWorkPolicy.REPLACE)
             }
         }
