@@ -1,8 +1,5 @@
 package com.sentinel.quantum.security
 
-import java.nio.ByteBuffer
-import java.nio.charset.CodingErrorAction
-
 /**
  * Pure trust boundary between a validated M-Retrieve.conf and Android provider mutation.
  *
@@ -18,13 +15,15 @@ internal object IncomingMmsProjectionPlan {
         val sizeBytes: Int
         val contentId: String?
         val contentLocation: String?
+        val charsetMibEnum: Int?
 
         data class Text(
             override val mimeType: String,
             override val sizeBytes: Int,
             val text: String,
             override val contentId: String? = null,
-            override val contentLocation: String? = null
+            override val contentLocation: String? = null,
+            override val charsetMibEnum: Int
         ) : Part
 
         data class Smil(
@@ -32,7 +31,8 @@ internal object IncomingMmsProjectionPlan {
             override val sizeBytes: Int,
             val text: String,
             override val contentId: String? = null,
-            override val contentLocation: String? = null
+            override val contentLocation: String? = null,
+            override val charsetMibEnum: Int
         ) : Part
 
         data class Binary(
@@ -40,7 +40,8 @@ internal object IncomingMmsProjectionPlan {
             override val sizeBytes: Int,
             val payload: ByteArray,
             override val contentId: String? = null,
-            override val contentLocation: String? = null
+            override val contentLocation: String? = null,
+            override val charsetMibEnum: Int? = null
         ) : Part
     }
 
@@ -107,8 +108,6 @@ internal object IncomingMmsProjectionPlan {
             return Result.Quarantined("UNSUPPORTED_CONTENT_TYPE")
         }
         if (envelope.contentType == MULTIPART_ALTERNATIVE) {
-            // Alternative requires choosing the carrier-declared representation. Until top-level
-            // type/start semantics are preserved, selecting one would manufacture presentation.
             return Result.Quarantined("PRESENTATION_METADATA_NOT_PRESERVED")
         }
         if (safeParts.isEmpty() || safeParts.size > MAX_PARTS) {
@@ -136,31 +135,36 @@ internal object IncomingMmsProjectionPlan {
             if (total > MAX_TOTAL_BYTES) return Result.Quarantined("MESSAGE_TOO_LARGE")
             when (part.mimeType) {
                 "text/plain" -> {
-                    val text = decodeUtf8Strict(part.payload)
+                    val decoded = MmsTextCharset.decode(part.payload, part.charsetMibEnum)
                         ?: return Result.Quarantined("TEXT_CHARSET_UNSUPPORTED")
                     projected += Part.Text(
                         mimeType = part.mimeType,
                         sizeBytes = size,
-                        text = text,
+                        text = decoded.text,
                         contentId = part.contentId,
-                        contentLocation = part.contentLocation
+                        contentLocation = part.contentLocation,
+                        charsetMibEnum = decoded.providerMibEnum
                     )
                 }
                 SMIL_MIME -> {
-                    val text = decodeUtf8Strict(part.payload)
+                    val decoded = MmsTextCharset.decode(part.payload, part.charsetMibEnum)
                         ?: return Result.Quarantined("SMIL_CHARSET_UNSUPPORTED")
-                    if (text.indexOf("<smil", ignoreCase = true) < 0) {
+                    if (decoded.text.indexOf("<smil", ignoreCase = true) < 0) {
                         return Result.Quarantined("INVALID_SMIL_PRESENTATION")
                     }
                     projected += Part.Smil(
                         mimeType = part.mimeType,
                         sizeBytes = size,
-                        text = text,
+                        text = decoded.text,
                         contentId = part.contentId,
-                        contentLocation = part.contentLocation
+                        contentLocation = part.contentLocation,
+                        charsetMibEnum = decoded.providerMibEnum
                     )
                 }
                 "image/jpeg", "image/png", "image/gif", "image/webp" -> {
+                    if (part.charsetMibEnum != null) {
+                        return Result.Quarantined("UNEXPECTED_BINARY_CHARSET")
+                    }
                     projected += Part.Binary(
                         mimeType = part.mimeType,
                         sizeBytes = size,
@@ -209,14 +213,6 @@ internal object IncomingMmsProjectionPlan {
         }
         return result
     }
-
-    private fun decodeUtf8Strict(bytes: ByteArray): String? = runCatching {
-        Charsets.UTF_8.newDecoder()
-            .onMalformedInput(CodingErrorAction.REPORT)
-            .onUnmappableCharacter(CodingErrorAction.REPORT)
-            .decode(ByteBuffer.wrap(bytes))
-            .toString()
-    }.getOrNull()
 
     private fun isSaneAddress(value: String): Boolean =
         value.isNotBlank() &&
