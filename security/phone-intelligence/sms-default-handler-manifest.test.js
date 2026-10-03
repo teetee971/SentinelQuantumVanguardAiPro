@@ -6,6 +6,10 @@ const manifest = fs.readFileSync(
   'native-android-app/app/src/main/AndroidManifest.xml',
   'utf8'
 );
+const respondService = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelRespondViaMessageService.kt',
+  'utf8'
+);
 
 function componentBlock(tag, androidName) {
   const escapedName = androidName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -30,6 +34,20 @@ test('default SMS respond-via-message service handles SMS and MMS schemes', () =
     [...schemes].sort(),
     ['mms', 'mmsto', 'sms', 'smsto'],
     'RESPOND_VIA_MESSAGE must expose every default-SMS scheme, not only SMS schemes'
+  );
+});
+
+test('quick replies preserve the requested SMS or MMS transport', () => {
+  assert.match(respondService, /val scheme = intent\.data\?\.scheme\?\.lowercase\(\)\.orEmpty\(\)/);
+  assert.match(respondService, /"sms", "smsto"\s*->\s*\{/);
+  assert.match(respondService, /SentinelSmsSender\(appContext\)\.send\(destination, body\)/);
+  assert.match(respondService, /"mms", "mmsto"\s*->\s*\{/);
+  assert.match(respondService, /SentinelMmsSender\(appContext\)\.send\(/);
+  assert.match(respondService, /UNSUPPORTED_RESPOND_VIA_MESSAGE_SCHEME/);
+  assert.match(
+    respondService,
+    /schemeSpecificPart\.orEmpty\(\)\.substringBefore\('\?'\)/,
+    'destination must exclude URI query parameters before transport validation'
   );
 });
 
