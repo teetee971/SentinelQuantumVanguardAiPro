@@ -6,6 +6,8 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.Telephony
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 
 /**
  * Fail-closed projection of one validated incoming MMS into Android's canonical MMS provider.
@@ -86,6 +88,24 @@ internal class IncomingMmsConversationStore(context: Context) {
             RootLookup.Absent -> Unit
         }
 
+        val selfAddresses = if (plan.toAddresses.size > 1 || plan.ccAddresses.isNotEmpty()) {
+            readSelfAddresses()
+        } else {
+            emptySet()
+        }
+        val threadRecipients = when (
+            val resolved = IncomingMmsThreadResolver.resolve(
+                sender = plan.sender,
+                toAddresses = plan.toAddresses,
+                ccAddresses = plan.ccAddresses,
+                selfAddresses = selfAddresses
+            )
+        ) {
+            is IncomingMmsThreadResolver.Result.Ready -> resolved.recipients
+            IncomingMmsThreadResolver.Result.SelfIdentityRequired ->
+                return ProjectResult.Rejected("MMS_GROUP_SELF_IDENTITY_UNAVAILABLE", true)
+        }
+
         var insertedRootUri: Uri? = null
         var rootInsertCleanupFailed = false
         val operations = object : MmsProviderProjectionTransaction.Operations {
@@ -94,7 +114,7 @@ internal class IncomingMmsConversationStore(context: Context) {
             override fun insertRoot(): Long? {
                 if (!holdsSmsRole()) return null
                 val threadId = runCatching {
-                    Telephony.Threads.getOrCreateThreadId(appContext, plan.sender)
+                    Telephony.Threads.getOrCreateThreadId(appContext, threadRecipients)
                 }.getOrNull()?.takeIf { it > 0L } ?: return null
 
                 val values = ContentValues().apply {
@@ -132,14 +152,17 @@ internal class IncomingMmsConversationStore(context: Context) {
 
             override fun insertAddress(providerMessageId: Long): Boolean {
                 if (!holdsSmsRole()) return false
-                val values = ContentValues().apply {
-                    put(Telephony.Mms.Addr.ADDRESS, plan.sender)
-                    put(Telephony.Mms.Addr.CHARSET, UTF_8_MIB_ENUM)
-                    put(Telephony.Mms.Addr.TYPE, ADDRESS_TYPE_FROM)
+                if (!insertAddressRow(providerMessageId, plan.sender, ADDRESS_TYPE_FROM)) return false
+                for (address in plan.toAddresses) {
+                    if (!insertAddressRow(providerMessageId, address, ADDRESS_TYPE_TO)) return false
                 }
-                return runCatching {
-                    appContext.contentResolver.insert(addressUri(providerMessageId), values) != null
-                }.getOrDefault(false)
+                for (address in plan.ccAddresses) {
+                    if (!insertAddressRow(providerMessageId, address, ADDRESS_TYPE_CC)) return false
+                }
+                for (address in plan.bccAddresses) {
+                    if (!insertAddressRow(providerMessageId, address, ADDRESS_TYPE_BCC)) return false
+                }
+                return true
             }
 
             override fun insertParts(providerMessageId: Long): Boolean {
@@ -396,15 +419,38 @@ internal class IncomingMmsConversationStore(context: Context) {
         } ?: false
     }.getOrDefault(false)
 
-    private fun sameAddress(actual: String, expected: String): Boolean {
-        val left = actual.substringBefore('/').trim()
-        val right = expected.substringBefore('/').trim()
-        if (left == right) return true
-        val leftPhone = CallRuleEngine.normalizeNumber(left)
-        val rightPhone = CallRuleEngine.normalizeNumber(right)
-        if (leftPhone != null && rightPhone != null) return leftPhone == rightPhone
-        return left.contains('@') && right.contains('@') && left.equals(right, ignoreCase = true)
+    private fun insertAddressRow(providerMessageId: Long, address: String, type: Int): Boolean {
+        val values = ContentValues().apply {
+            put(Telephony.Mms.Addr.ADDRESS, address)
+            put(Telephony.Mms.Addr.CHARSET, UTF_8_MIB_ENUM)
+            put(Telephony.Mms.Addr.TYPE, type)
+        }
+        return runCatching {
+            appContext.contentResolver.insert(addressUri(providerMessageId), values) != null
+        }.getOrDefault(false)
     }
+
+    @Suppress("DEPRECATION")
+    private fun readSelfAddresses(): Set<String> = runCatching {
+        val subscriptionManager = appContext.getSystemService(SubscriptionManager::class.java)
+            ?: return@runCatching emptySet()
+        val telephonyManager = appContext.getSystemService(TelephonyManager::class.java)
+            ?: return@runCatching emptySet()
+        subscriptionManager.activeSubscriptionInfoList.orEmpty()
+            .asSequence()
+            .mapNotNull { info ->
+                runCatching {
+                    telephonyManager.createForSubscriptionId(info.subscriptionId)
+                        .line1Number
+                        ?.trim()
+                        ?.takeIf { it.isNotEmpty() }
+                }.getOrNull()
+            }
+            .toSet()
+    }.getOrDefault(emptySet())
+
+    private fun sameAddress(actual: String, expected: String): Boolean =
+        IncomingMmsThreadResolver.sameAddress(actual, expected)
 
     private fun cleanupRoot(
         providerMessageId: Long,
@@ -440,6 +486,9 @@ internal class IncomingMmsConversationStore(context: Context) {
         IncomingMmsProviderJournal.validDigest(plan.digestHex) &&
             IncomingMmsProviderJournal.validSender(plan.sender) &&
             IncomingMmsProviderJournal.validCorrelation(plan.messageId, plan.transactionId) &&
+            (plan.toAddresses + plan.ccAddresses + plan.bccAddresses).all(
+                IncomingMmsProviderJournal::validSender
+            ) &&
             plan.dateSeconds >= 0L &&
             plan.subscriptionId >= 0 &&
             plan.parts.isNotEmpty()
@@ -475,7 +524,10 @@ internal class IncomingMmsConversationStore(context: Context) {
     private companion object {
         val PROJECTION_LOCK = Any()
         const val MESSAGE_TYPE_RETRIEVE_CONF = 0x84
+        const val ADDRESS_TYPE_BCC = 0x81
+        const val ADDRESS_TYPE_CC = 0x82
         const val ADDRESS_TYPE_FROM = 0x89
+        const val ADDRESS_TYPE_TO = 0x97
         const val UTF_8_MIB_ENUM = 106
     }
 }
