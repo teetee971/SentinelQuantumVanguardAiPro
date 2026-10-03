@@ -67,6 +67,24 @@ internal class MmsProviderJournal(context: Context) {
         nowMs
     )
 
+    /**
+     * A process restart makes a READY record ambiguous: Android may have been invoked immediately
+     * before process death, or the process may have died just before invocation. Preserve the row
+     * and record uncertainty rather than deleting it or inventing a transport result.
+     */
+    fun reconcileReadyAfterProcessDeath(nowMs: Long = System.currentTimeMillis()): Int {
+        if (nowMs < 0L) return 0
+        var changed = 0
+        all().forEach { record ->
+            val id = record.providerMessageId
+            if (record.phase == Phase.READY && id != null &&
+                markSubmissionUnknown(record.token, id, nowMs)) {
+                changed++
+            }
+        }
+        return changed
+    }
+
     fun remove(token: String): Boolean =
         validToken(token) && preferences.edit().remove(key(token)).commit()
 
