@@ -46,6 +46,77 @@ class SmsSendPermissionPolicyTest {
             ),
         )
     }
+
+    @Test
+    fun `activation path is fail closed until sms role is held`() {
+        val blockers = setOf(
+            SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+            SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+        )
+
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsActivationPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
+                blockers,
+            ),
+        )
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsActivationPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+                blockers,
+            ),
+        )
+    }
+
+    @Test
+    fun `activation path completes send phase before exposing inbox permissions`() {
+        val permissions = SmsActivationPermissionPolicy.permissionsFor(
+            SmsActivationDiagnostics.SmsRoleState.HELD,
+            setOf(
+                SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
+                SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED,
+                SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+            ),
+        )
+
+        assertArrayEquals(
+            arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_PHONE_STATE),
+            permissions,
+        )
+        assertFalse(permissions.contains(Manifest.permission.READ_SMS))
+        assertFalse(permissions.contains(Manifest.permission.RECEIVE_SMS))
+    }
+
+    @Test
+    fun `activation path exposes inbox phase after send phase is complete`() {
+        assertArrayEquals(
+            arrayOf(Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS),
+            SmsActivationPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.HELD,
+                setOf(
+                    SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                    SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `activation path is empty when all runtime permissions are satisfied`() {
+        assertArrayEquals(
+            emptyArray<String>(),
+            SmsActivationPermissionPolicy.permissionsFor(
+                SmsActivationDiagnostics.SmsRoleState.HELD,
+                emptySet(),
+            ),
+        )
+    }
+
     @Test
     fun `inbox path requests only read and receive permissions when sms role is held`() {
         val blockers = setOf(
