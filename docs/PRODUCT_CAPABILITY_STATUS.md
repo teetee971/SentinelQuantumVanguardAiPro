@@ -33,12 +33,13 @@ Evidence:
 ### Sentinel VPN
 
 - Production Sentinel exit gateway is not provisioned
-- External monotonic VPN lease sequence authority is not implemented or deployed
+- Redis-backed monotonic VPN lease sequence authority is implemented but not wired or deployed with production storage and credentials
 - End-to-end tunnel, DNS, IPv4/IPv6, MTU and recovery evidence is missing
 
 Evidence:
 - `docs/security/SENTINEL-VPN-ARCHITECTURE.md`
-- `ops/vpn-gateway/lease-sequence-authority.js`
+- `ops/vpn-gateway/redis-lease-sequence-authority.js`
+- `ops/vpn-gateway/provisioning-server.js`
 - `native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt`
 
 ### Voice Studio transformed calls
