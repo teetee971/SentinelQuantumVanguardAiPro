@@ -142,6 +142,10 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             )
         }
 
+        val providerInserted =
+            providerResult is IncomingMmsConversationStore.ProjectResult.Ready && !providerResult.replay
+        val providerReplay =
+            providerResult is IncomingMmsConversationStore.ProjectResult.Ready && providerResult.replay
         val replay = persistence.state == IncomingMmsPrivateStore.State.EXISTING
         if (replay) {
             LocalLogger(context).log(
@@ -150,7 +154,6 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 "Replay WAP MMS reconnu par identité SHA-256; aucune chronologie dupliquée"
             )
         } else {
-            val providerReady = providerResult is IncomingMmsConversationStore.ProjectResult.Ready
             runCatching {
                 PhonePrivateTimelineStore(context).append(
                     PhonePrivateTimeline.Event(
@@ -158,7 +161,8 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                         timestampMs = System.currentTimeMillis(),
                         direction = "INCOMING",
                         signal = when {
-                            providerReady -> "MMS_PROVIDER_READY"
+                            providerInserted -> "MMS_PROVIDER_READY"
+                            providerReplay -> "MMS_PROVIDER_REPLAY_NO_DUPLICATE"
                             safePreview is MmsDecodePipeline.Result.Accepted ->
                                 "MMS_SAFE_PREVIEW_READY"
                             else -> "MMS_LOCAL_QUARANTINE"
@@ -176,16 +180,20 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
                 "MMS entrant conservé localement; taille=${data.size}; provider=" +
-                    if (providerReady) "READY" else "PRIVATE_ONLY"
+                    when {
+                        providerInserted -> "INSERTED"
+                        providerReplay -> "REPLAY_NO_DUPLICATE"
+                        else -> "PRIVATE_ONLY"
+                    }
             )
         }
 
-        val canonical = providerResult is IncomingMmsConversationStore.ProjectResult.Ready
         SmsNotificationHelper.notifyMessage(
             context,
             title = "MMS reçu",
             preview = when {
-                canonical -> "MMS ajouté à la conversation Android."
+                providerInserted -> "MMS ajouté à la conversation Android."
+                providerReplay -> "MMS déjà traité; aucun doublon n’a été ajouté à la conversation Android."
                 safePreview is MmsDecodePipeline.Result.Accepted ->
                     "MMS conservé localement · aperçu sécurisé: ${safePreview.parts.size} partie(s) validée(s)."
                 else -> "MMS conservé en quarantaine locale."
