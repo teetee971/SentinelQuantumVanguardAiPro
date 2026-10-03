@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_lists_title">Listes de protection</string>
+    <string name="phone_lists_subtitle">Règles, provenance et état réel</string>
+    <string name="phone_lists_hero_title">Ce qui protège réellement vos appels</string>
+    <string name="phone_lists_hero_body">Chaque état ci-dessous est calculé depuis les données locales et les rôles Android observés. Une source absente, expirée ou non vérifiée n’est jamais affichée comme active.</string>
+    <string name="phone_lists_badge_truth">Zéro faux vert</string>
+    <string name="phone_lists_badge_local">Données privées locales</string>
+
+    <string name="phone_lists_private_section">Vos règles privées</string>
+    <string name="phone_lists_exact_title">Numéros bloqués par vous</string>
+    <string name="phone_lists_exact_details">Les numéros exacts ne sont pas conservés en clair. Sentinel n’affiche ici que le nombre d’empreintes actives.</string>
+    <string name="phone_lists_prefix_title">Préfixes bloqués par vous</string>
+    <string name="phone_lists_prefix_details">Règles explicitement créées sur cet appareil. Elles peuvent bloquer les appels correspondants.</string>
+    <string name="phone_lists_manage_rules">Gérer les règles de blocage</string>
+
+    <string name="phone_lists_type_block">BLOQUER</string>
+    <string name="phone_lists_type_silence">SILENCIER</string>
+    <string name="phone_lists_type_identify_alert">IDENTIFIER / ALERTER</string>
+    <string name="phone_lists_status_empty">VIDE</string>
+    <string name="phone_lists_status_local">LOCAL</string>
+    <string name="phone_lists_status_not_evaluated">NON ÉVALUÉ</string>
+    <string name="phone_lists_item_count">%1$d élément(s)</string>
+
+    <string name="phone_lists_trusted_section">Sources de confiance</string>
+    <string name="phone_lists_arcep_title">ARCEP · numéros polyvalents vérifiés</string>
+    <string name="phone_lists_arcep_meta">BLOQUER · Téléphone · source officielle intégrée</string>
+    <string name="phone_lists_arcep_version">Version source : plan de numérotation effectif au 01/01/2026</string>
+    <string name="phone_lists_arcep_count">%1$d préfixe(s) officiel(s)</string>
+    <string name="phone_lists_arcep_disclaimer">L’appartenance à une tranche ARCEP ne prouve ni une fraude ni l’identité de l’appelant. Le blocage reste volontaire.</string>
+    <string name="phone_lists_arcep_enabled">Blocage ARCEP activé</string>
+    <string name="phone_lists_arcep_disabled">Blocage ARCEP désactivé</string>
+    <string name="phone_lists_arcep_enabled_result">Liste ARCEP activée.</string>
+    <string name="phone_lists_arcep_disabled_result">Liste ARCEP désactivée.</string>
+    <string name="phone_lists_arcep_change_failed">Impossible de modifier la liste ARCEP.</string>
+
+    <string name="phone_lists_signed_title">Réputation Sentinel signée</string>
+    <string name="phone_lists_signed_meta">SILENCIER · Téléphone · paquet signé</string>
+    <string name="phone_lists_signed_stored">Éléments stockés : %1$d</string>
+    <string name="phone_lists_signed_sequence">Séquence acceptée : %1$d</string>
+    <string name="phone_lists_signed_package">Paquet : %1$s</string>
+    <string name="phone_lists_signed_issuer">Émetteur : %1$s</string>
+    <string name="phone_lists_signed_key">Clé : %1$s</string>
+    <string name="phone_lists_signed_issued">Émis : %1$s</string>
+    <string name="phone_lists_signed_expires">Expire : %1$s</string>
+    <string name="phone_lists_signed_channel_ready">Canal de mise à jour configuré.</string>
+    <string name="phone_lists_signed_channel_missing">Canal de mise à jour non provisionné : aucune source distante n’est présentée comme active.</string>
+    <string name="phone_lists_signed_disclaimer">Une réputation signée peut seulement mettre en silencieux. Elle ne devient jamais, à elle seule, un blocage automatique.</string>
+
+    <string name="phone_lists_community_section">Réputation communautaire</string>
+    <string name="phone_lists_community_title">Consensus communautaire</string>
+    <string name="phone_lists_community_details">Le consensus n’est affiché que pour un numéro réellement interrogé. Un signal isolé reste « Signalement insuffisant » et ne peut jamais déclencher un blocage automatique.</string>
+
+    <string name="phone_lists_android_section">État Phone Core observé</string>
+    <string name="phone_lists_android_note">Ces lignes décrivent des faits Android observés. Elles ne signifient pas que chaque élément est requis pour appliquer une règle de blocage d’appel.</string>
+    <string name="phone_lists_fact_dialer">Rôle Téléphone</string>
+    <string name="phone_lists_fact_screening">Rôle Filtrage d’appels</string>
+    <string name="phone_lists_fact_sms">Rôle SMS</string>
+    <string name="phone_lists_fact_contacts">Contacts</string>
+    <string name="phone_lists_fact_notifications">Notifications Phone Core</string>
+    <string name="phone_lists_fact_active">ACTIF</string>
+    <string name="phone_lists_fact_inactive">INACTIF</string>
+    <string name="phone_lists_battery_note">Optimisation batterie : non utilisée comme prérequis pour le filtrage CallScreening de cet écran.</string>
+    <string name="phone_lists_configure_phone_core">Configurer les prérequis Phone Core</string>
+
+    <string name="phone_lists_status_active">ACTIF</string>
+    <string name="phone_lists_status_disabled">DÉSACTIVÉ</string>
+    <string name="phone_lists_status_expired">EXPIRÉ</string>
+    <string name="phone_lists_status_unavailable">INDISPONIBLE</string>
+</resources>
