@@ -3,22 +3,31 @@ import test from "node:test";
 import {
   VpnLeaseSequenceAuthority,
   assertVpnLeaseSequenceAuthority,
+  validateVpnLeaseCommitBoundary,
+  validateVpnLeaseInvalidationBoundary,
   validateVpnLeaseSequenceBoundary,
 } from "./lease-sequence-authority.js";
 
-test("sequence authority is fail-closed until backed by external monotonic storage", async () => {
+const D1 = "1".repeat(64);
+const D2 = "2".repeat(64);
+
+test("sequence authority is fail-closed until backed by external snapshot storage", async () => {
   const authority = new VpnLeaseSequenceAuthority();
   await assert.rejects(
-    authority.readMinimumSequence("gw-prod-1"),
+    authority.readCommit("gw-prod-1"),
     /VPN_SEQUENCE_AUTHORITY_NOT_IMPLEMENTED/
   );
   await assert.rejects(
-    authority.commitSequence("gw-prod-1", 7),
+    authority.commitSnapshot("gw-prod-1", 7, D1),
+    /VPN_SEQUENCE_AUTHORITY_NOT_IMPLEMENTED/
+  );
+  await assert.rejects(
+    authority.invalidateSnapshot("gw-prod-1", 7, D1, D2),
     /VPN_SEQUENCE_AUTHORITY_NOT_IMPLEMENTED/
   );
 });
 
-test("sequence authority boundary accepts only canonical gateway and positive safe sequence", () => {
+test("sequence boundary accepts only canonical gateway and positive safe sequence", () => {
   assert.deepEqual(
     validateVpnLeaseSequenceBoundary({ gatewayId: "gw-prod-1", sequence: 7 }),
     { gatewayId: "gw-prod-1", sequence: 7 }
@@ -33,11 +42,49 @@ test("sequence authority boundary accepts only canonical gateway and positive sa
   );
 });
 
+test("commit boundary requires a canonical sha256 snapshot digest", () => {
+  assert.deepEqual(
+    validateVpnLeaseCommitBoundary({ gatewayId: "gw-prod-1", sequence: 7, snapshotDigest: D1 }),
+    { gatewayId: "gw-prod-1", sequence: 7, snapshotDigest: D1 }
+  );
+  assert.throws(
+    () => validateVpnLeaseCommitBoundary({ gatewayId: "gw-prod-1", sequence: 7, snapshotDigest: "bad" }),
+    /VPN_SEQUENCE_AUTHORITY_DIGEST_INVALID/
+  );
+});
+
+test("invalidation boundary requires a distinct canonical replacement digest", () => {
+  assert.deepEqual(
+    validateVpnLeaseInvalidationBoundary({
+      gatewayId: "gw-prod-1",
+      sequence: 7,
+      expectedDigest: D1,
+      invalidationDigest: D2,
+    }),
+    {
+      gatewayId: "gw-prod-1",
+      sequence: 7,
+      expectedDigest: D1,
+      invalidationDigest: D2,
+    }
+  );
+  assert.throws(
+    () => validateVpnLeaseInvalidationBoundary({
+      gatewayId: "gw-prod-1",
+      sequence: 7,
+      expectedDigest: D1,
+      invalidationDigest: D1,
+    }),
+    /VPN_SEQUENCE_AUTHORITY_INVALIDATION_DIGEST_REUSED/
+  );
+});
+
 test("sequence authority type boundary rejects duck-typed local substitutes", () => {
   assert.throws(
     () => assertVpnLeaseSequenceAuthority({
-      readMinimumSequence: async () => 1,
-      commitSequence: async () => {},
+      readCommit: async () => ({ sequence: 1, snapshotDigest: D1 }),
+      commitSnapshot: async () => {},
+      invalidateSnapshot: async () => {},
     }),
     /VpnLeaseSequenceAuthority required/
   );
