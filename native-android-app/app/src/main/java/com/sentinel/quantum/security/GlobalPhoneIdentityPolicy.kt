@@ -10,8 +10,10 @@ import java.util.Locale
  * supplies a France fallback.
  */
 internal object GlobalPhoneIdentityPolicy {
+    private val E164 = Regex("\\+[1-9][0-9]{6,14}")
+
     fun canonicalE164OrNull(raw: String?): String? =
-        CallRuleEngine.normalizeNumber(raw)?.takeIf { it.startsWith('+') }
+        CallRuleEngine.normalizeNumber(raw)?.takeIf(E164::matches)
 
     fun requireCanonicalE164(raw: String?): String =
         canonicalE164OrNull(raw)
