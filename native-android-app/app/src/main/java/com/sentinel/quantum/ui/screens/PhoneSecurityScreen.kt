@@ -246,12 +246,16 @@ fun PhoneSecurityScreen(navController: NavController) {
                         val canonicalCandidate = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
                             AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(candidate, observedRegion)
                         )
-                        val directoryTarget = PhoneDirectoryRoutingPolicy.targetFor(canonicalCandidate)
+                        val directoryLookupNumber = canonicalCandidate ?: candidate
+                        val directoryTarget = PhoneDirectoryRoutingPolicy.targetFor(
+                            directoryLookupNumber,
+                            observedRegion
+                        )
                         scope.launch {
                             when (directoryTarget) {
                                 PhoneDirectoryRoutingPolicy.Target.RTR -> {
                                     val lookup = withContext(Dispatchers.IO) {
-                                        runCatching { RtrDirectoryClient().lookup(canonicalCandidate.orEmpty()) }
+                                        runCatching { RtrDirectoryClient().lookup(directoryLookupNumber) }
                                     }
                                     directoryRunning = false
                                     lookup.onSuccess {
@@ -267,7 +271,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                                 }
                                 PhoneDirectoryRoutingPolicy.Target.ARCEP -> {
                                     val lookup = withContext(Dispatchers.IO) {
-                                        runCatching { ArcepDirectoryClient().lookup(canonicalCandidate.orEmpty()) }
+                                        runCatching { ArcepDirectoryClient().lookup(directoryLookupNumber) }
                                     }
                                     directoryRunning = false
                                     lookup.onSuccess {
@@ -283,8 +287,10 @@ fun PhoneSecurityScreen(navController: NavController) {
                                 }
                                 PhoneDirectoryRoutingPolicy.Target.NONE -> {
                                     directoryRunning = false
-                                    arcepStatus = if (canonicalCandidate == null) {
-                                        "Pays indéterminé : aucun annuaire national n’est interrogé."
+                                    arcepStatus = if (canonicalCandidate == null && observedRegion == null) {
+                                        "Contexte téléphonique insuffisant : aucun annuaire national n’est interrogé."
+                                    } else if (canonicalCandidate == null) {
+                                        "Aucun annuaire officiel intégré pour ce format de numéro."
                                     } else {
                                         "Aucun annuaire officiel intégré pour cet indicatif."
                                     }
