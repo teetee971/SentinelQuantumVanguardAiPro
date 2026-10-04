@@ -11,6 +11,10 @@ import java.util.concurrent.TimeUnit
  * Optional, post-screening enrichment. Never call this from CallScreeningService before
  * respondToCall(). The caller number is transmitted only when the user has explicitly enabled
  * remote enrichment in SettingsStore.
+ *
+ * Remote reputation identity is global, so this client accepts only an explicit/canonical E.164
+ * number. Region-dependent national syntax must be canonicalized at an Android boundary first;
+ * this client deliberately has no Context and therefore never guesses a country.
  */
 class CallerReputationClient(
     private val endpointBaseUrl: String = SentinelApiOrigin.baseUrl,
@@ -45,11 +49,12 @@ class CallerReputationClient(
         explicitConsent: Boolean = false
     ): Result {
         requireEgressAllowed(privacyMode, explicitConsent)
-        val normalized = CallRuleEngine.normalizeNumber(callerNumber)
-            ?: throw IllegalArgumentException("Invalid caller number")
+        val normalized = requireCanonicalE164(callerNumber)
+        val recipientRegion = canonicalRecipientRegion(recipientCountry)
+            ?: throw IllegalArgumentException("Recipient country required")
         val body = JSONObject()
             .put("caller_number", normalized)
-            .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
+            .put("recipient_country", recipientRegion)
             .put("ring_duration_ms", JSONObject.NULL)
             .put("verification_status", verificationStatus.take(64))
             .toString()
@@ -84,6 +89,22 @@ class CallerReputationClient(
             if (!runCatching { gate() }.getOrDefault(false)) {
                 throw SecurityException("PHONE_CORE_REMOTE_EGRESS_REVOKED")
             }
+        }
+
+        /** Pure remote-identity boundary: global reputation keys must be canonical E.164. */
+        internal fun requireCanonicalE164(raw: String?): String {
+            val normalized = CallRuleEngine.normalizeNumber(raw)
+                ?: throw IllegalArgumentException("Invalid caller number")
+            if (!normalized.startsWith('+')) {
+                throw IllegalArgumentException("E164 caller number required")
+            }
+            return normalized
+        }
+
+        /** Never default a missing/invalid recipient region to France. */
+        internal fun canonicalRecipientRegion(raw: String?): String? {
+            val region = raw?.trim()?.uppercase().orEmpty()
+            return region.takeIf { it.length == 2 && it.all(Char::isLetter) }
         }
 
         internal fun endpoint(baseUrl: String, allowedHosts: Set<String>): String =
