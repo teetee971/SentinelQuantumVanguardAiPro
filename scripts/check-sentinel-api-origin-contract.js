@@ -6,6 +6,7 @@ const SECURITY_ROOT = 'native-android-app/app/src/main/java/com/sentinel/quantum
 const ORIGIN_FILE = 'SentinelApiOrigin.kt';
 const LEGACY_BUILD_FIELD = 'BuildConfig.WANGIRI_API_BASE_URL';
 const PROVIDER_HOST_MARKERS = ['.onrender.com'];
+const SELF_DERIVED_PIN = /allowedHosts[\s\S]{0,240}originHost\s*\(\s*baseUrl\s*\)/;
 
 function kotlinFiles(root) {
   const files = [];
@@ -33,8 +34,8 @@ export function validateApiOriginSources(entries) {
     }
 
     for (const marker of PROVIDER_HOST_MARKERS) {
-      if (content.toLowerCase().includes(marker)) {
-        errors.push(`${name}: provider-specific API hostname marker exposed: ${marker}`);
+      if (!isOriginFile && content.toLowerCase().includes(marker)) {
+        errors.push(`${name}: provider-specific API hostname marker exposed outside ${ORIGIN_FILE}: ${marker}`);
       }
     }
   }
@@ -44,8 +45,13 @@ export function validateApiOriginSources(entries) {
   );
   if (!origin) {
     errors.push(`${ORIGIN_FILE}: canonical API origin source is missing`);
-  } else if (!origin.content.includes(LEGACY_BUILD_FIELD)) {
-    errors.push(`${ORIGIN_FILE}: legacy BuildConfig compatibility access must remain centralized until gateway migration`);
+  } else {
+    if (!origin.content.includes(LEGACY_BUILD_FIELD)) {
+      errors.push(`${ORIGIN_FILE}: legacy BuildConfig compatibility access must remain centralized until gateway migration`);
+    }
+    if (SELF_DERIVED_PIN.test(origin.content)) {
+      errors.push(`${ORIGIN_FILE}: host allowlist must be independent from the configured baseUrl`);
+    }
   }
 
   return errors;
