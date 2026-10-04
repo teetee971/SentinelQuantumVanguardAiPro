@@ -8,8 +8,14 @@ FLOW_NUMBER="5550100"
 FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 
-for FLOW_ROLE in DIALER SMS; do
-  adb shell cmd role add-role-holder --user 0 "android.app.role.$FLOW_ROLE" "$FLOW_PACKAGE"
+for FLOW_ROLE in DIALER SMS CALL_SCREENING; do
+  FLOW_ROLE_NAME="android.app.role.$FLOW_ROLE"
+  adb shell cmd role add-role-holder --user 0 "$FLOW_ROLE_NAME" "$FLOW_PACKAGE"
+  FLOW_ROLE_HOLDERS="$(adb shell cmd role get-role-holders --user 0 "$FLOW_ROLE_NAME" | tr -d '\r')"
+  if ! grep -Fq "$FLOW_PACKAGE" <<< "$FLOW_ROLE_HOLDERS"; then
+    echo "Sentinel did not become holder of $FLOW_ROLE_NAME. Holders: $FLOW_ROLE_HOLDERS"
+    exit 1
+  fi
 done
 for FLOW_PERMISSION in CALL_PHONE READ_PHONE_STATE READ_CONTACTS READ_CALL_LOG SEND_SMS READ_SMS RECEIVE_SMS RECEIVE_MMS RECEIVE_WAP_PUSH; do
   adb shell pm grant "$FLOW_PACKAGE" "android.permission.$FLOW_PERMISSION"
@@ -82,11 +88,16 @@ adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Clavier"
 capture 01-dialer
 
-# Locked incoming call exercises the real Telecom -> InCallService -> call UI path.
+# Locked incoming call first proves Telecom -> CallScreeningService -> CallerIdActivity, then
+# continues through Telecom -> InCallService. The Caller ID surface is only launched by the
+# screening service, so observing its ALLOW state is a direct runtime signal that screening ran.
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
+wait_text "Appel autorisé"
+capture 02-call-screened
+tap_text "Fermer la fiche"
 wait_text "Décrocher"
-capture 02-incoming-call
+capture 03-incoming-call
 tap_text "Décrocher"
 wait_text "En communication"
 if python3 - "$FLOW_XML" <<'PY'
@@ -99,10 +110,10 @@ then
   echo "Active call was represented as missing/idle."
   exit 1
 fi
-capture 03-active-call
+capture 04-active-call
 adb emu gsm cancel "$FLOW_NUMBER"
 wait_text "Appel terminé"
-capture 04-ended-call
+capture 05-ended-call
 
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
@@ -119,7 +130,7 @@ sys.exit(0 if any("En communication" in (n.get("text", "") + n.get("content-desc
 PY
 then adb emu gsm accept 5550101; fi
 wait_text "En communication"
-capture 05-outgoing-call
+capture 06-outgoing-call
 tap_text "Raccrocher"
 wait_text "Appel terminé"
 
@@ -129,7 +140,7 @@ adb emu sms send "$FLOW_SMS_NUMBER" "Sentinel emulator reply test"
 wait_text "Sentinel emulator reply test"
 tap_text "Sentinel emulator reply test"
 wait_text "Répondre"
-capture 06-thread
+capture 07-thread
 tap_text "Répondre"
 # A tap returns before Compose/IME focus settles; typing immediately can lose the first key.
 wait_reply_focus
@@ -154,5 +165,5 @@ if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
   echo "Inline reply was not observed in the provider-backed conversation."
   exit 1
 fi
-capture 07-inline-reply
-echo "Synthetic Telecom call and inline SMS reply UI verified; physical validation remains pending."
+capture 08-inline-reply
+echo "Synthetic CallScreening, Telecom call and inline SMS reply UI verified; physical validation remains pending."
