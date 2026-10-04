@@ -37,12 +37,12 @@ test('default SMS respond-via-message service handles SMS and MMS schemes', () =
   );
 });
 
-test('quick replies preserve the requested SMS or MMS transport', () => {
+test('quick replies preserve transport and use only the active Android default SIM', () => {
   assert.match(respondService, /val scheme = intent\.data\?\.scheme\?\.lowercase\(\)\.orEmpty\(\)/);
   assert.match(respondService, /"sms", "smsto"\s*->\s*\{/);
-  assert.match(respondService, /SentinelSmsSender\(appContext\)\.send\(destination, body\)/);
+  assert.match(respondService, /SentinelSmsSender\(appContext\)\.send\([\s\S]*?destination = destination,[\s\S]*?body = body,[\s\S]*?allowAndroidDefaultWhenMultiple = true[\s\S]*?\)/);
   assert.match(respondService, /"mms", "mmsto"\s*->\s*\{/);
-  assert.match(respondService, /SentinelMmsSender\(appContext\)\.send\(/);
+  assert.match(respondService, /SentinelMmsSender\(appContext\)\.send\([\s\S]*?destination = destination,[\s\S]*?text = body,[\s\S]*?allowAndroidDefaultWhenMultiple = true[\s\S]*?\)/);
   assert.match(respondService, /UNSUPPORTED_RESPOND_VIA_MESSAGE_SCHEME/);
   assert.match(
     respondService,
