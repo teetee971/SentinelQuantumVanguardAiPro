@@ -2,6 +2,7 @@ import { createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 
 const DOMAIN = 'sentinel-call-rules-v1';
 const PACKAGE_ID = 'fr-vigilance';
+const PACKAGE_CALLING_CODE = '33';
 const SIGNATURE_ALGORITHM = 'sha256';
 const ID_PATTERN = /^[A-Za-z0-9._:-]{1,64}$/;
 const MAX_PREFIXES = 500;
@@ -11,6 +12,11 @@ const MAX_LIFETIME_MS = 31 * 24 * 60 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 const MIN_REPUTATION_PREFIX_DIGITS = 5;
 
+function canonicalInternationalPrefix(digits) {
+  if (!digits || digits[0] === '0' || digits.length > 15) return null;
+  return `+${digits}`;
+}
+
 function normalizePrefix(raw) {
   if (typeof raw !== 'string') return null;
   const input = raw.trim();
@@ -19,10 +25,12 @@ function normalizePrefix(raw) {
   if ((input.match(/\+/g) || []).length > 1 || (input.includes('+') && !input.startsWith('+'))) return null;
   const digits = input.replace(/\D/g, '');
   if (digits.length < 3 || digits.length > 15) return null;
-  if (input.startsWith('+')) return `+${digits}`;
-  if (digits.startsWith('00') && digits.length >= 5) return `+${digits.slice(2)}`;
-  if (digits.startsWith('0')) return `+33${digits.slice(1)}`;
-  return digits;
+  if (input.startsWith('+')) return canonicalInternationalPrefix(digits);
+  if (digits.startsWith('00') && digits.length >= 5) return canonicalInternationalPrefix(digits.slice(2));
+  // This publisher is deliberately scoped to PACKAGE_ID=fr-vigilance. National syntax is
+  // therefore interpreted only inside that explicit package context, never as a global default.
+  if (digits.startsWith('0')) return canonicalInternationalPrefix(`${PACKAGE_CALLING_CODE}${digits.slice(1)}`);
+  return null;
 }
 
 function p256Key(key, kind) {
