@@ -8,6 +8,19 @@ const gatePath = path.join(root, 'config', 'phone-core-production-gates.json');
 const workflowPath = path.join(root, '.github', 'workflows', 'android-emulation-qualification.yml');
 const flowPath = path.join(root, 'scripts', 'phone-core-emulator-flow.sh');
 const revocationFlowPath = path.join(root, 'scripts', 'phone-core-emulator-revocation-flow.sh');
+const navigationSmokePath = path.join(
+  root,
+  'native-android-app',
+  'app',
+  'src',
+  'androidTest',
+  'java',
+  'com',
+  'sentinel',
+  'quantum',
+  'ui',
+  'AllStaticNavigationSurfacesInstrumentationTest.kt'
+);
 
 const errors = [];
 const gate = JSON.parse(fs.readFileSync(gatePath, 'utf8'));
@@ -16,12 +29,16 @@ const flow = fs.readFileSync(flowPath, 'utf8');
 const revocationFlow = fs.existsSync(revocationFlowPath)
   ? fs.readFileSync(revocationFlowPath, 'utf8')
   : '';
+const navigationSmoke = fs.existsSync(navigationSmokePath)
+  ? fs.readFileSync(navigationSmokePath, 'utf8')
+  : '';
 
 const requiredChecks = [
   'android_unit_tests',
   'android_lint',
   'connected_instrumentation_api29',
   'connected_instrumentation_api36',
+  'all_static_navigation_surfaces_render',
   'cold_install_and_relaunch',
   'phone_core_setup_resume',
   'incoming_call_telecom_flow',
@@ -108,6 +125,20 @@ for (const marker of [
   'assert_no_crash'
 ]) {
   if (!revocationFlow.includes(marker)) errors.push(`emulator revocation flow missing marker: ${marker}`);
+}
+for (const marker of [
+  'AllStaticNavigationSurfacesInstrumentationTest',
+  'Screen.Home.route',
+  'Screen.Search.route',
+  'Screen.PhoneSecurity.route',
+  'Screen.NetworkSurveillance.route',
+  'Screen.CollectiveDefense.route',
+  'Screen.SmartHome.route',
+  'Screen.Vpn.route',
+  'Screen.Settings.route',
+  'onRoot(useUnmergedTree = true).assertExists()'
+]) {
+  if (!navigationSmoke.includes(marker)) errors.push(`application navigation smoke missing marker: ${marker}`);
 }
 
 if (errors.length) {
