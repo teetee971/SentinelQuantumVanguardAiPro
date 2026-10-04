@@ -1,0 +1,236 @@
+name: Phone Core Android Emulation Qualification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phone-core-emulation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-and-host-tests:
+    name: Emulation contract, unit tests and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate emulator qualification contract
+        run: node scripts/check-phone-core-emulation-gate.js
+
+      - name: Validate Android product truth
+        run: npm run test:android-product-truth
+
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+
+      - name: Run Android host-side verification
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon
+
+  emulator-matrix:
+    name: PhoneCore-Emulation-Qualification API ${{ matrix.api-level }}
+    needs: contract-and-host-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [29, 36]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+
+      - name: Boot Android emulator
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api-level }}
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          IMAGE="system-images;android-${API_LEVEL};google_apis;x86_64"
+          SDK_PACKAGES=("emulator" "platforms;android-${API_LEVEL}" "$IMAGE")
+          SDK_READY=0
+          for attempt in 1 2 3; do
+            if timeout 600s sdkmanager "${SDK_PACKAGES[@]}"; then
+              SDK_READY=1
+              break
+            fi
+            echo "SDK/emulator installation failed on attempt ${attempt}; cleaning partial payloads."
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-${API_LEVEL}/google_apis/x86_64"
+            if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 5)); fi
+          done
+          if [[ "$SDK_READY" != "1" ]]; then
+            echo "Unable to install Android emulator packages for API ${API_LEVEL}."
+            exit 1
+          fi
+
+          test -x "$ANDROID_HOME/emulator/emulator"
+          test -f "$ANDROID_HOME/system-images/android-${API_LEVEL}/google_apis/x86_64/package.xml"
+          AVD_NAME="sentinel_phone_core_api${API_LEVEL}"
+          timeout 60s bash -c "echo no | avdmanager create avd --force --name '$AVD_NAME' --package '$IMAGE'"
+
+          EMULATOR_ACCEL_ARGS=(-no-accel)
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            EMULATOR_ACCEL_ARGS=(-accel on)
+          fi
+
+          "$ANDROID_HOME/emulator/emulator" \
+            -avd "$AVD_NAME" \
+            -no-window -no-audio -no-boot-anim \
+            -no-snapshot-load -no-snapshot-save \
+            "${EMULATOR_ACCEL_ARGS[@]}" \
+            -gpu swiftshader_indirect \
+            > "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/sentinel-emulator.pid"
+
+          DEVICE_READY=0
+          for _ in $(seq 1 90); do
+            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+              DEVICE_READY=1
+              break
+            fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1; then
+              cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          test "$DEVICE_READY" = "1"
+
+          BOOTED=0
+          for _ in $(seq 1 120); do
+            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+              BOOTED=1
+              break
+            fi
+            sleep 2
+          done
+          if [[ "$BOOTED" != "1" ]]; then
+            cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"
+            exit 1
+          fi
+
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell input keyevent KEYCODE_WAKEUP || true
+          adb shell wm dismiss-keyguard || true
+
+      - name: Run connected instrumentation suite
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
+
+      - name: Run full synthetic Phone Core runtime flow
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api-level }}
+        run: |
+          set -euo pipefail
+          ./gradlew assembleDebug --stacktrace --no-daemon
+          APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' -type f -print -quit)
+          test -n "$APK_PATH"
+          adb shell pm clear com.sentinel.quantum >/dev/null 2>&1 || true
+          adb install -r "$APK_PATH"
+
+          OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
+          mkdir -p "$OUTPUT"
+          adb logcat -c >/dev/null 2>&1 || true
+          bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+
+          adb logcat -d -v time > "$OUTPUT/logcat.txt" || true
+          adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
+          adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
+          adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
+
+          if grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum' "$OUTPUT/logcat.txt"; then
+            echo "Crash/ANR detected during Phone Core emulator qualification."
+            tail -n 400 "$OUTPUT/logcat.txt"
+            exit 1
+          fi
+
+          API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const report = {
+            schema_version: 1,
+            qualification: 'PHONE_CORE_ANDROID_EMULATION',
+            api_level: Number(process.env.API_LEVEL),
+            result: 'PASS',
+            synthetic_modem: true,
+            physical_modem_claim: false,
+            commercial_release_claim: false,
+            commit: process.env.GITHUB_SHA,
+            repository: process.env.GITHUB_REPOSITORY,
+            workflow_run_id: process.env.GITHUB_RUN_ID,
+            checks: {
+              connected_instrumentation: true,
+              incoming_call_telecom_flow: true,
+              outgoing_call_telecom_flow: true,
+              incoming_sms_and_inline_reply: true,
+              setup_resume: true,
+              crash_or_anr_absent: true
+            }
+          };
+          fs.writeFileSync(path.join(process.env.OUTPUT, 'qualification.json'), JSON.stringify(report, null, 2) + '\n');
+          NODE
+
+      - name: Upload emulator qualification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: PhoneCore-Emulation-Qualification-API${{ matrix.api-level }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api-level }}/
+            native-android-app/app/build/reports/androidTests/connected/
+            native-android-app/app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop emulator
+        if: always()
+        shell: bash
+        run: |
+          adb emu kill >/dev/null 2>&1 || true
+          if [[ -f "$RUNNER_TEMP/sentinel-emulator.pid" ]]; then
+            kill "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1 || true
+          fi
