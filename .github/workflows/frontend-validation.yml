@@ -116,9 +116,19 @@ jobs:
           test -s frontend/dist/public/product-truth.generated.json
           test -s frontend/dist/public/product-truth.js
           node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('frontend/dist/public/product-truth.generated.json','utf8')); if(p.schema_version!==1) process.exit(1); if(!Array.isArray(p.capabilities)||!Array.isArray(p.modules)) process.exit(1); if(Object.prototype.hasOwnProperty.call(p.capabilities[0]||{},'blockers')) process.exit(1);"
-          grep -q 'product-truth.js' frontend/dist/public/pricing.html
-          grep -q 'product-truth.js' frontend/dist/public/product-status.html
-          grep -q 'product-truth.js' frontend/dist/public/roadmap.html
+          page_count=0
+          while IFS= read -r -d '' page; do
+            page_count=$((page_count + 1))
+            if ! grep -q 'product-truth.js' "$page"; then
+              echo "ERROR: product truth runtime missing from generated page: $page"
+              exit 1
+            fi
+          done < <(find frontend/dist -type f -name '*.html' -print0)
+          if [ "$page_count" -lt 1 ]; then
+            echo 'ERROR: no generated HTML pages found'
+            exit 1
+          fi
+          echo "Product truth runtime present on all ${page_count} generated HTML pages."
 
       - name: Validate generated output
         run: |
