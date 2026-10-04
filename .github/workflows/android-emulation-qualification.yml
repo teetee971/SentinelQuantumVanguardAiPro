@@ -40,20 +40,33 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Run all Android repository host-side tests
+      - name: Prepare Gradle wrapper
         working-directory: ./native-android-app
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew \
-            :app:testDebugUnitTest \
-            :wearable-contract:test \
-            :wearable-security:test \
-            :app:lintDebug \
-            :app:assembleDebug \
-            :app:assembleDebugAndroidTest \
-            --stacktrace --no-daemon
+        run: chmod +x ./gradlew
+
+      - name: App unit tests
+        working-directory: ./native-android-app
+        run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
+
+      - name: Wearable contract unit tests
+        working-directory: ./native-android-app
+        run: ./gradlew :wearable-contract:test --stacktrace --no-daemon
+
+      - name: Wearable security unit tests
+        working-directory: ./native-android-app
+        run: ./gradlew :wearable-security:test --stacktrace --no-daemon
+
+      - name: Android app lint
+        working-directory: ./native-android-app
+        run: ./gradlew :app:lintDebug --stacktrace --no-daemon
+
+      - name: Assemble Android debug APK
+        working-directory: ./native-android-app
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Assemble Android instrumentation APK
+        working-directory: ./native-android-app
+        run: ./gradlew :app:assembleDebugAndroidTest --stacktrace --no-daemon
 
   emulator-matrix:
     name: PhoneCore-Emulation-Qualification API ${{ matrix.api_level }}
