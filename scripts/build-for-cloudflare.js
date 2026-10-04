@@ -2,13 +2,15 @@
 
 /**
  * Build script for Cloudflare Pages deployment.
- * Copies the validated static web surface to frontend/dist for deployment.
+ * Regenerates the public-safe product truth snapshot, then copies the validated
+ * static web surface to frontend/dist for deployment.
  * Requires Node.js 20.19.0+ as declared by package.json.
  */
 
 import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writePublicProductTruth } from './generate-public-product-truth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -51,6 +53,8 @@ if (!isCompatible) {
 const outputDir = join(rootDir, 'frontend', 'dist');
 
 console.log('Building static frontend for Cloudflare Pages...');
+console.log('Regenerating public product truth from canonical registries...');
+writePublicProductTruth();
 
 if (existsSync(outputDir)) {
   rmSync(outputDir, { recursive: true, force: true });
