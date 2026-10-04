@@ -7,21 +7,28 @@ import android.content.Context
  * they never alter call-screening, allowlist or blocklist decisions.
  */
 class PhoneFavoriteStore(context: Context) {
-    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val canonicalizer = AndroidPhoneNumberCanonicalizer(appContext)
 
-    fun all(): Set<String> = preferences.getStringSet(NUMBERS, emptySet()).orEmpty()
-        .mapNotNull(CallRuleEngine::normalizeNumber)
-        .take(MAX_FAVORITES)
-        .toSet()
+    fun all(): Set<String> {
+        val regionIso = canonicalizer.observedRegionIso()
+        return preferences.getStringSet(NUMBERS, emptySet()).orEmpty()
+            .mapNotNull { PhoneFavoriteIdentityPolicy.normalize(it, regionIso) }
+            .take(MAX_FAVORITES)
+            .toSet()
+    }
 
     fun contains(rawNumber: String?): Boolean {
-        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
-        return normalized in all()
+        val regionIso = canonicalizer.observedRegionIso()
+        val normalized = PhoneFavoriteIdentityPolicy.normalize(rawNumber, regionIso) ?: return false
+        return normalized in allWithRegion(regionIso)
     }
 
     fun setFavorite(rawNumber: String?, favorite: Boolean): Boolean {
-        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
-        val values = all().toMutableSet()
+        val regionIso = canonicalizer.observedRegionIso()
+        val normalized = PhoneFavoriteIdentityPolicy.normalize(rawNumber, regionIso) ?: return false
+        val values = allWithRegion(regionIso).toMutableSet()
         if (favorite) {
             if (normalized !in values && values.size >= MAX_FAVORITES) return false
             values += normalized
@@ -30,6 +37,12 @@ class PhoneFavoriteStore(context: Context) {
         }
         return preferences.edit().putStringSet(NUMBERS, values).commit()
     }
+
+    private fun allWithRegion(regionIso: String?): Set<String> =
+        preferences.getStringSet(NUMBERS, emptySet()).orEmpty()
+            .mapNotNull { PhoneFavoriteIdentityPolicy.normalize(it, regionIso) }
+            .take(MAX_FAVORITES)
+            .toSet()
 
     companion object {
         const val MAX_FAVORITES = 200
