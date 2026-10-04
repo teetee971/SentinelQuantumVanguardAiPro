@@ -23,6 +23,22 @@ class PhoneFavoritePolicyTest {
     }
 
     @Test
+    fun favoriteIdentityCollapsesNationalAndInternationalFormsWithKnownRegion() {
+        val values = listOf("0508 12 34 56", "+508123456", "00508123456")
+            .mapNotNull { PhoneFavoriteIdentityPolicy.normalize(it, "PM") }
+            .toSet()
+        assertEquals(setOf("+508123456"), values)
+    }
+
+    @Test
+    fun favoriteIdentityKeepsNationalFormDistinctWithoutRegionEvidence() {
+        val values = listOf("0508 12 34 56", "+508123456", "00508123456")
+            .mapNotNull { PhoneFavoriteIdentityPolicy.normalize(it, null) }
+            .toSet()
+        assertEquals(setOf("0508123456", "+508123456"), values)
+    }
+
+    @Test
     fun invalidNumbersFailClosed() {
         assertFalse(isValidFavorite("123"))
         assertFalse(isValidFavorite("06CALLME"))
