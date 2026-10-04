@@ -105,8 +105,8 @@ for (const marker of [
 for (const marker of [
   'adb emu gsm call',
   'adb emu sms send',
-  'android.app.role.DIALER',
-  'android.app.role.SMS',
+  'for FLOW_ROLE in DIALER SMS',
+  'android.app.role.$FLOW_ROLE',
   'android.app.role.CALL_SCREENING'
 ]) {
   if (!flow.includes(marker)) errors.push(`emulator runtime flow missing marker: ${marker}`);
