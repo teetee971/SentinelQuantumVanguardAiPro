@@ -88,6 +88,13 @@ if (setupResumeTest.includes('sendKeyDownUpSync')) {
 if (runtimeFlow.includes('wait_text "Décrocher"') || runtimeFlow.includes('tap_text "Décrocher"')) {
   errors.push('incoming-call emulation must not depend on an OS-owned localized Answer label');
 }
+if (runtimeFlow.includes('wait_text "Appel autorisé"')) {
+  errors.push('incoming-call emulation must not require CallerIdActivity to win the foreground race');
+}
+const dialerColdLaunchCommand = 'adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"';
+if (runtimeFlow.split(dialerColdLaunchCommand).length - 1 < 2) {
+  errors.push('modern Phone Core runtime must prove first launch plus process relaunch after fresh install');
+}
 
 const emulation = gate.emulator_qualification;
 if (!emulation || emulation.required !== true) errors.push('emulator qualification must be required');
@@ -136,6 +143,9 @@ for (const marker of [
   'phone_number_canonicalization_contract',
   'multi_sim_submit_readiness_contract',
   'setup_resume: modernPhoneCore',
+  'cold_install_and_relaunch: true',
+  'min-sdk-first-launch.txt',
+  'min-sdk-second-launch.txt',
   'FATAL EXCEPTION: main',
   'ANR in com\\.sentinel\\.quantum'
 ]) requireText(workflow, marker, 'emulation workflow');
@@ -164,8 +174,12 @@ for (const marker of [
 for (const marker of [
   'adb emu gsm call',
   'adb emu gsm accept "$FLOW_NUMBER"',
-  'wait_text "$FLOW_NUMBER"',
-  'wait_text "Appel autorisé"',
+  'wait_incoming_sentinel_surface',
+  "n.get('package') == package_name",
+  "'Appel autorisé' in text",
+  "'Appel entrant' in text and 'Sonnerie' in text",
+  '01-dialer-first-launch',
+  '01b-dialer-relaunch',
   'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
   'wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"',
   'shared_prefs/phone_private_timeline.xml',
