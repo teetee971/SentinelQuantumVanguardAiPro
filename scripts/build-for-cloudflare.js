@@ -140,19 +140,27 @@ function injectTruthRuntimeIntoHtmlTree(directory) {
     if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.html')) continue;
 
     let source = readFileSync(fullPath, 'utf8');
-    if (!/<main\b/i.test(source)) continue;
     if (!/<\/body\s*>/i.test(source)) throw new Error(`HTML page has no closing body tag: ${fullPath}`);
     if (!/<\/head\s*>/i.test(source)) throw new Error(`HTML page has no closing head tag: ${fullPath}`);
 
-    if (!source.includes(TRUTH_STYLE_MARKER)) {
-      source = source.replace(/<\/head\s*>/i, `${truthStyleTag}\n</head>`);
-    }
-    if (!source.includes(TRUTH_SHELL_MARKER) && !/class=["'][^"']*sentinel-truth-strip/.test(source)) {
-      source = source.replace(/<main\b/i, `${truthShell}\n<main`);
-    }
+    // The product-truth runtime is a global contract and must be available on
+    // every generated HTML page, including legacy documents without <main>.
     if (!source.includes(TRUTH_RUNTIME_MARKER) && !source.includes('src="/public/product-truth.js"') && !source.includes('src="product-truth.js"')) {
       source = source.replace(/<\/body\s*>/i, `${truthRuntimeTag}\n</body>`);
     }
+
+    // The visible synchronized truth strip is injected only where a semantic
+    // <main> exists. Legacy pages still receive the runtime without forcing a
+    // structural rewrite that could break their layout.
+    if (/<main\b/i.test(source)) {
+      if (!source.includes(TRUTH_STYLE_MARKER)) {
+        source = source.replace(/<\/head\s*>/i, `${truthStyleTag}\n</head>`);
+      }
+      if (!source.includes(TRUTH_SHELL_MARKER) && !/class=["'][^"']*sentinel-truth-strip/.test(source)) {
+        source = source.replace(/<main\b/i, `${truthShell}\n<main`);
+      }
+    }
+
     writeFileSync(fullPath, source, 'utf8');
   }
 }
