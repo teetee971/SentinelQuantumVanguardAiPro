@@ -28,22 +28,47 @@ internal object PhoneRegionRuntimeCache {
 
     fun start(context: Context) {
         val appContext = context.applicationContext
-        synchronized(this) {
+        val trackingReady = synchronized(this) {
             if (!started) {
-                started = true
-                appContext.getSystemService(SubscriptionManager::class.java)?.let { manager ->
+                val manager = appContext.getSystemService(SubscriptionManager::class.java)
+                if (manager == null) {
+                    regionIso = null
+                    false
+                } else {
                     val listener = object : SubscriptionManager.OnSubscriptionsChangedListener() {
                         override fun onSubscriptionsChanged() {
                             refresh(appContext)
                         }
                     }
-                    subscriptionListener = listener
                     @Suppress("DEPRECATION")
-                    runCatching { manager.addOnSubscriptionsChangedListener(listener) }
+                    val registered = runCatching {
+                        manager.addOnSubscriptionsChangedListener(listener)
+                        true
+                    }.getOrDefault(false)
+                    if (registered) {
+                        subscriptionListener = listener
+                        started = true
+                        true
+                    } else {
+                        // A one-shot region observation is unsafe if Sentinel cannot invalidate it
+                        // after SIM/subscription changes. Remain region-unknown and allow retry on a
+                        // later start() call instead of keeping stale country semantics.
+                        subscriptionListener = null
+                        regionIso = null
+                        started = false
+                        false
+                    }
                 }
+            } else {
+                subscriptionListener != null
             }
         }
-        refresh(appContext)
+
+        if (trackingReady) {
+            refresh(appContext)
+        } else {
+            regionIso = null
+        }
     }
 
     fun currentRegionIso(): String? = regionIso
