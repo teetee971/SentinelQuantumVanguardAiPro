@@ -2,6 +2,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { renderCapabilityConsumers } from './render-product-capabilities.js';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputPath = join(rootDir, 'public', 'product-truth.generated.json');
@@ -19,7 +20,7 @@ function capabilityState(capability) {
   return 'VALIDATION';
 }
 
-function publicCapability(capability) {
+function publicCapability(capability, expiresAtMs) {
   return {
     id: capability.id,
     surface: capability.surface,
@@ -31,6 +32,7 @@ function publicCapability(capability) {
     physically_validated: capability.physically_validated === true,
     release_signed: capability.release_signed === true,
     customer_available: capability.customer_available === true,
+    expires_at_ms: Number.isSafeInteger(expiresAtMs) ? expiresAtMs : null,
   };
 }
 
@@ -55,6 +57,12 @@ export function buildPublicProductTruth() {
   const catalog = readJson('config/commercial-catalog.json');
   const proExtension = readJson('config/commercial-catalog-pro-extension.json');
   const modules = [...(catalog.modules ?? []), ...(proExtension.modules ?? [])].map(publicModule);
+  const generatedCapabilityConsumer = JSON.parse(
+    renderCapabilityConsumers(capabilities, rootDir)['public/product-capabilities.json']
+  );
+  const expiryByCapabilityId = new Map(
+    (generatedCapabilityConsumer.capabilities ?? []).map((capability) => [capability.id, capability.expires_at_ms])
+  );
 
   return {
     schema_version: 1,
@@ -72,7 +80,9 @@ export function buildPublicProductTruth() {
     },
     tiers: Array.isArray(catalog.tiers) ? catalog.tiers : [],
     modules,
-    capabilities: (capabilities.capabilities ?? []).map(publicCapability),
+    capabilities: (capabilities.capabilities ?? []).map((capability) =>
+      publicCapability(capability, expiryByCapabilityId.get(capability.id))
+    ),
   };
 }
 
