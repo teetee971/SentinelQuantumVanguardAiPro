@@ -1,9 +1,12 @@
 package com.sentinel.quantum.security
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.telephony.PhoneNumberUtils
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import androidx.core.content.ContextCompat
 import java.util.Locale
 
 /**
@@ -34,6 +37,14 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
 
         if (subscriptionId != null && subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             return observedRegionForSubscription(subscriptionId)
+        }
+
+        if (ContextCompat.checkSelfPermission(
+                appContext,
+                Manifest.permission.READ_PHONE_STATE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return null
         }
 
         val activeSubscriptionIds = runCatching {
