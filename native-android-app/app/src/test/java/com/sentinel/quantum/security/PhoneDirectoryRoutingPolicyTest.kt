@@ -11,6 +11,7 @@ class PhoneDirectoryRoutingPolicyTest {
         assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("+594694123456"))
         assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("+596696123456"))
         assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("+262692123456"))
+        assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("+508123456"))
     }
 
     @Test fun routesFrenchPlanShortCodesOnlyWithTrustedTelephonyRegion() {
