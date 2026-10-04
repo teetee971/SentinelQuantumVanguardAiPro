@@ -35,13 +35,17 @@ class SentinelCallScreeningService : CallScreeningService() {
         val decision = runCatching {
             val store = CallBlocklistStore(this)
             val snapshot = store.cachedScreeningSnapshot()
-            val canonicalizer = AndroidPhoneNumberCanonicalizer(this)
             CallRuleEngine(
                 snapshot.blockedNumberHashes,
                 snapshot.effectiveBlockedPrefixes,
                 reputationSilencePrefixes = snapshot.signedSilencePrefixes,
                 fingerprintsForNumber = store::cachedFingerprintsForNumber,
-                numberNormalizer = { number -> canonicalizer.normalize(number) }
+                numberNormalizer = { number ->
+                    AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(
+                        number,
+                        PhoneRegionRuntimeCache.currentRegionIso()
+                    )
+                }
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
