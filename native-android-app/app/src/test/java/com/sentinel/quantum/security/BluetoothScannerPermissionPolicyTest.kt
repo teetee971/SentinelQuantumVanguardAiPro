@@ -3,30 +3,27 @@ package com.sentinel.quantum.security
 import android.Manifest
 import android.os.Build
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class BluetoothScannerPermissionPolicyTest {
     @Test
     fun android12PlusRequiresScanAndConnect() {
-        val permissions = BluetoothScanner.requiredPermissionsForApi(Build.VERSION_CODES.S)
-
         assertArrayEquals(
             arrayOf(
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_CONNECT
             ),
-            permissions
+            BluetoothScanner.requiredPermissionsForApi(Build.VERSION_CODES.S)
         )
-        assertTrue(permissions.contains(Manifest.permission.BLUETOOTH_SCAN))
-        assertTrue(permissions.contains(Manifest.permission.BLUETOOTH_CONNECT))
     }
 
     @Test
     fun modernApisKeepTheSameCompleteBluetoothPermissionContract() {
         assertArrayEquals(
             BluetoothScanner.requiredPermissionsForApi(Build.VERSION_CODES.S),
-            BluetoothScanner.requiredPermissionsForApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+            BluetoothScanner.requiredPermissionsForApi(API_35)
         )
     }
 
@@ -39,5 +36,19 @@ class BluetoothScannerPermissionPolicyTest {
             ),
             BluetoothScanner.requiredPermissionsForApi(Build.VERSION_CODES.R)
         )
+    }
+
+    @Test
+    fun sessionIdentityRequiresAnAuthorizedNonBlankBluetoothAddress() {
+        assertNull(BluetoothScanner.sessionKeyForAddress(""))
+        assertNull(BluetoothScanner.sessionKeyForAddress("   "))
+        assertEquals(
+            "AA:BB:CC:DD:EE:FF",
+            BluetoothScanner.sessionKeyForAddress("  AA:BB:CC:DD:EE:FF  ")
+        )
+    }
+
+    private companion object {
+        const val API_35 = 35
     }
 }

@@ -51,8 +51,13 @@ class BluetoothScanner(context: Context) {
         ContextCompat.checkSelfPermission(appContext, permission) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * Indique uniquement si l'adaptateur est activé dans un contexte où Sentinel détient déjà
+     * les autorisations Bluetooth requises. Un résultat false ne doit jamais être interprété comme
+     * "Bluetooth désactivé" sans vérifier séparément [hasPermissions].
+     */
     @SuppressLint("MissingPermission")
-    fun isBluetoothEnabled(): Boolean {
+    fun isBluetoothEnabledWhenAuthorized(): Boolean {
         val currentAdapter = adapter ?: return false
         if (!hasPermissions()) return false
         return runCatching { currentAdapter.isEnabled }.getOrDefault(false)
@@ -95,18 +100,26 @@ class BluetoothScanner(context: Context) {
         discovered.clear()
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                if (callback !== this) return
                 val scanResult = result ?: return
                 val device = scanResult.device ?: return
                 val mapped = toDevice(device, scanResult)
-                // Permission can be revoked while a scan is already running. Never access the
-                // protected address directly outside the fail-closed mapper.
-                val sessionKey = mapped.address.takeIf { it.isNotBlank() }
-                    ?: "anonymous:${System.identityHashCode(device)}"
+                val sessionKey = sessionKeyForAddress(mapped.address)
+                if (sessionKey == null) {
+                    // BLUETOOTH_CONNECT can be revoked while the scan is active. Without a stable,
+                    // authorized address Sentinel cannot deduplicate truthfully, so stop instead of
+                    // manufacturing an identity from the in-memory BluetoothDevice instance.
+                    stop()
+                    onError("Métadonnées Bluetooth devenues indisponibles ; autorisation à vérifier.")
+                    onScanFinished()
+                    return
+                }
                 discovered[sessionKey] = mapped
                 onResults(sortedResults())
             }
 
             override fun onScanFailed(errorCode: Int) {
+                if (callback !== this) return
                 stop()
                 onError("Scan Bluetooth impossible (code $errorCode).")
                 onScanFinished()
@@ -198,5 +211,8 @@ class BluetoothScanner(context: Context) {
             } else {
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
             }
+
+        internal fun sessionKeyForAddress(address: String): String? =
+            address.trim().takeIf { it.isNotEmpty() }
     }
 }
