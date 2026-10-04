@@ -94,12 +94,19 @@ class CallBlocklistStore(context: Context) {
         // explicitly; a national number is never fingerprinted under guessed country semantics.
         val normalized = canonicalizer.normalize(rawNumber) ?: return false
         if (!normalized.startsWith('+')) return false
+
+        val encodedMetadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
+        val metadataByHash = encodedMetadata
+            .mapNotNull(CallBlockMetadataCodec::decode)
+            .associateBy { it.fingerprint }
+        val expiredHashes = ExactRuleMigrationPolicy.expiredKnownHashes(metadataByHash, now)
         val values = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
-            .take(CallRuleEngine.MAX_EXACT_RULES)
+            .filterNot(expiredHashes::contains)
             .toMutableSet()
         val fingerprint = fingerprinter.fingerprint(normalized) ?: return false
         if (fingerprint !in values && values.size >= CallRuleEngine.MAX_EXACT_RULES) return false
         values += fingerprint
+
         val entry = CallBlockMetadata.Entry(
             fingerprint = fingerprint,
             reason = CallBlockMetadata.sanitizeReason(reason),
@@ -108,8 +115,12 @@ class CallBlocklistStore(context: Context) {
             origin = origin,
             canonicalization = CallBlockMetadata.Canonicalization.REGION_AWARE_E164_V1
         )
-        val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
-            .filterNot { it.startsWith("$fingerprint|") }.toMutableSet()
+        val metadata = encodedMetadata
+            .filterNot { encoded ->
+                val decoded = CallBlockMetadataCodec.decode(encoded)
+                decoded?.fingerprint in expiredHashes || decoded?.fingerprint == fingerprint
+            }
+            .toMutableSet()
         metadata += CallBlockMetadataCodec.encode(entry)
         val committed = preferences.edit()
             .putStringSet(EXACT_HASHES, values)
@@ -139,9 +150,7 @@ class CallBlocklistStore(context: Context) {
             .mapNotNull(CallBlockMetadataCodec::decode)
             .associateBy { it.fingerprint }
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
-        val currentHashes = hashes.filter { hash ->
-            metadataByHash[hash]?.safeForExactMatching == true
-        }.toSet()
+        val currentHashes = ExactRuleMigrationPolicy.currentSchemaHashes(hashes, metadataByHash)
         if (currentHashes.isEmpty()) return true
         val remainingHashes = hashes - currentHashes
         val remainingMetadata = encodedMetadata.filterNot { encoded ->
@@ -185,9 +194,7 @@ class CallBlocklistStore(context: Context) {
             .mapNotNull(CallBlockMetadataCodec::decode)
             .associateBy { it.fingerprint }
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
-        val legacy = hashes.filter { hash ->
-            metadataByHash[hash]?.safeForExactMatching != true
-        }.toSet()
+        val legacy = ExactRuleMigrationPolicy.legacyHashes(hashes, metadataByHash)
         if (legacy.isEmpty()) return 0
         hashes.removeAll(legacy)
         val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
@@ -212,19 +219,6 @@ class CallBlocklistStore(context: Context) {
         if (!preferences.edit().remove(LEGACY_PREFIXES).commit()) return 0
         refreshScreeningSnapshotAfterCommit()
         return legacy.size
-    }
-
-    /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
-    fun purgeExpiredBlockedNumbers(now: Long = System.currentTimeMillis()): Int {
-        val entries = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
-            .mapNotNull(CallBlockMetadataCodec::decode)
-        val expired = entries.filterNot { it.isActive(now) }.map { it.fingerprint }.toSet()
-        if (expired.isEmpty()) return 0
-        val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().filterNot(expired::contains).toSet()
-        val metadata = entries.filter { it.isActive(now) }.map(CallBlockMetadataCodec::encode).toSet()
-        if (!preferences.edit().putStringSet(EXACT_HASHES, hashes).putStringSet(EXACT_METADATA, metadata).commit()) return 0
-        refreshScreeningSnapshotAfterCommit()
-        return expired.size
     }
 
     /**
