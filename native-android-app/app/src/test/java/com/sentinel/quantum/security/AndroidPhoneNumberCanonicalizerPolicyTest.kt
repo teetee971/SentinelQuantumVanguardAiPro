@@ -16,6 +16,15 @@ class AndroidPhoneNumberCanonicalizerPolicyTest {
         )
     }
 
+    @Test fun explicitInternationalOutputMustBeRealE164() {
+        assertEquals(
+            "+590690123456",
+            AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("+590 690 12 34 56", null)
+        )
+        assertNull(AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("+01234567", null))
+        assertNull(AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("+0033612345678", null))
+    }
+
     @Test fun identicalSimAndNetworkRegionsAreSafeForOneSubscription() {
         assertEquals(
             "GP",
