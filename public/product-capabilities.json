@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-10-03",
+  "updated_at": "2026-10-04",
   "capabilities": [
     {
       "id": "phone_core_android",
@@ -95,6 +95,16 @@
     {
       "id": "repository_i18n",
       "surface": "Repository-wide internationalization",
+      "status": "IMPLEMENTED_NOT_CONFIGURED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "android_distribution_compliance",
+      "surface": "Android distribution legal and Play compliance",
       "status": "IMPLEMENTED_NOT_CONFIGURED",
       "implemented": true,
       "customer_available": false,

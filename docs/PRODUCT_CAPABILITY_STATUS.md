@@ -1,12 +1,12 @@
 # Product capability status — generated
 
-Source: `config/product-capabilities.json` · updated 2026-10-03.
+Source: `config/product-capabilities.json` · updated 2026-10-04.
 
 This file is generated. Do not promote a capability by editing this document; update the canonical registry with evidence and let CI validate the invariants.
 
 | Capability | Status | Customer available | Open blockers | Evidence revision | Observed at |
 |---|---|---:|---:|---|---|
-| Android Phone Core | IMPLEMENTED_NOT_VERIFIED | NO | 3 | Not attested | Not observed |
+| Android Phone Core | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
 | Sentinel VPN | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | Voice Studio transformed calls | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | GeoIntel USGS earthquakes | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
@@ -16,7 +16,8 @@ This file is generated. Do not promote a capability by editing this document; up
 | Signed Phone Intelligence reputation feed | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | Phone Intelligence moderation service | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
 | Repository-wide internationalization | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
-| Public signed Android release | IMPLEMENTED_NOT_CONFIGURED | NO | 2 | Not attested | Not observed |
+| Android distribution legal and Play compliance | IMPLEMENTED_NOT_CONFIGURED | NO | 4 | Not attested | Not observed |
+| Public signed Android release | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | SaaS customer identity and authorization | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
 | Voice signaling, token issuer and VoIP/PSTN gateway | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
 | Independent monotonic VPN lease sequence authority | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
@@ -27,7 +28,6 @@ This file is generated. Do not promote a capability by editing this document; up
 
 ### Android Phone Core
 
-- Incoming MMS provider projection is not yet complete end-to-end
 - 14/14 physical Phone Core evidence has not been recorded on the current install scope
 - No signed public Android release artifact is demonstrated
 
@@ -77,7 +77,7 @@ Evidence:
 
 ### Collective Defense API
 
-- Historical Render evidence exists, but fresh deployment and live health evidence for the current revision is not recorded
+- Historical Render evidence exists, but fresh deployment and live health evidence for the current repository revision is not recorded
 
 Evidence:
 - `backend/wangiri-api/README.md`
@@ -123,10 +123,32 @@ Evidence:
 - `native-android-app/app/src/main/res/values/strings.xml`
 - `native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt`
 
+### Android distribution legal and Play compliance
+
+- Final publisher identity, contact and support route are not configured and externally attested
+- Final privacy, CGU and CGV state is not approved and bound to the exact Android release
+- Play Data Safety, permission declarations, content rating and target countries are not submitted and externally observed for the exact release
+- No signed external distribution-compliance observation is bound to the exact release and material source scope
+
+Evidence:
+- `native-android-app/app/src/main/AndroidManifest.xml`
+- `native-android-app/app/build.gradle`
+- `docs/PLAY-DATA-SAFETY.md`
+- `native-android-app/PLAY_STORE_LISTING.md`
+- `PRIVACY_POLICY.md`
+- `public/privacy.html`
+- `public/terms.html`
+- `public/cgv.html`
+- `public/legal.html`
+- `public/faq.html`
+- `public/pricing.html`
+- `RELEASE_CHECKLIST.md`
+
 ### Public signed Android release
 
 - Release keystore custody and signed APK/AAB provenance are not demonstrated
 - Observed publication channel evidence is missing
+- Android distribution compliance is not runtime-verified for the exact release
 
 Evidence:
 - `.github/workflows/android-release.yml`

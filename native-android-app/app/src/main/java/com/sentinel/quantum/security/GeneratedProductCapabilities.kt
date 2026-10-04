@@ -17,6 +17,7 @@ object GeneratedProductCapabilities {
         "signed_phone_reputation_feed" to State(true, false, null),
         "phone_moderation_backend" to State(true, false, null),
         "repository_i18n" to State(true, false, null),
+        "android_distribution_compliance" to State(true, false, null),
         "public_android_release" to State(true, false, null),
         "saas_identity" to State(false, false, null),
         "voice_call_infrastructure" to State(false, false, null),
