@@ -2,13 +2,14 @@
 
 /**
  * Build script for Cloudflare Pages deployment.
- * Regenerates the public-safe product truth snapshot, then copies the validated
- * static web surface to frontend/dist for deployment.
+ * Regenerates the public-safe product truth snapshot, copies the validated
+ * static web surface to frontend/dist, then injects the truth runtime into
+ * every generated HTML page so product state cannot drift page-by-page.
  * Requires Node.js 20.19.0+ as declared by package.json.
  */
 
-import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync, readdirSync } from 'fs';
+import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { writePublicProductTruth } from './generate-public-product-truth.js';
 
@@ -103,6 +104,36 @@ for (const { src, dest, required } of filesToCopy) {
     process.exit(1);
   }
 }
+
+const truthRuntimeTag = '<script src="/public/product-truth.js" defer data-sentinel-product-truth-global="true"></script>';
+
+function injectProductTruthRuntime(directory) {
+  let htmlCount = 0;
+  let injectedCount = 0;
+  const visit = (current) => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const target = join(current, entry.name);
+      if (entry.isDirectory()) {
+        visit(target);
+        continue;
+      }
+      if (!entry.isFile() || extname(entry.name).toLowerCase() !== '.html') continue;
+      htmlCount += 1;
+      const html = readFileSync(target, 'utf8');
+      if (html.includes('product-truth.js')) continue;
+      const closeBodyIndex = html.toLowerCase().lastIndexOf('</body>');
+      if (closeBodyIndex < 0) throw new Error(`HTML page has no </body> and cannot receive product truth runtime: ${target}`);
+      const updated = `${html.slice(0, closeBodyIndex)}${truthRuntimeTag}\n${html.slice(closeBodyIndex)}`;
+      writeFileSync(target, updated, 'utf8');
+      injectedCount += 1;
+    }
+  };
+  visit(directory);
+  return { htmlCount, injectedCount };
+}
+
+const truthCoverage = injectProductTruthRuntime(outputDir);
+console.log(`Product truth runtime coverage: ${truthCoverage.htmlCount} HTML pages, ${truthCoverage.injectedCount} build-time injections.`);
 
 const deploymentCommit = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || null;
 writeFileSync(
