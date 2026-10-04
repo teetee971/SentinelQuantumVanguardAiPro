@@ -10,6 +10,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, extname, join, normalize, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writePublicProductTruth } from './generate-public-product-truth.js';
 
 export const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
@@ -100,6 +101,10 @@ function validateCssFile(file) {
   const importPattern = /@import\s+(?:url\(\s*)?["']([^"']+)["']/gi;
   while ((match = importPattern.exec(content)) !== null) validateTarget(file, match[1].trim());
 }
+
+// Materialize derived public truth before scanning so local, CI and release
+// link checks validate the same site surface that the Cloudflare build serves.
+writePublicProductTruth();
 
 const htmlFiles = collectFiles(rootDir, new Set(['.html']));
 const javascriptFiles = collectFiles(rootDir, new Set(['.js']));

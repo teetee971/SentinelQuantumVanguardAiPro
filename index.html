@@ -3,12 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sentinel Quantum Vanguard AI Pro — cybersécurité défensive local-first, recherche téléphonique gratuite et application Android en validation.">
+  <meta name="description" content="Sentinel Quantum Vanguard AI Pro — protection numérique, recherche téléphonique gratuite et application Android en préparation.">
   <meta name="theme-color" content="#080b10">
   <link rel="manifest" href="/public/manifest.json">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="public/shared-styles.css">
-  <title>Sentinel Quantum Vanguard AI Pro — Défense locale, preuves vérifiables</title>
+  <link rel="preload" href="public/shared-styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="public/shared-styles.css"></noscript>
+  <style>
+    :root{color-scheme:dark;--bg-main:#080b10;--bg-panel:#0e131c;--text-main:#f2f5fa;--text-soft:#aab6d1;--text-muted:#7c88a3;--accent-primary:#3fc7ff;--accent-secondary:#28d99a;--border-primary:#2e3f63;--border-secondary:#1c2740;--shadow-lg:0 34px 90px rgba(0,0,0,.42);--container:1240px}
+    *{box-sizing:border-box}
+    html{background:var(--bg-main)}
+    body{margin:0;padding-top:68px;min-height:100vh;background:linear-gradient(rgba(63,199,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(63,199,255,.028) 1px,transparent 1px),radial-gradient(circle at 12% -4%,rgba(63,199,255,.12),transparent 29%),radial-gradient(circle at 92% 12%,rgba(40,217,154,.07),transparent 24%),linear-gradient(180deg,#080b10 0%,#0a0f17 52%,#080b10 100%);background-size:48px 48px,48px 48px,auto,auto,auto;color:var(--text-main);font-family:Inter,Roboto,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6}
+    a{color:var(--accent-primary)}img,svg{max-width:100%}main{width:100%}section{margin-bottom:72px;position:relative}
+    h1,h2,h3{color:var(--text-main);font-weight:750;line-height:1.12;letter-spacing:-.03em;margin:0 0 12px}p{color:var(--text-soft);margin:0 0 20px}
+    .top-nav{position:fixed;inset:0 0 auto 0;z-index:1000;min-height:68px;display:flex;align-items:center;padding:10px clamp(14px,2.4vw,28px);background:rgba(8,11,16,.88);border-bottom:1px solid rgba(46,63,99,.7);box-shadow:0 12px 36px rgba(0,0,0,.24);backdrop-filter:blur(22px) saturate(125%);-webkit-backdrop-filter:blur(22px) saturate(125%)}
+    .top-nav-container{width:min(100%,1480px);max-width:none;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .nav-brand{display:inline-flex;align-items:center;gap:10px;color:var(--text-main);text-decoration:none;font-size:.9rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap}.nav-brand::before{content:"";width:36px;height:36px;border-radius:12px;background:url('/public/icon.svg') center/contain no-repeat;box-shadow:0 0 0 1px rgba(63,199,255,.18),0 0 26px rgba(63,199,255,.16)}
+    .nav-links{display:flex;align-items:center;gap:6px;list-style:none;margin:0;padding:0}.nav-link{display:inline-flex;align-items:center;min-height:38px;padding:8px 11px;border:1px solid transparent;border-radius:999px;color:var(--text-soft);text-decoration:none;font-size:.87rem;font-weight:700;white-space:nowrap}.nav-mobile-toggle{display:none;width:auto;min-width:48px;flex:0 0 auto;margin-left:auto;background:#0e131c;border:1px solid #2e3f63;color:#fff;padding:9px 12px;border-radius:14px;cursor:pointer;font-size:1.1rem}
+    .site-shell{width:min(100% - 32px,var(--container));margin-inline:auto;padding:clamp(28px,5vw,64px) 0 80px}.sq-home{display:grid;gap:clamp(56px,7vw,92px)}
+    .btn,a.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:12px 20px;border:1px solid rgba(63,199,255,.32);border-radius:13px;background:linear-gradient(135deg,rgba(63,199,255,.22),rgba(63,199,255,.11));color:#fff;font:inherit;font-weight:800;text-decoration:none;box-shadow:0 12px 30px rgba(0,0,0,.2)}.btn-secondary{background:rgba(255,255,255,.025);border-color:#2e3f63;color:#eaf4ff}
+    .sq-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:clamp(28px,5vw,64px);align-items:stretch;min-height:590px;padding:clamp(34px,6vw,76px);border:1px solid #1c2740;border-radius:32px;background:radial-gradient(circle at 12% 12%,rgba(63,199,255,.17),transparent 30%),radial-gradient(circle at 82% 20%,rgba(40,217,154,.08),transparent 24%),linear-gradient(145deg,rgba(14,19,28,.99),rgba(8,11,16,.99));box-shadow:var(--shadow-lg)}
+    .sq-hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(63,199,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(63,199,255,.035) 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to right,#000 0%,rgba(0,0,0,.55) 52%,transparent 88%)}
+    .sq-hero-copy,.sq-command-panel{position:relative;z-index:1}.sq-hero-copy{display:flex;flex-direction:column;justify-content:center;align-items:flex-start}.sq-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;color:#9ce6ff;font-size:.78rem;font-weight:850;letter-spacing:.11em;text-transform:uppercase}.sq-kicker::before{content:"";width:9px;height:9px;border-radius:50%;background:#28d99a;box-shadow:0 0 18px rgba(40,217,154,.58)}
+    .sq-title{max-width:900px;margin:0 0 22px;font-size:clamp(3rem,7vw,6.4rem);line-height:.97;letter-spacing:-.055em}.sq-title-emphasis{color:#79dcff}.sq-lede{max-width:760px;margin-bottom:30px;color:#b8c5dc;font-size:clamp(1.05rem,1.8vw,1.26rem);line-height:1.65}.sq-actions{display:flex;flex-wrap:wrap;gap:11px}
+    .sq-command-panel{display:grid;align-content:start;gap:14px;padding:22px;border:1px solid #2e3f63;border-radius:24px;background:rgba(10,15,23,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 24px 64px rgba(0,0,0,.3)}.sq-hero>.sq-visual-card{margin:0}.brand-visual{overflow:hidden;background:var(--bg-panel);box-shadow:var(--shadow-lg)}.sq-visual-card{min-height:430px;padding:0}.sq-visual-card img{display:block;width:100%;height:100%;min-height:430px;object-fit:cover;opacity:.93}
+    .sq-proof-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.sq-proof{min-height:122px;padding:18px;border:1px solid #1c2740;border-radius:18px;background:rgba(17,24,38,.68)}.sq-proof strong{display:block;margin:8px 0 4px;color:var(--text-main);font-size:1.04rem}.sq-proof small{color:var(--text-muted);line-height:1.5}.sq-proof-index{color:#3fc7ff;font-size:.72rem;font-weight:900;letter-spacing:.1em}
+    .sentinel-truth-strip{display:none!important}
+    @media(max-width:1220px){.nav-mobile-toggle{display:inline-flex}.top-nav-container{flex-wrap:wrap}.nav-links{display:none;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-top:12px}.nav-links.active{display:grid}.nav-link{justify-content:center;background:rgba(255,255,255,.04)}}
+    @media(max-width:1050px){.sq-hero{grid-template-columns:1fr;min-height:0}.sq-command-panel{max-width:720px}.sq-proof-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:760px){body{padding-top:64px}.sq-home{gap:44px}.sq-hero{grid-template-columns:minmax(0,1fr) 132px;gap:14px 12px;align-items:center;min-height:0;padding:26px 20px;border-radius:24px}.sq-hero-copy{display:contents}.sq-hero-copy>.sq-kicker{grid-column:1/-1;grid-row:1;margin-bottom:0}.sq-hero-copy>.sq-title{grid-column:1;grid-row:2;margin-bottom:0;font-size:clamp(2rem,8.7vw,2.75rem);line-height:.98}.sq-hero>.sq-visual-card{grid-column:2;grid-row:2;width:132px;min-height:0;padding:4px;align-self:center}.sq-hero-copy>.sq-lede{display:none}.sq-hero-copy>.sq-actions{grid-column:1/-1;grid-row:3}.sq-actions .btn{width:100%}.sq-hero>.sq-visual-card img{width:100%;height:auto;min-height:0;aspect-ratio:1/1;object-fit:cover;object-position:50% 38%;border-radius:16px}.sq-proof-strip{grid-template-columns:1fr}}
+    @media(max-width:640px){.site-shell{width:min(100% - 24px,var(--container));padding:28px 0}.nav-links{grid-template-columns:1fr}}
+  </style>
+  <title>Sentinel Quantum Vanguard AI Pro — Protection numérique et téléphonie sécurisée</title>
 </head>
 <body>
 <script defer src="public/shared-navigation.js"></script>
@@ -16,97 +42,53 @@
 <main id="main-content" class="site-shell sq-home">
   <section class="sq-hero" aria-labelledby="hero-title">
     <div class="sq-hero-copy">
-      <span class="sq-kicker">Sentinel Quantum Vanguard AI Pro · D.1</span>
-      <h1 id="hero-title" class="sq-title">Voir la menace. Vérifier la preuve. <span class="sq-title-emphasis">Garder le contrôle.</span></h1>
-      <p class="sq-lede">Sentinel rassemble téléphonie, sécurité mobile, veille et gouvernance dans une architecture défensive local-first. Chaque capacité publique est présentée selon son état réel : disponible, en validation ou planifiée.</p>
+      <span class="sq-kicker">Sentinel Quantum Vanguard AI Pro</span>
+      <h1 id="hero-title" class="sq-title">Votre téléphone. Vos données. <span class="sq-title-emphasis">Votre contrôle.</span></h1>
+      <p class="sq-lede">Sentinel réunit la recherche de numéros, la protection contre les appels indésirables, la messagerie et les outils de sécurité dans une seule expérience. Les fonctions sont présentées simplement, selon ce qui est disponible aujourd’hui et ce qui arrive ensuite.</p>
       <div class="sq-actions">
         <a class="btn" href="public/phone-intelligence.html">Rechercher un numéro — gratuit</a>
-        <a class="btn btn-secondary" href="public/mobile-security.html">Voir Phone Core Android</a>
-        <a class="btn btn-secondary" href="public/roadmap.html">Ouvrir la roadmap vérifiable</a>
+        <a class="btn btn-secondary" href="public/mobile-security.html">Découvrir l’application Android</a>
+        <a class="btn btn-secondary" href="public/roadmap.html">Voir l’avancement</a>
       </div>
     </div>
 
-    <aside class="sq-command-panel" aria-label="État public des capacités principales">
-      <div class="sq-command-head">
-        <strong>État système public</strong>
-        <span>Preuve &gt; promesse</span>
-      </div>
-
-      <div class="sq-status-row">
-        <span class="sq-status-dot ready" aria-hidden="true"></span>
-        <div class="sq-status-copy"><strong>Annuaire téléphonique Web</strong><small>Recherche par numéro et données d’attribution documentées.</small></div>
-        <span class="sq-status-value">Disponible</span>
-      </div>
-
-      <div class="sq-status-row">
-        <span class="sq-status-dot validation" aria-hidden="true"></span>
-        <div class="sq-status-copy"><strong>Phone Core Android</strong><small>Code natif et builds CI ; validation physique encore requise avant distribution.</small></div>
-        <span class="sq-status-value">Validation</span>
-      </div>
-
-      <div class="sq-status-row">
-        <span class="sq-status-dot planned" aria-hidden="true"></span>
-        <div class="sq-status-copy"><strong>VPN défensif</strong><small>Client Android présent ; infrastructure de sortie réelle encore requise.</small></div>
-        <span class="sq-status-value">Infrastructure</span>
-      </div>
-
-      <div class="sq-status-row">
-        <span class="sq-status-dot planned" aria-hidden="true"></span>
-        <div class="sq-status-copy"><strong>Client PC</strong><small>Aucun installateur Windows, macOS ou Linux n’est actuellement distribué.</small></div>
-        <span class="sq-status-value">Planifié</span>
-      </div>
-    </aside>
+    <figure class="sq-command-panel sq-visual-card brand-visual" aria-label="Visuel officiel Sentinel Quantum Vanguard AI Pro">
+      <img src="assets/images/sentinel-command-center.webp" width="1279" height="720" decoding="async" alt="Visuel officiel Sentinel Quantum avec une sentinelle en armure noire et un bouclier lumineux">
+    </figure>
   </section>
 
-  <section class="sq-proof-strip" aria-label="Principes publics Sentinel">
-    <article class="sq-proof"><span class="sq-proof-index">01 · LOCAL-FIRST</span><strong>Données maîtrisées</strong><small>Analyse locale lorsque possible et minimisation des données exposées.</small></article>
-    <article class="sq-proof"><span class="sq-proof-index">02 · GRATUIT</span><strong>Recherche téléphonique</strong><small>L’annuaire de base reste une porte d’entrée gratuite sur le Web et Android.</small></article>
-    <article class="sq-proof"><span class="sq-proof-index">03 · CONTRÔLE</span><strong>Humain dans la boucle</strong><small>Les actions sensibles restent bornées par politique, consentement et validation.</small></article>
-    <article class="sq-proof"><span class="sq-proof-index">04 · PREUVE</span><strong>Roadmap publique</strong><small>Le site distingue explicitement code, validation terrain, infrastructure et futur.</small></article>
+  <section class="sq-proof-strip" aria-label="Principes Sentinel">
+    <article class="sq-proof"><span class="sq-proof-index">01 · CONFIDENTIALITÉ</span><strong>Vos données d’abord</strong><small>Le traitement reste sur votre appareil chaque fois que possible.</small></article>
+    <article class="sq-proof"><span class="sq-proof-index">02 · GRATUIT</span><strong>Recherche téléphonique</strong><small>La recherche de base reste gratuite sur le Web et sur Android.</small></article>
+    <article class="sq-proof"><span class="sq-proof-index">03 · CONTRÔLE</span><strong>Vous gardez la main</strong><small>Les actions importantes restent sous votre contrôle.</small></article>
+    <article class="sq-proof"><span class="sq-proof-index">04 · TRANSPARENCE</span><strong>Un avancement clair</strong><small>Disponible, en validation ou à venir : chaque fonction est annoncée sans ambiguïté.</small></article>
   </section>
 
   <section class="sq-section" aria-labelledby="phone-entry-title">
     <div class="sq-section-head">
       <div>
-        <span class="eyebrow">Accès immédiat</span>
-        <h2 id="phone-entry-title">Le téléphone devient le premier périmètre de défense.</h2>
+        <span class="eyebrow">Protection du téléphone</span>
+        <h2 id="phone-entry-title">Identifier, filtrer et agir sans perdre le contrôle.</h2>
       </div>
-      <p>La recherche par numéro et l’analyse locale constituent le socle gratuit. Le Phone Core Android vise ensuite l’identification, le filtrage, les appels, les SMS/MMS et les preuves locales d’exécution — sans annoncer « 100 % fonctionnel » avant validation physique.</p>
+      <p>Commencez gratuitement par la recherche de numéros. L’application Android étend ensuite la protection aux appels, à l’identification des correspondants et à la messagerie.</p>
     </div>
 
     <div class="sq-grid">
       <article class="sq-card sq-card-success span-5">
         <span class="sq-state ready">Disponible sur le Web</span>
-        <h3>Annuaire téléphonique gratuit</h3>
-        <p>Recherche par numéro ou préfixe, informations d’attribution, territoire et provenance affichée. Une attribution de bloc n’est jamais présentée comme l’identité réelle de l’appelant après portabilité.</p>
+        <h3>Recherche de numéro gratuite</h3>
+        <p>Recherchez un numéro ou un préfixe et consultez les informations disponibles sur son attribution et son territoire, avec une présentation claire de leur origine.</p>
         <a class="btn" href="public/phone-intelligence.html">Lancer une recherche</a>
       </article>
 
       <article class="sq-card sq-card-accent span-7">
-        <span class="sq-state validation">Android · en validation</span>
-        <h3>Phone Core : appels, Caller ID, SMS et preuves locales.</h3>
-        <p>Le produit Android progresse selon une matrice d’acceptation mesurable : rôles et permissions réellement observés, scénarios d’appel et de messagerie testés, puis validation multi-version et double-SIM. L’APK publique n’est pas encore proposée depuis ce site.</p>
+        <span class="sq-state validation">Application Android · en validation</span>
+        <h3>Appels, identification et messagerie protégée.</h3>
+        <p>Les principales fonctions Android sont en cours de validation sur des appareils réels. L’application ne sera proposée au téléchargement qu’après ces vérifications.</p>
         <div class="sq-actions">
-          <a class="btn btn-secondary" href="public/mobile-security.html">État technique Android</a>
-          <a class="btn btn-secondary" href="public/roadmap.html">Critères et jalons</a>
+          <a class="btn btn-secondary" href="public/mobile-security.html">Découvrir Android</a>
+          <a class="btn btn-secondary" href="public/roadmap.html">Voir l’avancement</a>
         </div>
-      </article>
-    </div>
-  </section>
-
-  <section class="sq-section" aria-labelledby="identity-title">
-    <div class="sq-grid">
-      <figure class="sq-card sq-visual-card span-7">
-        <img src="assets/images/sentinel-command-center.webp" width="1279" height="720" loading="lazy" decoding="async" alt="Soldat Sentinel en armure noire tenant un bouclier lumineux dans un centre de supervision cyber">
-        <figcaption>Sentinel Quantum Vanguard AI Pro — une identité visuelle alignée avec la posture produit : vigilance, preuve et défense.</figcaption>
-      </figure>
-
-      <article class="sq-card span-5">
-        <span class="eyebrow">Identité Sentinel</span>
-        <h2 id="identity-title">Un centre de commandement, pas une vitrine qui survend.</h2>
-        <p>Le langage visuel D.1 reprend les états réels du produit : cyan pour l’observation et le test, vert pour ce qui est validé, orange pour ce qui demande encore une action ou une infrastructure.</p>
-        <p>Le site doit permettre de comprendre en quelques secondes ce qui existe réellement, ce qui est testable et ce qui reste une cible.</p>
-        <a class="btn btn-secondary" href="public/produit.html">Explorer le produit</a>
       </article>
     </div>
   </section>
@@ -114,20 +96,20 @@
   <section class="sq-section android-preview-section" aria-labelledby="android-preview-title">
     <div class="sq-section-head">
       <div>
-        <span class="eyebrow">Expérience Android</span>
-        <h2 id="android-preview-title">Une interface mobile cohérente avec le même système D.1.</h2>
+        <span class="eyebrow">Application Android</span>
+        <h2 id="android-preview-title">Une interface claire pour les protections du quotidien.</h2>
       </div>
-      <p>Cette maquette présente la direction UX. « Code intégré » signifie que la brique existe dans l’application ; « En validation » qu’elle exige encore des essais ou une infrastructure ; « Prévu » qu’elle n’est pas livrée.</p>
+      <p>Voici un aperçu des principaux écrans de Sentinel sur Android. Les fonctions encore en validation ou à venir sont indiquées directement.</p>
     </div>
 
     <div class="android-showcase" data-android-showcase>
       <div class="android-showcase-stage">
         <div class="android-showcase-crop" role="img" aria-label="Aperçu sélectionné de l’interface Android Sentinel" data-preview-image></div>
         <div class="android-showcase-copy" aria-live="polite">
-          <span class="android-status android-status-code" data-preview-status>Code intégré</span>
+          <span class="android-status android-status-validation" data-preview-status>En validation</span>
           <h3 data-preview-title>Accueil protection</h3>
-          <p data-preview-description>Vue d’ensemble de la posture mobile et raccourcis vers les protections Sentinel.</p>
-          <p class="android-evidence" data-preview-evidence>Base Android native et états de sécurité présents dans le dépôt.</p>
+          <p data-preview-description>Vos protections principales et leurs raccourcis au même endroit.</p>
+          <p class="android-evidence" data-preview-evidence>Écran principal de l’application Sentinel.</p>
         </div>
       </div>
 
@@ -135,7 +117,7 @@
         <button type="button" class="android-screen-tab active" role="tab" aria-selected="true" data-screen="0">Accueil</button>
         <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="1">Appels</button>
         <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="2">Appel entrant</button>
-        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="3">Caller ID</button>
+        <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="3">Identification</button>
         <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="4">VPN</button>
         <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="5">Pays VPN</button>
         <button type="button" class="android-screen-tab" role="tab" aria-selected="false" data-screen="6">Anti-traceurs</button>
@@ -145,16 +127,16 @@
       </div>
 
       <details class="android-full-mockup">
-        <summary>Voir la maquette complète</summary>
+        <summary>Voir l’aperçu complet</summary>
         <figure class="android-preview-visual">
-          <img src="assets/images/sentinel-android-preview.webp" width="280" height="293" loading="lazy" decoding="async" alt="Maquette de l’application Android Sentinel avec appels, Caller ID, VPN, SMS, exposition et paramètres">
-          <figcaption>Maquette de présentation. Aucun état « actif » ou « connecté » n’est présenté comme réel sans preuve correspondante.</figcaption>
+          <img src="assets/images/sentinel-android-preview.webp" width="280" height="293" loading="lazy" decoding="async" alt="Aperçu de l’application Android Sentinel avec appels, identification, VPN, SMS, exposition et paramètres">
+          <figcaption>Aperçu de l’interface mobile Sentinel.</figcaption>
         </figure>
       </details>
     </div>
 
     <div class="android-preview-actions">
-      <a class="btn" href="public/mobile-security.html">Voir l’état réel des fonctions Android</a>
+      <a class="btn" href="public/mobile-security.html">Découvrir la protection Android</a>
       <a class="btn btn-secondary" href="public/roadmap.html">Suivre l’avancement</a>
     </div>
   </section>
@@ -162,86 +144,85 @@
   <section id="modules" class="sq-section" aria-labelledby="modules-title">
     <div class="sq-section-head">
       <div>
-        <span class="eyebrow">Architecture modulaire</span>
-        <h2 id="modules-title">Un seul produit, des périmètres clairement séparés.</h2>
+        <span class="eyebrow">Protections complémentaires</span>
+        <h2 id="modules-title">Un seul univers, plusieurs niveaux de protection.</h2>
       </div>
-      <p>Les modules professionnels restent distincts du socle gratuit. Leur disponibilité dépend du code présent, des tests, de l’infrastructure et des exigences légales applicables.</p>
+      <p>Au-delà du téléphone, Sentinel regroupe des outils de surveillance, de veille et de contrôle destinés aux usages plus avancés.</p>
     </div>
 
     <div class="sq-grid">
       <article class="sq-card span-4">
         <div class="sq-module-icon"><img src="assets/images/modules/soc-monitoring.svg" alt=""></div>
-        <span class="sq-state validation">Socle</span><h3>Supervision</h3>
-        <p>Posture locale, événements importés, synthèses et observabilité sans confondre une interface avec un SOC de production.</p>
+        <span class="sq-state validation">Surveillance</span><h3>Vue d’ensemble</h3>
+        <p>Retrouvez les événements importants et les informations utiles dans un espace unique.</p>
       </article>
       <article class="sq-card span-4">
         <div class="sq-module-icon"><img src="assets/images/modules/audit-analysis.svg" alt=""></div>
-        <span class="sq-state validation">Sources traçables</span><h3>Threat Intelligence</h3>
-        <p>Veille vulnérabilités, provenance, normalisation et priorisation sans automatiser une attribution ou une décision sensible.</p>
+        <span class="sq-state validation">Informations vérifiées</span><h3>Veille des menaces</h3>
+        <p>Suivez les vulnérabilités et les signaux utiles avec leur provenance et leur niveau de confiance.</p>
       </article>
       <article class="sq-card span-4">
         <div class="sq-module-icon"><img src="assets/images/modules/compliance-governance.svg" alt=""></div>
-        <span class="sq-state validation">Garde-fous</span><h3>Gouvernance IA</h3>
-        <p>Politiques, provenance des preuves, évaluation, approbation et séparation des décisions à fort impact.</p>
+        <span class="sq-state validation">Maîtrise</span><h3>Contrôle de l’IA</h3>
+        <p>Gardez une trace claire des décisions, des règles et des validations importantes.</p>
       </article>
       <article class="sq-card span-4">
         <div class="sq-module-icon"><img src="assets/images/modules/defense-infrastructure.svg" alt=""></div>
-        <span class="sq-state planned">Encadré</span><h3>Red Team défensive</h3>
-        <p>Simulation et tests adversariaux dans un périmètre autorisé, avec contrôle explicite des capacités sensibles.</p>
+        <span class="sq-state planned">Encadré</span><h3>Tests de défense</h3>
+        <p>Évaluez la résistance de vos protections dans un cadre autorisé et contrôlé.</p>
       </article>
       <article class="sq-card span-4">
         <div class="sq-module-icon"><img src="assets/images/modules/ai-orchestration.svg" alt=""></div>
-        <span class="sq-state validation">Isolation</span><h3>Zero Trust &amp; souveraineté</h3>
-        <p>Réduction de la confiance implicite, frontières documentées et trajectoire de réversibilité technologique.</p>
+        <span class="sq-state validation">Accès</span><h3>Protection des accès</h3>
+        <p>Réduisez les accès implicites et gardez des frontières claires entre les données et les services.</p>
       </article>
       <article class="sq-card span-4">
         <div class="sq-module-icon" aria-hidden="true">◎</div>
-        <span class="sq-state planned">Roadmap</span><h3>Exposition &amp; OSINT</h3>
-        <p>Corrélation future de signaux publics ou autorisés, avec minimisation, provenance et revue humaine.</p>
+        <span class="sq-state planned">À venir</span><h3>Exposition numérique</h3>
+        <p>Repérez les informations publiques ou autorisées qui peuvent augmenter votre exposition en ligne.</p>
       </article>
     </div>
   </section>
 
   <section class="sq-section" aria-labelledby="truth-title">
     <div class="sq-section-head">
-      <div><span class="eyebrow">Vérité d’état</span><h2 id="truth-title">Une fonctionnalité n’est pas « prête » parce qu’elle apparaît dans l’interface.</h2></div>
-      <p>Sentinel sépare explicitement quatre niveaux : code présent, prérequis logiciels satisfaits, validation locale observée et disponibilité publique. Cette séparation évite de transformer un écran ou une CI verte en promesse de production.</p>
+      <div><span class="eyebrow">Transparence</span><h2 id="truth-title">Vous savez toujours ce qui est disponible.</h2></div>
+      <p>Chaque fonction est classée simplement pour éviter toute confusion entre ce que vous pouvez utiliser aujourd’hui et ce qui arrive plus tard.</p>
     </div>
 
     <div class="sq-grid">
-      <article class="sq-card span-6"><span class="sq-state">Code</span><h3>Implémenté</h3><p>La brique existe dans le dépôt et peut être inspectée ou testée.</p></article>
-      <article class="sq-card span-6"><span class="sq-state validation">Prêt test</span><h3>Prérequis observés</h3><p>Rôles, permissions, dépendances ou infrastructure nécessaires sont réellement disponibles.</p></article>
-      <article class="sq-card span-6"><span class="sq-state ready">Validé localement</span><h3>Scénario observé</h3><p>Le comportement attendu a été exécuté et la preuve correspondante a été conservée.</p></article>
-      <article class="sq-card span-6"><span class="sq-state planned">Distribution</span><h3>Disponible au public</h3><p>La signature, la conformité, le canal de distribution et les essais de release sont également validés.</p></article>
+      <article class="sq-card span-4"><span class="sq-state ready">Disponible</span><h3>Utilisable aujourd’hui</h3><p>La fonction est accessible au public dans les conditions indiquées.</p></article>
+      <article class="sq-card span-4"><span class="sq-state validation">En validation</span><h3>Dernières vérifications</h3><p>La fonction existe mais doit encore terminer ses essais avant sa mise à disposition.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">À venir</span><h3>Prévu ensuite</h3><p>La fonction fait partie de la suite du produit mais n’est pas encore proposée.</p></article>
     </div>
   </section>
 
   <section class="sq-section" aria-labelledby="offers-title">
     <div class="sq-section-head">
-      <div><span class="eyebrow">Modèle produit</span><h2 id="offers-title">Le socle téléphone reste gratuit. Les usages avancés deviennent des add-ons.</h2></div>
-      <p>Aucune offre payante n’est présentée comme livrée avant que le produit correspondant, son canal de distribution et ses conditions soient réellement prêts.</p>
+      <div><span class="eyebrow">Offre</span><h2 id="offers-title">La recherche téléphonique reste gratuite.</h2></div>
+      <p>Les protections plus avancées seront proposées séparément lorsqu’elles seront prêtes, avec un périmètre et un tarif clairement affichés.</p>
     </div>
     <div class="sq-grid">
       <article class="sq-card sq-card-success span-6">
-        <span class="sq-state ready">0 € · engagement produit</span>
-        <h3>Téléphone &amp; recherche</h3>
-        <p>Recherche téléphonique Web, analyse locale et fonctions Android de base lorsqu’une version installable validée sera distribuée.</p>
+        <span class="sq-state ready">Gratuit</span>
+        <h3>Recherche &amp; téléphone</h3>
+        <p>Recherche téléphonique sur le Web et fonctions de base de l’application Android lorsqu’une version validée sera distribuée.</p>
         <a class="btn" href="public/phone-intelligence.html">Utiliser la recherche gratuite</a>
       </article>
       <article class="sq-card span-6">
-        <span class="sq-state planned">Add-ons professionnels</span>
-        <h3>Veille, investigations, gouvernance et réseau</h3>
-        <p>Fonctions avancées séparées du socle gratuit, avec périmètre, niveau de preuve, tarification et contraintes propres.</p>
-        <a class="btn btn-secondary" href="public/pricing.html">Voir la structure tarifaire</a>
+        <span class="sq-state planned">Options avancées</span>
+        <h3>Protections professionnelles</h3>
+        <p>Des fonctions supplémentaires pour la veille, la sécurité et le suivi, séparées du socle gratuit.</p>
+        <a class="btn btn-secondary" href="public/pricing.html">Voir les offres</a>
       </article>
     </div>
   </section>
 
   <section class="sq-callout" aria-labelledby="roadmap-cta-title">
     <div>
-      <span class="eyebrow">Roadmap publique</span>
-      <h2 id="roadmap-cta-title">Ne pas demander « combien de pour cent ? » sans regarder ce qui manque réellement.</h2>
-      <p>La nouvelle roadmap sépare les capacités utilisables, celles en validation, les dépendances d’infrastructure et les chantiers futurs.</p>
+      <span class="eyebrow">Avancement</span>
+      <h2 id="roadmap-cta-title">Voir ce qui est disponible et ce qui arrive ensuite.</h2>
+      <p>Consultez l’avancement de Sentinel fonction par fonction, avec des statuts simples et lisibles.</p>
     </div>
     <a class="btn" href="public/roadmap.html">Consulter l’avancement</a>
   </section>
@@ -249,12 +230,12 @@
 
 <footer class="site-footer">
   <div class="footer-grid">
-    <div><h2>Sentinel Quantum Vanguard AI Pro</h2><p>Plateforme défensive local-first. Recherche téléphonique gratuite, Android en validation et add-ons professionnels séparés.</p></div>
+    <div><h2>Sentinel Quantum Vanguard AI Pro</h2><p>Protection numérique, recherche téléphonique gratuite et application Android en préparation.</p></div>
     <div><h3>Produit</h3><ul><li><a href="public/produit.html">Présentation</a></li><li><a href="public/mobile-security.html">Android</a></li><li><a href="public/pricing.html">Tarifs</a></li></ul></div>
-    <div><h3>Preuves</h3><ul><li><a href="public/roadmap.html">Roadmap</a></li><li><a href="public/security.html">Sécurité</a></li><li><a href="public/faq.html">FAQ</a></li></ul></div>
+    <div><h3>Suivi</h3><ul><li><a href="public/roadmap.html">Avancement</a></li><li><a href="public/security.html">Sécurité</a></li><li><a href="public/faq.html">FAQ</a></li></ul></div>
     <div><h3>Cadre</h3><ul><li><a href="public/privacy.html">Confidentialité</a></li><li><a href="public/legal.html">Mentions légales</a></li><li><a href="public/terms.html">CGU</a></li></ul></div>
   </div>
-  <p class="footer-bottom">Vitrine publique statique. Aucun APK/AAB ni client PC n’est proposé ici tant que le canal de distribution correspondant n’est pas validé.</p>
+  <p class="footer-bottom">Le téléchargement Android sera proposé lorsque la version aura terminé sa validation.</p>
 </footer>
 
 <script defer src="public/android-preview.js"></script>

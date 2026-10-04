@@ -2,13 +2,16 @@
 
 /**
  * Build script for Cloudflare Pages deployment.
- * Copies the validated static web surface to frontend/dist for deployment.
+ * Regenerates the public-safe product truth snapshot and public capability
+ * views, then copies the validated static web surface to frontend/dist.
  * Requires Node.js 20.19.0+ as declared by package.json.
  */
 
-import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { writePublicProductTruth } from './generate-public-product-truth.js';
+import { renderCapabilityConsumers } from './render-product-capabilities.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -51,6 +54,18 @@ if (!isCompatible) {
 const outputDir = join(rootDir, 'frontend', 'dist');
 
 console.log('Building static frontend for Cloudflare Pages...');
+console.log('Regenerating public product truth from canonical registries...');
+writePublicProductTruth();
+
+console.log('Regenerating public capability views from canonical capability registry...');
+const capabilityRegistry = JSON.parse(readFileSync(join(rootDir, 'config', 'product-capabilities.json'), 'utf8'));
+const capabilityConsumers = renderCapabilityConsumers(capabilityRegistry, rootDir);
+for (const [relativePath, content] of Object.entries(capabilityConsumers)) {
+  if (!relativePath.startsWith('public/')) continue;
+  const target = join(rootDir, relativePath);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, content, 'utf8');
+}
 
 if (existsSync(outputDir)) {
   rmSync(outputDir, { recursive: true, force: true });
@@ -99,6 +114,58 @@ for (const { src, dest, required } of filesToCopy) {
     process.exit(1);
   }
 }
+
+const TRUTH_RUNTIME_MARKER = 'data-sentinel-product-truth="build"';
+const TRUTH_STYLE_MARKER = 'id="sentinel-product-truth-styles"';
+const TRUTH_SHELL_MARKER = 'data-sentinel-product-truth-shell="build"';
+const truthRuntimeTag = '<script defer src="/public/product-truth.js" data-sentinel-product-truth="build"></script>';
+const truthStyleTag = `<style id="sentinel-product-truth-styles">
+.sentinel-truth-strip{box-sizing:border-box;margin:0 auto 14px;max-width:1180px;min-height:96px;padding:10px 14px;border:1px solid rgba(121,177,255,.24);border-radius:12px;background:rgba(8,13,21,.92);color:#dbe8ff;font:600 12px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.sentinel-truth-strip strong{color:#fff}.sentinel-truth-strip a{color:#91bdff;text-decoration:none}.sentinel-truth-strip a:hover{text-decoration:underline}.sentinel-truth-state{opacity:.86;font-weight:500}.sentinel-truth-state[data-state="AVAILABLE"]{color:#9ce5b2}.sentinel-truth-state[data-state="VALIDATION"]{color:#ffd48a}.sentinel-truth-state[data-state="INFRASTRUCTURE"],.sentinel-truth-state[data-state="PLANNED"]{color:#b8c8dc}
+@media (min-width:720px){.sentinel-truth-strip{min-height:48px}}
+</style>`;
+const truthShell = `<aside class="sentinel-truth-strip" data-sentinel-product-truth-shell="build" aria-label="État produit Sentinel synchronisé" aria-live="polite">
+  <span><strong>État Sentinel synchronisé</strong> · chargement du snapshot canonique…</span>
+  <span class="sentinel-truth-state" data-state="VALIDATION">Vérification de la disponibilité réelle</span>
+  <a href="/public/product-status.html">Voir l’état produit</a>
+</aside>`;
+
+function injectTruthRuntimeIntoHtmlTree(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const fullPath = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      injectTruthRuntimeIntoHtmlTree(fullPath);
+      continue;
+    }
+    if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.html')) continue;
+
+    let source = readFileSync(fullPath, 'utf8');
+    if (!/<\/body\s*>/i.test(source)) throw new Error(`HTML page has no closing body tag: ${fullPath}`);
+    if (!/<\/head\s*>/i.test(source)) throw new Error(`HTML page has no closing head tag: ${fullPath}`);
+
+    // The product-truth runtime is a global contract and must be available on
+    // every generated HTML page, including legacy documents without <main>.
+    if (!source.includes(TRUTH_RUNTIME_MARKER) && !source.includes('src="/public/product-truth.js"') && !source.includes('src="product-truth.js"')) {
+      source = source.replace(/<\/body\s*>/i, `${truthRuntimeTag}\n</body>`);
+    }
+
+    // The visible synchronized truth strip is injected only where a semantic
+    // <main> exists. Legacy pages still receive the runtime without forcing a
+    // structural rewrite that could break their layout.
+    if (/<main\b/i.test(source)) {
+      if (!source.includes(TRUTH_STYLE_MARKER)) {
+        source = source.replace(/<\/head\s*>/i, `${truthStyleTag}\n</head>`);
+      }
+      if (!source.includes(TRUTH_SHELL_MARKER) && !/class=["'][^"']*sentinel-truth-strip/.test(source)) {
+        source = source.replace(/<main\b/i, `${truthShell}\n<main`);
+      }
+    }
+
+    writeFileSync(fullPath, source, 'utf8');
+  }
+}
+
+injectTruthRuntimeIntoHtmlTree(outputDir);
 
 const deploymentCommit = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || null;
 writeFileSync(

@@ -4,6 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    ensureProductTruthRuntime();
     initializeSkipLink();
     initializeNavigation();
     initializeBackToTop();
@@ -11,6 +12,16 @@ document.addEventListener('DOMContentLoaded', function() {
     highlightCurrentPage();
     initializeRoadmapFilters();
 });
+
+function ensureProductTruthRuntime() {
+    if (window.__sentinelProductTruthRuntimeLoaded) return;
+    if (document.querySelector('script[src$="/public/product-truth.js"],script[src$="product-truth.js"]')) return;
+    const script = document.createElement('script');
+    script.src = '/public/product-truth.js';
+    script.defer = true;
+    script.dataset.sentinelAutoTruth = 'true';
+    document.head.appendChild(script);
+}
 
 function initializeSkipLink() {
     if (document.querySelector('.skip-link')) return;
@@ -77,6 +88,12 @@ function createNavigation() {
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-controls', 'primary-navigation');
     toggle.setAttribute('aria-label', 'Ouvrir le menu');
+    // The shared mobile rule makes normal content buttons full-width. The navigation trigger must
+    // stay compact so the brand and menu control remain on one line on phones.
+    toggle.style.width = 'auto';
+    toggle.style.minWidth = '48px';
+    toggle.style.flex = '0 0 auto';
+    toggle.style.marginLeft = 'auto';
 
     const links = [
         ['/index.html', 'home', 'Accueil'],

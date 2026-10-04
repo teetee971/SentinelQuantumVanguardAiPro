@@ -19,7 +19,7 @@ test('roadmap keeps Zero Trust, SOC automation and sovereignty claims evidence-b
   assert.match(roadmap, /Zero Trust généralisé/);
   assert.match(roadmap, /SOC automatisé sous contrôle humain/);
   assert.match(roadmap, /Aucune action offensive autonome/);
-  assert.match(roadmap, /GitHub, Cloudflare Pages, Render et Upstash/);
+  assert.match(roadmap, /dépend encore de services externes/);
   assert.match(roadmap, /ne peut donc pas être qualifiée de souveraine aujourd’hui/);
 });
 
@@ -92,20 +92,18 @@ test('mobile security claims identify the capability owner and current VPN state
   assert.match(faq, /Le client VPN Sentinel utilise désormais/);
 });
 
-test('the verified Render runtime has one explicit official URL', () => {
-  const officialApi = 'https://sentinel-moteur-api.onrender.com/';
-  assert.ok(readme.includes(officialApi));
-  assert.match(roadmap, /sentinel-moteur-api\.onrender\.com\/health\/live/);
-  assert.match(roadmap, /sentinel-moteur-api\.onrender\.com\/health\/ready/);
-  assert.match(roadmap, /Redis annonçait <code>connected<\/code>/);
-  assert.doesNotMatch(roadmap, /Aucune URL Render officielle n’est publiée/);
+test('the public roadmap uses a Sentinel API boundary instead of exposing provider origins', () => {
+  assert.match(roadmap, /contrat d’origine Sentinel/);
+  assert.match(roadmap, /Gateway Sentinel validé E2E/);
+  assert.match(roadmap, /éviter d’exposer ou de disperser les hostnames des fournisseurs d’infrastructure/);
+  assert.doesNotMatch(roadmap, /sentinel-moteur-api\.onrender\.com/i);
+  assert.doesNotMatch(roadmap, /upstash\.com/i);
 });
-
 
 test('the ad blocker roadmap is explicit about scope, privacy and Android VPN limits', () => {
   assert.match(roadmap, /Anti-publicité et anti-traceurs/);
   assert.match(roadmap, /VpnService/);
-  assert.match(roadmap, /un seul service VPN Android peut être actif à la fois/);
+  assert.match(roadmap, /Un seul service VPN Android peut être actif à la fois/);
   assert.match(roadmap, /ne déchiffrera pas HTTPS/);
   assert.match(roadmap, /Aucun bloqueur n’est livré aujourd’hui/);
   assert.match(roadmap, /la vitrine Web ne peut pas filtrer les autres sites/);

@@ -77,11 +77,61 @@ export function renderCapabilityConsumers(registry, baseDir = rootDir) {
       expires_at_ms: expiryFor(capability) };
   });
   const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+  const statusLabel = {
+    AVAILABLE: 'Implémentation vérifiée',
+    NOT_IMPLEMENTED: 'Prévu',
+    VERIFIED_NOT_RELEASED: 'Vérifié, publication manquante',
+    DEPLOYED_NOT_VERIFIED: 'Déployé, validation manquante',
+    IMPLEMENTED_NOT_VERIFIED: 'Implémenté, validation manquante',
+    IMPLEMENTED_NOT_CONFIGURED: 'Implémenté, configuration manquante'
+  };
   const html = `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>État des services Sentinel</title></head><body>
-<main><h1>État des services Sentinel</h1><p>Le code présent et les tests ne prouvent pas la disponibilité d’un service. Les validations physiques et la publication sont distinctes.</p><table><thead><tr><th>Service</th><th>État du code</th><th>Disponibilité client</th></tr></thead><tbody>
-${states.map(state => `<tr><td>${escape(state.surface)}</td><td>${escape({ AVAILABLE: 'Implémentation vérifiée', NOT_IMPLEMENTED: 'Prévu', VERIFIED_NOT_RELEASED: 'Vérifié, publication manquante', DEPLOYED_NOT_VERIFIED: 'Déployé, validation manquante', IMPLEMENTED_NOT_VERIFIED: 'Implémenté, validation manquante', IMPLEMENTED_NOT_CONFIGURED: 'Implémenté, configuration manquante' }[state.status])}</td><td data-product-available="${state.customer_available}" data-product-expires="${state.expires_at_ms ?? ''}">${state.customer_available ? 'Vérification de validité nécessaire' : 'Non disponible'}</td></tr>`).join('\n')}
-</tbody></table><p><a href="capabilities-roadmap.html">Périmètre des capacités</a></p></main><script src="product-capability-status.js" defer></script></body></html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="État public généré des capacités Sentinel : code, validation, disponibilité client et frontière commerciale séparés.">
+  <meta name="theme-color" content="#080b10">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="shared-styles.css">
+  <title>État produit — Sentinel</title>
+</head>
+<body>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell sq-home">
+  <section class="sq-hero" aria-labelledby="status-title">
+    <div class="sq-hero-copy">
+      <span class="sq-kicker">État produit · généré depuis le registre canonique</span>
+      <h1 id="status-title" class="sq-title">Code présent ≠ <span class="sq-title-emphasis">fonction disponible.</span></h1>
+      <p class="sq-lede">Cette page est régénérée depuis <code>config/product-capabilities.json</code>. Les validations physiques, la publication, l’entitlement commercial et la disponibilité client restent des preuves distinctes.</p>
+      <p class="sq-lede" data-product-truth-summary>Chargement du snapshot commercial public…</p>
+      <div class="sq-actions"><a class="btn" href="roadmap.html">Voir la roadmap</a><a class="btn btn-secondary" href="pricing.html">Voir le modèle commercial</a></div>
+    </div>
+    <aside class="sq-command-panel" aria-label="État du registre">
+      <div class="sq-command-head"><strong>Registre produit</strong><span>${escape(registry.updated_at)}</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>${states.length} capacités suivies</strong><small>Disponibilité calculée depuis les preuves canoniques.</small></div><span class="sq-status-value">Fail-closed</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Commerce</strong><small data-checkout-status>Checkout désactivé</small></div><span class="sq-status-value" data-trial-status>Essai désactivé</span></div>
+    </aside>
+  </section>
+
+  <section class="sq-section" aria-labelledby="capability-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Capacités techniques</span><h2 id="capability-title">Fallback statique vérifiable au build.</h2></div><p>Le navigateur réévalue aussi la validité temporelle des capacités disponibles ; aucune date expirée ne peut conserver un affichage disponible.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Service</th><th>État technique</th><th>Disponibilité client</th></tr></thead><tbody>
+${states.map(state => `<tr><td>${escape(state.surface)}</td><td>${escape(statusLabel[state.status])}</td><td data-product-available="${state.customer_available}" data-product-expires="${state.expires_at_ms ?? ''}">${state.customer_available ? 'Vérification de validité nécessaire' : 'Non disponible'}</td></tr>`).join('\n')}
+    </tbody></table></div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="commerce-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Catalogue commercial</span><h2 id="commerce-title">Free / Premium / Pro / Enterprise suivent le même snapshot public.</h2></div><p>La table commerciale est alimentée par le snapshot public filtré ; aucun blocker interne, chemin de preuve, scoring ou secret serveur n’est exposé.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Module</th><th>Niveau</th><th>Offre</th><th>Essai / accès</th></tr></thead><tbody data-commercial-catalog-generated><tr><td colspan="4">Chargement…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="notice info"><strong>Règle de release :</strong> Phone Core peut être prêt indépendamment de PTT, VPN, Voice, FIMI ou API Pro. Un add-on indisponible ne doit pas déclasser la readiness du socle Phone Core.</section>
+  <p><a href="capabilities-roadmap.html">Périmètre détaillé des capacités</a></p>
+</main>
+<script src="product-truth.js" defer></script>
+</body>
+</html>
 `;
   const quoted = value => JSON.stringify(value).replaceAll('$', '\\$');
   const kotlin = `// Generated from config/product-capabilities.json. Do not edit.
@@ -113,11 +163,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   for (const [relative, rendered] of Object.entries(outputs)) {
     const output = path.join(rootDir, relative);
     if (process.argv.includes('--check')) {
+      // The public HTML status is intentionally regenerated by the web build.
+      // Docs, JSON and Kotlin remain committed generated artifacts and must stay current.
+      if (relative === 'public/product-status.html') continue;
       if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== rendered) {
         console.error(`PRODUCT CAPABILITY STATUS: stale generated file ${relative}`); stale = true;
       }
     } else { fs.mkdirSync(path.dirname(output), { recursive: true }); fs.writeFileSync(output, rendered); }
   }
   if (stale) process.exit(1);
-  console.log(`PRODUCT CAPABILITY STATUS: ${process.argv.includes('--check') ? 'current' : 'generated'} (${Object.keys(outputs).length} views)`);
+  console.log(`PRODUCT CAPABILITY STATUS: ${process.argv.includes('--check') ? 'current' : 'generated'} (${Object.keys(outputs).length} views; public HTML regenerated at web build)`);
 }
