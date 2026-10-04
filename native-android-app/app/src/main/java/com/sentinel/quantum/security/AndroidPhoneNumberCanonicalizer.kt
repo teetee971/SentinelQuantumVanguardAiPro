@@ -70,15 +70,19 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
         /**
          * Fast canonicalization path for CallScreeningService: no subscription lookup, no I/O and
          * no country guess. A missing/ambiguous cached region leaves national syntax untouched.
+         * Any representation returned with a leading plus is guaranteed to satisfy the shared
+         * global E.164 identity contract.
          */
         fun normalizeWithKnownRegion(rawNumber: String?, regionIso: String?): String? {
             val syntaxOnly = CallRuleEngine.normalizeNumber(rawNumber) ?: return null
-            if (syntaxOnly.startsWith('+')) return syntaxOnly
+            if (syntaxOnly.startsWith('+')) {
+                return GlobalPhoneIdentityPolicy.canonicalE164OrNull(syntaxOnly)
+            }
             val safeRegion = sanitizeRegionIso(regionIso) ?: return syntaxOnly
             val e164 = runCatching {
                 PhoneNumberUtils.formatNumberToE164(rawNumber.orEmpty(), safeRegion)
             }.getOrNull()
-            return CallRuleEngine.normalizeNumber(e164) ?: syntaxOnly
+            return GlobalPhoneIdentityPolicy.canonicalE164OrNull(e164) ?: syntaxOnly
         }
 
         /**
