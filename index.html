@@ -7,13 +7,12 @@
   <meta name="theme-color" content="#080b10">
   <link rel="manifest" href="/public/manifest.json">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
-  <link rel="preload" as="image" href="assets/images/sentinel-command-center.webp" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="public/shared-styles.css">
   <style>
     .sentinel-truth-strip{display:none!important}
     .sq-hero>.sq-visual-card{margin:0}
     @media(max-width:760px){
-      .sq-hero{grid-template-columns:minmax(0,1fr) 132px;gap:14px 12px;align-items:center}
+      .sq-hero{grid-template-columns:minmax(0,1fr) 132px;gap:14px 12px;align-items:center;min-height:0}
       .sq-hero-copy{display:contents}
       .sq-hero-copy>.sq-kicker{grid-column:1/-1;grid-row:1;margin-bottom:0}
       .sq-hero-copy>.sq-title{grid-column:1;grid-row:2;margin-bottom:0;font-size:clamp(2rem,8.7vw,2.75rem);line-height:.98}
@@ -42,7 +41,7 @@
     </div>
 
     <figure class="sq-command-panel sq-visual-card brand-visual" aria-label="Visuel officiel Sentinel Quantum Vanguard AI Pro">
-      <img src="assets/images/sentinel-command-center.webp" width="1279" height="720" loading="eager" fetchpriority="high" alt="Visuel officiel Sentinel Quantum avec une sentinelle en armure noire et un bouclier lumineux">
+      <img src="assets/images/sentinel-command-center.webp" width="1279" height="720" decoding="async" alt="Visuel officiel Sentinel Quantum avec une sentinelle en armure noire et un bouclier lumineux">
     </figure>
   </section>
 
