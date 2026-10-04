@@ -1,0 +1,44 @@
+name: Owner Auto Merge
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: owner-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  enable-auto-merge:
+    name: Enable auto-merge for repository-owner PR
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.user.login == github.repository_owner &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+    steps:
+      - name: Enable squash auto-merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR_URL" --auto --squash
+
+      - name: Record automation boundary
+        shell: bash
+        run: |
+          {
+            echo '## Owner auto-merge enabled'
+            echo ''
+            echo 'No repository-owner review is required by policy.'
+            echo 'Merge still waits for every required branch status check.'
+            echo 'This workflow never checks out or executes pull-request code.'
+          } >> "$GITHUB_STEP_SUMMARY"
