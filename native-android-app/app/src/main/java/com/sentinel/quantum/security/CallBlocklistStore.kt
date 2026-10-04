@@ -21,6 +21,7 @@ class CallBlocklistStore(context: Context) {
             .toSet()
         val partition = ExactRuleMigrationPolicy.partition(allHashes, metadataByHash, now)
         val blockedHashes = partition.activeSafe
+        val legacyPrefixes = preferences.getStringSet(LEGACY_PREFIXES, emptySet()).orEmpty()
 
         return Snapshot(
             blockedNumberHashes = blockedHashes,
@@ -38,13 +39,16 @@ class CallBlocklistStore(context: Context) {
                 }
                 .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
             signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L),
-            quarantinedLegacyExactRuleCount = partition.quarantinedLegacy.size
+            quarantinedLegacyExactRuleCount = partition.quarantinedLegacy.size,
+            quarantinedLegacyPrefixRuleCount = legacyPrefixes.size
         )
     }
 
+    /** Only the post-migration explicit-international prefix namespace is executable. */
     fun manualBlockedPrefixes(): Set<String> =
-        preferences.getStringSet(PREFIXES, emptySet()).orEmpty()
+        preferences.getStringSet(PREFIXES_E164_V1, emptySet()).orEmpty()
             .mapNotNull { CallRuleEngine.normalizePrefix(it) }
+            .filter { it.startsWith('+') }
             .take(CallRuleEngine.MAX_PREFIX_RULES)
             .toSet()
 
@@ -178,6 +182,19 @@ class CallBlocklistStore(context: Context) {
         return legacy.size
     }
 
+    /**
+     * Old manual prefixes are intentionally not reinterpreted. The previous storage namespace may
+     * contain values that were silently rewritten from a national 0… prefix to +33…, so even a
+     * persisted +33 value does not prove that +33 was the user's original intent.
+     */
+    fun discardQuarantinedLegacyPrefixRules(): Int {
+        val legacy = preferences.getStringSet(LEGACY_PREFIXES, emptySet()).orEmpty()
+        if (legacy.isEmpty()) return 0
+        if (!preferences.edit().remove(LEGACY_PREFIXES).commit()) return 0
+        refreshScreeningSnapshotAfterCommit()
+        return legacy.size
+    }
+
     /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
     fun purgeExpiredBlockedNumbers(now: Long = System.currentTimeMillis()): Int {
         val entries = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
@@ -191,8 +208,13 @@ class CallBlocklistStore(context: Context) {
         return expired.size
     }
 
+    /**
+     * New manual prefix rules must be explicitly international. Incomplete national prefixes cannot
+     * be safely converted with PhoneNumberUtils because numbering plans differ by country/territory.
+     */
     fun addBlockedPrefix(rawPrefix: String): Boolean {
         val normalized = CallRuleEngine.normalizePrefix(rawPrefix) ?: return false
+        if (!normalized.startsWith('+')) return false
         val values = manualBlockedPrefixes().toMutableSet()
         val arcepCount = if (isArcepVerifiedBlockingEnabled()) {
             ArcepVerifiedPrefixCatalog.e164Prefixes.size
@@ -204,32 +226,34 @@ class CallBlocklistStore(context: Context) {
             values.size + 1 + arcepCount > CallRuleEngine.MAX_PREFIX_RULES
         ) return false
         values += normalized
-        val committed = preferences.edit().putStringSet(PREFIXES, values).commit()
+        val committed = preferences.edit().putStringSet(PREFIXES_E164_V1, values).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
         return committed
     }
 
     fun removeBlockedPrefix(prefix: String): Boolean {
         val normalized = CallRuleEngine.normalizePrefix(prefix) ?: return false
+        if (!normalized.startsWith('+')) return false
         val values = manualBlockedPrefixes().toMutableSet()
         if (!values.remove(normalized)) return false
-        val committed = preferences.edit().putStringSet(PREFIXES, values).commit()
+        val committed = preferences.edit().putStringSet(PREFIXES_E164_V1, values).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
         return committed
     }
 
     /**
      * User-driven restore path. The full replacement is committed atomically only when every
-     * supplied prefix is valid and the bounded rule capacity is respected.
+     * supplied prefix is an explicit international form and the bounded rule capacity is respected.
      */
     fun replaceBlockedPrefixes(rawPrefixes: Collection<String>): Boolean {
         if (rawPrefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return false
-        val normalized = rawPrefixes.map { CallRuleEngine.normalizePrefix(it) ?: return false }
-            .distinct()
+        val normalized = rawPrefixes.map { raw ->
+            CallRuleEngine.normalizePrefix(raw)?.takeIf { it.startsWith('+') } ?: return false
+        }.distinct()
         val effectiveSize = normalized.size +
             if (isArcepVerifiedBlockingEnabled()) ArcepVerifiedPrefixCatalog.e164Prefixes.size else 0
         if (effectiveSize > CallRuleEngine.MAX_PREFIX_RULES) return false
-        val committed = preferences.edit().putStringSet(PREFIXES, normalized.toSet()).commit()
+        val committed = preferences.edit().putStringSet(PREFIXES_E164_V1, normalized.toSet()).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
         return committed
     }
@@ -299,7 +323,8 @@ class CallBlocklistStore(context: Context) {
         val arcepVerifiedBlockingEnabled: Boolean = false,
         val blockedNumberExpiresAtMs: Map<String, Long> = emptyMap(),
         val signedExpiresAtMs: Long = 0L,
-        val quarantinedLegacyExactRuleCount: Int = 0
+        val quarantinedLegacyExactRuleCount: Int = 0,
+        val quarantinedLegacyPrefixRuleCount: Int = 0
     ) {
         /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
@@ -311,6 +336,9 @@ class CallBlocklistStore(context: Context) {
 
         val exactRuleMigrationRequired: Boolean
             get() = quarantinedLegacyExactRuleCount > 0
+
+        val prefixRuleMigrationRequired: Boolean
+            get() = quarantinedLegacyPrefixRuleCount > 0
 
         val effectiveBlockedPrefixes: Set<String>
             get() = if (arcepVerifiedBlockingEnabled) {
@@ -327,7 +355,8 @@ class CallBlocklistStore(context: Context) {
         const val PREFERENCES = "sentinel_call_rules"
         const val EXACT_HASHES = "blocked_number_hashes"
         const val EXACT_METADATA = "blocked_number_metadata_v1"
-        const val PREFIXES = "blocked_prefixes"
+        const val LEGACY_PREFIXES = "blocked_prefixes"
+        const val PREFIXES_E164_V1 = "blocked_prefixes_e164_v1"
         const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
         const val SIGNED_PACKAGE_ID = "signed_rule_package_id"
         const val SIGNED_ISSUER_ID = "signed_rule_issuer_id"
