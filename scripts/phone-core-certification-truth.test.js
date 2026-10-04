@@ -199,7 +199,11 @@ test('Phone Core activation uses the shared version-aware call-screening truth',
   );
   assert.match(
     activation,
-    /RoleManager\.ROLE_DIALER,\s*\n\s*RoleManager\.ROLE_CALL_SCREENING -> Intent\(TelecomManager\.ACTION_CHANGE_DEFAULT_DIALER\)/
+    /RoleManager\.ROLE_DIALER -> Intent\(TelecomManager\.ACTION_CHANGE_DEFAULT_DIALER\)/
+  );
+  assert.match(
+    activation,
+    /RoleManager\.ROLE_CALL_SCREENING ->[\s\S]*?CallScreeningActivationPolicy\.read\(this\) == CallScreeningActivationPolicy\.State\.AVAILABLE_NOT_HELD[\s\S]*?Intent\(TelecomManager\.ACTION_CHANGE_DEFAULT_DIALER\)/
   );
   assert.match(activation, /when \(callScreeningState\)/);
   assert.doesNotMatch(activation, /Disponible à partir d’Android 10/);
