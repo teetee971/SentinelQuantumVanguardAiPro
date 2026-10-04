@@ -17,6 +17,7 @@ import org.json.JSONObject
  */
 class CommunityReportClient(
     private val baseUrl: String = SentinelApiOrigin.baseUrl,
+    private val allowedHosts: Set<String> = SentinelApiOrigin.allowedHosts,
     private val egressGate: () -> Boolean = { false },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
@@ -64,7 +65,7 @@ class CommunityReportClient(
             .toRequestBody(JSON_MEDIA_TYPE)
 
         val request = Request.Builder()
-            .url(SentinelApiEndpointPolicy.build(baseUrl, PUBLIC_REPORT_PATH, SentinelApiOrigin.allowedHosts))
+            .url(SentinelApiEndpointPolicy.build(baseUrl, PUBLIC_REPORT_PATH, allowedHosts))
             .header("User-Agent", "SentinelQuantumVanguardAIPro-Android/1")
             .post(payload)
             .build()
