@@ -17,6 +17,10 @@ import java.util.concurrent.Executors
  * Android can dispatch the default-handler contract with sms/smsto or mms/mmsto URIs. The
  * URI scheme is therefore part of the transport decision and is validated fail-closed: an
  * MMS quick reply is never silently downgraded to SMS and an unknown scheme is never sent.
+ *
+ * Unlike the interactive composer, this platform flow cannot ask the user to choose a SIM.
+ * It may therefore use Android's already-selected default SMS subscription, but only when
+ * that subscription is still present in the active set. Missing or stale defaults remain closed.
  */
 class SentinelRespondViaMessageService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
@@ -36,7 +40,11 @@ class SentinelRespondViaMessageService : Service() {
                 try {
                     val outcome = when (scheme) {
                         "sms", "smsto" -> {
-                            val result = SentinelSmsSender(appContext).send(destination, body)
+                            val result = SentinelSmsSender(appContext).send(
+                                destination = destination,
+                                body = body,
+                                allowAndroidDefaultWhenMultiple = true
+                            )
                             QuickReplyOutcome(
                                 transport = "SMS",
                                 accepted = result.accepted,
@@ -46,7 +54,8 @@ class SentinelRespondViaMessageService : Service() {
                         "mms", "mmsto" -> {
                             val result = SentinelMmsSender(appContext).send(
                                 destination = destination,
-                                text = body
+                                text = body,
+                                allowAndroidDefaultWhenMultiple = true
                             )
                             QuickReplyOutcome(
                                 transport = "MMS",
