@@ -76,7 +76,7 @@ jobs:
   analyze-android:
     name: Analyze Android (Java/Kotlin)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       actions: read
       contents: read
@@ -187,7 +187,7 @@ jobs:
             "lighthouse-preproduction.yml"
           )
 
-          DEADLINE=$((SECONDS + 2400))
+          DEADLINE=$((SECONDS + 3600))
           POLL_SECONDS=15
 
           while true; do
