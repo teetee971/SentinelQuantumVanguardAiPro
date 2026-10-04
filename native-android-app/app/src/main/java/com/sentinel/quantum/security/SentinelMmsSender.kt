@@ -32,7 +32,8 @@ class SentinelMmsSender(private val context: Context) {
         destination: String,
         text: String,
         requestedSubscriptionId: Int? = null,
-        attachments: List<Attachment> = emptyList()
+        attachments: List<Attachment> = emptyList(),
+        allowAndroidDefaultWhenMultiple: Boolean = false
     ): SendResult {
         if (
             !context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_MESSAGING)
@@ -73,7 +74,8 @@ class SentinelMmsSender(private val context: Context) {
         val selection = SmsSubscriptionSelectionPolicy.select(
             activeSubscriptionIds = activeIds,
             requestedSubscriptionId = requestedSubscriptionId,
-            defaultSubscriptionId = defaultId
+            defaultSubscriptionId = defaultId,
+            allowActiveDefaultWhenMultiple = allowAndroidDefaultWhenMultiple
         )
         if (!selection.accepted || selection.subscriptionId == null) {
             return SendResult(false, selection.reason)

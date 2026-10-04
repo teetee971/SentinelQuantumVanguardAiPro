@@ -29,7 +29,12 @@ class SentinelSmsSender(private val context: Context) {
         val partCount: Int? = null
     )
 
-    fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
+    fun send(
+        destination: String,
+        body: String,
+        requestedSubscriptionId: Int? = null,
+        allowAndroidDefaultWhenMultiple: Boolean = false
+    ): SendResult {
         val syntaxSafeDestination = sanitizeDestination(destination)
             ?: return SendResult(false, "INVALID_DESTINATION")
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
@@ -67,7 +72,8 @@ class SentinelSmsSender(private val context: Context) {
             val selection = SmsSubscriptionSelectionPolicy.select(
                 activeSubscriptionIds = activeIds,
                 requestedSubscriptionId = requestedSubscriptionId,
-                defaultSubscriptionId = defaultId
+                defaultSubscriptionId = defaultId,
+                allowActiveDefaultWhenMultiple = allowAndroidDefaultWhenMultiple
             )
             if (!selection.accepted || selection.subscriptionId == null) {
                 return SendResult(false, selection.reason)
