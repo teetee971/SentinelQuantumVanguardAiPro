@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -9,19 +10,44 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
-/** Durable safety net for staged outgoing MMS payloads and provider recovery metadata. */
+/** Durable safety net for staged MMS payloads and outgoing/incoming provider recovery metadata. */
 class MmsSendCleanupWorker(
     appContext: Context,
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
         inputData.getString(KEY_FILE_NAME)?.let { fileName ->
-            MmsSendPduStager.expire(applicationContext, fileName)
+            val expired = MmsSendPduStager.expire(applicationContext, fileName)
+            if (!expired) {
+                LocalLogger(applicationContext).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsSend",
+                    "Nettoyage du PDU MMS sortant non confirmé : nouvelle tentative durable planifiée"
+                )
+                return Result.retry()
+            }
         }
         if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
-            MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
-            MmsSendPduStager.pruneExpired(applicationContext)
-            runCatching { MmsConversationStore(applicationContext).repairJournal() }
+            val recovered = runCatching {
+                MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
+                MmsSendPduStager.pruneExpired(applicationContext)
+                MmsDownloadCoordinator.pruneExpired(applicationContext)
+                MmsConversationStore(applicationContext).repairJournal()
+                IncomingMmsConversationStore(applicationContext).repairJournal()
+                // WorkManager survives process death, but an explicit startup nudge removes the
+                // delay for a downloaded PDU whose Android callback was lost with the dead process.
+                // schedulePendingNow also reconstructs the original bounded cleanup deadline.
+                MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext)
+                true
+            }.getOrDefault(false)
+            if (!recovered) {
+                LocalLogger(applicationContext).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsRecovery",
+                    "Reprise MMS au redémarrage incomplète : nouvelle tentative durable planifiée"
+                )
+                return Result.retry()
+            }
         }
         return Result.success()
     }
@@ -38,6 +64,7 @@ class MmsSendCleanupWorker(
             require(MmsSendPduStager.isValidStagedFileName(fileName)) { "invalid MMS staged file" }
             val request = OneTimeWorkRequestBuilder<MmsSendCleanupWorker>()
                 .setInitialDelay(MmsSendPduStager.STAGED_PDU_TTL_MS, TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
                 .setInputData(workDataOf(KEY_FILE_NAME to fileName))
                 .addTag(WORK_TAG)
                 .addTag(fileTag(fileName))
@@ -56,6 +83,7 @@ class MmsSendCleanupWorker(
 
         fun scheduleStartupRecovery(context: Context) {
             val request = OneTimeWorkRequestBuilder<MmsSendCleanupWorker>()
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
                 .setInputData(workDataOf(KEY_PROCESS_RESTART to true))
                 .addTag(STARTUP_WORK_TAG)
                 .build()

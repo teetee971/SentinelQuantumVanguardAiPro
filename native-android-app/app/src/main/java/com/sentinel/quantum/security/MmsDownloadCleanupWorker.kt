@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -9,24 +10,79 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
-/** Durable per-file cleanup for temporary MMS download payloads when Android never calls back. */
+/**
+ * Durable per-file deadline for temporary MMS downloads.
+ *
+ * Before the final bounded deletion, one last recovery pass is attempted. This preserves the
+ * original privacy guarantee (temporary cache cannot live forever) without confusing cleanup with
+ * product recovery when Android's callback was lost.
+ */
 class MmsDownloadCleanupWorker(
     appContext: Context,
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
         val fileName = inputData.getString(KEY_FILE_NAME) ?: return Result.success()
-        MmsDownloadCoordinator.expire(applicationContext, fileName)
+        val outcome = runCatching {
+            MmsDownloadRecovery.recover(
+                context = applicationContext,
+                fileName = fileName,
+                allowQuarantine = true
+            )
+        }.getOrDefault(MmsDownloadRecovery.Outcome.RETRY)
+
+        if (outcome == MmsDownloadRecovery.Outcome.RETRY) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échéance de reprise MMS atteinte : restauration automatique non terminée avant suppression du staging"
+            )
+            SmsNotificationHelper.notifyMessage(
+                applicationContext,
+                title = "MMS à vérifier",
+                preview = "Le MMS n’a pas pu être restauré automatiquement dans la conversation avant l’expiration de sa copie temporaire.",
+                notificationId = fileName.hashCode()
+            )
+        }
+
+        val expired = MmsDownloadCoordinator.expire(applicationContext, fileName)
+        if (!expired) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Nettoyage MMS temporaire non confirmé : nouvelle tentative durable planifiée"
+            )
+            return Result.retry()
+        }
         return Result.success()
     }
 
     companion object {
         fun schedule(context: Context, fileName: String) {
+            scheduleAtDeadline(
+                context = context,
+                fileName = fileName,
+                requestedAtMs = System.currentTimeMillis()
+            )
+        }
+
+        /**
+         * Reconstructs the original retention deadline after process death. The delay is anchored to
+         * the durable request timestamp; a restart must never grant a fresh 24-hour staging window.
+         */
+        internal fun scheduleAtDeadline(
+            context: Context,
+            fileName: String,
+            requestedAtMs: Long,
+            nowMs: Long = System.currentTimeMillis()
+        ) {
             require(MmsDownloadCoordinator.isValidStagedFileName(fileName)) {
                 "invalid MMS download file"
             }
+            require(requestedAtMs >= 0L) { "invalid MMS request timestamp" }
             val request = OneTimeWorkRequestBuilder<MmsDownloadCleanupWorker>()
-                .setInitialDelay(MmsDownloadCoordinator.DOWNLOAD_TTL_MS, TimeUnit.MILLISECONDS)
+                .setInitialDelay(remainingDelayMs(requestedAtMs, nowMs), TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
                 .setInputData(workDataOf(KEY_FILE_NAME to fileName))
                 .addTag(WORK_TAG)
                 .addTag(fileTag(fileName))
@@ -36,6 +92,19 @@ class MmsDownloadCleanupWorker(
                 ExistingWorkPolicy.KEEP,
                 request
             )
+        }
+
+        internal fun remainingDelayMs(requestedAtMs: Long, nowMs: Long): Long {
+            if (requestedAtMs < 0L) return 0L
+            val deadlineMs = if (
+                requestedAtMs > Long.MAX_VALUE - MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+            ) {
+                Long.MAX_VALUE
+            } else {
+                requestedAtMs + MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+            }
+            if (nowMs < 0L) return deadlineMs
+            return if (deadlineMs <= nowMs) 0L else deadlineMs - nowMs
         }
 
         fun cancel(context: Context, fileName: String) {
