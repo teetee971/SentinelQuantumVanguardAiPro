@@ -46,7 +46,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 reputationSilencePrefixes = snapshot.signedSilencePrefixes,
                 fingerprintsForNumber = store::cachedFingerprintsForNumber
             ).evaluate(canonicalCallerNumber)
-            ScreeningResult(decision, canonicalCallerNumber)
+            ScreeningResult(decision, canonicalCallerNumber, regionIso)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
             respondToCall(callDetails, CallResponse.Builder().build())
@@ -98,6 +98,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
                 putExtra(CallerIdActivity.EXTRA_NUMBER, profile.displayNumber.ifBlank { "Numéro masqué ou indisponible" })
                 putExtra(CallerIdActivity.EXTRA_COUNTRY, profile.countryName)
+                putExtra(CallerIdActivity.EXTRA_RECIPIENT_REGION, screeningResult.recipientRegionIso)
                 putExtra(CallerIdActivity.EXTRA_FLAG, profile.countryFlag)
                 putExtra(CallerIdActivity.EXTRA_TYPE, profile.callType)
                 putExtra(CallerIdActivity.EXTRA_VERIFICATION, profile.verification)
@@ -164,7 +165,8 @@ class SentinelCallScreeningService : CallScreeningService() {
 
     private data class ScreeningResult(
         val decision: CallRuleEngine.Decision,
-        val canonicalCallerNumber: String?
+        val canonicalCallerNumber: String?,
+        val recipientRegionIso: String?
     )
 
     private companion object {
