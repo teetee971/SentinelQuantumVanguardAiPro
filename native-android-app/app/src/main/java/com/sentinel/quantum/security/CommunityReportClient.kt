@@ -15,6 +15,9 @@ import org.json.JSONObject
  * Reports go only to the public pending-moderation endpoint. No REPORT_API_KEY or other
  * server credential is embedded in the APK, and the response explicitly confirms that a
  * pending report does not change live reputation.
+ *
+ * Community identity is global: national dial syntax is rejected here unless an Android boundary
+ * has already canonicalized it to E.164, and recipient region must be an explicit ISO-2 value.
  */
 class CommunityReportClient(
     private val baseUrl: String = SentinelApiOrigin.baseUrl,
@@ -54,12 +57,12 @@ class CommunityReportClient(
         explicitConsent: Boolean = false
     ): Result {
         requireEgressAllowed(protectionMode, explicitConsent)
-        val normalized = CallRuleEngine.normalizeNumber(callerNumber)
-            ?: throw IllegalArgumentException("Invalid caller number")
+        val normalized = GlobalPhoneIdentityPolicy.requireCanonicalE164(callerNumber)
+        val recipientRegion = GlobalPhoneIdentityPolicy.requireRegionIso(recipientCountry)
 
         val payload = JSONObject()
             .put("caller_number", normalized)
-            .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
+            .put("recipient_country", recipientRegion)
             .put("category", category.name)
             .put("client_nonce", UUID.randomUUID().toString())
             .toString()
