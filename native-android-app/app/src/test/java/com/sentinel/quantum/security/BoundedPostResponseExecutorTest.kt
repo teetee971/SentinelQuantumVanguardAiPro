@@ -28,11 +28,11 @@ class BoundedPostResponseExecutorTest {
         try {
             executor.execute {
                 workerStarted.countDown()
-                releaseWorker.await(2, TimeUnit.SECONDS)
+                releaseWorker.await()
             }
             assertTrue(workerStarted.await(1, TimeUnit.SECONDS))
 
-            // One queued task fills the only waiting slot while the worker is occupied.
+            // One queued task fills the only waiting slot while the worker remains blocked.
             executor.execute { Unit }
             assertEquals(0, executor.queue.remainingCapacity())
 
