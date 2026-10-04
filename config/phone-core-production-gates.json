@@ -18,6 +18,7 @@
       "connected_instrumentation_api29",
       "connected_instrumentation_api36",
       "all_static_navigation_surfaces_render",
+      "standalone_activity_surfaces_render",
       "min_sdk_cold_launch",
       "cold_install_and_relaunch",
       "phone_core_setup_resume",
@@ -30,7 +31,7 @@
       "multi_sim_selection_policy_matrix",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. API 24 couvre le plancher de compatibilité de l'application ; API 29 et 36 couvrent en plus les parcours Phone Core dépendants des rôles Android modernes. Il ne transforme pas une simulation de modem en preuve opérateur physique."
+    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. Il ouvre toutes les destinations statiques du NavGraph ainsi que les activités autonomes Activation, Diagnostic et Voice Studio. API 24 couvre le plancher de compatibilité de l'application ; API 29 et 36 couvrent en plus les parcours Phone Core dépendants des rôles Android modernes. Il ne transforme pas une simulation de modem en preuve opérateur physique."
   },
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
