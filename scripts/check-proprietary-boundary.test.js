@@ -1,12 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateDistributedText } from './check-proprietary-boundary.js';
+import { stripCommentsPreserveStrings, validateDistributedText } from './check-proprietary-boundary.js';
 
 test('ordinary public client code is allowed', () => {
   assert.deepEqual(validateDistributedText('fetch("/v1/intelligence/lookup")', 'client.js'), []);
 });
 
-test('server-only secret identifiers are rejected', () => {
+test('comment-only server secret warning is allowed', () => {
+  const source = `/** Never embed REPORT_API_KEY in this client. */\nfetch("/v1/report-call-public")`;
+  assert.deepEqual(validateDistributedText(source, 'client.kt'), []);
+});
+
+test('comment stripping preserves URL strings', () => {
+  const source = 'const endpoint = "https://example.invalid/v1/intelligence/lookup"; // public route';
+  assert.ok(stripCommentsPreserveStrings(source).includes('https://example.invalid/v1/intelligence/lookup'));
+});
+
+test('server-only secret identifiers are rejected when active', () => {
   const errors = validateDistributedText('const key = process.env.MODERATION_API_KEY;', 'client.js');
   assert.ok(errors.some((error) => error.includes('server-only identifier exposed')));
 });
