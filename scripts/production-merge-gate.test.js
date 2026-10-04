@@ -26,12 +26,14 @@ test('docs-only changes require universal gates without unrelated Android or web
   expectExcludes(required, SECURITY_FUZZ_WORKFLOWS);
 });
 
-test('Android-only changes require APK, AAB and instrumentation', () => {
+test('Android-only changes require APK, AAB and emulator qualification', () => {
   const required = requiredWorkflowsForPaths([
     'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt'
   ]);
   expectIncludes(required, [...UNIVERSAL_WORKFLOWS, ...ANDROID_WORKFLOWS]);
   expectExcludes(required, WEB_WORKFLOWS);
+  assert.ok(required.includes('android-emulation-qualification.yml'));
+  assert.ok(!required.includes('android-instrumentation.yml'));
 });
 
 test('web-only changes require frontend and Lighthouse gates', () => {
@@ -57,11 +59,19 @@ test('workflow-only production gate changes do not create a self-dependency', ()
   assert.ok(!required.includes('production-merge-gate.yml'));
 });
 
-test('workflow changes for Android or web require the affected gate family', () => {
-  expectIncludes(
-    requiredWorkflowsForPaths(['.github/workflows/android-instrumentation.yml']),
-    ANDROID_WORKFLOWS
-  );
+test('Android workflow changes require the emulator gate family, including legacy workflow edits', () => {
+  for (const changed of [
+    '.github/workflows/android-emulation-qualification.yml',
+    '.github/workflows/android-instrumentation.yml'
+  ]) {
+    const required = requiredWorkflowsForPaths([changed]);
+    expectIncludes(required, ANDROID_WORKFLOWS);
+    assert.ok(required.includes('android-emulation-qualification.yml'));
+    assert.ok(!required.includes('android-instrumentation.yml'));
+  }
+});
+
+test('web workflow changes require the web gate family', () => {
   expectIncludes(
     requiredWorkflowsForPaths(['.github/workflows/lighthouse-preproduction.yml']),
     WEB_WORKFLOWS
