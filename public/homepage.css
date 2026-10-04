@@ -17,6 +17,8 @@
     .sq-hero-copy > .sq-title {
         order: 1;
         margin-bottom: 0;
+        font-size: clamp(2.15rem, 9.5vw, 3rem);
+        line-height: .98;
     }
 
     .sq-hero > .sq-visual-card {
