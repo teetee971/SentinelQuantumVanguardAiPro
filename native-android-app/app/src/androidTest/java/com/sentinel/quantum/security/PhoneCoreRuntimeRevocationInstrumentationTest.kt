@@ -56,7 +56,7 @@ class PhoneCoreRuntimeRevocationInstrumentationTest {
 
     @Test
     fun dialerAndCallScreeningRolesReflectActualAndroidRevocation() {
-        val roleManager = context.getSystemService(RoleManager::class.java)
+        val roleManager = requireNotNull(context.getSystemService(RoleManager::class.java))
         try {
             shell("cmd role add-role-holder --user 0 android.app.role.DIALER $packageName")
             shell("cmd role add-role-holder --user 0 android.app.role.CALL_SCREENING $packageName")
