@@ -94,7 +94,7 @@ test('mobile security claims identify the capability owner and current VPN state
 
 test('the verified Render runtime has one explicit official URL', () => {
   const officialApi = 'https://sentinel-moteur-api.onrender.com/';
-  assert.match(readme, new RegExp(officialApi.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&')));
+  assert.ok(readme.includes(officialApi));
   assert.match(roadmap, /sentinel-moteur-api\.onrender\.com\/health\/live/);
   assert.match(roadmap, /sentinel-moteur-api\.onrender\.com\/health\/ready/);
   assert.match(roadmap, /Redis annonçait <code>connected<\/code>/);
