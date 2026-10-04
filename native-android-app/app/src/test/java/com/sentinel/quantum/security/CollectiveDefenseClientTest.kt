@@ -115,20 +115,20 @@ class CollectiveDefenseClientTest {
     }
 
     @Test
-    fun endpointPolicyAllowsOnlySentinelHttpsIntelligenceRoutes() {
-        val allowed = setOf("sentinel-moteur-api.onrender.com")
+    fun endpointPolicyAllowsOnlyPinnedHttpsIntelligenceRoutes() {
+        val allowed = setOf("api.example.test")
         val url = CollectiveDefenseClient.buildEndpoint(
-            "https://sentinel-moteur-api.onrender.com",
+            "https://api.example.test",
             "/v1/intelligence/lookup",
             allowed
         )
         assertEquals("https", url.scheme)
-        assertEquals("sentinel-moteur-api.onrender.com", url.host)
+        assertEquals("api.example.test", url.host)
         assertEquals("/v1/intelligence/lookup", url.encodedPath)
 
         assertThrows(SecurityException::class.java) {
             CollectiveDefenseClient.buildEndpoint(
-                "http://sentinel-moteur-api.onrender.com",
+                "http://api.example.test",
                 "/v1/intelligence/lookup",
                 allowed
             )
@@ -142,7 +142,7 @@ class CollectiveDefenseClientTest {
         }
         assertThrows(SecurityException::class.java) {
             CollectiveDefenseClient.buildEndpoint(
-                "https://sentinel-moteur-api.onrender.com",
+                "https://api.example.test",
                 "/health/ready",
                 allowed
             )
@@ -189,10 +189,10 @@ class CollectiveDefenseClientTest {
 
     @Test
     fun rejectsNonStandardHttpsPortAndOversizedRawIndicator() {
-        val allowed = setOf("sentinel-moteur-api.onrender.com")
+        val allowed = setOf("api.example.test")
         assertThrows(SecurityException::class.java) {
             CollectiveDefenseClient.buildEndpoint(
-                "https://sentinel-moteur-api.onrender.com:8443",
+                "https://api.example.test:8443",
                 "/v1/intelligence/lookup",
                 allowed
             )
