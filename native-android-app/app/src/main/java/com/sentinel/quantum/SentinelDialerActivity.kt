@@ -44,6 +44,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -830,9 +831,19 @@ class SentinelDialerActivity : ComponentActivity() {
                         SentinelTopBar(
                             title = "Téléphone Sentinel",
                             subtitle = if (protectionReady) {
-                                "Configuration téléphone prête"
+                                pluralStringResource(
+                                    R.plurals.phone_core_ready_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             } else {
-                                "Configuration téléphone à terminer"
+                                pluralStringResource(
+                                    R.plurals.phone_core_configuration_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             },
                             onBack = { finish() },
                             actions = {
@@ -898,9 +909,19 @@ class SentinelDialerActivity : ComponentActivity() {
                         if (phoneTab == 3) PhoneCoreBrand(
                             context = "Téléphone",
                             status = if (protectionReady) {
-                                "Configuration téléphone prête"
+                                pluralStringResource(
+                                    R.plurals.phone_core_ready_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             } else {
-                                "Configuration téléphone à terminer"
+                                pluralStringResource(
+                                    R.plurals.phone_core_configuration_validation_count,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.completedCount,
+                                    physicalEvidence.requiredCount
+                                )
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
