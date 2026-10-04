@@ -13,9 +13,10 @@ function requiredWorkflowBlock(workflow) {
   return workflow.slice(start, end);
 }
 
-test('required CodeQL Android status waits for emulator instrumentation', () => {
+test('required CodeQL Android status waits for emulator and comprehensive merge gates', () => {
   const block = requiredWorkflowBlock(codeqlWorkflow);
   assert.match(block, /"android-instrumentation\.yml"/);
+  assert.match(block, /"production-merge-gate\.yml"/);
 });
 
 test('Android emulator qualification covers minimum, current and newest runtime lanes', () => {
