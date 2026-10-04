@@ -180,3 +180,37 @@ test('counter-free customer Phone Core resources cover every supported Android v
     }
   }
 });
+
+
+test('Phone Core activation uses the shared version-aware call-screening truth', () => {
+  const activation = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'),
+    'utf8'
+  );
+
+  assert.match(activation, /import com\.sentinel\.quantum\.security\.CallScreeningActivationPolicy/);
+  assert.match(
+    activation,
+    /val screening = CallScreeningActivationPolicy\.read\(this\) == CallScreeningActivationPolicy\.State\.HELD/
+  );
+  assert.doesNotMatch(
+    activation,
+    /Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.Q && holdsRole\(RoleManager\.ROLE_CALL_SCREENING\)/
+  );
+  assert.match(
+    activation,
+    /RoleManager\.ROLE_DIALER,\s*\n\s*RoleManager\.ROLE_CALL_SCREENING -> Intent\(TelecomManager\.ACTION_CHANGE_DEFAULT_DIALER\)/
+  );
+  assert.match(activation, /when \(callScreeningState\)/);
+  assert.doesNotMatch(activation, /Disponible à partir d’Android 10/);
+
+  const coreProgress = activation.match(
+    /PhoneCoreSetupWizardStore\.Step\.CORE_PERMISSIONS -> \{[\s\S]*?checks\.count \{ it \} to checks\.size/
+  )?.[0];
+  assert.ok(coreProgress, 'CORE_PERMISSIONS progress block must remain statically auditable');
+  assert.doesNotMatch(
+    coreProgress,
+    /state\.contactsPermission/,
+    'optional contacts must never re-enter the essential setup progress denominator'
+  );
+});
