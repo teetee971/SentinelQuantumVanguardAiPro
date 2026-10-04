@@ -17,6 +17,8 @@ const runtimeFlow = read('scripts', 'phone-core-emulator-flow.sh');
 const revocationFlow = existsAndRead('scripts', 'phone-core-emulator-revocation-flow.sh');
 const navigationSmoke = existsAndRead('native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui', 'AllStaticNavigationSurfacesInstrumentationTest.kt');
 const standaloneSmoke = existsAndRead('native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui', 'StandaloneActivitySmokeInstrumentationTest.kt');
+const canonicalizationTest = existsAndRead('native-android-app', 'app', 'src', 'test', 'java', 'com', 'sentinel', 'quantum', 'security', 'CallRuleEngineTest.kt');
+const multiSimReadinessTest = existsAndRead('native-android-app', 'app', 'src', 'test', 'java', 'com', 'sentinel', 'quantum', 'security', 'SmsSubmitReadinessTest.kt');
 const buildGradle = read('native-android-app', 'app', 'build.gradle');
 const settingsGradle = read('native-android-app', 'settings.gradle');
 
@@ -28,6 +30,8 @@ const requiredChecks = [
   'wearable_contract_unit_tests',
   'wearable_security_unit_tests',
   'android_lint',
+  'phone_number_canonicalization_contract',
+  'multi_sim_submit_readiness_contract',
   'connected_instrumentation_api24',
   'connected_instrumentation_api29',
   'connected_instrumentation_api36',
@@ -42,8 +46,6 @@ const requiredChecks = [
   'incoming_sms_and_inline_reply',
   'role_revocation_fail_closed',
   'permission_revocation_fail_closed',
-  'region_canonicalization_matrix',
-  'multi_sim_selection_policy_matrix',
   'no_crash_or_anr'
 ];
 
@@ -71,6 +73,7 @@ if (!Array.isArray(emulation?.required_checks) || new Set(emulation.required_che
   errors.push('emulator required_checks must be a unique array');
 } else {
   for (const check of requiredChecks) if (!emulation.required_checks.includes(check)) errors.push(`missing emulator qualification check: ${check}`);
+  for (const check of emulation.required_checks) if (!requiredChecks.includes(check)) errors.push(`undeclared emulator qualification check contract: ${check}`);
 }
 if (emulation?.passed === true && (typeof emulation.evidence_ref !== 'string' || !emulation.evidence_ref.trim())) {
   errors.push('emulator qualification cannot be marked passed without evidence_ref');
@@ -99,16 +102,26 @@ for (const marker of [
   ':wearable-contract:test',
   ':wearable-security:test',
   ':app:lintDebug',
+  'CallRuleEngineTest',
+  'SmsSubmitReadinessTest',
   ':app:connectedDebugAndroidTest',
   'phone-core-emulator-setup-resume-flow.sh',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
+  'phone_number_canonicalization_contract',
+  'multi_sim_submit_readiness_contract',
   'FATAL EXCEPTION: main',
   'ANR in com\\.sentinel\\.quantum'
 ]) requireText(workflow, marker, 'emulation workflow');
 
+for (const marker of ['CallRuleEngineTest', 'frenchAndInternationalPrefixesCanonicalizeConsistently', 'normalizeNumber']) {
+  requireText(canonicalizationTest, marker, 'phone-number canonicalization contract');
+}
+for (const marker of ['SmsSubmitReadinessTest', 'blocksMultiSimUntilExplicitLineSelected', 'canSubmit']) {
+  requireText(multiSimReadinessTest, marker, 'multi-SIM submit readiness contract');
+}
 for (const marker of ['FIRST_RUN_PHONE_CORE_SETUP', 'Configuration initiale', 'Assistant séquentiel', 'attempted_target', 'completed', 'am force-stop', 'setup-resume-launch.txt']) {
   requireText(setupResumeFlow, marker, 'setup resume flow');
 }
