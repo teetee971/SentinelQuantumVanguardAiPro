@@ -1,0 +1,179 @@
+name: Phone Core Dialer One Shot
+
+on:
+  push:
+    branches:
+      - fix/phone-number-region-safe-20261004
+    paths:
+      - .github/workflows/phone-core-dialer-one-shot.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/phone-number-region-safe-20261004
+          fetch-depth: 0
+
+      - name: Apply region-safe dialer correction
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt')
+          text = path.read_text(encoding='utf-8')
+
+          anchor = 'import com.sentinel.quantum.security.AndroidRoleReadPolicy\n'
+          imports = (
+              'import com.sentinel.quantum.security.AndroidPhoneNumberCanonicalizer\n'
+              'import com.sentinel.quantum.security.AndroidRoleReadPolicy\n'
+              'import com.sentinel.quantum.security.GlobalPhoneIdentityPolicy\n'
+              'import com.sentinel.quantum.security.PhoneDirectoryRoutingPolicy\n'
+              'import com.sentinel.quantum.security.PhoneRegionRuntimeCache\n'
+          )
+          if text.count(anchor) != 1:
+              raise SystemExit('Expected AndroidRoleReadPolicy import anchor exactly once')
+          text = text.replace(anchor, imports, 1)
+
+          start_marker = '                fun lookup() {\n'
+          end_marker = '                val clipboard = LocalClipboardManager.current\n'
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('Dialer lookup anchors missing; refusing partial patch')
+          if text.find(start_marker, start + 1) >= 0:
+              raise SystemExit('Multiple lookup anchors; refusing partial patch')
+
+          legacy = text[start:end]
+          required = [
+              'val at = RtrDirectoryClient.normalize(lookupNumber)',
+              'val a = arcep.lookup(lookupNumber)',
+              'callerNumber = lookupNumber',
+              'recipientCountry = "FR"',
+          ]
+          missing = [token for token in required if token not in legacy]
+          if missing:
+              raise SystemExit('Legacy dialer contract changed; missing: ' + ', '.join(missing))
+
+          replacement = '''                fun lookup() {
+                    if (number.isBlank() || lookupRunning) return
+                    val lookupNumber = number
+                    val observedRegion = PhoneRegionRuntimeCache.currentRegionIso()
+                    val canonicalLookupNumber = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
+                        AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(
+                            lookupNumber,
+                            observedRegion
+                        )
+                    )
+                    val directoryLookupNumber = canonicalLookupNumber ?: lookupNumber
+                    val directoryTarget = PhoneDirectoryRoutingPolicy.targetFor(
+                        directoryLookupNumber,
+                        observedRegion
+                    )
+                    lookupRunning = true
+                    directoryStatus = "Recherche officielle…"
+                    contactStatus = null
+                    val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
+                        ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
+                    reputationStatus = when {
+                        !remoteReputationAllowed -> null
+                        observedRegion == null -> "Réputation Sentinel suspendue : région de ligne non déterminée."
+                        canonicalLookupNumber == null -> "Réputation Sentinel suspendue : numéro international non déterminé."
+                        else -> "Réputation Sentinel : analyse…"
+                    }
+                    scope.launch {
+                        val localIdentity = withContext(Dispatchers.IO) {
+                            contacts.find(lookupNumber)
+                        }
+                        contactStatus = localIdentity?.let { identity ->
+                            "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
+                        }
+                        directoryStatus = when (directoryTarget) {
+                            PhoneDirectoryRoutingPolicy.Target.RTR -> withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val r = rtr.lookup(directoryLookupNumber)
+                                    when {
+                                        r == null -> "Format autrichien non reconnu"
+                                        r.status == "ambiguous" -> "RTR : attribution ambiguë — aucune identité déduite"
+                                        r.matches.isNotEmpty() -> {
+                                            val m = r.matches.first()
+                                            "RTR : " + (m.allocationHolder ?: m.status) +
+                                                (m.area?.let { " · $it" } ?: "")
+                                        }
+                                        else -> "RTR : " + r.status
+                                    }
+                                }.getOrElse { "Répertoire RTR temporairement indisponible" }
+                            }
+                            PhoneDirectoryRoutingPolicy.Target.ARCEP -> withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val a = arcep.lookup(directoryLookupNumber)
+                                    if (a == null) "ARCEP : aucune attribution correspondante"
+                                    else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) +
+                                        (a.territory?.let { " · $it" } ?: "")
+                                }.getOrElse { "Répertoire ARCEP temporairement indisponible" }
+                            }
+                            PhoneDirectoryRoutingPolicy.Target.NONE -> {
+                                if (canonicalLookupNumber == null && observedRegion == null) {
+                                    "Contexte téléphonique insuffisant : aucun annuaire national n’est interrogé."
+                                } else {
+                                    "Aucun annuaire officiel intégré pour ce numéro."
+                                }
+                            }
+                        }
+                        if (
+                            remoteReputationAllowed &&
+                            observedRegion != null &&
+                            canonicalLookupNumber != null
+                        ) {
+                            reputationStatus = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    val r = reputation.evaluate(
+                                        callerNumber = canonicalLookupNumber,
+                                        recipientCountry = observedRegion,
+                                        verificationStatus = "outgoing_user_lookup",
+                                        privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
+                                        explicitConsent = settings.callerReputationEnrichmentEnabled
+                                    )
+                                    "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
+                                        if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
+                                }.getOrElse { "Réputation Sentinel temporairement indisponible" }
+                            }
+                        }
+                        lookupRunning = false
+                    }
+                }
+
+'''
+          text = text[:start] + replacement + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Verify dialer invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE=native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
+          ! grep -F 'recipientCountry = "FR"' "$FILE"
+          ! grep -F 'val at = RtrDirectoryClient.normalize(lookupNumber)' "$FILE"
+          grep -F 'PhoneDirectoryRoutingPolicy.targetFor(' "$FILE"
+          grep -F 'recipientCountry = observedRegion' "$FILE"
+          grep -F 'canonicalLookupNumber ?: lookupNumber' "$FILE"
+          git diff --check
+
+      - name: Commit correction and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/phone-core-dialer-one-shot.yml
+          git add native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
+          git diff --cached --check
+          git config user.name 'sentinel-autopilot'
+          git config user.email 'sentinel-autopilot@users.noreply.github.com'
+          git commit -m 'fix(phone-core): apply region-safe dialer routing'
+          git push origin HEAD:fix/phone-number-region-safe-20261004
