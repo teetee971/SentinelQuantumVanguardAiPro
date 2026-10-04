@@ -38,147 +38,112 @@ jobs:
               raise SystemExit('Expected AndroidRoleReadPolicy import anchor exactly once')
           text = text.replace(old_import, new_import, 1)
 
-          old_lookup = '''                fun lookup() {
-                      if (number.isBlank() || lookupRunning) return
-                      val lookupNumber = number
-                      lookupRunning = true
-                      directoryStatus = "Recherche officielle…"
-                      contactStatus = null
-                      val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
-                          ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
-                      reputationStatus = if (remoteReputationAllowed) "Réputation Sentinel : analyse…" else null
-                      scope.launch {
-                          val localIdentity = withContext(Dispatchers.IO) {
-                              contacts.find(lookupNumber)
-                          }
-                          contactStatus = localIdentity?.let { identity ->
-                              "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
-                          }
-                          val result = withContext(Dispatchers.IO) {
-                              runCatching {
-                                  val at = RtrDirectoryClient.normalize(lookupNumber)
-                                  if (at != null) {
-                                      val r = rtr.lookup(lookupNumber)
-                                      when {
-                                          r == null -> "Format autrichien non reconnu"
-                                          r.status == "ambiguous" -> "RTR : attribution ambiguë — aucune identité déduite"
-                                          r.matches.isNotEmpty() -> {
-                                              val m = r.matches.first()
-                                              "RTR : " + (m.allocationHolder ?: m.status) + (m.area?.let { " · $it" } ?: "")
-                                          }
-                                          else -> "RTR : " + r.status
-                                      }
-                                  } else {
-                                      val a = arcep.lookup(lookupNumber)
-                                      if (a == null) "ARCEP : aucune attribution correspondante"
-                                      else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) + (a.territory?.let { " · $it" } ?: "")
-                                  }
-                              }.getOrElse { "Répertoire officiel temporairement indisponible" }
-                          }
-                          directoryStatus = result
-                          if (remoteReputationAllowed) {
-                              reputationStatus = withContext(Dispatchers.IO) {
-                                  runCatching {
-                                      val r = reputation.evaluate(
-                                          callerNumber = lookupNumber,
-                                          recipientCountry = "FR",
-                                          verificationStatus = "outgoing_user_lookup",
-                                          privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
-                                          explicitConsent = settings.callerReputationEnrichmentEnabled
-                                      )
-                                      "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
-                                          if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
-                                  }.getOrElse { "Réputation Sentinel temporairement indisponible" }
-                              }
-                          }
-                          lookupRunning = false
-                      }
-                  }
+          start_marker = 'fun lookup() {'
+          end_marker = 'PrimaryNumberRow('
+          start = text.find(start_marker)
+          if start < 0 or text.find(start_marker, start + 1) >= 0:
+              raise SystemExit('Expected exactly one lookup() marker; refusing partial patch')
+          line_start = text.rfind('\n', 0, start) + 1
+          end = text.find(end_marker, start)
+          if end < 0 or text.find(end_marker, end + 1) >= 0:
+              raise SystemExit('Expected exactly one PrimaryNumberRow marker after lookup(); refusing partial patch')
+          end_line_start = text.rfind('\n', start, end) + 1
+          legacy = text[line_start:end_line_start]
+          required_legacy_tokens = [
+              'val at = RtrDirectoryClient.normalize(lookupNumber)',
+              'val a = arcep.lookup(lookupNumber)',
+              'callerNumber = lookupNumber',
+              'recipientCountry = "FR"',
+          ]
+          missing = [token for token in required_legacy_tokens if token not in legacy]
+          if missing:
+              raise SystemExit('Legacy lookup contract changed; missing: ' + ', '.join(missing))
+
+          indent = text[line_start:start]
+          body_indent = indent + '    '
+          new_lookup = f'''{indent}fun lookup() {{
+          {body_indent}if (number.isBlank() || lookupRunning) return
+          {body_indent}val lookupNumber = number
+          {body_indent}val observedRegion = PhoneRegionRuntimeCache.currentRegionIso()
+          {body_indent}val canonicalLookupNumber = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
+          {body_indent}    AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(
+          {body_indent}        lookupNumber,
+          {body_indent}        observedRegion
+          {body_indent}    )
+          {body_indent})
+          {body_indent}val directoryTarget = PhoneDirectoryRoutingPolicy.targetFor(canonicalLookupNumber)
+          {body_indent}lookupRunning = true
+          {body_indent}directoryStatus = "Recherche officielle…"
+          {body_indent}contactStatus = null
+          {body_indent}val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
+          {body_indent}    ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
+          {body_indent}reputationStatus = when {{
+          {body_indent}    !remoteReputationAllowed -> null
+          {body_indent}    observedRegion == null -> "Réputation Sentinel suspendue : région de ligne non déterminée."
+          {body_indent}    canonicalLookupNumber == null -> "Réputation Sentinel suspendue : numéro international non déterminé."
+          {body_indent}    else -> "Réputation Sentinel : analyse…"
+          {body_indent}}}
+          {body_indent}scope.launch {{
+          {body_indent}    val localIdentity = withContext(Dispatchers.IO) {{
+          {body_indent}        contacts.find(lookupNumber)
+          {body_indent}    }}
+          {body_indent}    contactStatus = localIdentity?.let {{ identity ->
+          {body_indent}        "Contact : " + identity.displayName + (identity.organisation?.let {{ " · $it" }} ?: "")
+          {body_indent}    }}
+          {body_indent}    val result = when (directoryTarget) {{
+          {body_indent}        PhoneDirectoryRoutingPolicy.Target.RTR -> withContext(Dispatchers.IO) {{
+          {body_indent}            runCatching {{
+          {body_indent}                val r = rtr.lookup(canonicalLookupNumber.orEmpty())
+          {body_indent}                when {{
+          {body_indent}                    r == null -> "Format autrichien non reconnu"
+          {body_indent}                    r.status == "ambiguous" -> "RTR : attribution ambiguë — aucune identité déduite"
+          {body_indent}                    r.matches.isNotEmpty() -> {{
+          {body_indent}                        val m = r.matches.first()
+          {body_indent}                        "RTR : " + (m.allocationHolder ?: m.status) + (m.area?.let {{ " · $it" }} ?: "")
+          {body_indent}                    }}
+          {body_indent}                    else -> "RTR : " + r.status
+          {body_indent}                }}
+          {body_indent}            }}.getOrElse {{ "Répertoire RTR temporairement indisponible" }}
+          {body_indent}        }}
+          {body_indent}        PhoneDirectoryRoutingPolicy.Target.ARCEP -> withContext(Dispatchers.IO) {{
+          {body_indent}            runCatching {{
+          {body_indent}                val a = arcep.lookup(canonicalLookupNumber.orEmpty())
+          {body_indent}                if (a == null) "ARCEP : aucune attribution correspondante"
+          {body_indent}                else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) + (a.territory?.let {{ " · $it" }} ?: "")
+          {body_indent}            }}.getOrElse {{ "Répertoire ARCEP temporairement indisponible" }}
+          {body_indent}        }}
+          {body_indent}        PhoneDirectoryRoutingPolicy.Target.NONE -> if (canonicalLookupNumber == null) {{
+          {body_indent}            "Pays indéterminé : aucun annuaire national n’est interrogé."
+          {body_indent}        }} else {{
+          {body_indent}            "Aucun annuaire officiel intégré pour cet indicatif."
+          {body_indent}        }}
+          {body_indent}    }}
+          {body_indent}    directoryStatus = result
+          {body_indent}    if (
+          {body_indent}        remoteReputationAllowed &&
+          {body_indent}        observedRegion != null &&
+          {body_indent}        canonicalLookupNumber != null
+          {body_indent}    ) {{
+          {body_indent}        reputationStatus = withContext(Dispatchers.IO) {{
+          {body_indent}            runCatching {{
+          {body_indent}                val r = reputation.evaluate(
+          {body_indent}                    callerNumber = canonicalLookupNumber,
+          {body_indent}                    recipientCountry = observedRegion,
+          {body_indent}                    verificationStatus = "outgoing_user_lookup",
+          {body_indent}                    privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
+          {body_indent}                    explicitConsent = settings.callerReputationEnrichmentEnabled
+          {body_indent}                )
+          {body_indent}                "Réputation Sentinel : risque ${{r.riskScore}}/100 · ${{r.action}}" +
+          {body_indent}                    if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
+          {body_indent}            }}.getOrElse {{ "Réputation Sentinel temporairement indisponible" }}
+          {body_indent}        }}
+          {body_indent}    }}
+          {body_indent}    lookupRunning = false
+          {body_indent}}}
+          {indent}}}
+
           '''
-          new_lookup = '''                fun lookup() {
-                      if (number.isBlank() || lookupRunning) return
-                      val lookupNumber = number
-                      val observedRegion = PhoneRegionRuntimeCache.currentRegionIso()
-                      val canonicalLookupNumber = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
-                          AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(
-                              lookupNumber,
-                              observedRegion
-                          )
-                      )
-                      val directoryTarget = PhoneDirectoryRoutingPolicy.targetFor(canonicalLookupNumber)
-                      lookupRunning = true
-                      directoryStatus = "Recherche officielle…"
-                      contactStatus = null
-                      val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
-                          ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
-                      reputationStatus = when {
-                          !remoteReputationAllowed -> null
-                          observedRegion == null -> "Réputation Sentinel suspendue : région de ligne non déterminée."
-                          canonicalLookupNumber == null -> "Réputation Sentinel suspendue : numéro international non déterminé."
-                          else -> "Réputation Sentinel : analyse…"
-                      }
-                      scope.launch {
-                          val localIdentity = withContext(Dispatchers.IO) {
-                              contacts.find(lookupNumber)
-                          }
-                          contactStatus = localIdentity?.let { identity ->
-                              "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
-                          }
-                          val result = when (directoryTarget) {
-                              PhoneDirectoryRoutingPolicy.Target.RTR -> withContext(Dispatchers.IO) {
-                                  runCatching {
-                                      val r = rtr.lookup(canonicalLookupNumber.orEmpty())
-                                      when {
-                                          r == null -> "Format autrichien non reconnu"
-                                          r.status == "ambiguous" -> "RTR : attribution ambiguë — aucune identité déduite"
-                                          r.matches.isNotEmpty() -> {
-                                              val m = r.matches.first()
-                                              "RTR : " + (m.allocationHolder ?: m.status) + (m.area?.let { " · $it" } ?: "")
-                                          }
-                                          else -> "RTR : " + r.status
-                                      }
-                                  }.getOrElse { "Répertoire RTR temporairement indisponible" }
-                              }
-                              PhoneDirectoryRoutingPolicy.Target.ARCEP -> withContext(Dispatchers.IO) {
-                                  runCatching {
-                                      val a = arcep.lookup(canonicalLookupNumber.orEmpty())
-                                      if (a == null) "ARCEP : aucune attribution correspondante"
-                                      else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) + (a.territory?.let { " · $it" } ?: "")
-                                  }.getOrElse { "Répertoire ARCEP temporairement indisponible" }
-                              }
-                              PhoneDirectoryRoutingPolicy.Target.NONE -> if (canonicalLookupNumber == null) {
-                                  "Pays indéterminé : aucun annuaire national n’est interrogé."
-                              } else {
-                                  "Aucun annuaire officiel intégré pour cet indicatif."
-                              }
-                          }
-                          directoryStatus = result
-                          if (
-                              remoteReputationAllowed &&
-                              observedRegion != null &&
-                              canonicalLookupNumber != null
-                          ) {
-                              reputationStatus = withContext(Dispatchers.IO) {
-                                  runCatching {
-                                      val r = reputation.evaluate(
-                                          callerNumber = canonicalLookupNumber,
-                                          recipientCountry = observedRegion,
-                                          verificationStatus = "outgoing_user_lookup",
-                                          privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
-                                          explicitConsent = settings.callerReputationEnrichmentEnabled
-                                      )
-                                      "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
-                                          if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
-                                  }.getOrElse { "Réputation Sentinel temporairement indisponible" }
-                              }
-                          }
-                          lookupRunning = false
-                      }
-                  }
-          '''
-          if text.count(old_lookup) != 1:
-              raise SystemExit('Expected legacy dialer lookup block exactly once; refusing partial patch')
-          text = text.replace(old_lookup, new_lookup, 1)
+          text = text[:line_start] + new_lookup + text[end_line_start:]
           path.write_text(text, encoding='utf-8')
           PY
       - name: Verify forbidden region fallbacks are gone from dialer
@@ -187,6 +152,7 @@ jobs:
           ! grep -F 'recipientCountry = "FR"' native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
           ! grep -F 'val at = RtrDirectoryClient.normalize(lookupNumber)' native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
           grep -F 'PhoneDirectoryRoutingPolicy.targetFor(canonicalLookupNumber)' native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
+          grep -F 'recipientCountry = observedRegion' native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
       - name: Commit patch
         shell: bash
         run: |
