@@ -51,6 +51,14 @@ jobs:
         working-directory: ./native-android-app
         run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
 
+      - name: Phone number canonicalization contract
+        working-directory: ./native-android-app
+        run: ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.CallRuleEngineTest' --stacktrace --no-daemon
+
+      - name: Multi-SIM submit readiness contract
+        working-directory: ./native-android-app
+        run: ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.SmsSubmitReadinessTest' --stacktrace --no-daemon
+
       - name: Wearable contract unit tests
         working-directory: ./native-android-app
         run: ./gradlew :wearable-contract:test --stacktrace --no-daemon
@@ -276,6 +284,9 @@ jobs:
               connected_instrumentation: true,
               all_static_navigation_surfaces_render: true,
               standalone_activity_surfaces_render: true,
+              phone_number_canonicalization_contract: true,
+              multi_sim_submit_readiness_contract: true,
+              cold_install_and_relaunch: true,
               min_sdk_cold_launch: api === 24,
               incoming_call_telecom_flow: modernPhoneCore,
               outgoing_call_telecom_flow: modernPhoneCore,
