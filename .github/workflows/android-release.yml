@@ -84,7 +84,7 @@ jobs:
           EXACT_WORKFLOWS=(
             "build-native-android.yml"
             "build-aab-playconsole.yml"
-            "android-instrumentation.yml"
+            "android-emulation-qualification.yml"
             "security-governance-validation.yml"
             "ai-governance-validation.yml"
             "sentinel-isolation.yml"
