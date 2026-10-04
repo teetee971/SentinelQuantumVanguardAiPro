@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Roadmap vérifiable de Sentinel au 4 octobre 2026 : Phone Core, add-ons, commerce, API Pro, PTT, infrastructure et protection propriétaire.">
+  <meta name="description" content="Roadmap vérifiable de Sentinel : Phone Core, add-ons, commerce, API Pro, PTT, infrastructure et protection propriétaire, synchronisés avec les registres canoniques.">
   <meta name="theme-color" content="#080b10">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
@@ -14,13 +14,14 @@
 <main id="main-content" class="page-shell roadmap-d1">
   <section class="sq-hero" aria-labelledby="roadmap-title">
     <div class="sq-hero-copy">
-      <span class="sq-kicker">Roadmap publique · 4 octobre 2026</span>
+      <span class="sq-kicker">Roadmap publique · synchronisée avec les registres produit</span>
       <h1 id="roadmap-title" class="sq-title">Pas de pourcentage marketing. <span class="sq-title-emphasis">Une capacité, un gate, une preuve.</span></h1>
-      <p class="sq-lede">La roadmap distingue le socle gratuit, les add-ons Premium, les produits Pro/Enterprise et les infrastructures nécessaires. Le code, la CI, le déploiement et la validation physique restent quatre preuves différentes.</p>
+      <p class="sq-lede">La roadmap distingue le socle gratuit, les add-ons Premium, les produits Pro/Enterprise et les infrastructures nécessaires. Le code, la CI, le déploiement, la validation physique et la disponibilité commerciale restent des preuves différentes.</p>
+      <p class="sq-lede" data-product-truth-summary>Chargement du snapshot produit canonique…</p>
       <div class="sq-actions"><a class="btn" href="product-status.html">État produit</a><a class="btn btn-secondary" href="pricing.html">Modèle commercial</a><a class="btn btn-secondary" href="security.html">Sécurité</a></div>
     </div>
     <aside class="sq-command-panel" aria-label="Contrat de vérité">
-      <div class="sq-command-head"><strong>Contrat de vérité</strong><span>2026-10-04</span></div>
+      <div class="sq-command-head"><strong>Contrat de vérité</strong><span data-product-truth-updated>Mise à jour…</span></div>
       <div class="sq-status-row"><span class="sq-status-dot ready"></span><div class="sq-status-copy"><strong>Disponible</strong><small>Canal réellement utilisable.</small></div><span class="sq-status-value">Preuve</span></div>
       <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>Validation</strong><small>Code présent, essais encore requis.</small></div><span class="sq-status-value">À tester</span></div>
       <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Infrastructure</strong><small>Serveur, gateway, source ou entitlement manquant.</small></div><span class="sq-status-value">Bloqué</span></div>
@@ -30,44 +31,42 @@
   <section class="roadmap-dashboard" aria-label="Résumé">
     <article class="roadmap-kpi"><span>Socle public</span><strong>Recherche téléphonique Web disponible</strong></article>
     <article class="roadmap-kpi"><span>Phone Core</span><strong>Pré-production logicielle, validation physique avant distribution</strong></article>
-    <article class="roadmap-kpi"><span>Commerce</span><strong>Catalogue Free / Premium / Pro / Enterprise verrouillé ; vente désactivée</strong></article>
-    <article class="roadmap-kpi"><span>Propriété</span><strong>Frontière client/serveur et protection des moteurs propriétaires renforcées</strong></article>
+    <article class="roadmap-kpi"><span>Commerce</span><strong data-checkout-status>Checkout désactivé</strong></article>
+    <article class="roadmap-kpi"><span>Essai</span><strong data-trial-status>Essai Premium défini mais désactivé</strong></article>
   </section>
 
   <section class="sq-section" aria-labelledby="now-title">
     <div class="sq-section-head"><div><span class="eyebrow">Priorité immédiate</span><h2 id="now-title">Finir le socle avant de commercialiser les add-ons.</h2></div><p>PTT, VPN, Voice et API Pro ne doivent pas ralentir ni falsifier la certification Phone Core.</p></div>
     <div class="roadmap-track-grid">
-      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">En validation</span><h3>Phone Core Android</h3></div></div><p>Dialer, Call Screening, SMS/MMS, Caller ID, historique et surfaces système restent soumis aux rôles Android et à une validation réelle multi-version/OEM. Les contacts ne doivent pas être comptés comme permission essentielle lorsque le produit peut fonctionner sans eux.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Sortie</span><strong>APK installable + preuves physiques + réversibilité</strong></div></div></article>
-      <article class="roadmap-track" data-roadmap-status="ready"><div class="roadmap-track-head"><div><span class="sq-state ready">Fusionné</span><h3>Catalogue commercial canonique</h3></div></div><p>Free, Premium individuel, Pro et Enterprise sont séparés. Le checkout et l'essai Premium 7 jours restent désactivés jusqu'à disponibilité technique et commerciale réelle.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Règle</span><strong>Aucune capacité non disponible ne devient achetable</strong></div></div></article>
-      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">Frontière API</span><h3>Origine Sentinel unique</h3></div></div><p>Les clients Android convergent vers un contrat d'origine API unique afin de supprimer les URLs d'hébergement dispersées et préparer un futur gateway Sentinel. Le basculement réel ne doit intervenir qu'après déploiement et validation du gateway.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Sortie</span><strong>Gateway Sentinel validé E2E</strong></div></div></article>
-      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">Sécurité</span><h3>Frontière propriétaire</h3></div></div><p>Les surfaces distribuées sont contrôlées pour empêcher l'exposition active de secrets serveur, headers d'administration et routes internes. Les futurs moteurs différenciants doivent rester côté serveur ou dans des dépôts privés.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Règle</span><strong>Le client reçoit le résultat, pas la recette</strong></div></div></article>
+      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">En validation</span><h3>Phone Core Android</h3></div></div><p>Dialer, Call Screening, SMS/MMS, Caller ID, historique et surfaces système restent soumis aux rôles Android et à une validation réelle multi-version/OEM.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Sortie</span><strong>APK installable + preuves physiques + réversibilité</strong></div></div></article>
+      <article class="roadmap-track" data-roadmap-status="ready"><div class="roadmap-track-head"><div><span class="sq-state ready">Fusionné</span><h3>Catalogue commercial canonique</h3></div></div><p>Free, Premium individuel, Pro et Enterprise sont séparés. Le checkout et l'essai restent indépendants de la présence du code.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Règle</span><strong>Aucune capacité non disponible ne devient achetable</strong></div></div></article>
+      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">Frontière API</span><h3>Origine Sentinel unique</h3></div></div><p>Les clients Android convergent vers un contrat d'origine API unique afin de supprimer les URLs d'hébergement dispersées et préparer un futur gateway Sentinel.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Sortie</span><strong>Gateway Sentinel validé E2E</strong></div></div></article>
+      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">Sécurité</span><h3>Frontière propriétaire</h3></div></div><p>Les surfaces distribuées sont contrôlées pour empêcher l'exposition active de secrets serveur, headers d'administration et routes internes.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Règle</span><strong>Le client reçoit le résultat, pas la recette</strong></div></div></article>
     </div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="auto-title">
+    <div class="sq-section-head"><div><span class="eyebrow">État automatique</span><h2 id="auto-title">Le registre de capacités alimente directement le site.</h2></div><p>Cette table est générée à partir de la même source que la CI. Elle permet de voir immédiatement si un module passe de planifié à validation, infrastructure ou disponibilité client.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Capacité</th><th>Code</th><th>État</th><th>Disponible client</th></tr></thead><tbody data-capability-status-generated><tr><td colspan="4">Chargement…</td></tr></tbody></table></div>
   </section>
 
   <section class="sq-section" aria-labelledby="addons-title">
     <div class="sq-section-head"><div><span class="eyebrow">Add-ons</span><h2 id="addons-title">Modules monétisables, indépendants du Phone Core.</h2></div><p>Chaque add-on possède sa propre readiness et ses propres coûts d'infrastructure.</p></div>
     <div class="sq-grid">
-      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>Sentinel PTT / Comms</h3><p>Architecture définie autour du transport voix Sentinel existant. Reste à construire la session PTT, l'arbitrage de parole, les accusés de livraison, la reconnexion et la validation Android-to-Android.</p></article>
-      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>Voice Transform</h3><p>DSP et intégration média côté client présents. Service d'appel Sentinel, issuer de tokens et validation physique de bout en bout requis avant vente.</p></article>
-      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>VPN Premium</h3><p>Client présent ; passerelles réelles, DNS, IPv4/IPv6, MTU, reconnexion et budgets opérationnels restent à valider.</p></article>
-      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>System Doctor avancé</h3><p>Le scan manuel reste gratuit. Historique, surveillance continue, planification et alertes constituent la cible Premium.</p></article>
-      <article class="sq-card span-4"><span class="sq-state planned">Pro</span><h3>Ingérence / FIMI</h3><p>Fondations méthodologiques et taxonomiques. Corrélation, hypothèses et preuves doivent rester distinctes ; aucune attribution politique automatique.</p></article>
-      <article class="sq-card span-4"><span class="sq-state planned">Pro</span><h3>Investigations &amp; Threat Brief</h3><p>Dossiers, chronologies, graphes, watchlists et exports professionnels après qualification des sources et règles de gouvernance.</p></article>
-      <article class="sq-card span-6"><span class="sq-state planned">Pro</span><h3>Sentinel API Pro</h3><p>Façade B2B prévue pour intégrer des décisions Sentinel dans des logiciels tiers. Authentification tenant, scopes, quotas, rate limiting, metering et contrat sont obligatoires avant ouverture.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>Sentinel PTT / Comms</h3><p>Session PTT, arbitrage de parole, livraison, reconnexion et validation Android-to-Android restent à finaliser.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>Voice Transform</h3><p>DSP et transport client présents ; infrastructure et validation physique de bout en bout restent requises.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>VPN Premium</h3><p>Client présent ; passerelles, DNS, IPv4/IPv6, MTU, reconnexion et exploitation restent à valider.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Premium</span><h3>System Doctor avancé</h3><p>Le scan manuel reste gratuit ; historique, surveillance continue et alertes constituent la cible Premium.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Pro</span><h3>Ingérence / FIMI</h3><p>Corrélation, hypothèses et preuves doivent rester distinctes ; aucune attribution politique automatique.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Pro</span><h3>Investigations &amp; Threat Brief</h3><p>Dossiers, chronologies, graphes, watchlists et exports après qualification des sources et règles de gouvernance.</p></article>
+      <article class="sq-card span-6"><span class="sq-state planned">Pro</span><h3>Sentinel API Pro</h3><p>Façade B2B prévue avec identité tenant, scopes, quotas, rate limiting, metering et contrat avant ouverture.</p></article>
       <article class="sq-card span-6"><span class="sq-state planned">Enterprise</span><h3>Organization Pack</h3><p>Multi-utilisateurs, politiques, journaux d'audit, connecteurs, gouvernance, intégration et SLA selon contrat.</p></article>
     </div>
   </section>
 
-  <section class="sq-section" aria-labelledby="free-title">
-    <div class="sq-section-head"><div><span class="eyebrow">Socle gratuit</span><h2 id="free-title">La sécurité de base ne devient pas un piège payant.</h2></div><p>Le revenu doit venir de l'automatisation, du service continu, de l'infrastructure et de la valeur professionnelle.</p></div>
-    <div class="sq-grid">
-      <article class="sq-card sq-card-success span-6"><span class="sq-state ready">Gratuit permanent</span><h3>Diagnostic local</h3><p>Phone Core lorsqu'il sera distribué, System Doctor manuel, Security Audit manuel, analyse locale SMS/liens/e-mails et visibilité réseau locale.</p></article>
-      <article class="sq-card sq-card-success span-6"><span class="sq-state ready">Effet réseau</span><h3>Protection communautaire de base</h3><p>La réputation de base et les signalements utiles doivent rester accessibles afin d'améliorer la valeur collective sans bloquer l'adoption.</p></article>
-    </div>
-  </section>
-
-  <section class="notice warning"><strong>Avant production :</strong> aucune page publique ne doit afficher « disponible », « protégé », « Premium actif » ou « API disponible » sans preuve correspondant exactement au canal concerné. L'infrastructure, la validation physique et le commerce restent des gates indépendants.</section>
+  <section class="notice warning"><strong>Avant production :</strong> aucune page publique ne doit afficher « disponible », « protégé », « Premium actif » ou « API disponible » sans preuve correspondant exactement au canal concerné.</section>
 </main>
 <footer class="site-footer"><div class="footer-grid"><div><h2>Roadmap Sentinel</h2><p>Une capacité, un gate, une preuve.</p></div><div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="mobile-security.html">Android</a></li></ul></div><div><h3>État</h3><ul><li><a href="product-status.html">État produit</a></li><li><a href="pricing.html">Tarifs</a></li></ul></div><div><h3>Confiance</h3><ul><li><a href="security.html">Sécurité</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
+<script src="product-truth.js" defer></script>
 </body>
 </html>
