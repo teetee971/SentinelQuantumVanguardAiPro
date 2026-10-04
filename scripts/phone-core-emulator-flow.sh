@@ -78,6 +78,36 @@ PYFOCUS
   echo "Inline reply input did not receive focus."
   return 1
 }
+wait_private_timeline_event() {
+  local direction="$1"
+  local signal="$2"
+  local evidence="$FLOW_OUTPUT_DIR/phone-private-timeline-${direction,,}-${signal,,}.xml"
+  for _ in $(seq 1 20); do
+    if adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null && \
+      python3 - "$evidence" "$direction" "$signal" <<'PYTIMELINE'
+import json, sys, xml.etree.ElementTree as ET
+path, direction, signal = sys.argv[1:]
+try:
+    root = ET.parse(path).getroot()
+    node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
+    events = json.loads((node.text if node is not None else '') or '[]')
+except Exception:
+    sys.exit(1)
+matched = any(
+    event.get('kind') == 'CALL' and
+    event.get('direction') == direction and
+    event.get('signal') == signal
+    for event in events
+)
+sys.exit(0 if matched else 1)
+PYTIMELINE
+    then return 0; fi
+    sleep 1
+  done
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null || true
+  echo "Phone Core private timeline did not record $direction/$signal."
+  return 1
+}
 capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
 adb shell am force-stop "$FLOW_PACKAGE"
@@ -91,37 +121,21 @@ adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
 # On recent Android releases the visible Answer/Decline controls belong to the system Telecom
 # surface, are localized by the emulator OS, and may be absent from the application UI dump.
-# Prove the stable Sentinel-owned incoming-call truth, then move the synthetic modem to ACTIVE.
+# Prove Sentinel's own caller-ID surface, then prove ACTIVE from the app-private evidence written
+# only after InCallService observes Call.STATE_ACTIVE.
 wait_text "$FLOW_NUMBER"
 wait_text "Appel autorisé"
 capture 02-incoming-call
 adb emu gsm accept "$FLOW_NUMBER"
-# CallerIdActivity is deliberately read-only and may remain above the dialer after a modem-level
-# accept. If it is still foreground, close only that Sentinel-owned card; if Telecom already
-# brought the in-call UI forward, leave the foreground untouched.
-sleep 1
-if fresh_ui && grep -q 'Fermer la fiche' "$FLOW_XML"; then
-  tap_text "Fermer la fiche"
-fi
-wait_text "En communication"
-if python3 - "$FLOW_XML" <<'PY'
-import sys, xml.etree.ElementTree as ET
-bad = ('Aucun appel actif', 'Aucun appel détecté', 'liaison indisponible')
-sys.exit(0 if any(any(w in (n.get('text','')+' '+n.get('content-desc','')) for w in bad)
-                  for n in ET.parse(sys.argv[1]).iter('node')) else 1)
-PY
-then
-  echo "Active call was represented as missing/idle."
-  exit 1
-fi
-capture 03-active-call
+wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
+capture 03-incoming-active-evidence
 adb emu gsm cancel "$FLOW_NUMBER"
-wait_text "Appel terminé"
-capture 04-ended-call
+sleep 1
 
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 
+# Outgoing call originates from Sentinel's own button and keeps the explicit InCall UI proof.
 adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Appeler"
 tap_text "Appeler"
@@ -132,6 +146,7 @@ sys.exit(0 if any("En communication" in (n.get("text", "") + n.get("content-desc
 PY
 then adb emu gsm accept 5550101; fi
 wait_text "En communication"
+wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"
 capture 05-outgoing-call
 tap_text "Raccrocher"
 wait_text "Appel terminé"
