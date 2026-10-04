@@ -1,6 +1,5 @@
 package com.sentinel.quantum.ui
 
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.navigation.compose.rememberNavController
@@ -53,6 +52,6 @@ class AllStaticNavigationSurfacesInstrumentationTest {
             }
         }
         composeRule.waitForIdle()
-        composeRule.onRoot(useUnmergedTree = true).assertExists()
+        composeRule.onRoot(useUnmergedTree = true).fetchSemanticsNode()
     }
 }
