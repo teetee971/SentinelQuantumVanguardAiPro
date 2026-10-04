@@ -17,6 +17,12 @@ class GlobalPhoneIdentityPolicyTest {
         assertThrowsIllegalArgument { GlobalPhoneIdentityPolicy.requireCanonicalE164("0690123456") }
     }
 
+    @Test fun rejectsPlusNumbersThatAreNotValidE164Shape() {
+        assertNull(GlobalPhoneIdentityPolicy.canonicalE164OrNull("+01234567"))
+        assertNull(GlobalPhoneIdentityPolicy.canonicalE164OrNull("+0033612345678"))
+        assertThrowsIllegalArgument { GlobalPhoneIdentityPolicy.requireCanonicalE164("+01234567") }
+    }
+
     @Test fun regionIsExplicitLocaleStableAndNeverDefaultsToFrance() {
         assertEquals("GP", GlobalPhoneIdentityPolicy.canonicalRegionIsoOrNull(" gp "))
         assertEquals("IN", GlobalPhoneIdentityPolicy.canonicalRegionIsoOrNull("in"))
