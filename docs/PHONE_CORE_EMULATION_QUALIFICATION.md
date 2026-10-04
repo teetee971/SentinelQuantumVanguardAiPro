@@ -17,12 +17,13 @@ Avant les émulateurs, il exécute explicitement les tests des trois modules Gra
 - `:wearable-security:test` ;
 - `:app:lintDebug`, compilation APK et APK de tests.
 
-API 24 vérifie le plancher réellement supporté par l'APK : installation, cold launch, instrumentation et rendu de toutes les destinations statiques de l'application. Les parcours Phone Core basés sur les rôles Android modernes sont volontairement limités aux API 29 et 36 ; leur absence sur API 24 n'est jamais transformée en faux support.
+API 24 vérifie le plancher réellement supporté par l'APK : installation, cold launch, instrumentation et rendu des surfaces applicatives. Les parcours Phone Core basés sur les rôles Android modernes sont volontairement limités aux API 29 et 36 ; leur absence sur API 24 n'est jamais transformée en faux support.
 
 La qualification exécute ensuite notamment :
 
 - `:app:connectedDebugAndroidTest` sur API 24, 29 et 36 ;
 - rendu instrumenté de chaque destination statique du `NavGraph` : accueil, recherche, OSINT, audits, journaux, Phone Security, communications, blocage et listes, historique, sécurité email/SMS, permissions, réseau, exposition numérique, défense collective, Smart Home, VPN, conformité, à propos et paramètres ;
+- lancement instrumenté des activités autonomes non couvertes par le `NavGraph` : activation Phone Core, diagnostic Phone Core et Voice Studio ;
 - canonicalisation régionale FR / GP / MQ / GF / RE / YT / PM ;
 - politiques multi-SIM et sélection d'abonnement ;
 - retrait/rétablissement réel des rôles SMS, Téléphone et Filtrage dans le framework Android de l'émulateur sur les versions qui les supportent ;
