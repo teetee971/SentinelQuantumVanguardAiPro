@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api_level: [29, 36]
+        api_level: [24, 29, 36]
 
     steps:
       - name: Checkout repository
@@ -159,7 +159,7 @@ jobs:
           set -euo pipefail
           ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
 
-      - name: Run full synthetic Phone Core runtime flow
+      - name: Run emulator application/runtime qualification
         working-directory: ./native-android-app
         shell: bash
         env:
@@ -175,8 +175,30 @@ jobs:
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           adb logcat -c >/dev/null 2>&1 || true
-          bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-          bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+
+          if [[ "$API_LEVEL" -ge 29 ]]; then
+            bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+            bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+          else
+            # API 24 is the application's declared minSdk. Modern Android RoleManager-based Phone
+            # Core flows do not exist here, so this row proves clean install/cold launch plus the
+            # full connected instrumentation/navigation smoke suite without inventing role support.
+            adb shell am force-stop com.sentinel.quantum
+            adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1 || true
+            sleep 3
+            adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
+            adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+              echo "Crash/ANR detected on minSdk first launch."
+              adb logcat -d -v time | tail -n 400
+              exit 1
+            fi
+            adb shell am force-stop com.sentinel.quantum
+            adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1 || true
+            sleep 3
+            adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-second-pid.txt"
+            adb exec-out screencap -p > "$OUTPUT/02-min-sdk-second-launch.png" || true
+          fi
 
           adb logcat -d -v time > "$OUTPUT/logcat.txt" || true
           adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
@@ -184,7 +206,7 @@ jobs:
           adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
 
           if grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum' "$OUTPUT/logcat.txt"; then
-            echo "Crash/ANR detected during Phone Core emulator qualification."
+            echo "Crash/ANR detected during Android emulator qualification."
             tail -n 400 "$OUTPUT/logcat.txt"
             exit 1
           fi
@@ -192,12 +214,14 @@ jobs:
           API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
+          const api = Number(process.env.API_LEVEL);
+          const modernPhoneCore = api >= 29;
           const report = {
             schema_version: 1,
-            qualification: 'PHONE_CORE_ANDROID_EMULATION',
-            api_level: Number(process.env.API_LEVEL),
+            qualification: 'ANDROID_APPLICATION_EMULATION',
+            api_level: api,
             result: 'PASS',
-            synthetic_modem: true,
+            synthetic_modem: modernPhoneCore,
             physical_modem_claim: false,
             commercial_release_claim: false,
             commit: process.env.GITHUB_SHA,
@@ -205,12 +229,14 @@ jobs:
             workflow_run_id: process.env.GITHUB_RUN_ID,
             checks: {
               connected_instrumentation: true,
-              incoming_call_telecom_flow: true,
-              outgoing_call_telecom_flow: true,
-              incoming_sms_and_inline_reply: true,
-              setup_resume: true,
-              role_revocation_fail_closed: true,
-              permission_revocation_fail_closed: true,
+              all_static_navigation_surfaces_render: true,
+              min_sdk_cold_launch: api === 24,
+              incoming_call_telecom_flow: modernPhoneCore,
+              outgoing_call_telecom_flow: modernPhoneCore,
+              incoming_sms_and_inline_reply: modernPhoneCore,
+              setup_resume: modernPhoneCore,
+              role_revocation_fail_closed: modernPhoneCore,
+              permission_revocation_fail_closed: modernPhoneCore,
               crash_or_anr_absent: true
             }
           };
