@@ -96,17 +96,17 @@ object PhoneCoreDiagnostics {
             )
         )
         /*
-         * Software readiness contains only prerequisites the app/user can configure.
+         * Software readiness contains only essential prerequisites the app/user can configure.
+         * READ_CONTACTS remains an optional local enrichment and is intentionally excluded here.
          * A currently active carrier line or SIM is an environment/physical-test condition,
          * not a software prerequisite. Keeping those separate prevents the UI from
-         * contradicting the 8-step activation wizard on Wi-Fi-only/test devices.
+         * contradicting the activation wizard on Wi-Fi-only/test devices.
          */
         val softwareReady =
             f.dialerRoleHeld &&
                 f.callPermissionGranted &&
                 f.readPhoneStatePermissionGranted &&
                 f.callScreeningRoleHeld &&
-                f.contactsPermissionGranted &&
                 f.callLogPermissionGranted &&
                 f.smsRoleHeld &&
                 f.sendSmsPermissionGranted &&
@@ -138,4 +138,3 @@ object PhoneCoreDiagnostics {
             else -> Capability(id, State.LOCKED, missing)
         }
 }
-
