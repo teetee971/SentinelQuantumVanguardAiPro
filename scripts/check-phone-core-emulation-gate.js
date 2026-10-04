@@ -7,11 +7,27 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const gatePath = path.join(root, 'config', 'phone-core-production-gates.json');
 const workflowPath = path.join(root, '.github', 'workflows', 'android-emulation-qualification.yml');
 const flowPath = path.join(root, 'scripts', 'phone-core-emulator-flow.sh');
+const revocationTestPath = path.join(
+  root,
+  'native-android-app',
+  'app',
+  'src',
+  'androidTest',
+  'java',
+  'com',
+  'sentinel',
+  'quantum',
+  'security',
+  'PhoneCoreRuntimeRevocationInstrumentationTest.kt'
+);
 
 const errors = [];
 const gate = JSON.parse(fs.readFileSync(gatePath, 'utf8'));
 const workflow = fs.existsSync(workflowPath) ? fs.readFileSync(workflowPath, 'utf8') : '';
 const flow = fs.readFileSync(flowPath, 'utf8');
+const revocationTest = fs.existsSync(revocationTestPath)
+  ? fs.readFileSync(revocationTestPath, 'utf8')
+  : '';
 
 const requiredChecks = [
   'android_unit_tests',
@@ -80,7 +96,9 @@ for (const marker of [
   'api-level: [29, 36]',
   'connectedDebugAndroidTest',
   'phone-core-emulator-flow.sh',
-  'PhoneCore-Emulation-Qualification'
+  'PhoneCore-Emulation-Qualification',
+  'FATAL EXCEPTION: main',
+  'ANR in com\\.sentinel\\.quantum'
 ]) {
   if (!workflow.includes(marker)) errors.push(`emulation workflow missing marker: ${marker}`);
 }
@@ -89,10 +107,17 @@ for (const marker of [
   'adb emu sms send',
   'android.app.role.DIALER',
   'android.app.role.SMS',
-  'FATAL EXCEPTION: main',
-  'ANR in com\\.sentinel\\.quantum'
+  'android.app.role.CALL_SCREENING'
 ]) {
   if (!flow.includes(marker)) errors.push(`emulator runtime flow missing marker: ${marker}`);
+}
+for (const marker of [
+  'remove-role-holder',
+  'SEND_SMS_PERMISSION_REQUIRED',
+  'assertFalse(withoutRole.canSend)',
+  'RoleManager.ROLE_CALL_SCREENING'
+]) {
+  if (!revocationTest.includes(marker)) errors.push(`emulator revocation test missing marker: ${marker}`);
 }
 
 if (errors.length) {
