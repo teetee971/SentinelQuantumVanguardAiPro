@@ -4,6 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    ensureProductTruthRuntime();
     initializeSkipLink();
     initializeNavigation();
     initializeBackToTop();
@@ -11,6 +12,16 @@ document.addEventListener('DOMContentLoaded', function() {
     highlightCurrentPage();
     initializeRoadmapFilters();
 });
+
+function ensureProductTruthRuntime() {
+    if (window.__sentinelProductTruthRuntimeLoaded) return;
+    if (document.querySelector('script[src$="/public/product-truth.js"],script[src$="product-truth.js"]')) return;
+    const script = document.createElement('script');
+    script.src = '/public/product-truth.js';
+    script.defer = true;
+    script.dataset.sentinelAutoTruth = 'true';
+    document.head.appendChild(script);
+}
 
 function initializeSkipLink() {
     if (document.querySelector('.skip-link')) return;
