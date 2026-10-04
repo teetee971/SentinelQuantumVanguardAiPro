@@ -11,6 +11,11 @@ FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 for FLOW_ROLE in DIALER SMS; do
   adb shell cmd role add-role-holder --user 0 "android.app.role.$FLOW_ROLE" "$FLOW_PACKAGE"
 done
+# Call screening is a distinct Android role on supported platform versions. Keep this conditional
+# because some emulator/OEM role services may report it unavailable even when Telecom remains usable.
+if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING >/dev/null 2>&1; then
+  adb shell cmd role add-role-holder --user 0 android.app.role.CALL_SCREENING "$FLOW_PACKAGE"
+fi
 for FLOW_PERMISSION in CALL_PHONE READ_PHONE_STATE READ_CONTACTS READ_CALL_LOG SEND_SMS READ_SMS RECEIVE_SMS RECEIVE_MMS RECEIVE_WAP_PUSH; do
   adb shell pm grant "$FLOW_PACKAGE" "android.permission.$FLOW_PERMISSION"
 done
@@ -155,4 +160,14 @@ if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
   exit 1
 fi
 capture 07-inline-reply
+
+# Persist role state as evidence. The instrumentation suite separately removes/restores these roles
+# and permissions and asserts that capability truth becomes fail-closed.
+for FLOW_ROLE in DIALER SMS; do
+  adb shell cmd role get-role-holders --user 0 "android.app.role.$FLOW_ROLE" | grep -q "$FLOW_PACKAGE"
+done
+if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING > "$FLOW_OUTPUT_DIR/call-screening-role.txt" 2>/dev/null; then
+  grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/call-screening-role.txt"
+fi
+
 echo "Synthetic Telecom call and inline SMS reply UI verified; physical validation remains pending."
