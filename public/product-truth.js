@@ -78,10 +78,45 @@
     const style = document.createElement('style');
     style.id = 'sentinel-product-truth-styles';
     style.textContent = `
-      .sentinel-truth-strip{box-sizing:border-box;margin:0 auto 14px;max-width:1180px;padding:10px 14px;border:1px solid rgba(121,177,255,.24);border-radius:12px;background:rgba(8,13,21,.92);color:#dbe8ff;font:600 12px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+      .sentinel-truth-strip{box-sizing:border-box;margin:0 auto 14px;max-width:1180px;min-height:96px;padding:10px 14px;border:1px solid rgba(121,177,255,.24);border-radius:12px;background:rgba(8,13,21,.92);color:#dbe8ff;font:600 12px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
       .sentinel-truth-strip strong{color:#fff}.sentinel-truth-strip a{color:#91bdff;text-decoration:none}.sentinel-truth-strip a:hover{text-decoration:underline}.sentinel-truth-state{opacity:.86;font-weight:500}.sentinel-truth-state[data-state="AVAILABLE"]{color:#9ce5b2}.sentinel-truth-state[data-state="VALIDATION"]{color:#ffd48a}.sentinel-truth-state[data-state="INFRASTRUCTURE"],.sentinel-truth-state[data-state="PLANNED"]{color:#b8c8dc}
+      @media (min-width:720px){.sentinel-truth-strip{min-height:48px}}
     `;
     document.head.append(style);
+  }
+
+  function createTruthLink() {
+    const link = document.createElement('a');
+    link.href = '/public/product-status.html';
+    link.textContent = 'Voir l’état produit';
+    return link;
+  }
+
+  function ensureGlobalTruthStrip() {
+    injectGlobalStyles();
+    const existing = document.querySelector('.sentinel-truth-strip');
+    if (existing) return existing;
+
+    const strip = document.createElement('aside');
+    strip.className = 'sentinel-truth-strip';
+    strip.setAttribute('aria-label', 'État produit Sentinel synchronisé');
+    strip.setAttribute('aria-live', 'polite');
+
+    const main = document.createElement('span');
+    const strong = document.createElement('strong');
+    strong.textContent = 'État Sentinel synchronisé';
+    main.append(strong, document.createTextNode(' · chargement du snapshot canonique…'));
+
+    const status = document.createElement('span');
+    status.className = 'sentinel-truth-state';
+    status.dataset.state = 'VALIDATION';
+    status.textContent = 'Vérification de la disponibilité réelle';
+
+    strip.append(main, status, createTruthLink());
+    const mainContent = document.querySelector('main');
+    if (mainContent?.parentNode) mainContent.parentNode.insertBefore(strip, mainContent);
+    else document.body.prepend(strip);
+    return strip;
   }
 
   function relevantState(payload) {
@@ -100,8 +135,7 @@
   }
 
   function renderGlobalTruthStrip(payload) {
-    injectGlobalStyles();
-    if (document.querySelector('.sentinel-truth-strip')) return;
+    const strip = ensureGlobalTruthStrip();
     const capabilities = payload.capabilities ?? [];
     const available = capabilities.filter((item) => capabilityAvailable(item)).length;
     const updated = [
@@ -110,10 +144,6 @@
       payload.generated_from?.commercial_pro_extension_updated_at,
     ].filter(Boolean).sort().at(-1) ?? 'inconnue';
     const relevant = relevantState(payload);
-
-    const strip = document.createElement('aside');
-    strip.className = 'sentinel-truth-strip';
-    strip.setAttribute('aria-label', 'État produit Sentinel synchronisé');
 
     const main = document.createElement('span');
     const strong = document.createElement('strong');
@@ -131,14 +161,7 @@
       status.textContent = payload.commerce?.checkout_enabled ? 'Commerce actif selon entitlement' : 'Commerce payant non activé';
     }
 
-    const link = document.createElement('a');
-    link.href = '/public/product-status.html';
-    link.textContent = 'Voir l’état produit';
-
-    strip.append(main, status, link);
-    const mainContent = document.querySelector('main');
-    if (mainContent?.parentNode) mainContent.parentNode.insertBefore(strip, mainContent);
-    else document.body.prepend(strip);
+    strip.replaceChildren(main, status, createTruthLink());
   }
 
   function renderCommercialCatalog(payload) {
@@ -196,6 +219,9 @@
     });
   }
 
+  // Reserve the global truth surface before the asynchronous snapshot returns. This prevents the
+  // previous mobile CLS regression where inserting the strip after first paint shifted the page.
+  ensureGlobalTruthStrip();
   refreshStaticCapabilityAvailability();
   window.setInterval(refreshStaticCapabilityAvailability, 1000);
 
@@ -219,5 +245,11 @@
       document.querySelectorAll('[data-product-truth-summary]').forEach((node) => {
         node.textContent = 'Snapshot produit indisponible : consulter la roadmap et les états statiques de repli.';
       });
+      const strip = ensureGlobalTruthStrip();
+      const status = strip.querySelector('.sentinel-truth-state');
+      if (status) {
+        status.dataset.state = 'VALIDATION';
+        status.textContent = 'Snapshot indisponible · aucun état disponible n’est déduit';
+      }
     });
 })();
