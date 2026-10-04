@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-04",
+  "certification_schema_version": 5,
+  "local_technical_certificate": {
+    "required": true,
+    "required_count": 14,
+    "note": "Le certificat local 14/14 est nécessaire mais ne suffit pas à qualifier Phone Core pour la production commerciale."
+  },
+  "external_physical_gates": [
+    {
+      "id": "guadeloupe_region_rule_migration",
+      "passed": false,
+      "evidence_ref": null,
+      "requirement": "Sur réseau réel en Guadeloupe, vérifier formes nationales et +590, ajout/suppression de règles exactes et migration historique sans promotion erronée vers +33."
+    },
+    {
+      "id": "metropolitan_france_region_path",
+      "passed": false,
+      "evidence_ref": null,
+      "requirement": "Sur SIM/réseau réel de France métropolitaine, vérifier formes nationales et +33 sans collision avec les identités DOM-COM."
+    },
+    {
+      "id": "dual_sim_region_paths",
+      "passed": false,
+      "evidence_ref": null,
+      "requirement": "Sur double-SIM, vérifier régions identiques et différentes, choix SMS/MMS et comportement fail-closed lorsque le contexte régional est ambigu."
+    },
+    {
+      "id": "screening_pre_response_latency",
+      "passed": false,
+      "evidence_ref": null,
+      "requirement": "Sur Samsung Galaxy S24+ sous Android 16, mesurer le temps avant respondToCall et démontrer une valeur maximale strictement inférieure à 500 ms sur les scénarios enregistrés.",
+      "max_pre_response_ms_exclusive": 500
+    },
+    {
+      "id": "activation_roles_permissions",
+      "passed": false,
+      "evidence_ref": null,
+      "requirement": "Valider physiquement l'activation, le retrait et la restauration des rôles et permissions Phone Core concernés, sans faux état READY."
+    }
+  ]
+}
