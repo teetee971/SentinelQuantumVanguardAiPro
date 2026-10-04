@@ -26,8 +26,13 @@ class CallRuleBoundaryTest {
         assertNull(decision.normalizedNumber)
     }
 
-    @Test fun internationalAndFrenchRepresentationsRemainEquivalentForMatching() {
+    @Test fun explicitInternationalRepresentationsRemainEquivalentWithoutInventingNationalRegion() {
         val forms = CallRuleEngine.matchingRepresentations("+33612345678")
-        assertEquals(setOf("+33612345678", "0612345678", "0033612345678"), forms)
+        assertEquals(setOf("+33612345678", "0033612345678"), forms)
+    }
+
+    @Test fun internationalFormNeverSynthesizesARegionSpecificNationalNumber() {
+        val forms = CallRuleEngine.matchingRepresentations("+590690123456")
+        assertEquals(setOf("+590690123456", "00590690123456"), forms)
     }
 }
