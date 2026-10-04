@@ -76,10 +76,10 @@ class SentinelSmsSender(private val context: Context) {
 
             // Durable/provider identity is global. Canonicalize only after the concrete outgoing
             // subscription is known; a national number must never inherit a guessed +33 region.
-            val normalized = AndroidPhoneNumberCanonicalizer(context)
-                .normalize(syntaxSafeDestination, subscriptionId = subscriptionId)
-                ?.takeIf { it.startsWith('+') }
-                ?: return SendResult(false, "E164_DESTINATION_UNAVAILABLE")
+            val normalized = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
+                AndroidPhoneNumberCanonicalizer(context)
+                    .normalize(syntaxSafeDestination, subscriptionId = subscriptionId)
+            ) ?: return SendResult(false, "E164_DESTINATION_UNAVAILABLE")
 
             @Suppress("DEPRECATION")
             val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
