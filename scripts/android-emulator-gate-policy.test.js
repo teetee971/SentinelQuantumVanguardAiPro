@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const codeqlWorkflow = readFileSync('.github/workflows/codeql-analysis.yml', 'utf8');
 const emulationWorkflow = readFileSync('.github/workflows/android-emulation-qualification.yml', 'utf8');
+const releaseWorkflow = readFileSync('.github/workflows/android-release.yml', 'utf8');
 
 function requiredWorkflowBlock(workflow) {
   const start = workflow.indexOf('REQUIRED_WORKFLOWS=(');
@@ -13,11 +14,28 @@ function requiredWorkflowBlock(workflow) {
   return workflow.slice(start, end);
 }
 
+function exactReleaseWorkflowBlock(workflow) {
+  const start = workflow.indexOf('EXACT_WORKFLOWS=(');
+  assert.notEqual(start, -1, 'Android release workflow must declare EXACT_WORKFLOWS');
+  const end = workflow.indexOf('\n          )', start);
+  assert.notEqual(end, -1, 'Android release EXACT_WORKFLOWS block must be bounded');
+  return workflow.slice(start, end);
+}
+
 test('required CodeQL Android status waits for canonical emulator and comprehensive merge gates', () => {
   const block = requiredWorkflowBlock(codeqlWorkflow);
   assert.match(block, /"android-emulation-qualification\.yml"/);
   assert.doesNotMatch(block, /"android-instrumentation\.yml"/);
   assert.match(block, /"production-merge-gate\.yml"/);
+});
+
+test('Android release requires canonical emulator qualification on the exact release SHA', () => {
+  const block = exactReleaseWorkflowBlock(releaseWorkflow);
+  assert.match(block, /"android-emulation-qualification\.yml"/);
+  assert.doesNotMatch(block, /"android-instrumentation\.yml"/);
+  assert.match(block, /"build-native-android\.yml"/);
+  assert.match(block, /"build-aab-playconsole\.yml"/);
+  assert.match(block, /"codeql-analysis\.yml"/);
 });
 
 test('Android emulator qualification covers minimum, RoleManager boundary, Android 16 and newest runtime lanes', () => {
