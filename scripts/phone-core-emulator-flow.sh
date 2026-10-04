@@ -11,6 +11,11 @@ FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 for FLOW_ROLE in DIALER SMS; do
   adb shell cmd role add-role-holder --user 0 "android.app.role.$FLOW_ROLE" "$FLOW_PACKAGE"
 done
+# Call screening is a distinct Android role on supported platform versions. Keep this conditional
+# because some emulator/OEM role services may report it unavailable even when Telecom remains usable.
+if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING >/dev/null 2>&1; then
+  adb shell cmd role add-role-holder --user 0 android.app.role.CALL_SCREENING "$FLOW_PACKAGE"
+fi
 for FLOW_PERMISSION in CALL_PHONE READ_PHONE_STATE READ_CONTACTS READ_CALL_LOG SEND_SMS READ_SMS RECEIVE_SMS RECEIVE_MMS RECEIVE_WAP_PUSH; do
   adb shell pm grant "$FLOW_PACKAGE" "android.permission.$FLOW_PERMISSION"
 done
@@ -82,7 +87,6 @@ adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Clavier"
 capture 01-dialer
 
-# Locked incoming call exercises the real Telecom -> InCallService -> call UI path.
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
 wait_text "Décrocher"
@@ -107,12 +111,10 @@ capture 04-ended-call
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 
-# Outgoing call originates from Sentinel's own button, matching the reported S24 scenario.
 adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Appeler"
 tap_text "Appeler"
 wait_text "Composition" "En communication"
-# Some virtual carriers connect immediately; do not require a transient dialing state.
 if ! python3 - "$FLOW_XML" <<'PY'
 import sys, xml.etree.ElementTree as ET
 sys.exit(0 if any("En communication" in (n.get("text", "") + n.get("content-desc", "")) for n in ET.parse(sys.argv[1]).iter("node")) else 1)
@@ -123,7 +125,6 @@ capture 05-outgoing-call
 tap_text "Raccrocher"
 wait_text "Appel terminé"
 
-# Receive one synthetic SMS, open its conversation, and send an inline reply.
 adb shell am start -W -a android.intent.action.MAIN -n "$FLOW_PACKAGE/.SmsComposeActivity"
 adb emu sms send "$FLOW_SMS_NUMBER" "Sentinel emulator reply test"
 wait_text "Sentinel emulator reply test"
@@ -131,7 +132,6 @@ tap_text "Sentinel emulator reply test"
 wait_text "Répondre"
 capture 06-thread
 tap_text "Répondre"
-# A tap returns before Compose/IME focus settles; typing immediately can lose the first key.
 wait_reply_focus
 adb shell input text ReplyFromSentinel
 wait_text "ReplyFromSentinel"
@@ -155,4 +155,12 @@ if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
   exit 1
 fi
 capture 07-inline-reply
+
+for FLOW_ROLE in DIALER SMS; do
+  adb shell cmd role get-role-holders --user 0 "android.app.role.$FLOW_ROLE" | grep -q "$FLOW_PACKAGE"
+done
+if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING > "$FLOW_OUTPUT_DIR/call-screening-role.txt" 2>/dev/null; then
+  grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/call-screening-role.txt"
+fi
+
 echo "Synthetic Telecom call and inline SMS reply UI verified; physical validation remains pending."
