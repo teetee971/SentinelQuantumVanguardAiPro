@@ -32,26 +32,27 @@ class SentinelCallScreeningService : CallScreeningService() {
             return
         }
 
-        val decision = runCatching {
+        val screeningResult = runCatching {
+            val regionIso = PhoneRegionRuntimeCache.currentRegionIso()
+            val canonicalCallerNumber = AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(
+                rawCallerNumber,
+                regionIso
+            )
             val store = CallBlocklistStore(this)
             val snapshot = store.cachedScreeningSnapshot()
-            CallRuleEngine(
+            val decision = CallRuleEngine(
                 snapshot.blockedNumberHashes,
                 snapshot.effectiveBlockedPrefixes,
                 reputationSilencePrefixes = snapshot.signedSilencePrefixes,
-                fingerprintsForNumber = store::cachedFingerprintsForNumber,
-                numberNormalizer = { number ->
-                    AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(
-                        number,
-                        PhoneRegionRuntimeCache.currentRegionIso()
-                    )
-                }
-            ).evaluate(rawCallerNumber)
+                fingerprintsForNumber = store::cachedFingerprintsForNumber
+            ).evaluate(canonicalCallerNumber)
+            ScreeningResult(decision, canonicalCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
             respondToCall(callDetails, CallResponse.Builder().build())
             return
         }
+        val decision = screeningResult.decision
         val response = CallResponse.Builder()
         when (decision.action) {
             CallRuleEngine.Action.BLOCK -> response
@@ -66,8 +67,9 @@ class SentinelCallScreeningService : CallScreeningService() {
         }
         respondToCall(callDetails, response.build())
 
-        // Caller-ID rendering happens only after the mandatory platform response. The profile is
-        // computed offline and contains no invented person or company identity.
+        // Caller-ID rendering happens only after the mandatory platform response. It receives the
+        // exact same region-safe representation that was evaluated above, so presentation cannot
+        // reintroduce a conflicting country interpretation after the filtering decision.
         val verificationCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             when (callDetails.callerNumberVerificationStatus) {
                 Connection.VERIFICATION_STATUS_PASSED -> "VERIFIED"
@@ -84,7 +86,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             else -> "Statut indisponible sur cette version Android"
         }
         val profile = CallerIdentityResolver.resolve(
-            rawNumber = rawCallerNumber,
+            rawNumber = screeningResult.canonicalCallerNumber,
             verification = verification,
             displayName = null,
             organisation = null,
@@ -159,6 +161,11 @@ class SentinelCallScreeningService : CallScreeningService() {
             REJECTED_POST_RESPONSE_WORK.incrementAndGet()
         }
     }
+
+    private data class ScreeningResult(
+        val decision: CallRuleEngine.Decision,
+        val canonicalCallerNumber: String?
+    )
 
     private companion object {
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
