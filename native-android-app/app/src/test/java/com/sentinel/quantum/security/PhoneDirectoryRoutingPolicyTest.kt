@@ -13,8 +13,16 @@ class PhoneDirectoryRoutingPolicyTest {
         assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("+262692123456"))
     }
 
+    @Test fun routesFrenchPlanShortCodesOnlyWithTrustedTelephonyRegion() {
+        assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("3018", "FR"))
+        assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("3018", "GP"))
+        assertEquals(PhoneDirectoryRoutingPolicy.Target.ARCEP, PhoneDirectoryRoutingPolicy.targetFor("3018", "PM"))
+        assertEquals(PhoneDirectoryRoutingPolicy.Target.NONE, PhoneDirectoryRoutingPolicy.targetFor("3018", null))
+        assertEquals(PhoneDirectoryRoutingPolicy.Target.NONE, PhoneDirectoryRoutingPolicy.targetFor("3018", "US"))
+    }
+
     @Test fun rejectsNationalMalformedAndUnsupportedInternationalNumbers() {
-        assertEquals(PhoneDirectoryRoutingPolicy.Target.NONE, PhoneDirectoryRoutingPolicy.targetFor("0612345678"))
+        assertEquals(PhoneDirectoryRoutingPolicy.Target.NONE, PhoneDirectoryRoutingPolicy.targetFor("0612345678", "FR"))
         assertEquals(PhoneDirectoryRoutingPolicy.Target.NONE, PhoneDirectoryRoutingPolicy.targetFor("+01234567"))
         assertEquals(PhoneDirectoryRoutingPolicy.Target.NONE, PhoneDirectoryRoutingPolicy.targetFor("+14155550132"))
     }
