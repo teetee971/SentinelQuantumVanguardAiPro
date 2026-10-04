@@ -40,6 +40,9 @@ jobs:
           node --test scripts/check-actions-permissions.test.js
           node scripts/check-actions-permissions.js
 
+      - name: Verify Android emulator gate policy
+        run: node --test scripts/android-emulator-gate-policy.test.js
+
       - name: Verify Android release publication policy
         run: npm run test:android-release-policy
 
