@@ -176,6 +176,7 @@ jobs:
           mkdir -p "$OUTPUT"
           adb logcat -c >/dev/null 2>&1 || true
           bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+          bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
 
           adb logcat -d -v time > "$OUTPUT/logcat.txt" || true
           adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
@@ -208,6 +209,8 @@ jobs:
               outgoing_call_telecom_flow: true,
               incoming_sms_and_inline_reply: true,
               setup_resume: true,
+              role_revocation_fail_closed: true,
+              permission_revocation_fail_closed: true,
               crash_or_anr_absent: true
             }
           };
