@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 test('Phone Core roadmap and diagnostic copy match certification schema v5', () => {
@@ -115,4 +115,68 @@ test('Phone Core readiness no longer owns the Wi-Fi scanner capability', () => {
   assert.doesNotMatch(labels, /"WIFI_SCAN"\s*->/);
   assert.match(wifiScanner, /SIGNAL_WIFI_SCAN_FRESH\s*=\s*"WIFI_SCAN_FRESH"/);
   assert.doesNotMatch(wifiScanner, /PhoneCorePhysicalValidation\.SIGNAL_WIFI_SCAN_FRESH/);
+});
+
+
+test('counter-free customer Phone Core resources cover every supported Android version', () => {
+  const buildGradle = readFileSync(resolve('native-android-app/app/build.gradle'), 'utf8');
+  const minSdk = Number(buildGradle.match(/\bminSdk\s+(\d+)/)?.[1]);
+  assert.ok(Number.isInteger(minSdk), 'Android minSdk must remain statically auditable');
+  assert.ok(
+    minSdk >= 24,
+    'counter-free values-v24 Phone Core resources no longer cover the supported SDK floor'
+  );
+
+  const names = [
+    'phone_core_ready_validation_count',
+    'phone_core_configuration_validation_count',
+  ];
+  const pluralBlock = (text, name) =>
+    text.match(
+      new RegExp(
+        `<plurals\\b(?=[^>]*\\bname\\s*=\\s*["']${name}["'])[^>]*>[\\s\\S]*?<\\/plurals>`,
+        'i'
+      )
+    )?.[0] ?? null;
+  const androidFormatPlaceholder = /%(?!%)(?:\d+\$)?[-#+ 0,(<]*\d*(?:\.\d+)?[bBhHsScCdoxXeEfgGaAtTn]/;
+  const assertCustomerStatusIsCounterFree = (block, location) => {
+    assert.ok(block, `${location} must define the customer Phone Core status plural`);
+    assert.doesNotMatch(
+      block,
+      androidFormatPlaceholder,
+      `${location} reintroduces a format placeholder in counter-free customer status`
+    );
+    assert.doesNotMatch(
+      block,
+      /\d+\s*\/\s*\d+|\bvalidation(?:s)?\b/i,
+      `${location} reintroduces certification progress in customer status`
+    );
+  };
+
+  const v24 = readFileSync(
+    resolve('native-android-app/app/src/main/res/values-v24/phone_core_status.xml'),
+    'utf8'
+  );
+  for (const name of names) {
+    assertCustomerStatusIsCounterFree(pluralBlock(v24, name), `values-v24/phone_core_status.xml:${name}`);
+  }
+
+  // A future locale-qualified override can outrank the generic values-v24 fallback for that locale.
+  // Attribute order, quote style and line breaks are intentionally tolerated. If a qualified resource
+  // redefines either customer status plural, only that element is inspected; unrelated XML copy must
+  // not create false positives.
+  const resRoot = resolve('native-android-app/app/src/main/res');
+  for (const directory of readdirSync(resRoot, { withFileTypes: true })) {
+    if (!directory.isDirectory() || !directory.name.startsWith('values-')) continue;
+    const directoryPath = resolve(resRoot, directory.name);
+    for (const file of readdirSync(directoryPath, { withFileTypes: true })) {
+      if (!file.isFile() || !file.name.endsWith('.xml')) continue;
+      const text = readFileSync(resolve(directoryPath, file.name), 'utf8');
+      for (const name of names) {
+        const block = pluralBlock(text, name);
+        if (block == null) continue;
+        assertCustomerStatusIsCounterFree(block, `${directory.name}/${file.name}:${name}`);
+      }
+    }
+  }
 });
