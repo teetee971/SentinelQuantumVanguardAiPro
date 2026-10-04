@@ -14,18 +14,13 @@ class CallBlocklistStore(context: Context) {
         // canonicalization marker are quarantined instead of being silently reinterpreted under
         // new semantics. This prevents both false +33 blocking and silent disappearance.
         val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
-            .mapNotNull(::decodeMetadata)
+            .mapNotNull(CallBlockMetadataCodec::decode)
             .associateBy { it.fingerprint }
         val allHashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
             .take(CallRuleEngine.MAX_EXACT_RULES)
             .toSet()
-        val blockedHashes = allHashes.filter { hash ->
-            metadataByHash[hash]?.let { it.safeForExactMatching && it.isActive(now) } == true
-        }.toSet()
-        val quarantinedLegacyHashes = allHashes.filter { hash ->
-            val metadata = metadataByHash[hash]
-            (metadata == null || !metadata.safeForExactMatching) && (metadata?.isActive(now) ?: true)
-        }.toSet()
+        val partition = ExactRuleMigrationPolicy.partition(allHashes, metadataByHash, now)
+        val blockedHashes = partition.activeSafe
 
         return Snapshot(
             blockedNumberHashes = blockedHashes,
@@ -43,7 +38,7 @@ class CallBlocklistStore(context: Context) {
                 }
                 .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
             signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L),
-            quarantinedLegacyExactRuleCount = quarantinedLegacyHashes.size
+            quarantinedLegacyExactRuleCount = partition.quarantinedLegacy.size
         )
     }
 
@@ -112,7 +107,7 @@ class CallBlocklistStore(context: Context) {
         )
         val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .filterNot { it.startsWith("$fingerprint|") }.toMutableSet()
-        metadata += encodeMetadata(entry)
+        metadata += CallBlockMetadataCodec.encode(entry)
         val committed = preferences.edit()
             .putStringSet(EXACT_HASHES, values)
             .putStringSet(EXACT_METADATA, metadata)
@@ -164,7 +159,7 @@ class CallBlocklistStore(context: Context) {
      */
     fun discardQuarantinedLegacyExactRules(): Int {
         val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
-            .mapNotNull(::decodeMetadata)
+            .mapNotNull(CallBlockMetadataCodec::decode)
             .associateBy { it.fingerprint }
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
         val legacy = hashes.filter { hash ->
@@ -185,11 +180,12 @@ class CallBlocklistStore(context: Context) {
 
     /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
     fun purgeExpiredBlockedNumbers(now: Long = System.currentTimeMillis()): Int {
-        val entries = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty().mapNotNull(::decodeMetadata)
+        val entries = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
+            .mapNotNull(CallBlockMetadataCodec::decode)
         val expired = entries.filterNot { it.isActive(now) }.map { it.fingerprint }.toSet()
         if (expired.isEmpty()) return 0
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().filterNot(expired::contains).toSet()
-        val metadata = entries.filter { it.isActive(now) }.map(::encodeMetadata).toSet()
+        val metadata = entries.filter { it.isActive(now) }.map(CallBlockMetadataCodec::encode).toSet()
         if (!preferences.edit().putStringSet(EXACT_HASHES, hashes).putStringSet(EXACT_METADATA, metadata).commit()) return 0
         refreshScreeningSnapshotAfterCommit()
         return expired.size
@@ -325,38 +321,6 @@ class CallBlocklistStore(context: Context) {
             } else {
                 blockedPrefixes
             }
-    }
-
-    private fun encodeMetadata(entry: CallBlockMetadata.Entry): String = listOf(
-        entry.fingerprint,
-        entry.createdAtEpochMs.toString(),
-        entry.expiresAtEpochMs?.toString().orEmpty(),
-        entry.origin.name,
-        entry.canonicalization.name,
-        entry.reason.replace("|", " ")
-    ).joinToString("|")
-
-    private fun decodeMetadata(encoded: String): CallBlockMetadata.Entry? {
-        val parts = encoded.split("|", limit = 6)
-        if (parts.size !in 5..6 || parts[0].isBlank()) return null
-        val created = parts[1].toLongOrNull() ?: return null
-        val expires = if (parts[2].isEmpty()) null else parts[2].toLongOrNull() ?: return null
-        val origin = runCatching { CallBlockMetadata.Origin.valueOf(parts[3]) }.getOrNull() ?: return null
-        val canonicalization = if (parts.size == 6) {
-            runCatching { CallBlockMetadata.Canonicalization.valueOf(parts[4]) }.getOrNull()
-                ?: return null
-        } else {
-            CallBlockMetadata.Canonicalization.LEGACY_UNSPECIFIED
-        }
-        val reason = if (parts.size == 6) parts[5] else parts[4]
-        return CallBlockMetadata.Entry(
-            fingerprint = parts[0],
-            reason = reason,
-            createdAtEpochMs = created,
-            expiresAtEpochMs = expires,
-            origin = origin,
-            canonicalization = canonicalization
-        )
     }
 
     private companion object {
