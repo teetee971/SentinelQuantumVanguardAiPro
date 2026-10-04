@@ -4,19 +4,28 @@ import android.content.Context
 
 /** App-private rule storage. Exact phone numbers are persisted only as keyed fingerprints. */
 class CallBlocklistStore(context: Context) {
-    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
     private val fingerprinter = CallNumberFingerprinter()
+    private val canonicalizer = AndroidPhoneNumberCanonicalizer(appContext)
 
     fun snapshot(now: Long = System.currentTimeMillis()): Snapshot {
-        // Keep expired entries in the lookup so they cannot be mistaken for
-        // legacy hashes without metadata. Legacy hashes remain permanent.
+        // Historical exact fingerprints are irreversible. Entries without the region-aware
+        // canonicalization marker are quarantined instead of being silently reinterpreted under
+        // new semantics. This prevents both false +33 blocking and silent disappearance.
         val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .mapNotNull(::decodeMetadata)
             .associateBy { it.fingerprint }
-        val blockedHashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
-            .filter { hash -> metadataByHash[hash]?.isActive(now) ?: true }
+        val allHashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
             .take(CallRuleEngine.MAX_EXACT_RULES)
             .toSet()
+        val blockedHashes = allHashes.filter { hash ->
+            metadataByHash[hash]?.let { it.safeForExactMatching && it.isActive(now) } == true
+        }.toSet()
+        val quarantinedLegacyHashes = allHashes.filter { hash ->
+            val metadata = metadataByHash[hash]
+            (metadata == null || !metadata.safeForExactMatching) && (metadata?.isActive(now) ?: true)
+        }.toSet()
 
         return Snapshot(
             blockedNumberHashes = blockedHashes,
@@ -27,9 +36,14 @@ class CallBlocklistStore(context: Context) {
             } else emptySet(),
             arcepVerifiedBlockingEnabled = isArcepVerifiedBlockingEnabled(),
             blockedNumberExpiresAtMs = metadataByHash.values
-                .filter { it.fingerprint in blockedHashes && it.expiresAtEpochMs != null }
+                .filter {
+                    it.safeForExactMatching &&
+                        it.fingerprint in blockedHashes &&
+                        it.expiresAtEpochMs != null
+                }
                 .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
-            signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L)
+            signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L),
+            quarantinedLegacyExactRuleCount = quarantinedLegacyHashes.size
         )
     }
 
@@ -77,17 +91,24 @@ class CallBlocklistStore(context: Context) {
         origin: CallBlockMetadata.Origin = CallBlockMetadata.Origin.MANUAL,
         now: Long = System.currentTimeMillis()
     ): Boolean {
-        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
-        val values = snapshot(now).blockedNumberHashes.toMutableSet()
+        // Exact security rules are persisted only after an explicit/observed region produced E.164.
+        // If the Android region is ambiguous or unavailable, callers may still supply +E.164
+        // explicitly; a national number is never fingerprinted under guessed country semantics.
+        val normalized = canonicalizer.normalize(rawNumber) ?: return false
+        if (!normalized.startsWith('+')) return false
+        val values = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
+            .take(CallRuleEngine.MAX_EXACT_RULES)
+            .toMutableSet()
         val fingerprint = fingerprinter.fingerprint(normalized) ?: return false
         if (fingerprint !in values && values.size >= CallRuleEngine.MAX_EXACT_RULES) return false
         values += fingerprint
         val entry = CallBlockMetadata.Entry(
-            fingerprint,
-            CallBlockMetadata.sanitizeReason(reason),
-            now,
-            CallBlockMetadata.expiresAt(now, duration),
-            origin
+            fingerprint = fingerprint,
+            reason = CallBlockMetadata.sanitizeReason(reason),
+            createdAtEpochMs = now,
+            expiresAtEpochMs = CallBlockMetadata.expiresAt(now, duration),
+            origin = origin,
+            canonicalization = CallBlockMetadata.Canonicalization.REGION_AWARE_E164_V1
         )
         val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .filterNot { it.startsWith("$fingerprint|") }.toMutableSet()
@@ -118,7 +139,8 @@ class CallBlocklistStore(context: Context) {
 
     /** UI/general path only; may access AndroidKeyStore. */
     fun removeBlockedNumber(rawNumber: String): Boolean {
-        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
+        val normalized = canonicalizer.normalize(rawNumber) ?: return false
+        if (!normalized.startsWith('+')) return false
         val fingerprints = fingerprinter.candidates(normalized)
         if (fingerprints.isEmpty()) return false
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
@@ -132,6 +154,33 @@ class CallBlocklistStore(context: Context) {
             .commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
         return committed
+    }
+
+    /**
+     * Explicit user-revocation path for exact rules created before region-aware canonicalization.
+     * Raw numbers were never stored, so automatic migration is impossible by design. Legacy
+     * fingerprints remain persisted and non-runnable until the user explicitly discards them and
+     * re-enrols desired rules from known numbers under the new E.164 contract.
+     */
+    fun discardQuarantinedLegacyExactRules(): Int {
+        val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
+            .mapNotNull(::decodeMetadata)
+            .associateBy { it.fingerprint }
+        val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
+        val legacy = hashes.filter { hash ->
+            metadataByHash[hash]?.safeForExactMatching != true
+        }.toSet()
+        if (legacy.isEmpty()) return 0
+        hashes.removeAll(legacy)
+        val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
+            .filterNot { encoded -> legacy.any { encoded.startsWith("$it|") } }.toSet()
+        val committed = preferences.edit()
+            .putStringSet(EXACT_HASHES, hashes)
+            .putStringSet(EXACT_METADATA, metadata)
+            .commit()
+        if (!committed) return 0
+        refreshScreeningSnapshotAfterCommit()
+        return legacy.size
     }
 
     /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
@@ -253,7 +302,8 @@ class CallBlocklistStore(context: Context) {
         val signedSilencePrefixes: Set<String>,
         val arcepVerifiedBlockingEnabled: Boolean = false,
         val blockedNumberExpiresAtMs: Map<String, Long> = emptyMap(),
-        val signedExpiresAtMs: Long = 0L
+        val signedExpiresAtMs: Long = 0L,
+        val quarantinedLegacyExactRuleCount: Int = 0
     ) {
         /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
@@ -262,6 +312,9 @@ class CallBlocklistStore(context: Context) {
             }.toSet(),
             signedSilencePrefixes = if (now < signedExpiresAtMs) signedSilencePrefixes else emptySet()
         )
+
+        val exactRuleMigrationRequired: Boolean
+            get() = quarantinedLegacyExactRuleCount > 0
 
         val effectiveBlockedPrefixes: Set<String>
             get() = if (arcepVerifiedBlockingEnabled) {
@@ -279,16 +332,31 @@ class CallBlocklistStore(context: Context) {
         entry.createdAtEpochMs.toString(),
         entry.expiresAtEpochMs?.toString().orEmpty(),
         entry.origin.name,
+        entry.canonicalization.name,
         entry.reason.replace("|", " ")
     ).joinToString("|")
 
     private fun decodeMetadata(encoded: String): CallBlockMetadata.Entry? {
-        val parts = encoded.split("|", limit = 5)
-        if (parts.size != 5 || parts[0].isBlank()) return null
+        val parts = encoded.split("|", limit = 6)
+        if (parts.size !in 5..6 || parts[0].isBlank()) return null
         val created = parts[1].toLongOrNull() ?: return null
         val expires = if (parts[2].isEmpty()) null else parts[2].toLongOrNull() ?: return null
         val origin = runCatching { CallBlockMetadata.Origin.valueOf(parts[3]) }.getOrNull() ?: return null
-        return CallBlockMetadata.Entry(parts[0], parts[4], created, expires, origin)
+        val canonicalization = if (parts.size == 6) {
+            runCatching { CallBlockMetadata.Canonicalization.valueOf(parts[4]) }.getOrNull()
+                ?: return null
+        } else {
+            CallBlockMetadata.Canonicalization.LEGACY_UNSPECIFIED
+        }
+        val reason = if (parts.size == 6) parts[5] else parts[4]
+        return CallBlockMetadata.Entry(
+            fingerprint = parts[0],
+            reason = reason,
+            createdAtEpochMs = created,
+            expiresAtEpochMs = expires,
+            origin = origin,
+            canonicalization = canonicalization
+        )
     }
 
     private companion object {
