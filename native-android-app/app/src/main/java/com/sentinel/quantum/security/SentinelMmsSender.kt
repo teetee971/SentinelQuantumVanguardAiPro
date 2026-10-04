@@ -83,10 +83,10 @@ class SentinelMmsSender(private val context: Context) {
         // National syntax becomes durable only after a concrete SMS subscription is selected.
         // This prevents a Guadeloupe/DOM number from being promoted under metropolitan +33 rules
         // and prevents double-SIM ambiguity from leaking into provider/thread identity.
-        val normalizedDestination = AndroidPhoneNumberCanonicalizer(context)
-            .normalize(destination, subscriptionId = subscriptionId)
-            ?.takeIf { it.startsWith('+') }
-            ?: return SendResult(false, "E164_DESTINATION_UNAVAILABLE")
+        val normalizedDestination = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
+            AndroidPhoneNumberCanonicalizer(context)
+                .normalize(destination, subscriptionId = subscriptionId)
+        ) ?: return SendResult(false, "E164_DESTINATION_UNAVAILABLE")
 
         val policyAttachments = attachments.map {
             MmsSendEligibilityPolicy.Attachment(it.mimeType, it.payload.size.toLong())
