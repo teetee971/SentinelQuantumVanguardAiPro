@@ -9,6 +9,7 @@ dist/
 build/
 frontend/dist/
 artifacts/frontend/
+public/product-truth.generated.json
 *.apk
 *.aab
 
