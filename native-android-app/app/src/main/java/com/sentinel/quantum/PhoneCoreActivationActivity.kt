@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,7 +42,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
-import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsNotificationHelper
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
@@ -62,7 +60,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 
-/** User-driven activation and device-test center for Phone Core. */
+/** User-driven activation center for Phone Core roles, permissions and Android settings. */
 @OptIn(ExperimentalMaterial3Api::class)
 class PhoneCoreActivationActivity : ComponentActivity() {
     private fun hasPermission(permission: String): Boolean =
@@ -112,7 +110,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             }
         }
 
-
     private fun currentInstallTimestamp(): Long = runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManager.getPackageInfo(
@@ -132,7 +129,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         setContent {
             SentinelQuantumTheme {
                 var epoch by remember { mutableStateOf(0) }
-                var validationDetailsExpanded by remember { mutableStateOf(false) }
                 var deniedPermissions by remember { mutableStateOf<Set<String>>(emptySet()) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -181,6 +177,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val smsModel = remember(state.smsSnapshot) { SmsActivationUiModel.from(state.smsSnapshot) }
                 val smsRoleHeld = state.smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
                 val mmsSafePreviewValidated = remember { MmsSafePreviewReadiness.softwareValidated }
+                // Certification remains part of readiness truth, but its raw x/14 detail belongs to
+                // PhoneCoreDiagnosticActivity rather than the customer activation journey.
                 val physicalEvidence by produceState(
                     initialValue = PhoneCorePhysicalValidation.evaluate(emptyList()),
                     key1 = epoch
@@ -364,11 +362,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
 
-
                 Scaffold(topBar = {
                     SentinelTopBar(
                         title = "Téléphonie",
-                        subtitle = "Centre d’activation & test",
+                        subtitle = "Centre d’activation",
                         onBack = { finish() }
                     )
                 }) { padding ->
@@ -377,9 +374,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         PhoneCoreBrand(
-                            context = "Activation & tests",
+                            context = "Activation",
                             status = if (state.callsReady && smsModel.state == SmsActivationDiagnostics.State.READY) {
-                                "Prérequis appels et SMS prêts · tests physiques requis"
+                                "Prérequis appels et SMS prêts"
                             } else {
                                 "Configuration Android incomplète"
                             },
@@ -506,15 +503,34 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, PhoneCoreDiagnosticActivity::class.java)) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Vérifier la configuration avancée")
+                            Text("Diagnostic technique")
                         }
 
-                        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+                        Card(
+                            Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                        ) {
                             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("TÉLÉPHONIE SENTINEL", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                                Text("Finaliser la configuration du téléphone", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
-                                Text("Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.", style = MaterialTheme.typography.bodySmall)
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    "TÉLÉPHONIE SENTINEL",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "Finaliser la configuration du téléphone",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                                Text(
+                                    "Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     StatusChip(
                                         if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER",
                                         state.callsReady
@@ -523,88 +539,27 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         if (readiness.softwarePrerequisitesReady) "CONFIGURATION PRÊTE" else "CONFIGURATION À TERMINER",
                                         readiness.softwarePrerequisitesReady
                                     )
-                                    StatusChip(
-                                        "TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
-                                        readiness.fullyValidated
-                                    )
                                 }
                             }
                         }
 
                         Card(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("Tests sur cet appareil", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
-                                        Text(
-                                            when {
-                                                readiness.fullyValidated -> "VALIDÉ SUR CET APPAREIL"
-                                                physicalEvidence.fullyValidated -> "VALIDATION SUSPENDUE"
-                                                readiness.softwarePrerequisitesReady -> "PRÊT À TESTER"
-                                                else -> "À CONFIGURER"
-                                            },
-                                            style = MaterialTheme.typography.labelSmall,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                                        )
-                                    }
-                                }
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    readiness.validationSummary(
-                                        physicalEvidence.completedCount,
-                                        physicalEvidence.requiredCount
-                                    ),
+                                    "État de configuration",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    if (readiness.softwarePrerequisitesReady) {
+                                        "Les rôles, autorisations et prérequis logiciels observables sont prêts pour les fonctions configurées."
+                                    } else {
+                                        "Terminez les rôles et autorisations indiqués ci-dessous. Sentinel relit l’état réellement accordé par Android."
+                                    },
                                     style = MaterialTheme.typography.bodySmall
                                 )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "Tests validés : ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    TextButton(onClick = { validationDetailsExpanded = !validationDetailsExpanded }) {
-                                        Text(if (validationDetailsExpanded) "Masquer les détails" else "Voir les détails")
-                                    }
-                                }
-                                if (validationDetailsExpanded) {
-                                    readiness.capabilities.filter { it.id != "PHYSICAL_DEVICE" }.forEach {
-                                        Text("• ${PhoneCoreFrenchLabels.capability(it.id)} : ${PhoneCoreFrenchLabels.diagnosticState(it.state)}", style = MaterialTheme.typography.labelMedium)
-                                    }
-                                    Text(
-                                        "• Preuves sur cet appareil : " + if (physicalEvidence.fullyValidated) "VALIDÉES" else "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}",
-                                        style = MaterialTheme.typography.labelMedium
-                                    )
-                                    Text(
-                                        "Les preuves de notification signifient qu’Android a accepté leur publication. L’affichage réel à l’écran doit encore être confirmé pendant les tests physiques.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text("  ${if (physicalEvidence.incomingCallConnected) "✓" else "○"} Appel entrant connecté", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.outgoingCallConnected) "✓" else "○"} Appel sortant connecté", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.callScreeningObserved) "✓" else "○"} Filtrage d’appel réellement invoqué", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.contactsProviderReady) "✓" else "○"} Répertoire Android interrogeable", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.callHistoryProviderReady) "✓" else "○"} Historique Android interrogeable", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.incomingSmsReceived) "✓" else "○"} SMS entrant enregistré", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.outgoingSmsSubmitted) "✓" else "○"} SMS sortant : toutes les parties envoyées avec succès", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.outgoingSmsDeliveredSuccessfully) "✓" else "○"} SMS livré : toutes les parties confirmées avec succès", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.incomingMmsSafePreview) "✓" else "○"} MMS entrant aperçu sécurisé", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.incomingCallNotificationPosted) "✓" else "○"} Notification d’appel acceptée par Android", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.incomingSmsNotificationPosted) "✓" else "○"} Notification SMS acceptée par Android", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.callerIdUiShown) "✓" else "○"} Fiche d’identification d’appel réellement affichée", style = MaterialTheme.typography.bodySmall)
-                                    Text("  ${if (physicalEvidence.inCallUiShown) "✓" else "○"} Interface d’appel Sentinel réellement affichée", style = MaterialTheme.typography.bodySmall)
-                                }
-                                LinearProgressIndicator(
-                                    progress = {
-                                        physicalEvidence.completedCount.toFloat() /
-                                            physicalEvidence.requiredCount.coerceAtLeast(1)
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
                                 Text(
-                                    "1. Installer l’APK candidate → 2. Activer les prérequis → 3. Observer ${physicalEvidence.requiredCount}/${physicalEvidence.requiredCount} preuves locales → 4. Confirmer visuellement les notifications et l’interface d’appel → 5. Valider multi-version Android + double-SIM + réversibilité → seulement ensuite 100 % fonctionnel",
+                                    "La certification technique de l’APK est séparée de l’usage quotidien. Son détail reste disponible dans Diagnostic technique.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -670,7 +625,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 !state.phoneStatePermission -> "Permission de détection des lignes requise"
                                 state.callLineState == CallLineState.LOOKUP_FAILED -> "Android n’a pas pu vérifier les lignes d’appel"
                                 !state.callLineAvailable -> "Aucune ligne d’appel active détectée"
-                                else -> "Prêt pour test appareil"
+                                else -> "Configuration prête"
                             },
                             when {
                                 !state.dialerRole && isRoleAvailable(RoleManager.ROLE_DIALER) -> "Choisir Sentinel comme téléphone"
@@ -694,7 +649,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             "Active le service système de filtrage pour appliquer les règles locales avant l’affichage de l’appel.",
                             state.callScreeningRole,
                             when {
-                                state.callScreeningRole -> "Rôle de filtrage actif · test réel requis"
+                                state.callScreeningRole -> "Rôle de filtrage actif"
                                 Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> "Disponible à partir d’Android 10"
                                 !isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) -> "Rôle de filtrage indisponible sur cet appareil"
                                 else -> "Rôle de filtrage disponible mais non accordé"
@@ -758,9 +713,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         CapabilityCard(
                             Icons.Default.Contacts, "Contacts & historique",
-                            "Requis pour valider le module Téléphonie complet : affichage local des contacts et des appels récents dans le composeur Sentinel.",
+                            "Utilisés localement pour afficher les contacts et les appels récents dans le composeur Sentinel.",
                             state.contactsPermission && state.callLogPermission,
-                            when { state.contactsPermission && state.callLogPermission -> "Accès local prêt"; !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"; else -> "Autorisations de téléphonie manquantes" },
+                            when {
+                                state.contactsPermission && state.callLogPermission -> "Accès local prêt"
+                                !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"
+                                else -> "Autorisations de téléphonie manquantes"
+                            },
                             if (!state.contactsPermission || !state.callLogPermission) "Autoriser les données locales" else null
                         ) {
                             val optional = buildList {
@@ -770,59 +729,49 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             if (optional.isNotEmpty()) permissionsLauncher.launch(optional)
                         }
 
-                        if (deniedPermissions.isNotEmpty()) Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                        if (deniedPermissions.isNotEmpty()) Card(
+                            Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Autorisation non accordée", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
-                                Text("Android indique qu’au moins une autorisation demandée n’est pas accordée. Sentinel ne suppose pas la cause du refus. Vous pouvez réessayer ou vérifier les autorisations dans les paramètres Android.", style = MaterialTheme.typography.bodySmall)
-                                OutlinedButton(onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }, modifier = Modifier.fillMaxWidth()) { Text("Ouvrir les paramètres de Sentinel") }
+                                Text(
+                                    "Android indique qu’au moins une autorisation demandée n’est pas accordée. Sentinel ne suppose pas la cause du refus. Vous pouvez réessayer ou vérifier les autorisations dans les paramètres Android.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                OutlinedButton(
+                                    onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("Ouvrir les paramètres de Sentinel") }
                             }
                         }
 
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Validation locale de l’APK", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text(
-                                    "${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} critères confirmés sur cet APK",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                if (physicalEvidence.missingCriteria.isNotEmpty()) {
-                                    Text(
-                                        "Reste à confirmer : " + physicalEvidence.missingCriteria.joinToString(" · ") {
-                                            when (it) {
-                                                "incoming_call_connected" -> "appel entrant connecté"
-                                                "outgoing_call_connected" -> "appel sortant connecté"
-                                                "call_screening_observed" -> "filtrage d’appel observé"
-                                                "contacts_provider_ready" -> "contacts accessibles"
-                                                "call_history_provider_ready" -> "historique d’appels accessible"
-                                                "incoming_sms_received" -> "SMS entrant reçu"
-                                                "outgoing_sms_submitted" -> "SMS sortant envoyé"
-                                                "outgoing_sms_delivered" -> "SMS sortant livré"
-                                                "incoming_mms_safe_preview" -> "MMS entrant sécurisé"
-                                                "incoming_call_notification" -> "notification d’appel"
-                                                "incoming_sms_notification" -> "notification SMS"
-                                                "caller_id_ui_shown" -> "Caller ID affiché"
-                                                "in_call_ui_shown" -> "interface d’appel affichée"
-                                                else -> it
-                                            }
-                                        },
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                } else {
-                                    Text("Les ${physicalEvidence.requiredCount} critères locaux requis sont confirmés pour cet APK.", style = MaterialTheme.typography.bodySmall)
+                                Text("Ouvrir les fonctions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Button(
+                                    onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, SentinelDialerActivity::class.java)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.PhoneInTalk, null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Appels & contacts")
+                                }
+                                OutlinedButton(
+                                    onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, SmsComposeActivity::class.java)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Message, null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Messages")
                                 }
                             }
                         }
-
-                        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Test immédiat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Button(onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, SentinelDialerActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Default.PhoneInTalk, null); Spacer(Modifier.width(8.dp)); Text("Tester appels & contacts")
-                            }
-                            OutlinedButton(onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, SmsComposeActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Default.Message, null); Spacer(Modifier.width(8.dp)); Text("Tester SMS")
-                            }
-                        } }
-                        Text("L’état « SMS prêt » exige le rôle SMS, les autorisations système requises et au moins une SIM active vérifiée. Sur appareil double-SIM, chaque ligne devra être testée physiquement. Une validation locale complète ne déclenche jamais à elle seule le statut « 100 % fonctionnel ».", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "L’état « SMS prêt » exige le rôle SMS, les autorisations système requises et au moins une SIM active vérifiée. Sur appareil double-SIM, chaque ligne reste un contexte distinct. La certification technique n’est jamais présentée comme une étape nécessaire à l’usage quotidien.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -897,22 +846,47 @@ class PhoneCoreActivationActivity : ComponentActivity() {
     }
 }
 
-@Composable private fun SectionTitle(title: String) { Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) }
-
-@Composable private fun CapabilityCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, detail: String, ready: Boolean, status: String, actionLabel: String?, onAction: () -> Unit) {
-    ElevatedCard(
-        Modifier.fillMaxWidth().semantics { stateDescription = status }
-    ) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(icon, null); Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold); Text(status, color = if (ready) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium) }
-            if (ready) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
-        }
-        Text(detail, style = MaterialTheme.typography.bodySmall)
-        if (actionLabel != null) Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
-    } }
+@Composable
+private fun SectionTitle(title: String) {
+    Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 }
 
-@Composable private fun StatusChip(label: String, ready: Boolean) {
+@Composable
+private fun CapabilityCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    detail: String,
+    ready: Boolean,
+    status: String,
+    actionLabel: String?,
+    onAction: () -> Unit
+) {
+    ElevatedCard(
+        Modifier.fillMaxWidth().semantics { stateDescription = status }
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(icon, null)
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        status,
+                        color = if (ready) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+                if (ready) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
+            }
+            Text(detail, style = MaterialTheme.typography.bodySmall)
+            if (actionLabel != null) {
+                Button(onClick = onAction, modifier = Modifier.fillMaxWidth()) { Text(actionLabel) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusChip(label: String, ready: Boolean) {
     val containerColor = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val contentColor = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     Surface(
@@ -929,4 +903,3 @@ class PhoneCoreActivationActivity : ComponentActivity() {
         )
     }
 }
-

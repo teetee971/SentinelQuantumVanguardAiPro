@@ -12,6 +12,14 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
     resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt'),
     'utf8'
   );
+  const activation = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'),
+    'utf8'
+  );
+  const dialer = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt'),
+    'utf8'
+  );
   const uiStateTest = readFileSync(
     resolve('native-android-app/app/src/test/java/com/sentinel/quantum/ui/design/PhoneCoreUiStateTest.kt'),
     'utf8'
@@ -40,7 +48,34 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
   assert.match(publicRoadmap, /Validation physique 14\/14 requise/);
   assert.doesNotMatch(publicRoadmap, /--progress:\d+%/);
 
-  assert.match(diagnostic, /n’est pas une certification Phone Core 14\/14/);
+  // Certification detail is a technical diagnostic concern, not a customer setup journey.
+  assert.match(diagnostic, /Certification Phone Core · technique/);
+  assert.match(diagnostic, /Preuves observées/);
+  assert.match(diagnostic, /qualification technique de Sentinel/);
+  assert.match(diagnostic, /Le détail x\/14 reste volontairement limité à ce diagnostic technique/);
+  assert.match(diagnostic, /PhoneCorePhysicalValidation\.criterionLabel\(id\)/);
+
+  for (const [surface, text] of [
+    ['activation', activation],
+    ['dialer', dialer],
+  ]) {
+    assert.doesNotMatch(
+      text,
+      /TESTS \$\{physicalEvidence\.completedCount\}\/\$\{physicalEvidence\.requiredCount\}/,
+      `${surface} must not expose raw certification counts to customers`
+    );
+    assert.doesNotMatch(
+      text,
+      /Validation Phone Core[^\n]*\$\{physicalEvidence\.completedCount\}\/\$\{physicalEvidence\.requiredCount\}/,
+      `${surface} must keep certification progress out of the customer UI`
+    );
+    assert.doesNotMatch(
+      text,
+      /SentinelEvidenceProgress\(/,
+      `${surface} must not render the technical certification progress component`
+    );
+  }
+
   assert.match(uiStateTest, /onlyFourteenOfFourteenIsValidated/);
   assert.match(uiStateTest, /thirteenOfFourteenCannotClaimValidated/);
 

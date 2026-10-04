@@ -193,6 +193,10 @@ if (diagnosticSource) {
     'PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)',
     'Restent aussi à configurer',
     'NON · À ACTIVER',
+    'Certification Phone Core · technique',
+    'Preuves observées',
+    'PhoneCorePhysicalValidation.criterionLabel(id)',
+    'Le détail x/14 reste volontairement limité à ce diagnostic technique',
   ]) {
     if (!diagnosticSource.includes(marker)) {
       errors.push(`phone-core diagnostic truth marker missing (${marker}): ${diagnosticPath}`);
@@ -507,10 +511,10 @@ if (activationFriendlySource) {
     'Sentinel vérifie directement ce qu’Android autorise réellement sur cet appareil.',
     'if (state.callsReady) "APPELS PRÊTS" else "APPELS À ACTIVER"',
     'if (readiness.softwarePrerequisitesReady) "CONFIGURATION PRÊTE" else "CONFIGURATION À TERMINER"',
-    '"TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"',
-    'Tests sur cet appareil',
-    'Tests validés :',
-    'Vérifier la configuration avancée',
+    'État de configuration',
+    'La certification technique de l’APK est séparée de l’usage quotidien.',
+    'Diagnostic technique',
+    'Ouvrir les fonctions',
   ]) {
     if (!activationFriendlySource.includes(marker)) {
       errors.push(
@@ -523,6 +527,10 @@ if (activationFriendlySource) {
     'StatusChip("SMS ${PhoneCoreFrenchLabels.smsState(smsModel.state)}"',
     '"APPAREIL LOCAL ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"',
     '"PREUVES ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount} · LOGICIEL À RÉACTIVER"',
+    '"TESTS ${physicalEvidence.completedCount}/${physicalEvidence.requiredCount}"',
+    'Tests sur cet appareil',
+    'Tests validés :',
+    'SentinelEvidenceProgress(',
   ]) {
     if (activationFriendlySource.includes(forbiddenMarker)) {
       errors.push(
@@ -569,9 +577,12 @@ if (dialerContactsSource) {
     'ContactPresentationPolicy.include(',
     'WhatsAppClickToChatPolicy.urlFor(phoneNumber)',
     'listOf("Clavier", "Récents", "Répertoire", "Réglages")',
+    'ScrollableTabRow(selectedTabIndex = phoneTab, edgePadding = 0.dp)',
     'Vos contacts restent sur cet appareil.',
-    'label = { Text("Appelables", maxLines = 1) }',
-    'label = { Text("Sans numéro", maxLines = 1) }',
+    'label = { Text("Appelables") }',
+    'label = { Text("Sans numéro") }',
+    'FlowRow(',
+    'Text("Réglages Phone Core"',
     'contactVisibleLimit',
     'val sectionedContacts = remember(filteredContacts)',
     'ContactPresentationPolicy.sectionOrderKey(it.value.displayName)',
@@ -587,6 +598,21 @@ if (dialerContactsSource) {
   }
   if (!/Text\(\s*"Votre répertoire"/.test(dialerContactsSource)) {
     errors.push(`complete contact-directory UI marker missing (Votre répertoire heading): ${dialerContactsPath}`);
+  }
+  for (const forbiddenMarker of [
+    'SentinelEvidenceProgress(',
+    '"Scanner réseau local"',
+    '"Analyse des applications"',
+    '"Analyse d’URL"',
+    '"Exposition numérique"',
+    '"Veille OSINT"',
+  ]) {
+    if (dialerContactsSource.includes(forbiddenMarker)) {
+      errors.push(`non-Phone-Core or certification customer marker reintroduced (${forbiddenMarker}): ${dialerContactsPath}`);
+    }
+  }
+  if (/Validation Phone Core[^\n]*\$\{physicalEvidence\.completedCount\}\/\$\{physicalEvidence\.requiredCount\}/.test(dialerContactsSource)) {
+    errors.push(`dialer reintroduced raw certification progress in customer UI: ${dialerContactsPath}`);
   }
   if (/contacts\.listWithState\(500\)/.test(dialerContactsSource)) {
     errors.push(`dialer reintroduced a 500-contact read cap: ${dialerContactsPath}`);
