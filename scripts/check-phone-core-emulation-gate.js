@@ -93,7 +93,7 @@ if (!Array.isArray(residual) || residual.length < 3) {
 
 for (const marker of [
   'matrix:',
-  'api-level: [29, 36]',
+  'api_level: [29, 36]',
   'connectedDebugAndroidTest',
   'phone-core-emulator-flow.sh',
   'PhoneCore-Emulation-Qualification',
