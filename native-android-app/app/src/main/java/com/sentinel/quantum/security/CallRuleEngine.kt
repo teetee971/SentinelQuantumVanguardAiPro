@@ -7,7 +7,8 @@ class CallRuleEngine(
     blockedNumberHashes: Set<String> = emptySet(),
     blockedPrefixes: Set<String> = emptySet(),
     reputationSilencePrefixes: Set<String> = emptySet(),
-    private val fingerprintsForNumber: (String) -> Set<String> = { setOf(sha256(it)) }
+    private val fingerprintsForNumber: (String) -> Set<String> = { setOf(sha256(it)) },
+    private val numberNormalizer: (String?) -> String? = { normalizeNumber(it) }
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
@@ -15,9 +16,9 @@ class CallRuleEngine(
         .take(MAX_REPUTATION_RULES).toSet()
 
     fun evaluate(rawNumber: String?): Decision {
-        val normalized = normalizeNumber(rawNumber)
+        val normalized = numberNormalizer(rawNumber)
             ?: return Decision(Action.ALLOW, "INVALID_OR_UNAVAILABLE_NUMBER", null, RuleSource.NONE)
-        if (matchingRepresentations(rawNumber).any { candidate ->
+        if (matchingRepresentations(normalized).any { candidate ->
                 fingerprintsForNumber(candidate).any(exactHashes::contains)
             }) {
             return Decision(Action.BLOCK, "USER_EXACT_BLOCK", normalized, RuleSource.USER)
@@ -41,7 +42,16 @@ class CallRuleEngine(
         const val MAX_REPUTATION_RULES = 500
         private val HASH_PATTERN = Regex("(?:v[1-9][0-9]*:)?[a-f0-9]{64}")
 
-        /** National 0xxxxxxxxx input is scoped to France; other regions require explicit E.164. */
+        /**
+         * Region-neutral syntax normalization.
+         *
+         * Explicit international forms are canonicalized to `+<digits>`. National forms are
+         * intentionally kept national: this pure layer has no trustworthy SIM/network/user region
+         * and must never invent `FR` (or any other country) from a leading zero.
+         *
+         * Android callers that have an observed/explicit region must inject a region-aware
+         * [numberNormalizer] into [CallRuleEngine].
+         */
         fun normalizeNumber(raw: String?): String? {
             val input = raw?.trim()?.takeIf { it.isNotBlank() && it.length <= 64 } ?: return null
             if (!input.all { it.isDigit() || it in setOf('+', ' ', '-', '(', ')', '.') }) return null
@@ -51,11 +61,16 @@ class CallRuleEngine(
             return when {
                 input.startsWith('+') -> "+$digits"
                 digits.startsWith("00") && digits.length >= 9 -> "+${digits.drop(2)}"
-                digits.length == 10 && digits.startsWith('0') -> "+33${digits.drop(1)}"
                 else -> digits
             }
         }
 
+        /**
+         * Prefix normalization follows the same region-neutral rule as [normalizeNumber].
+         * A national prefix remains national unless the caller supplied an explicit `+`/`00`
+         * country code. This avoids silently turning overseas or international national prefixes
+         * into French metropolitan prefixes.
+         */
         fun normalizePrefix(raw: String): String? {
             val input = raw.trim()
             if (input.length !in 2..24) return null
@@ -66,17 +81,19 @@ class CallRuleEngine(
             return when {
                 input.startsWith('+') -> "+$digits"
                 digits.startsWith("00") && digits.length >= 3 -> "+${digits.drop(2)}"
-                digits.startsWith('0') && digits.length >= 3 -> "+33${digits.drop(1)}"
                 digits.length >= 3 -> digits
                 else -> null
             }
         }
 
+        /**
+         * Representation candidates that are equivalent without assuming a national region.
+         * `+CC...` and `00CC...` are universally equivalent; national trunk forms are not.
+         */
         fun matchingRepresentations(raw: String?): Set<String> {
             val canonical = normalizeNumber(raw) ?: return emptySet()
             val values = linkedSetOf(canonical)
-            if (canonical.startsWith("+33") && canonical.length == 12) {
-                values += "0${canonical.drop(3)}"
+            if (canonical.startsWith('+')) {
                 values += "00${canonical.drop(1)}"
             }
             return values
