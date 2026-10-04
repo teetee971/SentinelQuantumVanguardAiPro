@@ -38,7 +38,9 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 
 ## Compatibilité du filtrage d’appels
 
-L’application peut s’exécuter à partir d’Android 7.0 (API 24). Le composant système `CallScreeningService` existe à partir de cette API, mais le parcours guidé actuel de sélection du rôle repose sur `RoleManager.ROLE_CALL_SCREENING`, disponible à partir d’Android 10 (API 29). En conséquence, tant qu’un parcours legacy API 24–28 n’est pas implémenté et testé, Sentinel revendique l’activation guidée du filtrage d’appels uniquement à partir d’Android 10. Les autres fonctions locales restent soumises à leurs propres prérequis.
+L’application peut s’exécuter à partir d’Android 7.0 (API 24). `CallScreeningService` existe à partir de cette API. Sur Android 7 à 9 (API 24–28), Sentinel utilise le chemin legacy documenté par le code : le filtrage devient disponible via la sélection de Sentinel comme application Téléphone par défaut (`TelecomManager.ACTION_CHANGE_DEFAULT_DIALER`). À partir d’Android 10 (API 29), l’activation utilise `RoleManager.ROLE_CALL_SCREENING` lorsque le rôle est disponible.
+
+La matrice CI exécute désormais `connectedDebugAndroidTest` sur API 24, 36 et 37 et vérifie notamment le modèle de vérité Phone Core. Cette preuve CI ne vaut pas certification terrain : le passage effectif au dialer par défaut, les appels réels, le comportement constructeur/opérateur et la réversibilité API 24–28 restent à valider sur appareils physiques avant d’élargir la revendication commerciale au-delà du périmètre effectivement testé.
 
 ## Installation
 
@@ -96,7 +98,7 @@ L'application déclare actuellement :
 - des permissions Wi-Fi/Bluetooth bornées pour les fonctions locales de scan ;
 - `ACCESS_FINE_LOCATION` lorsque les API de scan Wi-Fi exigent un consentement de localisation précis, y compris sur les versions récentes ; `ACCESS_COARSE_LOCATION` est limitée à Android 12L (`maxSdkVersion=32`). Ces permissions restent propres au diagnostic réseau, hors prérequis et certificat Phone Core.
 
-Les permissions `CALL_PHONE` et `READ_CALL_LOG` sont déclarées pour le mode composeur et restent conditionnées au rôle Téléphone et à une action explicite de l’utilisateur. `READ_PHONE_STATE` est utilisé pour détecter les lignes SIM lors d’un envoi SMS multi-SIM. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` restent conditionnées au rôle `ROLE_SMS`; l’application ne doit pas les utiliser comme messagerie par défaut tant qu’Android n’a pas effectivement attribué ce rôle. Aucune permission caméra ou microphone n’est demandée par Phone Core. Le service de filtrage d’appels fonctionne uniquement après attribution explicite du rôle Android `ROLE_CALL_SCREENING`; l'analyse email n'accède à aucune boîte mail.
+Les permissions `CALL_PHONE` et `READ_CALL_LOG` sont déclarées pour le mode composeur et restent conditionnées au rôle Téléphone et à une action explicite de l’utilisateur. `READ_PHONE_STATE` est utilisé pour détecter les lignes SIM lors d’un envoi SMS multi-SIM. Les permissions `READ_SMS`, `RECEIVE_SMS` et `SEND_SMS` restent conditionnées au rôle `ROLE_SMS`; l’application ne doit pas les utiliser comme messagerie par défaut tant qu’Android n’a pas effectivement attribué ce rôle. Aucune permission caméra ou microphone n’est demandée par Phone Core. Le service de filtrage d’appels fonctionne uniquement après attribution explicite du rôle Android correspondant ou, sur API 24–28, après sélection explicite de Sentinel comme application Téléphone par défaut ; l'analyse email n'accède à aucune boîte mail.
 
 Le manifeste interdit le trafic HTTP en clair (`usesCleartextTraffic=false`) et désactive la sauvegarde Android (`allowBackup=false`). Le build release active également R8/ProGuard.
 

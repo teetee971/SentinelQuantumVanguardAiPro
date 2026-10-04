@@ -2,12 +2,17 @@ package com.sentinel.quantum
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
+import android.telecom.TelecomManager
 import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,5 +61,23 @@ class PhoneCoreRuntimeFactsInstrumentationTest {
         if (!phoneStateGranted) {
             assertFalse(PhoneCoreRuntimeFacts.hasOperationalCarrierEnvironment(context))
         }
+    }
+
+    @Test
+    fun legacyCallScreeningActivationUsesResolvableDefaultDialerContract() {
+        if (Build.VERSION.SDK_INT !in 24..28) return
+
+        val screeningState = CallScreeningActivationPolicy.read(context)
+        assertTrue(
+            screeningState == CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD ||
+                screeningState == CallScreeningActivationPolicy.State.HELD
+        )
+
+        val request = Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+            .putExtra(
+                TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME,
+                context.packageName
+            )
+        assertNotNull(context.packageManager.resolveActivity(request, 0))
     }
 }

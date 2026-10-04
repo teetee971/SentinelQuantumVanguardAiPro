@@ -218,3 +218,34 @@ test('Phone Core activation uses the shared version-aware call-screening truth',
     'optional contacts must never re-enter the essential setup progress denominator'
   );
 });
+
+
+test('legacy call-screening implementation, CI scope and customer copy stay truthfully separated', () => {
+  const readme = readFileSync(resolve('native-android-app/README.md'), 'utf8');
+  const physicalProtocol = readFileSync(resolve('docs/PHONE_CORE_PHYSICAL_VALIDATION.md'), 'utf8');
+  const legacyUiCopy = readFileSync(
+    resolve('native-android-app/app/src/main/res/values-v24/call_screening_truth.xml'),
+    'utf8'
+  );
+  const activation = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'),
+    'utf8'
+  );
+  const policyTests = readFileSync(
+    resolve('native-android-app/app/src/test/java/com/sentinel/quantum/security/CallScreeningActivationPolicyTest.kt'),
+    'utf8'
+  );
+
+  assert.match(readme, /API 24–28[\s\S]*ACTION_CHANGE_DEFAULT_DIALER/);
+  assert.match(readme, /connectedDebugAndroidTest[\s\S]*API 24, 36 et 37/);
+  assert.doesNotMatch(readme, /parcours legacy API 24–28 n’est pas implémenté/);
+  assert.match(physicalProtocol, /chemin legacy API 24–28 est implémenté via `ACTION_CHANGE_DEFAULT_DIALER`/);
+  assert.match(physicalProtocol, /ne prouve pas le basculement réel du rôle/);
+  assert.match(legacyUiCopy, /configuration actuelle/);
+  assert.doesNotMatch(legacyUiCopy, /Android 10/);
+  assert.match(
+    activation,
+    /RoleManager\.ROLE_CALL_SCREENING ->[\s\S]*?Intent\(TelecomManager\.ACTION_CHANGE_DEFAULT_DIALER\)/
+  );
+  assert.match(policyTests, /api24To28CanBecomeAvailableViaDefaultDialerPath/);
+});
