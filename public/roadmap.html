@@ -40,8 +40,34 @@
     <div class="roadmap-track-grid">
       <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">En validation</span><h3>Phone Core Android</h3></div></div><p>Dialer, Call Screening, SMS/MMS, Caller ID, historique et surfaces système restent soumis aux rôles Android et à une validation réelle multi-version/OEM. Le certificat Phone Core v5 porte sur 14 preuves distinctes. Le scanner Wi-Fi reste un diagnostic réseau séparé et ne fait pas partie du certificat Phone Core.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Sortie</span><strong>Validation physique 14/14 requise · APK installable + preuves physiques + réversibilité</strong></div></div></article>
       <article class="roadmap-track" data-roadmap-status="ready"><div class="roadmap-track-head"><div><span class="sq-state ready">Fusionné</span><h3>Catalogue commercial canonique</h3></div></div><p>Free, Premium individuel, Pro et Enterprise sont séparés. Le checkout et l'essai restent indépendants de la présence du code.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Règle</span><strong>Aucune capacité non disponible ne devient achetable</strong></div></div></article>
-      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">Frontière API</span><h3>Origine Sentinel unique</h3></div></div><p>Les clients Android convergent vers un contrat d'origine API unique afin de supprimer les URLs d'hébergement dispersées et préparer un futur gateway Sentinel.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Sortie</span><strong>Gateway Sentinel validé E2E</strong></div></div></article>
+      <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">Frontière API</span><h3>Origine Sentinel unique</h3></div></div><p>Les clients convergent vers un contrat d’origine Sentinel afin d’éviter d’exposer ou de disperser les hostnames des fournisseurs d’infrastructure. Le futur gateway Sentinel doit être déployé et validé avant tout basculement de production.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Sortie</span><strong>Gateway Sentinel validé E2E</strong></div></div></article>
       <article class="roadmap-track" data-roadmap-status="validation"><div class="roadmap-track-head"><div><span class="sq-state validation">Sécurité</span><h3>Frontière propriétaire</h3></div></div><p>Les surfaces distribuées sont contrôlées pour empêcher l'exposition active de secrets serveur, headers d'administration et routes internes.</p><div class="roadmap-meter"><div class="roadmap-meter-line"><span>Règle</span><strong>Le client reçoit le résultat, pas la recette</strong></div></div></article>
+    </div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="governance-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Gouvernance</span><h2 id="governance-title">Automatiser sans transformer une cible en promesse livrée.</h2></div><p>Les ambitions d’architecture restent séparées des preuves de déploiement.</p></div>
+    <div class="sq-grid">
+      <article class="sq-card span-4"><span class="sq-state planned">Cible</span><h3>Zero Trust généralisé</h3><p>Orientation d’architecture, pas certification globale. Chaque chemin d’identité, d’autorisation et de révocation doit être prouvé séparément.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Cible</span><h3>SOC automatisé sous contrôle humain</h3><p>Aucune action à impact ne doit contourner les politiques, l’approbation humaine requise ou les limites d’autorisation.</p></article>
+      <article class="sq-card span-4"><span class="sq-state ready">Limite</span><h3>Aucune action offensive autonome</h3><p>Les fonctions de sécurité actives restent bornées au contexte autorisé et aux contrôles défensifs.</p></article>
+    </div>
+    <div class="notice info"><strong>Souveraineté :</strong> Sentinel dépend encore de services externes pour certaines parties de sa chaîne technique et ne peut donc pas être qualifiée de souveraine aujourd’hui. La cible est la réversibilité, la minimisation des dépendances et la protection de la logique propriétaire.</div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="intel-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Téléphonie & réseau</span><h2 id="intel-title">Couverture et NDR : état réel.</h2></div><p>Une source locale ou une conception ne doit pas être présentée comme un service mondial opérationnel.</p></div>
+    <div class="sq-grid">
+      <article class="sq-card span-6"><span class="sq-state validation">Index locaux — France et Autriche</span><h3>Ressources de numérotation</h3><p>La date de publication de ces CSV n’est pas connue pour l’ensemble des ressources locales ; leur fraîcheur doit donc rester explicite et leur synchronisation Android être qualifiée séparément.</p></article>
+      <article class="sq-card span-6"><span class="sq-state planned">Conception — non opérationnel</span><h3>NDR / quarantaine</h3><p>Aucun capteur NDR ni mécanisme de quarantaine n’est livré. Toute future action réseau à impact restera soumise à une approbation humaine et à un périmètre autorisé.</p></article>
+    </div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="privacy-network-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Protection réseau</span><h2 id="privacy-network-title">Anti-publicité et anti-traceurs</h2></div><p>Cette cible doit respecter les limites Android et ne jamais être présentée comme un filtrage déjà livré.</p></div>
+    <div class="sq-grid">
+      <article class="sq-card span-6"><span class="sq-state planned">Android</span><h3>Filtrage via VpnService</h3><p>Un seul service VPN Android peut être actif à la fois. L’architecture doit donc être compatible avec Sentinel VPN au lieu de créer deux tunnels concurrents.</p></article>
+      <article class="sq-card span-6"><span class="sq-state planned">Confidentialité</span><h3>Pas d’interception HTTPS</h3><p>Le bloqueur ne déchiffrera pas HTTPS. Aucun bloqueur n’est livré aujourd’hui et la vitrine Web ne peut pas filtrer les autres sites.</p></article>
     </div>
   </section>
 
