@@ -1,0 +1,50 @@
+name: Proprietary Boundary Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'frontend/**'
+      - 'native-android-app/app/src/main/**'
+      - 'config/commercial-catalog*.json'
+      - 'scripts/check-commercial-*.js'
+      - 'scripts/check-proprietary-boundary*.js'
+      - '.github/workflows/proprietary-boundary-validation.yml'
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-boundaries:
+    name: Validate commercial and proprietary boundaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Validate base commercial catalog
+        run: |
+          node scripts/check-commercial-catalog.js
+          node --test scripts/check-commercial-catalog.test.js
+
+      - name: Validate Pro commercial extension
+        run: |
+          node scripts/check-commercial-pro-extension.js
+          node --test scripts/check-commercial-pro-extension.test.js
+
+      - name: Validate distributed proprietary boundary
+        run: |
+          node scripts/check-proprietary-boundary.js
+          node --test scripts/check-proprietary-boundary.test.js
