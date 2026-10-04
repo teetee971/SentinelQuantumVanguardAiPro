@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit
  */
 class CallerReputationClient(
     private val endpointBaseUrl: String = SentinelApiOrigin.baseUrl,
+    private val allowedHosts: Set<String> = SentinelApiOrigin.allowedHosts,
     private val egressGate: () -> Boolean = { false },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
@@ -55,7 +56,7 @@ class CallerReputationClient(
             .toRequestBody(JSON_MEDIA_TYPE)
 
         val request = Request.Builder()
-            .url(endpoint(endpointBaseUrl))
+            .url(endpoint(endpointBaseUrl, allowedHosts))
             .header("User-Agent", "SentinelQuantumVanguardAIPro-Android/1")
             .post(body)
             .build()
@@ -86,10 +87,16 @@ class CallerReputationClient(
         }
 
         internal fun endpoint(baseUrl: String): String =
+            endpoint(
+                baseUrl,
+                setOf(SentinelApiEndpointPolicy.originHost(baseUrl))
+            )
+
+        internal fun endpoint(baseUrl: String, allowedHosts: Set<String>): String =
             SentinelApiEndpointPolicy.build(
                 baseUrl,
                 "/v1/evaluate-call",
-                SentinelApiOrigin.allowedHosts
+                allowedHosts
             ).toString()
 
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
