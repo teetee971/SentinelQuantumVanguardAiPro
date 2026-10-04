@@ -50,6 +50,16 @@
     return pageBindings[path] ?? null;
   }
 
+  function refreshStaticCapabilityAvailability() {
+    for (const element of document.querySelectorAll('[data-product-available]')) {
+      const deadline = Number(element.dataset.productExpires);
+      const available = element.dataset.productAvailable === 'true'
+        && Number.isSafeInteger(deadline)
+        && deadline > Date.now();
+      element.textContent = available ? 'Disponible' : 'Non disponible';
+    }
+  }
+
   function injectGlobalStyles() {
     if (document.getElementById('sentinel-product-truth-styles')) return;
     const style = document.createElement('style');
@@ -173,6 +183,9 @@
     });
   }
 
+  refreshStaticCapabilityAvailability();
+  window.setInterval(refreshStaticCapabilityAvailability, 1000);
+
   fetch(endpoint, { cache: 'no-store', credentials: 'same-origin' })
     .then((response) => {
       if (!response.ok) throw new Error(`HTTP_${response.status}`);
@@ -184,6 +197,7 @@
       renderCommercialCatalog(payload);
       renderCapabilities(payload);
       renderGlobalTruthStrip(payload);
+      refreshStaticCapabilityAvailability();
       document.documentElement.dataset.productTruth = 'loaded';
       window.dispatchEvent(new CustomEvent('sentinel:product-truth', { detail: payload }));
     })
