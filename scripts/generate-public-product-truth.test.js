@@ -67,6 +67,17 @@ test('public runtime reserves its global truth surface before asynchronous fetch
   assert.match(runtime, /@media \(min-width:720px\)\{\.sentinel-truth-strip\{min-height:48px\}\}/);
 });
 
+test('Cloudflare build pre-renders truth shell and sizing CSS before first paint', () => {
+  const build = readFileSync(new URL('./build-for-cloudflare.js', import.meta.url), 'utf8');
+  assert.match(build, /TRUTH_STYLE_MARKER = 'id="sentinel-product-truth-styles"'/);
+  assert.match(build, /TRUTH_SHELL_MARKER = 'data-sentinel-product-truth-shell="build"'/);
+  assert.match(build, /const truthShell = `<aside class="sentinel-truth-strip"/);
+  assert.match(build, /min-height:96px/);
+  assert.match(build, /@media \(min-width:720px\)\{\.sentinel-truth-strip\{min-height:48px\}\}/);
+  assert.match(build, /source = source\.replace\(\/<main\\b\/i, `\$\{truthShell\}\\n<main`\)/);
+  assert.match(build, /source = source\.replace\(\/<\\\/head\\s\*>\/i, `\$\{truthStyleTag\}\\n<\/head>`\)/);
+});
+
 test('canonical product-status renderer carries the public truth runtime and expiry boundary', () => {
   const rendered = renderCapabilityConsumers(registry)['public/product-status.html'];
   assert.match(rendered, /product-truth\.js/);
