@@ -4,11 +4,35 @@
 }
 
 @media (max-width: 760px) {
+    /* On phones, keep the headline first, then the official visual, then the supporting copy. */
+    .sq-hero-copy {
+        display: contents;
+    }
+
+    .sq-hero-copy > .sq-kicker {
+        order: 0;
+        margin-bottom: 0;
+    }
+
+    .sq-hero-copy > .sq-title {
+        order: 1;
+        margin-bottom: 0;
+    }
+
     .sq-hero > .sq-visual-card {
-        order: -1;
+        order: 2;
         width: 100%;
         max-width: none;
         min-height: 0;
+    }
+
+    .sq-hero-copy > .sq-lede {
+        order: 3;
+        margin-bottom: 0;
+    }
+
+    .sq-hero-copy > .sq-actions {
+        order: 4;
     }
 
     .sq-hero > .sq-visual-card img {
