@@ -45,6 +45,37 @@ PY
   echo "Phone Core flow did not expose expected UI: $expected"
   return 1
 }
+wait_incoming_sentinel_surface() {
+  for _ in $(seq 1 20); do
+    if fresh_ui && python3 - "$FLOW_XML" "$FLOW_PACKAGE" "$FLOW_NUMBER" <<'PYINCOMING'
+import sys, xml.etree.ElementTree as ET
+path, package_name, number = sys.argv[1:]
+try:
+    nodes = list(ET.parse(path).iter('node'))
+except Exception:
+    sys.exit(1)
+owned = [n for n in nodes if n.get('package') == package_name]
+text = ' '.join(
+    (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')).strip()
+    for n in owned
+)
+number_present = number in text
+# Android may bring either Sentinel's read-only caller-ID card or Sentinel's full in-call surface
+# to the foreground. Both are valid app-owned incoming-call surfaces; OS-owned localized labels
+# are deliberately excluded by the package check.
+sentinel_surface = (
+    'Appel autorisé' in text or
+    ('Appel entrant' in text and 'Sonnerie' in text)
+)
+sys.exit(0 if number_present and sentinel_surface else 1)
+PYINCOMING
+    then return 0; fi
+    sleep 1
+  done
+  capture failure
+  echo "Sentinel did not expose an app-owned incoming-call surface for $FLOW_NUMBER."
+  return 1
+}
 tap_text() {
   fresh_ui
   local coordinates
@@ -110,21 +141,25 @@ PYTIMELINE
 }
 capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
+# This is the first application launch after the workflow's fresh APK install. Exercise a second
+# process launch as well so cold_install_and_relaunch is a real per-lane proof, not report metadata.
 adb shell am force-stop "$FLOW_PACKAGE"
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Clavier"
-capture 01-dialer
+capture 01-dialer-first-launch
+adb shell am force-stop "$FLOW_PACKAGE"
+adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
+wait_text "Clavier"
+capture 01b-dialer-relaunch
 
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
-# On recent Android releases the visible Answer/Decline controls belong to the system Telecom
-# surface, are localized by the emulator OS, and may be absent from the application UI dump.
-# Prove Sentinel's own caller-ID surface, then prove ACTIVE from the app-private evidence written
-# only after InCallService observes Call.STATE_ACTIVE.
-wait_text "$FLOW_NUMBER"
-wait_text "Appel autorisé"
+# CallerIdActivity and SentinelInCallActivity are both Sentinel-owned and may race for foreground
+# on recent Android releases. Verify one coherent Sentinel incoming-call surface without depending
+# on OS localization or activity ordering, then prove ACTIVE from app-private InCallService evidence.
+wait_incoming_sentinel_surface
 capture 02-incoming-call
 adb emu gsm accept "$FLOW_NUMBER"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
@@ -189,4 +224,4 @@ if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING 
   grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/call-screening-role.txt"
 fi
 
-echo "Synthetic Telecom call and inline SMS reply UI verified; physical validation remains pending."
+echo "Synthetic Telecom call, cold relaunch, and inline SMS reply verified; physical validation remains pending."
