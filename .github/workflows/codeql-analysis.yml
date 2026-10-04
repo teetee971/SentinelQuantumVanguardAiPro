@@ -175,6 +175,7 @@ jobs:
 
           REQUIRED_WORKFLOWS=(
             "build-native-android.yml"
+            "android-instrumentation.yml"
             "build-aab-playconsole.yml"
             "frontend-validation.yml"
             "security-governance-validation.yml"
