@@ -34,9 +34,10 @@ class MmsSendEligibilityPolicyTest {
         )
     }
 
-    @Test fun rejectsInvalidDestinationAndEmptyRequest() {
-        assertEquals("INVALID_DESTINATION", rejected(held, 1, "123", "x", emptyList()))
-        assertEquals("EMPTY_MMS", rejected(held, 1, "+33612345678", "", emptyList()))
+    @Test fun requiresCanonicalInternationalDestinationAndRejectsEmptyRequest() {
+        assertEquals("E164_DESTINATION_REQUIRED", rejected(held, 1, "123", "x", emptyList()))
+        assertEquals("E164_DESTINATION_REQUIRED", rejected(held, 1, "0690123456", "x", emptyList()))
+        assertEquals("EMPTY_MMS", rejected(held, 1, "+590690123456", "", emptyList()))
     }
 
     @Test fun rejectsUnsupportedOrOversizedAttachments() {
