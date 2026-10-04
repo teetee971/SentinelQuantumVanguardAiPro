@@ -96,6 +96,13 @@ wait_text "$FLOW_NUMBER"
 wait_text "Appel autorisé"
 capture 02-incoming-call
 adb emu gsm accept "$FLOW_NUMBER"
+# CallerIdActivity is deliberately read-only and may remain above the dialer after a modem-level
+# accept. If it is still foreground, close only that Sentinel-owned card; if Telecom already
+# brought the in-call UI forward, leave the foreground untouched.
+sleep 1
+if fresh_ui && grep -q 'Fermer la fiche' "$FLOW_XML"; then
+  tap_text "Fermer la fiche"
+fi
 wait_text "En communication"
 if python3 - "$FLOW_XML" <<'PY'
 import sys, xml.etree.ElementTree as ET
