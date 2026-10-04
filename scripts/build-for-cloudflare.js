@@ -7,7 +7,7 @@
  * Requires Node.js 20.19.0+ as declared by package.json.
  */
 
-import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { writePublicProductTruth } from './generate-public-product-truth.js';
