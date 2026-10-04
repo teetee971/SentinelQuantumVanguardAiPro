@@ -129,7 +129,6 @@ ${states.map(state => `<tr><td>${escape(state.surface)}</td><td>${escape(statusL
   <section class="notice info"><strong>Règle de release :</strong> Phone Core peut être prêt indépendamment de PTT, VPN, Voice, FIMI ou API Pro. Un add-on indisponible ne doit pas déclasser la readiness du socle Phone Core.</section>
   <p><a href="capabilities-roadmap.html">Périmètre détaillé des capacités</a></p>
 </main>
-<script src="product-capability-status.js" defer></script>
 <script src="product-truth.js" defer></script>
 </body>
 </html>
