@@ -25,6 +25,21 @@ class AndroidPhoneNumberCanonicalizerPolicyTest {
         assertNull(AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("+0033612345678", null))
     }
 
+    @Test fun overseasPlatformFallbacksRemainRegionScoped() {
+        assertEquals(
+            "+262639123456",
+            AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("0639 12 34 56", "YT")
+        )
+        assertEquals(
+            "+508123456",
+            AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("0508 12 34 56", "PM")
+        )
+        assertEquals(
+            "0508123456",
+            AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("0508 12 34 56", null)
+        )
+    }
+
     @Test fun identicalSimAndNetworkRegionsAreSafeForOneSubscription() {
         assertEquals(
             "GP",
