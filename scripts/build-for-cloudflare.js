@@ -115,9 +115,22 @@ for (const { src, dest, required } of filesToCopy) {
   }
 }
 
+const TRUTH_RUNTIME_MARKER = 'data-sentinel-product-truth="build"';
+const TRUTH_STYLE_MARKER = 'id="sentinel-product-truth-styles"';
+const TRUTH_SHELL_MARKER = 'data-sentinel-product-truth-shell="build"';
+const truthRuntimeTag = '<script defer src="/public/product-truth.js" data-sentinel-product-truth="build"></script>';
+const truthStyleTag = `<style id="sentinel-product-truth-styles">
+.sentinel-truth-strip{box-sizing:border-box;margin:0 auto 14px;max-width:1180px;min-height:96px;padding:10px 14px;border:1px solid rgba(121,177,255,.24);border-radius:12px;background:rgba(8,13,21,.92);color:#dbe8ff;font:600 12px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.sentinel-truth-strip strong{color:#fff}.sentinel-truth-strip a{color:#91bdff;text-decoration:none}.sentinel-truth-strip a:hover{text-decoration:underline}.sentinel-truth-state{opacity:.86;font-weight:500}.sentinel-truth-state[data-state="AVAILABLE"]{color:#9ce5b2}.sentinel-truth-state[data-state="VALIDATION"]{color:#ffd48a}.sentinel-truth-state[data-state="INFRASTRUCTURE"],.sentinel-truth-state[data-state="PLANNED"]{color:#b8c8dc}
+@media (min-width:720px){.sentinel-truth-strip{min-height:48px}}
+</style>`;
+const truthShell = `<aside class="sentinel-truth-strip" data-sentinel-product-truth-shell="build" aria-label="État produit Sentinel synchronisé" aria-live="polite">
+  <span><strong>État Sentinel synchronisé</strong> · chargement du snapshot canonique…</span>
+  <span class="sentinel-truth-state" data-state="VALIDATION">Vérification de la disponibilité réelle</span>
+  <a href="/public/product-status.html">Voir l’état produit</a>
+</aside>`;
+
 function injectTruthRuntimeIntoHtmlTree(directory) {
-  const marker = 'data-sentinel-product-truth="build"';
-  const runtimeTag = '<script defer src="/public/product-truth.js" data-sentinel-product-truth="build"></script>';
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const fullPath = join(directory, entry.name);
     if (entry.isDirectory()) {
@@ -125,10 +138,22 @@ function injectTruthRuntimeIntoHtmlTree(directory) {
       continue;
     }
     if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.html')) continue;
-    const source = readFileSync(fullPath, 'utf8');
-    if (source.includes(marker) || source.includes('src="/public/product-truth.js"') || source.includes('src="product-truth.js"')) continue;
+
+    let source = readFileSync(fullPath, 'utf8');
+    if (!/<main\b/i.test(source)) continue;
     if (!/<\/body\s*>/i.test(source)) throw new Error(`HTML page has no closing body tag: ${fullPath}`);
-    writeFileSync(fullPath, source.replace(/<\/body\s*>/i, `${runtimeTag}\n</body>`), 'utf8');
+    if (!/<\/head\s*>/i.test(source)) throw new Error(`HTML page has no closing head tag: ${fullPath}`);
+
+    if (!source.includes(TRUTH_STYLE_MARKER)) {
+      source = source.replace(/<\/head\s*>/i, `${truthStyleTag}\n</head>`);
+    }
+    if (!source.includes(TRUTH_SHELL_MARKER) && !/class=["'][^"']*sentinel-truth-strip/.test(source)) {
+      source = source.replace(/<main\b/i, `${truthShell}\n<main`);
+    }
+    if (!source.includes(TRUTH_RUNTIME_MARKER) && !source.includes('src="/public/product-truth.js"') && !source.includes('src="product-truth.js"')) {
+      source = source.replace(/<\/body\s*>/i, `${truthRuntimeTag}\n</body>`);
+    }
+    writeFileSync(fullPath, source, 'utf8');
   }
 }
 
