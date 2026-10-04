@@ -72,6 +72,10 @@ class ExactRuleMigrationPolicyTest {
             setOf(legacy, missingMetadata, expiredLegacy),
             ExactRuleMigrationPolicy.legacyHashes(hashes, metadata)
         )
+        assertEquals(
+            setOf(expiredSafe, expiredLegacy),
+            ExactRuleMigrationPolicy.expiredKnownHashes(metadata, nowEpochMs = 1000L)
+        )
     }
 
     private fun entry(
