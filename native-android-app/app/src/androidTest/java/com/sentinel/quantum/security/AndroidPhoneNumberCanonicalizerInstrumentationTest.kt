@@ -16,7 +16,8 @@ class AndroidPhoneNumberCanonicalizerInstrumentationTest {
             Triple("0696 12 34 56", "MQ", "+596696123456"),
             Triple("0694 12 34 56", "GF", "+594694123456"),
             Triple("0692 12 34 56", "RE", "+262692123456"),
-            Triple("0639 12 34 56", "YT", "+262639123456")
+            Triple("0639 12 34 56", "YT", "+262639123456"),
+            Triple("0508 12 34 56", "PM", "+508123456")
         )
 
         cases.forEach { (raw, region, expected) ->
@@ -37,6 +38,10 @@ class AndroidPhoneNumberCanonicalizerInstrumentationTest {
         assertEquals(
             "+590690123456",
             AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("00 590 690 12 34 56", "FR")
+        )
+        assertEquals(
+            "+508123456",
+            AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion("+508 12 34 56", "FR")
         )
     }
 
