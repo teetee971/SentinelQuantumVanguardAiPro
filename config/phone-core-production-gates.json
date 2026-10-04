@@ -36,8 +36,8 @@
   },
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
-    "required_count": 13,
-    "note": "Le certificat local 13/13 reste une preuve appareil/réseau distincte. Il n'est pas requis pour qualifier une branche par émulation et ne doit pas être présenté comme automatisable si le signal dépend d'un modem, d'un opérateur ou d'un comportement OEM réel."
+    "required_count": 14,
+    "note": "Le certificat local v5 comporte 14 preuves, conformément à PhoneCorePhysicalValidation. Il reste une preuve appareil/réseau distincte. Il n'est pas requis pour qualifier une branche par émulation et ne doit pas être présenté comme automatisable si le signal dépend d'un modem, d'un opérateur ou d'un comportement OEM réel."
   },
   "residual_external_validation": [
     {
