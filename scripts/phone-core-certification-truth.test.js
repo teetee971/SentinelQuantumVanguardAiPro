@@ -76,6 +76,14 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
     );
   }
 
+  // Customer-facing Phone Core status stays resource-backed so this UX pass does not create new
+  // repository-i18n debt while hiding the certification counters.
+  assert.match(dialer, /import androidx\.compose\.ui\.res\.pluralStringResource/);
+  assert.match(dialer, /R\.plurals\.phone_core_ready_validation_count/);
+  assert.match(dialer, /R\.plurals\.phone_core_configuration_validation_count/);
+  assert.doesNotMatch(dialer, /"Configuration téléphone prête"/);
+  assert.doesNotMatch(dialer, /"Configuration téléphone à terminer"/);
+
   assert.match(uiStateTest, /onlyFourteenOfFourteenIsValidated/);
   assert.match(uiStateTest, /thirteenOfFourteenCannotClaimValidated/);
 
