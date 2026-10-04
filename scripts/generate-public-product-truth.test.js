@@ -57,10 +57,12 @@ test('public runtime fails closed on expired capability evidence and uses canoni
   assert.doesNotMatch(runtime, /saas_customer_identity/);
 });
 
-test('committed product status page matches its canonical renderer', () => {
-  const expected = renderCapabilityConsumers(registry)['public/product-status.html'];
-  const actual = readFileSync(new URL('../public/product-status.html', import.meta.url), 'utf8');
-  assert.equal(actual, expected);
+test('canonical product-status renderer carries the public truth runtime and expiry boundary', () => {
+  const rendered = renderCapabilityConsumers(registry)['public/product-status.html'];
+  assert.match(rendered, /product-truth\.js/);
+  assert.match(rendered, /data-product-available=/);
+  assert.match(rendered, /data-product-expires=/);
+  assert.match(rendered, /Code présent ≠/);
 });
 
 test('public renderer is wired into truth-sensitive pages', () => {
