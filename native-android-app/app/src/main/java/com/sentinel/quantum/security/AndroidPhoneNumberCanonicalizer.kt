@@ -22,14 +22,8 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
         subscriptionId: Int? = null,
         explicitRegionIso: String? = null
     ): String? {
-        val syntaxOnly = CallRuleEngine.normalizeNumber(rawNumber) ?: return null
-        if (syntaxOnly.startsWith('+')) return syntaxOnly
-
-        val regionIso = observedRegionIso(subscriptionId, explicitRegionIso) ?: return syntaxOnly
-        val e164 = runCatching {
-            PhoneNumberUtils.formatNumberToE164(rawNumber.orEmpty(), regionIso)
-        }.getOrNull()
-        return CallRuleEngine.normalizeNumber(e164) ?: syntaxOnly
+        val regionIso = observedRegionIso(subscriptionId, explicitRegionIso)
+        return normalizeWithKnownRegion(rawNumber, regionIso)
     }
 
     fun observedRegionIso(
@@ -72,6 +66,20 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
 
     companion object {
         private val ISO_REGION = Regex("[A-Z]{2}")
+
+        /**
+         * Fast canonicalization path for CallScreeningService: no subscription lookup, no I/O and
+         * no country guess. A missing/ambiguous cached region leaves national syntax untouched.
+         */
+        fun normalizeWithKnownRegion(rawNumber: String?, regionIso: String?): String? {
+            val syntaxOnly = CallRuleEngine.normalizeNumber(rawNumber) ?: return null
+            if (syntaxOnly.startsWith('+')) return syntaxOnly
+            val safeRegion = sanitizeRegionIso(regionIso) ?: return syntaxOnly
+            val e164 = runCatching {
+                PhoneNumberUtils.formatNumberToE164(rawNumber.orEmpty(), safeRegion)
+            }.getOrNull()
+            return CallRuleEngine.normalizeNumber(e164) ?: syntaxOnly
+        }
 
         /** Pure precedence rule for one known subscription. */
         fun resolveRegionIso(
