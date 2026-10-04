@@ -13,7 +13,8 @@ const existsAndRead = (...parts) => {
 const gate = JSON.parse(read('config', 'phone-core-production-gates.json'));
 const workflow = existsAndRead('.github', 'workflows', 'android-emulation-qualification.yml');
 const codeqlWorkflow = existsAndRead('.github', 'workflows', 'codeql-analysis.yml');
-const setupResumeFlow = existsAndRead('scripts', 'phone-core-emulator-setup-resume-flow.sh');
+const manifest = read('native-android-app', 'app', 'src', 'main', 'AndroidManifest.xml');
+const setupResumeTest = existsAndRead('native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'PhoneCoreSetupResumeInstrumentationTest.kt');
 const runtimeFlow = read('scripts', 'phone-core-emulator-flow.sh');
 const revocationFlow = existsAndRead('scripts', 'phone-core-emulator-revocation-flow.sh');
 const navigationSmoke = existsAndRead('native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui', 'AllStaticNavigationSurfacesInstrumentationTest.kt');
@@ -66,6 +67,16 @@ for (const moduleName of [':app', ':wearable-contract', ':wearable-security']) {
   if (!settingsGradle.includes(`include '${moduleName}'`)) errors.push(`Gradle module missing from settings: ${moduleName}`);
 }
 
+if (!/<activity\s+android:name="\.PhoneCoreActivationActivity"\s+android:exported="false"\s*\/>/m.test(manifest)) {
+  errors.push('PhoneCoreActivationActivity must remain private (android:exported="false")');
+}
+if (fs.existsSync(path.join(root, 'scripts', 'phone-core-emulator-setup-resume-flow.sh'))) {
+  errors.push('retired adb setup-resume script must not exist; private setup is instrumentation-only');
+}
+if (workflow.includes('phone-core-emulator-setup-resume-flow.sh')) {
+  errors.push('emulation workflow must not shell-launch the private PhoneCoreActivationActivity');
+}
+
 const emulation = gate.emulator_qualification;
 if (!emulation || emulation.required !== true) errors.push('emulator qualification must be required');
 if (!sameArray(emulation?.required_api_levels, requiredApis)) errors.push('emulator qualification must cover API 24, 29, 36 and 37');
@@ -106,13 +117,13 @@ for (const marker of [
   'CallRuleEngineTest',
   'SmsSubmitReadinessTest',
   ':app:connectedDebugAndroidTest',
-  'phone-core-emulator-setup-resume-flow.sh',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
   'phone_number_canonicalization_contract',
   'multi_sim_submit_readiness_contract',
+  'setup_resume: modernPhoneCore',
   'FATAL EXCEPTION: main',
   'ANR in com\\.sentinel\\.quantum'
 ]) requireText(workflow, marker, 'emulation workflow');
@@ -129,9 +140,15 @@ for (const marker of ['CallRuleEngineTest', 'frenchAndInternationalPrefixesCanon
 for (const marker of ['SmsSubmitReadinessTest', 'blocksMultiSimUntilExplicitLineSelected', 'canSubmit']) {
   requireText(multiSimReadinessTest, marker, 'multi-SIM submit readiness contract');
 }
-for (const marker of ['FIRST_RUN_PHONE_CORE_SETUP', 'Configuration initiale', 'Assistant séquentiel', 'attempted_target', 'completed', 'am force-stop', 'setup-resume-launch.txt']) {
-  requireText(setupResumeFlow, marker, 'setup resume flow');
-}
+for (const marker of [
+  'PhoneCoreSetupResumeInstrumentationTest',
+  'PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP',
+  'ActivityScenario.launch<PhoneCoreActivationActivity>',
+  'attempted_target',
+  'completed',
+  'sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)',
+  'interruptedFirstRunResumesWithoutFalseCompletion'
+]) requireText(setupResumeTest, marker, 'private setup resume instrumentation');
 for (const marker of ['adb emu gsm call', 'adb emu sms send', 'for FLOW_ROLE in DIALER SMS', 'android.app.role.$FLOW_ROLE', 'android.app.role.CALL_SCREENING']) {
   requireText(runtimeFlow, marker, 'emulator runtime flow');
 }
