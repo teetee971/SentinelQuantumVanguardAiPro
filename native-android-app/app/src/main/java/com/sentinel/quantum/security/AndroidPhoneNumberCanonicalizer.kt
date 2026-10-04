@@ -46,7 +46,7 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
 
         if (activeSubscriptionIds.isEmpty()) return null
         return unambiguousRegion(
-            activeSubscriptionIds.mapNotNull(::observedRegionForSubscription)
+            activeSubscriptionIds.map(::observedRegionForSubscription)
         )
     }
 
@@ -91,11 +91,19 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
             .firstOrNull()
 
         /**
-         * Multi-SIM safety rule: national canonicalization is allowed only when every usable
-         * active-subscription observation agrees on one ISO region.
+         * Multi-SIM safety rule: national canonicalization is allowed only when every active
+         * subscription has a usable ISO region and all observations agree. One missing/malformed
+         * observation is enough to keep the region unknown because another active SIM could belong
+         * to a different numbering plan.
          */
-        fun unambiguousRegion(observedRegions: Collection<String>): String? {
-            val regions = observedRegions.mapNotNull(::sanitizeRegionIso).distinct()
+        fun unambiguousRegion(observedRegions: Collection<String?>): String? {
+            if (observedRegions.isEmpty()) return null
+            val regions = linkedSetOf<String>()
+            for (observed in observedRegions) {
+                val region = sanitizeRegionIso(observed) ?: return null
+                regions += region
+                if (regions.size > 1) return null
+            }
             return regions.singleOrNull()
         }
 
