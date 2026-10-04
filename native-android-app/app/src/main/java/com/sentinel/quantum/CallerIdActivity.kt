@@ -55,6 +55,7 @@ import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.security.GlobalPhoneIdentityPolicy
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhoneEvidence
 import com.sentinel.quantum.security.PhonePrivateTimeline
@@ -73,7 +74,6 @@ import com.sentinel.quantum.ui.design.SentinelStateChip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
 
 /** Read-only caller-ID surface. It never delays or changes the screening decision. */
 class CallerIdActivity : ComponentActivity() {
@@ -97,6 +97,11 @@ class CallerIdActivity : ComponentActivity() {
         val verificationCode = intent.getStringExtra(EXTRA_VERIFICATION_CODE).orEmpty()
         val action = intent.getStringExtra(EXTRA_ACTION).orEmpty()
         val reason = intent.getStringExtra(EXTRA_REASON).orEmpty()
+        val recipientRegion = GlobalPhoneIdentityPolicy.canonicalRegionIsoOrNull(
+            intent.getStringExtra(EXTRA_RECIPIENT_REGION)
+        )
+        val canonicalCallerNumber = GlobalPhoneIdentityPolicy.canonicalE164OrNull(number)
+        val remoteContextReady = recipientRegion != null && canonicalCallerNumber != null
         callerUiEvidenceEligible = action in setOf("ALLOW", "BLOCK", "SILENCE") && reason.isNotBlank()
         val settingsStore = SettingsStore(applicationContext)
         val enrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled &&
@@ -140,14 +145,17 @@ class CallerIdActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(number) {
-                    if (number.isBlank() || ArcepDirectoryClient.toFrenchNational(number) == null) {
+                LaunchedEffect(canonicalCallerNumber) {
+                    if (
+                        canonicalCallerNumber == null ||
+                        ArcepDirectoryClient.toFrenchNational(canonicalCallerNumber) == null
+                    ) {
                         officialAllocation = null
-                        officialStatus = "Attribution ARCEP non applicable à ce numéro."
+                        officialStatus = "Attribution ARCEP non applicable ou pays non déterminé."
                     } else {
                         officialStatus = "Recherche de l’attribution officielle…"
                         val result = withContext(Dispatchers.IO) {
-                            runCatching { officialDirectory.lookup(number) }
+                            runCatching { officialDirectory.lookup(canonicalCallerNumber) }
                         }
                         result.onSuccess { allocation ->
                             officialAllocation = allocation
@@ -163,8 +171,8 @@ class CallerIdActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(number, enrichmentEnabled) {
-                    if (enrichmentEnabled && number.isNotBlank()) {
+                LaunchedEffect(canonicalCallerNumber, recipientRegion, enrichmentEnabled) {
+                    if (enrichmentEnabled && remoteContextReady) {
                         remoteStatus = "Enrichissement en cours…"
                         remoteResult = withContext(Dispatchers.IO) {
                             runCatching {
@@ -174,8 +182,8 @@ class CallerIdActivity : ComponentActivity() {
                                             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
                                     }
                                 ).evaluate(
-                                    callerNumber = number,
-                                    recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
+                                    callerNumber = canonicalCallerNumber!!,
+                                    recipientCountry = recipientRegion!!,
                                     verificationStatus = verificationCode.ifBlank { "UNKNOWN" },
                                     privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                     explicitConsent = settingsStore.callerReputationEnrichmentEnabled
@@ -187,6 +195,9 @@ class CallerIdActivity : ComponentActivity() {
                         } else {
                             "Enrichissement distant reçu"
                         }
+                    } else if (enrichmentEnabled) {
+                        remoteResult = null
+                        remoteStatus = "Enrichissement suspendu : numéro international ou région de ligne non déterminé."
                     }
                 }
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -212,10 +223,14 @@ class CallerIdActivity : ComponentActivity() {
                         reportRunning = reportRunning,
                         pendingReportCategory = pendingReportCategory,
                         onPrepareReport = { category ->
-                            if (!communityReportingEnabled) {
-                                reportStatus = "Mode local uniquement : aucun numéro n’est transmis pour signalement."
-                            } else if (!reportRunning) {
-                                pendingReportCategory = category
+                            when {
+                                !communityReportingEnabled -> {
+                                    reportStatus = "Mode local uniquement : aucun numéro n’est transmis pour signalement."
+                                }
+                                !remoteContextReady -> {
+                                    reportStatus = "Signalement suspendu : numéro international ou région de ligne non déterminé."
+                                }
+                                !reportRunning -> pendingReportCategory = category
                             }
                         },
                         onCancelReport = { pendingReportCategory = null },
@@ -223,15 +238,17 @@ class CallerIdActivity : ComponentActivity() {
                             pendingReportCategory = null
                             if (!communityReportingEnabled) {
                                 reportStatus = "Mode local uniquement : signalement distant désactivé."
-                            } else if (!reportRunning && number.isNotBlank()) {
+                            } else if (!remoteContextReady) {
+                                reportStatus = "Signalement suspendu : contexte téléphonique insuffisant."
+                            } else if (!reportRunning && canonicalCallerNumber != null && recipientRegion != null) {
                                 reportRunning = true
                                 reportStatus = "Envoi du signalement…"
                                 reportScope.launch {
                                     val submitted = withContext(Dispatchers.IO) {
                                         runCatching {
                                             reportClient.submit(
-                                                callerNumber = number,
-                                                recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
+                                                callerNumber = canonicalCallerNumber,
+                                                recipientCountry = recipientRegion,
                                                 category = category,
                                                 protectionMode = settingsStore.protectionMode,
                                                 explicitConsent = true
@@ -286,6 +303,7 @@ class CallerIdActivity : ComponentActivity() {
     companion object {
         const val EXTRA_NUMBER = "caller.number"
         const val EXTRA_COUNTRY = "caller.country"
+        const val EXTRA_RECIPIENT_REGION = "caller.recipient_region"
         const val EXTRA_FLAG = "caller.flag"
         const val EXTRA_TYPE = "caller.type"
         const val EXTRA_VERIFICATION = "caller.verification"
