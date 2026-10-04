@@ -37,7 +37,7 @@
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
     "required_count": 14,
-    "note": "Le certificat local v5 comporte 14 preuves, conformément à PhoneCorePhysicalValidation. Il reste une preuve appareil/réseau distincte. Il n'est pas requis pour qualifier une branche par émulation et ne doit pas être présenté comme automatisable si le signal dépend d'un modem, d'un opérateur ou d'un comportement OEM réel."
+    "note": "Le contrat de certificat local v5 comporte 14 preuves, conformément à PhoneCorePhysicalValidation. Cette configuration décrit le nombre requis, pas un état 14/14 acquis. Les preuves appareil/réseau restent distinctes et ne sont pas requises pour qualifier une branche par émulation ; elles ne doivent pas être présentées comme automatisables si le signal dépend d'un modem, d'un opérateur ou d'un comportement OEM réel."
   },
   "residual_external_validation": [
     {
