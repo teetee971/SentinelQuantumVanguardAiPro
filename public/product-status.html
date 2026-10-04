@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="État réel des capacités Sentinel au 4 octobre 2026 : code, validation, infrastructure et disponibilité client séparés.">
+  <meta name="description" content="État réel des capacités Sentinel : code, validation, infrastructure et disponibilité client séparés, avec snapshot généré automatiquement.">
   <meta name="theme-color" content="#080b10">
   <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="shared-styles.css">
@@ -14,42 +14,31 @@
 <main id="main-content" class="page-shell sq-home">
   <section class="sq-hero" aria-labelledby="status-title">
     <div class="sq-hero-copy">
-      <span class="sq-kicker">État produit · 4 octobre 2026</span>
+      <span class="sq-kicker">État produit · synchronisé avec la CI</span>
       <h1 id="status-title" class="sq-title">Code présent ≠ <span class="sq-title-emphasis">fonction disponible.</span></h1>
-      <p class="sq-lede">Sentinel sépare désormais code, prérequis, validation physique, infrastructure, entitlement commercial et disponibilité client. Une fonction ne devient pas vendable parce qu'elle existe dans le dépôt.</p>
+      <p class="sq-lede">Sentinel sépare code, prérequis, validation physique, infrastructure, entitlement commercial et disponibilité client. Les états ci-dessous sont reconstruits à partir du registre produit canonique lors du build du site.</p>
+      <p class="sq-lede" data-product-truth-summary>Chargement du snapshot produit canonique…</p>
       <div class="sq-actions"><a class="btn" href="roadmap.html">Voir la roadmap</a><a class="btn btn-secondary" href="pricing.html">Voir le modèle commercial</a></div>
     </div>
   </section>
 
-  <section class="sq-section" aria-labelledby="matrix-title">
-    <div class="sq-section-head"><div><span class="eyebrow">Matrice de vérité</span><h2 id="matrix-title">Capacités principales</h2></div><p>La colonne « disponibilité client » reste la référence publique.</p></div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Capacité</th><th>État technique</th><th>Niveau commercial</th><th>Disponibilité client</th></tr></thead>
-        <tbody>
-          <tr><td>Recherche téléphonique Web</td><td>Disponible sur le canal Web public</td><td>Free</td><td data-product-available="true" data-product-expires="">Disponible</td></tr>
-          <tr><td>Android Phone Core</td><td>Implémenté ; raccordements et validations physiques encore requis</td><td>Free</td><td data-product-available="false" data-product-expires="">Non distribué</td></tr>
-          <tr><td>System Doctor manuel</td><td>Moteur local présent</td><td>Free</td><td data-product-available="false" data-product-expires="">Lié à la distribution Android</td></tr>
-          <tr><td>Security Audit / permissions</td><td>Analyse locale présente</td><td>Free</td><td data-product-available="false" data-product-expires="">Lié à la distribution Android</td></tr>
-          <tr><td>Collective Defense / réputation</td><td>Backend et clients présents ; validation et configuration client à poursuivre</td><td>Free de base / fonctions avancées séparées</td><td data-product-available="false" data-product-expires="">Non qualifié comme service client complet</td></tr>
-          <tr><td>Sentinel VPN</td><td>Client Android présent ; passerelle de sortie non validée</td><td>Premium cible</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
-          <tr><td>Voice Transform / appels Sentinel</td><td>DSP + transport client présents ; infrastructure et E2E physique manquants</td><td>Premium cible</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
-          <tr><td>Sentinel PTT / Comms</td><td>Architecture définie ; session PTT et validation Android-to-Android à construire</td><td>Premium cible</td><td data-product-available="false" data-product-expires="">NOT_FOR_SALE</td></tr>
-          <tr><td>Wearable avancé</td><td>Fondations de confiance présentes ; validation physique requise</td><td>Free basique / Premium avancé</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
-          <tr><td>GeoIntel / OSINT</td><td>Fondations et certaines sources présentes ; périmètre incomplet</td><td>Free basique / Pro avancé</td><td data-product-available="false" data-product-expires="">Partiel / non commercial</td></tr>
-          <tr><td>Ingérence / FIMI</td><td>Fondations méthodologiques ; attribution automatique interdite</td><td>Pro / Enterprise cible</td><td data-product-available="false" data-product-expires="">Planifié / non vendu</td></tr>
-          <tr><td>Sentinel Investigations</td><td>Fondations produit ; workflow complet à qualifier</td><td>Pro / Enterprise cible</td><td data-product-available="false" data-product-expires="">Non vendu</td></tr>
-          <tr><td>Sentinel API Pro</td><td>Produit commercial enregistré ; identité tenant, quotas et metering requis</td><td>Pro</td><td data-product-available="false" data-product-expires="">NOT_FOR_SALE</td></tr>
-          <tr><td>Essai Premium 7 jours</td><td>Durée définie ; entitlement/checkout non activés</td><td>Premium</td><td data-product-available="false" data-product-expires="">Désactivé</td></tr>
-          <tr><td>Checkout / abonnement</td><td>Aucun parcours de paiement client validé</td><td>Commercial</td><td data-product-available="false" data-product-expires="">Désactivé</td></tr>
-        </tbody>
-      </table>
+  <section class="sq-section" aria-labelledby="generated-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Matrice auto-générée</span><h2 id="generated-title">Capacités suivies par le registre produit.</h2></div><p>Dernière source canonique : <strong data-product-truth-updated>chargement…</strong>. Aucun blocker interne, chemin de preuve ou détail propriétaire n'est exporté vers cette vue publique.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Capacité</th><th>Code</th><th>État</th><th>Disponible client</th></tr></thead><tbody data-capability-status-generated><tr><td colspan="4">Chargement…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="boundaries-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Frontières</span><h2 id="boundaries-title">Ce que le snapshot ne confond jamais.</h2></div><p>La disponibilité commerciale ne découle jamais automatiquement de l'implémentation.</p></div>
+    <div class="sq-grid">
+      <article class="sq-card span-4"><span class="sq-state validation">Logiciel</span><h3>Implémenté</h3><p>Le code et les tests peuvent exister sans service client disponible.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Infrastructure</span><h3>Déployé et vérifié</h3><p>Les services distants exigent une infrastructure réelle et une preuve runtime liée à la révision concernée.</p></article>
+      <article class="sq-card span-4"><span class="sq-state ready">Client</span><h3>Customer available</h3><p>Seul cet état permet au site d'afficher automatiquement une disponibilité client.</p></article>
     </div>
   </section>
 
   <section class="notice info"><strong>Règle de release :</strong> Phone Core peut être prêt indépendamment de PTT, VPN, Voice, FIMI ou API Pro. Une panne ou indisponibilité d'un add-on ne doit jamais déclasser la readiness du socle Phone Core.</section>
 </main>
 <footer class="site-footer"><div class="footer-grid"><div><h2>État produit</h2><p>Disponibilité annoncée uniquement avec preuve adaptée.</p></div><div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="mobile-security.html">Android</a></li></ul></div><div><h3>Commerce</h3><ul><li><a href="pricing.html">Tarifs</a></li><li><a href="roadmap.html">Roadmap</a></li></ul></div><div><h3>Confiance</h3><ul><li><a href="security.html">Sécurité</a></li><li><a href="privacy.html">Confidentialité</a></li></ul></div></div></footer>
-<script src="product-capability-status.js" defer></script>
+<script src="product-truth.js" defer></script>
 </body>
 </html>
