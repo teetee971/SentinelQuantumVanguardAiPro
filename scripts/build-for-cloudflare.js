@@ -2,16 +2,16 @@
 
 /**
  * Build script for Cloudflare Pages deployment.
- * Regenerates the public-safe product truth snapshot, copies the validated
- * static web surface to frontend/dist, then injects the truth runtime into
- * every generated HTML page so product state cannot drift page-by-page.
+ * Regenerates the public-safe product truth snapshot and public capability
+ * views, then copies the validated static web surface to frontend/dist.
  * Requires Node.js 20.19.0+ as declared by package.json.
  */
 
-import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync, readdirSync } from 'fs';
-import { join, dirname, extname } from 'path';
+import { cpSync, existsSync, mkdirSync, rmSync, readFileSync, writeFileSync } from 'fs';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { writePublicProductTruth } from './generate-public-product-truth.js';
+import { renderCapabilityConsumers } from './render-product-capabilities.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -56,6 +56,16 @@ const outputDir = join(rootDir, 'frontend', 'dist');
 console.log('Building static frontend for Cloudflare Pages...');
 console.log('Regenerating public product truth from canonical registries...');
 writePublicProductTruth();
+
+console.log('Regenerating public capability views from canonical capability registry...');
+const capabilityRegistry = JSON.parse(readFileSync(join(rootDir, 'config', 'product-capabilities.json'), 'utf8'));
+const capabilityConsumers = renderCapabilityConsumers(capabilityRegistry, rootDir);
+for (const [relativePath, content] of Object.entries(capabilityConsumers)) {
+  if (!relativePath.startsWith('public/')) continue;
+  const target = join(rootDir, relativePath);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, content, 'utf8');
+}
 
 if (existsSync(outputDir)) {
   rmSync(outputDir, { recursive: true, force: true });
@@ -105,35 +115,24 @@ for (const { src, dest, required } of filesToCopy) {
   }
 }
 
-const truthRuntimeTag = '<script src="/public/product-truth.js" defer data-sentinel-product-truth-global="true"></script>';
-
-function injectProductTruthRuntime(directory) {
-  let htmlCount = 0;
-  let injectedCount = 0;
-  const visit = (current) => {
-    for (const entry of readdirSync(current, { withFileTypes: true })) {
-      const target = join(current, entry.name);
-      if (entry.isDirectory()) {
-        visit(target);
-        continue;
-      }
-      if (!entry.isFile() || extname(entry.name).toLowerCase() !== '.html') continue;
-      htmlCount += 1;
-      const html = readFileSync(target, 'utf8');
-      if (html.includes('product-truth.js')) continue;
-      const closeBodyIndex = html.toLowerCase().lastIndexOf('</body>');
-      if (closeBodyIndex < 0) throw new Error(`HTML page has no </body> and cannot receive product truth runtime: ${target}`);
-      const updated = `${html.slice(0, closeBodyIndex)}${truthRuntimeTag}\n${html.slice(closeBodyIndex)}`;
-      writeFileSync(target, updated, 'utf8');
-      injectedCount += 1;
+function injectTruthRuntimeIntoHtmlTree(directory) {
+  const marker = 'data-sentinel-product-truth="build"';
+  const runtimeTag = '<script defer src="/public/product-truth.js" data-sentinel-product-truth="build"></script>';
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const fullPath = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      injectTruthRuntimeIntoHtmlTree(fullPath);
+      continue;
     }
-  };
-  visit(directory);
-  return { htmlCount, injectedCount };
+    if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.html')) continue;
+    const source = readFileSync(fullPath, 'utf8');
+    if (source.includes(marker) || source.includes('src="/public/product-truth.js"') || source.includes('src="product-truth.js"')) continue;
+    if (!/<\/body\s*>/i.test(source)) throw new Error(`HTML page has no closing body tag: ${fullPath}`);
+    writeFileSync(fullPath, source.replace(/<\/body\s*>/i, `${runtimeTag}\n</body>`), 'utf8');
+  }
 }
 
-const truthCoverage = injectProductTruthRuntime(outputDir);
-console.log(`Product truth runtime coverage: ${truthCoverage.htmlCount} HTML pages, ${truthCoverage.injectedCount} build-time injections.`);
+injectTruthRuntimeIntoHtmlTree(outputDir);
 
 const deploymentCommit = process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || null;
 writeFileSync(
