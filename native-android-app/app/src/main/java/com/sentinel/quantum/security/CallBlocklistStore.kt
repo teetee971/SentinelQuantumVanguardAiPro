@@ -47,8 +47,7 @@ class CallBlocklistStore(context: Context) {
     /** Only the post-migration explicit-international prefix namespace is executable. */
     fun manualBlockedPrefixes(): Set<String> =
         preferences.getStringSet(PREFIXES_E164_V1, emptySet()).orEmpty()
-            .mapNotNull { CallRuleEngine.normalizePrefix(it) }
-            .filter { it.startsWith('+') }
+            .mapNotNull(ManualPrefixPersistencePolicy::normalize)
             .take(CallRuleEngine.MAX_PREFIX_RULES)
             .toSet()
 
@@ -213,8 +212,7 @@ class CallBlocklistStore(context: Context) {
      * be safely converted with PhoneNumberUtils because numbering plans differ by country/territory.
      */
     fun addBlockedPrefix(rawPrefix: String): Boolean {
-        val normalized = CallRuleEngine.normalizePrefix(rawPrefix) ?: return false
-        if (!normalized.startsWith('+')) return false
+        val normalized = ManualPrefixPersistencePolicy.normalize(rawPrefix) ?: return false
         val values = manualBlockedPrefixes().toMutableSet()
         val arcepCount = if (isArcepVerifiedBlockingEnabled()) {
             ArcepVerifiedPrefixCatalog.e164Prefixes.size
@@ -232,8 +230,7 @@ class CallBlocklistStore(context: Context) {
     }
 
     fun removeBlockedPrefix(prefix: String): Boolean {
-        val normalized = CallRuleEngine.normalizePrefix(prefix) ?: return false
-        if (!normalized.startsWith('+')) return false
+        val normalized = ManualPrefixPersistencePolicy.normalize(prefix) ?: return false
         val values = manualBlockedPrefixes().toMutableSet()
         if (!values.remove(normalized)) return false
         val committed = preferences.edit().putStringSet(PREFIXES_E164_V1, values).commit()
@@ -248,7 +245,7 @@ class CallBlocklistStore(context: Context) {
     fun replaceBlockedPrefixes(rawPrefixes: Collection<String>): Boolean {
         if (rawPrefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return false
         val normalized = rawPrefixes.map { raw ->
-            CallRuleEngine.normalizePrefix(raw)?.takeIf { it.startsWith('+') } ?: return false
+            ManualPrefixPersistencePolicy.normalize(raw) ?: return false
         }.distinct()
         val effectiveSize = normalized.size +
             if (isArcepVerifiedBlockingEnabled()) ArcepVerifiedPrefixCatalog.e164Prefixes.size else 0
