@@ -8,7 +8,6 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
 import com.sentinel.quantum.CallerIdActivity
-import java.util.concurrent.Executors
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
 class SentinelCallScreeningService : CallScreeningService() {
@@ -156,8 +155,8 @@ class SentinelCallScreeningService : CallScreeningService() {
     }
 
     private companion object {
-        val POST_RESPONSE_WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-call-screening-post-response").apply { isDaemon = true }
-        }
+        val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
+            threadName = "sentinel-call-screening-post-response"
+        )
     }
 }
