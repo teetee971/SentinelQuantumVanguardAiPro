@@ -43,4 +43,12 @@ internal object ExactRuleMigrationPolicy {
     ): Set<String> = hashes.filterTo(linkedSetOf()) { hash ->
         metadataByHash[hash]?.safeForExactMatching != true
     }
+
+    /** Known expired metadata can be retired safely because its TTL already revoked the rule. */
+    fun expiredKnownHashes(
+        metadataByHash: Map<String, CallBlockMetadata.Entry>,
+        nowEpochMs: Long
+    ): Set<String> = metadataByHash.values
+        .filterNot { it.isActive(nowEpochMs) }
+        .mapTo(linkedSetOf()) { it.fingerprint }
 }
