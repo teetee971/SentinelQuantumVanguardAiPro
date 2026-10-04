@@ -49,14 +49,14 @@ jobs:
           ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon
 
   emulator-matrix:
-    name: PhoneCore-Emulation-Qualification API ${{ matrix.api-level }}
+    name: PhoneCore-Emulation-Qualification API ${{ matrix.api_level }}
     needs: contract-and-host-tests
     runs-on: ubuntu-latest
     timeout-minutes: 55
     strategy:
       fail-fast: false
       matrix:
-        api-level: [29, 36]
+        api_level: [29, 36]
 
     steps:
       - name: Checkout repository
@@ -78,7 +78,7 @@ jobs:
         working-directory: ./native-android-app
         shell: bash
         env:
-          API_LEVEL: ${{ matrix.api-level }}
+          API_LEVEL: ${{ matrix.api_level }}
         run: |
           set -euo pipefail
           chmod +x ./gradlew
@@ -163,7 +163,7 @@ jobs:
         working-directory: ./native-android-app
         shell: bash
         env:
-          API_LEVEL: ${{ matrix.api-level }}
+          API_LEVEL: ${{ matrix.api_level }}
         run: |
           set -euo pipefail
           ./gradlew assembleDebug --stacktrace --no-daemon
@@ -218,9 +218,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: PhoneCore-Emulation-Qualification-API${{ matrix.api-level }}-${{ github.sha }}
+          name: PhoneCore-Emulation-Qualification-API${{ matrix.api_level }}-${{ github.sha }}
           path: |
-            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api-level }}/
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/
             native-android-app/app/build/reports/androidTests/connected/
             native-android-app/app/build/outputs/androidTest-results/connected/
           if-no-files-found: warn
