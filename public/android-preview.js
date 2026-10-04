@@ -13,9 +13,9 @@
     {
       title: 'Accueil protection',
       description: 'Vos protections principales et leurs raccourcis au même endroit.',
-      evidence: 'Écran principal de l’application Sentinel.',
-      status: 'Présent',
-      statusClass: 'android-status-code',
+      evidence: 'Écran principal intégré à l’application Sentinel ; l’application reste en validation avant distribution.',
+      status: 'En validation',
+      statusClass: 'android-status-validation',
       position: '0% 0%'
     },
     {
@@ -37,17 +37,17 @@
     {
       title: 'Identification de l’appelant',
       description: 'Retrouvez les informations disponibles sur un numéro et les signaux de vigilance associés.',
-      evidence: 'Les informations sont présentées comme des indications, jamais comme des certitudes non prouvées.',
-      status: 'Présent',
-      statusClass: 'android-status-code',
+      evidence: 'La fonction est intégrée, mais l’application complète reste en validation avant distribution.',
+      status: 'En validation',
+      statusClass: 'android-status-validation',
       position: '75% 0%'
     },
     {
       title: 'VPN défensif',
-      description: 'Une protection de connexion destinée à sécuriser davantage les échanges réseau.',
-      evidence: 'La connexion sera activée lorsque les serveurs nécessaires seront prêts.',
-      status: 'En validation',
-      statusClass: 'android-status-validation',
+      description: 'Une protection de connexion prévue pour sécuriser davantage les échanges réseau.',
+      evidence: 'Le client Android existe, mais aucune passerelle Sentinel de sortie n’est encore provisionnée.',
+      status: 'À venir',
+      statusClass: 'android-status-planned',
       position: '100% 0%'
     },
     {
@@ -60,10 +60,10 @@
     },
     {
       title: 'Anti-publicité et anti-traceurs',
-      description: 'Réduisez les domaines publicitaires, les traceurs et certains domaines malveillants.',
-      evidence: 'Cette protection est encore en cours d’intégration à la connexion sécurisée.',
-      status: 'En validation',
-      statusClass: 'android-status-validation',
+      description: 'Une protection prévue pour réduire les domaines publicitaires, les traceurs et certains domaines malveillants.',
+      evidence: 'Aucun bloqueur n’est livré aujourd’hui ; cette protection doit encore être intégrée au chemin VPN/DNS.',
+      status: 'À venir',
+      statusClass: 'android-status-planned',
       position: '25% 100%'
     },
     {
