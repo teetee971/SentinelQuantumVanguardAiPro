@@ -39,45 +39,74 @@ assert_no_crash() {
     return 1
   fi
 }
+assert_sms_role_held() {
+  adb shell cmd role get-role-holders --user 0 android.app.role.SMS | grep -q "$PACKAGE"
+}
+launch_sms_surface() {
+  local output="$1"
+  adb shell am force-stop "$PACKAGE"
+  adb shell am start -W -a android.intent.action.SENDTO -d sms:+15550123 \
+    -n "$PACKAGE/.SmsComposeActivity" > "$OUT_DIR/$output"
+}
 
-# Establish a known-good SMS role before exercising revocation.
+# Establish a known-good SMS role before exercising each failure axis independently.
 adb shell cmd role add-role-holder --user 0 android.app.role.SMS "$PACKAGE"
 for permission in SEND_SMS READ_SMS RECEIVE_SMS READ_PHONE_STATE; do
   adb shell pm grant "$PACKAGE" "android.permission.$permission"
 done
-adb shell am force-stop "$PACKAGE"
+assert_sms_role_held
 
-# Remove role and critical permissions outside the app process. A correct app must relaunch in a
-# fail-closed state rather than preserving a stale READY state.
+# 1) Permission-only failure: keep ROLE_SMS held and revoke SEND_SMS only. This specifically proves
+# that capability truth cannot remain READY merely because the role is still held.
 adb logcat -c >/dev/null 2>&1 || true
-adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
 adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
-adb shell pm revoke "$PACKAGE" android.permission.READ_PHONE_STATE >/dev/null 2>&1 || true
-adb shell am force-stop "$PACKAGE"
-adb shell am start -W -a android.intent.action.SENDTO -d sms:+15550123 -n "$PACKAGE/.SmsComposeActivity" > "$OUT_DIR/sms-revoked-launch.txt"
-wait_ui_contains "rôle SMS disponible mais non accordé"
-capture 08-sms-role-revoked
+launch_sms_surface "sms-send-permission-revoked-launch.txt"
+assert_sms_role_held
+wait_ui_contains "Envoi SMS : autorisation Android requise."
+capture 08-sms-send-permission-revoked
+if adb shell dumpsys package "$PACKAGE" | grep -E 'android.permission.SEND_SMS: granted=true' >/dev/null; then
+  echo "SEND_SMS remained granted after explicit permission-only revocation."
+  exit 1
+fi
 assert_no_crash
+adb shell pm grant "$PACKAGE" android.permission.SEND_SMS
 
-# The framework itself must agree that the app no longer owns the role/permission.
+# 2) A second permission-only failure exercises SIM truth separately from send permission truth.
+adb shell pm revoke "$PACKAGE" android.permission.READ_PHONE_STATE >/dev/null 2>&1 || true
+launch_sms_surface "sms-phone-state-permission-revoked-launch.txt"
+assert_sms_role_held
+wait_ui_contains "Détection SIM : accès à l’état téléphonique requis."
+capture 09-sms-phone-state-permission-revoked
+if adb shell dumpsys package "$PACKAGE" | grep -E 'android.permission.READ_PHONE_STATE: granted=true' >/dev/null; then
+  echo "READ_PHONE_STATE remained granted after explicit permission-only revocation."
+  exit 1
+fi
+assert_no_crash
+adb shell pm grant "$PACKAGE" android.permission.READ_PHONE_STATE
+
+# 3) Role-only failure: permissions are restored first, then ROLE_SMS alone is removed. The UI must
+# report the role blocker rather than inheriting the previous permission state.
+for permission in SEND_SMS READ_SMS RECEIVE_SMS READ_PHONE_STATE; do
+  adb shell pm grant "$PACKAGE" "android.permission.$permission"
+done
+adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
+launch_sms_surface "sms-role-revoked-launch.txt"
 if adb shell cmd role get-role-holders --user 0 android.app.role.SMS | grep -q "$PACKAGE"; then
   echo "SMS role remained held after explicit removal."
   exit 1
 fi
-if adb shell dumpsys package "$PACKAGE" | grep -E 'android.permission.SEND_SMS: granted=true' >/dev/null; then
-  echo "SEND_SMS remained granted after explicit revocation."
-  exit 1
-fi
+wait_ui_contains "rôle SMS disponible mais non accordé"
+capture 10-sms-role-revoked
+assert_no_crash
 
-# Restore the SMS path and prove the app survives a real framework-state transition.
+# Restore the SMS path and prove the app survives the complete framework-state transition.
 adb shell cmd role add-role-holder --user 0 android.app.role.SMS "$PACKAGE"
 for permission in SEND_SMS READ_SMS RECEIVE_SMS READ_PHONE_STATE; do
   adb shell pm grant "$PACKAGE" "android.permission.$permission"
 done
-adb shell am force-stop "$PACKAGE"
-adb shell am start -W -a android.intent.action.SENDTO -d sms:+15550123 -n "$PACKAGE/.SmsComposeActivity" > "$OUT_DIR/sms-restored-launch.txt"
+launch_sms_surface "sms-restored-launch.txt"
 assert_no_crash
-adb shell cmd role get-role-holders --user 0 android.app.role.SMS | grep -q "$PACKAGE"
+assert_sms_role_held
 
 # Repeat role withdrawal for dialer/call-screening without requiring a personal dual-SIM device.
 for role in DIALER CALL_SCREENING; do
@@ -101,4 +130,4 @@ adb shell cmd role get-role-holders --user 0 android.app.role.SMS > "$OUT_DIR/sm
 adb shell cmd role get-role-holders --user 0 android.app.role.DIALER > "$OUT_DIR/dialer-role-restored.txt" 2>/dev/null || true
 adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING > "$OUT_DIR/call-screening-role-restored.txt" 2>/dev/null || true
 
-echo "Role/permission revocation and restoration verified on Android Emulator."
+echo "Independent permission and role revocation/restoration verified on Android Emulator."
