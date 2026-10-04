@@ -31,14 +31,19 @@ test('Android emulator qualification covers minimum, current and newest runtime 
 test('Phone Core Android 16 flow proves call screening before in-call handling', () => {
   assert.match(phoneCoreFlow, /DIALER SMS CALL_SCREENING/);
   assert.match(phoneCoreFlow, /cmd role get-role-holders/);
+  assert.match(phoneCoreFlow, /CALL_SCREENED:/);
+  assert.match(phoneCoreFlow, /phone_private_timeline\.xml/);
+  assert.match(phoneCoreFlow, /Raw caller number leaked into the privacy-bounded Phone Core timeline/);
 
   const incomingCall = phoneCoreFlow.indexOf('adb emu gsm call "$FLOW_NUMBER"');
   const screened = phoneCoreFlow.indexOf('wait_text "Appel autorisé"');
+  const persisted = phoneCoreFlow.indexOf("grep -Fq 'CALL_SCREENED:'");
   const dismissCallerId = phoneCoreFlow.indexOf('tap_text "Fermer la fiche"');
   const answer = phoneCoreFlow.indexOf('wait_text "Décrocher"');
 
   assert.ok(incomingCall >= 0, 'Phone Core flow must place a synthetic incoming call');
-  assert.ok(screened > incomingCall, 'Call Screening proof must follow the incoming call');
-  assert.ok(dismissCallerId > screened, 'Caller ID must be dismissed after screening proof');
+  assert.ok(screened > incomingCall, 'Call Screening UI proof must follow the incoming call');
+  assert.ok(persisted > screened, 'persisted Call Screening evidence must follow the UI proof');
+  assert.ok(dismissCallerId > persisted, 'Caller ID must be dismissed after persisted screening proof');
   assert.ok(answer > dismissCallerId, 'InCall proof must happen after Call Screening proof');
 });
