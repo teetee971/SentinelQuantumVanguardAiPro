@@ -10,7 +10,6 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
-import java.util.concurrent.Executors
 
 /** A bounded Room history containing decisions and a device-bound HMAC, never a phone number. */
 class CallFilterLogStore private constructor(
@@ -44,9 +43,11 @@ class CallFilterLogStore private constructor(
     companion object {
         const val MAX_HISTORY_ENTRIES = 500
         private const val MAX_REASON_LENGTH = 128
-        private val WRITER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-call-history").apply { isDaemon = true }
-        }
+        private const val MAX_PENDING_WRITES = 128
+        private val WRITER = BoundedPostResponseExecutor.create(
+            threadName = "sentinel-call-history",
+            queueCapacity = MAX_PENDING_WRITES
+        )
 
         fun get(context: Context): CallFilterLogStore = CallFilterLogStore(
             SentinelLocalDatabase.get(context.applicationContext).callFilterDecisionDao()
