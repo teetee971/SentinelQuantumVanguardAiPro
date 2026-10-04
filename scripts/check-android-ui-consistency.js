@@ -604,6 +604,7 @@ if (dialerContactsSource) {
     '"Scanner réseau local"',
     '"Analyse des applications"',
     '"Analyse d’URL"',
+    '"Analyse de liens/URLs"',
     '"Exposition numérique"',
     '"Veille OSINT"',
   ]) {
