@@ -2,11 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateApiOriginSources } from './check-sentinel-api-origin-contract.js';
 
-test('canonical origin file may contain the legacy compatibility field', () => {
+test('canonical origin file may contain the legacy compatibility field and centralized provider pin', () => {
   const errors = validateApiOriginSources([
     {
       name: 'SentinelApiOrigin.kt',
-      content: 'val baseUrl get() = BuildConfig.WANGIRI_API_BASE_URL'
+      content: `
+        private const val LEGACY_PINNED_HOST = "service.onrender.com"
+        val baseUrl get() = BuildConfig.WANGIRI_API_BASE_URL
+        val allowedHosts get() = setOf(LEGACY_PINNED_HOST)
+      `
     },
     {
       name: 'CommunityReportClient.kt',
@@ -45,6 +49,20 @@ test('provider-specific hostname cannot be scattered into Android security sourc
   ]);
 
   assert.ok(errors.some((error) => error.includes('provider-specific API hostname marker')));
+});
+
+test('canonical host allowlist cannot derive trust from the configured origin itself', () => {
+  const errors = validateApiOriginSources([
+    {
+      name: 'SentinelApiOrigin.kt',
+      content: `
+        val baseUrl get() = BuildConfig.WANGIRI_API_BASE_URL
+        val allowedHosts get() = setOf(SentinelApiEndpointPolicy.originHost(baseUrl))
+      `
+    }
+  ]);
+
+  assert.ok(errors.some((error) => error.includes('host allowlist must be independent')));
 });
 
 test('missing canonical origin fails closed', () => {
