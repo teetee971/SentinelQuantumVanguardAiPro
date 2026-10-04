@@ -76,6 +76,12 @@ if (fs.existsSync(path.join(root, 'scripts', 'phone-core-emulator-setup-resume-f
 if (workflow.includes('phone-core-emulator-setup-resume-flow.sh')) {
   errors.push('emulation workflow must not shell-launch the private PhoneCoreActivationActivity');
 }
+if (setupResumeTest.includes('sendKeyDownUpSync')) {
+  errors.push('setup-resume instrumentation must not require privileged cross-application key injection');
+}
+if (runtimeFlow.includes('wait_text "Décrocher"') || runtimeFlow.includes('tap_text "Décrocher"')) {
+  errors.push('incoming-call emulation must not depend on an OS-owned localized Answer label');
+}
 
 const emulation = gate.emulator_qualification;
 if (!emulation || emulation.required !== true) errors.push('emulator qualification must be required');
@@ -146,12 +152,19 @@ for (const marker of [
   'ActivityScenario.launch<PhoneCoreActivationActivity>',
   'attempted_target',
   'completed',
-  'sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)',
+  'performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)',
   'interruptedFirstRunResumesWithoutFalseCompletion'
 ]) requireText(setupResumeTest, marker, 'private setup resume instrumentation');
-for (const marker of ['adb emu gsm call', 'adb emu sms send', 'for FLOW_ROLE in DIALER SMS', 'android.app.role.$FLOW_ROLE', 'android.app.role.CALL_SCREENING']) {
-  requireText(runtimeFlow, marker, 'emulator runtime flow');
-}
+for (const marker of [
+  'adb emu gsm call',
+  'adb emu gsm accept "$FLOW_NUMBER"',
+  'wait_text "$FLOW_NUMBER"',
+  'wait_text "Appel autorisé"',
+  'adb emu sms send',
+  'for FLOW_ROLE in DIALER SMS',
+  'android.app.role.$FLOW_ROLE',
+  'android.app.role.CALL_SCREENING'
+]) requireText(runtimeFlow, marker, 'emulator runtime flow');
 for (const marker of ['remove-role-holder', 'pm revoke', 'assert_sms_role_held', 'Envoi SMS : autorisation Android requise.', 'Détection SIM : accès à l’état téléphonique requis.', 'rôle SMS disponible mais non accordé', 'android.app.role.CALL_SCREENING', 'assert_no_crash']) {
   requireText(revocationFlow, marker, 'emulator revocation flow');
 }
