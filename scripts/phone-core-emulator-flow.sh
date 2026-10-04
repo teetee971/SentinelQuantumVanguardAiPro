@@ -89,9 +89,13 @@ capture 01-dialer
 
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
-wait_text "Décrocher"
+# On recent Android releases the visible Answer/Decline controls belong to the system Telecom
+# surface, are localized by the emulator OS, and may be absent from the application UI dump.
+# Prove the stable Sentinel-owned incoming-call truth, then move the synthetic modem to ACTIVE.
+wait_text "$FLOW_NUMBER"
+wait_text "Appel autorisé"
 capture 02-incoming-call
-tap_text "Décrocher"
+adb emu gsm accept "$FLOW_NUMBER"
 wait_text "En communication"
 if python3 - "$FLOW_XML" <<'PY'
 import sys, xml.etree.ElementTree as ET
