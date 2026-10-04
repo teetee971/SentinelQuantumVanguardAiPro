@@ -60,6 +60,8 @@ class ArcepDirectoryClient(
                 compact.matches(Regex("^0033[1-9]\\d{8}$")) -> "0" + compact.substring(4)
                 compact.matches(Regex("^\\+(590|594|596|262)\\d{9}$")) -> "0" + compact.substring(4)
                 compact.matches(Regex("^00(590|594|596|262)\\d{9}$")) -> "0" + compact.substring(5)
+                compact.matches(Regex("^\\+508\\d{6}$")) -> "0" + compact.substring(1)
+                compact.matches(Regex("^00508\\d{6}$")) -> "0" + compact.substring(2)
                 compact.matches(Regex("^0[1-9]\\d{8}$")) -> compact
                 compact.matches(Regex("^\\d{4,6}$")) -> compact
                 else -> return null
