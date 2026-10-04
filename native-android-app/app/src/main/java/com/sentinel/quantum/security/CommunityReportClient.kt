@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -16,6 +17,8 @@ import org.json.JSONObject
  * pending report does not change live reputation.
  */
 class CommunityReportClient(
+    private val baseUrl: String = SentinelApiOrigin.baseUrl,
+    private val allowedHosts: Set<String> = SentinelApiOrigin.allowedHosts,
     private val egressGate: () -> Boolean = { false },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
@@ -63,7 +66,7 @@ class CommunityReportClient(
             .toRequestBody(JSON_MEDIA_TYPE)
 
         val request = Request.Builder()
-            .url(ENDPOINT)
+            .url(endpoint(baseUrl, allowedHosts))
             .header("User-Agent", "SentinelQuantumVanguardAIPro-Android/1")
             .post(payload)
             .build()
@@ -85,6 +88,11 @@ class CommunityReportClient(
     }
 
     companion object {
+        private const val PUBLIC_REPORT_PATH = "/v1/report-call-public"
+
+        internal fun endpoint(baseUrl: String, allowedHosts: Set<String>): HttpUrl =
+            SentinelApiEndpointPolicy.build(baseUrl, PUBLIC_REPORT_PATH, allowedHosts)
+
         internal fun requireEgressAllowed(mode: ProtectionMode, explicitConsent: Boolean) {
             if (!ProtectionModePolicy.permitsExplicitCommunityReport(mode) || !explicitConsent) {
                 throw SecurityException("COMMUNITY_REPORT_REMOTE_EGRESS_DENIED")
@@ -97,8 +105,6 @@ class CommunityReportClient(
             }
         }
 
-        const val ENDPOINT =
-            "https://sentinel-moteur-api.onrender.com/v1/report-call-public"
         private val JSON_MEDIA_TYPE =
             "application/json; charset=utf-8".toMediaType()
     }

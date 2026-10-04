@@ -1,0 +1,40 @@
+name: Sentinel API Origin Contract
+
+on:
+  pull_request:
+    paths:
+      - 'native-android-app/app/src/main/java/com/sentinel/quantum/security/**'
+      - 'native-android-app/app/src/test/java/com/sentinel/quantum/security/**'
+      - 'scripts/check-sentinel-api-origin-contract.js'
+      - 'scripts/check-sentinel-api-origin-contract.test.js'
+      - '.github/workflows/sentinel-api-origin-contract.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'native-android-app/app/src/main/java/com/sentinel/quantum/security/**'
+      - 'scripts/check-sentinel-api-origin-contract.js'
+      - 'scripts/check-sentinel-api-origin-contract.test.js'
+      - '.github/workflows/sentinel-api-origin-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-api-origin-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .node-version
+
+      - name: Reject provider-specific origin scatter
+        run: node scripts/check-sentinel-api-origin-contract.js
+
+      - name: Run API origin contract regression tests
+        run: node --test scripts/check-sentinel-api-origin-contract.test.js

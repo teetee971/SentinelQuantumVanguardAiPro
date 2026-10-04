@@ -41,6 +41,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
+import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsNotificationHelper
@@ -97,6 +98,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 when (role) {
                     RoleManager.ROLE_DIALER -> Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
                         .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+                    RoleManager.ROLE_CALL_SCREENING ->
+                        if (CallScreeningActivationPolicy.read(this) == CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD) {
+                            Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                                .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, packageName)
+                        } else {
+                            null
+                        }
                     RoleManager.ROLE_SMS -> Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
                     else -> null
                 }
@@ -171,6 +179,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
                 val state = remember(epoch) { readState(smsDiagnostics) }
+                val callScreeningState = remember(epoch) {
+                    CallScreeningActivationPolicy.read(applicationContext)
+                }
                 LaunchedEffect(epoch) {
                     deniedPermissions = deniedPermissions.filterNot(::hasPermission).toSet()
                 }
@@ -263,7 +274,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         val checks = buildList {
                             add(state.callPermission)
                             add(state.phoneStatePermission)
-                            add(state.contactsPermission)
                             if (notificationPermissionRequired) {
                                 add(hasPermission(Manifest.permission.POST_NOTIFICATIONS))
                             }
@@ -457,9 +467,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                         "Le rôle Téléphone est disponible mais non accordé à Sentinel. Android n’indique pas ici si le rôle a été refusé ou reporté."
                                                 PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
                                                     if (!setupFacts.callScreeningRoleAvailable)
-                                                        "Le rôle Filtrage d’appels est indisponible sur cet appareil ou dans cette configuration. Sentinel reste bloqué sur ce prérequis."
+                                                        "Le filtrage d’appels est indisponible sur cet appareil ou dans cette configuration. Sentinel reste bloqué sur ce prérequis."
                                                     else
-                                                        "Le rôle Filtrage d’appels est disponible mais non accordé à Sentinel."
+                                                        "Le filtrage d’appels est disponible mais non activé pour Sentinel."
                                                 PhoneCoreSetupWizardStore.Step.SMS_ROLE ->
                                                     if (!setupFacts.smsRoleAvailable)
                                                         "Le rôle SMS est indisponible sur cet appareil ou dans cette configuration. Sentinel reste bloqué sur ce prérequis et ne peut pas ouvrir une demande de rôle Android."
@@ -469,7 +479,6 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                     val missing = buildList {
                                                         if (!state.callPermission) add("autorisation pour passer des appels")
                                                         if (!state.phoneStatePermission) add("accès à l’état du téléphone")
-                                                        if (!state.contactsPermission) add("accès aux contacts")
                                                         if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                                             add("autorisation des notifications")
                                                         }
@@ -648,13 +657,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Icons.Default.Security, "Filtrage des appels",
                             "Active le service système de filtrage pour appliquer les règles locales avant l’affichage de l’appel.",
                             state.callScreeningRole,
-                            when {
-                                state.callScreeningRole -> "Rôle de filtrage actif"
-                                Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> "Disponible à partir d’Android 10"
-                                !isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) -> "Rôle de filtrage indisponible sur cet appareil"
-                                else -> "Rôle de filtrage disponible mais non accordé"
+                            when (callScreeningState) {
+                                CallScreeningActivationPolicy.State.HELD -> "Filtrage système actif"
+                                CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD -> "Filtrage disponible mais non activé"
+                                CallScreeningActivationPolicy.State.UNAVAILABLE -> "Filtrage indisponible sur cet appareil ou dans cette configuration"
                             },
-                            if (!state.callScreeningRole && isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) "Activer le filtrage" else null
+                            if (callScreeningState == CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD) {
+                                "Activer le filtrage"
+                            } else null
                         ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
 
                         SectionTitle("Messages")
@@ -784,7 +794,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
     private fun readState(smsDiagnostics: SmsActivationDiagnostics): RuntimeState {
         val dialer = holdsRole(RoleManager.ROLE_DIALER)
-        val screening = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && holdsRole(RoleManager.ROLE_CALL_SCREENING)
+        val screening = CallScreeningActivationPolicy.read(this) == CallScreeningActivationPolicy.State.HELD
         val phoneStatePermission = hasPermission(Manifest.permission.READ_PHONE_STATE)
         val callLineState = if (!phoneStatePermission) {
             CallLineState.PERMISSION_REQUIRED

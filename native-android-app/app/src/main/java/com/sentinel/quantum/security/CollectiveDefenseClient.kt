@@ -1,8 +1,6 @@
 package com.sentinel.quantum.security
 
-import com.sentinel.quantum.BuildConfig
 import okhttp3.HttpUrl
-import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -21,8 +19,8 @@ import java.util.concurrent.TimeUnit
  * original URL, domain, email address or SHA-256 value to be persisted.
  */
 class CollectiveDefenseClient(
-    private val baseUrl: String = BuildConfig.WANGIRI_API_BASE_URL,
-    private val allowedHosts: Set<String> = setOf(PRODUCTION_HOST),
+    private val baseUrl: String = SentinelApiOrigin.baseUrl,
+    private val allowedHosts: Set<String> = SentinelApiOrigin.allowedHosts,
     private val client: OkHttpClient = defaultClient()
 ) {
     enum class IndicatorType { DOMAIN, URL, EMAIL, SHA256 }
@@ -177,7 +175,6 @@ class CollectiveDefenseClient(
     }
 
     companion object {
-        private const val PRODUCTION_HOST = "sentinel-moteur-api.onrender.com"
         private const val USER_AGENT = "SentinelQuantumVanguardAIPro-Android/1"
         private const val MAX_RAW_VALUE_CHARS = 4096
         private const val MAX_RESPONSE_BYTES = 65_536
@@ -196,31 +193,7 @@ class CollectiveDefenseClient(
             baseUrl: String,
             path: String,
             allowedHosts: Set<String>
-        ): HttpUrl {
-            val parsed = runCatching { baseUrl.trim().trimEnd('/').toHttpUrl() }
-                .getOrElse { throw SecurityException("COLLECTIVE_ENDPOINT_INVALID") }
-            val hosts = allowedHosts.map { it.trim().lowercase() }
-                .filter { it.isNotEmpty() }
-                .toSet()
-            if (
-                hosts.isEmpty() ||
-                hosts.size > 8 ||
-                parsed.scheme != "https" ||
-                parsed.port != 443 ||
-                parsed.host.lowercase() !in hosts ||
-                parsed.username.isNotEmpty() ||
-                parsed.password.isNotEmpty() ||
-                parsed.fragment != null ||
-                !path.startsWith("/v1/intelligence/")
-            ) {
-                throw SecurityException("COLLECTIVE_ENDPOINT_NOT_ALLOWED")
-            }
-            return parsed.newBuilder()
-                .encodedPath(path)
-                .query(null)
-                .fragment(null)
-                .build()
-        }
+        ): HttpUrl = SentinelApiEndpointPolicy.build(baseUrl, path, allowedHosts)
 
         internal fun requireExpectedResult(
             expectedType: IndicatorType,
