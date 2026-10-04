@@ -1,0 +1,49 @@
+name: Commercial Catalog Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/commercial-catalog.json'
+      - 'config/product-capabilities.json'
+      - 'scripts/check-commercial-catalog.js'
+      - 'scripts/check-commercial-catalog.test.js'
+      - 'public/pricing.html'
+      - 'public/espace-client.html'
+      - '.github/workflows/commercial-catalog-validation.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/commercial-catalog.json'
+      - 'config/product-capabilities.json'
+      - 'scripts/check-commercial-catalog.js'
+      - 'scripts/check-commercial-catalog.test.js'
+      - 'public/pricing.html'
+      - 'public/espace-client.html'
+      - '.github/workflows/commercial-catalog-validation.yml'
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  commercial-catalog:
+    name: Validate commercial truth
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Validate commercial catalog structure and capability gates
+        run: node scripts/check-commercial-catalog.js
+
+      - name: Run commercial regression tests
+        run: node --test scripts/check-commercial-catalog.test.js
