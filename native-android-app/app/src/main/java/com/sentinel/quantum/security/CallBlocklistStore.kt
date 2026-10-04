@@ -129,8 +129,28 @@ class CallBlocklistStore(context: Context) {
     /** Best-effort warm-up outside the call-screening callback. */
     fun prepareFingerprintKeys() = fingerprinter.prepareExistingKeys()
 
+    /**
+     * Ordinary clear only removes post-migration exact rules. Ambiguous historical fingerprints
+     * stay quarantined until the user explicitly revokes them through the migration flow.
+     */
     fun clearBlockedNumbers(): Boolean {
-        val committed = preferences.edit().remove(EXACT_HASHES).remove(EXACT_METADATA).commit()
+        val encodedMetadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
+        val metadataByHash = encodedMetadata
+            .mapNotNull(CallBlockMetadataCodec::decode)
+            .associateBy { it.fingerprint }
+        val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty()
+        val currentHashes = hashes.filter { hash ->
+            metadataByHash[hash]?.safeForExactMatching == true
+        }.toSet()
+        if (currentHashes.isEmpty()) return true
+        val remainingHashes = hashes - currentHashes
+        val remainingMetadata = encodedMetadata.filterNot { encoded ->
+            CallBlockMetadataCodec.decode(encoded)?.fingerprint in currentHashes
+        }.toSet()
+        val committed = preferences.edit()
+            .putStringSet(EXACT_HASHES, remainingHashes)
+            .putStringSet(EXACT_METADATA, remainingMetadata)
+            .commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
         return committed
     }
