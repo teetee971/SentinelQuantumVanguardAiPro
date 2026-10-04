@@ -10,6 +10,7 @@ import android.telephony.TelephonyManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
+import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsNotificationHelper
 
@@ -80,6 +81,7 @@ internal object PhoneCoreLocalDiagnostics {
         fun granted(permission: String): Boolean =
             ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
+        val callScreeningState = CallScreeningActivationPolicy.read(context)
         val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.getPackageInfo(
                 context.packageName,
@@ -104,10 +106,8 @@ internal object PhoneCoreLocalDiagnostics {
             voiceCapable = context.getSystemService(TelephonyManager::class.java)?.isVoiceCapable == true,
             dialerRoleAvailable = roleAvailable(RoleManager.ROLE_DIALER),
             dialerRoleHeld = roleHeld(RoleManager.ROLE_DIALER),
-            callScreeningRoleAvailable =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && roleAvailable(RoleManager.ROLE_CALL_SCREENING),
-            callScreeningRoleHeld =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && roleHeld(RoleManager.ROLE_CALL_SCREENING),
+            callScreeningRoleAvailable = callScreeningState != CallScreeningActivationPolicy.State.UNAVAILABLE,
+            callScreeningRoleHeld = callScreeningState == CallScreeningActivationPolicy.State.HELD,
             smsRoleAvailable = roleAvailable(RoleManager.ROLE_SMS),
             smsRoleHeld = roleHeld(RoleManager.ROLE_SMS),
             callPermission = granted(Manifest.permission.CALL_PHONE),
