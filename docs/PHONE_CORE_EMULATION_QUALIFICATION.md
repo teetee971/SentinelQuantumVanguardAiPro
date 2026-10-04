@@ -10,14 +10,18 @@ Cette qualification automatise tout ce qui peut être reproduit de façon déter
 
 Le workflow `.github/workflows/android-emulation-qualification.yml` doit réussir sur API 24, API 29 et API 36.
 
+Avant les émulateurs, il exécute explicitement les tests des trois modules Gradle du dépôt Android :
+
+- `:app:testDebugUnitTest` ;
+- `:wearable-contract:test` ;
+- `:wearable-security:test` ;
+- `:app:lintDebug`, compilation APK et APK de tests.
+
 API 24 vérifie le plancher réellement supporté par l'APK : installation, cold launch, instrumentation et rendu de toutes les destinations statiques de l'application. Les parcours Phone Core basés sur les rôles Android modernes sont volontairement limités aux API 29 et 36 ; leur absence sur API 24 n'est jamais transformée en faux support.
 
-La qualification exécute notamment :
+La qualification exécute ensuite notamment :
 
-- tests unitaires Android complets ;
-- lint Android ;
-- compilation APK debug et APK de tests ;
-- `connectedDebugAndroidTest` sur API 24, 29 et 36 ;
+- `:app:connectedDebugAndroidTest` sur API 24, 29 et 36 ;
 - rendu instrumenté de chaque destination statique du `NavGraph` : accueil, recherche, OSINT, audits, journaux, Phone Security, communications, blocage et listes, historique, sécurité email/SMS, permissions, réseau, exposition numérique, défense collective, Smart Home, VPN, conformité, à propos et paramètres ;
 - canonicalisation régionale FR / GP / MQ / GF / RE / YT / PM ;
 - politiques multi-SIM et sélection d'abonnement ;
@@ -52,6 +56,6 @@ Ces preuves sont des gates de **release commerciale**, pas des prérequis pour c
 
 ## Règle de vérité
 
-Une PR peut être déclarée **qualification Android par émulation verte** uniquement lorsque les trois lignes API 24/29/36 réussissent et que les artefacts CI sont présents.
+Une PR peut être déclarée **qualification Android par émulation verte** uniquement lorsque les tests des trois modules Gradle, puis les trois lignes API 24/29/36, réussissent et que les artefacts CI sont présents.
 
 Elle ne peut être déclarée **Phone Core 100 % fonctionnel en production commerciale** tant que les validations externes restantes et la signature/release publique ne sont pas démontrées sur la révision exacte.
