@@ -26,8 +26,10 @@ jobs:
       matrix:
         include:
           - api-level: 36
+            sdk_package_level: '36'
             android-version: Android 16
           - api-level: 37
+            sdk_package_level: '37.0'
             android-version: Android 17
     steps:
       - name: Checkout repository
@@ -50,14 +52,17 @@ jobs:
         shell: bash
         env:
           API_LEVEL: ${{ matrix.api-level }}
+          SDK_PACKAGE_LEVEL: ${{ matrix.sdk_package_level }}
         run: |
           set -euo pipefail
           chmod +x ./gradlew
 
-          SYSTEM_IMAGE="system-images;android-${API_LEVEL};google_apis;x86_64"
-          PLATFORM="platforms;android-${API_LEVEL}"
+          SYSTEM_IMAGE="system-images;android-${SDK_PACKAGE_LEVEL};google_apis;x86_64"
+          PLATFORM="platforms;android-${SDK_PACKAGE_LEVEL}"
           AVD_NAME="sentinel_instrumentation_api${API_LEVEL}"
           EMULATOR_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-emulator.log"
+
+          echo "Qualifying runtime API ${API_LEVEL} with SDK package level ${SDK_PACKAGE_LEVEL}."
 
           SDK_PACKAGES=("emulator" "$PLATFORM" "$SYSTEM_IMAGE")
           SDK_READY=0
@@ -67,17 +72,17 @@ jobs:
               break
             fi
             echo "Android SDK package installation failed on attempt ${attempt} for API ${API_LEVEL}; cleaning partial emulator payloads."
-            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-${API_LEVEL}/google_apis/x86_64"
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-${SDK_PACKAGE_LEVEL}/google_apis/x86_64"
             if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 5)); fi
           done
           if [[ "$SDK_READY" != "1" ]]; then
-            echo "Unable to install Android emulator packages for API ${API_LEVEL}."
-            sdkmanager --list | grep -E "android-${API_LEVEL}|system-images;android-${API_LEVEL}" || true
+            echo "Unable to install Android emulator packages for API ${API_LEVEL} (SDK package ${SDK_PACKAGE_LEVEL})."
+            sdkmanager --list | grep -E "android-${API_LEVEL}|android-${SDK_PACKAGE_LEVEL}" || true
             exit 1
           fi
 
           test -x "$ANDROID_HOME/emulator/emulator"
-          test -f "$ANDROID_HOME/system-images/android-${API_LEVEL}/google_apis/x86_64/package.xml"
+          test -f "$ANDROID_HOME/system-images/android-${SDK_PACKAGE_LEVEL}/google_apis/x86_64/package.xml"
           timeout 60s bash -c "echo 'no' | avdmanager create avd --force --name '${AVD_NAME}' --package '${SYSTEM_IMAGE}'"
 
           EMULATOR_ACCEL_ARGS=(-no-accel)
