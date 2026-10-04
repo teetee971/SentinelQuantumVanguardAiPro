@@ -8,7 +8,7 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
 import com.sentinel.quantum.CallerIdActivity
-import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
 class SentinelCallScreeningService : CallScreeningService() {
@@ -147,17 +147,17 @@ class SentinelCallScreeningService : CallScreeningService() {
         }.isSuccess
 
         if (!submitted) {
-            LocalLogger(appContext).logAsync(
-                LocalLogger.LogLevel.WARNING,
-                "CallScreening",
-                "Télémétrie post-réponse non planifiée; la décision Android a déjà été rendue"
-            )
+            // Do not enqueue another log when the post-response queue is already saturated.
+            // A monotonic in-memory counter preserves a bounded overload signal without moving
+            // pressure into LocalLogger's asynchronous queue. The call decision is already final.
+            REJECTED_POST_RESPONSE_WORK.incrementAndGet()
         }
     }
 
     private companion object {
-        val POST_RESPONSE_WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-call-screening-post-response").apply { isDaemon = true }
-        }
+        val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
+            threadName = "sentinel-call-screening-post-response"
+        )
+        val REJECTED_POST_RESPONSE_WORK = AtomicLong(0L)
     }
 }
