@@ -45,8 +45,7 @@ object MmsSendEligibilityPolicy {
         if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             return Result.Rejected("MMS_SUBSCRIPTION_REQUIRED")
         }
-        val canonicalDestination = CallRuleEngine.normalizeNumber(destination)
-        if (canonicalDestination == null || !canonicalDestination.startsWith('+')) {
+        if (GlobalPhoneIdentityPolicy.canonicalE164OrNull(destination) == null) {
             return Result.Rejected("E164_DESTINATION_REQUIRED")
         }
         if (text.length > MAX_TEXT_CHARS) return Result.Rejected("TEXT_TOO_LARGE")
