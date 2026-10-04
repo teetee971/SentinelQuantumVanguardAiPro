@@ -62,7 +62,8 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     val store = remember(context) { CallBlocklistStore(context.applicationContext) }
     var postureEpoch by remember { mutableIntStateOf(0) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
-    var migrationDialogVisible by remember { mutableStateOf(false) }
+    var exactMigrationDialogVisible by remember { mutableStateOf(false) }
+    var prefixMigrationDialogVisible by remember { mutableStateOf(false) }
 
     DisposableEffect(hostActivity) {
         val observer = LifecycleEventObserver { _, event ->
@@ -105,15 +106,20 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     val arcepEnabledResult = stringResource(R.string.phone_lists_arcep_enabled_result)
     val arcepDisabledResult = stringResource(R.string.phone_lists_arcep_disabled_result)
     val arcepChangeFailed = stringResource(R.string.phone_lists_arcep_change_failed)
-    val migrationRemoved = stringResource(
+    val exactMigrationRemoved = stringResource(
         R.string.phone_lists_exact_migration_removed,
         snapshot.quarantinedLegacyExactRuleCount
     )
-    val migrationFailed = stringResource(R.string.phone_lists_exact_migration_failed)
+    val exactMigrationFailed = stringResource(R.string.phone_lists_exact_migration_failed)
+    val prefixMigrationRemoved = stringResource(
+        R.string.phone_lists_prefix_migration_removed,
+        snapshot.quarantinedLegacyPrefixRuleCount
+    )
+    val prefixMigrationFailed = stringResource(R.string.phone_lists_prefix_migration_failed)
 
-    if (migrationDialogVisible && snapshot.exactRuleMigrationRequired) {
+    if (exactMigrationDialogVisible && snapshot.exactRuleMigrationRequired) {
         AlertDialog(
-            onDismissRequest = { migrationDialogVisible = false },
+            onDismissRequest = { exactMigrationDialogVisible = false },
             title = { Text(stringResource(R.string.phone_lists_exact_migration_confirm_title)) },
             text = {
                 Text(
@@ -124,7 +130,7 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 )
             },
             dismissButton = {
-                TextButton(onClick = { migrationDialogVisible = false }) {
+                TextButton(onClick = { exactMigrationDialogVisible = false }) {
                     Text(stringResource(R.string.phone_lists_exact_migration_cancel))
                 }
             },
@@ -133,8 +139,40 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                     onClick = {
                         val removed = store.discardQuarantinedLegacyExactRules()
                         snapshot = store.snapshot()
-                        actionStatus = if (removed > 0) migrationRemoved else migrationFailed
-                        migrationDialogVisible = false
+                        actionStatus = if (removed > 0) exactMigrationRemoved else exactMigrationFailed
+                        exactMigrationDialogVisible = false
+                    }
+                ) {
+                    Text(stringResource(R.string.phone_lists_exact_migration_confirm))
+                }
+            }
+        )
+    }
+
+    if (prefixMigrationDialogVisible && snapshot.prefixRuleMigrationRequired) {
+        AlertDialog(
+            onDismissRequest = { prefixMigrationDialogVisible = false },
+            title = { Text(stringResource(R.string.phone_lists_prefix_migration_confirm_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.phone_lists_prefix_migration_confirm_body,
+                        snapshot.quarantinedLegacyPrefixRuleCount
+                    )
+                )
+            },
+            dismissButton = {
+                TextButton(onClick = { prefixMigrationDialogVisible = false }) {
+                    Text(stringResource(R.string.phone_lists_exact_migration_cancel))
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val removed = store.discardQuarantinedLegacyPrefixRules()
+                        snapshot = store.snapshot()
+                        actionStatus = if (removed > 0) prefixMigrationRemoved else prefixMigrationFailed
+                        prefixMigrationDialogVisible = false
                     }
                 ) {
                     Text(stringResource(R.string.phone_lists_exact_migration_confirm))
@@ -186,37 +224,15 @@ fun PhoneProtectionListsScreen(navController: NavController) {
             )
 
             if (snapshot.exactRuleMigrationRequired) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.phone_lists_exact_migration_title),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Text(
-                            stringResource(
-                                R.string.phone_lists_exact_migration_body,
-                                snapshot.quarantinedLegacyExactRuleCount
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        OutlinedButton(
-                            onClick = { migrationDialogVisible = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(stringResource(R.string.phone_lists_exact_migration_action))
-                        }
-                    }
-                }
+                MigrationWarningCard(
+                    title = stringResource(R.string.phone_lists_exact_migration_title),
+                    body = stringResource(
+                        R.string.phone_lists_exact_migration_body,
+                        snapshot.quarantinedLegacyExactRuleCount
+                    ),
+                    action = stringResource(R.string.phone_lists_exact_migration_action),
+                    onAction = { exactMigrationDialogVisible = true }
+                )
             }
 
             ProtectionListCard(
@@ -232,6 +248,19 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 itemCount = manualPrefixes.size,
                 details = stringResource(R.string.phone_lists_prefix_details)
             )
+
+            if (snapshot.prefixRuleMigrationRequired) {
+                MigrationWarningCard(
+                    title = stringResource(R.string.phone_lists_prefix_migration_title),
+                    body = stringResource(
+                        R.string.phone_lists_prefix_migration_body,
+                        snapshot.quarantinedLegacyPrefixRuleCount
+                    ),
+                    action = stringResource(R.string.phone_lists_prefix_migration_action),
+                    onAction = { prefixMigrationDialogVisible = true }
+                )
+            }
+
             OutlinedButton(
                 onClick = { navController.navigate(Screen.CallBlocking.route) },
                 modifier = Modifier.fillMaxWidth()
@@ -384,6 +413,38 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun MigrationWarningCard(
+    title: String,
+    body: String,
+    action: String,
+    onAction: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                title,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                body,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            OutlinedButton(onClick = onAction, modifier = Modifier.fillMaxWidth()) {
+                Text(action)
+            }
         }
     }
 }
