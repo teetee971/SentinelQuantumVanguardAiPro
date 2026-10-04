@@ -18,9 +18,17 @@ concurrency:
 
 jobs:
   connected-tests:
-    name: Compose instrumentation on Android 16
+    name: Compose instrumentation — ${{ matrix.android-version }} / API ${{ matrix.api-level }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api-level: 36
+            android-version: Android 16
+          - api-level: 37
+            android-version: Android 17
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -40,29 +48,37 @@ jobs:
       - name: Run connected Android tests
         working-directory: ./native-android-app
         shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api-level }}
         run: |
           set -euo pipefail
           chmod +x ./gradlew
 
-          SDK_PACKAGES=("emulator" "platforms;android-36" "system-images;android-36;google_apis;x86_64")
+          SYSTEM_IMAGE="system-images;android-${API_LEVEL};google_apis;x86_64"
+          PLATFORM="platforms;android-${API_LEVEL}"
+          AVD_NAME="sentinel_instrumentation_api${API_LEVEL}"
+          EMULATOR_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-emulator.log"
+
+          SDK_PACKAGES=("emulator" "$PLATFORM" "$SYSTEM_IMAGE")
           SDK_READY=0
           for attempt in 1 2 3; do
             if timeout 600s sdkmanager "${SDK_PACKAGES[@]}"; then
               SDK_READY=1
               break
             fi
-            echo "Android SDK package installation failed on attempt ${attempt}; cleaning partial emulator payloads."
-            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-36/google_apis/x86_64"
+            echo "Android SDK package installation failed on attempt ${attempt} for API ${API_LEVEL}; cleaning partial emulator payloads."
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-${API_LEVEL}/google_apis/x86_64"
             if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 5)); fi
           done
           if [[ "$SDK_READY" != "1" ]]; then
-            echo "Unable to install Android emulator packages."
+            echo "Unable to install Android emulator packages for API ${API_LEVEL}."
+            sdkmanager --list | grep -E "android-${API_LEVEL}|system-images;android-${API_LEVEL}" || true
             exit 1
           fi
 
           test -x "$ANDROID_HOME/emulator/emulator"
-          test -f "$ANDROID_HOME/system-images/android-36/google_apis/x86_64/package.xml"
-          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_instrumentation_api36 --package "system-images;android-36;google_apis;x86_64"'
+          test -f "$ANDROID_HOME/system-images/android-${API_LEVEL}/google_apis/x86_64/package.xml"
+          timeout 60s bash -c "echo 'no' | avdmanager create avd --force --name '${AVD_NAME}' --package '${SYSTEM_IMAGE}'"
 
           EMULATOR_ACCEL_ARGS=(-no-accel)
           if [[ -e /dev/kvm ]]; then
@@ -71,12 +87,12 @@ jobs:
           fi
 
           "$ANDROID_HOME/emulator/emulator" \
-            -avd sentinel_instrumentation_api36 \
+            -avd "$AVD_NAME" \
             -no-window -no-audio -no-boot-anim \
             -no-snapshot-load -no-snapshot-save \
             "${EMULATOR_ACCEL_ARGS[@]}" \
             -gpu swiftshader_indirect \
-            > "$RUNNER_TEMP/sentinel-instrumentation-emulator.log" 2>&1 &
+            > "$EMULATOR_LOG" 2>&1 &
           EMULATOR_PID=$!
           trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
 
@@ -87,16 +103,16 @@ jobs:
               break
             fi
             if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
-              echo "Android emulator exited before becoming available to adb."
-              cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+              echo "Android API ${API_LEVEL} emulator exited before becoming available to adb."
+              cat "$EMULATOR_LOG"
               exit 1
             fi
             sleep 2
           done
           if [[ "$DEVICE_READY" != "1" ]]; then
-            echo "Android instrumentation emulator did not become available to adb within 180 seconds."
+            echo "Android API ${API_LEVEL} emulator did not become available to adb within 180 seconds."
             adb devices -l || true
-            cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+            cat "$EMULATOR_LOG"
             exit 1
           fi
 
@@ -107,15 +123,24 @@ jobs:
               break
             fi
             if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
-              echo "Android emulator exited before boot completion."
-              cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+              echo "Android API ${API_LEVEL} emulator exited before boot completion."
+              cat "$EMULATOR_LOG"
               exit 1
             fi
             sleep 2
           done
           if [[ "$BOOTED" != "1" ]]; then
-            echo "Android instrumentation emulator did not finish booting."
-            cat "$RUNNER_TEMP/sentinel-instrumentation-emulator.log"
+            echo "Android API ${API_LEVEL} emulator did not finish booting."
+            cat "$EMULATOR_LOG"
+            exit 1
+          fi
+
+          ACTUAL_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+          ACTUAL_RELEASE="$(adb shell getprop ro.build.version.release | tr -d '\r')"
+          ACTUAL_CODENAME="$(adb shell getprop ro.build.version.codename | tr -d '\r')"
+          echo "Emulator ready: Android ${ACTUAL_RELEASE} (${ACTUAL_CODENAME}), API ${ACTUAL_API}."
+          if [[ "$ACTUAL_API" != "$API_LEVEL" ]]; then
+            echo "Expected emulator API ${API_LEVEL}, got API ${ACTUAL_API}."
             exit 1
           fi
 
@@ -129,9 +154,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Android-Instrumentation-${{ github.sha }}
+          name: Android-Instrumentation-API${{ matrix.api-level }}-${{ github.sha }}
           path: |
             native-android-app/app/build/reports/androidTests/connected/
             native-android-app/app/build/outputs/androidTest-results/connected/
+            ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-emulator.log
           if-no-files-found: warn
           retention-days: 14
