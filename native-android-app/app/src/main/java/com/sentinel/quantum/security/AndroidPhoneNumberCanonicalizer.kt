@@ -11,7 +11,8 @@ import java.util.Locale
  *
  * The pure [CallRuleEngine] deliberately refuses to invent a country for national numbers. This
  * adapter may promote a national representation to E.164 only when a region is explicit or
- * observed from the selected SIM/network. It never falls back to the UI locale or hard-coded FR.
+ * unambiguously observed from the selected/active SIMs. It never falls back to the UI locale,
+ * a hard-coded FR region, or an arbitrary default SIM when several active subscriptions disagree.
  */
 class AndroidPhoneNumberCanonicalizer(context: Context) {
     private val appContext = context.applicationContext
@@ -24,12 +25,7 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
         val syntaxOnly = CallRuleEngine.normalizeNumber(rawNumber) ?: return null
         if (syntaxOnly.startsWith('+')) return syntaxOnly
 
-        val regionIso = resolveRegionIso(
-            explicitRegionIso = explicitRegionIso,
-            simRegionIso = observedSimRegionIso(subscriptionId),
-            networkRegionIso = observedNetworkRegionIso(subscriptionId)
-        ) ?: return syntaxOnly
-
+        val regionIso = observedRegionIso(subscriptionId, explicitRegionIso) ?: return syntaxOnly
         val e164 = runCatching {
             PhoneNumberUtils.formatNumberToE164(rawNumber.orEmpty(), regionIso)
         }.getOrNull()
@@ -39,34 +35,45 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
     fun observedRegionIso(
         subscriptionId: Int? = null,
         explicitRegionIso: String? = null
-    ): String? = resolveRegionIso(
-        explicitRegionIso = explicitRegionIso,
-        simRegionIso = observedSimRegionIso(subscriptionId),
-        networkRegionIso = observedNetworkRegionIso(subscriptionId)
-    )
+    ): String? {
+        sanitizeRegionIso(explicitRegionIso)?.let { return it }
 
-    private fun observedSimRegionIso(subscriptionId: Int?): String? =
-        telephonyManager(subscriptionId)?.let { manager ->
-            runCatching { manager.simCountryIso }.getOrNull()
+        if (subscriptionId != null && subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            return observedRegionForSubscription(subscriptionId)
         }
 
-    private fun observedNetworkRegionIso(subscriptionId: Int?): String? =
-        telephonyManager(subscriptionId)?.let { manager ->
-            runCatching { manager.networkCountryIso }.getOrNull()
-        }
+        val activeSubscriptionIds = runCatching {
+            appContext.getSystemService(SubscriptionManager::class.java)
+                ?.activeSubscriptionInfoList
+                .orEmpty()
+                .map { it.subscriptionId }
+                .distinct()
+        }.getOrNull() ?: return null
 
-    private fun telephonyManager(subscriptionId: Int?): TelephonyManager? {
+        if (activeSubscriptionIds.isEmpty()) return null
+        return unambiguousRegion(
+            activeSubscriptionIds.mapNotNull(::observedRegionForSubscription)
+        )
+    }
+
+    private fun observedRegionForSubscription(subscriptionId: Int): String? {
+        val manager = telephonyManager(subscriptionId) ?: return null
+        return resolveRegionIso(
+            explicitRegionIso = null,
+            simRegionIso = runCatching { manager.simCountryIso }.getOrNull(),
+            networkRegionIso = runCatching { manager.networkCountryIso }.getOrNull()
+        )
+    }
+
+    private fun telephonyManager(subscriptionId: Int): TelephonyManager? {
         val base = appContext.getSystemService(TelephonyManager::class.java) ?: return null
-        if (subscriptionId == null || subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-            return base
-        }
-        return runCatching { base.createForSubscriptionId(subscriptionId) }.getOrNull() ?: base
+        return runCatching { base.createForSubscriptionId(subscriptionId) }.getOrNull()
     }
 
     companion object {
         private val ISO_REGION = Regex("[A-Z]{2}")
 
-        /** Pure precedence rule, kept testable without Android framework calls. */
+        /** Pure precedence rule for one known subscription. */
         fun resolveRegionIso(
             explicitRegionIso: String?,
             simRegionIso: String?,
@@ -74,6 +81,15 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
         ): String? = sequenceOf(explicitRegionIso, simRegionIso, networkRegionIso)
             .mapNotNull(::sanitizeRegionIso)
             .firstOrNull()
+
+        /**
+         * Multi-SIM safety rule: national canonicalization is allowed only when every usable
+         * active-subscription observation agrees on one ISO region.
+         */
+        fun unambiguousRegion(observedRegions: Collection<String>): String? {
+            val regions = observedRegions.mapNotNull(::sanitizeRegionIso).distinct()
+            return regions.singleOrNull()
+        }
 
         private fun sanitizeRegionIso(value: String?): String? {
             val normalized = value?.trim()?.uppercase(Locale.ROOT).orEmpty()
