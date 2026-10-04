@@ -149,7 +149,7 @@
 
         <receiver
             android:name=".security.SentinelMissedCallReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.telecom.action.SHOW_MISSED_CALLS_NOTIFICATION" />
             </intent-filter>
