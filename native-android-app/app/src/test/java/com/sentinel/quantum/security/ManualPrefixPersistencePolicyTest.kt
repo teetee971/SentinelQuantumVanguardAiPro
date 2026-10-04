@@ -16,4 +16,9 @@ class ManualPrefixPersistencePolicyTest {
         assertNull(ManualPrefixPersistencePolicy.normalize("06"))
         assertNull(ManualPrefixPersistencePolicy.normalize("01 42"))
     }
+
+    @Test fun malformedInternationalZeroPrefixIsRejected() {
+        assertNull(ManualPrefixPersistencePolicy.normalize("+0123"))
+        assertNull(ManualPrefixPersistencePolicy.normalize("000123"))
+    }
 }
