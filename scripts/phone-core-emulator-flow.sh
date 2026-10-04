@@ -95,6 +95,30 @@ adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
 wait_text "Appel autorisé"
 capture 02-call-screened
+
+# The physical-certification model consumes a privacy-bounded CALL_SCREENED:* timeline signal.
+# Require the asynchronous post-response persistence too, and prove the raw synthetic number was
+# not copied into that private evidence store.
+FLOW_SCREENING_PERSISTED=0
+FLOW_TIMELINE=""
+for _ in $(seq 1 15); do
+  FLOW_TIMELINE="$(adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml 2>/dev/null | tr -d '\r' || true)"
+  if grep -Fq 'CALL_SCREENED:' <<< "$FLOW_TIMELINE"; then
+    FLOW_SCREENING_PERSISTED=1
+    break
+  fi
+  sleep 1
+done
+if [[ "$FLOW_SCREENING_PERSISTED" != "1" ]]; then
+  echo "Call Screening UI appeared but CALL_SCREENED evidence was not persisted."
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml 2>/dev/null || true
+  exit 1
+fi
+if grep -Fq "$FLOW_NUMBER" <<< "$FLOW_TIMELINE"; then
+  echo "Raw caller number leaked into the privacy-bounded Phone Core timeline."
+  exit 1
+fi
+
 tap_text "Fermer la fiche"
 wait_text "Décrocher"
 capture 03-incoming-call
@@ -166,4 +190,4 @@ if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
   exit 1
 fi
 capture 08-inline-reply
-echo "Synthetic CallScreening, Telecom call and inline SMS reply UI verified; physical validation remains pending."
+echo "Synthetic CallScreening, privacy-bounded screening evidence, Telecom call and inline SMS reply UI verified; physical validation remains pending."
