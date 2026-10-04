@@ -57,6 +57,16 @@ test('public runtime fails closed on expired capability evidence and uses canoni
   assert.doesNotMatch(runtime, /saas_customer_identity/);
 });
 
+test('public runtime reserves its global truth surface before asynchronous fetch hydration', () => {
+  const runtime = readFileSync(new URL('../public/product-truth.js', import.meta.url), 'utf8');
+  const reserveCall = runtime.indexOf('ensureGlobalTruthStrip();\n  refreshStaticCapabilityAvailability();');
+  const fetchCall = runtime.indexOf("fetch(endpoint, { cache: 'no-store', credentials: 'same-origin' })");
+  assert.ok(reserveCall >= 0, 'global truth strip must be reserved synchronously');
+  assert.ok(fetchCall > reserveCall, 'global truth strip reservation must happen before network fetch');
+  assert.match(runtime, /min-height:96px/);
+  assert.match(runtime, /@media \(min-width:720px\)\{\.sentinel-truth-strip\{min-height:48px\}\}/);
+});
+
 test('canonical product-status renderer carries the public truth runtime and expiry boundary', () => {
   const rendered = renderCapabilityConsumers(registry)['public/product-status.html'];
   assert.match(rendered, /product-truth\.js/);
