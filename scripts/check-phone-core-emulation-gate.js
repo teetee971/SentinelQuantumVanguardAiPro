@@ -21,6 +21,7 @@ const navigationSmokePath = path.join(
   'ui',
   'AllStaticNavigationSurfacesInstrumentationTest.kt'
 );
+const buildGradlePath = path.join(root, 'native-android-app', 'app', 'build.gradle');
 
 const errors = [];
 const gate = JSON.parse(fs.readFileSync(gatePath, 'utf8'));
@@ -32,13 +33,16 @@ const revocationFlow = fs.existsSync(revocationFlowPath)
 const navigationSmoke = fs.existsSync(navigationSmokePath)
   ? fs.readFileSync(navigationSmokePath, 'utf8')
   : '';
+const buildGradle = fs.readFileSync(buildGradlePath, 'utf8');
 
 const requiredChecks = [
   'android_unit_tests',
   'android_lint',
+  'connected_instrumentation_api24',
   'connected_instrumentation_api29',
   'connected_instrumentation_api36',
   'all_static_navigation_surfaces_render',
+  'min_sdk_cold_launch',
   'cold_install_and_relaunch',
   'phone_core_setup_resume',
   'incoming_call_telecom_flow',
@@ -55,10 +59,16 @@ if (gate.schema_version !== 2) errors.push('phone-core production gate schema_ve
 if (gate.certification_schema_version !== 5) errors.push('Phone Core certification schema must remain v5');
 if (gate.manual_user_validation_required !== false) errors.push('manual user validation must not be required for emulator qualification');
 
+const minSdk = Number(buildGradle.match(/\bminSdk\s+(\d+)/)?.[1]);
+if (minSdk !== 24) errors.push(`expected audited Android minSdk 24, found ${String(minSdk)}`);
+
 const emulation = gate.emulator_qualification;
 if (!emulation || emulation.required !== true) errors.push('emulator qualification must be required');
-if (JSON.stringify(emulation?.required_api_levels) !== JSON.stringify([29, 36])) {
-  errors.push('emulator qualification must cover Android API 29 and API 36');
+if (JSON.stringify(emulation?.required_api_levels) !== JSON.stringify([24, 29, 36])) {
+  errors.push('emulator qualification must cover minSdk API 24, API 29 and API 36');
+}
+if (JSON.stringify(emulation?.phone_core_runtime_api_levels) !== JSON.stringify([29, 36])) {
+  errors.push('Phone Core role/runtime flows must remain scoped to API 29 and API 36');
 }
 if (!Array.isArray(emulation?.required_checks) || new Set(emulation.required_checks).size !== emulation.required_checks.length) {
   errors.push('emulator required_checks must be a unique array');
@@ -98,10 +108,11 @@ if (!Array.isArray(residual) || residual.length < 3) {
 
 for (const marker of [
   'matrix:',
-  'api_level: [29, 36]',
+  'api_level: [24, 29, 36]',
   'connectedDebugAndroidTest',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
+  'if [[ "$API_LEVEL" -ge 29 ]]',
   'PhoneCore-Emulation-Qualification',
   'FATAL EXCEPTION: main',
   'ANR in com\\.sentinel\\.quantum'
