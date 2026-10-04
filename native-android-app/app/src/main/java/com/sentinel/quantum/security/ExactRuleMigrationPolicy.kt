@@ -27,4 +27,20 @@ internal object ExactRuleMigrationPolicy {
 
         return Partition(activeSafe, quarantinedLegacy)
     }
+
+    /** Current-schema hashes may be cleared by ordinary user rule management, expired or not. */
+    fun currentSchemaHashes(
+        hashes: Set<String>,
+        metadataByHash: Map<String, CallBlockMetadata.Entry>
+    ): Set<String> = hashes.filterTo(linkedSetOf()) { hash ->
+        metadataByHash[hash]?.safeForExactMatching == true
+    }
+
+    /** Missing, malformed, or pre-migration metadata always remains on the explicit migration path. */
+    fun legacyHashes(
+        hashes: Set<String>,
+        metadataByHash: Map<String, CallBlockMetadata.Entry>
+    ): Set<String> = hashes.filterTo(linkedSetOf()) { hash ->
+        metadataByHash[hash]?.safeForExactMatching != true
+    }
 }
