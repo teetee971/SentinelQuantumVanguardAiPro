@@ -1,0 +1,22 @@
+/* Homepage-only layout refinements for the public Sentinel visual. */
+.sq-hero > .sq-visual-card {
+    margin: 0;
+}
+
+@media (max-width: 760px) {
+    .sq-hero > .sq-visual-card {
+        order: -1;
+        width: 100%;
+        max-width: none;
+        min-height: 0;
+    }
+
+    .sq-hero > .sq-visual-card img {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        object-position: center;
+    }
+}
