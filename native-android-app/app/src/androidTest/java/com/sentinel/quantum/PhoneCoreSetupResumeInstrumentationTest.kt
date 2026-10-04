@@ -1,9 +1,9 @@
 package com.sentinel.quantum
 
+import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
-import android.view.KeyEvent
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,7 +39,13 @@ class PhoneCoreSetupResumeInstrumentationTest {
 
     @After
     fun cleanUpWizardHistoryAndDialogs() {
-        runCatching { instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK) }
+        // UiAutomation global actions are the supported cross-window test boundary. Direct
+        // Instrumentation key injection can require the signature-only INJECT_EVENTS permission
+        // on older Android releases and must never become a production/test prerequisite.
+        runCatching {
+            instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+            instrumentation.waitForIdleSync()
+        }
         prefs.edit().clear().commit()
     }
 
@@ -55,9 +61,10 @@ class PhoneCoreSetupResumeInstrumentationTest {
             assertFalse("interrupted setup must never persist completed=true", prefs.getBoolean(KEY_COMPLETED, false))
 
             // The first missing prerequisite may have opened an Android role/permission surface.
-            // Dismiss that system-owned surface exactly as an interrupted user flow would.
+            // Dismiss that system-owned surface through UiAutomation rather than privileged input
+            // injection, matching a user Back action without requesting INJECT_EVENTS.
             SystemClock.sleep(750)
-            instrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+            instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
             instrumentation.waitForIdleSync()
         } finally {
             firstScenario.close()
