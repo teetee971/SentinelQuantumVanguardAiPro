@@ -9,6 +9,7 @@ const workflowPath = path.join(root, '.github', 'workflows', 'android-emulation-
 const flowPath = path.join(root, 'scripts', 'phone-core-emulator-flow.sh');
 const revocationFlowPath = path.join(root, 'scripts', 'phone-core-emulator-revocation-flow.sh');
 const navigationSmokePath = path.join(root, 'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui', 'AllStaticNavigationSurfacesInstrumentationTest.kt');
+const standaloneSmokePath = path.join(root, 'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui', 'StandaloneActivitySmokeInstrumentationTest.kt');
 const buildGradlePath = path.join(root, 'native-android-app', 'app', 'build.gradle');
 const settingsGradlePath = path.join(root, 'native-android-app', 'settings.gradle');
 
@@ -18,6 +19,7 @@ const workflow = fs.existsSync(workflowPath) ? fs.readFileSync(workflowPath, 'ut
 const flow = fs.readFileSync(flowPath, 'utf8');
 const revocationFlow = fs.existsSync(revocationFlowPath) ? fs.readFileSync(revocationFlowPath, 'utf8') : '';
 const navigationSmoke = fs.existsSync(navigationSmokePath) ? fs.readFileSync(navigationSmokePath, 'utf8') : '';
+const standaloneSmoke = fs.existsSync(standaloneSmokePath) ? fs.readFileSync(standaloneSmokePath, 'utf8') : '';
 const buildGradle = fs.readFileSync(buildGradlePath, 'utf8');
 const settingsGradle = fs.readFileSync(settingsGradlePath, 'utf8');
 
@@ -30,6 +32,7 @@ const requiredChecks = [
   'connected_instrumentation_api29',
   'connected_instrumentation_api36',
   'all_static_navigation_surfaces_render',
+  'standalone_activity_surfaces_render',
   'min_sdk_cold_launch',
   'cold_install_and_relaunch',
   'phone_core_setup_resume',
@@ -115,6 +118,15 @@ for (const marker of [
   'onRoot(useUnmergedTree = true).assertExists()'
 ]) {
   if (!navigationSmoke.includes(marker)) errors.push(`application navigation smoke missing marker: ${marker}`);
+}
+for (const marker of [
+  'StandaloneActivitySmokeInstrumentationTest',
+  'PhoneCoreActivationActivity::class.java',
+  'PhoneCoreDiagnosticActivity::class.java',
+  'VoiceStudioActivity::class.java',
+  'ActivityScenario.launch'
+]) {
+  if (!standaloneSmoke.includes(marker)) errors.push(`standalone activity smoke missing marker: ${marker}`);
 }
 
 if (errors.length) {
