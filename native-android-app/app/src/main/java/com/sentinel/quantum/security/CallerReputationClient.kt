@@ -86,12 +86,6 @@ class CallerReputationClient(
             }
         }
 
-        internal fun endpoint(baseUrl: String): String =
-            endpoint(
-                baseUrl,
-                setOf(SentinelApiEndpointPolicy.originHost(baseUrl))
-            )
-
         internal fun endpoint(baseUrl: String, allowedHosts: Set<String>): String =
             SentinelApiEndpointPolicy.build(
                 baseUrl,
