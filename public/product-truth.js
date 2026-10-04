@@ -1,5 +1,22 @@
 (() => {
+  if (window.__sentinelProductTruthRuntimeLoaded) return;
+  window.__sentinelProductTruthRuntimeLoaded = true;
+
   const endpoint = '/public/product-truth.generated.json';
+  const pageBindings = {
+    '/public/mobile-security.html': { capabilities: ['phone_core_android'] },
+    '/public/download-guide.html': { capabilities: ['public_android_release', 'phone_core_android'] },
+    '/public/phone-intelligence.html': { modules: ['phone_intelligence_basic'], capabilities: ['collective_defense_backend', 'collective_defense_android'] },
+    '/public/geointel.html': { modules: ['geointel_basic'], capabilities: ['geointel_usgs', 'geointel_multisource'] },
+    '/public/investigations.html': { modules: ['sentinel_investigations'] },
+    '/public/threat-intelligence.html': { modules: ['threat_brief_pro', 'foreign_interference_defense'] },
+    '/public/security-audit.html': { modules: ['security_audit_basic'] },
+    '/public/espace-client.html': { capabilities: ['saas_customer_identity'] },
+    '/public/pricing.html': { commerce: true },
+    '/public/product-status.html': { allCapabilities: true },
+    '/public/roadmap.html': { allCapabilities: true },
+    '/public/system-status.html': { allCapabilities: true },
+  };
 
   const text = (value) => value == null ? '—' : String(value);
   const labelTier = (tier) => ({
@@ -28,6 +45,79 @@
     return cell;
   }
 
+  function currentPageBinding() {
+    const path = window.location.pathname === '/' ? '/index.html' : window.location.pathname;
+    return pageBindings[path] ?? null;
+  }
+
+  function injectGlobalStyles() {
+    if (document.getElementById('sentinel-product-truth-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'sentinel-product-truth-styles';
+    style.textContent = `
+      .sentinel-truth-strip{box-sizing:border-box;margin:0 auto 14px;max-width:1180px;padding:10px 14px;border:1px solid rgba(121,177,255,.24);border-radius:12px;background:rgba(8,13,21,.92);color:#dbe8ff;font:600 12px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+      .sentinel-truth-strip strong{color:#fff}.sentinel-truth-strip a{color:#91bdff;text-decoration:none}.sentinel-truth-strip a:hover{text-decoration:underline}.sentinel-truth-state{opacity:.86;font-weight:500}.sentinel-truth-state[data-state="AVAILABLE"]{color:#9ce5b2}.sentinel-truth-state[data-state="VALIDATION"]{color:#ffd48a}.sentinel-truth-state[data-state="INFRASTRUCTURE"],.sentinel-truth-state[data-state="PLANNED"]{color:#b8c8dc}
+    `;
+    document.head.append(style);
+  }
+
+  function relevantState(payload) {
+    const binding = currentPageBinding();
+    if (!binding) return null;
+    const states = [];
+    for (const id of binding.capabilities ?? []) {
+      const item = payload.capabilities?.find((capability) => capability.id === id);
+      if (item) states.push({ name: item.surface, state: item.state, label: labelCapability(item) });
+    }
+    for (const id of binding.modules ?? []) {
+      const item = payload.modules?.find((module) => module.id === id);
+      if (item) states.push({ name: item.name, state: item.offer === 'NOT_FOR_SALE' ? 'PLANNED' : 'VALIDATION', label: `${labelTier(item.tier)} · ${labelOffer(item.offer)}` });
+    }
+    return states;
+  }
+
+  function renderGlobalTruthStrip(payload) {
+    injectGlobalStyles();
+    if (document.querySelector('.sentinel-truth-strip')) return;
+    const capabilities = payload.capabilities ?? [];
+    const available = capabilities.filter((item) => item.customer_available).length;
+    const updated = [
+      payload.generated_from?.product_capabilities_updated_at,
+      payload.generated_from?.commercial_catalog_updated_at,
+      payload.generated_from?.commercial_pro_extension_updated_at,
+    ].filter(Boolean).sort().at(-1) ?? 'inconnue';
+    const relevant = relevantState(payload);
+
+    const strip = document.createElement('aside');
+    strip.className = 'sentinel-truth-strip';
+    strip.setAttribute('aria-label', 'État produit Sentinel synchronisé');
+
+    const main = document.createElement('span');
+    const strong = document.createElement('strong');
+    strong.textContent = 'État Sentinel synchronisé';
+    main.append(strong, document.createTextNode(` · source canonique ${updated} · ${available}/${capabilities.length} capacités disponibles client`));
+
+    const status = document.createElement('span');
+    status.className = 'sentinel-truth-state';
+    if (relevant?.length) {
+      const representative = relevant.find((item) => item.state !== 'AVAILABLE') ?? relevant[0];
+      status.dataset.state = representative.state;
+      status.textContent = relevant.map((item) => `${item.name}: ${item.label}`).join(' · ');
+    } else {
+      status.dataset.state = 'VALIDATION';
+      status.textContent = payload.commerce?.checkout_enabled ? 'Commerce actif selon entitlement' : 'Commerce payant non activé';
+    }
+
+    const link = document.createElement('a');
+    link.href = '/public/product-status.html';
+    link.textContent = 'Voir l’état produit';
+
+    strip.append(main, status, link);
+    const mainContent = document.querySelector('main');
+    if (mainContent?.parentNode) mainContent.parentNode.insertBefore(strip, mainContent);
+    else document.body.prepend(strip);
+  }
+
   function renderCommercialCatalog(payload) {
     document.querySelectorAll('[data-commercial-catalog-generated]').forEach((target) => {
       const body = document.createElement('tbody');
@@ -39,7 +129,7 @@
         row.append(td(module.permanent_free ? 'Gratuit permanent' : (module.trial_eligible ? 'Essai activable' : module.trial_candidate ? 'Candidat essai après validation' : 'Hors essai')));
         body.append(row);
       }
-      target.replaceChildren(body);
+      target.replaceChildren(...body.childNodes);
     });
   }
 
@@ -54,7 +144,7 @@
         row.append(td(capability.customer_available ? 'Oui' : 'Non'));
         body.append(row);
       }
-      target.replaceChildren(body);
+      target.replaceChildren(...body.childNodes);
     });
   }
 
@@ -89,10 +179,13 @@
       return response.json();
     })
     .then((payload) => {
+      window.SentinelProductTruth = payload;
       renderSummary(payload);
       renderCommercialCatalog(payload);
       renderCapabilities(payload);
+      renderGlobalTruthStrip(payload);
       document.documentElement.dataset.productTruth = 'loaded';
+      window.dispatchEvent(new CustomEvent('sentinel:product-truth', { detail: payload }));
     })
     .catch(() => {
       document.documentElement.dataset.productTruth = 'unavailable';
