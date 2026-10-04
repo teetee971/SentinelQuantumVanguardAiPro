@@ -184,6 +184,7 @@ jobs:
           adb logcat -c >/dev/null 2>&1 || true
 
           if [[ "$API_LEVEL" -ge 29 ]]; then
+            bash ../scripts/phone-core-emulator-setup-resume-flow.sh "$OUTPUT"
             bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
             bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
           else
@@ -234,6 +235,7 @@ jobs:
             checks: {
               connected_instrumentation: true,
               all_static_navigation_surfaces_render: true,
+              standalone_activity_surfaces_render: true,
               min_sdk_cold_launch: api === 24,
               incoming_call_telecom_flow: modernPhoneCore,
               outgoing_call_telecom_flow: modernPhoneCore,
