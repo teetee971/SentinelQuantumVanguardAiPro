@@ -25,10 +25,12 @@ function signed(overrides = {}) {
   }).envelope;
 }
 
-test('normalization matches Android call-rule prefix semantics', () => {
+test('normalizes prefixes only inside the explicit French vigilance package context', () => {
   assert.equal(normalizePrefix('01 87'), '+33187');
   assert.equal(normalizePrefix('0033948'), '+33948');
   assert.equal(normalizePrefix('+33 1 87'), '+33187');
+  assert.equal(normalizePrefix('+033187'), null);
+  assert.equal(normalizePrefix('00033187'), null);
   assert.equal(normalizePrefix('bad-prefix'), null);
 });
 
@@ -98,4 +100,13 @@ test('payload generation rejects overly broad or duplicate reputation prefixes',
     keyId: 'key-1',
     silencePrefixes: ['+33187', '+33187'],
   }), /CALL_RULE_PREFIX_DUPLICATE/);
+
+  assert.throws(() => buildPayload({
+    sequence: 1,
+    issuedAtMs: now,
+    expiresAtMs: now + 1_000,
+    issuerId: 'sentinel-phone-publication',
+    keyId: 'key-1',
+    silencePrefixes: ['+033187'],
+  }), /CALL_RULE_PREFIX_INVALID/);
 });
