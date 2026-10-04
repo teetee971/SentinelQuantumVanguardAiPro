@@ -174,9 +174,23 @@ for (const marker of [
   'android.app.role.$FLOW_ROLE',
   'android.app.role.CALL_SCREENING'
 ]) requireText(runtimeFlow, marker, 'emulator runtime flow');
-for (const marker of ['remove-role-holder', 'pm revoke', 'assert_sms_role_held', 'Envoi SMS : autorisation Android requise.', 'Détection SIM : accès à l’état téléphonique requis.', 'rôle SMS disponible mais non accordé', 'android.app.role.CALL_SCREENING', 'assert_no_crash']) {
-  requireText(revocationFlow, marker, 'emulator revocation flow');
-}
+for (const marker of [
+  'remove-role-holder',
+  'pm revoke',
+  'assert_sms_role_held',
+  'Envoi SMS : autorisation Android requise.',
+  'Détection SIM : accès à l’état téléphonique requis.',
+  'rôle SMS disponible mais non accordé',
+  'SMS_SIGNAL_BEFORE=',
+  'tap_ui_text "Envoyer"',
+  'assert_modem_call_absent "$DIALER_PROBE_NUMBER"',
+  'tap_ui_text "Appeler"',
+  'SCREENING_BEFORE=',
+  "timeline_signal_prefix_count 'CALL_SCREENED:'",
+  'wait_modem_call_present "$SCREENING_PROBE_NUMBER"',
+  'android.app.role.CALL_SCREENING',
+  'assert_no_crash'
+]) requireText(revocationFlow, marker, 'emulator protected-action revocation flow');
 for (const marker of ['AllStaticNavigationSurfacesInstrumentationTest', 'Screen.Home.route', 'Screen.Search.route', 'Screen.PhoneSecurity.route', 'Screen.NetworkSurveillance.route', 'Screen.CollectiveDefense.route', 'Screen.SmartHome.route', 'Screen.Vpn.route', 'Screen.Settings.route', 'fetchSemanticsNode()']) {
   requireText(navigationSmoke, marker, 'application navigation smoke');
 }
