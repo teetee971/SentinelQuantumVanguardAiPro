@@ -10,7 +10,9 @@
     "required_api_levels": [24, 29, 36],
     "phone_core_runtime_api_levels": [29, 36],
     "required_checks": [
-      "android_unit_tests",
+      "android_app_unit_tests",
+      "wearable_contract_unit_tests",
+      "wearable_security_unit_tests",
       "android_lint",
       "connected_instrumentation_api24",
       "connected_instrumentation_api29",
@@ -28,7 +30,7 @@
       "multi_sim_selection_policy_matrix",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator. API 24 couvre le plancher de compatibilité de l'application ; API 29 et 36 couvrent en plus les parcours Phone Core dépendants des rôles Android modernes. Il ne transforme pas une simulation de modem en preuve opérateur physique."
+    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. API 24 couvre le plancher de compatibilité de l'application ; API 29 et 36 couvrent en plus les parcours Phone Core dépendants des rôles Android modernes. Il ne transforme pas une simulation de modem en preuve opérateur physique."
   },
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
