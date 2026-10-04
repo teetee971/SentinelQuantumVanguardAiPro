@@ -12,7 +12,7 @@ import java.util.Locale
  * The pure [CallRuleEngine] deliberately refuses to invent a country for national numbers. This
  * adapter may promote a national representation to E.164 only when a region is explicit or
  * unambiguously observed from the selected/active SIMs. It never falls back to the UI locale,
- * a hard-coded FR region, or an arbitrary default SIM when several active subscriptions disagree.
+ * a hard-coded FR region, or an arbitrary default SIM when observations disagree.
  */
 class AndroidPhoneNumberCanonicalizer(context: Context) {
     private val appContext = context.applicationContext
@@ -81,14 +81,25 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
             return CallRuleEngine.normalizeNumber(e164) ?: syntaxOnly
         }
 
-        /** Pure precedence rule for one known subscription. */
+        /**
+         * Pure rule for one known subscription. An explicit caller-supplied region wins. Without
+         * one, SIM and network observations may fill a missing value but may never override each
+         * other: two valid conflicting regions are ambiguous and therefore fail closed.
+         */
         fun resolveRegionIso(
             explicitRegionIso: String?,
             simRegionIso: String?,
             networkRegionIso: String?
-        ): String? = sequenceOf(explicitRegionIso, simRegionIso, networkRegionIso)
-            .mapNotNull(::sanitizeRegionIso)
-            .firstOrNull()
+        ): String? {
+            sanitizeRegionIso(explicitRegionIso)?.let { return it }
+            val sim = sanitizeRegionIso(simRegionIso)
+            val network = sanitizeRegionIso(networkRegionIso)
+            return when {
+                sim != null && network != null && sim != network -> null
+                sim != null -> sim
+                else -> network
+            }
+        }
 
         /**
          * Multi-SIM safety rule: national canonicalization is allowed only when every active
