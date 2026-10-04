@@ -1,22 +1,27 @@
-# Qualification Android par émulation — Phone Core
+# Qualification Android par émulation — application Sentinel / Phone Core
 
 **Statut :** gate CI principal pour la validation développeur  
 **Validation manuelle utilisateur :** non requise  
-**Périmètre :** Android 10 / API 29 et Android 16 / API 36
+**Périmètre :** Android 7 / API 24 (minSdk), Android 10 / API 29 et Android 16 / API 36
 
 Cette qualification automatise tout ce qui peut être reproduit de façon déterministe avec Android Emulator. Elle est distincte de la validation modem/opérateur réelle et ne doit jamais être présentée comme une preuve physique universelle.
 
 ## Gate automatisé
 
-Le workflow `.github/workflows/android-emulation-qualification.yml` doit réussir sur API 29 et API 36. Il exécute :
+Le workflow `.github/workflows/android-emulation-qualification.yml` doit réussir sur API 24, API 29 et API 36.
+
+API 24 vérifie le plancher réellement supporté par l'APK : installation, cold launch, instrumentation et rendu de toutes les destinations statiques de l'application. Les parcours Phone Core basés sur les rôles Android modernes sont volontairement limités aux API 29 et 36 ; leur absence sur API 24 n'est jamais transformée en faux support.
+
+La qualification exécute notamment :
 
 - tests unitaires Android complets ;
 - lint Android ;
 - compilation APK debug et APK de tests ;
-- `connectedDebugAndroidTest` sur chaque niveau API ;
+- `connectedDebugAndroidTest` sur API 24, 29 et 36 ;
+- rendu instrumenté de chaque destination statique du `NavGraph` : accueil, recherche, OSINT, audits, journaux, Phone Security, communications, blocage et listes, historique, sécurité email/SMS, permissions, réseau, exposition numérique, défense collective, Smart Home, VPN, conformité, à propos et paramètres ;
 - canonicalisation régionale FR / GP / MQ / GF / RE / YT / PM ;
 - politiques multi-SIM et sélection d'abonnement ;
-- retrait/rétablissement réel des rôles SMS, Téléphone et Filtrage dans le framework Android de l'émulateur ;
+- retrait/rétablissement réel des rôles SMS, Téléphone et Filtrage dans le framework Android de l'émulateur sur les versions qui les supportent ;
 - retrait de permissions critiques et vérification fail-closed ;
 - installation, premier lancement, interruption et reprise du parcours Phone Core ;
 - appel entrant synthétique via Telecom ;
@@ -25,7 +30,7 @@ Le workflow `.github/workflows/android-emulation-qualification.yml` doit réussi
 - contrôle crash/ANR ;
 - captures, logcat, état Telecom, rôles et état package comme artefacts CI.
 
-Les artefacts portent explicitement `synthetic_modem: true`, `physical_modem_claim: false` et `commercial_release_claim: false`. Une émulation verte ne peut donc pas être transformée en revendication de validation opérateur réelle.
+Les rapports indiquent explicitement `physical_modem_claim: false` et `commercial_release_claim: false`. Les lignes API 29/36 utilisant la téléphonie simulée portent `synthetic_modem: true`. Une émulation verte ne peut donc pas être transformée en revendication de validation opérateur réelle.
 
 ## Multi-SIM
 
@@ -47,6 +52,6 @@ Ces preuves sont des gates de **release commerciale**, pas des prérequis pour c
 
 ## Règle de vérité
 
-Une PR peut être déclarée **qualification émulateur verte** lorsque les deux matrices API réussissent et que les artefacts CI sont présents.
+Une PR peut être déclarée **qualification Android par émulation verte** uniquement lorsque les trois lignes API 24/29/36 réussissent et que les artefacts CI sont présents.
 
 Elle ne peut être déclarée **Phone Core 100 % fonctionnel en production commerciale** tant que les validations externes restantes et la signature/release publique ne sont pas démontrées sur la révision exacte.
