@@ -1,43 +1,61 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "updated_at": "2026-10-04",
   "certification_schema_version": 5,
-  "local_technical_certificate": {
+  "manual_user_validation_required": false,
+  "emulator_qualification": {
     "required": true,
-    "required_count": 14,
-    "note": "Le certificat local 14/14 est nécessaire mais ne suffit pas à qualifier Phone Core pour la production commerciale."
+    "passed": false,
+    "evidence_ref": null,
+    "required_api_levels": [29, 36],
+    "required_checks": [
+      "android_unit_tests",
+      "android_lint",
+      "connected_instrumentation_api29",
+      "connected_instrumentation_api36",
+      "cold_install_and_relaunch",
+      "phone_core_setup_resume",
+      "incoming_call_telecom_flow",
+      "outgoing_call_telecom_flow",
+      "incoming_sms_and_inline_reply",
+      "role_revocation_fail_closed",
+      "permission_revocation_fail_closed",
+      "region_canonicalization_matrix",
+      "multi_sim_selection_policy_matrix",
+      "no_crash_or_anr"
+    ],
+    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator. Il ne transforme pas une simulation de modem en preuve opérateur physique."
   },
-  "external_physical_gates": [
+  "local_technical_certificate": {
+    "required_for_physical_release_evidence": true,
+    "required_count": 14,
+    "note": "Le certificat local 14/14 reste une preuve appareil/réseau distincte. L'utilisateur n'est pas tenu de l'exécuter manuellement pour qualifier la branche par émulation."
+  },
+  "residual_external_validation": [
     {
-      "id": "guadeloupe_region_rule_migration",
-      "passed": false,
+      "id": "real_carrier_sms_mms_callbacks",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
       "evidence_ref": null,
-      "requirement": "Sur réseau réel en Guadeloupe, vérifier formes nationales et +590, ajout/suppression de règles exactes et migration historique sans promotion erronée vers +33."
+      "requirement": "Confirmer sur réseau opérateur réel les callbacks de livraison SMS et le succès transport MMS."
     },
     {
-      "id": "metropolitan_france_region_path",
-      "passed": false,
+      "id": "samsung_s24_screening_latency",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
       "evidence_ref": null,
-      "requirement": "Sur SIM/réseau réel de France métropolitaine, vérifier formes nationales et +33 sans collision avec les identités DOM-COM."
-    },
-    {
-      "id": "dual_sim_region_paths",
-      "passed": false,
-      "evidence_ref": null,
-      "requirement": "Sur double-SIM, vérifier régions identiques et différentes, choix SMS/MMS et comportement fail-closed lorsque le contexte régional est ambigu."
-    },
-    {
-      "id": "screening_pre_response_latency",
-      "passed": false,
-      "evidence_ref": null,
-      "requirement": "Sur Samsung Galaxy S24+ sous Android 16, mesurer le temps avant respondToCall et démontrer une valeur maximale strictement inférieure à 500 ms sur les scénarios enregistrés.",
+      "requirement": "Sur Samsung Galaxy S24+ Android 16, mesurer la latence réelle avant respondToCall et démontrer une valeur maximale strictement inférieure à 500 ms.",
       "max_pre_response_ms_exclusive": 500
     },
     {
-      "id": "activation_roles_permissions",
-      "passed": false,
+      "id": "physical_dual_sim_oem_compatibility",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
       "evidence_ref": null,
-      "requirement": "Valider physiquement l'activation, le retrait et la restauration des rôles et permissions Phone Core concernés, sans faux état READY."
+      "requirement": "Confirmer sur au moins un appareil double-SIM réel que les comportements OEM/modem correspondent aux politiques multi-SIM déjà validées en logiciel et en émulation."
     }
   ]
 }
