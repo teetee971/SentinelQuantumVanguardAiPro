@@ -37,28 +37,26 @@ class BluetoothScanner(context: Context) {
     private val discovered = linkedMapOf<String, DiscoveredBluetoothDevice>()
     private var callback: ScanCallback? = null
 
-    /** Autorisations à demander à l'utilisateur avant un scan. */
-    val requiredPermissions: Array<String> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
-        } else {
-            // Android 12 impose de demander la localisation approximative avec la localisation
-            // précise, seule cette dernière autorisant le scan BLE.
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-        }
+    /** Autorisations réellement nécessaires au produit pour exécuter ce scan et lire ses métadonnées. */
+    val requiredPermissions: Array<String> = requiredPermissionsForApi(Build.VERSION.SDK_INT)
 
-    private val mandatoryPermissions: Array<String> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(Manifest.permission.BLUETOOTH_SCAN)
-        } else {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-
-    fun hasPermissions(): Boolean = mandatoryPermissions.all { permission ->
+    /**
+     * Source unique de vérité pour l'UI et le scanner.
+     *
+     * Android 12+ sépare le scan BLE de l'accès aux métadonnées de l'appareil. Sentinel utilise
+     * les deux pour nommer/classer les appareils et évaluer le risque : SCAN seul n'est donc pas un
+     * état "autorisé" complet.
+     */
+    fun hasPermissions(): Boolean = requiredPermissions.all { permission ->
         ContextCompat.checkSelfPermission(appContext, permission) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun isBluetoothEnabled(): Boolean = adapter?.isEnabled == true
+    @SuppressLint("MissingPermission")
+    fun isBluetoothEnabled(): Boolean {
+        val currentAdapter = adapter ?: return false
+        if (!hasPermissions()) return false
+        return runCatching { currentAdapter.isEnabled }.getOrDefault(false)
+    }
 
     /**
      * Lance un scan borné dans le temps. [onResults] est appelé à chaque mise à jour puis
@@ -71,13 +69,25 @@ class BluetoothScanner(context: Context) {
         onError: (String) -> Unit,
         onScanFinished: () -> Unit = {}
     ) {
-        val scanner = adapter?.bluetoothLeScanner
-        if (adapter == null || scanner == null || !isBluetoothEnabled()) {
-            onError("Bluetooth indisponible ou désactivé.")
+        val currentAdapter = adapter
+        if (currentAdapter == null) {
+            onError("Bluetooth indisponible sur cet appareil.")
             return
         }
+        // Permission truth must be established before touching protected adapter/scanner APIs.
         if (!hasPermissions()) {
-            onError("Autorisation requise pour observer les appareils Bluetooth environnants.")
+            onError("Autorisations Bluetooth requises incomplètes.")
+            return
+        }
+
+        val scanner = try {
+            if (!currentAdapter.isEnabled) null else currentAdapter.bluetoothLeScanner
+        } catch (_: SecurityException) {
+            onError("Autorisation Bluetooth refusée ou révoquée par le système.")
+            return
+        }
+        if (scanner == null) {
+            onError("Bluetooth indisponible ou désactivé.")
             return
         }
 
@@ -87,7 +97,12 @@ class BluetoothScanner(context: Context) {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
                 val scanResult = result ?: return
                 val device = scanResult.device ?: return
-                discovered[device.address] = toDevice(device, scanResult)
+                val mapped = toDevice(device, scanResult)
+                // Permission can be revoked while a scan is already running. Never access the
+                // protected address directly outside the fail-closed mapper.
+                val sessionKey = mapped.address.takeIf { it.isNotBlank() }
+                    ?: "anonymous:${System.identityHashCode(device)}"
+                discovered[sessionKey] = mapped
                 onResults(sortedResults())
             }
 
@@ -103,7 +118,7 @@ class BluetoothScanner(context: Context) {
             scanner.startScan(scanCallback)
         } catch (_: SecurityException) {
             callback = null
-            onError("Autorisation Bluetooth refusée par le système.")
+            onError("Autorisation Bluetooth refusée ou révoquée par le système.")
             return
         } catch (_: IllegalStateException) {
             callback = null
@@ -126,7 +141,8 @@ class BluetoothScanner(context: Context) {
         runCatching { adapter?.bluetoothLeScanner?.stopScan(scanCallback) }
     }
 
-    // Les autorisations sont vérifiées avant le scan ; les accès restent protégés par runCatching.
+    // Les autorisations sont vérifiées avant le scan ; une révocation concurrente reste tolérée
+    // en protégeant chaque lecture de métadonnée individuellement.
     @SuppressLint("MissingPermission")
     private fun toDevice(device: BluetoothDevice, result: ScanResult): DiscoveredBluetoothDevice {
         val systemName = runCatching { device.name }.getOrNull()?.trim().orEmpty()
@@ -135,10 +151,11 @@ class BluetoothScanner(context: Context) {
         val kind = runCatching { deviceKind(device.bluetoothClass) }.getOrDefault(BluetoothDeviceKind.UNKNOWN)
         val bonded = runCatching { device.bondState == BluetoothDevice.BOND_BONDED }.getOrDefault(false)
         val randomizedAddress = runCatching { device.type == BluetoothDevice.DEVICE_TYPE_LE }.getOrDefault(false)
+        val address = runCatching { device.address }.getOrNull()?.trim().orEmpty()
 
         return DiscoveredBluetoothDevice(
             name = name.ifEmpty { UNKNOWN_DEVICE_NAME },
-            address = device.address.orEmpty(),
+            address = address,
             rssiDbm = result.rssi,
             kind = kind,
             randomizedAddress = randomizedAddress,
@@ -174,5 +191,12 @@ class BluetoothScanner(context: Context) {
     companion object {
         const val UNKNOWN_DEVICE_NAME = "Appareil inconnu"
         const val DEFAULT_SCAN_DURATION_MS = 10_000L
+
+        internal fun requiredPermissionsForApi(sdkInt: Int): Array<String> =
+            if (sdkInt >= Build.VERSION_CODES.S) {
+                arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+            } else {
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
     }
 }
