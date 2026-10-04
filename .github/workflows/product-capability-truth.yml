@@ -30,7 +30,7 @@ jobs:
         run: node scripts/check-product-capabilities.js
 
       - name: Run capability truth regression tests
-        run: node --test scripts/check-product-capabilities.test.js
+        run: node --test scripts/check-product-capabilities.test.js scripts/android-distribution-compliance.test.js
 
       - name: Reject stale generated capability status
         run: node scripts/render-product-capabilities.js --check
