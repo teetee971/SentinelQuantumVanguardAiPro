@@ -55,15 +55,23 @@ class ExactRuleMigrationPolicyTest {
             expiredSafe to entry(expiredSafe, CallBlockMetadata.Canonicalization.REGION_AWARE_E164_V1, expiresAt = 900L),
             expiredLegacy to entry(expiredLegacy, CallBlockMetadata.Canonicalization.LEGACY_UNSPECIFIED, expiresAt = 900L)
         )
+        val hashes = setOf(safe, legacy, missingMetadata, expiredSafe, expiredLegacy)
 
         val partition = ExactRuleMigrationPolicy.partition(
-            hashes = setOf(safe, legacy, missingMetadata, expiredSafe, expiredLegacy),
+            hashes = hashes,
             metadataByHash = metadata,
             nowEpochMs = 1000L
         )
 
         assertEquals(setOf(safe), partition.activeSafe)
         assertEquals(setOf(legacy, missingMetadata), partition.quarantinedLegacy)
+        // Ordinary rule clearing may remove current-schema entries, including expired cleanup
+        // candidates, but can never consume ambiguous legacy/missing-metadata entries.
+        assertEquals(setOf(safe, expiredSafe), ExactRuleMigrationPolicy.currentSchemaHashes(hashes, metadata))
+        assertEquals(
+            setOf(legacy, missingMetadata, expiredLegacy),
+            ExactRuleMigrationPolicy.legacyHashes(hashes, metadata)
+        )
     }
 
     private fun entry(
