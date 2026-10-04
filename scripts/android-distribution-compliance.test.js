@@ -28,10 +28,12 @@ test('public Android release is structurally gated by exact-release distribution
     'native-android-app/app/build.gradle',
     'docs/PLAY-DATA-SAFETY.md',
     'native-android-app/PLAY_STORE_LISTING.md',
+    'PRIVACY_POLICY.md',
     'public/privacy.html',
     'public/terms.html',
     'public/cgv.html',
     'public/legal.html',
+    'public/faq.html',
     'public/pricing.html',
     'RELEASE_CHECKLIST.md',
   ]) {
@@ -59,12 +61,14 @@ test('a signed and published Android release cannot bypass absent distribution c
 test('repository legal and Play preparation copy cannot masquerade as completed compliance', () => {
   const dataSafety = fs.readFileSync(path.join(rootDir, 'docs/PLAY-DATA-SAFETY.md'), 'utf8');
   const listing = fs.readFileSync(path.join(rootDir, 'native-android-app/PLAY_STORE_LISTING.md'), 'utf8');
+  const privacyPolicy = fs.readFileSync(path.join(rootDir, 'PRIVACY_POLICY.md'), 'utf8');
   const legal = fs.readFileSync(path.join(rootDir, 'public/legal.html'), 'utf8');
   const pricing = fs.readFileSync(path.join(rootDir, 'public/pricing.html'), 'utf8');
 
   assert.match(dataSafety, /document de préparation interne/);
   assert.match(dataSafety, /n’est pas une déclaration Play Console soumise/);
   assert.match(listing, /None of these may be advertised as a distributed production service/);
+  assert.match(privacyPolicy, /Aucun APK précompilé et signé n'est actuellement annoncé comme distribué/);
   assert.match(legal, /\[NOM_ÉDITEUR — à configurer\]/);
   assert.match(pricing, /Prix non contractuels/);
   assert.match(pricing, /Aucun paiement n’est traité par cette vitrine statique aujourd’hui/);

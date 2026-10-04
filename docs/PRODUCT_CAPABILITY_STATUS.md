@@ -135,6 +135,7 @@ Evidence:
 - `native-android-app/app/build.gradle`
 - `docs/PLAY-DATA-SAFETY.md`
 - `native-android-app/PLAY_STORE_LISTING.md`
+- `PRIVACY_POLICY.md`
 - `public/privacy.html`
 - `public/terms.html`
 - `public/cgv.html`
