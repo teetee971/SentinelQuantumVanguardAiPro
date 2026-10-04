@@ -95,12 +95,14 @@ class AndroidPhoneNumberCanonicalizer(context: Context) {
             }.getOrNull()
             GlobalPhoneIdentityPolicy.canonicalE164OrNull(e164)?.let { return it }
 
-            // Android's platform formatter does not canonicalize Mayotte (YT) national forms on
-            // all supported API levels. This fallback is deliberately territory-scoped: it is
-            // reachable only after an explicit or unambiguous YT SIM/network observation, and it
-            // accepts only Mayotte's known 0269 fixed-line / 0639 mobile national prefixes.
+            // Android's platform formatter does not canonicalize every French overseas numbering
+            // plan consistently on all supported API levels. These fallbacks are deliberately
+            // territory-scoped and reachable only after an explicit or unambiguous region.
             if (safeRegion == "YT" && syntaxOnly.matches(Regex("0(?:269|639)\\d{6}"))) {
                 return GlobalPhoneIdentityPolicy.canonicalE164OrNull("+262" + syntaxOnly.drop(1))
+            }
+            if (safeRegion == "PM" && syntaxOnly.matches(Regex("0508\\d{6}"))) {
+                return GlobalPhoneIdentityPolicy.canonicalE164OrNull("+508" + syntaxOnly.drop(4))
             }
             return syntaxOnly
         }
