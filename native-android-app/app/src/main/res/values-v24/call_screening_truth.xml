@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- minSdk is 24, so this truthful override is selected on every supported runtime. -->
+    <string name="call_blocking_role_unsupported">Le filtrage Android n’est pas disponible dans la configuration actuelle.</string>
+</resources>

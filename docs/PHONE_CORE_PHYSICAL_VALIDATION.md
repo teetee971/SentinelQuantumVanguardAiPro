@@ -1,8 +1,8 @@
 # Protocole de validation physique — Phone Core v5
 
-**Révision :** 2 octobre 2026  
+**Révision :** 4 octobre 2026  
 **Statut :** protocole prêt à exécuter ; aucun résultat terrain renseigné  
-**Référence logicielle examinée :** PR #1497 ; utiliser le SHA exact et l’artefact exact qui auront passé les gates avant l’essai terrain.
+**Référence logicielle :** utiliser le SHA exact et l’artefact exact qui auront passé les gates avant l’essai terrain.
 
 Source des critères : [PhoneCorePhysicalValidation.kt](../native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt). Le certificat comporte exactement 14 critères : deux vérifications automatiques de providers et douze observations opérationnelles, dont l’envoi MMS réel. Les essais de compatibilité et le Wi-Fi sont séparés de ce compteur.
 
@@ -10,7 +10,7 @@ Source des critères : [PhoneCorePhysicalValidation.kt](../native-android-app/ap
 
 1. Utiliser un appareil physique et une ligne mobile de test, avec un second appareil/une seconde ligne pour appels et messages. Ne pas utiliser de numéro d’urgence pour ces essais.
 2. Installer l’APK du commit à vérifier après examen de ses contrôles CI ; relever son SHA-256 et son certificat de signature. Un APK debug de validation ne devient pas un livrable public signé.
-3. Ouvrir le centre Phone Core. Accorder explicitement les rôles Téléphone, Filtrage d’appels et SMS requis, puis les permissions nécessaires. Vérifier canaux de notification et réglages constructeur.
+3. Ouvrir le centre Phone Core. Accorder explicitement les rôles Téléphone, Filtrage d’appels et SMS requis, puis les permissions nécessaires. Vérifier canaux de notification et réglages constructeur. Sur API 24–28, le filtrage passe par la sélection explicite de Sentinel comme application Téléphone par défaut ; à partir d’API 29, Android expose le rôle Call Screening dédié.
 4. Utiliser le périmètre de certification de l’installation courante. Ne pas réinjecter d’événements, modifier le stockage ou reprendre les preuves d’une ancienne installation pour remplir le compteur.
 5. Sélectionner explicitement la ligne utilisée lorsqu’il existe plusieurs SIM.
 
@@ -53,7 +53,7 @@ Les noms de signaux permettent de rapprocher le diagnostic du code ; ils ne sont
 ## Compatibilité et réversibilité — hors compteur
 
 - **Double-SIM :** répéter appels et SMS sur chaque ligne, puis rendre une ligne indisponible. Aucun choix arbitraire ne doit être présenté comme validé.
-- **Versions/constructeurs :** répéter sur la matrice réellement ciblée. L’activation guidée du filtrage est revendiquée à partir d’API 29 ; API 24–28 ne sont pas réputées couvertes par ce parcours.
+- **Versions/constructeurs :** répéter sur la matrice réellement ciblée. Le chemin legacy API 24–28 est implémenté via `ACTION_CHANGE_DEFAULT_DIALER` et la CI instrumentée vérifie API 24 sans changer automatiquement le dialer. Cela ne prouve pas le basculement réel du rôle ni le filtrage opérateur sur un appareil physique. À partir d’API 29, le parcours utilise `RoleManager.ROLE_CALL_SCREENING`. Ne revendiquer la compatibilité terrain que pour les versions réellement testées sur appareil.
 - **Notifications :** refuser la permission ou désactiver un canal, puis vérifier les états affichés sans déclaration de succès erronée.
 - **Retrait des rôles/permissions :** revenir aux applications système et refuser les accès ; observer l’état courant des prérequis et l’absence d’opération non autorisée. Refaire les vérifications après restauration.
 - **Échecs transport :** tester envoi/livraison en erreur et MMS non pris en charge ; ils ne doivent pas compléter les critères de succès.

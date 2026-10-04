@@ -1,10 +1,12 @@
 # Revue Phone Core — 1 octobre 2026
 
+> **Archive de vérité datée.** Ce document décrit l’état examiné le 1er octobre et conserve donc les références historiques au schéma v4 / 13 critères. Le contrat courant est `PhoneCorePhysicalValidation` v5 avec **14 critères** ; voir `PHONE_CORE_PHYSICAL_VALIDATION.md` et `ROADMAP.md`. Depuis cette revue, le chemin legacy de filtrage API 24–28 est implémenté via l’application Téléphone par défaut et la CI exécute l’instrumentation sur API 24, 36 et 37. Cela ne constitue toujours pas une validation physique API 24–28.
+
 ## Périmètre et verdict
 
 Référence du code examinée : `8da13f492dff16cbb3d64f931e8edd3298ddc1be` après intégration de la PR #1435. Revue des sources du centre d'activation, composeur, InCall, diagnostics, permissions/rôles, timeline/provenance, callbacks SMS et chaîne MMS ; contrôles statiques du manifeste, de vérité produit et des surfaces UI. Cette revue ne constitue pas un audit de sécurité exhaustif ni une validation visuelle ou terrain.
 
-Le jalon est mesurable : prérequis logiciels réellement activés + APK candidate vérifiée et installable → 13 preuves sur appareil → matrice de compatibilité → statut fonctionnel. Le code ne permet pas de promettre 100 % de prérequis activables sur un appareil dont Android refuse les rôles nécessaires.
+Le jalon de cette révision était mesurable : prérequis logiciels réellement activés + APK candidate vérifiée et installable → 13 preuves sur appareil → matrice de compatibilité → statut fonctionnel. Le code ne permet pas de promettre 100 % de prérequis activables sur un appareil dont Android refuse les rôles nécessaires. Ce jalon est historique ; le certificat courant v5 comporte 14 critères.
 
 ## Défauts corrigés par cette revue
 
@@ -20,12 +22,12 @@ Le jalon est mesurable : prérequis logiciels réellement activés + APK candida
 
 ## Frontières examinées
 
-- **Activation :** faits Android relus au retour du système ; historique de l'assistant distinct de la readiness ; indisponibilité des rôles explicitée. L'activation guidée de Call Screening reste limitée à API 29+.
+- **Activation :** à la date de cette revue, les faits Android étaient relus au retour du système, l’historique de l'assistant était distinct de la readiness et l’indisponibilité des rôles explicitée. La limitation alors documentée à API 29+ a depuis été dépassée par le chemin legacy API 24–28 via `ACTION_CHANGE_DEFAULT_DIALER`; sa qualification physique reste distincte.
 - **Appels :** service système protégé par BIND_SCREENING_SERVICE/BIND_INCALL_SERVICE ; réponse de filtrage locale avant persistance ; dégradation ouverte si classification d'urgence indisponible. Aucun cloud sur la réponse critique.
 - **Providers :** contacts après READ_CONTACTS ; historique après rôle Téléphone et READ_CALL_LOG ; vérification du provider distincte d'une permission déclarée.
 - **SMS :** rôle SMS et permissions relus ; choix de souscription explicite ; callbacks privés/immutables et identités URI vérifiées ; agrégation multiparties et tombstones bornés.
 - **MMS :** réception système protégée, callback privé, chemins canoniques et taille bornée, décodage sécurisé et quarantaine ; un aperçu reçu ne prouve pas l'envoi MMS sortant.
-- **Preuves :** schema v4, 13 critères, provenance installation/version/mise à jour, écriture durable et verrou partagé ; timeline minimisée sans numéro ou corps de message.
+- **Preuves :** dans cette révision historique, schema v4 et 13 critères ; le contrat courant est v5 / 14 critères. Provenance installation/version/mise à jour, écriture durable et verrou partagé ; timeline minimisée sans numéro ou corps de message.
 - **Notifications :** autorisations, canaux et publication acceptée distingués d'une notification visuellement observée.
 - **Réseau :** absence de cleartext applicatif déclaré ; VPN Internet et Mesh distincts ; ni gateway réelle ni disponibilité universelle déduites de la présence de WireGuard.
 
@@ -40,9 +42,9 @@ Contrôles locaux exécutés avec succès après corrections :
 - `node scripts/check-android-ui-consistency.js` : 21 écrans découverts, 5 activités à barre commune et 2 surfaces immersives.
 - Suites `check-android-product-truth.test.js`, `phone-core-certification-truth.test.js` et `android-install-smoke-policy.test.js` réussies.
 
-Les nouveaux tests Kotlin, lint, compilation et installation de l'APK doivent encore être exécutés par GitHub Actions sur le commit final de cette correction. La CI de #1435 était réussie sur son dernier commit avant intégration ; elle ne valide pas les nouveaux changements.
+Les nouveaux tests Kotlin, lint, compilation et installation de l'APK de cette révision devaient encore être exécutés par GitHub Actions sur son commit final. Les validations CI réalisées depuis sont rattachées à leurs propres SHA et ne réécrivent pas rétroactivement cette preuve historique.
 
-Aucun émulateur Android, appareil physique ni outil de capture n'est disponible dans cette session. La revue UX concerne donc les états et parcours dans le code. Lisibilité, contraste rendu, zones tactiles, TalkBack, clavier, très grandes polices, fenêtres système et rotations restent à observer ; aucune conformité visuelle/accessibilité n'est prononcée.
+Aucun émulateur Android, appareil physique ni outil de capture n'était disponible dans cette session du 1er octobre. La revue UX concernait donc les états et parcours dans le code. Lisibilité, contraste rendu, zones tactiles, TalkBack, clavier, très grandes polices, fenêtres système et rotations restaient à observer ; aucune conformité visuelle/accessibilité n'était prononcée par cette revue.
 
 ## Gate avant remise de l'APK
 
