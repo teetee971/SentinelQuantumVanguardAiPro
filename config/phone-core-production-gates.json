@@ -14,6 +14,8 @@
       "wearable_contract_unit_tests",
       "wearable_security_unit_tests",
       "android_lint",
+      "phone_number_canonicalization_contract",
+      "multi_sim_submit_readiness_contract",
       "connected_instrumentation_api24",
       "connected_instrumentation_api29",
       "connected_instrumentation_api36",
@@ -28,11 +30,9 @@
       "incoming_sms_and_inline_reply",
       "role_revocation_fail_closed",
       "permission_revocation_fail_closed",
-      "region_canonicalization_matrix",
-      "multi_sim_selection_policy_matrix",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. Il ouvre toutes les destinations statiques du NavGraph ainsi que les activités autonomes Activation, Diagnostic et Voice Studio. API 24 couvre le plancher de compatibilité déclaré, API 29 la frontière RoleManager, API 36 Android 16 et API 37 Android 17 comme compatibilité runtime la plus récente. Les parcours téléphonie simulée restent explicitement synthétiques et ne constituent pas une preuve modem/opérateur physique."
+    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. Il exécute aussi les contrats ciblés de canonicalisation téléphonique et de préparation multi-SIM avant envoi. Il ouvre toutes les destinations statiques du NavGraph ainsi que les activités autonomes Activation, Diagnostic et Voice Studio. API 24 couvre le plancher de compatibilité déclaré, API 29 la frontière RoleManager, API 36 Android 16 et API 37 Android 17 comme compatibilité runtime la plus récente. Les parcours téléphonie simulée restent explicitement synthétiques et ne constituent pas une preuve modem/opérateur physique."
   },
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
