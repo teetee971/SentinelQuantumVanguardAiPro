@@ -1,12 +1,12 @@
 package com.sentinel.quantum.ui.screens
 
 import android.Manifest
-import android.app.Activity
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.telecom.TelecomManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -30,6 +30,7 @@ import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
+import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.OkHttpCallRulePackageTransport
 import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.SignedCallRulePackageVerifier
@@ -46,14 +47,14 @@ fun CallBlockingScreen(navController: NavController) {
     val context = LocalContext.current
     val store = remember(context) { CallBlocklistStore(context) }
     val settingsStore = remember(context) { SettingsStore(context) }
-    val roleSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     var snapshot by remember { mutableStateOf(store.snapshot()) }
     var number by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
     var prefixMenuExpanded by remember { mutableStateOf(false) }
     var prefixSearch by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
-    var roleHeld by remember { mutableStateOf(isCallScreeningRoleHeld(context)) }
+    var screeningState by remember { mutableStateOf(CallScreeningActivationPolicy.read(context)) }
+    val roleHeld = screeningState == CallScreeningActivationPolicy.State.HELD
     var contactsAllowed by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
@@ -74,8 +75,8 @@ fun CallBlockingScreen(navController: NavController) {
     val prefixAddedText = stringResource(R.string.call_blocking_prefix_added)
     val prefixInvalidText = stringResource(R.string.call_blocking_prefix_invalid)
     val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
-    val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        roleHeld = result.resultCode == Activity.RESULT_OK && isCallScreeningRoleHeld(context)
+    val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        screeningState = CallScreeningActivationPolicy.read(context)
     }
     val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         contactsAllowed = granted
@@ -108,12 +109,15 @@ fun CallBlockingScreen(navController: NavController) {
                 if (roleHeld) stringResource(R.string.call_blocking_role_on) else stringResource(R.string.call_blocking_role_off),
                 fontWeight = FontWeight.Bold
             )
-            if (isCallScreeningRoleAvailable(context) && !roleHeld) {
+            if (screeningState == CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD) {
                 Button(
-                    onClick = { requestCallScreeningRole(context)?.let { intent -> roleLauncher.launch(intent) } },
+                    onClick = {
+                        requestCallScreeningActivation(context)?.let(roleLauncher::launch)
+                            ?: run { screeningState = CallScreeningActivationPolicy.read(context) }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.call_blocking_enable_role)) }
-            } else if (!roleSupported) {
+            } else if (screeningState == CallScreeningActivationPolicy.State.UNAVAILABLE) {
                 Text(stringResource(R.string.call_blocking_role_unsupported))
             }
 
@@ -392,32 +396,23 @@ fun CallBlockingScreen(navController: NavController) {
     }
 }
 
-private fun isCallScreeningRoleHeld(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-    return AndroidRoleReadPolicy.readBoolean {
-        context.getSystemService(RoleManager::class.java)
-            .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+private fun requestCallScreeningActivation(context: Context): Intent? {
+    if (CallScreeningActivationPolicy.read(context) != CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD) {
+        return null
     }
-}
-
-private fun isCallScreeningRoleAvailable(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-    return AndroidRoleReadPolicy.readBoolean {
-        context.getSystemService(RoleManager::class.java)
-            .isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)
-    }
-}
-
-private fun requestCallScreeningRole(context: Context): Intent? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
     return AndroidRoleReadPolicy.readOrNull {
-        val manager = context.getSystemService(RoleManager::class.java)
-        if (!manager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) ||
-            manager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
-        ) {
-            null
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
+                .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, context.packageName)
         } else {
-            manager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+            val manager = context.getSystemService(RoleManager::class.java)
+            if (!manager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) ||
+                manager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+            ) {
+                null
+            } else {
+                manager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+            }
         }
     }
 }
