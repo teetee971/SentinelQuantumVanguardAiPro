@@ -61,6 +61,18 @@ class AndroidPhoneNumberCanonicalizerPolicyTest {
         )
     }
 
+    @Test fun oneUnknownMultiSimRegionMakesWholeContextUnknown() {
+        assertNull(
+            AndroidPhoneNumberCanonicalizer.unambiguousRegion(listOf("GP", null))
+        )
+    }
+
+    @Test fun malformedObservationMakesWholeMultiSimContextUnknown() {
+        assertNull(
+            AndroidPhoneNumberCanonicalizer.unambiguousRegion(listOf("GP", "590"))
+        )
+    }
+
     @Test fun noUsableActiveSubscriptionRegionRemainsUnknown() {
         assertNull(AndroidPhoneNumberCanonicalizer.unambiguousRegion(listOf("unknown", "590")))
     }
