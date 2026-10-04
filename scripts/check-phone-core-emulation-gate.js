@@ -12,6 +12,7 @@ const existsAndRead = (...parts) => {
 
 const gate = JSON.parse(read('config', 'phone-core-production-gates.json'));
 const workflow = existsAndRead('.github', 'workflows', 'android-emulation-qualification.yml');
+const codeqlWorkflow = existsAndRead('.github', 'workflows', 'codeql-analysis.yml');
 const setupResumeFlow = existsAndRead('scripts', 'phone-core-emulator-setup-resume-flow.sh');
 const runtimeFlow = read('scripts', 'phone-core-emulator-flow.sh');
 const revocationFlow = existsAndRead('scripts', 'phone-core-emulator-revocation-flow.sh');
@@ -115,6 +116,12 @@ for (const marker of [
   'FATAL EXCEPTION: main',
   'ANR in com\\.sentinel\\.quantum'
 ]) requireText(workflow, marker, 'emulation workflow');
+
+requireText(codeqlWorkflow, '"android-emulation-qualification.yml"', 'required CodeQL gate coupling');
+requireText(codeqlWorkflow, '"production-merge-gate.yml"', 'required CodeQL gate coupling');
+if (codeqlWorkflow.includes('"android-instrumentation.yml"')) {
+  errors.push('required CodeQL status still depends on retired android-instrumentation.yml');
+}
 
 for (const marker of ['CallRuleEngineTest', 'frenchAndInternationalPrefixesCanonicalizeConsistently', 'normalizeNumber']) {
   requireText(canonicalizationTest, marker, 'phone-number canonicalization contract');
