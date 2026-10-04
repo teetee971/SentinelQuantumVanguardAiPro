@@ -14,6 +14,7 @@ const gate = JSON.parse(read('config', 'phone-core-production-gates.json'));
 const workflow = existsAndRead('.github', 'workflows', 'android-emulation-qualification.yml');
 const codeqlWorkflow = existsAndRead('.github', 'workflows', 'codeql-analysis.yml');
 const manifest = read('native-android-app', 'app', 'src', 'main', 'AndroidManifest.xml');
+const physicalValidation = read('native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security', 'PhoneCorePhysicalValidation.kt');
 const setupResumeTest = existsAndRead('native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'PhoneCoreSetupResumeInstrumentationTest.kt');
 const runtimeFlow = read('scripts', 'phone-core-emulator-flow.sh');
 const revocationFlow = existsAndRead('scripts', 'phone-core-emulator-revocation-flow.sh');
@@ -59,7 +60,12 @@ const requireText = (haystack, needle, label) => {
 if (gate.schema_version !== 2) errors.push('phone-core production gate schema_version must be 2');
 if (gate.certification_schema_version !== 5) errors.push('Phone Core certification schema must remain v5');
 if (gate.manual_user_validation_required !== false) errors.push('manual user validation must not be required for emulator qualification');
-if (gate.local_technical_certificate?.required_count !== 13) errors.push('physical certificate must reflect the current 13-proof contract');
+const physicalRequiredCount = Number(physicalValidation.match(/val requiredCount:\s*Int\s*get\(\)\s*=\s*(\d+)/)?.[1]);
+if (physicalRequiredCount !== 14) errors.push(`Phone Core v5 physical contract must expose exactly 14 criteria, found ${String(physicalRequiredCount)}`);
+if (gate.local_technical_certificate?.required_count !== physicalRequiredCount) {
+  errors.push(`physical gate count ${String(gate.local_technical_certificate?.required_count)} does not match PhoneCorePhysicalValidation ${String(physicalRequiredCount)}`);
+}
+requireText(physicalValidation, 'const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"', 'Phone Core physical active-call evidence');
 
 const minSdk = Number(buildGradle.match(/\bminSdk\s+(\d+)/)?.[1]);
 if (minSdk !== 24) errors.push(`expected audited Android minSdk 24, found ${String(minSdk)}`);
@@ -160,6 +166,9 @@ for (const marker of [
   'adb emu gsm accept "$FLOW_NUMBER"',
   'wait_text "$FLOW_NUMBER"',
   'wait_text "Appel autorisé"',
+  'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
+  'wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"',
+  'shared_prefs/phone_private_timeline.xml',
   'adb emu sms send',
   'for FLOW_ROLE in DIALER SMS',
   'android.app.role.$FLOW_ROLE',
