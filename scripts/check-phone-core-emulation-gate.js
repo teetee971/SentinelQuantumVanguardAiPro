@@ -8,35 +8,23 @@ const gatePath = path.join(root, 'config', 'phone-core-production-gates.json');
 const workflowPath = path.join(root, '.github', 'workflows', 'android-emulation-qualification.yml');
 const flowPath = path.join(root, 'scripts', 'phone-core-emulator-flow.sh');
 const revocationFlowPath = path.join(root, 'scripts', 'phone-core-emulator-revocation-flow.sh');
-const navigationSmokePath = path.join(
-  root,
-  'native-android-app',
-  'app',
-  'src',
-  'androidTest',
-  'java',
-  'com',
-  'sentinel',
-  'quantum',
-  'ui',
-  'AllStaticNavigationSurfacesInstrumentationTest.kt'
-);
+const navigationSmokePath = path.join(root, 'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui', 'AllStaticNavigationSurfacesInstrumentationTest.kt');
 const buildGradlePath = path.join(root, 'native-android-app', 'app', 'build.gradle');
+const settingsGradlePath = path.join(root, 'native-android-app', 'settings.gradle');
 
 const errors = [];
 const gate = JSON.parse(fs.readFileSync(gatePath, 'utf8'));
 const workflow = fs.existsSync(workflowPath) ? fs.readFileSync(workflowPath, 'utf8') : '';
 const flow = fs.readFileSync(flowPath, 'utf8');
-const revocationFlow = fs.existsSync(revocationFlowPath)
-  ? fs.readFileSync(revocationFlowPath, 'utf8')
-  : '';
-const navigationSmoke = fs.existsSync(navigationSmokePath)
-  ? fs.readFileSync(navigationSmokePath, 'utf8')
-  : '';
+const revocationFlow = fs.existsSync(revocationFlowPath) ? fs.readFileSync(revocationFlowPath, 'utf8') : '';
+const navigationSmoke = fs.existsSync(navigationSmokePath) ? fs.readFileSync(navigationSmokePath, 'utf8') : '';
 const buildGradle = fs.readFileSync(buildGradlePath, 'utf8');
+const settingsGradle = fs.readFileSync(settingsGradlePath, 'utf8');
 
 const requiredChecks = [
-  'android_unit_tests',
+  'android_app_unit_tests',
+  'wearable_contract_unit_tests',
+  'wearable_security_unit_tests',
   'android_lint',
   'connected_instrumentation_api24',
   'connected_instrumentation_api29',
@@ -61,55 +49,44 @@ if (gate.manual_user_validation_required !== false) errors.push('manual user val
 
 const minSdk = Number(buildGradle.match(/\bminSdk\s+(\d+)/)?.[1]);
 if (minSdk !== 24) errors.push(`expected audited Android minSdk 24, found ${String(minSdk)}`);
+for (const moduleName of [':app', ':wearable-contract', ':wearable-security']) {
+  if (!settingsGradle.includes(`include '${moduleName}'`)) errors.push(`Gradle module missing from settings: ${moduleName}`);
+}
 
 const emulation = gate.emulator_qualification;
 if (!emulation || emulation.required !== true) errors.push('emulator qualification must be required');
-if (JSON.stringify(emulation?.required_api_levels) !== JSON.stringify([24, 29, 36])) {
-  errors.push('emulator qualification must cover minSdk API 24, API 29 and API 36');
-}
-if (JSON.stringify(emulation?.phone_core_runtime_api_levels) !== JSON.stringify([29, 36])) {
-  errors.push('Phone Core role/runtime flows must remain scoped to API 29 and API 36');
-}
+if (JSON.stringify(emulation?.required_api_levels) !== JSON.stringify([24, 29, 36])) errors.push('emulator qualification must cover minSdk API 24, API 29 and API 36');
+if (JSON.stringify(emulation?.phone_core_runtime_api_levels) !== JSON.stringify([29, 36])) errors.push('Phone Core role/runtime flows must remain scoped to API 29 and API 36');
 if (!Array.isArray(emulation?.required_checks) || new Set(emulation.required_checks).size !== emulation.required_checks.length) {
   errors.push('emulator required_checks must be a unique array');
 } else {
-  for (const check of requiredChecks) {
-    if (!emulation.required_checks.includes(check)) errors.push(`missing emulator qualification check: ${check}`);
-  }
+  for (const check of requiredChecks) if (!emulation.required_checks.includes(check)) errors.push(`missing emulator qualification check: ${check}`);
 }
-if (emulation?.passed === true && (typeof emulation.evidence_ref !== 'string' || !emulation.evidence_ref.trim())) {
-  errors.push('emulator qualification cannot be marked passed without evidence_ref');
-}
+if (emulation?.passed === true && (typeof emulation.evidence_ref !== 'string' || !emulation.evidence_ref.trim())) errors.push('emulator qualification cannot be marked passed without evidence_ref');
 
 const residual = gate.residual_external_validation;
 if (!Array.isArray(residual) || residual.length < 3) {
   errors.push('residual external validation must declare the non-emulatable release checks');
 } else {
   const ids = new Set(residual.map(item => item?.id));
-  for (const id of [
-    'real_carrier_sms_mms_callbacks',
-    'samsung_s24_screening_latency',
-    'physical_dual_sim_oem_compatibility'
-  ]) {
+  for (const id of ['real_carrier_sms_mms_callbacks', 'samsung_s24_screening_latency', 'physical_dual_sim_oem_compatibility']) {
     if (!ids.has(id)) errors.push(`missing residual physical validation: ${id}`);
   }
   for (const item of residual) {
-    if (item.blocking_for_emulator_qualification !== false) {
-      errors.push(`${item.id}: residual physical validation must not block emulator qualification`);
-    }
-    if (item.blocking_for_commercial_release !== true) {
-      errors.push(`${item.id}: residual physical validation must still block commercial release`);
-    }
-    if (item.execution_owner !== 'external_device_lab_or_release_qa') {
-      errors.push(`${item.id}: physical validation must be assigned away from manual user validation`);
-    }
+    if (item.blocking_for_emulator_qualification !== false) errors.push(`${item.id}: residual physical validation must not block emulator qualification`);
+    if (item.blocking_for_commercial_release !== true) errors.push(`${item.id}: residual physical validation must still block commercial release`);
+    if (item.execution_owner !== 'external_device_lab_or_release_qa') errors.push(`${item.id}: physical validation must be assigned away from manual user validation`);
   }
 }
 
 for (const marker of [
   'matrix:',
   'api_level: [24, 29, 36]',
-  'connectedDebugAndroidTest',
+  ':app:testDebugUnitTest',
+  ':wearable-contract:test',
+  ':wearable-security:test',
+  ':app:lintDebug',
+  ':app:connectedDebugAndroidTest',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
   'if [[ "$API_LEVEL" -ge 29 ]]',
@@ -119,22 +96,10 @@ for (const marker of [
 ]) {
   if (!workflow.includes(marker)) errors.push(`emulation workflow missing marker: ${marker}`);
 }
-for (const marker of [
-  'adb emu gsm call',
-  'adb emu sms send',
-  'for FLOW_ROLE in DIALER SMS',
-  'android.app.role.$FLOW_ROLE',
-  'android.app.role.CALL_SCREENING'
-]) {
+for (const marker of ['adb emu gsm call', 'adb emu sms send', 'for FLOW_ROLE in DIALER SMS', 'android.app.role.$FLOW_ROLE', 'android.app.role.CALL_SCREENING']) {
   if (!flow.includes(marker)) errors.push(`emulator runtime flow missing marker: ${marker}`);
 }
-for (const marker of [
-  'remove-role-holder',
-  'pm revoke',
-  'rôle SMS disponible mais non accordé',
-  'android.app.role.CALL_SCREENING',
-  'assert_no_crash'
-]) {
+for (const marker of ['remove-role-holder', 'pm revoke', 'rôle SMS disponible mais non accordé', 'android.app.role.CALL_SCREENING', 'assert_no_crash']) {
   if (!revocationFlow.includes(marker)) errors.push(`emulator revocation flow missing marker: ${marker}`);
 }
 for (const marker of [
