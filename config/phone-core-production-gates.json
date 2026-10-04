@@ -13,6 +13,7 @@
       "android_lint",
       "connected_instrumentation_api29",
       "connected_instrumentation_api36",
+      "all_static_navigation_surfaces_render",
       "cold_install_and_relaunch",
       "phone_core_setup_resume",
       "incoming_call_telecom_flow",
@@ -24,7 +25,7 @@
       "multi_sim_selection_policy_matrix",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator. Il ne transforme pas une simulation de modem en preuve opérateur physique."
+    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator, y compris l'ouverture de chaque destination statique du NavGraph. Il ne transforme pas une simulation de modem en preuve opérateur physique."
   },
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
