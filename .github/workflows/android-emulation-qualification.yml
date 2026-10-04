@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   contract-and-host-tests:
-    name: Emulation contract, unit tests and lint
+    name: Emulation contract, all module tests and lint
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -40,13 +40,20 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Run Android host-side verification
+      - name: Run all Android repository host-side tests
         working-directory: ./native-android-app
         shell: bash
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon
+          ./gradlew \
+            :app:testDebugUnitTest \
+            :wearable-contract:test \
+            :wearable-security:test \
+            :app:lintDebug \
+            :app:assembleDebug \
+            :app:assembleDebugAndroidTest \
+            --stacktrace --no-daemon
 
   emulator-matrix:
     name: PhoneCore-Emulation-Qualification API ${{ matrix.api_level }}
@@ -157,7 +164,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
+          ./gradlew :app:connectedDebugAndroidTest --stacktrace --no-daemon
 
       - name: Run emulator application/runtime qualification
         working-directory: ./native-android-app
@@ -166,7 +173,7 @@ jobs:
           API_LEVEL: ${{ matrix.api_level }}
         run: |
           set -euo pipefail
-          ./gradlew assembleDebug --stacktrace --no-daemon
+          ./gradlew :app:assembleDebug --stacktrace --no-daemon
           APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' -type f -print -quit)
           test -n "$APK_PATH"
           adb shell pm clear com.sentinel.quantum >/dev/null 2>&1 || true
@@ -180,9 +187,6 @@ jobs:
             bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
             bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
           else
-            # API 24 is the application's declared minSdk. Modern Android RoleManager-based Phone
-            # Core flows do not exist here, so this row proves clean install/cold launch plus the
-            # full connected instrumentation/navigation smoke suite without inventing role support.
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1 || true
             sleep 3
