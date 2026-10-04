@@ -1,13 +1,8 @@
 package com.sentinel.quantum
 
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import com.sentinel.quantum.security.readTelecomInCall
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.delay
-import com.sentinel.quantum.security.SentinelInCallService
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -24,8 +19,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -33,12 +32,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import androidx.lifecycle.repeatOnLifecycle
+import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
+import com.sentinel.quantum.security.PhoneCorePhysicalValidation
+import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.SentinelInCallService
+import com.sentinel.quantum.security.SystemCallLogReader
+import com.sentinel.quantum.security.readTelecomInCall
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
-/** Local-only view of raw Android activation facts. It performs no requests and no network I/O. */
+/** Local-only technical view of raw Android and Phone Core certification facts. */
 @OptIn(ExperimentalMaterial3Api::class)
 class PhoneCoreDiagnosticActivity : ComponentActivity() {
+    private fun currentInstallTimestamp(): Long = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getPackageInfo(
+                packageName,
+                PackageManager.PackageInfoFlags.of(0)
+            ).lastUpdateTime
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+        }
+    }.getOrDefault(0L)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -89,6 +111,49 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                 val remainingStepLabels = remember(setupChecks) {
                     setupChecks.filterNot { it.second }.map { PhoneCoreSetupWizardStore.stepLabel(it.first) }
                 }
+                val installTimestampMs = remember { currentInstallTimestamp() }
+                val certificationScopeBound = remember(epoch) {
+                    PhoneCoreCertificationScopeProvider.current(applicationContext) != null
+                }
+                val certificationEvidence by produceState(
+                    initialValue = PhoneCorePhysicalValidation.evaluate(emptyList()),
+                    key1 = epoch
+                ) {
+                    value = withContext(Dispatchers.IO) {
+                        val contactsReady =
+                            LocalContactLookup(applicationContext).listWithState(1).state ==
+                                LocalContactLookup.ContactAccessState.READY
+                        val callHistoryReady =
+                            SystemCallLogReader(applicationContext).accessState() ==
+                                SystemCallLogReader.AccessState.READY
+                        PhoneCorePhysicalValidation.evaluateCertification(
+                            events = PhonePrivateTimelineStore(applicationContext).read().events,
+                            activeScope = PhoneCoreCertificationScopeProvider.current(applicationContext),
+                            notBeforeMs = installTimestampMs,
+                            contactsProviderReady = contactsReady,
+                            callHistoryProviderReady = callHistoryReady
+                        )
+                    }
+                }
+                val certificationCriteria = remember(certificationEvidence) {
+                    listOf(
+                        "incoming_call_connected" to certificationEvidence.incomingCallConnected,
+                        "outgoing_call_connected" to certificationEvidence.outgoingCallConnected,
+                        "call_screening_observed" to certificationEvidence.callScreeningObserved,
+                        "contacts_provider_ready" to certificationEvidence.contactsProviderReady,
+                        "call_history_provider_ready" to certificationEvidence.callHistoryProviderReady,
+                        "incoming_sms_received" to certificationEvidence.incomingSmsReceived,
+                        "outgoing_sms_submitted" to certificationEvidence.outgoingSmsSubmitted,
+                        "outgoing_sms_delivered" to certificationEvidence.outgoingSmsDeliveredSuccessfully,
+                        "incoming_mms_safe_preview" to certificationEvidence.incomingMmsSafePreview,
+                        "outgoing_mms_sent" to certificationEvidence.outgoingMmsSentSuccessfully,
+                        "incoming_call_notification" to certificationEvidence.incomingCallNotificationPosted,
+                        "incoming_sms_notification" to certificationEvidence.incomingSmsNotificationPosted,
+                        "caller_id_ui_shown" to certificationEvidence.callerIdUiShown,
+                        "in_call_ui_shown" to certificationEvidence.inCallUiShown
+                    )
+                }
+
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
@@ -132,6 +197,30 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                                 )
                             }
                         }
+                        DiagnosticCard("Certification Phone Core · technique") {
+                            Fact(
+                                "Portée de certification",
+                                if (certificationScopeBound) "LIÉE À CET APK" else "ABSENTE"
+                            )
+                            Fact(
+                                "Preuves observées",
+                                "${certificationEvidence.completedCount}/${certificationEvidence.requiredCount}"
+                            )
+                            Fact(
+                                "Certification locale",
+                                if (certificationEvidence.fullyValidated) "COMPLÈTE" else "INCOMPLÈTE"
+                            )
+                            Text(
+                                "Ces critères servent à la qualification technique de Sentinel. Ils ne sont pas des étapes que le client doit exécuter pour utiliser les fonctions déjà configurées.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            certificationCriteria.forEach { (id, passed) ->
+                                Fact(
+                                    PhoneCorePhysicalValidation.criterionLabel(id),
+                                    if (passed) "OUI" else "NON"
+                                )
+                            }
+                        }
                         DiagnosticCard("Liaison de l’appel en direct") {
                             Fact("Appel détecté par Android", when (telecomInCall) {
                                 true -> "OUI"; false -> "NON"; null -> "NON VÉRIFIABLE"
@@ -140,8 +229,11 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             Fact("Sessions publiées actuelles", callSession.calls.size.toString())
                             Fact("Session affichable", yesNo(callSession.primary != null))
                             if (telecomInCall == true && callSession.primary == null) {
-                                Text("Défaut de liaison : un appel est détecté sans session Sentinel affichable.",
-                                    color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Défaut de liaison : un appel est détecté sans session Sentinel affichable.",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                         DiagnosticCard("Système") {
@@ -182,7 +274,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             }
                         }
                         Text(
-                            "Cet écran n’est pas une certification Phone Core 14/14. Il affiche uniquement des faits Android relus au retour au premier plan. Aucun numéro, SIM, compte, contact, identifiant matériel ou résultat du wizard n’est affiché.",
+                            "Le détail x/14 reste volontairement limité à ce diagnostic technique. Les écrans client doivent présenter des états qualitatifs de configuration, sans transformer la certification interne en parcours utilisateur.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
