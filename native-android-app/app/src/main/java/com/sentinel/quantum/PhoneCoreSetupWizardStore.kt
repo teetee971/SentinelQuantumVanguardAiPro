@@ -73,6 +73,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         private const val KEY_ATTEMPTED_STEP = "attempted_step"
         private const val KEY_ATTEMPTED_TARGET = "attempted_target"
         private const val KEY_COMPLETED = "completed"
+        private const val OPTIONAL_CONTACTS_PERMISSION = "android.permission.READ_CONTACTS"
 
         fun nextStep(facts: Facts): Step = when {
             !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
@@ -108,8 +109,15 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             else -> true
         }
 
+        /**
+         * Returns the next missing permission that belongs to the essential setup contract.
+         * READ_CONTACTS is intentionally skipped: contact-name enrichment is local and optional,
+         * and must only be requested from its dedicated user-driven surface.
+         */
         fun firstMissingPermission(candidates: List<Pair<String, Boolean>>): String? =
-            candidates.firstOrNull { (_, granted) -> !granted }?.first
+            candidates.firstOrNull { (permission, granted) ->
+                permission != OPTIONAL_CONTACTS_PERMISSION && !granted
+            }?.first
 
         fun targetKey(step: Step, atomicId: String? = null): String =
             if (atomicId == null) step.name else "${step.name}:$atomicId"
@@ -156,7 +164,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
 
         fun stepRationale(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS ->
-                "Permettre à Sentinel de lancer un appel, connaître l’état téléphonique nécessaire au multi-SIM, afficher vos contacts localement et vous notifier."
+                "Permettre à Sentinel de lancer un appel, connaître l’état téléphonique nécessaire au multi-SIM et vous notifier. L’accès aux contacts reste facultatif et séparé."
             Step.DIALER_ROLE ->
                 "Le rôle Téléphone permet d’utiliser le composeur Sentinel et les contrôles d’appel intégrés."
             Step.CALL_SCREENING_ROLE ->
@@ -177,7 +185,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
 
         fun stepPrivacyNote(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS ->
-                "Les contacts restent traités localement par ce parcours. Les autorisations sont accordées ou refusées par Android."
+                "Le parcours essentiel ne demande pas l’accès aux contacts. Chaque autorisation reste accordée ou refusée par Android."
             Step.DIALER_ROLE, Step.CALL_SCREENING_ROLE, Step.SMS_ROLE ->
                 "Changer une application par défaut ou un rôle est une décision Android réversible dans les paramètres système."
             Step.CALL_LOG_PERMISSION ->

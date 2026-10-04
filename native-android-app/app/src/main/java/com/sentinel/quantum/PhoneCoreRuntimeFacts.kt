@@ -38,7 +38,6 @@ internal object PhoneCoreRuntimeFacts {
             corePermissionsReady =
                 hasPermission(context, Manifest.permission.CALL_PHONE) &&
                     hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
-                    hasPermission(context, Manifest.permission.READ_CONTACTS) &&
                     notificationPermissionGranted,
             dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
             dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
@@ -111,4 +110,3 @@ internal object PhoneCoreRuntimeFacts {
         }
 
 }
-
