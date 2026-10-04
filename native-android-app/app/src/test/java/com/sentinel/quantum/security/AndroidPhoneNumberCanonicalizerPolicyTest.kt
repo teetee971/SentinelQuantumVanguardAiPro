@@ -16,9 +16,19 @@ class AndroidPhoneNumberCanonicalizerPolicyTest {
         )
     }
 
-    @Test fun simRegionWinsOverNetworkRegionForOneKnownSubscription() {
+    @Test fun identicalSimAndNetworkRegionsAreSafeForOneSubscription() {
         assertEquals(
             "GP",
+            AndroidPhoneNumberCanonicalizer.resolveRegionIso(
+                explicitRegionIso = null,
+                simRegionIso = "gp",
+                networkRegionIso = "GP"
+            )
+        )
+    }
+
+    @Test fun conflictingSimAndNetworkRegionsRemainUnknown() {
+        assertNull(
             AndroidPhoneNumberCanonicalizer.resolveRegionIso(
                 explicitRegionIso = null,
                 simRegionIso = "gp",
@@ -34,6 +44,17 @@ class AndroidPhoneNumberCanonicalizerPolicyTest {
                 explicitRegionIso = null,
                 simRegionIso = "",
                 networkRegionIso = "mq"
+            )
+        )
+    }
+
+    @Test fun simRegionIsUsedWhenNetworkRegionIsUnavailable() {
+        assertEquals(
+            "GP",
+            AndroidPhoneNumberCanonicalizer.resolveRegionIso(
+                explicitRegionIso = null,
+                simRegionIso = "gp",
+                networkRegionIso = ""
             )
         )
     }
