@@ -11,7 +11,7 @@
     '/public/investigations.html': { modules: ['sentinel_investigations'] },
     '/public/threat-intelligence.html': { modules: ['threat_brief_pro', 'foreign_interference_defense'] },
     '/public/security-audit.html': { modules: ['security_audit_basic'] },
-    '/public/espace-client.html': { capabilities: ['saas_customer_identity'] },
+    '/public/espace-client.html': { capabilities: ['saas_identity'] },
     '/public/pricing.html': { commerce: true },
     '/public/product-status.html': { allCapabilities: true },
     '/public/roadmap.html': { allCapabilities: true },
@@ -32,10 +32,23 @@
     NOT_FOR_SALE: 'Non commercialisé',
   }[offer] ?? text(offer));
 
+  const capabilityAvailable = (capability, now = Date.now()) => {
+    const deadline = Number(capability?.expires_at_ms);
+    return capability?.customer_available === true
+      && Number.isSafeInteger(deadline)
+      && deadline > now;
+  };
+
+  const effectiveCapabilityState = (capability) => {
+    if (capability?.state === 'AVAILABLE' && !capabilityAvailable(capability)) return 'VALIDATION';
+    return capability?.state ?? 'VALIDATION';
+  };
+
   const labelCapability = (capability) => {
-    if (capability.customer_available) return 'Disponible';
-    if (capability.state === 'PLANNED') return 'Planifié';
-    if (capability.state === 'INFRASTRUCTURE') return 'Infrastructure requise';
+    if (capabilityAvailable(capability)) return 'Disponible';
+    const state = effectiveCapabilityState(capability);
+    if (state === 'PLANNED') return 'Planifié';
+    if (state === 'INFRASTRUCTURE') return 'Infrastructure requise';
     return 'En validation';
   };
 
@@ -77,7 +90,7 @@
     const states = [];
     for (const id of binding.capabilities ?? []) {
       const item = payload.capabilities?.find((capability) => capability.id === id);
-      if (item) states.push({ name: item.surface, state: item.state, label: labelCapability(item) });
+      if (item) states.push({ name: item.surface, state: effectiveCapabilityState(item), label: labelCapability(item) });
     }
     for (const id of binding.modules ?? []) {
       const item = payload.modules?.find((module) => module.id === id);
@@ -90,7 +103,7 @@
     injectGlobalStyles();
     if (document.querySelector('.sentinel-truth-strip')) return;
     const capabilities = payload.capabilities ?? [];
-    const available = capabilities.filter((item) => item.customer_available).length;
+    const available = capabilities.filter((item) => capabilityAvailable(item)).length;
     const updated = [
       payload.generated_from?.product_capabilities_updated_at,
       payload.generated_from?.commercial_catalog_updated_at,
@@ -151,7 +164,7 @@
         row.append(td(capability.surface));
         row.append(td(capability.implemented ? 'Implémenté' : 'Planifié'));
         row.append(td(labelCapability(capability)));
-        row.append(td(capability.customer_available ? 'Oui' : 'Non'));
+        row.append(td(capabilityAvailable(capability) ? 'Oui' : 'Non'));
         body.append(row);
       }
       target.replaceChildren(...body.childNodes);
@@ -161,7 +174,7 @@
   function renderSummary(payload) {
     const capabilities = payload.capabilities ?? [];
     const modules = payload.modules ?? [];
-    const available = capabilities.filter((item) => item.customer_available).length;
+    const available = capabilities.filter((item) => capabilityAvailable(item)).length;
     const paidForSale = modules.filter((item) => item.tier !== 'FREE' && item.offer !== 'NOT_FOR_SALE').length;
     const updated = [
       payload.generated_from?.product_capabilities_updated_at,
