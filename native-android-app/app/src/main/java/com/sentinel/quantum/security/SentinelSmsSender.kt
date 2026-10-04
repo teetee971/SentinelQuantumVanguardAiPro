@@ -30,7 +30,8 @@ class SentinelSmsSender(private val context: Context) {
     )
 
     fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
-        val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
+        val syntaxSafeDestination = sanitizeDestination(destination)
+            ?: return SendResult(false, "INVALID_DESTINATION")
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
             return SendResult(false, "INVALID_MESSAGE")
         }
@@ -41,7 +42,9 @@ class SentinelSmsSender(private val context: Context) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
             return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
         }
-        when (emergencyNumberState(normalized)) {
+        // Emergency short codes are intentionally checked before E.164 canonicalization: they are
+        // not ordinary global destinations and must be redirected to the dialer, never SMS.
+        when (emergencyNumberState(syntaxSafeDestination)) {
             EmergencyNumberState.EMERGENCY ->
                 return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
             EmergencyNumberState.LOOKUP_FAILED ->
@@ -70,6 +73,13 @@ class SentinelSmsSender(private val context: Context) {
                 return SendResult(false, selection.reason)
             }
             val subscriptionId = selection.subscriptionId
+
+            // Durable/provider identity is global. Canonicalize only after the concrete outgoing
+            // subscription is known; a national number must never inherit a guessed +33 region.
+            val normalized = AndroidPhoneNumberCanonicalizer(context)
+                .normalize(syntaxSafeDestination, subscriptionId = subscriptionId)
+                ?.takeIf { it.startsWith('+') }
+                ?: return SendResult(false, "E164_DESTINATION_UNAVAILABLE")
 
             @Suppress("DEPRECATION")
             val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
