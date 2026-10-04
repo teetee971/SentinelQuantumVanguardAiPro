@@ -5,7 +5,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
@@ -92,21 +91,13 @@ class CallerReputationClient(
             }
         }
 
-        /** Pure remote-identity boundary: global reputation keys must be canonical E.164. */
-        internal fun requireCanonicalE164(raw: String?): String {
-            val normalized = CallRuleEngine.normalizeNumber(raw)
-                ?: throw IllegalArgumentException("Invalid caller number")
-            if (!normalized.startsWith('+')) {
-                throw IllegalArgumentException("E164 caller number required")
-            }
-            return normalized
-        }
+        /** Pure remote-identity boundary shared with all globally keyed phone features. */
+        internal fun requireCanonicalE164(raw: String?): String =
+            GlobalPhoneIdentityPolicy.requireCanonicalE164(raw)
 
         /** Never default a missing/invalid recipient region to France. */
-        internal fun canonicalRecipientRegion(raw: String?): String? {
-            val region = raw?.trim()?.uppercase(Locale.ROOT).orEmpty()
-            return region.takeIf { it.length == 2 && it.all(Char::isLetter) }
-        }
+        internal fun canonicalRecipientRegion(raw: String?): String? =
+            GlobalPhoneIdentityPolicy.canonicalRegionIsoOrNull(raw)
 
         internal fun endpoint(baseUrl: String, allowedHosts: Set<String>): String =
             SentinelApiEndpointPolicy.build(
