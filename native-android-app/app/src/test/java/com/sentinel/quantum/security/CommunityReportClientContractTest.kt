@@ -1,6 +1,8 @@
 package com.sentinel.quantum.security
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -28,11 +30,26 @@ class CommunityReportClientContractTest {
         }
     }
 
-    @Test fun publicEndpointDoesNotEmbedServerCredentialInItsUrl() {
-        val endpoint = CommunityReportClient.ENDPOINT
-        assertTrue(endpoint.startsWith("https://"))
-        assertFalse(endpoint.contains("api_key", ignoreCase = true))
-        assertFalse(endpoint.contains("token", ignoreCase = true))
-        assertFalse(endpoint.contains("secret", ignoreCase = true))
+    @Test fun publicEndpointIsCredentialFreeAndPinnedToInjectedHost() {
+        val endpoint = CommunityReportClient.endpoint(
+            "https://api.example.test",
+            setOf("api.example.test")
+        )
+
+        assertEquals("https", endpoint.scheme)
+        assertEquals("api.example.test", endpoint.host)
+        assertEquals("/v1/report-call-public", endpoint.encodedPath)
+        assertFalse(endpoint.toString().contains("api_key", ignoreCase = true))
+        assertFalse(endpoint.toString().contains("token", ignoreCase = true))
+        assertFalse(endpoint.toString().contains("secret", ignoreCase = true))
+    }
+
+    @Test fun publicEndpointRejectsHostMismatch() {
+        assertThrows(SecurityException::class.java) {
+            CommunityReportClient.endpoint(
+                "https://evil.example.test",
+                setOf("api.example.test")
+            )
+        }
     }
 }

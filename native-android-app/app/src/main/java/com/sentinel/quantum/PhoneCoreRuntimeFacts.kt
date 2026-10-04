@@ -11,6 +11,7 @@ import android.telecom.TelecomManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
+import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsNotificationHelper
@@ -25,6 +26,7 @@ internal object PhoneCoreRuntimeFacts {
     fun read(context: Context): PhoneCoreSetupWizardStore.Facts {
         val sms = SmsActivationDiagnostics(context).snapshot()
         val smsRoleHeld = sms.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD
+        val callScreeningState = CallScreeningActivationPolicy.read(context)
         val notificationPermissionGranted =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
@@ -41,12 +43,8 @@ internal object PhoneCoreRuntimeFacts {
                     notificationPermissionGranted,
             dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
             dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
-            callScreeningRoleHeld =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                    holdsRole(context, RoleManager.ROLE_CALL_SCREENING),
-            callScreeningRoleAvailable =
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                    isRoleAvailable(context, RoleManager.ROLE_CALL_SCREENING),
+            callScreeningRoleHeld = callScreeningState == CallScreeningActivationPolicy.State.HELD,
+            callScreeningRoleAvailable = callScreeningState != CallScreeningActivationPolicy.State.UNAVAILABLE,
             callLogPermissionGranted = hasPermission(context, Manifest.permission.READ_CALL_LOG),
             smsRoleHeld = smsRoleHeld,
             smsRoleAvailable = sms.smsRoleState != SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
@@ -108,5 +106,4 @@ internal object PhoneCoreRuntimeFacts {
                 manager.isRoleAvailable(role) && manager.isRoleHeld(role)
             }
         }
-
 }
