@@ -48,7 +48,8 @@ class SignedCallRulePackageVerifierTest {
         for (prefixes in listOf(
             listOf("+33899", "+33897"),
             listOf("+33897", "+33897"),
-            listOf("0897")
+            listOf("0897"),
+            listOf("+033897")
         )) {
             assertEquals("SIGNED_RULE_PAYLOAD_SCHEMA_INVALID",
                 verifier().verify(envelope(payload(prefixes = prefixes), trustedPair), 0, now).reason)
