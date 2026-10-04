@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const gatePath = path.join(root, 'config', 'phone-core-production-gates.json');
 const workflowPath = path.join(root, '.github', 'workflows', 'android-emulation-qualification.yml');
+const setupResumeFlowPath = path.join(root, 'scripts', 'phone-core-emulator-setup-resume-flow.sh');
 const flowPath = path.join(root, 'scripts', 'phone-core-emulator-flow.sh');
 const revocationFlowPath = path.join(root, 'scripts', 'phone-core-emulator-revocation-flow.sh');
 const navigationSmokePath = path.join(root, 'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui', 'AllStaticNavigationSurfacesInstrumentationTest.kt');
@@ -16,6 +17,7 @@ const settingsGradlePath = path.join(root, 'native-android-app', 'settings.gradl
 const errors = [];
 const gate = JSON.parse(fs.readFileSync(gatePath, 'utf8'));
 const workflow = fs.existsSync(workflowPath) ? fs.readFileSync(workflowPath, 'utf8') : '';
+const setupResumeFlow = fs.existsSync(setupResumeFlowPath) ? fs.readFileSync(setupResumeFlowPath, 'utf8') : '';
 const flow = fs.readFileSync(flowPath, 'utf8');
 const revocationFlow = fs.existsSync(revocationFlowPath) ? fs.readFileSync(revocationFlowPath, 'utf8') : '';
 const navigationSmoke = fs.existsSync(navigationSmokePath) ? fs.readFileSync(navigationSmokePath, 'utf8') : '';
@@ -90,6 +92,7 @@ for (const marker of [
   ':wearable-security:test',
   ':app:lintDebug',
   ':app:connectedDebugAndroidTest',
+  'phone-core-emulator-setup-resume-flow.sh',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
   'if [[ "$API_LEVEL" -ge 29 ]]',
@@ -99,10 +102,30 @@ for (const marker of [
 ]) {
   if (!workflow.includes(marker)) errors.push(`emulation workflow missing marker: ${marker}`);
 }
+for (const marker of [
+  'FIRST_RUN_PHONE_CORE_SETUP',
+  'Configuration initiale',
+  'Assistant séquentiel',
+  'attempted_target',
+  'completed',
+  'am force-stop',
+  'setup-resume-launch.txt'
+]) {
+  if (!setupResumeFlow.includes(marker)) errors.push(`setup resume flow missing marker: ${marker}`);
+}
 for (const marker of ['adb emu gsm call', 'adb emu sms send', 'for FLOW_ROLE in DIALER SMS', 'android.app.role.$FLOW_ROLE', 'android.app.role.CALL_SCREENING']) {
   if (!flow.includes(marker)) errors.push(`emulator runtime flow missing marker: ${marker}`);
 }
-for (const marker of ['remove-role-holder', 'pm revoke', 'rôle SMS disponible mais non accordé', 'android.app.role.CALL_SCREENING', 'assert_no_crash']) {
+for (const marker of [
+  'remove-role-holder',
+  'pm revoke',
+  'assert_sms_role_held',
+  'Envoi SMS : autorisation Android requise.',
+  'Détection SIM : accès à l’état téléphonique requis.',
+  'rôle SMS disponible mais non accordé',
+  'android.app.role.CALL_SCREENING',
+  'assert_no_crash'
+]) {
   if (!revocationFlow.includes(marker)) errors.push(`emulator revocation flow missing marker: ${marker}`);
 }
 for (const marker of [
