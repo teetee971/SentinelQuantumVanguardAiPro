@@ -3,8 +3,6 @@ package com.sentinel.quantum.security
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import com.sentinel.quantum.BuildConfig
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -15,7 +13,8 @@ import java.util.concurrent.TimeUnit
  * remote enrichment in SettingsStore.
  */
 class CallerReputationClient(
-    private val endpointBaseUrl: String = BuildConfig.WANGIRI_API_BASE_URL,
+    private val endpointBaseUrl: String = SentinelApiOrigin.baseUrl,
+    private val allowedHosts: Set<String> = SentinelApiOrigin.allowedHosts,
     private val egressGate: () -> Boolean = { false },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
@@ -56,9 +55,8 @@ class CallerReputationClient(
             .toString()
             .toRequestBody(JSON_MEDIA_TYPE)
 
-        val endpoint = endpoint(endpointBaseUrl)
         val request = Request.Builder()
-            .url(endpoint)
+            .url(endpoint(endpointBaseUrl, allowedHosts))
             .header("User-Agent", "SentinelQuantumVanguardAIPro-Android/1")
             .post(body)
             .build()
@@ -88,19 +86,12 @@ class CallerReputationClient(
             }
         }
 
-        internal fun endpoint(baseUrl: String): String {
-            val parsed = runCatching { baseUrl.trim().trimEnd('/').toHttpUrl() }
-                .getOrElse { throw SecurityException("WANGIRI_ENDPOINT_INVALID") }
-            if (parsed.scheme != "https" || parsed.host.isBlank() || parsed.username.isNotEmpty() || parsed.password.isNotEmpty()) {
-                throw SecurityException("WANGIRI_ENDPOINT_NOT_HTTPS")
-            }
-            return parsed.newBuilder()
-                .encodedPath("/v1/evaluate-call")
-                .query(null)
-                .fragment(null)
-                .build()
-                .toString()
-        }
+        internal fun endpoint(baseUrl: String, allowedHosts: Set<String>): String =
+            SentinelApiEndpointPolicy.build(
+                baseUrl,
+                "/v1/evaluate-call",
+                allowedHosts
+            ).toString()
 
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
