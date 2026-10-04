@@ -17,12 +17,14 @@ import org.json.JSONObject
  * pending report does not change live reputation.
  *
  * Community identity is global: national dial syntax is rejected here unless an Android boundary
- * has already canonicalized it to E.164, and recipient region must be an explicit ISO-2 value.
+ * has already canonicalized it to E.164. Recipient region must match current telephony evidence;
+ * locale or a hard-coded country is never sufficient for remote egress.
  */
 class CommunityReportClient(
     private val baseUrl: String = SentinelApiOrigin.baseUrl,
     private val allowedHosts: Set<String> = SentinelApiOrigin.allowedHosts,
     private val egressGate: () -> Boolean = { false },
+    private val recipientRegionEvidence: () -> String? = { PhoneRegionRuntimeCache.currentRegionIso() },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(4, TimeUnit.SECONDS)
@@ -59,6 +61,7 @@ class CommunityReportClient(
         requireEgressAllowed(protectionMode, explicitConsent)
         val normalized = GlobalPhoneIdentityPolicy.requireCanonicalE164(callerNumber)
         val recipientRegion = GlobalPhoneIdentityPolicy.requireRegionIso(recipientCountry)
+        CallerReputationClient.requireRecipientRegionEvidence(recipientRegion, recipientRegionEvidence)
 
         val payload = JSONObject()
             .put("caller_number", normalized)
