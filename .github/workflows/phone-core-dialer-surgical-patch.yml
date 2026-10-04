@@ -133,7 +133,7 @@ jobs:
           {body_indent}                    privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
           {body_indent}                    explicitConsent = settings.callerReputationEnrichmentEnabled
           {body_indent}                )
-          {body_indent}                "Réputation Sentinel : risque ${{r.riskScore}}/100 · ${{r.action}}" +
+          {body_indent}                "Réputation Sentinel : risque " + r.riskScore + "/100 · " + r.action +
           {body_indent}                    if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
           {body_indent}            }}.getOrElse {{ "Réputation Sentinel temporairement indisponible" }}
           {body_indent}        }}
