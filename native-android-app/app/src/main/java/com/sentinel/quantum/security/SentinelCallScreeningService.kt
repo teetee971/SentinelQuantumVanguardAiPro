@@ -41,13 +41,14 @@ class SentinelCallScreeningService : CallScreeningService() {
         }
 
         val decision = runCatching {
-            val store = CallBlocklistStore(this)
-            val snapshot = store.cachedScreeningSnapshot()
+            // Strict screening boundary: process-memory caches only. Do not instantiate
+            // CallBlocklistStore here because its constructor obtains SharedPreferences.
+            val snapshot = CallBlocklistStore.cachedSnapshotForScreening()
             CallRuleEngine(
                 snapshot.blockedNumberHashes,
                 snapshot.effectiveBlockedPrefixes,
                 reputationSilencePrefixes = snapshot.signedSilencePrefixes,
-                fingerprintsForNumber = store::cachedFingerprintsForNumber
+                fingerprintsForNumber = SCREENING_FINGERPRINTER::cachedCandidates
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
@@ -129,8 +130,6 @@ class SentinelCallScreeningService : CallScreeningService() {
                     "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
                 )
 
-                // Exact-number matching above is cache-only: AndroidKeyStore loading/generation is
-                // forbidden from the screening callback. Room initialization is also deferred here.
                 runCatching {
                     CallFilterLogStore.get(appContext).recordAsync(decision)
                 }.onFailure {
@@ -155,9 +154,6 @@ class SentinelCallScreeningService : CallScreeningService() {
         }.isSuccess
 
         if (!submitted) {
-            // Do not enqueue another log when the post-response queue is already saturated.
-            // A monotonic in-memory counter preserves a bounded overload signal without moving
-            // pressure into LocalLogger's asynchronous queue. The call decision is already final.
             REJECTED_POST_RESPONSE_WORK.incrementAndGet()
         }
     }
@@ -165,6 +161,7 @@ class SentinelCallScreeningService : CallScreeningService() {
     private companion object {
         const val LIFECYCLE_TAG = "SentinelLifecycle"
         const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
+        val SCREENING_FINGERPRINTER = CallNumberFingerprinter()
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
             threadName = "sentinel-call-screening-post-response"
         )
