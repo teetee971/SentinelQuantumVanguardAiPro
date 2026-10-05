@@ -20,6 +20,10 @@ const callScreeningService = read(
   'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security',
   'SentinelCallScreeningService.kt'
 );
+const callBlocklistStore = read(
+  'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security',
+  'CallBlocklistStore.kt'
+);
 const setupResumeTest = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum',
   'PhoneCoreSetupResumeInstrumentationTest.kt'
@@ -128,8 +132,14 @@ for (const marker of [
   'const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"',
   'getSystemService(TelephonyManager::class.java).isEmergencyNumber',
   'if (emergency != false)',
+  'CallBlocklistStore.cachedSnapshotForScreening()',
+  'SCREENING_FINGERPRINTER::cachedCandidates',
   'respondToCall(callDetails, CallResponse.Builder().build())'
 ]) requireText(callScreeningService, marker, 'CallScreeningService truth');
+requireText(callBlocklistStore, 'internal fun cachedSnapshotForScreening', 'memory-only screening cache');
+if (callScreeningService.includes('CallBlocklistStore(this)')) {
+  errors.push('CallScreeningService must not construct CallBlocklistStore before respondToCall; SharedPreferences stay outside the screening critical path');
+}
 
 const incomingGuard = callScreeningService.indexOf('callDetails.callDirection != Call.Details.DIRECTION_INCOMING');
 const callbackMarker = callScreeningService.indexOf('Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)');
