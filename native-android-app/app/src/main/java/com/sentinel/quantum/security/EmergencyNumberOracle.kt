@@ -10,8 +10,9 @@ import android.telephony.TelephonyManager
  *
  * Never maintains a Sentinel country-number catalogue. API 29+ uses TelephonyManager as the
  * authoritative public API. API 24-28 uses the platform's then-public local emergency lookup.
- * If the modern oracle is temporarily unreadable, the legacy platform oracle is used as a
- * compatibility fallback instead of immediately treating a possible emergency as ordinary.
+ * If the modern oracle is temporarily unreadable, the legacy platform oracle is attempted.
+ * If Android cannot classify through either API, return true conservatively so the outgoing call
+ * bypasses Sentinel's ordinary SIM/risk gates and is handed to system telephony instead.
  */
 object EmergencyNumberOracle {
     fun isEmergency(context: Context, number: String): Boolean {
@@ -22,12 +23,12 @@ object EmergencyNumberOracle {
             }.getOrNull()
             if (modern != null) return modern
         }
-        return legacyIsEmergency(context, number)
+        return legacyIsEmergencyOrNull(context, number) ?: true
     }
 
     @Suppress("DEPRECATION")
-    private fun legacyIsEmergency(context: Context, number: String): Boolean =
+    private fun legacyIsEmergencyOrNull(context: Context, number: String): Boolean? =
         runCatching {
             PhoneNumberUtils.isLocalEmergencyNumber(context, number)
-        }.getOrDefault(false)
+        }.getOrNull()
 }
