@@ -1,6 +1,8 @@
 package com.sentinel.quantum.wearable.security
 
 import java.nio.charset.StandardCharsets
+import java.nio.CharBuffer
+import java.nio.charset.CodingErrorAction
 import java.security.KeyFactory
 import java.security.MessageDigest
 import java.security.PublicKey
@@ -90,7 +92,7 @@ object WearableHandshakeTranscriptCodec {
         require(issuedAtMs >= 0)
 
         val sortedCapabilities = capabilities.toSortedSet().joinToString(",")
-        return buildString {
+        val transcript = buildString {
             append(DOMAIN).append('\n')
             append(stableId).append('\n')
             append(keyFingerprintSha256).append('\n')
@@ -99,6 +101,13 @@ object WearableHandshakeTranscriptCodec {
             append(sortedCapabilities).append('\n')
             append(challengeNonce).append('\n')
             append(issuedAtMs).append('\n')
-        }.toByteArray(StandardCharsets.UTF_8)
+        }
+        // String.toByteArray replaces malformed UTF-16 with '?', allowing two different
+        // identity/session/capability strings to share signed bytes. Refuse lossy encoding.
+        val bytes = StandardCharsets.UTF_8.newEncoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+            .encode(CharBuffer.wrap(transcript))
+        return ByteArray(bytes.remaining()).also { bytes.get(it) }
     }
 }
