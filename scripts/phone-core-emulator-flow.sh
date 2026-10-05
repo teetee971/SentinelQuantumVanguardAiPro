@@ -9,18 +9,51 @@ FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
+role_holders() {
+  local full_role="$1"
+  local direct_output=""
+  local direct_status=0
+  set +e
+  direct_output="$(adb shell cmd role get-role-holders --user 0 "$full_role" 2>&1 | tr -d '\r')"
+  direct_status=$?
+  set -e
+  if [[ "$direct_status" -eq 0 && "$direct_output" != *"Unknown command"* ]]; then
+    printf '%s\n' "$direct_output"
+    return 0
+  fi
+
+  # Android 10/API 29 can manage roles with `cmd role`, but its shell command does not expose
+  # get-role-holders. `dumpsys role` is the platform-supported read path on that release.
+  adb shell dumpsys role 2>/dev/null | tr -d '\r' | python3 - "$full_role" <<'PYROLE'
+import re, sys
+role = sys.argv[1]
+active = False
+for raw in sys.stdin:
+    line = raw.strip()
+    m = re.match(r'^name\s*[=:]\s*(.+)$', line)
+    if m:
+        active = m.group(1).strip() == role
+        continue
+    if active:
+        h = re.match(r'^holders\s*[=:]\s*(.+)$', line)
+        if h:
+            print(h.group(1).strip())
+PYROLE
+}
+
 wait_role_held() {
   local full_role="$1"
   local evidence="$2"
   for _ in $(seq 1 20); do
-    if adb shell cmd role get-role-holders --user 0 "$full_role" > "$FLOW_OUTPUT_DIR/$evidence" 2>&1 && \
-      grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
+    role_holders "$full_role" > "$FLOW_OUTPUT_DIR/$evidence" 2>&1 || true
+    if grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
       return 0
     fi
     sleep 0.5
   done
   echo "Android role $full_role was not stably held by $FLOW_PACKAGE."
   cat "$FLOW_OUTPUT_DIR/$evidence" 2>/dev/null || true
+  adb shell dumpsys role > "$FLOW_OUTPUT_DIR/${evidence%.txt}-dumpsys.txt" 2>&1 || true
   return 1
 }
 
@@ -279,8 +312,7 @@ fi
 capture 07-inline-reply
 
 for FLOW_ROLE in DIALER SMS CALL_SCREENING; do
-  adb shell cmd role get-role-holders --user 0 "android.app.role.$FLOW_ROLE" \
-    > "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt" 2>/dev/null
+  role_holders "android.app.role.$FLOW_ROLE" > "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt" 2>&1 || true
   grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt"
 done
 
