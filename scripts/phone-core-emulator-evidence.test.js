@@ -9,7 +9,46 @@ import { spawnSync } from 'node:child_process';
 // These fixtures are never Android, modem, or physical qualification evidence.
 const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qualification.yml', import.meta.url), 'utf8');
 const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
-const reportCode = workflow.split("node <<'NODE'\n")[1].split('\n          NODE')[0];
+function nodeCodeForStep(name) {
+  const step = workflow.split(`- name: ${name}\n`)[1];
+  assert.ok(step, `Workflow step exists: ${name}`);
+  return step.split("node <<'NODE'\n")[1].split('\n          NODE')[0];
+}
+const reportCode = nodeCodeForStep('Collect qualification evidence even after failure');
+const hostProvenanceCode = nodeCodeForStep('Record host evidence provenance');
+
+test('archived host provenance preserves build, source, base and branch independently', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-host-provenance-'));
+  try {
+    const result = spawnSync(process.execPath, ['-e', hostProvenanceCode], { encoding: 'utf8', env: {
+      ...process.env, RUNNER_TEMP: dir, BUILT_COMMIT: 'a'.repeat(40), GITHUB_SHA: 'a'.repeat(40),
+      SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch'
+    } });
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(readFileSync(join(dir, 'phone-core-host-evidence/provenance.json'), 'utf8'));
+    assert.equal(report.built_commit, 'a'.repeat(40));
+    assert.equal(report.workflow_commit, 'a'.repeat(40));
+    assert.equal(report.source_head_sha, 'b'.repeat(40));
+    assert.equal(report.source_base_sha, 'c'.repeat(40));
+    assert.equal(report.source_head_ref, 'fixture-branch');
+    assert.equal(report.qualification_scope, 'developer_qualification');
+    assert.equal(report.rollout_mode, 'shadow');
+    assert.equal(report.physical_validation, false);
+    assert.equal(report.commercial_readiness, false);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('host provenance refuses a checkout different from the workflow commit', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-host-provenance-mismatch-'));
+  try {
+    const result = spawnSync(process.execPath, ['-e', hostProvenanceCode], { encoding: 'utf8', env: {
+      ...process.env, RUNNER_TEMP: dir, BUILT_COMMIT: 'a'.repeat(40), GITHUB_SHA: 'b'.repeat(40)
+    } });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Host checkout does not match/);
+    assert.equal(existsSync(join(dir, 'phone-core-host-evidence/provenance.json')), false);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
 function shellFunction(name) {
   const start = revocation.indexOf(`${name}() {`);
   assert.notEqual(start, -1);

@@ -54,6 +54,21 @@ jobs:
         working-directory: ./native-android-app
         run: ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
 
+      - name: Preserve complete app unit test reports before focused reruns
+        if: always()
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT="$RUNNER_TEMP/phone-core-host-evidence"
+          mkdir -p "$OUTPUT"
+          if [[ -d app/build/test-results/testDebugUnitTest ]]; then
+            cp -a app/build/test-results/testDebugUnitTest "$OUTPUT/app-unit-test-results"
+          fi
+          if [[ -d app/build/reports/tests/testDebugUnitTest ]]; then
+            cp -a app/build/reports/tests/testDebugUnitTest "$OUTPUT/app-unit-test-reports"
+          fi
+
       - name: Phone number canonicalization contract
         working-directory: ./native-android-app
         run: ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.CallRuleEngineTest' --stacktrace --no-daemon
@@ -81,6 +96,53 @@ jobs:
       - name: Assemble Android instrumentation APK
         working-directory: ./native-android-app
         run: ./gradlew :app:assembleDebugAndroidTest --stacktrace --no-daemon
+
+      - name: Record host evidence provenance
+        if: always()
+        shell: bash
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          BUILT_COMMIT="$(git rev-parse HEAD)" node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          if (process.env.BUILT_COMMIT !== process.env.GITHUB_SHA) {
+            throw new Error('Host checkout does not match the workflow commit');
+          }
+          const output = path.join(process.env.RUNNER_TEMP, 'phone-core-host-evidence');
+          fs.mkdirSync(output, { recursive: true });
+          fs.writeFileSync(path.join(output, 'provenance.json'), JSON.stringify({
+            qualification_scope: 'developer_qualification',
+            rollout_mode: 'shadow',
+            physical_validation: false,
+            commercial_readiness: false,
+            built_commit: process.env.BUILT_COMMIT,
+            workflow_commit: process.env.GITHUB_SHA,
+            source_head_sha: process.env.SOURCE_HEAD_SHA,
+            source_base_sha: process.env.SOURCE_BASE_SHA || null,
+            source_head_ref: process.env.SOURCE_HEAD_REF,
+            workflow_run_id: process.env.GITHUB_RUN_ID,
+            workflow_run_attempt: process.env.GITHUB_RUN_ATTEMPT
+          }, null, 2) + '\n');
+          NODE
+
+      - name: Upload host qualification evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: PhoneCore-Host-Qualification-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/phone-core-host-evidence/
+            native-android-app/wearable-contract/build/test-results/
+            native-android-app/wearable-contract/build/reports/tests/
+            native-android-app/wearable-security/build/test-results/
+            native-android-app/wearable-security/build/reports/tests/
+            native-android-app/app/build/reports/lint-results-debug.*
+          if-no-files-found: error
+          retention-days: 14
 
   emulator-matrix:
     name: PhoneCore-Emulation-Qualification API ${{ matrix.api_level }}
