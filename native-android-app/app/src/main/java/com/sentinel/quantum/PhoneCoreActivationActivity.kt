@@ -251,10 +251,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         PhoneCoreSetupWizardStore.firstMissingPermission(
                             listOf(
                                 Manifest.permission.CALL_PHONE to state.callPermission,
-                                Manifest.permission.READ_PHONE_STATE to state.phoneStatePermission,
-                                Manifest.permission.READ_CONTACTS to state.contactsPermission,
-                                Manifest.permission.POST_NOTIFICATIONS to
-                                    (!notificationPermissionRequired || hasPermission(Manifest.permission.POST_NOTIFICATIONS))
+                                Manifest.permission.READ_PHONE_STATE to state.phoneStatePermission
                             )
                         )
                     PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION -> Manifest.permission.READ_CALL_LOG
@@ -267,17 +264,17 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 Manifest.permission.RECEIVE_WAP_PUSH to state.receiveWapPushPermission
                             )
                         )
+                    PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS ->
+                        if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                            Manifest.permission.POST_NOTIFICATIONS
+                        } else {
+                            null
+                        }
                     else -> null
                 }
                 val setupAtomicProgress: Pair<Int, Int>? = when (setupStep) {
                     PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
-                        val checks = buildList {
-                            add(state.callPermission)
-                            add(state.phoneStatePermission)
-                            if (notificationPermissionRequired) {
-                                add(hasPermission(Manifest.permission.POST_NOTIFICATIONS))
-                            }
-                        }
+                        val checks = listOf(state.callPermission, state.phoneStatePermission)
                         checks.count { it } to checks.size
                     }
                     PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
@@ -288,6 +285,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         val checks = listOf(state.receiveMmsPermission, state.receiveWapPushPermission)
                         checks.count { it } to checks.size
                     }
+                    PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS ->
+                        if (notificationPermissionRequired) {
+                            (if (hasPermission(Manifest.permission.POST_NOTIFICATIONS)) 1 else 0) to 1
+                        } else {
+                            null
+                        }
                     else -> null
                 }?.takeIf { it.second > 0 }
                 val setupTargetKey = PhoneCoreSetupWizardStore.targetKey(setupStep, setupAtomicPermission)
@@ -300,10 +303,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             val permission = PhoneCoreSetupWizardStore.firstMissingPermission(
                                 listOf(
                                     Manifest.permission.CALL_PHONE to state.callPermission,
-                                    Manifest.permission.READ_PHONE_STATE to state.phoneStatePermission,
-                                    Manifest.permission.READ_CONTACTS to state.contactsPermission,
-                                    Manifest.permission.POST_NOTIFICATIONS to
-                                        (!notificationPermissionRequired || hasPermission(Manifest.permission.POST_NOTIFICATIONS))
+                                    Manifest.permission.READ_PHONE_STATE to state.phoneStatePermission
                                 )
                             )
                             if (permission != null) run {
@@ -344,13 +344,18 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS -> {
-                            settingsLauncher.launch(
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !fullScreenIntentReady) {
-                                    Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))
-                                } else {
-                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-                                }
-                            )
+                            if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                                setupPermissionInFlight = Manifest.permission.POST_NOTIFICATIONS
+                                setupPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                settingsLauncher.launch(
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !fullScreenIntentReady) {
+                                        Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))
+                                    } else {
+                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                    }
+                                )
+                            }
                         }
                         PhoneCoreSetupWizardStore.Step.COMPLETE -> setupWizard.markCompleted()
                     }
@@ -479,16 +484,19 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                     val missing = buildList {
                                                         if (!state.callPermission) add("autorisation pour passer des appels")
                                                         if (!state.phoneStatePermission) add("accès à l’état du téléphone")
-                                                        if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
-                                                            add("autorisation des notifications")
-                                                        }
                                                     }
                                                     if (missing.isEmpty()) {
-                                                        "Les autorisations de base sont accordées. Sentinel relit l’état Android avant de poursuivre."
+                                                        "Les autorisations téléphonie essentielles sont accordées. Sentinel relit l’état Android avant de poursuivre."
                                                     } else {
                                                         "Autorisations encore manquantes : " + missing.joinToString(" · ") + ". Android n’indique pas ici la cause d’un refus ; réessayez ou vérifiez les paramètres de l’application."
                                                     }
                                                 }
+                                                PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS ->
+                                                    if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+                                                        "L’autorisation Android des notifications n’est pas encore accordée. Les canaux et le plein écran seront vérifiés seulement après cette permission."
+                                                    } else {
+                                                        "Les notifications restent incomplètes : vérifiez les notifications globales, les canaux Appels/SMS et, si Android le demande, le plein écran d’appel."
+                                                    }
                                                 else ->
                                                     "Cette étape n’est pas encore accordée. Vérifiez les paramètres Android puis réessayez."
                                             },
