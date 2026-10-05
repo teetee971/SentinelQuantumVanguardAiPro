@@ -208,6 +208,7 @@ jobs:
           adb shell wm dismiss-keyguard || true
 
       - name: Run connected instrumentation suite
+        id: instrumentation
         working-directory: ./native-android-app
         shell: bash
         env:
@@ -269,6 +270,8 @@ jobs:
           SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
           SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}
+          INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
         run: |
           set -euo pipefail
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
@@ -321,7 +324,8 @@ jobs:
           const api = Number(process.env.API_LEVEL);
           const output = process.env.OUTPUT;
           const modernPhoneCore = api >= 29;
-          const hostPrerequisitesPassed = true; // This step is unreachable unless needs + instrumentation succeeded.
+          const hostContractsPassed = process.env.HOST_CONTRACT_RESULT === 'success';
+          const instrumentationPassed = process.env.INSTRUMENTATION_OUTCOME === 'success';
           const file = (name) => path.join(output, name);
           const exists = (name) => fs.existsSync(file(name));
           const nonEmpty = (name, minBytes = 1) => exists(name) && fs.statSync(file(name)).size >= minBytes;
@@ -329,6 +333,21 @@ jobs:
           const screenshot = (name) => nonEmpty(name, 256);
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => contains(name, 'com.sentinel.quantum');
+          const walk = (dir) => {
+            if (!fs.existsSync(dir)) return [];
+            return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+              const full = path.join(dir, entry.name);
+              return entry.isDirectory() ? walk(full) : [full];
+            });
+          };
+          const instrumentationRoot = path.join('app', 'build', 'outputs', 'androidTest-results', 'connected', 'debug');
+          const instrumentationXml = walk(instrumentationRoot)
+            .filter((name) => name.endsWith('.xml'))
+            .map((name) => {
+              try { return fs.readFileSync(name, 'utf8'); } catch { return ''; }
+            })
+            .join('\n');
+          const instrumentationEvidencePassed = instrumentationPassed && instrumentationXml.length > 0;
 
           let revocation = null;
           if (modernPhoneCore && exists('revocation-summary.json')) {
@@ -378,11 +397,13 @@ jobs:
             !/FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
 
           const checks = {
-            connected_instrumentation: hostPrerequisitesPassed,
-            all_static_navigation_surfaces_render: hostPrerequisitesPassed,
-            standalone_activity_surfaces_render: hostPrerequisitesPassed,
-            phone_number_canonicalization_contract: hostPrerequisitesPassed,
-            multi_sim_submit_readiness_contract: hostPrerequisitesPassed,
+            connected_instrumentation: instrumentationEvidencePassed,
+            all_static_navigation_surfaces_render:
+              instrumentationEvidencePassed && instrumentationXml.includes('AllStaticNavigationSurfacesInstrumentationTest'),
+            standalone_activity_surfaces_render:
+              instrumentationEvidencePassed && instrumentationXml.includes('StandaloneActivitySmokeInstrumentationTest'),
+            phone_number_canonicalization_contract: hostContractsPassed,
+            multi_sim_submit_readiness_contract: hostContractsPassed,
             cold_install_and_relaunch: coldRelaunchObserved,
             min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
@@ -390,7 +411,9 @@ jobs:
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
             incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
-            setup_resume: modernPhoneCore ? hostPrerequisitesPassed : null,
+            setup_resume: modernPhoneCore
+              ? instrumentationEvidencePassed && instrumentationXml.includes('PhoneCoreSetupResumeInstrumentationTest')
+              : null,
             role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
             effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
             crash_or_anr_absent: crashOrAnrAbsent
@@ -439,7 +462,8 @@ jobs:
             repository: process.env.GITHUB_REPOSITORY,
             workflow_run_id: process.env.GITHUB_RUN_ID,
             evidence_source: {
-              host_contracts_and_instrumentation: 'preceding successful workflow steps',
+              host_contracts: process.env.HOST_CONTRACT_RESULT,
+              instrumentation: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
               revocation: modernPhoneCore ? 'revocation-summary.json + UI/AppOp evidence' : null
             },
