@@ -181,7 +181,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
 
         fun stepRationale(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS ->
-                "Permettre à Sentinel de lancer un appel, connaître l’état téléphonique nécessaire au multi-SIM et vous notifier. L’accès aux contacts reste facultatif et séparé."
+                "Permettre à Sentinel de lancer un appel et de connaître l’état téléphonique nécessaire au multi-SIM. L’accès aux contacts et les notifications restent séparés."
             Step.DIALER_ROLE ->
                 "Le rôle Téléphone permet d’utiliser le composeur Sentinel et les contrôles d’appel intégrés."
             Step.CALL_SCREENING_ROLE ->
@@ -195,14 +195,14 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.MMS_PERMISSIONS ->
                 "Ces autorisations permettent la réception MMS. La capacité opérationnelle reste distincte tant qu’elle n’est pas validée sur appareil réel."
             Step.NOTIFICATION_CHANNELS ->
-                "Les notifications rendent visibles les appels et messages ; le plein écran d’appel dépend aussi des réglages Android."
+                "Cette étape regroupe l’autorisation Android des notifications, les canaux Appels/SMS et le plein écran d’appel lorsqu’Android l’exige."
             Step.COMPLETE ->
                 "Tous les prérequis logiciels suivis par cet assistant sont actuellement présents."
         }
 
         fun stepPrivacyNote(step: Step): String = when (step) {
             Step.CORE_PERMISSIONS ->
-                "Le parcours essentiel ne demande pas l’accès aux contacts. Chaque autorisation reste accordée ou refusée par Android."
+                "Le parcours essentiel ne demande ni l’accès aux contacts ni l’autorisation de notification. Chaque autorisation reste accordée ou refusée par Android."
             Step.DIALER_ROLE, Step.CALL_SCREENING_ROLE, Step.SMS_ROLE ->
                 "Changer une application par défaut ou un rôle est une décision Android réversible dans les paramètres système."
             Step.CALL_LOG_PERMISSION ->
@@ -216,7 +216,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         }
 
         fun stepLabel(step: Step): String = when (step) {
-            Step.CORE_PERMISSIONS -> "Autoriser les fonctions essentielles"
+            Step.CORE_PERMISSIONS -> "Autoriser les fonctions téléphonie essentielles"
             Step.DIALER_ROLE -> "Définir Sentinel comme application Téléphone"
             Step.CALL_SCREENING_ROLE -> "Activer l’identification et le filtrage des appels"
             Step.CALL_LOG_PERMISSION -> "Autoriser l’historique des appels"
