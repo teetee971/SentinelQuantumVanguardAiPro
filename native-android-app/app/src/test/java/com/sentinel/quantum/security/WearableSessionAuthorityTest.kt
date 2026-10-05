@@ -2,6 +2,8 @@ package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import com.sentinel.quantum.wearable.security.VerifiedWearableHandshakeFixture
 
@@ -72,5 +74,46 @@ class WearableSessionAuthorityTest {
         assertNull(authority.activeSession("watch-1"))
         assertEquals(WearableSessionActivationDecision.NO_PENDING_HANDSHAKE,
             authority.activate(attempt, session("s1"), proof("watch-1", "s1")))
+    }
+
+    @Test fun signedProtocolCannotAuthorizeAnotherProtocol() {
+        val authority = WearableSessionAuthority()
+        val attempt = WearableHandshakeAttempt("watch-1", "a1", 1)
+        authority.beginHandshake(attempt)
+        assertEquals(WearableSessionActivationDecision.PROTOCOL_MISMATCH,
+            authority.activate(attempt, session("s1").copy(protocolVersion = 2), proof("watch-1", "s1")))
+        assertNull(authority.activeSession("watch-1"))
+        assertEquals(WearableSessionActivationDecision.ACTIVATED,
+            authority.activate(attempt, session("s1"), proof("watch-1", "s1")))
+    }
+
+    @Test fun unsignedCapabilitiesCannotReplaceExistingAuthority() {
+        val authority = WearableSessionAuthority()
+        val first = WearableHandshakeAttempt("watch-1", "a1", 1)
+        authority.beginHandshake(first)
+        authority.activate(first, session("old"), proof("watch-1", "old"))
+        val next = WearableHandshakeAttempt("watch-1", "a2", 2)
+        authority.beginHandshake(next)
+        val expanded = session("new").copy(negotiatedCapabilities = setOf(WearableCapability.QUICK_ACTIONS))
+        assertEquals(WearableSessionActivationDecision.CAPABILITY_MISMATCH,
+            authority.activate(next, expanded, proof("watch-1", "new")))
+        assertEquals("old", authority.activeSession("watch-1")?.sessionId)
+        assertEquals(WearableSessionActivationDecision.ACTIVATED,
+            authority.activate(next, session("new"), proof("watch-1", "new")))
+    }
+
+    @Test fun capabilityMutationCannotExpandActivatedAuthority() {
+        val authority = WearableSessionAuthority()
+        val attempt = WearableHandshakeAttempt("watch-1", "a1", 1)
+        val capabilities = mutableSetOf(WearableCapability.SENTINEL_ALERTS)
+        authority.beginHandshake(attempt)
+        assertEquals(WearableSessionActivationDecision.ACTIVATED,
+            authority.activate(attempt, session("s1").copy(negotiatedCapabilities = capabilities), proof("watch-1", "s1")))
+        capabilities.add(WearableCapability.QUICK_ACTIONS)
+        val active = requireNotNull(authority.activeSession("watch-1"))
+        assertFalse(WearableCapability.QUICK_ACTIONS in active.negotiatedCapabilities)
+        assertThrows(UnsupportedOperationException::class.java) {
+            (active.negotiatedCapabilities as MutableSet<WearableCapability>).add(WearableCapability.QUICK_ACTIONS)
+        }
     }
 }

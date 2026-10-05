@@ -25,7 +25,9 @@ enum class WearableSessionActivationDecision {
     ACTIVATED,
     NO_PENDING_HANDSHAKE,
     SUPERSEDED_HANDSHAKE,
-    IDENTITY_MISMATCH
+    IDENTITY_MISMATCH,
+    PROTOCOL_MISMATCH,
+    CAPABILITY_MISMATCH
 }
 
 class WearableSessionAuthority {
@@ -54,7 +56,15 @@ class WearableSessionAuthority {
         if (verifiedProof.sessionId != session.sessionId) {
             return WearableSessionActivationDecision.IDENTITY_MISMATCH
         }
-        activeByIdentity[attempt.stableId] = session
+        if (verifiedProof.protocolVersion != session.protocolVersion) {
+            return WearableSessionActivationDecision.PROTOCOL_MISMATCH
+        }
+        // Authenticate the same immutable capability snapshot that becomes session authority.
+        val capabilities = java.util.Collections.unmodifiableSet(LinkedHashSet(session.negotiatedCapabilities))
+        if (!verifiedProof.capabilities.containsAll(capabilities.map { it.name })) {
+            return WearableSessionActivationDecision.CAPABILITY_MISMATCH
+        }
+        activeByIdentity[attempt.stableId] = session.copy(negotiatedCapabilities = capabilities)
         pendingByIdentity.remove(attempt.stableId)
         return WearableSessionActivationDecision.ACTIVATED
     }
