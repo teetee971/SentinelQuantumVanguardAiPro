@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.telephony.SubscriptionManager
 import java.util.concurrent.Executors
 
 /**
@@ -17,6 +18,10 @@ import java.util.concurrent.Executors
  * Android can dispatch the default-handler contract with sms/smsto or mms/mmsto URIs. The
  * URI scheme is therefore part of the transport decision and is validated fail-closed: an
  * MMS quick reply is never silently downgraded to SMS and an unknown scheme is never sent.
+ *
+ * Quick replies have no interactive SIM picker. When Android exposes a valid default SMS
+ * subscription, that line is forwarded as the requested subscription. The transport layer
+ * still verifies that it is currently active; stale/default-missing states remain fail-closed.
  */
 class SentinelRespondViaMessageService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
@@ -31,12 +36,16 @@ class SentinelRespondViaMessageService : Service() {
         val destination = intent.data?.schemeSpecificPart.orEmpty().substringBefore('?')
         val body = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString().orEmpty()
         val appContext = applicationContext
+        val platformDefaultSmsSubscriptionId = SubscriptionManager.getDefaultSmsSubscriptionId()
+            .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
         val submitted = runCatching {
             WORKER.execute {
                 try {
                     val outcome = when (scheme) {
                         "sms", "smsto" -> {
-                            val result = SentinelSmsSender(appContext).send(destination, body)
+                            val result = platformDefaultSmsSubscriptionId?.let { subscriptionId ->
+                                SentinelSmsSender(appContext).send(destination, body, subscriptionId)
+                            } ?: SentinelSmsSender(appContext).send(destination, body)
                             QuickReplyOutcome(
                                 transport = "SMS",
                                 accepted = result.accepted,
@@ -46,7 +55,8 @@ class SentinelRespondViaMessageService : Service() {
                         "mms", "mmsto" -> {
                             val result = SentinelMmsSender(appContext).send(
                                 destination = destination,
-                                text = body
+                                text = body,
+                                requestedSubscriptionId = platformDefaultSmsSubscriptionId
                             )
                             QuickReplyOutcome(
                                 transport = "MMS",
