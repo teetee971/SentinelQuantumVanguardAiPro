@@ -7,19 +7,36 @@ FLOW_PACKAGE="com.sentinel.quantum"
 FLOW_NUMBER="5550100"
 FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
+FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+
+wait_role_held() {
+  local full_role="$1"
+  local evidence="$2"
+  for _ in $(seq 1 20); do
+    if adb shell cmd role get-role-holders --user 0 "$full_role" > "$FLOW_OUTPUT_DIR/$evidence" 2>&1 && \
+      grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  echo "Android role $full_role was not stably held by $FLOW_PACKAGE."
+  cat "$FLOW_OUTPUT_DIR/$evidence" 2>/dev/null || true
+  return 1
+}
 
 for FLOW_ROLE in DIALER SMS; do
   adb shell cmd role add-role-holder --user 0 "android.app.role.$FLOW_ROLE" "$FLOW_PACKAGE"
+  wait_role_held "android.app.role.$FLOW_ROLE" "role-${FLOW_ROLE,,}-held.txt"
 done
-# Call screening is a distinct Android role on supported platform versions. Keep this conditional
-# because some emulator/OEM role services may report it unavailable even when Telecom remains usable.
-if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING >/dev/null 2>&1; then
-  adb shell cmd role add-role-holder --user 0 android.app.role.CALL_SCREENING "$FLOW_PACKAGE"
-fi
+# Android 10+ exposes ROLE_CALL_SCREENING. The runtime matrix starts at API 29 for Phone Core, so
+# role ownership is a required precondition rather than an optional best-effort shell command.
+adb shell cmd role add-role-holder --user 0 android.app.role.CALL_SCREENING "$FLOW_PACKAGE"
+wait_role_held android.app.role.CALL_SCREENING "role-call-screening-held.txt"
+
 for FLOW_PERMISSION in CALL_PHONE READ_PHONE_STATE READ_CONTACTS READ_CALL_LOG SEND_SMS READ_SMS RECEIVE_SMS RECEIVE_MMS RECEIVE_WAP_PUSH; do
   adb shell pm grant "$FLOW_PACKAGE" "android.permission.$FLOW_PERMISSION"
 done
-if [[ "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" -ge 33 ]]; then
+if [[ "$FLOW_API" -ge 33 ]]; then
   adb shell pm grant "$FLOW_PACKAGE" android.permission.POST_NOTIFICATIONS
 fi
 
@@ -71,6 +88,17 @@ PYINCOMING
   done
   capture failure
   echo "Sentinel did not expose an app-owned incoming-call surface for $FLOW_NUMBER."
+  return 1
+}
+wait_logcat_marker() {
+  local marker="$1"
+  local evidence="$2"
+  for _ in $(seq 1 20); do
+    adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence" 2>/dev/null || true
+    if grep -Fq "$marker" "$FLOW_OUTPUT_DIR/$evidence"; then return 0; fi
+    sleep 0.5
+  done
+  echo "Expected PII-free Android lifecycle marker was not observed: $marker"
   return 1
 }
 tap_text() {
@@ -182,11 +210,17 @@ capture 01b-dialer-relaunch
 
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
-# CallerIdActivity and SentinelInCallActivity are both Sentinel-owned and may race for foreground.
-# Prove a coherent app-owned surface and wait for the post-response CallScreening evidence before
-# continuing; this also stabilizes the later CALL_SCREENING revocation baseline.
+# First prove Telecom actually bound Sentinel's screening service. This marker contains no number or
+# identity. Android 10 can fail emergency-number classification on an emulator even after callback
+# invocation, so CALL_SCREENED:* remains a stricter, separate rule-engine-decision proof.
+wait_logcat_marker "CallScreeningService:onScreenCall" "call-screening-callback-logcat.txt"
 wait_incoming_sentinel_surface
-wait_private_timeline_signal_prefix "CALL_SCREENED:"
+if [[ "$FLOW_API" -ge 36 ]]; then
+  wait_private_timeline_signal_prefix "CALL_SCREENED:"
+else
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml \
+    > "$FLOW_OUTPUT_DIR/phone-private-timeline-api${FLOW_API}-screening.xml" 2>/dev/null || true
+fi
 capture 02-incoming-call
 adb emu gsm accept "$FLOW_NUMBER"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
@@ -244,11 +278,10 @@ if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
 fi
 capture 07-inline-reply
 
-for FLOW_ROLE in DIALER SMS; do
-  adb shell cmd role get-role-holders --user 0 "android.app.role.$FLOW_ROLE" | grep -q "$FLOW_PACKAGE"
+for FLOW_ROLE in DIALER SMS CALL_SCREENING; do
+  adb shell cmd role get-role-holders --user 0 "android.app.role.$FLOW_ROLE" \
+    > "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt" 2>/dev/null
+  grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt"
 done
-if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING > "$FLOW_OUTPUT_DIR/call-screening-role.txt" 2>/dev/null; then
-  grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/call-screening-role.txt"
-fi
 
-echo "Synthetic Telecom screening/calls, cold relaunch, and inline SMS reply verified; physical validation remains pending."
+echo "Synthetic Telecom callback/calls, cold relaunch, and inline SMS reply verified; physical validation remains pending."
