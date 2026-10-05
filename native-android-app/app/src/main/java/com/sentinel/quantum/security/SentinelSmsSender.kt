@@ -116,6 +116,7 @@ class SentinelSmsSender(private val context: Context) {
             return SendResult(false, SmsSubmissionOutcomePolicy.reasonForPreparationException())
         }
 
+        val parts = prepared.parts
         val conversations = SmsConversationStore(context)
         val persistedMessageId = conversations.insertOutgoingOutbox(
             normalized,
@@ -137,20 +138,20 @@ class SentinelSmsSender(private val context: Context) {
                         .setData(
                             Uri.parse(
                                 "sentinel-sms-status://callback/" +
-                                    "$sendToken/$persistedMessageId/$partIndex/${prepared.parts.size}/$callbackKind"
+                                    "$sendToken/$persistedMessageId/$partIndex/${parts.size}/$callbackKind"
                             )
                         )
                         .putExtra(EXTRA_SEND_TOKEN, sendToken)
                         .putExtra(EXTRA_PART_INDEX, partIndex)
-                        .putExtra(EXTRA_PART_COUNT, prepared.parts.size)
+                        .putExtra(EXTRA_PART_COUNT, parts.size)
                         .putExtra(EXTRA_PROVIDER_MESSAGE_ID, persistedMessageId),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             }
 
-            val sent = ArrayList<PendingIntent>(prepared.parts.size)
-            val delivered = ArrayList<PendingIntent>(prepared.parts.size)
-            for (partIndex in prepared.parts.indices) {
+            val sent = ArrayList<PendingIntent>(parts.size)
+            val delivered = ArrayList<PendingIntent>(parts.size)
+            for (partIndex in parts.indices) {
                 sent += statusIntent(ACTION_SENT, partIndex, false)
                 delivered += statusIntent(ACTION_DELIVERED, partIndex, true)
             }
@@ -162,7 +163,7 @@ class SentinelSmsSender(private val context: Context) {
                 reason = SmsSubmissionOutcomePolicy.reasonForCallbackPreparationException(repaired),
                 subscriptionId = prepared.subscriptionId,
                 providerMessageId = persistedMessageId,
-                partCount = prepared.parts.size
+                partCount = parts.size
             )
         }
 
@@ -170,7 +171,7 @@ class SentinelSmsSender(private val context: Context) {
         // throw after Android has accepted one or more segments. Keep OUTBOX/PENDING in that case;
         // validated SENT callbacks remain the only conclusive durable transition.
         return try {
-            if (prepared.parts.size <= 1) {
+            if (parts.size <= 1) {
                 prepared.manager.sendTextMessage(
                     normalized,
                     null,
@@ -182,7 +183,7 @@ class SentinelSmsSender(private val context: Context) {
                 prepared.manager.sendMultipartTextMessage(
                     normalized,
                     null,
-                    ArrayList(prepared.parts),
+                    ArrayList(parts),
                     callbacks.sent,
                     callbacks.delivered
                 )
@@ -193,7 +194,7 @@ class SentinelSmsSender(private val context: Context) {
                 subscriptionId = prepared.subscriptionId,
                 sendToken = callbacks.sendToken,
                 providerMessageId = persistedMessageId,
-                partCount = prepared.parts.size
+                partCount = parts.size
             )
         } catch (_: Exception) {
             SendResult(
@@ -202,7 +203,7 @@ class SentinelSmsSender(private val context: Context) {
                 subscriptionId = prepared.subscriptionId,
                 sendToken = callbacks.sendToken,
                 providerMessageId = persistedMessageId,
-                partCount = prepared.parts.size
+                partCount = parts.size
             )
         }
     }
