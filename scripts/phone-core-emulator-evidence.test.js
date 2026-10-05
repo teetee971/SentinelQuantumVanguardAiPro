@@ -140,6 +140,24 @@ test('successful host fixture preserves distinct build, PR source, base, and bra
   assert.equal(report.commercial_release_claim, false);
 });
 
+for (const role of ['sms', 'dialer', 'call-screening']) {
+  test(`a similarly named package cannot prove restored ${role} ownership`, () => {
+    const { result, report } = fixture({}, ({ put }) => {
+      put(`${role}-role-restored.txt`, 'com.sentinel.quantum.other\n');
+    });
+    assert.notEqual(result.status, 0);
+    assert.equal(report.result, 'FAIL');
+  });
+}
+
+test('shell diagnostics containing the package cannot prove restored role ownership', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('sms-role-restored.txt', 'Error: failed querying com.sentinel.quantum\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+});
+
 for (const [name, env, failure] of [
   ['failed runtime cannot use partial artifacts to pass', { RUNTIME_OUTCOME: 'failure' }, 'runtime_execution'],
   ['skipped runtime cannot qualify', { RUNTIME_OUTCOME: 'skipped' }, 'runtime_execution'],

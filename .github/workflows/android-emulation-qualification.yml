@@ -411,7 +411,8 @@ jobs:
           const read = (name) => exists(name) ? fs.readFileSync(file(name), 'utf8') : '';
           const screenshot = (name) => nonEmpty(name, 256);
           const contains = (name, needle) => read(name).includes(needle);
-          const packageHeld = (name) => contains(name, 'com.sentinel.quantum');
+          const packageHeld = (name) => read(name).split(/\r?\n/)
+            .some((line) => line.trim() === 'com.sentinel.quantum');
           const walk = (dir) => {
             if (!fs.existsSync(dir)) return [];
             return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
