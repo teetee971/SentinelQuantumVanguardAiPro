@@ -75,10 +75,27 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         private const val KEY_COMPLETED = "completed"
         private const val OPTIONAL_CONTACTS_PERMISSION = "android.permission.READ_CONTACTS"
 
+        /**
+         * Least-privilege activation order.
+         *
+         * Android roles are established before requesting the runtime permissions used by the
+         * corresponding telephony surface. SMS already follows the same invariant independently.
+         */
+        private val ACTIONABLE_FLOW = listOf(
+            Step.DIALER_ROLE,
+            Step.CALL_SCREENING_ROLE,
+            Step.CORE_PERMISSIONS,
+            Step.CALL_LOG_PERMISSION,
+            Step.SMS_ROLE,
+            Step.SMS_PERMISSIONS,
+            Step.MMS_PERMISSIONS,
+            Step.NOTIFICATION_CHANNELS
+        )
+
         fun nextStep(facts: Facts): Step = when {
-            !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
             !facts.dialerRoleHeld -> Step.DIALER_ROLE
             !facts.callScreeningRoleHeld -> Step.CALL_SCREENING_ROLE
+            !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
             !facts.callLogPermissionGranted -> Step.CALL_LOG_PERMISSION
             !facts.smsRoleHeld -> Step.SMS_ROLE
             !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
@@ -157,9 +174,9 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         }
 
         fun stepProgress(step: Step): Pair<Int, Int> {
-            val actionable = Step.entries.filterNot { it == Step.COMPLETE }
-            val position = actionable.indexOf(step)
-            return if (position >= 0) (position + 1) to actionable.size else actionable.size to actionable.size
+            val position = ACTIONABLE_FLOW.indexOf(step)
+            return if (position >= 0) (position + 1) to ACTIONABLE_FLOW.size
+            else ACTIONABLE_FLOW.size to ACTIONABLE_FLOW.size
         }
 
         fun stepRationale(step: Step): String = when (step) {
