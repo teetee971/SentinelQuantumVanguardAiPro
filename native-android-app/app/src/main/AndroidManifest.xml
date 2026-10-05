@@ -147,9 +147,15 @@
             android:name=".security.SentinelCallActionReceiver"
             android:exported="false" />
 
+        <!--
+            Telecom sends this package-targeted system broadcast to the selected default dialer.
+            It must be exported to be reachable cross-process, but the signature-only
+            MODIFY_PHONE_STATE permission restricts callers to trusted telephony/system code.
+        -->
         <receiver
             android:name=".security.SentinelMissedCallReceiver"
-            android:exported="false">
+            android:exported="true"
+            android:permission="android.permission.MODIFY_PHONE_STATE">
             <intent-filter>
                 <action android:name="android.telecom.action.SHOW_MISSED_CALLS_NOTIFICATION" />
             </intent-filter>

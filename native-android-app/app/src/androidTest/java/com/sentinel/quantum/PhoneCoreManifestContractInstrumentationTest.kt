@@ -61,6 +61,13 @@ class PhoneCoreManifestContractInstrumentationTest {
         )
         assertTrue(mmsDeliver.exported)
         assertEquals("android.permission.BROADCAST_WAP_PUSH", mmsDeliver.permission)
+
+        val missedCalls = packageManager.getReceiverInfo(
+            component(".security.SentinelMissedCallReceiver"),
+            0
+        )
+        assertTrue(missedCalls.exported)
+        assertEquals("android.permission.MODIFY_PHONE_STATE", missedCalls.permission)
     }
 
     @Test
@@ -82,7 +89,6 @@ class PhoneCoreManifestContractInstrumentationTest {
 
         listOf(
             ".security.SentinelCallActionReceiver",
-            ".security.SentinelMissedCallReceiver",
             ".security.SentinelMmsDownloadReceiver",
             ".security.SentinelMmsSendStatusReceiver",
             ".security.SentinelSmsStatusReceiver"

@@ -27,8 +27,11 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
         if (intent.action != TelecomManager.ACTION_SHOW_MISSED_CALLS_NOTIFICATION) return
         if (!holdsDialerRole(context)) return
 
+        // Treat the external broadcast as untrusted input even though the manifest requires the
+        // signature-only MODIFY_PHONE_STATE permission from its sender. We consume only a bounded
+        // aggregate count and deliberately ignore caller-number/account extras.
         val count = intent.getIntExtra(TelecomManager.EXTRA_NOTIFICATION_COUNT, 0)
-            .coerceAtLeast(0)
+            .coerceIn(0, MAX_MISSED_CALL_COUNT)
         val manager = NotificationManagerCompat.from(context)
         if (count == 0) {
             manager.cancel(NOTIFICATION_ID)
@@ -78,6 +81,7 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
     companion object {
         private const val CHANNEL_ID = "sentinel_missed_calls"
         private const val NOTIFICATION_ID = 5102
+        private const val MAX_MISSED_CALL_COUNT = 99
 
         /** Ensure the default-dialer missed-call channel exists without overriding user choices. */
         fun ensureChannel(context: Context) {
