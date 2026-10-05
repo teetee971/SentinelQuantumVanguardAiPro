@@ -149,6 +149,23 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         }
 
         /**
+         * Next step that Android can still act on without violating role-before-permission
+         * dependencies. An unavailable role does not become success and remains visible as
+         * the terminal blocker after every independent configurable branch has been handled.
+         */
+        fun nextConfigurableStep(facts: Facts): Step = when {
+            !facts.dialerRoleHeld && facts.dialerRoleAvailable -> Step.DIALER_ROLE
+            !facts.callScreeningRoleHeld && facts.callScreeningRoleAvailable -> Step.CALL_SCREENING_ROLE
+            facts.dialerRoleHeld && !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
+            facts.dialerRoleHeld && !facts.callLogPermissionGranted -> Step.CALL_LOG_PERMISSION
+            !facts.smsRoleHeld && facts.smsRoleAvailable -> Step.SMS_ROLE
+            facts.smsRoleHeld && !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
+            facts.smsRoleHeld && !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+            !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
+            else -> nextStep(facts)
+        }
+
+        /**
          * Single pure truth for the setup prerequisites represented by [Facts].
          * A wizard lifecycle state is never used as proof: runtime facts remain authoritative.
          */

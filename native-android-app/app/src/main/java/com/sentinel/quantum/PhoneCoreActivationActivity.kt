@@ -246,7 +246,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     PhoneCoreRuntimeFacts.read(applicationContext)
                 }
                 val setupStep = remember(setupFacts) {
-                    PhoneCoreSetupWizardStore.nextStep(setupFacts)
+                    PhoneCoreSetupWizardStore.nextConfigurableStep(setupFacts)
                 }
                 val setupAtomicPermission = when (setupStep) {
                     PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS ->
