@@ -1,6 +1,6 @@
 # Product capability status — generated
 
-Source: `config/product-capabilities.json` · updated 2026-10-04.
+Source: `config/product-capabilities.json` · updated 2026-10-05.
 
 This file is generated. Do not promote a capability by editing this document; update the canonical registry with evidence and let CI validate the invariants.
 
@@ -28,7 +28,7 @@ This file is generated. Do not promote a capability by editing this document; up
 
 ### Android Phone Core
 
-- 14/14 physical Phone Core evidence has not been recorded on the current install scope
+- Signed physical-device validation of the 14 canonical Phone Core criteria has not been recorded; local or emulator 14/14 evidence is not sufficient
 - No signed public Android release artifact is demonstrated
 
 Evidence:
