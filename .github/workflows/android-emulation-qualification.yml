@@ -389,7 +389,9 @@ jobs:
           set -euo pipefail
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
-          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || true
+          LOGCAT_STATUS=0
+          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
+          printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
           adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
           adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
           adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
@@ -440,14 +442,17 @@ jobs:
           const completedInstrumentationClass = (className) => {
             if (api === 24) {
               let currentClass = '';
-              let passed = false;
+              const terminalStatuses = [];
               for (const line of api24InstrumentationLog.split('\n')) {
                 if (line.startsWith('INSTRUMENTATION_STATUS: class=')) {
                   currentClass = line.slice('INSTRUMENTATION_STATUS: class='.length);
                 }
-                if (currentClass.endsWith('.' + className) && line === 'INSTRUMENTATION_STATUS_CODE: 0') passed = true;
+                const status = line.match(/^INSTRUMENTATION_STATUS_CODE: (-?\d+)$/);
+                if (currentClass.endsWith('.' + className) && status && Number(status[1]) !== 1) {
+                  terminalStatuses.push(Number(status[1]));
+                }
               }
-              return passed;
+              return terminalStatuses.length > 0 && terminalStatuses.every((status) => status === 0);
             }
             const cases = connectedResultText.match(/<testcase\b[^>]*(?:\/>|>[\s\S]*?<\/testcase>)/g) || [];
             const matching = cases.filter((entry) => new RegExp(`classname=["'](?:[^"']*\\.)?${className}["']`).test(entry));
@@ -506,7 +511,7 @@ jobs:
             screenshot('10-sms-role-revoked.png') &&
             screenshot('11-dialer-role-revoked.png') &&
             screenshot('12-call-screening-role-revoked.png');
-          const crashOrAnrAbsent = nonEmpty('logcat.txt') &&
+          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') &&
             !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
           const instrumentationKey = `connected_instrumentation_api${api}`;
 

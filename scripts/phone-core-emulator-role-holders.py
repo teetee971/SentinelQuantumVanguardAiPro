@@ -11,14 +11,19 @@ def holders_from_dump(role, text):
         raise ValueError("Unknown or ambiguous role dump scope")
 
     def packages(value):
-        values = [part for part in re.split(r"[,\s]+", value.strip("[] \t\n")) if part]
+        value = value.strip()
+        if value.startswith("[") and value.endswith("]"):
+            value = value[1:-1]
+        values = [part for part in re.split(r"[,\s]+", value) if part]
         if any(not re.fullmatch(r"[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+", item) for item in values):
             raise ValueError("Unreadable holders")
         return values
 
-    compact = re.search(re.escape(role) + r"\s*[=:]\s*\[([^\]]*)\]", text)
+    compact = re.findall(r"(?<![A-Za-z0-9_.])" + re.escape(role) + r"\s*[=:]\s*\[([^\[\]]*)\]", text)
     if compact:
-        return packages(compact.group(1))
+        if len(compact) != 1:
+            raise ValueError("Ambiguous compact role")
+        return packages(compact[0])
 
     # Android 10 emits complete leaf blocks with only name=ROLE when no holder exists.
     # A missing holders field is meaningful only inside a complete, named role block.

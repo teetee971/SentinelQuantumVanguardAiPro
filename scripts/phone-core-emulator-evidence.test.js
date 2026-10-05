@@ -27,7 +27,10 @@ for (const [name, dump, status, holders] of [
   ['truncated role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n', 1, ''],
   ['diagnostic mentioning role', 'Error querying android.app.role.CALL_SCREENING', 1, ''],
   ['ambiguous multiple users', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n} ] user_id=10 }', 1, ''],
-  ['invalid holder field', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=Error querying package\n} ] }', 1, '']
+  ['invalid holder field', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=Error querying package\n} ] }', 1, ''],
+  ['compact key prefixed by another identifier', 'RoleUserState { user_id=0 roleNameToPackageNames={xandroid.app.role.CALL_SCREENING=[]} }', 1, ''],
+  ['contradictory compact roles', 'RoleUserState { user_id=0 roleNameToPackageNames={android.app.role.CALL_SCREENING=[] android.app.role.CALL_SCREENING=[com.sentinel.quantum]} }', 1, ''],
+  ['malformed nested holder brackets', 'RoleUserState { user_id=0 roleNameToPackageNames={android.app.role.CALL_SCREENING=[[[]]]} }', 1, '']
 ]) {
   test(`dumpsys oracle: ${name}`, () => {
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-role-dump-'));
@@ -128,6 +131,7 @@ function fixture(overrides = {}, alter = () => {}) {
   for (const name of ['01-dialer-first-launch', '01b-dialer-relaunch', '02-incoming-call', '03-incoming-active-evidence', '05-outgoing-call', '06-thread', '07-inline-reply', '08-sms-effective-permission-denied', '10-sms-role-revoked', '11-dialer-role-revoked', '12-call-screening-role-revoked']) put(name + '.png', Buffer.alloc(300));
   for (const name of ['sms-role-restored', 'dialer-role-restored', 'call-screening-role-restored']) put(name + '.txt', 'com.sentinel.quantum\n');
   put('logcat.txt', 'SentinelLifecycle: fixture only\n');
+  put('logcat-status.txt', '0\n');
   put('package.txt', 'Package [com.sentinel.quantum]\n');
   put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
   put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
@@ -142,9 +146,9 @@ function fixture(overrides = {}, alter = () => {}) {
   const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('');
   writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
   const sha = 'a'.repeat(40);
-  const env = { ...process.env, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
+  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
   try {
-    alter({ put, results });
+    alter({ put, results, dir });
     const result = spawnSync(process.execPath, ['-e', reportCode], { cwd: dir, env, encoding: 'utf8' });
     assert.ok(existsSync(join(output, 'qualification.json')), result.stderr || result.stdout || 'report was not written');
     const report = JSON.parse(readFileSync(join(output, 'qualification.json'), 'utf8'));
@@ -183,6 +187,53 @@ test('shell diagnostics containing the package cannot prove restored role owners
   });
   assert.notEqual(result.status, 0);
   assert.equal(report.result, 'FAIL');
+});
+
+test('partial logcat stdout with a failed read cannot prove absence of crashes', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('logcat-status.txt', '1\n');
+    put('logcat-error.txt', 'adb: logcat read failed: device disconnected\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.no_crash_or_anr, false);
+  assert.ok(report.evidence_failures.includes('no_crash_or_anr'));
+});
+
+test('missing logcat exit status cannot prove absence of crashes', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('logcat-status.txt', '');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.no_crash_or_anr, false);
+});
+
+function api24Evidence({ put, dir }, secondRenderStatus) {
+  put('min-sdk-first-pid.txt', '100\n');
+  put('min-sdk-second-pid.txt', '200\n');
+  put('01-min-sdk-first-launch.png', Buffer.alloc(300));
+  put('02-min-sdk-second-launch.png', Buffer.alloc(300));
+  const renderClass = 'com.sentinel.quantum.ui.AllStaticNavigationSurfacesInstrumentationTest';
+  const standaloneClass = 'com.sentinel.quantum.ui.StandaloneActivitySmokeInstrumentationTest';
+  const event = (name, method, code) => `INSTRUMENTATION_STATUS: class=${name}\nINSTRUMENTATION_STATUS: test=${method}\nINSTRUMENTATION_STATUS_CODE: ${code}\n`;
+  writeFileSync(join(dir, 'sentinel-instrumentation-api24-tests.log'),
+    event(renderClass, 'homeRenders', 0) + event(renderClass, 'searchRenders', secondRenderStatus) +
+    event(standaloneClass, 'activityRenders', 0) + 'OK (3 tests)\n');
+}
+
+test('API 24 raw instrumentation requires every render test to pass', () => {
+  const { result, report } = fixture({ API_LEVEL: '24' }, (files) => api24Evidence(files, 0));
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(report.result, 'PASS');
+  assert.equal(report.checks.all_static_navigation_surfaces_render, true);
+});
+
+test('API 24 passing render cannot hide an ignored test in the same class', () => {
+  const { result, report } = fixture({ API_LEVEL: '24' }, (files) => api24Evidence(files, -3));
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.all_static_navigation_surfaces_render, false);
 });
 
 for (const [name, env, failure] of [
