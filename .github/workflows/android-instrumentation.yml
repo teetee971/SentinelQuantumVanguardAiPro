@@ -28,6 +28,9 @@ jobs:
           - api-level: 24
             sdk_package_level: '24'
             android-version: Android 7.0
+          - api-level: 29
+            sdk_package_level: '29'
+            android-version: Android 10
           - api-level: 36
             sdk_package_level: '36'
             android-version: Android 16
