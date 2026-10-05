@@ -36,4 +36,32 @@ class SmsTimestampOrderTest {
         assertEquals(false, SmsTimestampOrder.isAnomalous(Long.MAX_VALUE, Long.MAX_VALUE - 1L))
         assertEquals(Long.MIN_VALUE, SmsTimestampOrder.sortTimestamp(-1L, nowMs))
     }
+
+    @Test fun aLimitedConversationWindowDoesNotHideNormalMessagesBehindFutureRows() {
+        val future = nowMs + 365L * 24L * 60L * 60L * 1000L
+        val dates = (1..200).map { future + it } + (1..10).map { nowMs - it }
+        var anomalousReads = 0
+        val window = SmsTimestampOrder.loadWindow(5,
+            loadPlausible = { limit -> dates.filterNot { SmsTimestampOrder.isAnomalous(it, nowMs) }
+                .sortedDescending().take(limit) },
+            loadAnomalous = { limit -> anomalousReads++; dates.filter { SmsTimestampOrder.isAnomalous(it, nowMs) }
+                .sortedDescending().take(limit) }
+        )
+        assertEquals((1..5).map { nowMs - it }, window)
+        assertEquals(0, anomalousReads)
+        // The former DATE DESC LIMIT boundary would return only the hostile dates.
+        assertEquals(5, dates.sortedDescending().take(5).count { SmsTimestampOrder.isAnomalous(it, nowMs) })
+    }
+
+    @Test fun sparseConversationRetainsOriginalAnomalousDatesOnlyInRemainingCapacity() {
+        val future = nowMs + SmsTimestampOrder.FUTURE_TOLERANCE_MS + 1L
+        val normal = listOf(nowMs, nowMs - 1000L)
+        var remainingCapacity = 0
+        val window = SmsTimestampOrder.loadWindow(4,
+            loadPlausible = { normal.take(it) },
+            loadAnomalous = { limit -> remainingCapacity = limit; listOf(future, -1L, -2L).take(limit) }
+        )
+        assertEquals(2, remainingCapacity)
+        assertEquals(listOf(nowMs, nowMs - 1000L, future, -1L), window)
+    }
 }
