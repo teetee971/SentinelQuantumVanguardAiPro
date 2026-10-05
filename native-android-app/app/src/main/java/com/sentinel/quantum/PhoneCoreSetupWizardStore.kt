@@ -73,9 +73,16 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
     fun isCompleted(): Boolean = lifecycleState() == LifecycleState.COMPLETED
 
     private fun setLifecycleState(state: LifecycleState) {
+        check(state != LifecycleState.COMPLETED) {
+            "COMPLETED must be persisted through markCompleted()"
+        }
+        // IN_PROGRESS is specifically used to recover after process death. Persist lifecycle
+        // transitions synchronously before launching Android-owned permission/role surfaces, and
+        // invalidate the legacy completion bit so a later migration can never resurrect stale READY.
         prefs.edit()
+            .putBoolean(KEY_COMPLETED, false)
             .putString(KEY_LIFECYCLE_STATE, state.name)
-            .apply()
+            .commit()
     }
 
     enum class Step {
