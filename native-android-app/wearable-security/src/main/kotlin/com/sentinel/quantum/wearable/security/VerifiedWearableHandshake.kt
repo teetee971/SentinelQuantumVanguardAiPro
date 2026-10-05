@@ -9,8 +9,11 @@ class VerifiedWearableHandshake internal constructor(
     val keyFingerprintSha256: String,
     val sessionId: String,
     val protocolVersion: Int,
-    val capabilities: Set<String>
+    capabilities: Set<String>
 ) {
+    // Transport consumers must not be able to add capabilities to authenticated evidence.
+    val capabilities: Set<String> = java.util.Collections.unmodifiableSet(LinkedHashSet(capabilities))
+
     init {
         require(stableId.isNotBlank())
         require(keyFingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))

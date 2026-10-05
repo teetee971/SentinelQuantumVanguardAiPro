@@ -22,7 +22,13 @@ class Ed25519WearableHandshakeVerifier(
         .generatePublic(X509EncodedKeySpec(publicKeyX509.copyOf()))
     private val fingerprint = sha256Hex(publicKey.encoded)
 
-    override fun verify(candidate: WearableHandshakeCandidate): VerifiedWearableHandshake? {
+    override fun verify(candidate: WearableHandshakeCandidate): VerifiedWearableHandshake? =
+        runCatching { verifySnapshot(candidate) }.getOrNull()
+
+    private fun verifySnapshot(candidate: WearableHandshakeCandidate): VerifiedWearableHandshake? {
+        // The proof must contain exactly the capabilities whose transcript was verified,
+        // even if a transport supplied a mutable set and changes it during verification.
+        val capabilities = candidate.capabilities.toSet()
         if (!MessageDigest.isEqual(
                 fingerprint.toByteArray(StandardCharsets.US_ASCII),
                 candidate.keyFingerprintSha256.toByteArray(StandardCharsets.US_ASCII)
@@ -34,7 +40,7 @@ class Ed25519WearableHandshakeVerifier(
             keyFingerprintSha256 = candidate.keyFingerprintSha256,
             sessionId = candidate.sessionId,
             protocolVersion = candidate.protocolVersion,
-            capabilities = candidate.capabilities,
+            capabilities = capabilities,
             challengeNonce = candidate.challengeNonce,
             issuedAtMs = candidate.issuedAtMs
         )
@@ -50,7 +56,7 @@ class Ed25519WearableHandshakeVerifier(
             keyFingerprintSha256 = candidate.keyFingerprintSha256,
             sessionId = candidate.sessionId,
             protocolVersion = candidate.protocolVersion,
-            capabilities = candidate.capabilities.toSet()
+            capabilities = capabilities
         )
     }
 
@@ -75,7 +81,9 @@ object WearableHandshakeTranscriptCodec {
         require(sessionId.isNotBlank())
         require(protocolVersion > 0)
         require(capabilities.isNotEmpty())
-        require(capabilities.none { it.isBlank() || '\n' in it || '\r' in it })
+        // Commas delimit capabilities in protocol v1. Reject embedded delimiters so
+        // {"A,B"} cannot authenticate as {"A", "B"} with the same signed bytes.
+        require(capabilities.none { it.isBlank() || ',' in it || '\n' in it || '\r' in it })
         require('\n' !in stableId && '\r' !in stableId)
         require('\n' !in sessionId && '\r' !in sessionId)
         require(challengeNonce.matches(Regex("^[A-Za-z0-9_-]{22,128}$")))

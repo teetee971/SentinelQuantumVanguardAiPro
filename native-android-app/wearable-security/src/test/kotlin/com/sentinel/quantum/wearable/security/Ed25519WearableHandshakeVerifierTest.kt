@@ -35,6 +35,31 @@ class Ed25519WearableHandshakeVerifierTest {
         assertNotNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(candidate()))
     }
 
+    @Test fun rejectsCapabilityDelimiterSubstitutionWithPreviouslyValidSignature() {
+        val original = candidate(capabilities = setOf("QUICK_ACTIONS", "SENTINEL_ALERTS"))
+        val changed = original.copy(capabilities = setOf("QUICK_ACTIONS,SENTINEL_ALERTS"))
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun refusesAmbiguousCapabilityEncoding() {
+        candidate(capabilities = setOf("QUICK_ACTIONS,SENTINEL_ALERTS"))
+    }
+
+    @Test fun malformedSignatureFailsClosedWithoutThrowing() {
+        val changed = candidate().copy(signature = byteArrayOf(1))
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test(expected = UnsupportedOperationException::class)
+    fun authenticatedCapabilitiesCannotBeExpandedByTransportConsumer() {
+        val proof = requireNotNull(
+            Ed25519WearableHandshakeVerifier(pair.public.encoded)
+                .verify(candidate(capabilities = setOf("QUICK_ACTIONS", "SENTINEL_ALERTS")))
+        )
+        (proof.capabilities as MutableSet<String>).add("UNSIGNED_CAPABILITY")
+    }
+
     @Test fun rejectsFieldSubstitutionEvenWithPreviouslyValidSignature() {
         val original = candidate()
         val changed = original.copy(sessionId = "session-2")
