@@ -44,6 +44,7 @@ const requiredChecks = [
   'min_sdk_cold_launch',
   'cold_install_and_relaunch',
   'phone_core_setup_resume',
+  'synthetic_call_screening_observed',
   'incoming_call_telecom_flow',
   'outgoing_call_telecom_flow',
   'incoming_sms_and_inline_reply',
@@ -66,6 +67,7 @@ if (gate.local_technical_certificate?.required_count !== physicalRequiredCount) 
   errors.push(`physical gate count ${String(gate.local_technical_certificate?.required_count)} does not match PhoneCorePhysicalValidation ${String(physicalRequiredCount)}`);
 }
 requireText(physicalValidation, 'const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"', 'Phone Core physical active-call evidence');
+requireText(physicalValidation, 'const val SIGNAL_CALL_SCREENED_PREFIX = "CALL_SCREENED:"', 'Phone Core call-screening evidence');
 
 const minSdk = Number(buildGradle.match(/\bminSdk\s+(\d+)/)?.[1]);
 if (minSdk !== 24) errors.push(`expected audited Android minSdk 24, found ${String(minSdk)}`);
@@ -146,6 +148,7 @@ for (const marker of [
   'phone_number_canonicalization_contract',
   'multi_sim_submit_readiness_contract',
   'setup_resume: modernPhoneCore',
+  'synthetic_call_screening_observed: modernPhoneCore',
   'cold_install_and_relaunch: true',
   'min-sdk-first-launch.txt',
   'min-sdk-second-launch.txt',
@@ -183,6 +186,7 @@ for (const marker of [
   "'Appel entrant' in text and 'Sonnerie' in text",
   '01-dialer-first-launch',
   '01b-dialer-relaunch',
+  'wait_private_timeline_signal_prefix "CALL_SCREENED:"',
   'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
   'wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"',
   'shared_prefs/phone_private_timeline.xml',
