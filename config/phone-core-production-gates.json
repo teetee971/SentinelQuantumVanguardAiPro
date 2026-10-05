@@ -26,8 +26,7 @@
       "min_sdk_cold_launch",
       "cold_install_and_relaunch",
       "phone_core_setup_resume",
-      "synthetic_call_screening_callback_observed",
-      "synthetic_call_screening_decision_recorded",
+      "synthetic_call_screening_observed",
       "incoming_call_telecom_flow",
       "outgoing_call_telecom_flow",
       "incoming_sms_and_inline_reply",
@@ -35,7 +34,7 @@
       "permission_revocation_fail_closed",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. Il exécute aussi les contrats ciblés de canonicalisation téléphonique et de préparation multi-SIM avant envoi. Il ouvre toutes les destinations statiques du NavGraph ainsi que les activités autonomes Activation, Diagnostic et Voice Studio. Sur API 29/36/37, un appel entrant synthétique doit démontrer via un marqueur Logcat sans PII que Telecom a réellement invoqué CallScreeningService. Sur API 36/37, le même parcours doit en plus produire la preuve privée CALL_SCREENED:* d'une décision effective du moteur. L'AVD Android 10 peut invoquer le callback puis rendre l'identification d'urgence indéterminée ; Sentinel doit alors rester fail-open sans fabriquer de décision CALL_SCREENED. API 24 couvre le plancher de compatibilité déclaré, API 29 la frontière RoleManager, API 36 Android 16 et API 37 Android 17 comme compatibilité runtime la plus récente. Les parcours téléphonie simulée restent explicitement synthétiques et ne constituent pas une preuve modem/opérateur physique."
+    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. Il exécute aussi les contrats ciblés de canonicalisation téléphonique et de préparation multi-SIM avant envoi. Il ouvre toutes les destinations statiques du NavGraph ainsi que les activités autonomes Activation, Diagnostic et Voice Studio. Le check synthetic_call_screening_observed signifie que, sur API 29/36/37, Telecom a réellement invoqué CallScreeningService, prouvé par un marqueur Logcat sans PII. Sur API 36/37, le même parcours doit en plus produire la preuve privée CALL_SCREENED:* d'une décision effective du moteur. L'AVD Android 10 peut invoquer le callback puis rendre l'identification d'urgence indéterminée ; Sentinel doit alors rester fail-open sans fabriquer de décision CALL_SCREENED. API 24 couvre le plancher de compatibilité déclaré, API 29 la frontière RoleManager, API 36 Android 16 et API 37 Android 17 comme compatibilité runtime la plus récente. Les parcours téléphonie simulée restent explicitement synthétiques et ne constituent pas une preuve modem/opérateur physique."
   },
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
