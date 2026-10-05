@@ -340,14 +340,29 @@ jobs:
               return entry.isDirectory() ? walk(full) : [full];
             });
           };
-          const instrumentationRoot = path.join('app', 'build', 'outputs', 'androidTest-results', 'connected', 'debug');
-          const instrumentationXml = walk(instrumentationRoot)
+          const connectedResultsRoot = path.join('app', 'build', 'outputs', 'androidTest-results');
+          const connectedResultText = walk(connectedResultsRoot)
             .filter((name) => name.endsWith('.xml'))
             .map((name) => {
               try { return fs.readFileSync(name, 'utf8'); } catch { return ''; }
             })
             .join('\n');
-          const instrumentationEvidencePassed = instrumentationPassed && instrumentationXml.length > 0;
+          const api24LogPath = path.join(
+            process.env.RUNNER_TEMP || '',
+            `sentinel-instrumentation-api${api}-tests.log`
+          );
+          const api24InstrumentationLog = api === 24 && fs.existsSync(api24LogPath)
+            ? fs.readFileSync(api24LogPath, 'utf8')
+            : '';
+          const instrumentationEvidenceText = api === 24
+            ? api24InstrumentationLog
+            : connectedResultText;
+          const instrumentationEvidencePassed = instrumentationPassed && (
+            api === 24
+              ? /^OK \([1-9][0-9]* tests?\)$/m.test(api24InstrumentationLog) &&
+                !/^FAILURES!!!|^INSTRUMENTATION_FAILED:|Process crashed/m.test(api24InstrumentationLog)
+              : connectedResultText.length > 0
+          );
 
           let revocation = null;
           if (modernPhoneCore && exists('revocation-summary.json')) {
@@ -406,13 +421,13 @@ jobs:
             multi_sim_submit_readiness_contract: hostContractsPassed,
             [instrumentationKey]: instrumentationEvidencePassed,
             all_static_navigation_surfaces_render:
-              instrumentationEvidencePassed && instrumentationXml.includes('AllStaticNavigationSurfacesInstrumentationTest'),
+              instrumentationEvidencePassed && instrumentationEvidenceText.includes('AllStaticNavigationSurfacesInstrumentationTest'),
             standalone_activity_surfaces_render:
-              instrumentationEvidencePassed && instrumentationXml.includes('StandaloneActivitySmokeInstrumentationTest'),
+              instrumentationEvidencePassed && instrumentationEvidenceText.includes('StandaloneActivitySmokeInstrumentationTest'),
             min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
             cold_install_and_relaunch: coldRelaunchObserved,
             phone_core_setup_resume: modernPhoneCore
-              ? instrumentationEvidencePassed && instrumentationXml.includes('PhoneCoreSetupResumeInstrumentationTest')
+              ? instrumentationEvidencePassed && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest')
               : null,
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
@@ -468,7 +483,8 @@ jobs:
             workflow_run_id: process.env.GITHUB_RUN_ID,
             evidence_source: {
               host_contracts: process.env.HOST_CONTRACT_RESULT,
-              instrumentation: process.env.INSTRUMENTATION_OUTCOME,
+              instrumentation: api === 24 ? 'raw adb instrumentation log' : 'Gradle connected test XML',
+              instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
               revocation: modernPhoneCore ? 'revocation-summary.json + UI/AppOp evidence' : null
             },
