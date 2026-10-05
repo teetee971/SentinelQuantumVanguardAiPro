@@ -69,6 +69,8 @@ import com.sentinel.quantum.ui.design.PhoneCoreUiState
 import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.security.EmergencyCallGuard
+import com.sentinel.quantum.security.EmergencyCallHandoff
+import com.sentinel.quantum.security.EmergencyNumberOracle
 import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
@@ -184,6 +186,20 @@ class SentinelDialerActivity : ComponentActivity() {
         }
 
     private fun requestDialerRole(number: String) {
+        val safeNumber = sanitizeDialNumber(number)
+        if (safeNumber != null && EmergencyNumberOracle.isEmergency(this, safeNumber)) {
+            pendingNumber = null
+            assistedConfirmationNumber = null
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
+            val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+            callActionStatus = if (handedOff) {
+                "Appel d’urgence transféré au téléphone système."
+            } else {
+                "Android n’a pas pu ouvrir le téléphone système pour cet appel d’urgence."
+            }
+            return
+        }
         pendingNumber = number
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val request = AndroidRoleReadPolicy.readOrNull {
@@ -327,8 +343,35 @@ class SentinelDialerActivity : ComponentActivity() {
         if (assistedConfirmationNumber != null && assistedConfirmationNumber != safeNumber) {
             assistedConfirmationNumber = null
         }
+        val platformConfirmsEmergency = EmergencyNumberOracle.isEmergency(this, safeNumber)
+        if (platformConfirmsEmergency && !holdsDialerRole()) {
+            assistedConfirmationNumber = null
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
+            val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+            callActionStatus = if (handedOff) {
+                "Appel d’urgence transféré au téléphone système."
+            } else {
+                "Android n’a pas pu ouvrir le téléphone système pour cet appel d’urgence."
+            }
+            return
+        }
         if (!holdsDialerRole()) {
             callActionStatus = "Rôle Téléphone requis. Aucun appel n’a été lancé."
+            return
+        }
+        if (
+            platformConfirmsEmergency &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+            if (handedOff) {
+                callActionStatus = "Appel d’urgence transféré au téléphone système."
+            } else {
+                pendingNumber = safeNumber
+                callActionStatus = "Autorisation Android d’appel requise pour transmettre cet appel d’urgence."
+                callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            }
             return
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
@@ -338,11 +381,6 @@ class SentinelDialerActivity : ComponentActivity() {
             return
         }
         val telecom = getSystemService(TelecomManager::class.java)
-        val platformConfirmsEmergency = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            runCatching {
-                getSystemService(TelephonyManager::class.java).isEmergencyNumber(safeNumber)
-            }.getOrDefault(false)
-        } else false
         if (!EmergencyCallGuard.requiresExplicitPhoneAccountSelection(platformConfirmsEmergency)) {
             assistedConfirmationNumber = null
             assistedConfirmationBypassNumber = null
