@@ -28,6 +28,9 @@ jobs:
       - name: Validate emulator qualification contract
         run: node scripts/check-phone-core-emulation-gate.js
 
+      - name: Test emulator evidence failure paths
+        run: node scripts/phone-core-emulator-evidence.test.js
+
       - name: Validate Android product truth
         run: npm run test:android-product-truth
 
@@ -263,6 +266,7 @@ jobs:
           fi
 
       - name: Run emulator application/runtime qualification
+        id: runtime
         working-directory: ./native-android-app
         shell: bash
         env:
@@ -295,7 +299,7 @@ jobs:
             sleep 3
             adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
               echo "Crash/ANR detected on minSdk first launch."
               adb logcat -d -v time | tail -n 400
               exit 1
@@ -307,18 +311,31 @@ jobs:
             adb exec-out screencap -p > "$OUTPUT/02-min-sdk-second-launch.png" || true
           fi
 
-          adb logcat -d -v time > "$OUTPUT/logcat.txt" || true
+      - name: Collect qualification evidence even after failure
+        if: always()
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api_level }}
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}
+          INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+        run: |
+          set -euo pipefail
+          OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
+          mkdir -p "$OUTPUT"
+          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || true
           adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
           adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
           adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
 
-          if grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum' "$OUTPUT/logcat.txt"; then
-            echo "Crash/ANR detected during Android emulator qualification."
-            tail -n 400 "$OUTPUT/logcat.txt"
-            exit 1
+          if [[ -s app/build/outputs/apk/debug/app-debug.apk ]]; then
+            sha256sum app/build/outputs/apk/debug/app-debug.apk > "$OUTPUT/apk.sha256"
           fi
-
-          API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
+          BUILT_COMMIT="$(git rev-parse HEAD)" API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
           const api = Number(process.env.API_LEVEL);
@@ -357,6 +374,22 @@ jobs:
           const instrumentationEvidenceText = api === 24
             ? api24InstrumentationLog
             : connectedResultText;
+          const completedInstrumentationClass = (className) => {
+            if (api === 24) {
+              let currentClass = '';
+              let passed = false;
+              for (const line of api24InstrumentationLog.split('\n')) {
+                if (line.startsWith('INSTRUMENTATION_STATUS: class=')) {
+                  currentClass = line.slice('INSTRUMENTATION_STATUS: class='.length);
+                }
+                if (currentClass.endsWith('.' + className) && line === 'INSTRUMENTATION_STATUS_CODE: 0') passed = true;
+              }
+              return passed;
+            }
+            const cases = connectedResultText.match(/<testcase\b[^>]*(?:\/>|>[\s\S]*?<\/testcase>)/g) || [];
+            const matching = cases.filter((entry) => new RegExp(`classname=["'](?:[^"']*\\.)?${className}["']`).test(entry));
+            return matching.length > 0 && matching.every((entry) => !/<(?:skipped|failure|error)\b/.test(entry));
+          };
           const instrumentationEvidencePassed = instrumentationPassed && (
             api === 24
               ? /^OK \([1-9][0-9]* tests?\)$/m.test(api24InstrumentationLog) &&
@@ -409,7 +442,7 @@ jobs:
             screenshot('11-dialer-role-revoked.png') &&
             screenshot('12-call-screening-role-revoked.png');
           const crashOrAnrAbsent = nonEmpty('logcat.txt') &&
-            !/FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+            !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
           const instrumentationKey = `connected_instrumentation_api${api}`;
 
           const checks = {
@@ -421,13 +454,13 @@ jobs:
             multi_sim_submit_readiness_contract: hostContractsPassed,
             [instrumentationKey]: instrumentationEvidencePassed,
             all_static_navigation_surfaces_render:
-              instrumentationEvidencePassed && instrumentationEvidenceText.includes('AllStaticNavigationSurfacesInstrumentationTest'),
+              instrumentationEvidencePassed && instrumentationEvidenceText.includes('AllStaticNavigationSurfacesInstrumentationTest') && completedInstrumentationClass('AllStaticNavigationSurfacesInstrumentationTest'),
             standalone_activity_surfaces_render:
-              instrumentationEvidencePassed && instrumentationEvidenceText.includes('StandaloneActivitySmokeInstrumentationTest'),
+              instrumentationEvidencePassed && instrumentationEvidenceText.includes('StandaloneActivitySmokeInstrumentationTest') && completedInstrumentationClass('StandaloneActivitySmokeInstrumentationTest'),
             min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
             cold_install_and_relaunch: coldRelaunchObserved,
             phone_core_setup_resume: modernPhoneCore
-              ? instrumentationEvidencePassed && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest')
+              ? instrumentationEvidencePassed && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest') && completedInstrumentationClass('PhoneCoreSetupResumeInstrumentationTest')
               : null,
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
@@ -466,23 +499,42 @@ jobs:
                 ...(api >= 36 ? ['synthetic_call_screening_decision_observed'] : [])
               ];
           const evidenceFailures = required.filter((name) => checks[name] !== true);
+          if (process.env.RUNTIME_OUTCOME !== 'success') evidenceFailures.push('runtime_execution');
+          const validSha = (value) => /^[a-f0-9]{40}$/.test(value || '');
+          const provenanceValid = validSha(process.env.BUILT_COMMIT) &&
+            process.env.BUILT_COMMIT === process.env.GITHUB_SHA &&
+            validSha(process.env.SOURCE_HEAD_SHA) &&
+            Boolean(process.env.SOURCE_HEAD_REF) &&
+            (process.env.GITHUB_EVENT_NAME !== 'pull_request' || validSha(process.env.SOURCE_BASE_SHA));
+          if (!provenanceValid) evidenceFailures.push('code_provenance');
+          const apkSha256 = read('apk.sha256').match(/^([a-f0-9]{64})\s/);
+          if (!apkSha256) evidenceFailures.push('apk_provenance');
+          if (!nonEmpty('package.txt') || !contains('package.txt', 'com.sentinel.quantum')) {
+            evidenceFailures.push('package_state');
+          }
 
           const report = {
             schema_version: 3,
             qualification: 'ANDROID_APPLICATION_EMULATION',
+            rollout_mode: 'shadow',
+            evidence_scope: 'developer_qualification',
             api_level: api,
             result: evidenceFailures.length === 0 ? 'PASS' : 'FAIL',
             synthetic_modem: modernPhoneCore,
             physical_modem_claim: false,
             commercial_release_claim: false,
-            build_commit: process.env.GITHUB_SHA,
+            build_commit: process.env.BUILT_COMMIT,
+            workflow_commit: process.env.GITHUB_SHA,
+            apk_sha256: apkSha256?.[1] || null,
             source_head_commit: process.env.SOURCE_HEAD_SHA,
             source_base_commit: process.env.SOURCE_BASE_SHA || null,
             source_head_ref: process.env.SOURCE_HEAD_REF,
             repository: process.env.GITHUB_REPOSITORY,
             workflow_run_id: process.env.GITHUB_RUN_ID,
+            workflow_run_attempt: process.env.GITHUB_RUN_ATTEMPT,
             evidence_source: {
               host_contracts: process.env.HOST_CONTRACT_RESULT,
+              runtime_outcome: process.env.RUNTIME_OUTCOME,
               instrumentation: api === 24 ? 'raw adb instrumentation log' : 'Gradle connected test XML',
               instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
@@ -521,3 +573,4 @@ jobs:
           if [[ -f "$RUNNER_TEMP/sentinel-emulator.pid" ]]; then
             kill "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1 || true
           fi
+

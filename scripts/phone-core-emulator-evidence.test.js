@@ -1,0 +1,151 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+// Host regressions exercise the real shell or report code with isolated fixtures.
+// These fixtures are never Android, modem, or physical qualification evidence.
+const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qualification.yml', import.meta.url), 'utf8');
+const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
+const reportCode = workflow.split("node <<'NODE'\n")[1].split('\n          NODE')[0];
+function shellFunction(name) {
+  const start = revocation.indexOf(`${name}() {`);
+  assert.notEqual(start, -1);
+  return revocation.slice(start, revocation.indexOf('\n}', start) + 2);
+}
+
+for (const [name, output, status, expected] of [
+  ['oracle failure remains unknown', '', 2, 1],
+  ['held role cannot be reported absent', 'com.sentinel.quantum', 0, 1],
+  ['successful empty holder list proves absence', '', 0, 0],
+  ['another package proves absence', 'com.sentinel.quantum.other', 0, 0]
+]) {
+  test(name, () => {
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR=/tmp\nrole_holders() { printf '%s\\n' '${output}'; return ${status}; }\nsleep() { :; }\nadb() { :; }\n${shellFunction('wait_role_absent')}\nwait_role_absent android.app.role.SMS`;
+    const result = spawnSync('bash', ['-c', script], { encoding: 'utf8' });
+    assert.equal(result.status, expected, result.stderr);
+  });
+}
+
+test('effective SEND_SMS denial and restore target the role-managed UID mode', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-test-'));
+  try {
+    const result = spawnSync('bash', ['-c', `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nsleep() { :; }\nadb() { printf '%s\\n' "$*"; }\n${shellFunction('set_send_sms_appop')}\nset_send_sms_appop ignore deny.txt\nset_send_sms_appop allow restore.txt`, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(readFileSync(join(dir, 'deny.txt'), 'utf8'), /appops set --user 0 --uid com\.sentinel\.quantum SEND_SMS ignore/);
+    assert.match(readFileSync(join(dir, 'restore.txt'), 'utf8'), /appops set --user 0 --uid com\.sentinel\.quantum SEND_SMS allow/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+function fixture(overrides = {}, alter = () => {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-report-test-'));
+  const output = join(dir, 'evidence');
+  mkdirSync(output);
+  const put = (name, content) => writeFileSync(join(output, name), content);
+  for (const name of ['01-dialer-first-launch', '01b-dialer-relaunch', '02-incoming-call', '03-incoming-active-evidence', '05-outgoing-call', '06-thread', '07-inline-reply', '08-sms-effective-permission-denied', '10-sms-role-revoked', '11-dialer-role-revoked', '12-call-screening-role-revoked']) put(name + '.png', Buffer.alloc(300));
+  for (const name of ['sms-role-restored', 'dialer-role-restored', 'call-screening-role-restored']) put(name + '.txt', 'com.sentinel.quantum\n');
+  put('logcat.txt', 'SentinelLifecycle: fixture only\n');
+  put('package.txt', 'Package [com.sentinel.quantum]\n');
+  put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
+  put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+  put('phone-private-timeline-prefix.xml', 'CALL_SCREENED:ALLOW');
+  for (const direction of ['incoming', 'outgoing']) put(`phone-private-timeline-${direction}-incall_active.xml`, 'INCALL_ACTIVE');
+  put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
+  put('revocation-summary.json', JSON.stringify({ schema_version: 2, effective_permission_denial_fail_closed: true, role_revocation_fail_closed: true, effective_permission_probe: 'SEND_SMS_APP_OP_DENIED' }));
+  const results = join(dir, 'app/build/outputs/androidTest-results');
+  mkdirSync(results, { recursive: true });
+  const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('');
+  writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
+  const sha = 'a'.repeat(40);
+  const env = { ...process.env, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
+  try {
+    alter({ put, results });
+    const result = spawnSync(process.execPath, ['-e', reportCode], { cwd: dir, env, encoding: 'utf8' });
+    assert.ok(existsSync(join(output, 'qualification.json')), result.stderr || result.stdout || 'report was not written');
+    const report = JSON.parse(readFileSync(join(output, 'qualification.json'), 'utf8'));
+    return { result, report };
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+
+test('successful host fixture preserves distinct build, PR source, base, and branch provenance', () => {
+  const { result, report } = fixture();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(report.result, 'PASS');
+  assert.equal(report.build_commit, 'a'.repeat(40));
+  assert.equal(report.source_head_commit, 'b'.repeat(40));
+  assert.equal(report.source_base_commit, 'c'.repeat(40));
+  assert.equal(report.source_head_ref, 'fixture-branch');
+  assert.equal(report.apk_sha256, 'd'.repeat(64));
+  assert.equal(report.rollout_mode, 'shadow');
+  assert.equal(report.evidence_scope, 'developer_qualification');
+  assert.equal(report.physical_modem_claim, false);
+  assert.equal(report.commercial_release_claim, false);
+});
+
+for (const [name, env, failure] of [
+  ['failed runtime cannot use partial artifacts to pass', { RUNTIME_OUTCOME: 'failure' }, 'runtime_execution'],
+  ['skipped runtime cannot qualify', { RUNTIME_OUTCOME: 'skipped' }, 'runtime_execution'],
+  ['missing PR base invalidates provenance', { SOURCE_BASE_SHA: '' }, 'code_provenance'],
+  ['build mismatch invalidates provenance', { BUILT_COMMIT: 'd'.repeat(40) }, 'code_provenance'],
+  ['missing source branch invalidates provenance', { SOURCE_HEAD_REF: '' }, 'code_provenance']
+]) {
+  test(name, () => {
+    const { result, report } = fixture(env);
+    assert.equal(result.status, 1, result.stderr);
+    assert.equal(report.result, 'FAIL');
+    assert.ok(report.evidence_failures.includes(failure));
+  });
+}
+
+test('background-thread crash is retained as failed evidence', () => {
+  const { result, report } = fixture({}, ({ put }) => put('logcat.txt', 'FATAL EXCEPTION: pool-1-thread-1\n'));
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.no_crash_or_anr, false);
+});
+
+test('a skipped named instrumentation class cannot qualify a rendered surface', () => {
+  const { result, report } = fixture({}, ({ results }) => writeFileSync(join(results, 'TEST-fixture.xml'), '<testsuite><testcase classname="com.sentinel.quantum.AllStaticNavigationSurfacesInstrumentationTest"><skipped/></testcase></testsuite>'));
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.all_static_navigation_surfaces_render, false);
+});
+
+test('evidence collection runs after failure and still writes a report', () => {
+  assert.match(workflow, /name: Collect qualification evidence even after failure\s+if: always\(\)/);
+  assert.match(workflow, /RUNTIME_OUTCOME: \$\{\{ steps\.runtime\.outcome \}\}/);
+});
+
+test('logcat oracle failure cannot become a zero-callback revocation proof', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-logcat-test-'));
+  try {
+    const result = spawnSync('bash', ['-c', `OUT_DIR="$1"\nadb() { return 1; }\n${shellFunction('screening_callback_count')}\nscreening_callback_count`, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 2, result.stderr);
+    assert.equal(result.stdout, '');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('missing APK digest cannot qualify provenance', () => {
+  const { result, report } = fixture({}, ({ put }) => put('apk.sha256', ''));
+  assert.equal(result.status, 1);
+  assert.ok(report.evidence_failures.includes('apk_provenance'));
+});
+
+test('revocation flow retains the preceding runtime logcat evidence', () => {
+  assert.doesNotMatch(revocation, /adb logcat -c/);
+});
+
+for (const [label, output, status] of [
+  ['readable zero callbacks', '', 0],
+  ['readable callback invocation', 'CallScreeningService:onScreenCall', 0]
+]) {
+  test(label, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sentinel-logcat-test-'));
+    try {
+      const script = `OUT_DIR="$1"\nadb() { printf '%s\\n' '${output}'; return ${status}; }\n${shellFunction('screening_callback_count')}\nscreening_callback_count`;
+      const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stdout.trim(), output ? '1' : '0');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+}
