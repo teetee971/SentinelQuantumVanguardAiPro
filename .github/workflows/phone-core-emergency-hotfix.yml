@@ -1,0 +1,177 @@
+name: Phone Core Emergency Hotfix
+
+on:
+  push:
+    branches:
+      - recovery/phone-core-emulator-phase2-20261005
+    paths:
+      - .github/workflows/phone-core-emergency-hotfix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-emergency-routing:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: recovery/phone-core-emulator-phase2-20261005
+          fetch-depth: 0
+
+      - name: Apply bounded emergency routing patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt')
+          text = path.read_text(encoding='utf-8')
+
+          old_import = '''import com.sentinel.quantum.security.EmergencyCallGuard
+          import com.sentinel.quantum.security.FamilySafetyPolicy'''
+          new_import = '''import com.sentinel.quantum.security.EmergencyCallGuard
+          import com.sentinel.quantum.security.EmergencyCallHandoff
+          import com.sentinel.quantum.security.EmergencyNumberOracle
+          import com.sentinel.quantum.security.FamilySafetyPolicy'''
+          if text.count(old_import) != 1:
+              raise SystemExit('Emergency import anchor is not unique')
+          text = text.replace(old_import, new_import, 1)
+
+          old_request = '''    private fun requestDialerRole(number: String) {
+                  pendingNumber = number
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {'''
+          new_request = '''    private fun requestDialerRole(number: String) {
+                  val safeNumber = sanitizeDialNumber(number)
+                  if (safeNumber != null && EmergencyNumberOracle.isEmergency(this, safeNumber)) {
+                      pendingNumber = null
+                      assistedConfirmationNumber = null
+                      assistedConfirmationBypassNumber = null
+                      assistedConfirmationBypassExpiresAtMs = 0L
+                      val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+                      callActionStatus = if (handedOff) {
+                          "Appel d’urgence transféré au téléphone système."
+                      } else {
+                          "Android n’a pas pu ouvrir le téléphone système pour cet appel d’urgence."
+                      }
+                      return
+                  }
+                  pendingNumber = number
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {'''
+          if text.count(old_request) != 1:
+              raise SystemExit('requestDialerRole anchor is not unique')
+          text = text.replace(old_request, new_request, 1)
+
+          old_call = '''        if (assistedConfirmationNumber != null && assistedConfirmationNumber != safeNumber) {
+                      assistedConfirmationNumber = null
+                  }
+                  if (!holdsDialerRole()) {
+                      callActionStatus = "Rôle Téléphone requis. Aucun appel n’a été lancé."
+                      return
+                  }
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                      pendingNumber = safeNumber
+                      callActionStatus = "Autorisation Android d’appel requise."
+                      callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                      return
+                  }
+                  val telecom = getSystemService(TelecomManager::class.java)
+                  val platformConfirmsEmergency = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                      runCatching {
+                          getSystemService(TelephonyManager::class.java).isEmergencyNumber(safeNumber)
+                      }.getOrDefault(false)
+                  } else false
+                  if (!EmergencyCallGuard.requiresExplicitPhoneAccountSelection(platformConfirmsEmergency)) {
+                      assistedConfirmationNumber = null
+                      assistedConfirmationBypassNumber = null
+                      assistedConfirmationBypassExpiresAtMs = 0L
+                      val failure = runCatching {
+                          telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+                      }.exceptionOrNull()
+                      callActionStatus = if (failure == null) {
+                          "Appel d’urgence transmis directement à Android pour routage système."
+                      } else {
+                          "Android n’a pas pu transmettre l’appel d’urgence."
+                      }
+                      return
+                  }'''
+          new_call = '''        if (assistedConfirmationNumber != null && assistedConfirmationNumber != safeNumber) {
+                      assistedConfirmationNumber = null
+                  }
+                  val platformConfirmsEmergency = EmergencyNumberOracle.isEmergency(this, safeNumber)
+                  if (platformConfirmsEmergency && !holdsDialerRole()) {
+                      assistedConfirmationNumber = null
+                      assistedConfirmationBypassNumber = null
+                      assistedConfirmationBypassExpiresAtMs = 0L
+                      val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+                      callActionStatus = if (handedOff) {
+                          "Appel d’urgence transféré au téléphone système."
+                      } else {
+                          "Android n’a pas pu ouvrir le téléphone système pour cet appel d’urgence."
+                      }
+                      return
+                  }
+                  if (!holdsDialerRole()) {
+                      callActionStatus = "Rôle Téléphone requis. Aucun appel n’a été lancé."
+                      return
+                  }
+                  if (
+                      platformConfirmsEmergency &&
+                      ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED
+                  ) {
+                      val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+                      if (handedOff) {
+                          callActionStatus = "Appel d’urgence transféré au téléphone système."
+                      } else {
+                          pendingNumber = safeNumber
+                          callActionStatus = "Autorisation Android d’appel requise pour transmettre cet appel d’urgence."
+                          callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                      }
+                      return
+                  }
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                      pendingNumber = safeNumber
+                      callActionStatus = "Autorisation Android d’appel requise."
+                      callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                      return
+                  }
+                  val telecom = getSystemService(TelecomManager::class.java)
+                  if (!EmergencyCallGuard.requiresExplicitPhoneAccountSelection(platformConfirmsEmergency)) {
+                      assistedConfirmationNumber = null
+                      assistedConfirmationBypassNumber = null
+                      assistedConfirmationBypassExpiresAtMs = 0L
+                      val failure = runCatching {
+                          telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+                      }.exceptionOrNull()
+                      callActionStatus = if (failure == null) {
+                          "Appel d’urgence transmis directement à Android pour routage système."
+                      } else {
+                          "Android n’a pas pu transmettre l’appel d’urgence."
+                      }
+                      return
+                  }'''
+          if text.count(old_call) != 1:
+              raise SystemExit('placeCallIfReady emergency anchor is not unique')
+          text = text.replace(old_call, new_call, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git diff --check
+          node --test \
+            security/phone-intelligence/emergency-number-legacy-routing.test.js \
+            security/phone-intelligence/emergency-handoff-contract.test.js
+
+      - name: Commit bounded patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "sentinel-ci"
+          git config user.email "sentinel-ci@users.noreply.github.com"
+          git add native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
+          git diff --cached --exit-code && { echo 'No patch produced'; exit 1; } || true
+          git commit -m "fix(phone-core): route emergency calls before ordinary gates"
+          git push origin HEAD:recovery/phone-core-emulator-phase2-20261005
