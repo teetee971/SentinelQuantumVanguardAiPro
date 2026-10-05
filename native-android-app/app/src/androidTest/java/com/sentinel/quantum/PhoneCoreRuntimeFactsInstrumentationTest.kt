@@ -1,6 +1,7 @@
 package com.sentinel.quantum
 
 import android.Manifest
+import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -79,5 +80,29 @@ class PhoneCoreRuntimeFactsInstrumentationTest {
                 context.packageName
             )
         assertNotNull(context.packageManager.resolveActivity(request, 0))
+    }
+
+    @Test
+    fun roleManagerRuntimeFactsMatchPlatformTruthFromAndroid10() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+
+        val roleManager = context.getSystemService(RoleManager::class.java)
+        assertNotNull(roleManager)
+        requireNotNull(roleManager)
+
+        val facts = PhoneCoreRuntimeFacts.read(context)
+        val dialerAvailable = roleManager.isRoleAvailable(RoleManager.ROLE_DIALER)
+        val dialerHeld = dialerAvailable && roleManager.isRoleHeld(RoleManager.ROLE_DIALER)
+        val smsAvailable = roleManager.isRoleAvailable(RoleManager.ROLE_SMS)
+        val smsHeld = smsAvailable && roleManager.isRoleHeld(RoleManager.ROLE_SMS)
+        val screeningAvailable = roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)
+        val screeningHeld = screeningAvailable && roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+
+        assertEquals(dialerAvailable, facts.dialerRoleAvailable)
+        assertEquals(dialerHeld, facts.dialerRoleHeld)
+        assertEquals(smsAvailable, facts.smsRoleAvailable)
+        assertEquals(smsHeld, facts.smsRoleHeld)
+        assertEquals(screeningAvailable, facts.callScreeningRoleAvailable)
+        assertEquals(screeningHeld, facts.callScreeningRoleHeld)
     }
 }
