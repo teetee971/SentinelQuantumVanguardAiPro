@@ -15,6 +15,7 @@ const workflow = existsAndRead('.github', 'workflows', 'android-emulation-qualif
 const codeqlWorkflow = existsAndRead('.github', 'workflows', 'codeql-analysis.yml');
 const manifest = read('native-android-app', 'app', 'src', 'main', 'AndroidManifest.xml');
 const physicalValidation = read('native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security', 'PhoneCorePhysicalValidation.kt');
+const callScreeningService = read('native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security', 'SentinelCallScreeningService.kt');
 const setupResumeTest = existsAndRead('native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'PhoneCoreSetupResumeInstrumentationTest.kt');
 const runtimeFlow = read('scripts', 'phone-core-emulator-flow.sh');
 const revocationFlow = existsAndRead('scripts', 'phone-core-emulator-revocation-flow.sh');
@@ -28,6 +29,7 @@ const settingsGradle = read('native-android-app', 'settings.gradle');
 const errors = [];
 const requiredApis = [24, 29, 36, 37];
 const runtimeApis = [29, 36, 37];
+const screeningDecisionApis = [36, 37];
 const requiredChecks = [
   'android_app_unit_tests',
   'wearable_contract_unit_tests',
@@ -67,7 +69,24 @@ if (gate.local_technical_certificate?.required_count !== physicalRequiredCount) 
   errors.push(`physical gate count ${String(gate.local_technical_certificate?.required_count)} does not match PhoneCorePhysicalValidation ${String(physicalRequiredCount)}`);
 }
 requireText(physicalValidation, 'const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"', 'Phone Core physical active-call evidence');
-requireText(physicalValidation, 'const val SIGNAL_CALL_SCREENED_PREFIX = "CALL_SCREENED:"', 'Phone Core call-screening evidence');
+requireText(physicalValidation, 'const val SIGNAL_CALL_SCREENED_PREFIX = "CALL_SCREENED:"', 'Phone Core call-screening decision evidence');
+
+for (const marker of [
+  'Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)',
+  'const val LIFECYCLE_TAG = "SentinelLifecycle"',
+  'const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"',
+  'getSystemService(TelephonyManager::class.java).isEmergencyNumber',
+  'if (emergency != false)',
+  'respondToCall(callDetails, CallResponse.Builder().build())'
+]) requireText(callScreeningService, marker, 'call-screening callback truth');
+const callbackMarkerIndex = callScreeningService.indexOf('Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)');
+const emergencyLookupIndex = callScreeningService.indexOf('getSystemService(TelephonyManager::class.java).isEmergencyNumber');
+if (callbackMarkerIndex < 0 || emergencyLookupIndex < 0 || callbackMarkerIndex > emergencyLookupIndex) {
+  errors.push('PII-free CallScreeningService callback marker must precede emergency-number classification');
+}
+if (callScreeningService.includes('PhonePrivateTimelineStore(this).append') && callbackMarkerIndex >= 0) {
+  errors.push('CallScreeningService must not perform timeline persistence before the mandatory platform response');
+}
 
 const minSdk = Number(buildGradle.match(/\bminSdk\s+(\d+)/)?.[1]);
 if (minSdk !== 24) errors.push(`expected audited Android minSdk 24, found ${String(minSdk)}`);
@@ -105,6 +124,9 @@ const emulation = gate.emulator_qualification;
 if (!emulation || emulation.required !== true) errors.push('emulator qualification must be required');
 if (!sameArray(emulation?.required_api_levels, requiredApis)) errors.push('emulator qualification must cover API 24, 29, 36 and 37');
 if (!sameArray(emulation?.phone_core_runtime_api_levels, runtimeApis)) errors.push('Phone Core runtime flows must cover API 29, 36 and 37');
+if (!sameArray(emulation?.call_screening_decision_api_levels, screeningDecisionApis)) {
+  errors.push('effective synthetic CallScreening rule-engine decisions must be required on API 36 and 37 while API 29 keeps callback-only emulator proof');
+}
 if (!Array.isArray(emulation?.required_checks) || new Set(emulation.required_checks).size !== emulation.required_checks.length) {
   errors.push('emulator required_checks must be a unique array');
 } else {
@@ -116,10 +138,15 @@ if (emulation?.passed === true && (typeof emulation.evidence_ref !== 'string' ||
 }
 
 const residual = gate.residual_external_validation;
-if (!Array.isArray(residual) || residual.length < 3) {
+if (!Array.isArray(residual) || residual.length < 4) {
   errors.push('residual external validation must declare non-emulatable release checks');
 } else {
-  const expectedIds = ['real_carrier_sms_mms_callbacks', 'samsung_s24_screening_latency', 'physical_dual_sim_oem_compatibility'];
+  const expectedIds = [
+    'real_carrier_sms_mms_callbacks',
+    'samsung_s24_screening_latency',
+    'android10_call_screening_decision',
+    'physical_dual_sim_oem_compatibility'
+  ];
   const ids = new Set(residual.map(item => item?.id));
   for (const id of expectedIds) if (!ids.has(id)) errors.push(`missing residual physical validation: ${id}`);
   for (const item of residual) {
@@ -178,22 +205,24 @@ for (const marker of [
   'interruptedFirstRunResumesWithoutFalseCompletion'
 ]) requireText(setupResumeTest, marker, 'private setup resume instrumentation');
 for (const marker of [
+  'FLOW_API=',
+  'wait_role_held android.app.role.CALL_SCREENING',
   'adb emu gsm call',
   'adb emu gsm accept "$FLOW_NUMBER"',
+  'wait_logcat_marker "CallScreeningService:onScreenCall"',
   'wait_incoming_sentinel_surface',
   "n.get('package') == package_name",
   "'Appel autorisé' in text",
   "'Appel entrant' in text and 'Sonnerie' in text",
   '01-dialer-first-launch',
   '01b-dialer-relaunch',
+  'if [[ "$FLOW_API" -ge 36 ]]',
   'wait_private_timeline_signal_prefix "CALL_SCREENED:"',
   'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
   'wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"',
   'shared_prefs/phone_private_timeline.xml',
   'adb emu sms send',
-  'for FLOW_ROLE in DIALER SMS',
-  'android.app.role.$FLOW_ROLE',
-  'android.app.role.CALL_SCREENING'
+  'for FLOW_ROLE in DIALER SMS CALL_SCREENING'
 ]) requireText(runtimeFlow, marker, 'emulator runtime flow');
 for (const marker of [
   'remove-role-holder',
@@ -202,14 +231,17 @@ for (const marker of [
   'Envoi SMS : autorisation Android requise.',
   'Détection SIM : accès à l’état téléphonique requis.',
   'rôle SMS disponible mais non accordé',
-  'assert_button_disabled "Envoyer"',
+  'scroll_until_ui_contains "Envoyer"',
+  'assert_action_disabled "Envoyer"',
   'tap_ui_text "Envoyer"',
   'assert_modem_call_absent "$DIALER_PROBE_NUMBER"',
   'tap_ui_text "Appeler"',
-  'SCREENING_BEFORE=',
+  'SCREENING_CALLBACK_BEFORE=',
+  'screening_callback_count',
+  'SCREENING_DECISION_BEFORE=',
   "timeline_signal_prefix_count 'CALL_SCREENED:'",
   'wait_modem_call_present "$SCREENING_PROBE_NUMBER"',
-  'android.app.role.CALL_SCREENING',
+  'wait_role_absent android.app.role.CALL_SCREENING',
   'assert_no_crash'
 ]) requireText(revocationFlow, marker, 'emulator protected-action revocation flow');
 for (const marker of ['AllStaticNavigationSurfacesInstrumentationTest', 'Screen.Home.route', 'Screen.Search.route', 'Screen.PhoneSecurity.route', 'Screen.NetworkSurveillance.route', 'Screen.CollectiveDefense.route', 'Screen.SmartHome.route', 'Screen.Vpn.route', 'Screen.Settings.route', 'fetchSemanticsNode()']) {
