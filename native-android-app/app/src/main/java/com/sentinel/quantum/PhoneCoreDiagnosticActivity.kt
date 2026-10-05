@@ -260,7 +260,8 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                         }
                         DiagnosticCard("Notifications") {
                             Fact("Notifications globales", yesNo(snapshot.notificationsGloballyEnabled))
-                            Fact("Canal appels", yesNo(snapshot.callNotificationChannelEnabled))
+                            Fact("Canal appels entrants", yesNo(snapshot.callNotificationChannelEnabled))
+                            Fact("Canal appels manqués", yesNo(snapshot.missedCallNotificationChannelEnabled))
                             Fact("Canal SMS", yesNo(snapshot.smsNotificationChannelEnabled))
                             Fact(
                                 "Plein écran appels",

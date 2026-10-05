@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
+import com.sentinel.quantum.security.SentinelMissedCallReceiver
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsNotificationHelper
 
@@ -59,6 +60,7 @@ internal object PhoneCoreRuntimeFacts {
                 notificationPermissionGranted &&
                     notificationsGloballyEnabled &&
                     SentinelCallNotificationHelper.isChannelEnabled(context) &&
+                    SentinelMissedCallReceiver.isChannelEnabled(context) &&
                     SmsNotificationHelper.isChannelEnabled(context) &&
                     fullScreenIntentReady
         )

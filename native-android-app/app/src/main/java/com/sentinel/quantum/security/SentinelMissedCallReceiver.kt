@@ -40,8 +40,8 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
                 PackageManager.PERMISSION_GRANTED
         ) return
         if (!manager.areNotificationsEnabled()) return
+        if (!isChannelEnabled(context)) return
 
-        ensureChannel(context)
         val openDialer = PendingIntent.getActivity(
             context,
             0,
@@ -53,7 +53,7 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
-            .setContentText("Ouvrir Sentinel pour consulter les appels récents.")
+            .setContentText("Ouvrir Sentinel Téléphone.")
             .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
@@ -75,23 +75,33 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
             }
         }
 
-    private fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val system = context.getSystemService(NotificationManager::class.java)
-        if (system.getNotificationChannel(CHANNEL_ID) != null) return
-        system.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_ID,
-                "Appels manqués Sentinel",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications d'appels manqués du composeur Sentinel"
-            }
-        )
-    }
+    companion object {
+        private const val CHANNEL_ID = "sentinel_missed_calls"
+        private const val NOTIFICATION_ID = 5102
 
-    private companion object {
-        const val CHANNEL_ID = "sentinel_missed_calls"
-        const val NOTIFICATION_ID = 5102
+        /** Ensure the default-dialer missed-call channel exists without overriding user choices. */
+        fun ensureChannel(context: Context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+            val system = context.getSystemService(NotificationManager::class.java)
+            if (system.getNotificationChannel(CHANNEL_ID) != null) return
+            system.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    "Appels manqués Sentinel",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Notifications d'appels manqués du composeur Sentinel"
+                }
+            )
+        }
+
+        /** Channel truth only; global notification permission/state is evaluated separately. */
+        fun isChannelEnabled(context: Context): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+            ensureChannel(context)
+            val channel = context.getSystemService(NotificationManager::class.java)
+                .getNotificationChannel(CHANNEL_ID) ?: return false
+            return channel.importance != NotificationManager.IMPORTANCE_NONE
+        }
     }
 }
