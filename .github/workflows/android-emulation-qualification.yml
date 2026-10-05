@@ -19,7 +19,7 @@ concurrency:
 jobs:
   contract-and-host-tests:
     name: Emulation contract, all module tests and lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Checkout repository
@@ -147,7 +147,7 @@ jobs:
   emulator-matrix:
     name: PhoneCore-Emulation-Qualification API ${{ matrix.api_level }}
     needs: contract-and-host-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
