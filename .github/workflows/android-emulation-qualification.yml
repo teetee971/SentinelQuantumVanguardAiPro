@@ -287,6 +287,7 @@ jobs:
               multi_sim_submit_readiness_contract: true,
               cold_install_and_relaunch: true,
               min_sdk_cold_launch: api === 24,
+              synthetic_call_screening_observed: modernPhoneCore,
               incoming_call_telecom_flow: modernPhoneCore,
               outgoing_call_telecom_flow: modernPhoneCore,
               incoming_sms_and_inline_reply: modernPhoneCore,
