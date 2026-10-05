@@ -7,14 +7,36 @@ FLOW_PACKAGE="com.sentinel.quantum"
 FLOW_NUMBER="5550100"
 FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
+FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+
+wait_role_held() {
+  local full_role="$1"
+  local evidence="$2"
+  for _ in $(seq 1 20); do
+    if adb shell cmd role get-role-holders --user 0 "$full_role" > "$FLOW_OUTPUT_DIR/$evidence" 2>&1 && \
+      grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  echo "Android role $full_role was not stably held by $FLOW_PACKAGE."
+  cat "$FLOW_OUTPUT_DIR/$evidence" 2>/dev/null || true
+  return 1
+}
 
 for FLOW_ROLE in DIALER SMS; do
   adb shell cmd role add-role-holder --user 0 "android.app.role.$FLOW_ROLE" "$FLOW_PACKAGE"
+  wait_role_held "android.app.role.$FLOW_ROLE" "role-${FLOW_ROLE,,}-held.txt"
 done
+# Android 10+ exposes ROLE_CALL_SCREENING. The runtime matrix starts at API 29 for Phone Core, so
+# role ownership is a required precondition rather than an optional best-effort shell command.
+adb shell cmd role add-role-holder --user 0 android.app.role.CALL_SCREENING "$FLOW_PACKAGE"
+wait_role_held android.app.role.CALL_SCREENING "role-call-screening-held.txt"
+
 for FLOW_PERMISSION in CALL_PHONE READ_PHONE_STATE READ_CONTACTS READ_CALL_LOG SEND_SMS READ_SMS RECEIVE_SMS RECEIVE_MMS RECEIVE_WAP_PUSH; do
   adb shell pm grant "$FLOW_PACKAGE" "android.permission.$FLOW_PERMISSION"
 done
-if [[ "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" -ge 33 ]]; then
+if [[ "$FLOW_API" -ge 33 ]]; then
   adb shell pm grant "$FLOW_PACKAGE" android.permission.POST_NOTIFICATIONS
 fi
 
@@ -38,6 +60,45 @@ PY
   done
   adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/failure.png" || true
   echo "Phone Core flow did not expose expected UI: $expected"
+  return 1
+}
+wait_incoming_sentinel_surface() {
+  for _ in $(seq 1 20); do
+    if fresh_ui && python3 - "$FLOW_XML" "$FLOW_PACKAGE" "$FLOW_NUMBER" <<'PYINCOMING'
+import sys, xml.etree.ElementTree as ET
+path, package_name, number = sys.argv[1:]
+try:
+    nodes = list(ET.parse(path).iter('node'))
+except Exception:
+    sys.exit(1)
+owned = [n for n in nodes if n.get('package') == package_name]
+text = ' '.join(
+    (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')).strip()
+    for n in owned
+)
+number_present = number in text
+sentinel_surface = (
+    'Appel autorisé' in text or
+    ('Appel entrant' in text and 'Sonnerie' in text)
+)
+sys.exit(0 if number_present and sentinel_surface else 1)
+PYINCOMING
+    then return 0; fi
+    sleep 1
+  done
+  capture failure
+  echo "Sentinel did not expose an app-owned incoming-call surface for $FLOW_NUMBER."
+  return 1
+}
+wait_logcat_marker() {
+  local marker="$1"
+  local evidence="$2"
+  for _ in $(seq 1 20); do
+    adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence" 2>/dev/null || true
+    if grep -Fq "$marker" "$FLOW_OUTPUT_DIR/$evidence"; then return 0; fi
+    sleep 0.5
+  done
+  echo "Expected PII-free Android lifecycle marker was not observed: $marker"
   return 1
 }
 tap_text() {
@@ -73,57 +134,119 @@ PYFOCUS
   echo "Inline reply input did not receive focus."
   return 1
 }
+wait_private_timeline_event() {
+  local direction="$1"
+  local signal="$2"
+  local evidence="$FLOW_OUTPUT_DIR/phone-private-timeline-${direction,,}-${signal,,}.xml"
+  for _ in $(seq 1 20); do
+    if adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null && \
+      python3 - "$evidence" "$direction" "$signal" <<'PYTIMELINE'
+import json, sys, xml.etree.ElementTree as ET
+path, direction, signal = sys.argv[1:]
+try:
+    root = ET.parse(path).getroot()
+    node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
+    events = json.loads((node.text if node is not None else '') or '[]')
+except Exception:
+    sys.exit(1)
+matched = any(
+    event.get('kind') == 'CALL' and
+    event.get('direction') == direction and
+    event.get('signal') == signal
+    for event in events
+)
+sys.exit(0 if matched else 1)
+PYTIMELINE
+    then return 0; fi
+    sleep 1
+  done
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null || true
+  echo "Phone Core private timeline did not record $direction/$signal."
+  return 1
+}
+wait_private_timeline_signal_prefix() {
+  local prefix="$1"
+  local evidence="$FLOW_OUTPUT_DIR/phone-private-timeline-prefix.xml"
+  for _ in $(seq 1 20); do
+    if adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null && \
+      python3 - "$evidence" "$prefix" <<'PYPREFIX'
+import json, sys, xml.etree.ElementTree as ET
+path, prefix = sys.argv[1:]
+try:
+    root = ET.parse(path).getroot()
+    node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
+    events = json.loads((node.text if node is not None else '') or '[]')
+except Exception:
+    sys.exit(1)
+matched = any(
+    event.get('kind') == 'CALL' and
+    event.get('direction') == 'INCOMING' and
+    str(event.get('signal') or '').startswith(prefix)
+    for event in events
+)
+sys.exit(0 if matched else 1)
+PYPREFIX
+    then return 0; fi
+    sleep 1
+  done
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null || true
+  echo "Phone Core private timeline did not record incoming signal prefix $prefix."
+  return 1
+}
 capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
+# This is the first application launch after the workflow's fresh APK install. Exercise a second
+# process launch as well so cold_install_and_relaunch is a real per-lane proof, not report metadata.
 adb shell am force-stop "$FLOW_PACKAGE"
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Clavier"
-capture 01-dialer
+capture 01-dialer-first-launch
+adb shell am force-stop "$FLOW_PACKAGE"
+adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
+wait_text "Clavier"
+capture 01b-dialer-relaunch
 
-# Locked incoming call exercises the real Telecom -> InCallService -> call UI path.
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
-wait_text "Décrocher"
-capture 02-incoming-call
-tap_text "Décrocher"
-wait_text "En communication"
-if python3 - "$FLOW_XML" <<'PY'
-import sys, xml.etree.ElementTree as ET
-bad = ('Aucun appel actif', 'Aucun appel détecté', 'liaison indisponible')
-sys.exit(0 if any(any(w in (n.get('text','')+' '+n.get('content-desc','')) for w in bad)
-                  for n in ET.parse(sys.argv[1]).iter('node')) else 1)
-PY
-then
-  echo "Active call was represented as missing/idle."
-  exit 1
+# First prove Telecom actually bound Sentinel's screening service. This marker contains no number or
+# identity. Android 10 can fail emergency-number classification on an emulator even after callback
+# invocation, so CALL_SCREENED:* remains a stricter, separate rule-engine-decision proof.
+wait_logcat_marker "CallScreeningService:onScreenCall" "call-screening-callback-logcat.txt"
+wait_incoming_sentinel_surface
+if [[ "$FLOW_API" -ge 36 ]]; then
+  wait_private_timeline_signal_prefix "CALL_SCREENED:"
+else
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml \
+    > "$FLOW_OUTPUT_DIR/phone-private-timeline-api${FLOW_API}-screening.xml" 2>/dev/null || true
 fi
-capture 03-active-call
+capture 02-incoming-call
+adb emu gsm accept "$FLOW_NUMBER"
+wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
+capture 03-incoming-active-evidence
 adb emu gsm cancel "$FLOW_NUMBER"
-wait_text "Appel terminé"
-capture 04-ended-call
+sleep 1
 
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 
-# Outgoing call originates from Sentinel's own button, matching the reported S24 scenario.
+# Outgoing call originates from Sentinel's own button and keeps the explicit InCall UI proof.
 adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "Appeler"
 tap_text "Appeler"
 wait_text "Composition" "En communication"
-# Some virtual carriers connect immediately; do not require a transient dialing state.
 if ! python3 - "$FLOW_XML" <<'PY'
 import sys, xml.etree.ElementTree as ET
 sys.exit(0 if any("En communication" in (n.get("text", "") + n.get("content-desc", "")) for n in ET.parse(sys.argv[1]).iter("node")) else 1)
 PY
 then adb emu gsm accept 5550101; fi
 wait_text "En communication"
+wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"
 capture 05-outgoing-call
 tap_text "Raccrocher"
 wait_text "Appel terminé"
 
-# Receive one synthetic SMS, open its conversation, and send an inline reply.
 adb shell am start -W -a android.intent.action.MAIN -n "$FLOW_PACKAGE/.SmsComposeActivity"
 adb emu sms send "$FLOW_SMS_NUMBER" "Sentinel emulator reply test"
 wait_text "Sentinel emulator reply test"
@@ -131,7 +254,6 @@ tap_text "Sentinel emulator reply test"
 wait_text "Répondre"
 capture 06-thread
 tap_text "Répondre"
-# A tap returns before Compose/IME focus settles; typing immediately can lose the first key.
 wait_reply_focus
 adb shell input text ReplyFromSentinel
 wait_text "ReplyFromSentinel"
@@ -155,4 +277,11 @@ if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
   exit 1
 fi
 capture 07-inline-reply
-echo "Synthetic Telecom call and inline SMS reply UI verified; physical validation remains pending."
+
+for FLOW_ROLE in DIALER SMS CALL_SCREENING; do
+  adb shell cmd role get-role-holders --user 0 "android.app.role.$FLOW_ROLE" \
+    > "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt" 2>/dev/null
+  grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt"
+done
+
+echo "Synthetic Telecom callback/calls, cold relaunch, and inline SMS reply verified; physical validation remains pending."
