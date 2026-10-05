@@ -1,0 +1,79 @@
+{
+  "schema_version": 2,
+  "updated_at": "2026-10-04",
+  "certification_schema_version": 5,
+  "manual_user_validation_required": false,
+  "emulator_qualification": {
+    "required": true,
+    "passed": false,
+    "evidence_ref": null,
+    "required_api_levels": [24, 29, 36, 37],
+    "phone_core_runtime_api_levels": [29, 36, 37],
+    "call_screening_decision_api_levels": [36, 37],
+    "required_checks": [
+      "android_app_unit_tests",
+      "wearable_contract_unit_tests",
+      "wearable_security_unit_tests",
+      "android_lint",
+      "phone_number_canonicalization_contract",
+      "multi_sim_submit_readiness_contract",
+      "connected_instrumentation_api24",
+      "connected_instrumentation_api29",
+      "connected_instrumentation_api36",
+      "connected_instrumentation_api37",
+      "all_static_navigation_surfaces_render",
+      "standalone_activity_surfaces_render",
+      "min_sdk_cold_launch",
+      "cold_install_and_relaunch",
+      "phone_core_setup_resume",
+      "synthetic_call_screening_observed",
+      "incoming_call_telecom_flow",
+      "outgoing_call_telecom_flow",
+      "incoming_sms_and_inline_reply",
+      "role_revocation_fail_closed",
+      "permission_revocation_fail_closed",
+      "no_crash_or_anr"
+    ],
+    "scope_note": "Ce gate automatise tout ce qui est reproductible sur Android Emulator et exécute explicitement les tests des trois modules Gradle app, wearable-contract et wearable-security. Il exécute aussi les contrats ciblés de canonicalisation téléphonique et de préparation multi-SIM avant envoi. Il ouvre toutes les destinations statiques du NavGraph ainsi que les activités autonomes Activation, Diagnostic et Voice Studio. Le check synthetic_call_screening_observed signifie que, sur API 29/36/37, Telecom a réellement invoqué CallScreeningService, prouvé par un marqueur Logcat sans PII. Sur API 36/37, le même parcours doit en plus produire la preuve privée CALL_SCREENED:* d'une décision effective du moteur. L'AVD Android 10 peut invoquer le callback puis rendre l'identification d'urgence indéterminée ; Sentinel doit alors rester fail-open sans fabriquer de décision CALL_SCREENED. API 24 couvre le plancher de compatibilité déclaré, API 29 la frontière RoleManager, API 36 Android 16 et API 37 Android 17 comme compatibilité runtime la plus récente. Les parcours téléphonie simulée restent explicitement synthétiques et ne constituent pas une preuve modem/opérateur physique."
+  },
+  "local_technical_certificate": {
+    "required_for_physical_release_evidence": true,
+    "required_count": 14,
+    "note": "Le contrat de certificat local v5 comporte 14 preuves, conformément à PhoneCorePhysicalValidation. Cette configuration décrit le nombre requis, pas un état 14/14 acquis. Les preuves appareil/réseau restent distinctes et ne sont pas requises pour qualifier une branche par émulation ; elles ne doivent pas être présentées comme automatisables si le signal dépend d'un modem, d'un opérateur ou d'un comportement OEM réel."
+  },
+  "residual_external_validation": [
+    {
+      "id": "real_carrier_sms_mms_callbacks",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Confirmer sur réseau opérateur réel les callbacks de livraison SMS et le succès transport MMS."
+    },
+    {
+      "id": "samsung_s24_screening_latency",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Sur Samsung Galaxy S24+ Android 16, mesurer la latence réelle avant respondToCall et démontrer une valeur maximale strictement inférieure à 500 ms.",
+      "max_pre_response_ms_exclusive": 500
+    },
+    {
+      "id": "android10_call_screening_decision",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Sur un appareil Android 10/API 29 réel, confirmer ROLE_CALL_SCREENING puis un appel entrant non urgent produisant une décision CALL_SCREENED:* ; l'AVD API 29 ne doit pas transformer une classification d'urgence indéterminée en fausse preuve de décision."
+    },
+    {
+      "id": "physical_dual_sim_oem_compatibility",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Confirmer sur au moins un appareil double-SIM réel que les comportements OEM/modem correspondent aux politiques multi-SIM déjà validées en logiciel et en émulation."
+    }
+  ]
+}

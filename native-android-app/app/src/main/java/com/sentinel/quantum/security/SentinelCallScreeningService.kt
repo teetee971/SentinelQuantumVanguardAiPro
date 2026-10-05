@@ -7,12 +7,19 @@ import android.telephony.TelephonyManager
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.Connection
+import android.util.Log
 import com.sentinel.quantum.CallerIdActivity
 import java.util.concurrent.atomic.AtomicLong
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
 class SentinelCallScreeningService : CallScreeningService() {
     override fun onScreenCall(callDetails: Call.Details) {
+        // PII-free lifecycle marker used by emulator qualification to prove that Telecom actually
+        // invoked the platform screening callback. Keep it before emergency classification because
+        // Android 10 emulators can legitimately fail that platform lookup; a callback observation
+        // is not the same thing as a completed rule-engine screening decision.
+        Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
 
@@ -26,7 +33,8 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
         }.getOrNull()
         // Emergency classification is safety-critical. If Android cannot classify the number,
-        // fail open rather than applying a blocking or silencing rule.
+        // fail open rather than applying a blocking or silencing rule. The lifecycle marker above
+        // may still prove callback invocation, but no CALL_SCREENED:* evidence is manufactured.
         if (emergency != false) {
             respondToCall(callDetails, CallResponse.Builder().build())
             return
@@ -155,6 +163,8 @@ class SentinelCallScreeningService : CallScreeningService() {
     }
 
     private companion object {
+        const val LIFECYCLE_TAG = "SentinelLifecycle"
+        const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
             threadName = "sentinel-call-screening-post-response"
         )

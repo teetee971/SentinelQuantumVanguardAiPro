@@ -13,7 +13,7 @@ export const UNIVERSAL_WORKFLOWS = Object.freeze([
 export const ANDROID_WORKFLOWS = Object.freeze([
   'build-native-android.yml',
   'build-aab-playconsole.yml',
-  'android-instrumentation.yml'
+  'android-emulation-qualification.yml'
 ]);
 
 export const WEB_WORKFLOWS = Object.freeze([
@@ -26,6 +26,7 @@ export const SECURITY_FUZZ_WORKFLOWS = Object.freeze(['security-fuzz.yml']);
 const ANDROID_WORKFLOW_FILES = new Set([
   '.github/workflows/build-native-android.yml',
   '.github/workflows/build-aab-playconsole.yml',
+  '.github/workflows/android-emulation-qualification.yml',
   '.github/workflows/android-instrumentation.yml',
   '.github/workflows/android-release.yml',
   '.github/workflows/codeql-analysis.yml'
