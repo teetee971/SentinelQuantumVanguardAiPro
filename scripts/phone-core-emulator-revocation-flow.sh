@@ -59,6 +59,25 @@ PY
   read -r x y <<< "$coordinates"
   adb shell input tap "$x" "$y"
 }
+assert_button_disabled() {
+  local needle="$1"
+  dump_ui
+  python3 - "$XML" "$needle" <<'PYDISABLED'
+import sys, xml.etree.ElementTree as ET
+path, needle = sys.argv[1:]
+root = ET.parse(path).getroot()
+for node in root.iter('node'):
+    if node.get('class') != 'android.widget.Button':
+        continue
+    text = ' '.join(
+        (child.get('text','') + ' ' + child.get('content-desc','') + ' ' + child.get('hint','')).strip()
+        for child in node.iter('node')
+    )
+    if needle in text:
+        sys.exit(0 if node.get('enabled') == 'false' else 2)
+sys.exit(1)
+PYDISABLED
+}
 assert_no_crash() {
   if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
     adb logcat -d -v time | tail -n 400
@@ -126,6 +145,8 @@ adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || tr
 launch_sms_surface "sms-send-permission-revoked-launch.txt"
 assert_sms_role_held
 wait_ui_contains "Envoi SMS : autorisation Android requise."
+wait_ui_contains "Envoyer"
+assert_button_disabled "Envoyer"
 capture 08-sms-send-permission-revoked
 if adb shell dumpsys package "$PACKAGE" | grep -E 'android.permission.SEND_SMS: granted=true' >/dev/null; then
   echo "SEND_SMS remained granted after explicit permission-only revocation."
@@ -138,6 +159,8 @@ adb shell pm revoke "$PACKAGE" android.permission.READ_PHONE_STATE >/dev/null 2>
 launch_sms_surface "sms-phone-state-permission-revoked-launch.txt"
 assert_sms_role_held
 wait_ui_contains "Détection SIM : accès à l’état téléphonique requis."
+wait_ui_contains "Envoyer"
+assert_button_disabled "Envoyer"
 capture 09-sms-phone-state-permission-revoked
 if adb shell dumpsys package "$PACKAGE" | grep -E 'android.permission.READ_PHONE_STATE: granted=true' >/dev/null; then
   echo "READ_PHONE_STATE remained granted after explicit permission-only revocation."
@@ -157,14 +180,13 @@ if adb shell cmd role get-role-holders --user 0 android.app.role.SMS | grep -q "
 fi
 wait_ui_contains "rôle SMS disponible mais non accordé"
 wait_ui_contains "Envoyer"
-SMS_SIGNAL_BEFORE="$(timeline_signal_prefix_count 'SMS_ALL_PARTS_SENT')"
+assert_button_disabled "Envoyer"
+# Tap the disabled protected action as an end-to-end guard: it must remain inert and must not
+# silently reacquire ROLE_SMS. No asynchronous callback counter is used here, avoiding pollution
+# from the legitimate SMS sent by the preceding runtime flow.
 tap_ui_text "Envoyer"
-sleep 2
-SMS_SIGNAL_AFTER="$(timeline_signal_prefix_count 'SMS_ALL_PARTS_SENT')"
-if [[ "$SMS_SIGNAL_AFTER" != "$SMS_SIGNAL_BEFORE" ]]; then
-  echo "SMS submission evidence advanced while SMS role was revoked."
-  exit 1
-fi
+sleep 1
+assert_button_disabled "Envoyer"
 if adb shell cmd role get-role-holders --user 0 android.app.role.SMS | grep -q "$PACKAGE"; then
   echo "SMS role was unexpectedly reacquired by the protected send attempt."
   exit 1
