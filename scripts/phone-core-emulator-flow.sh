@@ -278,6 +278,11 @@ else
     > "$FLOW_OUTPUT_DIR/phone-private-timeline-api${FLOW_API}-screening.xml" 2>/dev/null || true
 fi
 capture 02-incoming-call
+# CallerIdActivity can appear before Telecom finishes both screening callbacks on API 29.
+# Accepting at that point races Telecom's later SET_RINGING and loses the ACTIVE transition.
+# This event is recorded by InCallService only after it receives the ringing call and posts
+# its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
+wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
 adb emu gsm accept "$FLOW_NUMBER"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
 capture 03-incoming-active-evidence
@@ -340,4 +345,3 @@ for FLOW_ROLE in DIALER SMS CALL_SCREENING; do
 done
 
 echo "Synthetic Telecom callback/calls, cold relaunch, and inline SMS reply verified; physical validation remains pending."
-
