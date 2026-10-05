@@ -132,21 +132,38 @@ role_holders() {
   fi
 
   # Android 10/API 29 has add/remove role shell commands but no get-role-holders command.
-  # dumpsys role is the supported read path on that release.
-  adb shell dumpsys role 2>/dev/null | tr -d '\r' | python3 - "$full_role" <<'PYROLE'
+  # Persist dumpsys first because the heredoc below is already Python's stdin.
+  local role_dump="$OUT_DIR/role-state-current.txt"
+  if ! adb shell dumpsys role > "$role_dump" 2>/dev/null; then
+    return 1
+  fi
+  python3 - "$full_role" "$role_dump" <<'PYROLE'
 import re, sys
-role = sys.argv[1]
+role, path = sys.argv[1:]
+text = open(path, encoding='utf-8', errors='replace').read().replace('\r', '')
+
+match = re.search(re.escape(role) + r'\s*[=:]\s*\[([^\]]*)\]', text, re.S)
+if match:
+    for package in re.findall(r'[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+', match.group(1)):
+        print(package)
+    sys.exit(0)
+
+lines = text.splitlines()
 active = False
-for raw in sys.stdin:
+for raw in lines:
     line = raw.strip()
-    m = re.match(r'^name\s*[=:]\s*(.+)$', line)
-    if m:
-        active = m.group(1).strip() == role
+    named = re.match(r'^name\s*[=:]\s*(.+)$', line)
+    if named:
+        active = named.group(1).strip() == role
         continue
     if active:
-        h = re.match(r'^holders\s*[=:]\s*(.+)$', line)
-        if h:
-            print(h.group(1).strip())
+        holders = re.match(r'^holders\s*[=:]\s*(.+)$', line)
+        if holders:
+            for package in re.findall(r'[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+', holders.group(1)):
+                print(package)
+            sys.exit(0)
+
+sys.exit(1)
 PYROLE
 }
 
