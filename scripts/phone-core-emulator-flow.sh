@@ -18,8 +18,11 @@ role_holders() {
   direct_status=$?
   set -e
   if [[ "$direct_status" -eq 0 && "$direct_output" != *"Unknown command"* ]]; then
-    printf '%s\n' "$direct_output"
-    return 0
+    # Accept only a holder list, never shell diagnostics containing the package name.
+    if ! grep -Evq '^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$|^$' <<< "$direct_output"; then
+      printf '%s\n' "$direct_output"
+      return 0
+    fi
   fi
 
   # Android 10/API 29 can manage roles with `cmd role`, but its shell command does not expose
@@ -66,7 +69,7 @@ wait_role_held() {
   local evidence="$2"
   for _ in $(seq 1 20); do
     role_holders "$full_role" > "$FLOW_OUTPUT_DIR/$evidence" 2>&1 || true
-    if grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
+    if grep -Fxq "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
       return 0
     fi
     sleep 0.5
@@ -333,7 +336,8 @@ capture 07-inline-reply
 
 for FLOW_ROLE in DIALER SMS CALL_SCREENING; do
   role_holders "android.app.role.$FLOW_ROLE" > "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt" 2>&1 || true
-  grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt"
+  grep -Fxq "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt"
 done
 
 echo "Synthetic Telecom callback/calls, cold relaunch, and inline SMS reply verified; physical validation remains pending."
+

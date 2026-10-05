@@ -237,7 +237,7 @@ for (const marker of [
   'phone-core-emulator-revocation-flow.sh',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
-  'FATAL EXCEPTION: main',
+  'FATAL EXCEPTION:',
   'ANR in com\\.sentinel\\.quantum',
   'schema_version: 3',
   'physical_modem_claim: false',
@@ -312,7 +312,7 @@ for (const marker of [
   'pm revoke',
   'appops set',
   'set_send_sms_appop ignore',
-  'adb shell appops set "$PACKAGE" SEND_SMS "$mode"',
+  'adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode"',
   'assert_send_sms_appop_denied',
   'assert_sms_role_held',
   'assert_action_disabled "Envoyer"',
@@ -330,3 +330,4 @@ if (errors.length) {
   process.exit(1);
 }
 console.log('PHONE CORE EMULATION SHADOW GATE: PASS');
+

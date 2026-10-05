@@ -112,7 +112,7 @@ PYDISABLED
 }
 
 assert_no_crash() {
-  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
     adb logcat -d -v time | tail -n 400
     return 1
   fi
@@ -127,8 +127,11 @@ role_holders() {
   direct_status=$?
   set -e
   if [[ "$direct_status" -eq 0 && "$direct_output" != *"Unknown command"* ]]; then
-    printf '%s\n' "$direct_output"
-    return 0
+    # Accept only a holder list, never shell diagnostics containing the package name.
+    if ! grep -Evq '^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$|^$' <<< "$direct_output"; then
+      printf '%s\n' "$direct_output"
+      return 0
+    fi
   fi
 
   # Android 10/API 29 has add/remove role shell commands but no get-role-holders command.
@@ -170,7 +173,7 @@ PYROLE
 wait_role_held() {
   local full_role="$1"
   for _ in $(seq 1 20); do
-    if role_holders "$full_role" | grep -q "$PACKAGE"; then return 0; fi
+    if role_holders "$full_role" | grep -Fxq "$PACKAGE"; then return 0; fi
     sleep 0.5
   done
   echo "$full_role was not restored to $PACKAGE."
@@ -180,8 +183,12 @@ wait_role_held() {
 
 wait_role_absent() {
   local full_role="$1"
+  local holders
   for _ in $(seq 1 20); do
-    if ! role_holders "$full_role" | grep -q "$PACKAGE"; then return 0; fi
+    # A failed oracle is UNKNOWN, never proof that Android removed the role.
+    if holders="$(role_holders "$full_role")"; then
+      if ! grep -Fxq "$PACKAGE" <<< "$holders"; then return 0; fi
+    fi
     sleep 0.5
   done
   echo "$full_role remained held after explicit removal."
@@ -192,7 +199,7 @@ wait_role_absent() {
 ensure_role_held() {
   local full_role="$1"
   local slug="${full_role##*.}"
-  if role_holders "$full_role" | grep -q "$PACKAGE"; then return 0; fi
+  if role_holders "$full_role" | grep -Fxq "$PACKAGE"; then return 0; fi
   for attempt in 1 2 3 4 5; do
     set +e
     adb shell cmd role add-role-holder --user 0 "$full_role" "$PACKAGE" \
@@ -209,7 +216,7 @@ ensure_role_held() {
 }
 
 assert_sms_role_held() {
-  role_holders android.app.role.SMS | grep -q "$PACKAGE"
+  role_holders android.app.role.SMS | grep -Fxq "$PACKAGE"
 }
 
 permission_granted() {
@@ -239,7 +246,9 @@ probe_pm_revoke_send_sms() {
 set_send_sms_appop() {
   local mode="$1"
   local evidence="$2"
-  adb shell appops set "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1
+  # RoleController grants a UID-level mode on recent Android. A package-level deny
+  # cannot override that mode; deny at the same UID boundary and verify after launch.
+  adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1
   sleep 1
   adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
 }
@@ -287,7 +296,19 @@ PY
 }
 
 screening_callback_count() {
-  adb logcat -d -v brief 2>/dev/null | grep -F -c 'CallScreeningService:onScreenCall' || true
+  local evidence="$OUT_DIR/screening-callback-count-logcat.txt"
+  local count
+  if ! adb logcat -d -v brief > "$evidence"; then
+    echo "Screening callback oracle is unreadable; absence cannot be qualified." >&2
+    return 2
+  fi
+  if count="$(grep -F -c 'CallScreeningService:onScreenCall' "$evidence")"; then
+    printf '%s\n' "$count"
+  elif [[ "$count" == "0" ]]; then
+    printf '0\n'
+  else
+    return 2
+  fi
 }
 
 assert_modem_call_absent() {
@@ -338,7 +359,6 @@ for permission in SEND_SMS READ_SMS RECEIVE_SMS READ_PHONE_STATE; do
   adb shell pm grant "$PACKAGE" "android.permission.$permission" >/dev/null 2>&1 || true
 done
 assert_sms_role_held
-adb logcat -c >/dev/null 2>&1 || true
 
 # Record whether raw runtime revocation remains observable while ROLE_SMS is held. This is
 # diagnostic evidence only because the role controller is allowed to restore role-managed grants.
