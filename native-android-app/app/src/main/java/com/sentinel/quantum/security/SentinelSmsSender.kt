@@ -4,19 +4,19 @@ import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.net.Uri
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import java.security.SecureRandom
 
 /**
  * Real SMS sending primitive for the user-selected default-SMS client.
- * It refuses to send unless Sentinel actually holds ROLE_SMS and SEND_SMS is granted.
+ * It refuses to send unless Sentinel actually holds ROLE_SMS and the effective Android
+ * authorization (runtime permission plus associated AppOp, when defined) allows the operation.
  */
 class SentinelSmsSender(private val context: Context) {
 
@@ -35,10 +35,10 @@ class SentinelSmsSender(private val context: Context) {
             return SendResult(false, "INVALID_MESSAGE")
         }
         if (!holdsSmsRole()) return SendResult(false, "SMS_ROLE_NOT_HELD")
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) {
             return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
         }
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+        if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
             return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
         }
         when (emergencyNumberState(normalized)) {
@@ -137,6 +137,9 @@ class SentinelSmsSender(private val context: Context) {
             SendResult(false, SmsSubmissionOutcomePolicy.reasonForSynchronousException())
         }
     }
+
+    private fun hasEffectivePermission(permission: String): Boolean =
+        PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun sanitizeDestination(raw: String): String? {
         val value = raw.trim()
