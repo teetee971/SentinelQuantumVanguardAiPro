@@ -36,14 +36,18 @@ import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.security.AndroidPhoneNumberCanonicalizer
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.RtrDirectoryClient
 import com.sentinel.quantum.security.ExplainableAI
+import com.sentinel.quantum.security.GlobalPhoneIdentityPolicy
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.PhoneDirectoryRoutingPolicy
 import com.sentinel.quantum.security.PhoneMonitor
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.security.PhoneRegionRuntimeCache
 import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
@@ -52,7 +56,6 @@ import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -236,25 +239,62 @@ fun PhoneSecurityScreen(navController: NavController) {
                         monitorStats = phoneMonitor.getStats()
                         directoryRunning = true
                         arcepResult = null
+                        rtrResult = null
                         arcepStatus = "Recherche dans l’annuaire officiel…"
                         val candidate = phoneNumber
+                        val observedRegion = PhoneRegionRuntimeCache.currentRegionIso()
+                        val canonicalCandidate = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
+                            AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(candidate, observedRegion)
+                        )
+                        val directoryLookupNumber = canonicalCandidate ?: candidate
+                        val directoryTarget = PhoneDirectoryRoutingPolicy.targetFor(
+                            directoryLookupNumber,
+                            observedRegion
+                        )
                         scope.launch {
-                            val isAustria = RtrDirectoryClient.normalize(candidate) != null
-                            if (isAustria) {
-                                val lookup = withContext(Dispatchers.IO) { runCatching { RtrDirectoryClient().lookup(candidate) } }
-                                directoryRunning = false
-                                lookup.onSuccess {
-                                    rtrResult = it
-                                    arcepStatus = if (it != null && it.matches.isNotEmpty()) "Attribution RTR trouvée" else "Aucune attribution RTR correspondante"
-                                }.onFailure { arcepStatus = "Annuaire RTR temporairement indisponible" }
-                            } else {
-                                rtrResult = null
-                                val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
-                                directoryRunning = false
-                                lookup.onSuccess {
-                                    arcepResult = it
-                                    arcepStatus = if (it != null) "Attribution ARCEP trouvée" else "Aucune attribution ARCEP correspondante"
-                                }.onFailure { arcepStatus = "Annuaire ARCEP temporairement indisponible" }
+                            when (directoryTarget) {
+                                PhoneDirectoryRoutingPolicy.Target.RTR -> {
+                                    val lookup = withContext(Dispatchers.IO) {
+                                        runCatching { RtrDirectoryClient().lookup(directoryLookupNumber) }
+                                    }
+                                    directoryRunning = false
+                                    lookup.onSuccess {
+                                        rtrResult = it
+                                        arcepStatus = if (it != null && it.matches.isNotEmpty()) {
+                                            "Attribution RTR trouvée"
+                                        } else {
+                                            "Aucune attribution RTR correspondante"
+                                        }
+                                    }.onFailure {
+                                        arcepStatus = "Annuaire RTR temporairement indisponible"
+                                    }
+                                }
+                                PhoneDirectoryRoutingPolicy.Target.ARCEP -> {
+                                    val lookup = withContext(Dispatchers.IO) {
+                                        runCatching { ArcepDirectoryClient().lookup(directoryLookupNumber) }
+                                    }
+                                    directoryRunning = false
+                                    lookup.onSuccess {
+                                        arcepResult = it
+                                        arcepStatus = if (it != null) {
+                                            "Attribution ARCEP trouvée"
+                                        } else {
+                                            "Aucune attribution ARCEP correspondante"
+                                        }
+                                    }.onFailure {
+                                        arcepStatus = "Annuaire ARCEP temporairement indisponible"
+                                    }
+                                }
+                                PhoneDirectoryRoutingPolicy.Target.NONE -> {
+                                    directoryRunning = false
+                                    arcepStatus = if (canonicalCandidate == null && observedRegion == null) {
+                                        "Contexte téléphonique insuffisant : aucun annuaire national n’est interrogé."
+                                    } else if (canonicalCandidate == null) {
+                                        "Aucun annuaire officiel intégré pour ce format de numéro."
+                                    } else {
+                                        "Aucun annuaire officiel intégré pour cet indicatif."
+                                    }
+                                }
                             }
                         }
                     }
@@ -405,33 +445,48 @@ fun PhoneSecurityScreen(navController: NavController) {
                 Button(
                     onClick = {
                         val candidate = phoneNumber
-                        if (candidate.isNotBlank()) {
-                            remoteRunning = true
-                            remoteResult = null
-                            remoteStatus = "Enrichissement Sentinel en cours…"
-                            scope.launch {
-                                val checked = withContext(Dispatchers.IO) {
-                                    runCatching {
-                                        CallerReputationClient(
-                                            egressGate = {
-                                                settingsStore.callerReputationEnrichmentEnabled &&
-                                                    ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
-                                            }
-                                        ).evaluate(
-                                            callerNumber = candidate,
-                                            recipientCountry = Locale.getDefault().country.ifBlank { "FR" },
-                                            verificationStatus = "UNKNOWN",
-                                            privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
-                                            explicitConsent = settingsStore.callerReputationEnrichmentEnabled
-                                        )
+                        val recipientRegion = PhoneRegionRuntimeCache.currentRegionIso()
+                        val canonicalCandidate = GlobalPhoneIdentityPolicy.canonicalE164OrNull(
+                            AndroidPhoneNumberCanonicalizer.normalizeWithKnownRegion(candidate, recipientRegion)
+                        )
+                        when {
+                            candidate.isBlank() -> Unit
+                            recipientRegion == null -> {
+                                remoteResult = null
+                                remoteStatus = "Enrichissement suspendu : région de ligne non déterminée."
+                            }
+                            canonicalCandidate == null -> {
+                                remoteResult = null
+                                remoteStatus = "Enrichissement suspendu : numéro international non déterminé."
+                            }
+                            else -> {
+                                remoteRunning = true
+                                remoteResult = null
+                                remoteStatus = "Enrichissement Sentinel en cours…"
+                                scope.launch {
+                                    val checked = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            CallerReputationClient(
+                                                egressGate = {
+                                                    settingsStore.callerReputationEnrichmentEnabled &&
+                                                        ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
+                                                }
+                                            ).evaluate(
+                                                callerNumber = canonicalCandidate,
+                                                recipientCountry = recipientRegion,
+                                                verificationStatus = "UNKNOWN",
+                                                privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
+                                                explicitConsent = settingsStore.callerReputationEnrichmentEnabled
+                                            )
+                                        }
                                     }
-                                }
-                                remoteRunning = false
-                                checked.onSuccess {
-                                    remoteResult = it
-                                    remoteStatus = "Réputation distante reçue"
-                                }.onFailure {
-                                    remoteStatus = "Réputation distante indisponible"
+                                    remoteRunning = false
+                                    checked.onSuccess {
+                                        remoteResult = it
+                                        remoteStatus = "Réputation distante reçue"
+                                    }.onFailure {
+                                        remoteStatus = "Réputation distante indisponible"
+                                    }
                                 }
                             }
                         }
@@ -519,7 +574,6 @@ fun PhoneSecurityScreen(navController: NavController) {
     }
 }
 
-
 @Composable
 private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady: Boolean) {
     Card(
@@ -545,7 +599,6 @@ private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady
         }
     }
 }
-
 
 @Composable
 private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifier = Modifier) {

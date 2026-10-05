@@ -18,6 +18,8 @@ class PhoneDirectoryClientTest {
         assertEquals("0694123456", ArcepDirectoryClient.toFrenchNational("+594 694 12 34 56"))
         assertEquals("0692123456", ArcepDirectoryClient.toFrenchNational("+262 692 12 34 56"))
         assertEquals("0639123456", ArcepDirectoryClient.toFrenchNational("00262 639 12 34 56"))
+        assertEquals("0508123456", ArcepDirectoryClient.toFrenchNational("+508 12 34 56"))
+        assertEquals("0508123456", ArcepDirectoryClient.toFrenchNational("00508 12 34 56"))
         assertNull(ArcepDirectoryClient.toFrenchNational("+43 1 234567"))
     }
 

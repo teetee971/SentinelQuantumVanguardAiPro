@@ -9,9 +9,25 @@
 
     <string name="phone_lists_private_section">Vos règles privées</string>
     <string name="phone_lists_exact_title">Numéros bloqués par vous</string>
-    <string name="phone_lists_exact_details">Les numéros exacts ne sont pas conservés en clair. Sentinel n’affiche ici que le nombre d’empreintes actives.</string>
+    <string name="phone_lists_exact_details">Les numéros exacts ne sont pas conservés en clair. Sentinel n’affiche ici que le nombre d’empreintes actives et sûres pour la canonicalisation actuelle.</string>
+    <string name="phone_lists_exact_migration_title">Anciennes règles exactes en quarantaine</string>
+    <string name="phone_lists_exact_migration_body">%1$d ancienne(s) empreinte(s) ne bloque(nt) aucun appel. Leur pays d’origine ne peut pas être reconstruit sans le numéro brut, que Sentinel n’a jamais conservé. Ré-enregistrez les numéros souhaités en format international +pays ou avec une région SIM non ambiguë.</string>
+    <string name="phone_lists_exact_migration_action">Révoquer les anciennes empreintes</string>
+    <string name="phone_lists_exact_migration_confirm_title">Révoquer les anciennes règles ?</string>
+    <string name="phone_lists_exact_migration_confirm_body">Cette action supprime définitivement %1$d ancienne(s) empreinte(s) en quarantaine. Elle ne supprime pas les nouvelles règles E.164. Les numéros bruts ne peuvent pas être récupérés automatiquement.</string>
+    <string name="phone_lists_exact_migration_cancel">Annuler</string>
+    <string name="phone_lists_exact_migration_confirm">Révoquer</string>
+    <string name="phone_lists_exact_migration_removed">%1$d ancienne(s) empreinte(s) révoquée(s). Ré-enregistrez les numéros que vous souhaitez bloquer.</string>
+    <string name="phone_lists_exact_migration_failed">Aucune ancienne empreinte n’a été supprimée.</string>
     <string name="phone_lists_prefix_title">Préfixes bloqués par vous</string>
-    <string name="phone_lists_prefix_details">Règles explicitement créées sur cet appareil. Elles peuvent bloquer les appels correspondants.</string>
+    <string name="phone_lists_prefix_details">Règles explicitement créées sur cet appareil. Les nouvelles règles utilisent uniquement un préfixe international explicite (+pays…).</string>
+    <string name="phone_lists_prefix_migration_title">Anciens préfixes en quarantaine</string>
+    <string name="phone_lists_prefix_migration_body">%1$d ancien(s) préfixe(s) ne bloque(nt) aucun appel. Les versions précédentes pouvaient transformer silencieusement un préfixe national en +33, donc leur intention géographique ne peut pas être prouvée.</string>
+    <string name="phone_lists_prefix_migration_action">Révoquer les anciens préfixes</string>
+    <string name="phone_lists_prefix_migration_confirm_title">Révoquer les anciens préfixes ?</string>
+    <string name="phone_lists_prefix_migration_confirm_body">Cette action supprime définitivement %1$d ancien(s) préfixe(s) en quarantaine. Les nouvelles règles internationales restent intactes.</string>
+    <string name="phone_lists_prefix_migration_removed">%1$d ancien(s) préfixe(s) révoqué(s). Recréez uniquement les règles voulues avec un préfixe international explicite.</string>
+    <string name="phone_lists_prefix_migration_failed">Aucun ancien préfixe n’a été supprimé.</string>
     <string name="phone_lists_manage_rules">Gérer les règles de blocage</string>
 
     <string name="phone_lists_type_block">BLOQUER</string>

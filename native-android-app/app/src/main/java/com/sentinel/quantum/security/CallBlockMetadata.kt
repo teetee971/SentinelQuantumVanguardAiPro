@@ -14,15 +14,31 @@ object CallBlockMetadata {
 
     enum class Origin { MANUAL, AUTOMATED }
 
+    /**
+     * Records the semantics used before the irreversible fingerprint was produced.
+     *
+     * LEGACY_UNSPECIFIED is intentionally non-runnable after the region-aware migration: older
+     * builds could have silently converted any national 0… number to +33. Because the raw number
+     * was never persisted, those historical fingerprints cannot be disambiguated safely.
+     */
+    enum class Canonicalization {
+        LEGACY_UNSPECIFIED,
+        REGION_AWARE_E164_V1
+    }
+
     data class Entry(
         val fingerprint: String,
         val reason: String,
         val createdAtEpochMs: Long,
         val expiresAtEpochMs: Long?,
-        val origin: Origin
+        val origin: Origin,
+        val canonicalization: Canonicalization = Canonicalization.LEGACY_UNSPECIFIED
     ) {
         fun isActive(nowEpochMs: Long): Boolean =
             expiresAtEpochMs == null || expiresAtEpochMs > nowEpochMs
+
+        val safeForExactMatching: Boolean
+            get() = canonicalization == Canonicalization.REGION_AWARE_E164_V1
     }
 
     fun expiresAt(createdAtEpochMs: Long, duration: Duration): Long? =

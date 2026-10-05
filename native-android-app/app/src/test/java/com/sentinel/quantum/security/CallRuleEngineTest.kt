@@ -12,9 +12,11 @@ class CallRuleEngineTest {
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate(normalized).action)
     }
 
-    @Test fun frenchNationalAndInternationalFormsMatchTheSameExactRule() {
+    @Test fun explicitInternationalFormsMatchTheSameExactRule() {
         val blocked = "a".repeat(64)
-        val fingerprint: (String) -> Set<String> = { setOf(if (it == "0612345678") blocked else "b".repeat(64)) }
+        val fingerprint: (String) -> Set<String> = { value ->
+            setOf(if (value == "+33612345678" || value == "0033612345678") blocked else "b".repeat(64))
+        }
         val engine = CallRuleEngine(setOf(blocked), fingerprintsForNumber = fingerprint)
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("+33 6 12 34 56 78").action)
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("0033 6 12 34 56 78").action)
@@ -41,10 +43,42 @@ class CallRuleEngineTest {
         assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("08 99 12 34 56").action)
     }
 
-    @Test fun frenchAndInternationalPrefixesCanonicalizeConsistently() {
-        assertEquals("+33899", CallRuleEngine.normalizePrefix("0899"))
+    @Test fun regionlessNationalFormsNeverInventFrance() {
+        assertEquals("0899", CallRuleEngine.normalizePrefix("0899"))
         assertEquals("+33899", CallRuleEngine.normalizePrefix("0033 899"))
-        assertEquals("+33612345678", CallRuleEngine.normalizeNumber("06 12 34 56 78"))
+        assertEquals("0612345678", CallRuleEngine.normalizeNumber("06 12 34 56 78"))
+        assertEquals("0590123456", CallRuleEngine.normalizeNumber("05 90 12 34 56"))
+        assertEquals("0690123456", CallRuleEngine.normalizeNumber("06 90 12 34 56"))
+    }
+
+    @Test fun explicitInternationalCountryCallingCodesRemainStable() {
+        assertEquals("+590690123456", CallRuleEngine.normalizeNumber("+590 690 12 34 56"))
+        assertEquals("+590690123456", CallRuleEngine.normalizeNumber("00590 690 12 34 56"))
+        assertEquals("+594694123456", CallRuleEngine.normalizeNumber("+594 694 12 34 56"))
+        assertEquals("+596696123456", CallRuleEngine.normalizeNumber("+596 696 12 34 56"))
+        assertEquals("+262692123456", CallRuleEngine.normalizeNumber("+262 692 12 34 56"))
+    }
+
+    @Test fun nationalGuadeloupeNumberCannotFalseMatchFrenchPrefixWithoutRegion() {
+        val engine = CallRuleEngine(blockedPrefixes = setOf("+33690"))
+        assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("06 90 12 34 56").action)
+    }
+
+    @Test fun observedRegionCanBeInjectedWithoutChangingPureEnginePolicy() {
+        val blocked = "a".repeat(64)
+        val engine = CallRuleEngine(
+            blockedNumberHashes = setOf(blocked),
+            fingerprintsForNumber = { value ->
+                setOf(if (value == "+590690123456") blocked else "b".repeat(64))
+            },
+            numberNormalizer = { raw ->
+                when (CallRuleEngine.normalizeNumber(raw)) {
+                    "0690123456" -> "+590690123456"
+                    else -> CallRuleEngine.normalizeNumber(raw)
+                }
+            }
+        )
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("06 90 12 34 56").action)
     }
 
     @Test fun internationalCountryCallingCodeCanBeBlockedExplicitly() {

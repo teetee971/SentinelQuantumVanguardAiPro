@@ -7,11 +7,19 @@ import org.junit.Test
 
 class PhoneFavoritePolicyTest {
     @Test
-    fun canonicalRepresentationsCollapseToOneFavorite() {
-        val values = listOf("06 12 34 56 78", "+33612345678", "0033612345678")
+    fun explicitInternationalRepresentationsCollapseWithoutInventingNationalRegion() {
+        val values = listOf("+33612345678", "0033612345678")
             .mapNotNull(CallRuleEngine::normalizeNumber)
             .toSet()
         assertEquals(setOf("+33612345678"), values)
+    }
+
+    @Test
+    fun nationalRepresentationStaysDistinctUntilARegionIsObserved() {
+        val values = listOf("06 12 34 56 78", "+33612345678", "0033612345678")
+            .mapNotNull(CallRuleEngine::normalizeNumber)
+            .toSet()
+        assertEquals(setOf("0612345678", "+33612345678"), values)
     }
 
     @Test

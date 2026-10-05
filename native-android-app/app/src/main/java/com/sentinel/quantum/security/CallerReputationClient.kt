@@ -11,11 +11,17 @@ import java.util.concurrent.TimeUnit
  * Optional, post-screening enrichment. Never call this from CallScreeningService before
  * respondToCall(). The caller number is transmitted only when the user has explicitly enabled
  * remote enrichment in SettingsStore.
+ *
+ * Remote reputation identity is global, so this client accepts only an explicit/canonical E.164
+ * number. Region-dependent national syntax must be canonicalized at an Android boundary first.
+ * Recipient-country context must also match the process-local telephony observation; UI locale is
+ * never accepted as evidence for a phone region.
  */
 class CallerReputationClient(
     private val endpointBaseUrl: String = SentinelApiOrigin.baseUrl,
     private val allowedHosts: Set<String> = SentinelApiOrigin.allowedHosts,
     private val egressGate: () -> Boolean = { false },
+    private val recipientRegionEvidence: () -> String? = { PhoneRegionRuntimeCache.currentRegionIso() },
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(3, TimeUnit.SECONDS)
         .readTimeout(4, TimeUnit.SECONDS)
@@ -45,11 +51,13 @@ class CallerReputationClient(
         explicitConsent: Boolean = false
     ): Result {
         requireEgressAllowed(privacyMode, explicitConsent)
-        val normalized = CallRuleEngine.normalizeNumber(callerNumber)
-            ?: throw IllegalArgumentException("Invalid caller number")
+        val normalized = requireCanonicalE164(callerNumber)
+        val recipientRegion = canonicalRecipientRegion(recipientCountry)
+            ?: throw IllegalArgumentException("Recipient country required")
+        requireRecipientRegionEvidence(recipientRegion, recipientRegionEvidence)
         val body = JSONObject()
             .put("caller_number", normalized)
-            .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
+            .put("recipient_country", recipientRegion)
             .put("ring_duration_ms", JSONObject.NULL)
             .put("verification_status", verificationStatus.take(64))
             .toString()
@@ -85,6 +93,25 @@ class CallerReputationClient(
                 throw SecurityException("PHONE_CORE_REMOTE_EGRESS_REVOKED")
             }
         }
+
+        internal fun requireRecipientRegionEvidence(
+            requestedRegion: String,
+            evidence: () -> String?
+        ) {
+            val observed = canonicalRecipientRegion(runCatching { evidence() }.getOrNull())
+                ?: throw SecurityException("PHONE_CORE_RECIPIENT_REGION_UNKNOWN")
+            if (observed != requestedRegion) {
+                throw SecurityException("PHONE_CORE_RECIPIENT_REGION_MISMATCH")
+            }
+        }
+
+        /** Pure remote-identity boundary shared with all globally keyed phone features. */
+        internal fun requireCanonicalE164(raw: String?): String =
+            GlobalPhoneIdentityPolicy.requireCanonicalE164(raw)
+
+        /** Never default a missing/invalid recipient region to France. */
+        internal fun canonicalRecipientRegion(raw: String?): String? =
+            GlobalPhoneIdentityPolicy.canonicalRegionIsoOrNull(raw)
 
         internal fun endpoint(baseUrl: String, allowedHosts: Set<String>): String =
             SentinelApiEndpointPolicy.build(

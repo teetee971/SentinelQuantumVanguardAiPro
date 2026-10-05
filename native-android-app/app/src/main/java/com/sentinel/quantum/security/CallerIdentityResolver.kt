@@ -3,6 +3,10 @@ package com.sentinel.quantum.security
 /**
  * Deterministic, offline caller-ID facts safe to compute on the incoming-call path.
  * Names and organisations are deliberately supplied by a separate trusted local source.
+ *
+ * This resolver does not own regional canonicalization. It consumes explicit international E.164
+ * when available, or a region-neutral national representation when the Android boundary could not
+ * prove a country. That keeps presentation from silently reintroducing `0… -> +33…` semantics.
  */
 object CallerIdentityResolver {
     data class Country(val callingCode: String, val isoCode: String, val name: String, val flag: String)
@@ -45,29 +49,13 @@ object CallerIdentityResolver {
         )
     }
 
-    fun normalize(rawNumber: String?): String {
-        val compact = rawNumber.orEmpty().trim().filter { it.isDigit() || it == '+' }
-        if (compact.isEmpty()) return ""
-        val international = when {
-            compact.startsWith("+") -> "+" + compact.drop(1).filter(Char::isDigit)
-            compact.startsWith("00") -> "+" + compact.drop(2).filter(Char::isDigit)
-            compact.length == 10 && compact.startsWith("0590") -> "+590" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0594") -> "+594" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0596") -> "+596" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0262") -> "+262" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0269") -> "+262" + compact.drop(1)
-            compact.length == 10 && compact.startsWith('0') -> "+33" + compact.drop(1)
-            else -> compact.filter(Char::isDigit)
-        }
-        return international.take(32)
-    }
+    fun normalize(rawNumber: String?): String =
+        CallRuleEngine.normalizeNumber(rawNumber).orEmpty()
 
     private fun classifyType(number: String): String {
-        val french = when {
-            number.startsWith("+33") -> "0" + number.drop(3)
-            number.length == 10 && number.startsWith('0') -> number
-            else -> null
-        }
+        // Type classification is only asserted where the country is explicit in E.164. A national
+        // 06/08/09 sequence with unknown region is not called French merely because it looks French.
+        val french = number.takeIf { it.startsWith("+33") }?.let { "0" + it.drop(3) }
         return when {
             french?.startsWith("06") == true || french?.startsWith("07") == true -> "Mobile"
             french?.startsWith("01") == true || french?.startsWith("02") == true ||

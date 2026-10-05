@@ -107,7 +107,7 @@ class SignedCallRulePackageVerifier(
         if (keyId != envelopeKeyId) return null
         val prefixes = lines.drop(FIXED_PAYLOAD_LINES).map { line ->
             val raw = field(line, "silence_prefix") ?: return null
-            val normalized = CallRuleEngine.normalizePrefix(raw) ?: return null
+            val normalized = ManualPrefixPersistencePolicy.normalize(raw) ?: return null
             if (raw != normalized || normalized.count(Char::isDigit) < MIN_REPUTATION_PREFIX_DIGITS) return null
             normalized
         }

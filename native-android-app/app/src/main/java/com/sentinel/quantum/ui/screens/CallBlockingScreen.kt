@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
@@ -105,6 +106,51 @@ fun CallBlockingScreen(navController: NavController) {
                     "Règles privées" to SentinelD1.Cyan
                 )
             )
+
+            if (snapshot.exactRuleMigrationRequired || snapshot.prefixRuleMigrationRequired) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(
+                        Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "Migration de règles requise",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        if (snapshot.exactRuleMigrationRequired) {
+                            Text(
+                                stringResource(
+                                    R.string.phone_lists_exact_migration_body,
+                                    snapshot.quarantinedLegacyExactRuleCount
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        if (snapshot.prefixRuleMigrationRequired) {
+                            Text(
+                                stringResource(
+                                    R.string.phone_lists_prefix_migration_body,
+                                    snapshot.quarantinedLegacyPrefixRuleCount
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        Button(
+                            onClick = { navController.navigate(Screen.PhoneLists.route) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.phone_lists_title))
+                        }
+                    }
+                }
+            }
+
             Text(
                 if (roleHeld) stringResource(R.string.call_blocking_role_on) else stringResource(R.string.call_blocking_role_off),
                 fontWeight = FontWeight.Bold
@@ -185,7 +231,7 @@ fun CallBlockingScreen(navController: NavController) {
             HorizontalDivider()
             Text("Préfixes bloqués par vous", fontWeight = FontWeight.Bold)
             Text(
-                "Ajoutez un indicatif international ou un préfixe plus précis. Ces règles bloquent réellement les appels correspondants sur cet appareil.",
+                "Ajoutez un préfixe international explicite (+pays… ou 00pays…). Les formes nationales comme 0690… sont refusées plutôt que d’inventer un pays.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

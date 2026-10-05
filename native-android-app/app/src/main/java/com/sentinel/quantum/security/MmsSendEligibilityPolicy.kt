@@ -3,10 +3,13 @@ package com.sentinel.quantum.security
 import android.telephony.SubscriptionManager
 
 /**
- * Pure fail-closed eligibility boundary for future outgoing MMS transport.
+ * Pure fail-closed eligibility boundary for outgoing MMS transport.
  *
- * Passing this policy means only that a request is structurally eligible to be composed.
- * It does not mean that an MMS was submitted, sent or delivered by Android/the carrier.
+ * The transport selects a concrete subscription before invoking this policy and must supply an
+ * already canonical E.164 destination. This boundary therefore never invents a country from a
+ * national number and never silently accepts two region-dependent representations as equivalent.
+ * Passing this policy means only that a request is structurally eligible to be composed; it does
+ * not mean Android/the carrier accepted, sent or delivered the MMS.
  */
 object MmsSendEligibilityPolicy {
     const val MAX_ATTACHMENTS = 8
@@ -42,8 +45,8 @@ object MmsSendEligibilityPolicy {
         if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             return Result.Rejected("MMS_SUBSCRIPTION_REQUIRED")
         }
-        if (CallRuleEngine.normalizeNumber(destination) == null) {
-            return Result.Rejected("INVALID_DESTINATION")
+        if (GlobalPhoneIdentityPolicy.canonicalE164OrNull(destination) == null) {
+            return Result.Rejected("E164_DESTINATION_REQUIRED")
         }
         if (text.length > MAX_TEXT_CHARS) return Result.Rejected("TEXT_TOO_LARGE")
         if (attachments.isEmpty() && text.isBlank()) return Result.Rejected("EMPTY_MMS")

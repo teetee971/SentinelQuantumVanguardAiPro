@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,6 +24,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -60,6 +62,8 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     val store = remember(context) { CallBlocklistStore(context.applicationContext) }
     var postureEpoch by remember { mutableIntStateOf(0) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
+    var exactMigrationDialogVisible by remember { mutableStateOf(false) }
+    var prefixMigrationDialogVisible by remember { mutableStateOf(false) }
 
     DisposableEffect(hostActivity) {
         val observer = LifecycleEventObserver { _, event ->
@@ -102,6 +106,80 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     val arcepEnabledResult = stringResource(R.string.phone_lists_arcep_enabled_result)
     val arcepDisabledResult = stringResource(R.string.phone_lists_arcep_disabled_result)
     val arcepChangeFailed = stringResource(R.string.phone_lists_arcep_change_failed)
+    val exactMigrationRemoved = stringResource(
+        R.string.phone_lists_exact_migration_removed,
+        snapshot.quarantinedLegacyExactRuleCount
+    )
+    val exactMigrationFailed = stringResource(R.string.phone_lists_exact_migration_failed)
+    val prefixMigrationRemoved = stringResource(
+        R.string.phone_lists_prefix_migration_removed,
+        snapshot.quarantinedLegacyPrefixRuleCount
+    )
+    val prefixMigrationFailed = stringResource(R.string.phone_lists_prefix_migration_failed)
+
+    if (exactMigrationDialogVisible && snapshot.exactRuleMigrationRequired) {
+        AlertDialog(
+            onDismissRequest = { exactMigrationDialogVisible = false },
+            title = { Text(stringResource(R.string.phone_lists_exact_migration_confirm_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.phone_lists_exact_migration_confirm_body,
+                        snapshot.quarantinedLegacyExactRuleCount
+                    )
+                )
+            },
+            dismissButton = {
+                TextButton(onClick = { exactMigrationDialogVisible = false }) {
+                    Text(stringResource(R.string.phone_lists_exact_migration_cancel))
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val removed = store.discardQuarantinedLegacyExactRules()
+                        snapshot = store.snapshot()
+                        actionStatus = if (removed > 0) exactMigrationRemoved else exactMigrationFailed
+                        exactMigrationDialogVisible = false
+                    }
+                ) {
+                    Text(stringResource(R.string.phone_lists_exact_migration_confirm))
+                }
+            }
+        )
+    }
+
+    if (prefixMigrationDialogVisible && snapshot.prefixRuleMigrationRequired) {
+        AlertDialog(
+            onDismissRequest = { prefixMigrationDialogVisible = false },
+            title = { Text(stringResource(R.string.phone_lists_prefix_migration_confirm_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.phone_lists_prefix_migration_confirm_body,
+                        snapshot.quarantinedLegacyPrefixRuleCount
+                    )
+                )
+            },
+            dismissButton = {
+                TextButton(onClick = { prefixMigrationDialogVisible = false }) {
+                    Text(stringResource(R.string.phone_lists_exact_migration_cancel))
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val removed = store.discardQuarantinedLegacyPrefixRules()
+                        snapshot = store.snapshot()
+                        actionStatus = if (removed > 0) prefixMigrationRemoved else prefixMigrationFailed
+                        prefixMigrationDialogVisible = false
+                    }
+                ) {
+                    Text(stringResource(R.string.phone_lists_exact_migration_confirm))
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -144,6 +222,19 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 itemCount = snapshot.blockedNumberHashes.size,
                 details = stringResource(R.string.phone_lists_exact_details)
             )
+
+            if (snapshot.exactRuleMigrationRequired) {
+                MigrationWarningCard(
+                    title = stringResource(R.string.phone_lists_exact_migration_title),
+                    body = stringResource(
+                        R.string.phone_lists_exact_migration_body,
+                        snapshot.quarantinedLegacyExactRuleCount
+                    ),
+                    action = stringResource(R.string.phone_lists_exact_migration_action),
+                    onAction = { exactMigrationDialogVisible = true }
+                )
+            }
+
             ProtectionListCard(
                 title = stringResource(R.string.phone_lists_prefix_title),
                 type = stringResource(R.string.phone_lists_type_block),
@@ -157,6 +248,19 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 itemCount = manualPrefixes.size,
                 details = stringResource(R.string.phone_lists_prefix_details)
             )
+
+            if (snapshot.prefixRuleMigrationRequired) {
+                MigrationWarningCard(
+                    title = stringResource(R.string.phone_lists_prefix_migration_title),
+                    body = stringResource(
+                        R.string.phone_lists_prefix_migration_body,
+                        snapshot.quarantinedLegacyPrefixRuleCount
+                    ),
+                    action = stringResource(R.string.phone_lists_prefix_migration_action),
+                    onAction = { prefixMigrationDialogVisible = true }
+                )
+            }
+
             OutlinedButton(
                 onClick = { navController.navigate(Screen.CallBlocking.route) },
                 modifier = Modifier.fillMaxWidth()
@@ -309,6 +413,38 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun MigrationWarningCard(
+    title: String,
+    body: String,
+    action: String,
+    onAction: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                title,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                body,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            OutlinedButton(onClick = onAction, modifier = Modifier.fillMaxWidth()) {
+                Text(action)
+            }
         }
     }
 }
