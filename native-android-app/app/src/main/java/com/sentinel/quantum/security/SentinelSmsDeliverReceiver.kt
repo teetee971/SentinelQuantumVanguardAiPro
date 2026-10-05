@@ -45,6 +45,9 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
     }
 
     private fun processDelivery(context: Context, intent: Intent) {
+        // The default handler may change while this broadcast waits for the serial worker.
+        // Re-read Android at the asynchronous processing boundary instead of retaining onReceive's truth.
+        if (!holdsSmsRole(context)) return
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty() || messages.size > MAX_SMS_PARTS) {
             LocalLogger(context).log(
