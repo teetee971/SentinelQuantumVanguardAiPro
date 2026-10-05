@@ -282,27 +282,8 @@ jobs:
           adb logcat -c >/dev/null 2>&1 || true
 
           if [[ "$API_LEVEL" -ge 29 ]]; then
-            if [[ "$API_LEVEL" == "29" ]]; then
-              SMS_ROLE_READY=0
-              for attempt in 1 2 3 4 5; do
-                set +e
-                adb shell cmd role add-role-holder --user 0 android.app.role.SMS com.sentinel.quantum \
-                  > "$OUTPUT/api29-sms-role-add-attempt-${attempt}.txt" 2>&1
-                ROLE_STATUS=$?
-                set -e
-                if [[ "$ROLE_STATUS" -eq 0 ]] && \
-                  adb shell cmd role get-role-holders --user 0 android.app.role.SMS 2>/dev/null | grep -q com.sentinel.quantum; then
-                  SMS_ROLE_READY=1
-                  break
-                fi
-                sleep $attempt
-              done
-              if [[ "$SMS_ROLE_READY" != "1" ]]; then
-                echo "Android 10 emulator could not establish ROLE_SMS after five qualified retries."
-                cat "$OUTPUT"/api29-sms-role-add-attempt-*.txt 2>/dev/null || true
-                exit 1
-              fi
-            fi
+            # Role establishment and proof are owned by the runtime scripts. They use the modern
+            # get-role-holders shell command when available and a dumpsys-role proof on API 29.
             bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
             bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
           else
@@ -338,12 +319,116 @@ jobs:
           const fs = require('node:fs');
           const path = require('node:path');
           const api = Number(process.env.API_LEVEL);
+          const output = process.env.OUTPUT;
           const modernPhoneCore = api >= 29;
+          const hostPrerequisitesPassed = true; // This step is unreachable unless needs + instrumentation succeeded.
+          const file = (name) => path.join(output, name);
+          const exists = (name) => fs.existsSync(file(name));
+          const nonEmpty = (name, minBytes = 1) => exists(name) && fs.statSync(file(name)).size >= minBytes;
+          const read = (name) => exists(name) ? fs.readFileSync(file(name), 'utf8') : '';
+          const screenshot = (name) => nonEmpty(name, 256);
+          const contains = (name, needle) => read(name).includes(needle);
+          const packageHeld = (name) => contains(name, 'com.sentinel.quantum');
+
+          let revocation = null;
+          if (modernPhoneCore && exists('revocation-summary.json')) {
+            try {
+              revocation = JSON.parse(read('revocation-summary.json'));
+            } catch (error) {
+              revocation = { parse_error: String(error) };
+            }
+          }
+
+          const callbackObserved = modernPhoneCore &&
+            contains('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+          const decisionObserved = api >= 36
+            ? contains('phone-private-timeline-prefix.xml', 'CALL_SCREENED:')
+            : null;
+          const incomingCallObserved = modernPhoneCore &&
+            screenshot('02-incoming-call.png') &&
+            screenshot('03-incoming-active-evidence.png') &&
+            contains('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE');
+          const outgoingCallObserved = modernPhoneCore &&
+            screenshot('05-outgoing-call.png') &&
+            contains('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE');
+          const smsReplyObserved = modernPhoneCore &&
+            screenshot('06-thread.png') && screenshot('07-inline-reply.png');
+          const coldRelaunchObserved = modernPhoneCore
+            ? screenshot('01-dialer-first-launch.png') && screenshot('01b-dialer-relaunch.png')
+            : nonEmpty('min-sdk-first-pid.txt') && nonEmpty('min-sdk-second-pid.txt') &&
+              screenshot('01-min-sdk-first-launch.png') && screenshot('02-min-sdk-second-launch.png');
+          const restoredRolesObserved = modernPhoneCore &&
+            packageHeld('sms-role-restored.txt') &&
+            packageHeld('dialer-role-restored.txt') &&
+            packageHeld('call-screening-role-restored.txt');
+          const effectivePermissionDenied = modernPhoneCore &&
+            revocation?.schema_version === 2 &&
+            revocation?.effective_permission_denial_fail_closed === true &&
+            revocation?.effective_permission_probe === 'SEND_SMS_APP_OP_DENIED' &&
+            screenshot('08-sms-effective-permission-denied.png') &&
+            /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt'));
+          const roleRevocationFailClosed = modernPhoneCore &&
+            revocation?.schema_version === 2 &&
+            revocation?.role_revocation_fail_closed === true &&
+            restoredRolesObserved &&
+            screenshot('10-sms-role-revoked.png') &&
+            screenshot('11-dialer-role-revoked.png') &&
+            screenshot('12-call-screening-role-revoked.png');
+          const crashOrAnrAbsent = nonEmpty('logcat.txt') &&
+            !/FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+
+          const checks = {
+            connected_instrumentation: hostPrerequisitesPassed,
+            all_static_navigation_surfaces_render: hostPrerequisitesPassed,
+            standalone_activity_surfaces_render: hostPrerequisitesPassed,
+            phone_number_canonicalization_contract: hostPrerequisitesPassed,
+            multi_sim_submit_readiness_contract: hostPrerequisitesPassed,
+            cold_install_and_relaunch: coldRelaunchObserved,
+            min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
+            synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
+            synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
+            incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
+            outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
+            incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
+            setup_resume: modernPhoneCore ? hostPrerequisitesPassed : null,
+            role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
+            effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
+            crash_or_anr_absent: crashOrAnrAbsent
+          };
+
+          const required = api === 24
+            ? [
+                'connected_instrumentation',
+                'all_static_navigation_surfaces_render',
+                'standalone_activity_surfaces_render',
+                'cold_install_and_relaunch',
+                'min_sdk_cold_launch',
+                'crash_or_anr_absent'
+              ]
+            : [
+                'connected_instrumentation',
+                'all_static_navigation_surfaces_render',
+                'standalone_activity_surfaces_render',
+                'phone_number_canonicalization_contract',
+                'multi_sim_submit_readiness_contract',
+                'cold_install_and_relaunch',
+                'synthetic_call_screening_observed',
+                'incoming_call_telecom_flow',
+                'outgoing_call_telecom_flow',
+                'incoming_sms_and_inline_reply',
+                'setup_resume',
+                'role_revocation_fail_closed',
+                'effective_permission_denial_fail_closed',
+                'crash_or_anr_absent',
+                ...(api >= 36 ? ['synthetic_call_screening_decision_observed'] : [])
+              ];
+          const evidenceFailures = required.filter((name) => checks[name] !== true);
+
           const report = {
-            schema_version: 2,
+            schema_version: 3,
             qualification: 'ANDROID_APPLICATION_EMULATION',
             api_level: api,
-            result: 'PASS',
+            result: evidenceFailures.length === 0 ? 'PASS' : 'FAIL',
             synthetic_modem: modernPhoneCore,
             physical_modem_claim: false,
             commercial_release_claim: false,
@@ -353,25 +438,20 @@ jobs:
             source_head_ref: process.env.SOURCE_HEAD_REF,
             repository: process.env.GITHUB_REPOSITORY,
             workflow_run_id: process.env.GITHUB_RUN_ID,
-            checks: {
-              connected_instrumentation: true,
-              all_static_navigation_surfaces_render: true,
-              standalone_activity_surfaces_render: true,
-              phone_number_canonicalization_contract: true,
-              multi_sim_submit_readiness_contract: true,
-              cold_install_and_relaunch: true,
-              min_sdk_cold_launch: api === 24,
-              synthetic_call_screening_observed: modernPhoneCore,
-              incoming_call_telecom_flow: modernPhoneCore,
-              outgoing_call_telecom_flow: modernPhoneCore,
-              incoming_sms_and_inline_reply: modernPhoneCore,
-              setup_resume: modernPhoneCore,
-              role_revocation_fail_closed: modernPhoneCore,
-              permission_revocation_fail_closed: modernPhoneCore,
-              crash_or_anr_absent: true
-            }
+            evidence_source: {
+              host_contracts_and_instrumentation: 'preceding successful workflow steps',
+              runtime: 'files produced in this API lane',
+              revocation: modernPhoneCore ? 'revocation-summary.json + UI/AppOp evidence' : null
+            },
+            required_checks_for_lane: required,
+            evidence_failures: evidenceFailures,
+            checks
           };
-          fs.writeFileSync(path.join(process.env.OUTPUT, 'qualification.json'), JSON.stringify(report, null, 2) + '\n');
+          fs.writeFileSync(file('qualification.json'), JSON.stringify(report, null, 2) + '\n');
+          if (evidenceFailures.length) {
+            console.error(`Emulator evidence incomplete for API ${api}: ${evidenceFailures.join(', ')}`);
+            process.exit(1);
+          }
           NODE
 
       - name: Upload emulator qualification evidence
