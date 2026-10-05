@@ -56,6 +56,7 @@ import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
+import com.sentinel.quantum.security.OutgoingCallPermissionPolicy
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallHistoryInsights
 import com.sentinel.quantum.security.CallHistoryPresentationPolicy
@@ -429,9 +430,30 @@ class SentinelDialerActivity : ComponentActivity() {
         }
         selectedCallAccount = selectedLine.handle
 
-        val outgoingPermissionHint = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            runCatching { telecom.isOutgoingCallPermitted(selectedLine.handle) }.getOrNull()
-        } else null
+        val outgoingPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                if (telecom.isOutgoingCallPermitted(selectedLine.handle)) {
+                    OutgoingCallPermissionPolicy.State.ALLOWED
+                } else {
+                    OutgoingCallPermissionPolicy.State.DENIED
+                }
+            } catch (_: SecurityException) {
+                OutgoingCallPermissionPolicy.State.UNKNOWN
+            } catch (_: RuntimeException) {
+                OutgoingCallPermissionPolicy.State.UNKNOWN
+            }
+        } else {
+            OutgoingCallPermissionPolicy.State.API_NOT_SUPPORTED
+        }
+        if (!OutgoingCallPermissionPolicy.mayPlaceCall(outgoingPermissionState)) {
+            callActionStatus = when (outgoingPermissionState) {
+                OutgoingCallPermissionPolicy.State.DENIED ->
+                    "Android signale que cette ligne n’est pas autorisée pour un appel sortant. Aucun appel n’a été lancé."
+                else ->
+                    "Android n’a pas pu confirmer l’autorisation d’appel sortant sur cette ligne. Aucun appel n’a été lancé."
+            }
+            return
+        }
         val extras = Bundle().apply {
             putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, selectedLine.handle)
         }
@@ -443,8 +465,7 @@ class SentinelDialerActivity : ComponentActivity() {
         callActionStatus = if (failure == null) {
             "Demande d’appel transmise à Android via " + selectedLine.label + "."
         } else {
-            val hint = if (outgoingPermissionHint == false) " La ligne était signalée indisponible par Android." else ""
-            "Android n’a pas pu démarrer l’appel sur " + selectedLine.label + "." + hint
+            "Android n’a pas pu démarrer l’appel sur " + selectedLine.label + "."
         }
     }
 
