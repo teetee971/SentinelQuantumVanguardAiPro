@@ -246,11 +246,19 @@ probe_pm_revoke_send_sms() {
 set_send_sms_appop() {
   local mode="$1"
   local evidence="$2"
-  # RoleController grants a UID-level mode on recent Android. A package-level deny
-  # cannot override that mode; deny at the same UID boundary and verify after launch.
-  adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1
+  # Recent RoleController versions grant a UID-level mode. Android 10 can instead
+  # retain only a package mode. Try UID first, then the package boundary if the UID
+  # denial did not become observable. The caller must still prove denial after launch.
+  if ! adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1; then
+    echo "UID AppOp command failed; checking effective mode." >> "$OUT_DIR/$evidence"
+  fi
   sleep 1
   adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
+  if [[ "$mode" == "allow" ]] || ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
+    adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
+    sleep 1
+    adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
+  fi
 }
 
 assert_send_sms_appop_denied() {

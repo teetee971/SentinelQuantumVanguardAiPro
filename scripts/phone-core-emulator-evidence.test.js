@@ -39,6 +39,21 @@ test('effective SEND_SMS denial and restore target the role-managed UID mode', (
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('UID denial with no observed effect falls back to package mode and restores both boundaries', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-legacy-test-'));
+  try {
+    const result = spawnSync('bash', ['-c', `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nMODE=allow\nsleep() { :; }\nadb() {\n  printf '%s\\n' "$*" >> "$OUT_DIR/commands.txt"\n  if [[ "$*" == "shell appops get com.sentinel.quantum SEND_SMS" ]]; then printf 'SEND_SMS: %s\\n' "$MODE"; fi\n  if [[ "$*" == "shell appops set --user 0 com.sentinel.quantum SEND_SMS ignore" ]]; then MODE=ignore; fi\n  if [[ "$*" == "shell appops set --user 0 com.sentinel.quantum SEND_SMS allow" ]]; then MODE=allow; fi\n  return 0\n}\n${shellFunction('set_send_sms_appop')}\nset_send_sms_appop ignore deny.txt\nset_send_sms_appop allow restore.txt`, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(readFileSync(join(dir, 'deny.txt'), 'utf8'), /SEND_SMS: ignore/);
+    assert.match(readFileSync(join(dir, 'restore.txt'), 'utf8'), /SEND_SMS: allow/);
+    const commands = readFileSync(join(dir, 'commands.txt'), 'utf8');
+    assert.match(commands, /--uid com\.sentinel\.quantum SEND_SMS ignore/);
+    assert.match(commands, /--user 0 com\.sentinel\.quantum SEND_SMS ignore/);
+    assert.match(commands, /--uid com\.sentinel\.quantum SEND_SMS allow/);
+    assert.match(commands, /--user 0 com\.sentinel\.quantum SEND_SMS allow/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 function fixture(overrides = {}, alter = () => {}) {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-report-test-'));
   const output = join(dir, 'evidence');
