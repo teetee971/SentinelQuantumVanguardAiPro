@@ -32,6 +32,8 @@
       "incoming_call_telecom_flow",
       "outgoing_call_telecom_flow",
       "incoming_sms_and_inline_reply",
+      "sms_all_parts_sent_callback",
+      "sms_all_parts_delivered_callback",
       "role_revocation_fail_closed",
       "effective_permission_denial_fail_closed",
       "no_crash_or_anr"

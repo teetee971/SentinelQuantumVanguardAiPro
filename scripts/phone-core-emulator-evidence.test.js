@@ -51,6 +51,8 @@ function fixture(overrides = {}, alter = () => {}) {
   put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
   put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
   put('phone-private-timeline-prefix.xml', 'CALL_SCREENED:ALLOW');
+  put('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
+  put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
   for (const direction of ['incoming', 'outgoing']) put(`phone-private-timeline-${direction}-incall_active.xml`, 'INCALL_ACTIVE');
   put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
   put('revocation-summary.json', JSON.stringify({ schema_version: 2, effective_permission_denial_fail_closed: true, role_revocation_fail_closed: true, effective_permission_probe: 'SEND_SMS_APP_OP_DENIED' }));
@@ -130,6 +132,18 @@ test('missing APK digest cannot qualify provenance', () => {
   assert.equal(result.status, 1);
   assert.ok(report.evidence_failures.includes('apk_provenance'));
 });
+
+for (const [signal, file, check] of [
+  ['SENT', 'phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'sms_all_parts_sent_callback'],
+  ['DELIVERED', 'phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'sms_all_parts_delivered_callback']
+]) {
+  test(`reply screenshots without Android ${signal} callback cannot qualify SMS`, () => {
+    const { result, report } = fixture({}, ({ put }) => put(file, ''));
+    assert.equal(result.status, 1);
+    assert.equal(report.checks[check], false);
+    assert.ok(report.evidence_failures.includes(check));
+  });
+}
 
 test('revocation flow retains the preceding runtime logcat evidence', () => {
   assert.doesNotMatch(revocation, /adb logcat -c/);

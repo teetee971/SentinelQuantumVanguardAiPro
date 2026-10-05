@@ -420,6 +420,8 @@ jobs:
             contains('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE');
           const smsReplyObserved = modernPhoneCore &&
             screenshot('06-thread.png') && screenshot('07-inline-reply.png');
+          const smsSentCallbackObserved = contains('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
+          const smsDeliveredCallbackObserved = contains('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
           const coldRelaunchObserved = modernPhoneCore
             ? screenshot('01-dialer-first-launch.png') && screenshot('01b-dialer-relaunch.png')
             : nonEmpty('min-sdk-first-pid.txt') && nonEmpty('min-sdk-second-pid.txt') &&
@@ -467,6 +469,8 @@ jobs:
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
             incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
+            sms_all_parts_sent_callback: modernPhoneCore ? smsSentCallbackObserved : null,
+            sms_all_parts_delivered_callback: api >= 36 ? smsDeliveredCallbackObserved : null,
             role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
             effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
             no_crash_or_anr: crashOrAnrAbsent
@@ -494,9 +498,10 @@ jobs:
                 'incoming_call_telecom_flow',
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',
+                'sms_all_parts_sent_callback',
                 'role_revocation_fail_closed',
                 'effective_permission_denial_fail_closed',
-                ...(api >= 36 ? ['synthetic_call_screening_decision_observed'] : [])
+                ...(api >= 36 ? ['synthetic_call_screening_decision_observed', 'sms_all_parts_delivered_callback'] : [])
               ];
           const evidenceFailures = required.filter((name) => checks[name] !== true);
           if (process.env.RUNTIME_OUTCOME !== 'success') evidenceFailures.push('runtime_execution');
@@ -573,4 +578,3 @@ jobs:
           if [[ -f "$RUNNER_TEMP/sentinel-emulator.pid" ]]; then
             kill "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1 || true
           fi
-

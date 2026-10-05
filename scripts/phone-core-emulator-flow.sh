@@ -193,12 +193,13 @@ PYFOCUS
 wait_private_timeline_event() {
   local direction="$1"
   local signal="$2"
+  local kind="${3:-CALL}"
   local evidence="$FLOW_OUTPUT_DIR/phone-private-timeline-${direction,,}-${signal,,}.xml"
   for _ in $(seq 1 20); do
     if adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null && \
-      python3 - "$evidence" "$direction" "$signal" <<'PYTIMELINE'
+      python3 - "$evidence" "$direction" "$signal" "$kind" <<'PYTIMELINE'
 import json, sys, xml.etree.ElementTree as ET
-path, direction, signal = sys.argv[1:]
+path, direction, signal, kind = sys.argv[1:]
 try:
     root = ET.parse(path).getroot()
     node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
@@ -206,7 +207,7 @@ try:
 except Exception:
     sys.exit(1)
 matched = any(
-    event.get('kind') == 'CALL' and
+    event.get('kind') == kind and
     event.get('direction') == direction and
     event.get('signal') == signal
     for event in events
@@ -338,6 +339,12 @@ if [[ "$FLOW_REPLY_STORED" != "1" ]]; then
   exit 1
 fi
 capture 07-inline-reply
+# Provider visibility alone is insufficient: require the real Android SENT callback.
+# Recent emulator images also expose DELIVERED; this remains synthetic modem evidence.
+wait_private_timeline_event "OUTGOING" "SMS_ALL_PARTS_SENT" "SMS"
+if [[ "$FLOW_API" -ge 36 ]]; then
+  wait_private_timeline_event "OUTGOING" "SMS_ALL_PARTS_DELIVERED" "SMS"
+fi
 
 for FLOW_ROLE in DIALER SMS CALL_SCREENING; do
   role_holders "android.app.role.$FLOW_ROLE" > "$FLOW_OUTPUT_DIR/role-${FLOW_ROLE,,}-final.txt" 2>&1 || true
