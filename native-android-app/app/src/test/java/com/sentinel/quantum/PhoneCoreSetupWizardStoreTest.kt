@@ -24,15 +24,30 @@ class PhoneCoreSetupWizardStoreTest {
         notificationChannelsReady = notifications
     )
 
-    @Test fun firstMissingStateDeterminesStep() {
-        assertEquals(PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS, PhoneCoreSetupWizardStore.nextStep(facts()))
-        assertEquals(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, PhoneCoreSetupWizardStore.nextStep(facts(core = true)))
-        assertEquals(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true)))
+    @Test fun firstMissingStateDeterminesStepInLeastPrivilegeOrder() {
+        assertEquals(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, PhoneCoreSetupWizardStore.nextStep(facts()))
+        assertEquals(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, PhoneCoreSetupWizardStore.nextStep(facts(dialer = true)))
+        assertEquals(PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS, PhoneCoreSetupWizardStore.nextStep(facts(dialer = true, screening = true)))
         assertEquals(PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true, screening = true)))
         assertEquals(PhoneCoreSetupWizardStore.Step.SMS_ROLE, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true, screening = true, callLog = true)))
         assertEquals(PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true, screening = true, callLog = true, smsRole = true)))
         assertEquals(PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true, screening = true, callLog = true, smsRole = true, smsPermissions = true)))
         assertEquals(PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS, PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = true, screening = true, callLog = true, smsRole = true, smsPermissions = true, mms = true)))
+    }
+
+    @Test fun runtimePermissionsNeverPrecedePhoneRoles() {
+        assertEquals(
+            PhoneCoreSetupWizardStore.Step.DIALER_ROLE,
+            PhoneCoreSetupWizardStore.nextStep(facts(core = false, dialer = false, screening = false))
+        )
+        assertEquals(
+            PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE,
+            PhoneCoreSetupWizardStore.nextStep(facts(core = false, dialer = true, screening = false))
+        )
+        assertEquals(
+            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
+            PhoneCoreSetupWizardStore.nextStep(facts(core = false, dialer = true, screening = true))
+        )
     }
 
     @Test fun globalNotificationDisableBelongsToNotificationStepNotCorePermissions() {
@@ -65,6 +80,7 @@ class PhoneCoreSetupWizardStoreTest {
             PhoneCoreSetupWizardStore.nextStep(facts(core = true, dialer = false, screening = true, callLog = true, smsRole = true, smsPermissions = true, mms = true, notifications = true))
         )
     }
+
     @Test fun softwareReadinessUsesRuntimeFactsNotPersistence() {
         assertEquals(
             false,
@@ -106,7 +122,6 @@ class PhoneCoreSetupWizardStoreTest {
         }
     }
 
-
     @Test fun everySetupStepHasRationaleAndPrivacyCopy() {
         PhoneCoreSetupWizardStore.Step.entries.forEach { step ->
             assertEquals(false, PhoneCoreSetupWizardStore.stepRationale(step).isBlank())
@@ -114,19 +129,21 @@ class PhoneCoreSetupWizardStoreTest {
         }
     }
 
-    @Test fun setupProgressIsStableAndCompleteIsTerminal() {
-        assertEquals(1 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS))
+    @Test fun setupProgressMatchesRoleFirstFlowAndCompleteIsTerminal() {
+        assertEquals(1 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.DIALER_ROLE))
+        assertEquals(2 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE))
+        assertEquals(3 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS))
         assertEquals(5 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.SMS_ROLE))
         assertEquals(8 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS))
         assertEquals(8 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.COMPLETE))
     }
 
     @Test fun unavailableRoleRemainsBlockingButIsNotActionable() {
-        val dialerUnavailable = facts(core = true).copy(dialerRoleAvailable = false)
+        val dialerUnavailable = facts().copy(dialerRoleAvailable = false)
         assertEquals(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, PhoneCoreSetupWizardStore.nextStep(dialerUnavailable))
         assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, dialerUnavailable))
 
-        val screeningUnavailable = facts(core = true, dialer = true).copy(callScreeningRoleAvailable = false)
+        val screeningUnavailable = facts(dialer = true).copy(callScreeningRoleAvailable = false)
         assertEquals(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, PhoneCoreSetupWizardStore.nextStep(screeningUnavailable))
         assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, screeningUnavailable))
 
@@ -136,10 +153,10 @@ class PhoneCoreSetupWizardStoreTest {
     }
 
     @Test fun availableMissingRoleRemainsActionable() {
-        val dialerMissing = facts(core = true)
+        val dialerMissing = facts()
         assertEquals(true, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, dialerMissing))
 
-        val screeningMissing = facts(core = true, dialer = true)
+        val screeningMissing = facts(dialer = true)
         assertEquals(true, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE, screeningMissing))
 
         val smsMissing = facts(core = true, dialer = true, screening = true, callLog = true)
@@ -273,10 +290,7 @@ class PhoneCoreSetupWizardStoreTest {
     }
 
     @Test fun firstSetupTargetStillAutoLaunchesWithoutPriorAttempt() {
-        val target = PhoneCoreSetupWizardStore.targetKey(
-            PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS,
-            "android.permission.CALL_PHONE"
-        )
+        val target = PhoneCoreSetupWizardStore.targetKey(PhoneCoreSetupWizardStore.Step.DIALER_ROLE)
         assertEquals(
             true,
             PhoneCoreSetupWizardStore.shouldAutoLaunch(
@@ -292,5 +306,4 @@ class PhoneCoreSetupWizardStoreTest {
         assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.COMPLETE, facts()))
         assertEquals(false, PhoneCoreSetupWizardStore.shouldAutoLaunch(complete, complete))
     }
-
 }

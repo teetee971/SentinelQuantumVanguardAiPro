@@ -229,8 +229,8 @@ jobs:
           adb shell am force-stop com.sentinel.quantum
           adb logcat -c >/dev/null 2>&1 || true
           # am start -W can return non-zero when Android immediately hands foreground
-          # control to PermissionController. The assertions below independently require either
-          # PhoneCoreActivationActivity or its specifically-bound GrantPermissionsActivity,
+          # control to PermissionController/RoleController. The assertions below independently
+          # require PhoneCoreActivationActivity or a specifically-bound permission/role activity,
           # and still fail on Sentinel crash/ANR.
           SECOND_LAUNCH_STATUS=0
           adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$RUNNER_TEMP/sentinel-second-launch.txt" 2>&1 || SECOND_LAUNCH_STATUS=$?
@@ -252,8 +252,16 @@ jobs:
 
             # Equivalent proof during Android-controlled permission flow: GrantPermissionsActivity
             # is foreground and its result target is specifically PhoneCoreActivationActivity.
-            # Do not accept an unrelated system dialog merely because Sentinel remains in the task.
             if grep -Eq 'mResumedActivity.*permissioncontroller.*GrantPermissionsActivity|topResumedActivity=.*permissioncontroller.*GrantPermissionsActivity' "$SETUP_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$SETUP_DUMP"; then
+              SETUP_RESUMED=1
+              break
+            fi
+
+            # Equivalent proof for role-first activation: Android's role controller may own the
+            # foreground while ROLE_DIALER / ROLE_CALL_SCREENING is being requested. Accept it only
+            # when dumpsys binds the result specifically back to PhoneCoreActivationActivity.
+            if grep -Eiq 'mResumedActivity.*permissioncontroller.*role.*Activity|topResumedActivity=.*permissioncontroller.*role.*Activity' "$SETUP_DUMP" &&
                grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$SETUP_DUMP"; then
               SETUP_RESUMED=1
               break

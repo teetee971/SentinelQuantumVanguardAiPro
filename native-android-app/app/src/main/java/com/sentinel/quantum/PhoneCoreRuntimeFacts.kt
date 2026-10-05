@@ -39,8 +39,7 @@ internal object PhoneCoreRuntimeFacts {
         return PhoneCoreSetupWizardStore.Facts(
             corePermissionsReady =
                 hasPermission(context, Manifest.permission.CALL_PHONE) &&
-                    hasPermission(context, Manifest.permission.READ_PHONE_STATE) &&
-                    notificationPermissionGranted,
+                    hasPermission(context, Manifest.permission.READ_PHONE_STATE),
             dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
             dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
             callScreeningRoleHeld = callScreeningState == CallScreeningActivationPolicy.State.HELD,
@@ -57,7 +56,8 @@ internal object PhoneCoreRuntimeFacts {
                 hasPermission(context, Manifest.permission.RECEIVE_MMS) &&
                     hasPermission(context, Manifest.permission.RECEIVE_WAP_PUSH),
             notificationChannelsReady =
-                notificationsGloballyEnabled &&
+                notificationPermissionGranted &&
+                    notificationsGloballyEnabled &&
                     SentinelCallNotificationHelper.isChannelEnabled(context) &&
                     SmsNotificationHelper.isChannelEnabled(context) &&
                     fullScreenIntentReady

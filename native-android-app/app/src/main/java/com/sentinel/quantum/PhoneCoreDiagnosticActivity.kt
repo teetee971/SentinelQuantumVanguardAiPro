@@ -94,9 +94,9 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                 }
                 val setupChecks = remember(runtimeFacts) {
                     listOf(
-                        PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS to runtimeFacts.corePermissionsReady,
                         PhoneCoreSetupWizardStore.Step.DIALER_ROLE to runtimeFacts.dialerRoleHeld,
                         PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE to runtimeFacts.callScreeningRoleHeld,
+                        PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS to runtimeFacts.corePermissionsReady,
                         PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION to runtimeFacts.callLogPermissionGranted,
                         PhoneCoreSetupWizardStore.Step.SMS_ROLE to runtimeFacts.smsRoleHeld,
                         PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS to runtimeFacts.smsRuntimePermissionsReady,
