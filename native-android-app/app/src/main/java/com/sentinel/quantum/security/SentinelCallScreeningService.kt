@@ -84,7 +84,9 @@ class SentinelCallScreeningService : CallScreeningService() {
 
         // Caller-ID rendering happens only after the mandatory platform response. The profile is
         // computed offline and contains no invented person or company identity.
-        val verificationCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // STIR/SHAKEN verification on Call.Details was added in Android 11, not 10.
+        // Never call this accessor on API 29 after responding: it would crash the dialer process.
+        val verificationCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             when (callDetails.callerNumberVerificationStatus) {
                 Connection.VERIFICATION_STATUS_PASSED -> "VERIFIED"
                 Connection.VERIFICATION_STATUS_FAILED -> "FAILED"

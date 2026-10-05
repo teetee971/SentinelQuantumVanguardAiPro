@@ -180,6 +180,9 @@ for (const marker of [
   'respondToCall(callDetails, CallResponse.Builder().build())'
 ]) requireText(callScreeningService, marker, 'CallScreeningService truth');
 requireText(callBlocklistStore, 'internal fun cachedSnapshotForScreening', 'memory-only screening cache');
+if (!/val verificationCode = if \(Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.R\)\s*\{\s*when \(callDetails\.callerNumberVerificationStatus\)/.test(callScreeningService)) {
+  errors.push('callerNumberVerificationStatus requires Android 11/API 30; Android 10 must retain UNKNOWN without calling the accessor');
+}
 if (callScreeningService.includes('CallBlocklistStore(this)')) {
   errors.push('CallScreeningService must not construct CallBlocklistStore before respondToCall; SharedPreferences stay outside the screening critical path');
 }
