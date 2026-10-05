@@ -281,6 +281,10 @@ jobs:
         id: version
         working-directory: ./native-android-app
         shell: bash
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           set -euo pipefail
           VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
@@ -305,12 +309,15 @@ jobs:
           const name = process.env.BUILD_APK_NAME;
           const bytes = fs.readFileSync(name);
           const identity = {
-            schema_version: 1,
+            schema_version: 2,
             channel: 'debug-physical-test-candidate',
             apk_name: name,
             apk_sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
             apk_size_bytes: bytes.length,
             build_commit: process.env.GITHUB_SHA,
+            source_head_commit: process.env.SOURCE_HEAD_SHA,
+            source_base_commit: process.env.SOURCE_BASE_SHA || null,
+            source_head_ref: process.env.SOURCE_HEAD_REF,
             source_ref: process.env.GITHUB_REF,
             repository: process.env.GITHUB_REPOSITORY,
             run_id: process.env.GITHUB_RUN_ID,
@@ -324,7 +331,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: SentinelQuantumVanguard-APK-${{ github.sha }}
+          name: SentinelQuantumVanguard-APK-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             native-android-app/${{ steps.version.outputs.apk_name }}
             native-android-app/${{ steps.version.outputs.apk_name }}.sha256
@@ -353,7 +360,7 @@ jobs:
       - name: Download the tested APK
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          name: SentinelQuantumVanguard-APK-${{ github.sha }}
+          name: SentinelQuantumVanguard-APK-${{ github.event.pull_request.head.sha || github.sha }}
           path: native-android-app/ci-apk
       - name: Verify Telecom and inline reply on Android 16
         working-directory: ./native-android-app
@@ -440,7 +447,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: PhoneCore-Android16-UI-${{ github.sha }}
+          name: PhoneCore-Android16-UI-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/phone-core-ui/
           if-no-files-found: warn
           retention-days: 14
