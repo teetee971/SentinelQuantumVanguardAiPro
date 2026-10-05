@@ -223,7 +223,20 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
         val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
-        val lifecycleState = wizard.lifecycleState()
+        var lifecycleState = wizard.lifecycleState()
+
+        // A user may defer the guided journey, then finish every prerequisite later from Android
+        // settings or the manually opened Phone Core center. Promote the persisted UX lifecycle to
+        // COMPLETED only when current Android facts independently prove readiness. This restores
+        // future auto-repair on revocation without ever turning DEFERRED itself into readiness.
+        if (
+            lifecycleState != PhoneCoreSetupWizardStore.LifecycleState.COMPLETED &&
+            PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)
+        ) {
+            wizard.markCompleted()
+            lifecycleState = PhoneCoreSetupWizardStore.LifecycleState.COMPLETED
+        }
+
         if (!PhoneCoreSetupWizardStore.shouldAutoOpenSetup(lifecycleState, runtimeFacts)) return
 
         // Runtime truth remains authoritative. COMPLETED only suppresses the setup while Android
