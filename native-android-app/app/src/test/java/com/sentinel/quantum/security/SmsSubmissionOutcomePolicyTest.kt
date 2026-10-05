@@ -1,17 +1,30 @@
 package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SmsSubmissionOutcomePolicyTest {
-    @Test fun synchronousSubmissionExceptionRemainsNonConclusive() {
+    @Test fun failuresBeforeTheSmsManagerBoundaryRemainConclusive() {
+        assertEquals(
+            "SMS_TELEPHONY_PREPARATION_FAILED",
+            SmsSubmissionOutcomePolicy.reasonForPreparationException()
+        )
+        assertEquals(
+            "SMS_CALLBACK_PREPARATION_FAILED",
+            SmsSubmissionOutcomePolicy.reasonForCallbackPreparationException(true)
+        )
+        assertEquals(
+            "SMS_CALLBACK_PREPARATION_FAILED_PROVIDER_REPAIR_FAILED",
+            SmsSubmissionOutcomePolicy.reasonForCallbackPreparationException(false)
+        )
+    }
+
+    @Test fun actualSubmissionExceptionRemainsNonConclusive() {
         assertEquals(
             "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN",
-            SmsSubmissionOutcomePolicy.reasonForSynchronousException()
+            SmsSubmissionOutcomePolicy.reasonForSubmissionException()
         )
-        assertFalse(SmsSubmissionOutcomePolicy.shouldMarkProviderFailedOnSynchronousException())
     }
 
     @Test fun submissionsMustFitTheDurableMultipartCallbackBoundary() {

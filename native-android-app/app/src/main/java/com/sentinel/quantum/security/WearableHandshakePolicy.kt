@@ -8,6 +8,7 @@ import com.sentinel.quantum.wearable.security.VerifiedWearableHandshake
  * The crypto implementation is deliberately separate. Transport adapters must not manufacture
  * cryptographic truth: only the crypto boundary can issue [VerifiedHandshakeProof].
  */
+@ConsistentCopyVisibility
 data class PairingConfirmation internal constructor(
     val stableId: String,
     val sessionId: String,
