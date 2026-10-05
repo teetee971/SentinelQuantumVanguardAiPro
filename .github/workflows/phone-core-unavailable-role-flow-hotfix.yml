@@ -1,0 +1,189 @@
+name: Phone Core Unavailable Role Flow Hotfix
+
+on:
+  push:
+    branches:
+      - recovery/phone-core-emulator-phase2-20261005
+    paths:
+      - .github/workflows/phone-core-unavailable-role-flow-hotfix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-unavailable-role-flow:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: recovery/phone-core-emulator-phase2-20261005
+          fetch-depth: 0
+
+      - name: Apply bounded unavailable-role flow patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          store_path = Path('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt')
+          store = store_path.read_text(encoding='utf-8')
+          old = '''        fun nextStep(facts: Facts): Step = when {
+                      !facts.dialerRoleHeld -> Step.DIALER_ROLE
+                      !facts.callScreeningRoleHeld -> Step.CALL_SCREENING_ROLE
+                      !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
+                      !facts.callLogPermissionGranted -> Step.CALL_LOG_PERMISSION
+                      !facts.smsRoleHeld -> Step.SMS_ROLE
+                      !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
+                      !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+                      !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
+                      else -> Step.COMPLETE
+                  }
+          '''
+          new = '''        fun nextStep(facts: Facts): Step = when {
+                      !facts.dialerRoleHeld -> Step.DIALER_ROLE
+                      !facts.callScreeningRoleHeld -> Step.CALL_SCREENING_ROLE
+                      !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
+                      !facts.callLogPermissionGranted -> Step.CALL_LOG_PERMISSION
+                      !facts.smsRoleHeld -> Step.SMS_ROLE
+                      !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
+                      !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+                      !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
+                      else -> Step.COMPLETE
+                  }
+
+                  /**
+                   * Next step that Android can still act on without violating role-before-permission
+                   * dependencies. An unavailable role does not become success and remains visible as
+                   * the terminal blocker after every independent configurable branch has been handled.
+                   */
+                  fun nextConfigurableStep(facts: Facts): Step = when {
+                      !facts.dialerRoleHeld && facts.dialerRoleAvailable -> Step.DIALER_ROLE
+                      !facts.callScreeningRoleHeld && facts.callScreeningRoleAvailable -> Step.CALL_SCREENING_ROLE
+                      facts.dialerRoleHeld && !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
+                      facts.dialerRoleHeld && !facts.callLogPermissionGranted -> Step.CALL_LOG_PERMISSION
+                      !facts.smsRoleHeld && facts.smsRoleAvailable -> Step.SMS_ROLE
+                      facts.smsRoleHeld && !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
+                      facts.smsRoleHeld && !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+                      !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
+                      else -> nextStep(facts)
+                  }
+          '''
+          if store.count(old) != 1:
+              raise SystemExit('nextStep anchor is not unique')
+          store_path.write_text(store.replace(old, new, 1), encoding='utf-8')
+
+          activity_path = Path('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt')
+          activity = activity_path.read_text(encoding='utf-8')
+          old_activity = '''                val setupStep = remember(setupFacts) {
+                              PhoneCoreSetupWizardStore.nextStep(setupFacts)
+                          }'''
+          new_activity = '''                val setupStep = remember(setupFacts) {
+                              PhoneCoreSetupWizardStore.nextConfigurableStep(setupFacts)
+                          }'''
+          if activity.count(old_activity) != 1:
+              raise SystemExit('activation setupStep anchor is not unique')
+          activity_path.write_text(activity.replace(old_activity, new_activity, 1), encoding='utf-8')
+
+          test_path = Path('native-android-app/app/src/test/java/com/sentinel/quantum/PhoneCoreSetupConfigurableStepTest.kt')
+          test_path.write_text('''package com.sentinel.quantum
+
+          import org.junit.Assert.assertEquals
+          import org.junit.Assert.assertFalse
+          import org.junit.Test
+
+          class PhoneCoreSetupConfigurableStepTest {
+              private fun facts(
+                  core: Boolean = false,
+                  dialer: Boolean = false,
+                  dialerAvailable: Boolean = true,
+                  screening: Boolean = false,
+                  screeningAvailable: Boolean = true,
+                  callLog: Boolean = false,
+                  smsRole: Boolean = false,
+                  smsRoleAvailable: Boolean = true,
+                  smsPermissions: Boolean = false,
+                  mms: Boolean = false,
+                  notifications: Boolean = false
+              ) = PhoneCoreSetupWizardStore.Facts(
+                  corePermissionsReady = core,
+                  dialerRoleHeld = dialer,
+                  dialerRoleAvailable = dialerAvailable,
+                  callScreeningRoleHeld = screening,
+                  callScreeningRoleAvailable = screeningAvailable,
+                  callLogPermissionGranted = callLog,
+                  smsRoleHeld = smsRole,
+                  smsRoleAvailable = smsRoleAvailable,
+                  smsRuntimePermissionsReady = smsPermissions,
+                  mmsPermissionsReady = mms,
+                  notificationChannelsReady = notifications
+              )
+
+              @Test fun unavailablePhoneRolesDoNotBlockIndependentSmsActivation() {
+                  val runtime = facts(dialerAvailable = false, screeningAvailable = false)
+                  assertEquals(
+                      PhoneCoreSetupWizardStore.Step.SMS_ROLE,
+                      PhoneCoreSetupWizardStore.nextConfigurableStep(runtime)
+                  )
+                  assertFalse(PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtime))
+              }
+
+              @Test fun unavailableDialerNeverUnlocksDialerDependentRuntimePermissions() {
+                  val runtime = facts(
+                      dialerAvailable = false,
+                      screening = true,
+                      smsRole = true,
+                      smsPermissions = true,
+                      mms = true,
+                      notifications = true
+                  )
+                  assertEquals(
+                      PhoneCoreSetupWizardStore.Step.DIALER_ROLE,
+                      PhoneCoreSetupWizardStore.nextConfigurableStep(runtime)
+                  )
+                  assertFalse(PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, runtime))
+              }
+
+              @Test fun unavailableSmsRoleSkipsSmsAndMmsPermissionsButKeepsTruthBlocked() {
+                  val runtime = facts(
+                      core = true,
+                      dialer = true,
+                      screening = true,
+                      callLog = true,
+                      smsRoleAvailable = false,
+                      notifications = false
+                  )
+                  assertEquals(
+                      PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS,
+                      PhoneCoreSetupWizardStore.nextConfigurableStep(runtime)
+                  )
+                  val afterNotifications = runtime.copy(notificationChannelsReady = true)
+                  assertEquals(
+                      PhoneCoreSetupWizardStore.Step.SMS_ROLE,
+                      PhoneCoreSetupWizardStore.nextConfigurableStep(afterNotifications)
+                  )
+                  assertFalse(PhoneCoreSetupWizardStore.softwarePrerequisitesReady(afterNotifications))
+              }
+          }
+          ''', encoding='utf-8')
+          PY
+
+          git diff --check
+          grep -q 'nextConfigurableStep' native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt
+          grep -q 'nextConfigurableStep(setupFacts)' native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt
+
+      - name: Commit bounded patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "sentinel-ci"
+          git config user.email "sentinel-ci@users.noreply.github.com"
+          git add \
+            native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt \
+            native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt \
+            native-android-app/app/src/test/java/com/sentinel/quantum/PhoneCoreSetupConfigurableStepTest.kt
+          git diff --cached --exit-code && { echo 'No patch produced'; exit 1; } || true
+          git commit -m "fix(phone-core): bypass impossible role branches safely"
+          git push origin HEAD:recovery/phone-core-emulator-phase2-20261005
