@@ -24,6 +24,18 @@ const callBlocklistStore = read(
   'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security',
   'CallBlocklistStore.kt'
 );
+const smsDiagnostics = read(
+  'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security',
+  'SmsActivationDiagnostics.kt'
+);
+const smsSender = read(
+  'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security',
+  'SentinelSmsSender.kt'
+);
+const mmsSender = read(
+  'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum', 'security',
+  'SentinelMmsSender.kt'
+);
 const setupResumeTest = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum',
   'PhoneCoreSetupResumeInstrumentationTest.kt'
@@ -67,6 +79,12 @@ if (!sameArray(emulation?.phone_core_runtime_api_levels, [29, 36, 37])) {
 }
 if (!sameArray(emulation?.call_screening_decision_api_levels, [36, 37])) {
   errors.push('effective rule-engine screening decisions must remain API 36/37 emulator proofs only');
+}
+if (!Array.isArray(emulation?.required_checks) || !emulation.required_checks.includes('effective_permission_denial_fail_closed')) {
+  errors.push('emulator contract must require effective_permission_denial_fail_closed');
+}
+if (emulation?.required_checks?.includes('permission_revocation_fail_closed')) {
+  errors.push('ambiguous permission_revocation_fail_closed check is forbidden; role-managed grants must use effective authorization evidence');
 }
 if (emulation?.passed === true && !(typeof emulation.evidence_ref === 'string' && emulation.evidence_ref.trim())) {
   errors.push('emulator qualification cannot be marked passed without evidence_ref');
@@ -148,6 +166,13 @@ if (incomingGuard < 0 || callbackMarker < 0 || emergencyLookup < 0 || !(incoming
   errors.push('PII-free callback marker must be after the incoming-call guard and before emergency classification');
 }
 
+for (const permissionBoundary of [smsDiagnostics, smsSender, mmsSender]) {
+  requireText(permissionBoundary, 'PermissionChecker', 'effective SMS/MMS permission boundary');
+}
+requireText(smsDiagnostics, 'PermissionChecker.checkSelfPermission', 'SMS activation AppOp-aware truth');
+requireText(smsSender, 'PermissionChecker.checkSelfPermission', 'SMS send AppOp-aware truth');
+requireText(mmsSender, 'PermissionChecker.checkSelfPermission', 'MMS send AppOp-aware truth');
+
 for (const api of [24, 29, 36, 37]) {
   if (!new RegExp(`api_level:\\s*${api}\\b`).test(workflow)) {
     errors.push(`emulation workflow missing API ${api}`);
@@ -169,9 +194,13 @@ for (const marker of [
   'FATAL EXCEPTION: main',
   'ANR in com\\.sentinel\\.quantum',
   'physical_modem_claim: false',
-  'commercial_release_claim: false'
+  'commercial_release_claim: false',
+  'effective_permission_denial_fail_closed'
 ]) requireText(workflow, marker, 'shadow emulation workflow');
 
+if (workflow.includes('set-bypassing-role-qualification')) {
+  errors.push('emulator gate must never bypass Android role qualification');
+}
 if (workflow.includes('android-instrumentation.yml')) {
   errors.push('shadow workflow must not disable or mutate the existing instrumentation gate');
 }
@@ -208,6 +237,7 @@ for (const marker of [
 
 for (const marker of [
   'wait_role_held android.app.role.CALL_SCREENING',
+  'dumpsys role',
   'adb emu gsm call',
   'wait_logcat_marker "CallScreeningService:onScreenCall"',
   'wait_incoming_sentinel_surface',
@@ -221,8 +251,12 @@ for (const marker of [
 for (const marker of [
   'remove-role-holder',
   'pm revoke',
+  'appops set',
+  'SEND_SMS ignore',
+  'assert_send_sms_appop_denied',
   'assert_sms_role_held',
   'assert_action_disabled "Envoyer"',
+  'effective_permission_denial_fail_closed',
   'assert_modem_call_absent',
   'SCREENING_CALLBACK_BEFORE=',
   'SCREENING_DECISION_BEFORE=',
