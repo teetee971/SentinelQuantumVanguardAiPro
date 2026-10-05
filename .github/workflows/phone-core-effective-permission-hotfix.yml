@@ -1,0 +1,102 @@
+name: Phone Core Effective Permission Hotfix
+
+on:
+  push:
+    branches:
+      - recovery/phone-core-emulator-phase2-20261005
+    paths:
+      - .github/workflows/phone-core-effective-permission-hotfix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-effective-permission-truth:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: recovery/phone-core-emulator-phase2-20261005
+          fetch-depth: 0
+
+      - name: Apply bounded activation permission patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt')
+          text = path.read_text(encoding='utf-8')
+
+          old_imports = '''import androidx.core.content.ContextCompat
+          import androidx.core.app.NotificationManagerCompat'''
+          new_imports = '''import androidx.core.app.NotificationManagerCompat
+          import androidx.core.content.PermissionChecker'''
+          if text.count(old_imports) != 1:
+              raise SystemExit('permission import anchor is not unique')
+          text = text.replace(old_imports, new_imports, 1)
+
+          old_helper = '''    private fun hasPermission(permission: String): Boolean =
+                  ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED'''
+          new_helper = '''    private fun hasPermission(permission: String): Boolean =
+                  PermissionChecker.checkSelfPermission(this, permission) == PermissionChecker.PERMISSION_GRANTED'''
+          if text.count(old_helper) != 1:
+              raise SystemExit('permission helper anchor is not unique')
+          text = text.replace(old_helper, new_helper, 1)
+
+          if 'ContextCompat' in text:
+              raise SystemExit('unexpected ContextCompat usage remains in activation activity')
+          path.write_text(text, encoding='utf-8')
+
+          contract = Path('security/phone-intelligence/phone-core-effective-permission-truth.test.js')
+          contract.write_text(r'''import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import test from 'node:test';
+
+          const activation = fs.readFileSync(
+            'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
+            'utf8'
+          );
+          const runtime = fs.readFileSync(
+            'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt',
+            'utf8'
+          );
+
+          test('activation center and canonical runtime facts use effective Android permission truth', () => {
+            assert.match(activation, /import androidx\.core\.content\.PermissionChecker/);
+            assert.match(runtime, /import androidx\.core\.content\.PermissionChecker/);
+            assert.match(
+              activation,
+              /private fun hasPermission\(permission: String\): Boolean =\s*PermissionChecker\.checkSelfPermission\(this, permission\) == PermissionChecker\.PERMISSION_GRANTED/
+            );
+            assert.match(
+              runtime,
+              /private fun hasEffectivePermission\(context: Context, permission: String\): Boolean =\s*PermissionChecker\.checkSelfPermission\(context, permission\) == PermissionChecker\.PERMISSION_GRANTED/
+            );
+            assert.doesNotMatch(
+              activation,
+              /ContextCompat\.checkSelfPermission/,
+              'activation UI must not report a runtime grant as READY when the associated AppOp is denied'
+            );
+          });
+          ''', encoding='utf-8')
+          PY
+
+          git diff --check
+          node --test security/phone-intelligence/phone-core-effective-permission-truth.test.js
+
+      - name: Commit bounded patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "sentinel-ci"
+          git config user.email "sentinel-ci@users.noreply.github.com"
+          git add \
+            native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt \
+            security/phone-intelligence/phone-core-effective-permission-truth.test.js
+          git diff --cached --exit-code && { echo 'No patch produced'; exit 1; } || true
+          git commit -m "fix(phone-core): align activation permission truth"
+          git push origin HEAD:recovery/phone-core-emulator-phase2-20261005
