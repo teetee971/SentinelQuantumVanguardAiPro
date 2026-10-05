@@ -80,8 +80,33 @@ if (!sameArray(emulation?.phone_core_runtime_api_levels, [29, 36, 37])) {
 if (!sameArray(emulation?.call_screening_decision_api_levels, [36, 37])) {
   errors.push('effective rule-engine screening decisions must remain API 36/37 emulator proofs only');
 }
-if (!Array.isArray(emulation?.required_checks) || !emulation.required_checks.includes('effective_permission_denial_fail_closed')) {
-  errors.push('emulator contract must require effective_permission_denial_fail_closed');
+const expectedRequiredChecks = [
+  'android_app_unit_tests',
+  'wearable_contract_unit_tests',
+  'wearable_security_unit_tests',
+  'android_lint',
+  'phone_number_canonicalization_contract',
+  'multi_sim_submit_readiness_contract',
+  'connected_instrumentation_api24',
+  'connected_instrumentation_api29',
+  'connected_instrumentation_api36',
+  'connected_instrumentation_api37',
+  'all_static_navigation_surfaces_render',
+  'standalone_activity_surfaces_render',
+  'min_sdk_cold_launch',
+  'cold_install_and_relaunch',
+  'phone_core_setup_resume',
+  'synthetic_call_screening_observed',
+  'synthetic_call_screening_decision_observed',
+  'incoming_call_telecom_flow',
+  'outgoing_call_telecom_flow',
+  'incoming_sms_and_inline_reply',
+  'role_revocation_fail_closed',
+  'effective_permission_denial_fail_closed',
+  'no_crash_or_anr'
+];
+if (!sameArray(emulation?.required_checks, expectedRequiredChecks)) {
+  errors.push('emulator required_checks must exactly match the evidence keys produced by qualification.json');
 }
 if (emulation?.required_checks?.includes('permission_revocation_fail_closed')) {
   errors.push('ambiguous permission_revocation_fail_closed check is forbidden; role-managed grants must use effective authorization evidence');
@@ -195,6 +220,14 @@ for (const marker of [
   "instrumentationXml.includes('AllStaticNavigationSurfacesInstrumentationTest')",
   "instrumentationXml.includes('StandaloneActivitySmokeInstrumentationTest')",
   "instrumentationXml.includes('PhoneCoreSetupResumeInstrumentationTest')",
+  'connected_instrumentation_api${api}',
+  'phone_core_setup_resume',
+  'synthetic_call_screening_decision_observed',
+  'no_crash_or_anr',
+  'android_app_unit_tests',
+  'wearable_contract_unit_tests',
+  'wearable_security_unit_tests',
+  'android_lint',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
   'ACTUAL_API=',
@@ -216,8 +249,11 @@ if (workflow.includes('android-instrumentation.yml')) {
 if (workflow.includes('hostPrerequisitesPassed = true')) {
   errors.push('emulator qualification must not hardcode host/instrumentation prerequisites to true');
 }
-if (/connected_instrumentation:\s*true/.test(workflow) || /setup_resume:\s*modernPhoneCore/.test(workflow)) {
+if (/^\s*connected_instrumentation:\s*true\b/m.test(workflow) || /^\s*setup_resume:\s*modernPhoneCore\b/m.test(workflow)) {
   errors.push('qualification.json checks must be derived from actual workflow/test evidence, not static truthy literals');
+}
+if (/^\s*connected_instrumentation\s*:/m.test(workflow) || /^\s*setup_resume\s*:/m.test(workflow) || /^\s*crash_or_anr_absent\s*:/m.test(workflow)) {
+  errors.push('legacy qualification check keys are forbidden; report keys must match phone-core-production-gates.json exactly');
 }
 if (workflow.includes('cmd role get-role-holders --user 0 android.app.role.SMS')) {
   errors.push('workflow must not use get-role-holders as an Android 10/API 29 oracle; runtime scripts own the dumpsys-compatible role proof');
