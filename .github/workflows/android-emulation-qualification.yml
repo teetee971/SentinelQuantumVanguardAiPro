@@ -395,54 +395,59 @@ jobs:
             screenshot('12-call-screening-role-revoked.png');
           const crashOrAnrAbsent = nonEmpty('logcat.txt') &&
             !/FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+          const instrumentationKey = `connected_instrumentation_api${api}`;
 
           const checks = {
-            connected_instrumentation: instrumentationEvidencePassed,
+            android_app_unit_tests: hostContractsPassed,
+            wearable_contract_unit_tests: hostContractsPassed,
+            wearable_security_unit_tests: hostContractsPassed,
+            android_lint: hostContractsPassed,
+            phone_number_canonicalization_contract: hostContractsPassed,
+            multi_sim_submit_readiness_contract: hostContractsPassed,
+            [instrumentationKey]: instrumentationEvidencePassed,
             all_static_navigation_surfaces_render:
               instrumentationEvidencePassed && instrumentationXml.includes('AllStaticNavigationSurfacesInstrumentationTest'),
             standalone_activity_surfaces_render:
               instrumentationEvidencePassed && instrumentationXml.includes('StandaloneActivitySmokeInstrumentationTest'),
-            phone_number_canonicalization_contract: hostContractsPassed,
-            multi_sim_submit_readiness_contract: hostContractsPassed,
-            cold_install_and_relaunch: coldRelaunchObserved,
             min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
+            cold_install_and_relaunch: coldRelaunchObserved,
+            phone_core_setup_resume: modernPhoneCore
+              ? instrumentationEvidencePassed && instrumentationXml.includes('PhoneCoreSetupResumeInstrumentationTest')
+              : null,
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
             incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
-            setup_resume: modernPhoneCore
-              ? instrumentationEvidencePassed && instrumentationXml.includes('PhoneCoreSetupResumeInstrumentationTest')
-              : null,
             role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
             effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
-            crash_or_anr_absent: crashOrAnrAbsent
+            no_crash_or_anr: crashOrAnrAbsent
           };
 
+          const commonRequired = [
+            'android_app_unit_tests',
+            'wearable_contract_unit_tests',
+            'wearable_security_unit_tests',
+            'android_lint',
+            'phone_number_canonicalization_contract',
+            'multi_sim_submit_readiness_contract',
+            instrumentationKey,
+            'all_static_navigation_surfaces_render',
+            'standalone_activity_surfaces_render',
+            'cold_install_and_relaunch',
+            'no_crash_or_anr'
+          ];
           const required = api === 24
-            ? [
-                'connected_instrumentation',
-                'all_static_navigation_surfaces_render',
-                'standalone_activity_surfaces_render',
-                'cold_install_and_relaunch',
-                'min_sdk_cold_launch',
-                'crash_or_anr_absent'
-              ]
+            ? [...commonRequired, 'min_sdk_cold_launch']
             : [
-                'connected_instrumentation',
-                'all_static_navigation_surfaces_render',
-                'standalone_activity_surfaces_render',
-                'phone_number_canonicalization_contract',
-                'multi_sim_submit_readiness_contract',
-                'cold_install_and_relaunch',
+                ...commonRequired,
+                'phone_core_setup_resume',
                 'synthetic_call_screening_observed',
                 'incoming_call_telecom_flow',
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',
-                'setup_resume',
                 'role_revocation_fail_closed',
                 'effective_permission_denial_fail_closed',
-                'crash_or_anr_absent',
                 ...(api >= 36 ? ['synthetic_call_screening_decision_observed'] : [])
               ];
           const evidenceFailures = required.filter((name) => checks[name] !== true);
