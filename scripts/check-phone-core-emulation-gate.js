@@ -95,6 +95,9 @@ const dialerColdLaunchCommand = 'adb shell am start -W -n "$FLOW_PACKAGE/.Sentin
 if (runtimeFlow.split(dialerColdLaunchCommand).length - 1 < 2) {
   errors.push('modern Phone Core runtime must prove first launch plus process relaunch after fresh install');
 }
+if (revocationFlow.includes('SMS_SIGNAL_BEFORE=') || revocationFlow.includes("timeline_signal_prefix_count 'SMS_ALL_PARTS_SENT'")) {
+  errors.push('SMS role revocation must not depend on asynchronous callbacks from an earlier legitimate send');
+}
 
 const emulation = gate.emulator_qualification;
 if (!emulation || emulation.required !== true) errors.push('emulator qualification must be required');
@@ -195,7 +198,7 @@ for (const marker of [
   'Envoi SMS : autorisation Android requise.',
   'Détection SIM : accès à l’état téléphonique requis.',
   'rôle SMS disponible mais non accordé',
-  'SMS_SIGNAL_BEFORE=',
+  'assert_button_disabled "Envoyer"',
   'tap_ui_text "Envoyer"',
   'assert_modem_call_absent "$DIALER_PROBE_NUMBER"',
   'tap_ui_text "Appeler"',
