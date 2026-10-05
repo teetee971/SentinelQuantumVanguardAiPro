@@ -231,7 +231,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             receiveMmsPermissionGranted = state.receiveMmsPermission,
                             receiveWapPushPermissionGranted = state.receiveWapPushPermission,
                             mmsSafePreviewValidated = mmsSafePreviewValidated,
-                            physicalDeviceValidated = physicalEvidence.fullyValidated
+                            physicalDeviceValidated = physicalEvidence.physicalDeviceValidated
                         )
                     )
                 }

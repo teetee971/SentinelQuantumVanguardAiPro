@@ -23,6 +23,7 @@ const SOURCE_PATHS = Object.freeze({
   voiceStudio: 'native-android-app/app/src/main/java/com/sentinel/quantum/VoiceStudioActivity.kt',
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
+  phoneCoreActivation: 'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
   localLogger: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalLogger.kt',
   phoneCoreFrenchLabels: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt'
 });
@@ -46,10 +47,14 @@ export function auditProductTruth(sources) {
   const {
     manifest, strings, listing, architecture, privacy,
     callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
-    callScreening, localLogger, phoneCoreFrenchLabels
+    callScreening, localLogger, phoneCoreFrenchLabels, phoneCoreActivation
   } = sources;
 
   const presented = { strings, listing, architecture };
+  if (!phoneCoreActivation.includes('physicalDeviceValidated = physicalEvidence.physicalDeviceValidated') ||
+      /physicalDeviceValidated\s*=\s*physicalEvidence\.fullyValidated/.test(phoneCoreActivation)) {
+    errors.push('local technical certificate: runtime observations must not manufacture physical-device validation');
+  }
 
   if (!phoneCoreFrenchLabels.includes('\"MMS_ATTACHMENTS\" -> \"MMS entrants · aperçu sécurisé\"')) {
     errors.push('Phone Core MMS label must remain scoped to incoming safe preview until outgoing MMS is implemented and validated');

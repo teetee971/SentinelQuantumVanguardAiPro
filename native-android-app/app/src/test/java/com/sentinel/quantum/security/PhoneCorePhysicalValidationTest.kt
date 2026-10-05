@@ -91,6 +91,8 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.fullyValidated)
         assertEquals(14, evidence.completedCount)
+        assertEquals("local_technical_qualification", evidence.evidenceScope)
+        assertFalse("Fourteen runtime observations cannot attest physical hardware or a carrier", evidence.physicalDeviceValidated)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {

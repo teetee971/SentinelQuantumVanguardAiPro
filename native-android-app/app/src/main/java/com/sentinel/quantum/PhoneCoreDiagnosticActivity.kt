@@ -211,7 +211,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                                 if (certificationEvidence.fullyValidated) "COMPLÈTE" else "INCOMPLÈTE"
                             )
                             Text(
-                                "Ces critères servent à la qualification technique de Sentinel. Ils ne sont pas des étapes que le client doit exécuter pour utiliser les fonctions déjà configurées.",
+                                "Ces observations locales servent à la qualification technique, y compris sur émulateur. Elles ne valident ni un appareil physique ni un réseau opérateur ; cette validation reste indépendante.",
                                 style = MaterialTheme.typography.bodySmall
                             )
                             certificationCriteria.forEach { (id, passed) ->

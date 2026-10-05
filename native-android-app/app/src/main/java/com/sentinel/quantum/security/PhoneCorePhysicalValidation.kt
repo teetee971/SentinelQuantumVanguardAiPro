@@ -1,9 +1,10 @@
 package com.sentinel.quantum.security
 
 /**
- * Derives physical Phone Core validation from bounded local metadata and operational provider
- * probes observed by the current installed APK. No phone number, contact name, message body,
- * URL or subscription identifier is retained as validation evidence.
+ * Observes the fourteen local technical criteria from runtime metadata and provider probes.
+ * These observations can also come from an emulator. Even a complete local certificate does
+ * not establish physical hardware, carrier-network validation or commercial readiness.
+ * No phone number, contact name, message body, URL or subscription identifier is retained.
  */
 object PhoneCorePhysicalValidation {
     const val CERTIFICATION_SCHEMA_VERSION = 5
@@ -23,6 +24,11 @@ object PhoneCorePhysicalValidation {
         val callerIdUiShown: Boolean,
         val inCallUiShown: Boolean
     ) {
+        val evidenceScope: String get() = "local_technical_qualification"
+        // This model consumes no independently verified hardware/carrier evidence.
+        // Keep that claim separate from the fourteen observable runtime criteria below.
+        val physicalDeviceValidated: Boolean get() = false
+
         val completedCount: Int
             get() = listOf(
                 incomingCallConnected,
@@ -61,6 +67,7 @@ object PhoneCorePhysicalValidation {
                 if (!inCallUiShown) add("in_call_ui_shown")
             }
 
+        /** Completeness of the local technical certificate only, not physical validation. */
         val fullyValidated: Boolean
             get() = missingCriteria.isEmpty() && completedCount == requiredCount
     }

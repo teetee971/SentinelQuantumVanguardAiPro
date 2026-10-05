@@ -10,6 +10,12 @@ test('current Android user-facing claims match declared role-gated capabilities'
   assert.deepEqual(auditProductTruth(source()), []);
 });
 
+test('local runtime certificate cannot authorize a physical-device claim', () => {
+  const s = source();
+  s.phoneCoreActivation = s.phoneCoreActivation.replace('physicalDeviceValidated = physicalEvidence.physicalDeviceValidated', 'physicalDeviceValidated = physicalEvidence.fullyValidated');
+  assert.ok(auditProductTruth(s).some((e) => e.includes('runtime observations must not manufacture')));
+});
+
 test('detects obsolete unconditional call-log denial', () => {
   const s = source();
   s.strings += "\n<string name=\"obsolete\">Ne lit pas le journal d'appels</string>";
