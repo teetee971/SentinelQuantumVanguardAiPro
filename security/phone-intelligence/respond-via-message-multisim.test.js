@@ -7,7 +7,14 @@ const service = fs.readFileSync(
   'utf8'
 );
 
-test('platform quick replies reuse Android default SMS subscription without weakening fail-closed selection', () => {
+test('platform quick replies prefer the incoming-call subscription, then Android SMS default', () => {
+  assert.match(service, /android\.telephony\.extra\.SUBSCRIPTION_INDEX/);
+  assert.match(service, /EXTRA_LEGACY_SUBSCRIPTION\s*=\s*"subscription"/);
+  assert.match(
+    service,
+    /val quickReplySubscriptionId = intentSubscriptionId \?: platformDefaultSmsSubscriptionId/,
+    'Telecom-provided call subscription must take priority over the device SMS default'
+  );
   assert.match(service, /SubscriptionManager\.getDefaultSmsSubscriptionId\(\)/);
   assert.match(
     service,
@@ -16,16 +23,16 @@ test('platform quick replies reuse Android default SMS subscription without weak
   assert.match(
     service,
     /SentinelSmsSender\(appContext\)\.send\(destination, body, subscriptionId\)/,
-    'SMS quick reply must forward Android default subscription when one is available'
+    'SMS quick reply must forward the resolved subscription when one is available'
   );
   assert.match(
     service,
     /\?: SentinelSmsSender\(appContext\)\.send\(destination, body\)/,
-    'missing Android default must keep the existing fail-closed sender path'
+    'missing subscription evidence must keep the existing fail-closed sender path'
   );
   assert.match(
     service,
-    /requestedSubscriptionId\s*=\s*platformDefaultSmsSubscriptionId/,
-    'MMS quick reply must use the same Android default subscription contract'
+    /requestedSubscriptionId\s*=\s*quickReplySubscriptionId/,
+    'MMS quick reply must use the same resolved subscription contract'
   );
 });
