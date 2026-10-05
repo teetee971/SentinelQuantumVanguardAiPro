@@ -200,8 +200,8 @@ launch_sms_surface() {
 timeline_signal_prefix_count() {
   local prefix="$1"
   if ! adb shell run-as "$PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$TIMELINE_XML" 2>/dev/null; then
-    printf '0\n'
-    return 0
+    echo "Phone Core private timeline is unreadable; screening revocation evidence cannot be qualified." >&2
+    return 2
   fi
   python3 - "$TIMELINE_XML" "$prefix" <<'PY'
 import json, sys, xml.etree.ElementTree as ET
@@ -209,10 +209,14 @@ path, prefix = sys.argv[1:]
 try:
     root = ET.parse(path).getroot()
     node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
-    events = json.loads((node.text if node is not None else '') or '[]')
-except Exception:
-    print(0)
-    sys.exit(0)
+    if node is None:
+        raise ValueError('events node missing')
+    events = json.loads((node.text or '[]'))
+    if not isinstance(events, list):
+        raise ValueError('events payload is not a list')
+except Exception as exc:
+    print(f'Invalid Phone Core private timeline evidence: {exc}', file=sys.stderr)
+    sys.exit(2)
 print(sum(1 for event in events if str(event.get('signal') or '').startswith(prefix)))
 PY
 }
@@ -354,7 +358,8 @@ adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
 ensure_role_held android.app.role.DIALER
 
 # CALL_SCREENING role: a real incoming modem call must not invoke Sentinel's callback or create a
-# CALL_SCREENED:* decision while the role is absent.
+# CALL_SCREENED:* decision while the role is absent. Timeline read/parse errors are fatal because
+# an unreadable evidence source must never be interpreted as a zero-count proof.
 adb shell cmd role remove-role-holder --user 0 android.app.role.CALL_SCREENING "$PACKAGE"
 wait_role_absent android.app.role.CALL_SCREENING
 SCREENING_CALLBACK_BEFORE="$(screening_callback_count)"
