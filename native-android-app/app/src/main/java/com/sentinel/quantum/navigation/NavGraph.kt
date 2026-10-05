@@ -13,7 +13,7 @@ import com.sentinel.quantum.ui.screens.*
 fun NavGraph(
     navController: NavHostController,
     startDestination: String = Screen.Home.route,
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    themeMode: ThemeMode = ThemeMode.DARK,
     onThemeModeChange: (ThemeMode) -> Unit = {}
 ) {
     NavHost(

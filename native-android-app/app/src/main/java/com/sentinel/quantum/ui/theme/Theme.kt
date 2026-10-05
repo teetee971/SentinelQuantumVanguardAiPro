@@ -7,11 +7,11 @@ import com.sentinel.quantum.data.ThemeMode
 
 /**
  * Institutional Sentinel theme. [themeMode] lets the user force light or dark, or follow the
- * system setting ([ThemeMode.SYSTEM], the default) via [isSystemInDarkTheme].
+ * system setting ([ThemeMode.SYSTEM]) via [isSystemInDarkTheme]. D.1 defaults to dark.
  */
 @Composable
 fun SentinelQuantumTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    themeMode: ThemeMode = ThemeMode.DARK,
     content: @Composable () -> Unit
 ) {
     val useDarkTheme = when (themeMode) {

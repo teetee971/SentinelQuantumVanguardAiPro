@@ -22,9 +22,9 @@ class SettingsStore(context: Context) {
     private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 
     fun getThemeMode(): ThemeMode = try {
-        ThemeMode.valueOf(preferences.getString(THEME_MODE, null) ?: ThemeMode.SYSTEM.name)
+        ThemeMode.valueOf(preferences.getString(THEME_MODE, null) ?: ThemeMode.DARK.name)
     } catch (_: IllegalArgumentException) {
-        ThemeMode.SYSTEM
+        ThemeMode.DARK
     }
 
     fun setThemeMode(mode: ThemeMode) {
