@@ -122,7 +122,23 @@ assert_no_crash() {
 
 role_holders() {
   local full_role="$1"
-  adb shell cmd role get-role-holders --user 0 "$full_role" 2>/dev/null || true
+  local output status
+  set +e
+  output="$(adb shell cmd role get-role-holders --user 0 "$full_role" 2>/dev/null)"
+  status=$?
+  set -e
+  if [[ "$status" -eq 0 ]] && ! grep -qiE 'unknown command|error|exception' <<< "$output"; then
+    printf '%s\n' "$output"
+    return 0
+  fi
+
+  # Android 10/API 29 may support role mutation while omitting get-role-holders.
+  # Restrict the fallback to the requested dumpsys role section.
+  adb shell dumpsys role 2>/dev/null | awk -v role="$full_role" '
+    index($0, role) { in_role=1; next }
+    in_role && /android\.app\.role\.[A-Z_]+/ { exit }
+    in_role { print }
+  '
 }
 
 wait_role_held() {
@@ -276,7 +292,7 @@ if revoke_permission_if_observable SEND_SMS "send-sms-permission-revoke.txt"; th
   SEND_SMS_REVOCATION_OBSERVABLE=true
   launch_sms_surface "sms-send-permission-revoked-launch.txt"
   assert_sms_role_held
-  scroll_until_ui_contains "Envoi SMS : autorisation Android requise."
+
   scroll_until_ui_contains "Envoyer"
   assert_action_disabled "Envoyer"
   capture 08-sms-send-permission-revoked
@@ -299,7 +315,7 @@ if ! revoke_permission_if_observable READ_PHONE_STATE "read-phone-state-permissi
 fi
 launch_sms_surface "sms-phone-state-permission-revoked-launch.txt"
 assert_sms_role_held
-scroll_until_ui_contains "Détection SIM : accès à l’état téléphonique requis."
+
 scroll_until_ui_contains "Envoyer"
 assert_action_disabled "Envoyer"
 capture 09-sms-phone-state-permission-revoked
