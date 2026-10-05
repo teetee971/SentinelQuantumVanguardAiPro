@@ -3,18 +3,18 @@ package com.sentinel.quantum.security
 import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 
 /**
  * Single source of truth for the user-visible SMS activation state.
  *
  * This class never requests permissions and never changes the SMS role. It only reports what
  * Android has already granted so UI callers can remain fail-closed and ask for the minimum next
- * user action.
+ * user action. Permission reads include their associated AppOp when Android defines one, so a
+ * platform-level operation denial cannot be presented as an actionable send state.
  */
 class SmsActivationDiagnostics(private val context: Context) {
     enum class State { READY, LIMITED, LOCKED }
@@ -62,17 +62,17 @@ class SmsActivationDiagnostics(private val context: Context) {
         val blockers = linkedSetOf<Blocker>()
         val roleState = smsRoleState()
         if (roleState != SmsRoleState.HELD) blockers += Blocker.SMS_ROLE_REQUIRED
-        if (!hasPermission(Manifest.permission.SEND_SMS)) {
+        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) {
             blockers += Blocker.SEND_SMS_PERMISSION_REQUIRED
         }
-        if (!hasPermission(Manifest.permission.READ_SMS)) {
+        if (!hasEffectivePermission(Manifest.permission.READ_SMS)) {
             blockers += Blocker.READ_SMS_PERMISSION_REQUIRED
         }
-        if (!hasPermission(Manifest.permission.RECEIVE_SMS)) {
+        if (!hasEffectivePermission(Manifest.permission.RECEIVE_SMS)) {
             blockers += Blocker.RECEIVE_SMS_PERMISSION_REQUIRED
         }
 
-        val hasPhoneState = hasPermission(Manifest.permission.READ_PHONE_STATE)
+        val hasPhoneState = hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)
         if (!hasPhoneState) blockers += Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED
 
         var lookupFailed = false
@@ -107,8 +107,8 @@ class SmsActivationDiagnostics(private val context: Context) {
         return Snapshot(state, blockers, subscriptions, roleState)
     }
 
-    private fun hasPermission(permission: String): Boolean =
-        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    private fun hasEffectivePermission(permission: String): Boolean =
+        PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun smsRoleState(): SmsRoleState = context.readSmsRoleStateFailClosed()
 
@@ -156,4 +156,3 @@ internal fun Context.readSmsRoleStateFailClosed(): SmsActivationDiagnostics.SmsR
             SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
         }
     }
-
