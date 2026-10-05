@@ -200,9 +200,10 @@ jobs:
           FIRST_RUN_READY=0
           for _ in $(seq 1 30); do
             # MainActivity can become RESUMED before the Phone Core hand-off has completed.
-            # Require the persistent STARTED marker before force-stopping. STARTED is not
-            # COMPLETED: an unfinished wizard must resume on the next cold launch.
-            if adb shell run-as com.sentinel.quantum cat shared_prefs/sentinel_first_run_setup.xml 2>/dev/null | grep -q 'name="phone_core_setup_started_v2" value="true"'; then
+            # Require the canonical lifecycle state before force-stopping. IN_PROGRESS is
+            # not success: runtime Android facts remain authoritative and an interrupted
+            # setup must resume on the next cold launch.
+            if adb shell run-as com.sentinel.quantum cat shared_prefs/phone_core_setup_wizard_v2.xml 2>/dev/null | grep -Eq 'name="lifecycle_state_v1">(OFFERED|IN_PROGRESS)<'; then
               FIRST_RUN_READY=1
               break
             fi
@@ -214,7 +215,7 @@ jobs:
             sleep 1
           done
           if [[ "$FIRST_RUN_READY" != "1" ]]; then
-            echo "Sentinel did not persist the Phone Core setup STARTED state within 30 seconds."
+            echo "Sentinel did not persist the canonical Phone Core setup lifecycle state within 30 seconds."
             adb shell dumpsys activity activities || true
             adb shell run-as com.sentinel.quantum sh -c 'for f in shared_prefs/*; do echo "=== $f ==="; cat "$f"; done' 2>/dev/null || true
             adb logcat -d -v time | tail -n 400
