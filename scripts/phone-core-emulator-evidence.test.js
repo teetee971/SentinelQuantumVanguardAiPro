@@ -89,6 +89,9 @@ for (const [name, output, status, expected] of [
     const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR=/tmp\nrole_holders() { printf '%s\\n' '${output}'; return ${status}; }\nsleep() { :; }\nadb() { :; }\n${shellFunction('wait_role_absent')}\nwait_role_absent android.app.role.SMS`;
     const result = spawnSync('bash', ['-c', script], { encoding: 'utf8' });
     assert.equal(result.status, expected, result.stderr);
+    if (expected !== 0) {
+      assert.match(result.stdout, status === 0 ? /last observation: held/ : /last observation: unknown/);
+    }
   });
 }
 

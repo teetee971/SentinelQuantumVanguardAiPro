@@ -157,14 +157,18 @@ wait_role_held() {
 wait_role_absent() {
   local full_role="$1"
   local holders
+  local observation="unknown"
   for _ in $(seq 1 20); do
     # A failed oracle is UNKNOWN, never proof that Android removed the role.
     if holders="$(role_holders "$full_role")"; then
       if ! grep -Fxq "$PACKAGE" <<< "$holders"; then return 0; fi
+      observation="held"
+    else
+      observation="unknown"
     fi
     sleep 0.5
   done
-  echo "$full_role remained held after explicit removal."
+  echo "$full_role absence could not be proven after explicit removal (last observation: $observation)."
   adb shell dumpsys role > "$OUT_DIR/role-wait-absent-failure.txt" 2>&1 || true
   return 1
 }
