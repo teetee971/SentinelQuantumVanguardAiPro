@@ -1,0 +1,84 @@
+{
+  "schema_version": 3,
+  "updated_at": "2026-10-05",
+  "certification_schema_version": 5,
+  "rollout_mode": "shadow",
+  "emulator_qualification": {
+    "required_for_developer_gate": true,
+    "repository_owner_manual_validation_required_for_emulator_qualification": false,
+    "passed": false,
+    "evidence_ref": null,
+    "required_api_levels": [24, 29, 36, 37],
+    "phone_core_runtime_api_levels": [29, 36, 37],
+    "call_screening_decision_api_levels": [36, 37],
+    "required_checks": [
+      "android_app_unit_tests",
+      "wearable_contract_unit_tests",
+      "wearable_security_unit_tests",
+      "android_lint",
+      "phone_number_canonicalization_contract",
+      "multi_sim_submit_readiness_contract",
+      "connected_instrumentation_api24",
+      "connected_instrumentation_api29",
+      "connected_instrumentation_api36",
+      "connected_instrumentation_api37",
+      "all_static_navigation_surfaces_render",
+      "standalone_activity_surfaces_render",
+      "min_sdk_cold_launch",
+      "cold_install_and_relaunch",
+      "phone_core_setup_resume",
+      "synthetic_call_screening_observed",
+      "incoming_call_telecom_flow",
+      "outgoing_call_telecom_flow",
+      "incoming_sms_and_inline_reply",
+      "role_revocation_fail_closed",
+      "permission_revocation_fail_closed",
+      "no_crash_or_anr"
+    ],
+    "scope_note": "Ce portail automatise uniquement les preuves reproductibles sur Android Emulator. Il ne constitue ni une preuve modem/opérateur physique ni une autorisation de revendiquer une production commerciale complète."
+  },
+  "commercial_release": {
+    "physical_validation_required": true,
+    "emulator_only_is_sufficient": false
+  },
+  "local_technical_certificate": {
+    "required_for_physical_release_evidence": true,
+    "required_count": 14,
+    "note": "Le contrat Phone Core v5 exige 14 preuves physiques distinctes de la qualification développeur par émulation."
+  },
+  "residual_external_validation": [
+    {
+      "id": "real_carrier_sms_mms_callbacks",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Confirmer sur réseau opérateur réel les callbacks de livraison SMS et le succès transport MMS."
+    },
+    {
+      "id": "samsung_s24_screening_latency",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Sur Samsung Galaxy S24+ Android 16, mesurer la latence réelle avant respondToCall et démontrer une valeur maximale strictement inférieure à 500 ms.",
+      "max_pre_response_ms_exclusive": 500
+    },
+    {
+      "id": "android10_call_screening_decision",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Sur un appareil Android 10/API 29 réel, confirmer ROLE_CALL_SCREENING puis un appel entrant non urgent produisant une décision CALL_SCREENED:* ; l'émulation API 29 ne doit pas fabriquer cette preuve si la classification d'urgence reste indéterminée."
+    },
+    {
+      "id": "physical_dual_sim_oem_compatibility",
+      "blocking_for_emulator_qualification": false,
+      "blocking_for_commercial_release": true,
+      "execution_owner": "external_device_lab_or_release_qa",
+      "evidence_ref": null,
+      "requirement": "Confirmer sur au moins un appareil double-SIM réel que les comportements OEM/modem correspondent aux politiques multi-SIM déjà validées en logiciel et en émulation."
+    }
+  ]
+}
