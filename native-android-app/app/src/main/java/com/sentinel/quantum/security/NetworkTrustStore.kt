@@ -67,10 +67,9 @@ class NetworkTrustStore(context: Context) {
         }.getOrNull()
     }
 
-    @Synchronized
-    private fun getKey(): SecretKey {
+    private fun getKey(): SecretKey = synchronized(KEY_LOCK) {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return@synchronized it }
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, ANDROID_KEYSTORE)
         generator.init(
@@ -78,10 +77,12 @@ class NetworkTrustStore(context: Context) {
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .build()
         )
-        return generator.generateKey()
+        generator.generateKey()
     }
 
     private companion object {
+        // Scanner and UI stores share this alias; first-use creation must be process-wide.
+        val KEY_LOCK = Any()
         const val PREFS_NAME = "sentinel_network_trust"
         const val KEY_ALLOWLIST = "allowlist_fingerprints"
         const val KEY_BLOCKLIST = "blocklist_fingerprints"

@@ -53,15 +53,14 @@ class CallNumberFingerprinter {
      * A single KeyStore load avoids the old asynchronous warm-up race while keeping all Keystore
      * access outside the screening callback. Missing keys are never generated from this path.
      */
-    @Synchronized
-    fun prepareExistingKeys() {
+    fun prepareExistingKeys(): Unit = synchronized(KEY_LOCK) {
         val missingVersions = listOf(ACTIVE_VERSION, LEGACY_VERSION)
             .filter { cachedKey(it) == null }
-        if (missingVersions.isEmpty()) return
+        if (missingVersions.isEmpty()) return@synchronized
 
         val keyStore = runCatching {
             KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        }.getOrNull() ?: return
+        }.getOrNull() ?: return@synchronized
 
         missingVersions.forEach { version ->
             val alias = "$KEY_ALIAS_PREFIX$version"
@@ -79,16 +78,15 @@ class CallNumberFingerprinter {
         computeHmacFingerprint(key, normalizedNumber)
     }.getOrNull()
 
-    @Synchronized
-    private fun getKey(version: String, createIfMissing: Boolean): SecretKey? {
+    private fun getKey(version: String, createIfMissing: Boolean): SecretKey? = synchronized(KEY_LOCK) {
         val alias = "$KEY_ALIAS_PREFIX$version"
-        cachedKey(version)?.let { return it }
+        cachedKey(version)?.let { return@synchronized it }
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         (keyStore.getKey(alias, null) as? SecretKey)?.let {
             KEY_CACHE[version] = it
-            return it
+            return@synchronized it
         }
-        if (!createIfMissing) return null
+        if (!createIfMissing) return@synchronized null
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, ANDROID_KEYSTORE)
         generator.init(
@@ -96,12 +94,15 @@ class CallNumberFingerprinter {
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .build()
         )
-        return generator.generateKey().also { KEY_CACHE[version] = it }
+        generator.generateKey().also { KEY_CACHE[version] = it }
     }
 
     private fun cachedKey(version: String): SecretKey? = KEY_CACHE[version]
 
     private companion object {
+        // Aliases and KEY_CACHE are shared across instances. An instance monitor permits
+        // two stores to replace the same missing key and invalidate existing fingerprints.
+        val KEY_LOCK = Any()
         val KEY_CACHE = ConcurrentHashMap<String, SecretKey>()
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
         const val KEY_ALIAS_PREFIX = "sentinel_call_rule_hmac_"
