@@ -60,9 +60,6 @@ text = ' '.join(
     for n in owned
 )
 number_present = number in text
-# Android may bring either Sentinel's read-only caller-ID card or Sentinel's full in-call surface
-# to the foreground. Both are valid app-owned incoming-call surfaces; OS-owned localized labels
-# are deliberately excluded by the package check.
 sentinel_surface = (
     'Appel autorisé' in text or
     ('Appel entrant' in text and 'Sonnerie' in text)
@@ -139,6 +136,35 @@ PYTIMELINE
   echo "Phone Core private timeline did not record $direction/$signal."
   return 1
 }
+wait_private_timeline_signal_prefix() {
+  local prefix="$1"
+  local evidence="$FLOW_OUTPUT_DIR/phone-private-timeline-prefix.xml"
+  for _ in $(seq 1 20); do
+    if adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null && \
+      python3 - "$evidence" "$prefix" <<'PYPREFIX'
+import json, sys, xml.etree.ElementTree as ET
+path, prefix = sys.argv[1:]
+try:
+    root = ET.parse(path).getroot()
+    node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
+    events = json.loads((node.text if node is not None else '') or '[]')
+except Exception:
+    sys.exit(1)
+matched = any(
+    event.get('kind') == 'CALL' and
+    event.get('direction') == 'INCOMING' and
+    str(event.get('signal') or '').startswith(prefix)
+    for event in events
+)
+sys.exit(0 if matched else 1)
+PYPREFIX
+    then return 0; fi
+    sleep 1
+  done
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null || true
+  echo "Phone Core private timeline did not record incoming signal prefix $prefix."
+  return 1
+}
 capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
 # This is the first application launch after the workflow's fresh APK install. Exercise a second
@@ -156,10 +182,11 @@ capture 01b-dialer-relaunch
 
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"
-# CallerIdActivity and SentinelInCallActivity are both Sentinel-owned and may race for foreground
-# on recent Android releases. Verify one coherent Sentinel incoming-call surface without depending
-# on OS localization or activity ordering, then prove ACTIVE from app-private InCallService evidence.
+# CallerIdActivity and SentinelInCallActivity are both Sentinel-owned and may race for foreground.
+# Prove a coherent app-owned surface and wait for the post-response CallScreening evidence before
+# continuing; this also stabilizes the later CALL_SCREENING revocation baseline.
 wait_incoming_sentinel_surface
+wait_private_timeline_signal_prefix "CALL_SCREENED:"
 capture 02-incoming-call
 adb emu gsm accept "$FLOW_NUMBER"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
@@ -224,4 +251,4 @@ if adb shell cmd role get-role-holders --user 0 android.app.role.CALL_SCREENING 
   grep -q "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/call-screening-role.txt"
 fi
 
-echo "Synthetic Telecom call, cold relaunch, and inline SMS reply verified; physical validation remains pending."
+echo "Synthetic Telecom screening/calls, cold relaunch, and inline SMS reply verified; physical validation remains pending."
