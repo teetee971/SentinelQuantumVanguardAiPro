@@ -40,8 +40,7 @@ class PhoneCoreSetupResumeInstrumentationTest {
     @After
     fun cleanUpWizardHistoryAndDialogs() {
         runCatching {
-            instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-            instrumentation.waitForIdleSync()
+            dismissSystemSetupDialog()
         }
         prefs.edit().clear().commit()
     }
@@ -57,9 +56,7 @@ class PhoneCoreSetupResumeInstrumentationTest {
             assertNotNull("first-run setup must persist the target it attempted", attemptedTarget)
             assertFalse("interrupted setup must never persist completed=true", prefs.getBoolean(KEY_COMPLETED, false))
 
-            SystemClock.sleep(750)
-            instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-            instrumentation.waitForIdleSync()
+            dismissSystemSetupDialog()
         } finally {
             firstScenario.close()
         }
@@ -98,6 +95,25 @@ class PhoneCoreSetupResumeInstrumentationTest {
             SystemClock.sleep(100)
         }
         return prefs.getString(KEY_ATTEMPTED_TARGET, null)
+    }
+
+    private fun dismissSystemSetupDialog() {
+        // A delayed global Back can hit Sentinel after Android has already closed
+        // its role dialog, destroying the resumed wizard instead of interrupting setup.
+        // Only dismiss an observed system permission/role window; scenario.close()
+        // still supplies the interruption when no system dialog is visible.
+        repeat(50) {
+            val owner = instrumentation.uiAutomation.rootInActiveWindow?.packageName?.toString()
+            if (owner in setOf("com.android.permissioncontroller", "com.google.android.permissioncontroller",
+                    "com.android.packageinstaller", "com.google.android.packageinstaller",
+                    "com.android.server.telecom")) {
+                instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                instrumentation.waitForIdleSync()
+                return
+            }
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(100)
+        }
     }
 
     private companion object {
