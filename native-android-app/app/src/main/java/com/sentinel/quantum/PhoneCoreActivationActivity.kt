@@ -35,8 +35,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.PermissionChecker
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -66,7 +66,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 class PhoneCoreActivationActivity : ComponentActivity() {
     private fun hasPermission(permission: String): Boolean =
-        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+        PermissionChecker.checkSelfPermission(this, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun holdsRole(role: String): Boolean =
         AndroidRoleReadPolicy.readBoolean {
