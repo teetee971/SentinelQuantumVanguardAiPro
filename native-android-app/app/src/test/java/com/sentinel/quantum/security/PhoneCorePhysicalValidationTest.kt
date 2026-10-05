@@ -346,6 +346,15 @@ class PhoneCorePhysicalValidationTest {
         )
     }
 
+    @Test fun localCriteriaDoNotPresentSyntheticCallbacksAsPhysicalOrCarrierValidation() {
+        val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
+        assertEquals(14, criteria.size)
+        criteria.forEach { criterion ->
+            val label = PhoneCorePhysicalValidation.criterionLabel(criterion).lowercase()
+            assertFalse(label, label.contains("réel") || label.contains("opérateur") || label.contains("physique"))
+        }
+    }
+
     @Test fun allSchemaV5CriteriaHaveExplicitKindsAndUnknownFailsClosed() {
         val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
         assertEquals(14, criteria.size)
