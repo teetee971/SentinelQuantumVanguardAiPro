@@ -187,12 +187,21 @@ for (const marker of [
   'CallRuleEngineTest',
   'SmsSubmitReadinessTest',
   ':app:connectedDebugAndroidTest',
+  'id: instrumentation',
+  'HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}',
+  'INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}',
+  "process.env.HOST_CONTRACT_RESULT === 'success'",
+  "process.env.INSTRUMENTATION_OUTCOME === 'success'",
+  "instrumentationXml.includes('AllStaticNavigationSurfacesInstrumentationTest')",
+  "instrumentationXml.includes('StandaloneActivitySmokeInstrumentationTest')",
+  "instrumentationXml.includes('PhoneCoreSetupResumeInstrumentationTest')",
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
   'FATAL EXCEPTION: main',
   'ANR in com\\.sentinel\\.quantum',
+  'schema_version: 3',
   'physical_modem_claim: false',
   'commercial_release_claim: false',
   'effective_permission_denial_fail_closed'
@@ -203,6 +212,15 @@ if (workflow.includes('set-bypassing-role-qualification')) {
 }
 if (workflow.includes('android-instrumentation.yml')) {
   errors.push('shadow workflow must not disable or mutate the existing instrumentation gate');
+}
+if (workflow.includes('hostPrerequisitesPassed = true')) {
+  errors.push('emulator qualification must not hardcode host/instrumentation prerequisites to true');
+}
+if (/connected_instrumentation:\s*true/.test(workflow) || /setup_resume:\s*modernPhoneCore/.test(workflow)) {
+  errors.push('qualification.json checks must be derived from actual workflow/test evidence, not static truthy literals');
+}
+if (workflow.includes('cmd role get-role-holders --user 0 android.app.role.SMS')) {
+  errors.push('workflow must not use get-role-holders as an Android 10/API 29 oracle; runtime scripts own the dumpsys-compatible role proof');
 }
 
 for (const marker of [
