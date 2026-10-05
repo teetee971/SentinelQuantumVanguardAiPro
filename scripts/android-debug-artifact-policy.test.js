@@ -25,7 +25,7 @@ test('debug APK verification checks package, alignment and signature', () => {
   assert.match(workflow, /test -s "\$APK_PATH"/);
 });
 
-test('delivered APK checksum and identity describe the actual file and build', () => {
+test('delivered APK checksum and identity describe actual build and PR source', () => {
   const prepare = workflow.split('- name: Get version and prepare APK')[1]
     .split('- name: Upload APK artifact')[0];
   const script = prepare.split('run: |\n')[1].split('\n')
@@ -43,6 +43,9 @@ test('delivered APK checksum and identity describe the actual file and build', (
         PATH: process.env.PATH,
         GITHUB_OUTPUT: join(root, 'outputs'),
         GITHUB_SHA: 'a'.repeat(40),
+        SOURCE_HEAD_SHA: 'b'.repeat(40),
+        SOURCE_BASE_SHA: 'c'.repeat(40),
+        SOURCE_HEAD_REF: 'feature/provenance',
         GITHUB_REF: 'refs/pull/123/merge',
         GITHUB_REPOSITORY: 'fixture/repository',
         GITHUB_RUN_ID: '456',
@@ -55,12 +58,15 @@ test('delivered APK checksum and identity describe the actual file and build', (
     assert.equal(readFileSync(join(root, name + '.sha256'), 'utf8'), digest + '  ' + name + '\n');
     const identity = JSON.parse(readFileSync(join(root, name + '.build.json'), 'utf8'));
     assert.deepEqual(identity, {
-      schema_version: 1,
+      schema_version: 2,
       channel: 'debug-physical-test-candidate',
       apk_name: name,
       apk_sha256: digest,
       apk_size_bytes: bytes.length,
       build_commit: 'a'.repeat(40),
+      source_head_commit: 'b'.repeat(40),
+      source_base_commit: 'c'.repeat(40),
+      source_head_ref: 'feature/provenance',
       source_ref: 'refs/pull/123/merge',
       repository: 'fixture/repository',
       run_id: '456',
@@ -75,6 +81,12 @@ test('delivered APK checksum and identity describe the actual file and build', (
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('APK artifacts are named with exact PR source head when available', () => {
+  const exactHeadExpression = '${{ github.event.pull_request.head.sha || github.sha }}';
+  assert.ok(workflow.includes('name: SentinelQuantumVanguard-APK-' + exactHeadExpression));
+  assert.ok(workflow.includes('name: PhoneCore-Android16-UI-' + exactHeadExpression));
 });
 
 test('APK delivery uploads the APK, its checksum and its build identity', () => {
