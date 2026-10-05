@@ -26,42 +26,12 @@ role_holders() {
   fi
 
   # Android 10/API 29 can manage roles with `cmd role`, but its shell command does not expose
-  # get-role-holders. Persist dumpsys first: the Python program itself is supplied by heredoc and
-  # therefore must not also rely on stdin for the role-service payload.
+  # get-role-holders. Persist the dump for the shared, fail-closed user-0 parser.
   local role_dump="$FLOW_OUTPUT_DIR/role-state-current.txt"
   if ! adb shell dumpsys role > "$role_dump" 2>/dev/null; then
     return 1
   fi
-  python3 - "$full_role" "$role_dump" <<'PYROLE'
-import re, sys
-role, path = sys.argv[1:]
-text = open(path, encoding='utf-8', errors='replace').read().replace('\r', '')
-
-# Common RoleUserState dumps expose roleNameToPackageNames as ROLE=[pkg,...].
-match = re.search(re.escape(role) + r'\s*[=:]\s*\[([^\]]*)\]', text, re.S)
-if match:
-    for package in re.findall(r'[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+', match.group(1)):
-        print(package)
-    sys.exit(0)
-
-# Also tolerate verbose service dumps using separate name/holders fields.
-lines = text.splitlines()
-active = False
-for raw in lines:
-    line = raw.strip()
-    named = re.match(r'^name\s*[=:]\s*(.+)$', line)
-    if named:
-        active = named.group(1).strip() == role
-        continue
-    if active:
-        holders = re.match(r'^holders\s*[=:]\s*(.+)$', line)
-        if holders:
-            for package in re.findall(r'[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+', holders.group(1)):
-                print(package)
-            sys.exit(0)
-
-sys.exit(1)
-PYROLE
+  python3 "$(dirname "${BASH_SOURCE[0]}")/phone-core-emulator-role-holders.py" "$full_role" "$role_dump"
 }
 
 wait_role_held() {

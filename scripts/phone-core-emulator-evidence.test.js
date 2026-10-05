@@ -16,6 +16,30 @@ function nodeCodeForStep(name) {
 }
 const reportCode = nodeCodeForStep('Collect qualification evidence even after failure');
 const hostProvenanceCode = nodeCodeForStep('Record host evidence provenance');
+const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.url).pathname;
+
+for (const [name, dump, status, holders] of [
+  ['complete empty API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n}\n{\nname=android.app.role.SMS\nholders=com.sentinel.quantum\n} ] }', 0, ''],
+  ['complete held API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=com.sentinel.quantum\n} ] }', 0, 'com.sentinel.quantum'],
+  ['compact empty role', 'RoleUserState { user_id=0 roleNameToPackageNames={android.app.role.CALL_SCREENING=[]} }', 0, ''],
+  ['compact held role', 'RoleUserState { user_id=0 roleNameToPackageNames={android.app.role.CALL_SCREENING=[com.sentinel.quantum]} }', 0, 'com.sentinel.quantum'],
+  ['missing role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.SMS\nholders=com.sentinel.quantum\n} ] }', 1, ''],
+  ['truncated role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n', 1, ''],
+  ['diagnostic mentioning role', 'Error querying android.app.role.CALL_SCREENING', 1, ''],
+  ['ambiguous multiple users', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n} ] user_id=10 }', 1, ''],
+  ['invalid holder field', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=Error querying package\n} ] }', 1, '']
+]) {
+  test(`dumpsys oracle: ${name}`, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sentinel-role-dump-'));
+    try {
+      const file = join(dir, 'roles.txt');
+      writeFileSync(file, dump);
+      const result = spawnSync('python3', [roleParser, 'android.app.role.CALL_SCREENING', file], { encoding: 'utf8' });
+      assert.equal(result.status, status, result.stderr);
+      assert.equal(result.stdout.trim(), holders);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+}
 
 test('archived host provenance preserves build, source, base and branch independently', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-host-provenance-'));
