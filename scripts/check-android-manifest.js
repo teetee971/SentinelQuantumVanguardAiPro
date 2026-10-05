@@ -449,16 +449,26 @@ const screeningService = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt'),
   'utf8'
 );
+const callBlocklistStore = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/CallBlocklistStore.kt'),
+  'utf8'
+);
 const fingerprinter = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/CallNumberFingerprinter.kt'),
   'utf8'
 );
 
-if (!screeningService.includes('store::cachedFingerprintsForNumber')) {
+if (!screeningService.includes('CallBlocklistStore.cachedSnapshotForScreening()') ||
+    !callBlocklistStore.includes('internal fun cachedSnapshotForScreening')) {
+  errors.push('CallScreeningService must read its rule snapshot from the process-memory screening cache only.');
+}
+if (!screeningService.includes('SCREENING_FINGERPRINTER::cachedCandidates')) {
   errors.push('CallScreeningService must use cache-only exact-number fingerprints.');
 }
-if (screeningService.includes('store::fingerprintsForNumber')) {
-  errors.push('CallScreeningService must never use the Keystore-capable fingerprint path.');
+if (screeningService.includes('CallBlocklistStore(this)') ||
+    screeningService.includes('::fingerprintsForNumber') ||
+    screeningService.includes('.fingerprintsForNumber(')) {
+  errors.push('CallScreeningService must never construct persistent rule storage or use the Keystore-capable fingerprint path before respondToCall.');
 }
 
 const cachedCandidatesMatch = /fun cachedCandidates\([\s\S]*?\n    }\n/.exec(fingerprinter)?.[0] ?? '';
