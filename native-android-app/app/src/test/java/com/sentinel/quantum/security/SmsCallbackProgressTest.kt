@@ -247,4 +247,24 @@ class SmsCallbackProgressTest {
         assertTrue(failed.sendFailed)
         assertNull(SmsCallbackProgress.record(failed.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, false))
     }
+
+    @Test fun maximumSupportedMultipartMessageRetainsEveryObservedCallback() {
+        val partCount = SmsCallbackProgress.MAX_PARTS
+        var state: SmsCallbackProgress.State? = null
+        var sentSignals = 0
+        var deliveredSignals = 0
+        for (stage in listOf(SmsDeliveryStatusBus.Stage.SENT, SmsDeliveryStatusBus.Stage.DELIVERED)) {
+            for (index in 0 until partCount) {
+                val outcome = SmsCallbackProgress.record(state, index, partCount, stage, true)!!
+                state = outcome.state
+                if (outcome.sentCompletedNow) sentSignals++
+                if (outcome.deliveryCompletedNow) deliveredSignals++
+                assertTrue(outcome.allDelivered == (stage == SmsDeliveryStatusBus.Stage.DELIVERED && index == partCount - 1))
+            }
+        }
+        assertTrue(state!!.sentOk.size == partCount)
+        assertTrue(state!!.deliveredOk.size == partCount)
+        assertTrue(sentSignals == 1)
+        assertTrue(deliveredSignals == 1)
+    }
 }

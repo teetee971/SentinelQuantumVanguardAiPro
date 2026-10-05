@@ -94,6 +94,9 @@ class SentinelSmsSender(private val context: Context) {
             }
 
             val parts = manager.divideMessage(body)
+            SmsSubmissionOutcomePolicy.reasonForPartCount(parts.size)?.let { reason ->
+                return SendResult(false, reason)
+            }
             val persistedMessageId = SmsConversationStore(context).insertOutgoingOutbox(
                 normalized,
                 body,

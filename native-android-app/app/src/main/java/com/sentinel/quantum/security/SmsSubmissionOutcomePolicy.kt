@@ -9,6 +9,11 @@ package com.sentinel.quantum.security
  */
 internal object SmsSubmissionOutcomePolicy {
     const val OUTCOME_UNKNOWN = "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN"
+    const val UNSUPPORTED_PART_COUNT = "SMS_MULTIPART_LIMIT_EXCEEDED"
+
+    /** Only submit messages whose Android callbacks fit the durable multipart reducer. */
+    fun reasonForPartCount(partCount: Int): String? =
+        if (partCount in 1..SmsCallbackProgress.MAX_PARTS) null else UNSUPPORTED_PART_COUNT
 
     fun reasonForSynchronousException(): String = OUTCOME_UNKNOWN
 
