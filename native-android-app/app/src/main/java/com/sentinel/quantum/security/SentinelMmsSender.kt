@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
+import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 
 /**
@@ -45,8 +46,20 @@ class SentinelMmsSender(private val context: Context) {
         ) {
             return SendResult(false, "SMS_ROLE_NOT_HELD")
         }
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
+        }
         if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) {
             return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
+        }
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
         }
         if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
             return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
