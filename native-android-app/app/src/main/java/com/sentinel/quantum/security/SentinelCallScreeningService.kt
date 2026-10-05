@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Intent
+import android.app.role.RoleManager
 import android.os.Build
 import android.telephony.PhoneNumberUtils
 import android.telephony.TelephonyManager
@@ -22,6 +23,18 @@ class SentinelCallScreeningService : CallScreeningService() {
         // classification: callback observation and a completed rule-engine decision are distinct
         // proofs, especially on Android 10 emulators where emergency classification may be unknown.
         Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)
+
+        // Telecom can invoke the default dialer's screening service even after the
+        // dedicated screening role is revoked. Invocation is not authorization.
+        // One system role read; no rule engine, storage or network before this response.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            !AndroidRoleReadPolicy.readBoolean {
+                getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
+            }
+        ) {
+            respondToCall(callDetails, CallResponse.Builder().build())
+            return
+        }
 
         val rawCallerNumber = callDetails.handle?.schemeSpecificPart
         val emergency = runCatching {

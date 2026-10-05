@@ -187,6 +187,10 @@ if (callScreeningService.includes('CallBlocklistStore(this)')) {
 const incomingGuard = callScreeningService.indexOf('callDetails.callDirection != Call.Details.DIRECTION_INCOMING');
 const callbackMarker = callScreeningService.indexOf('Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)');
 const emergencyLookup = callScreeningService.indexOf('getSystemService(TelephonyManager::class.java).isEmergencyNumber');
+const roleAuthorization = callScreeningService.indexOf('isRoleHeld(RoleManager.ROLE_CALL_SCREENING)');
+if (!(callbackMarker < roleAuthorization && roleAuthorization < emergencyLookup)) {
+  errors.push('CallScreeningService must recheck the Android 10+ screening role before emergency lookup and rule-engine decisions');
+}
 if (incomingGuard < 0 || callbackMarker < 0 || emergencyLookup < 0 || !(incomingGuard < callbackMarker && callbackMarker < emergencyLookup)) {
   errors.push('PII-free callback marker must be after the incoming-call guard and before emergency classification');
 }
@@ -330,4 +334,3 @@ if (errors.length) {
   process.exit(1);
 }
 console.log('PHONE CORE EMULATION SHADOW GATE: PASS');
-

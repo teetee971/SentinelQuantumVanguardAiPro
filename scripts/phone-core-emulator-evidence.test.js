@@ -149,3 +149,19 @@ for (const [label, output, status] of [
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 }
+
+for (const [label, modem, notificationCount, oracleStatus, expected] of [
+  ['modem observation proves the incoming probe', '5550198', 1, 0, 0],
+  ['new InCallService evidence proves a call when gsm list returns only OK', 'OK', 2, 0, 0],
+  ['stale InCallService evidence cannot prove a new probe', 'OK', 1, 0, 1],
+  ['unreadable InCallService evidence cannot prove a probe', 'OK', 0, 2, 2]
+]) {
+  test(label, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sentinel-call-probe-test-'));
+    try {
+      const script = `OUT_DIR="$1"\nINCOMING_NOTIFICATION_BEFORE=1\nsleep() { :; }\nadb() { printf '%s\\n' '${modem}'; }\ntimeline_signal_prefix_count() { printf '%s\\n' '${notificationCount}'; return ${oracleStatus}; }\n${shellFunction('wait_incoming_call_observed')}\nwait_incoming_call_observed 5550198 modem.txt`;
+      const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+      assert.equal(result.status, expected, result.stderr);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+}
