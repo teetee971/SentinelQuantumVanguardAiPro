@@ -128,10 +128,10 @@ const physicalRequiredCount = Number(
   physicalValidation.match(/val requiredCount:\s*Int\s*get\(\)\s*=\s*(\d+)/)?.[1]
 );
 if (physicalRequiredCount !== 14) {
-  errors.push(`Phone Core v5 physical contract must expose exactly 14 criteria, found ${String(physicalRequiredCount)}`);
+  errors.push(`Phone Core v5 local technical contract must expose exactly 14 criteria, found ${String(physicalRequiredCount)}`);
 }
 if (gate.local_technical_certificate?.required_count !== physicalRequiredCount) {
-  errors.push('configured physical certificate count must match PhoneCorePhysicalValidation');
+  errors.push('configured local technical certificate count must match PhoneCorePhysicalValidation');
 }
 
 const requiredResidualIds = [

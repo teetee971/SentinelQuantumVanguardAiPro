@@ -47,7 +47,7 @@
   "local_technical_certificate": {
     "required_for_physical_release_evidence": true,
     "required_count": 14,
-    "note": "Le contrat Phone Core v5 exige 14 preuves physiques distinctes de la qualification développeur par émulation."
+    "note": "Le certificat technique local Phone Core v5 regroupe 14 observations Android. Il ne prouve ni validation physique ni disponibilité commerciale ; les validations externes restent obligatoires."
   },
   "residual_external_validation": [
     {
