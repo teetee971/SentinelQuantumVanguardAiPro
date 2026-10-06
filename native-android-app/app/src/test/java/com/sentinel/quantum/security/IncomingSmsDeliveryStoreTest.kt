@@ -69,6 +69,39 @@ class IncomingSmsDeliveryStoreTest {
         }
     }
 
+    @Test
+    fun `corrupt staged record is never accepted as replay or permanent capacity`() {
+        val root = Files.createTempDirectory("sentinel-sms-corrupt").toFile()
+        try {
+            val first = record("d".repeat(64), 30L)
+            val second = record("e".repeat(64), 31L)
+            assertEquals(
+                IncomingSmsDeliveryStore.PersistState.CREATED,
+                IncomingSmsDeliveryStore.persist(root, first, maxPendingRecords = 1)
+            )
+
+            val firstFile = root.walkTopDown().first { it.name == first.id + ".sms" }
+            firstFile.writeText("corrupt")
+            assertEquals(
+                IncomingSmsDeliveryStore.PersistState.CREATED,
+                IncomingSmsDeliveryStore.persist(root, first, maxPendingRecords = 1)
+            )
+            assertEquals(first, IncomingSmsDeliveryStore.read(root, first.id))
+
+            val rewritten = root.walkTopDown().first { it.name == first.id + ".sms" }
+            rewritten.writeText("corrupt-again")
+            assertEquals(
+                IncomingSmsDeliveryStore.PersistState.CREATED,
+                IncomingSmsDeliveryStore.persist(root, second, maxPendingRecords = 1)
+            )
+            assertNull(IncomingSmsDeliveryStore.read(root, first.id))
+            assertEquals(second, IncomingSmsDeliveryStore.read(root, second.id))
+            assertEquals(listOf(second.id), IncomingSmsDeliveryStore.pendingIds(root))
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     private fun record(id: String, receivedAt: Long) = IncomingSmsDeliveryStore.Record(
         id = id,
         address = "+590690000000",
