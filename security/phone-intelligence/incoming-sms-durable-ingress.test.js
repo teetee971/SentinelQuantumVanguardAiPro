@@ -37,7 +37,14 @@ test('SMS durable spool is bounded, fsynced and idempotency-keyed', () => {
   assert.match(store, /stream\.fd\.sync\(\)/);
   assert.match(store, /MessageDigest\.getInstance\("SHA-256"\)/);
   assert.match(store, /PersistState\.CAPACITY_EXCEEDED/);
-  assert.match(store, /if \(target\.isFile\) return PersistState\.EXISTING/);
+  assert.match(store, /decodeRecordFile\(target, record\.id\) != null\) return PersistState\.EXISTING/);
+});
+
+test('corrupt SMS spool records cannot masquerade as replay or poison bounded capacity', () => {
+  assert.match(store, /cleanInvalidRecordFiles\(directory\)/);
+  assert.match(store, /if \(decoded == null\) runCatching \{ target\.delete\(\) \}/);
+  assert.match(store, /if \(decodeRecordFile\(target, record\.id\) != null\) return PersistState\.EXISTING/);
+  assert.match(store, /if \(!runCatching \{ target\.delete\(\) \}\.getOrDefault\(false\)\) return PersistState\.FAILED/);
 });
 
 test('provider projection is role-gated, replay-safe and WorkManager-backed', () => {
