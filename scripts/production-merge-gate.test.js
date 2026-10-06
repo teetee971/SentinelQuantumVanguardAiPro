@@ -5,10 +5,13 @@ import {
   ANDROID_WORKFLOWS,
   DEFAULT_GATE_TIMEOUT_MS,
   EMULATION_MAX_CRITICAL_PATH_MS,
+  GITHUB_API_MAX_ATTEMPTS,
   SECURITY_FUZZ_WORKFLOWS,
   UNIVERSAL_WORKFLOWS,
   WEB_WORKFLOWS,
   evaluateWorkflowRun,
+  githubJson,
+  isRetryableGitHubStatus,
   requiredWorkflowsForPaths,
   selectLatestExactHeadRun
 } from './production-merge-gate.js';
@@ -19,6 +22,15 @@ function expectIncludes(actual, expected) {
 
 function expectExcludes(actual, expected) {
   for (const item of expected) assert.ok(!actual.includes(item), `unexpected ${item}`);
+}
+
+function response(status, payload = {}, retryAfter = null) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: { get: (name) => name.toLowerCase() === 'retry-after' ? retryAfter : null },
+    async json() { return payload; }
+  };
 }
 
 test('docs-only changes require universal gates without unrelated Android or web gates', () => {
@@ -132,4 +144,93 @@ test('missing and in-progress evidence waits while non-success completion fails 
     evaluateWorkflowRun({ status: 'completed', conclusion: 'success' }),
     { state: 'pass', reason: 'SUCCESS' }
   );
+});
+
+test('only transient GitHub control-plane statuses are retryable', () => {
+  for (const status of [429, 500, 502, 503, 504, 599]) {
+    assert.equal(isRetryableGitHubStatus(status), true, String(status));
+  }
+  for (const status of [400, 401, 403, 404, 422]) {
+    assert.equal(isRetryableGitHubStatus(status), false, String(status));
+  }
+});
+
+test('GitHub API retry absorbs a single transient 500 with backoff', async () => {
+  let calls = 0;
+  const sleeps = [];
+  const payload = await githubJson('https://api.github.com/example', 'token', {
+    fetchImpl: async () => {
+      calls += 1;
+      return calls === 1 ? response(500) : response(200, { ok: true });
+    },
+    sleep: async (ms) => sleeps.push(ms),
+    baseDelayMs: 1
+  });
+
+  assert.deepEqual(payload, { ok: true });
+  assert.equal(calls, 2);
+  assert.deepEqual(sleeps, [1]);
+});
+
+test('GitHub API retry honors Retry-After for transient responses', async () => {
+  let calls = 0;
+  const sleeps = [];
+  await githubJson('https://api.github.com/example', 'token', {
+    fetchImpl: async () => {
+      calls += 1;
+      return calls === 1 ? response(503, {}, '2') : response(200, { ok: true });
+    },
+    sleep: async (ms) => sleeps.push(ms),
+    baseDelayMs: 1
+  });
+  assert.deepEqual(sleeps, [2000]);
+});
+
+test('GitHub API retry fails immediately for non-retryable authentication errors', async () => {
+  let calls = 0;
+  await assert.rejects(
+    githubJson('https://api.github.com/example', 'token', {
+      fetchImpl: async () => {
+        calls += 1;
+        return response(401);
+      },
+      sleep: async () => {},
+      baseDelayMs: 0
+    }),
+    /GitHub API 401/
+  );
+  assert.equal(calls, 1);
+});
+
+test('GitHub API retry budget stays bounded for persistent 5xx responses', async () => {
+  let calls = 0;
+  await assert.rejects(
+    githubJson('https://api.github.com/example', 'token', {
+      fetchImpl: async () => {
+        calls += 1;
+        return response(500);
+      },
+      sleep: async () => {},
+      baseDelayMs: 0
+    }),
+    /GitHub API 500/
+  );
+  assert.equal(calls, GITHUB_API_MAX_ATTEMPTS);
+});
+
+test('GitHub API retry handles transport exceptions but remains bounded and fail-closed', async () => {
+  let calls = 0;
+  await assert.rejects(
+    githubJson('https://api.github.com/example', 'token', {
+      fetchImpl: async () => {
+        calls += 1;
+        throw new TypeError('socket reset');
+      },
+      sleep: async () => {},
+      baseDelayMs: 0,
+      maxAttempts: 3
+    }),
+    /transport failure.*after 3 attempts/
+  );
+  assert.equal(calls, 3);
 });
