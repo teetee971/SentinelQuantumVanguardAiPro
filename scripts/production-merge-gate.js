@@ -24,6 +24,12 @@ export const WEB_WORKFLOWS = Object.freeze([
 
 export const SECURITY_FUZZ_WORKFLOWS = Object.freeze(['security-fuzz.yml']);
 
+// The Android emulation workflow has a 45-minute host job followed by a
+// dependent 60-minute emulator matrix. The merge gate must never have a
+// shorter legitimate wait window than that 105-minute critical path.
+export const EMULATION_MAX_CRITICAL_PATH_MS = (45 + 60) * 60 * 1000;
+export const DEFAULT_GATE_TIMEOUT_MS = 170 * 60 * 1000;
+
 const ANDROID_WORKFLOW_FILES = new Set([
   '.github/workflows/android-emulation-qualification.yml',
   '.github/workflows/build-native-android.yml',
@@ -162,10 +168,13 @@ export async function runProductionMergeGate({
   repository,
   eventPath,
   token,
-  timeoutMs = 55 * 60 * 1000,
+  timeoutMs = DEFAULT_GATE_TIMEOUT_MS,
   pollMs = 15 * 1000
 }) {
   if (!repository || !eventPath || !token) throw new Error('Missing production merge gate environment');
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= EMULATION_MAX_CRITICAL_PATH_MS) {
+    throw new Error('Production merge gate timeout must exceed the Android emulation critical path');
+  }
   const event = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
   const pullNumber = Number(event?.pull_request?.number);
   const expectedSha = String(event?.pull_request?.head?.sha || '');
