@@ -21,7 +21,10 @@ test('runtime revocation cannot be credited when pm revoke fails', () => {
     const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=false\nsleep(){ :; }\nadb(){ return 7; }\npermission_granted(){ return 1; }\n${shellFunction('probe_pm_revoke_send_sms')}\nif probe_pm_revoke_send_sms; then rc=0; else rc=$?; fi\nprintf '%s|%s\\n' "$rc" "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
     const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /7\|false/);
+    assert.match(result.stdout, /1\|false/);
+    const evidence = readFileSync(join(dir, 'send-sms-pm-revoke-observation.txt'), 'utf8');
+    assert.match(evidence, /pm_revoke_status=7/);
+    assert.match(evidence, /reason=pm_revoke_command_failed/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
