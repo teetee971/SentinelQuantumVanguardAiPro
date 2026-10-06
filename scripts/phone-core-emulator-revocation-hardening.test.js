@@ -67,6 +67,49 @@ for (const [name, output, expected] of [
   });
 }
 
+test('AppOp setter writes both UID and package boundaries for persistent deny and symmetric restore', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-setter-'));
+  try {
+    const script = `set -e\nPACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nsleep(){ :; }\nadb(){\n  printf '%s\\n' "$*" >> "$OUT_DIR/calls.txt"\n  if [[ "$*" == 'shell appops get com.sentinel.quantum SEND_SMS' ]]; then printf 'SEND_SMS: allow\\n'; fi\n  return 0\n}\n${shellFunction('set_send_sms_appop')}\nset_send_sms_appop ignore deny.txt\nset_send_sms_appop allow restore.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const calls = readFileSync(join(dir, 'calls.txt'), 'utf8');
+    for (const expected of [
+      'shell appops set --user 0 --uid com.sentinel.quantum SEND_SMS ignore',
+      'shell appops set --user 0 com.sentinel.quantum SEND_SMS ignore',
+      'shell appops set --user 0 --uid com.sentinel.quantum SEND_SMS allow',
+      'shell appops set --user 0 com.sentinel.quantum SEND_SMS allow'
+    ]) assert.match(calls, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(readFileSync(join(dir, 'deny.txt'), 'utf8'), /uid_set_status=0\npackage_set_status=0/);
+    assert.match(readFileSync(join(dir, 'restore.txt'), 'utf8'), /uid_set_status=0\npackage_set_status=0/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('AppOp setter fails closed when persistent package boundary cannot be written', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-persistence-fail-'));
+  try {
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nsleep(){ :; }\nadb(){\n  if [[ "$*" == 'shell appops set --user 0 com.sentinel.quantum SEND_SMS ignore' ]]; then return 9; fi\n  return 0\n}\n${shellFunction('set_send_sms_appop')}\nif set_send_sms_appop ignore deny.txt; then rc=0; else rc=$?; fi\nprintf '%s\\n' "$rc"`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^1\s*$/m);
+    const evidence = readFileSync(join(dir, 'deny.txt'), 'utf8');
+    assert.match(evidence, /package_set_status=9/);
+    assert.match(evidence, /persistent SEND_SMS AppOp state cannot be established/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('AppOp setter tolerates missing UID command only when package persistence succeeds', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-uid-fallback-'));
+  try {
+    const script = `set -e\nPACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nsleep(){ :; }\nadb(){\n  if [[ "$*" == 'shell appops set --user 0 --uid com.sentinel.quantum SEND_SMS ignore' ]]; then return 8; fi\n  if [[ "$*" == 'shell appops get com.sentinel.quantum SEND_SMS' ]]; then printf 'SEND_SMS: ignore\\n'; fi\n  return 0\n}\n${shellFunction('set_send_sms_appop')}\nset_send_sms_appop ignore deny.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const evidence = readFileSync(join(dir, 'deny.txt'), 'utf8');
+    assert.match(evidence, /uid_set_status=8\npackage_set_status=0/);
+    assert.match(evidence, /package boundary is the persistence fallback/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('executed flow proves a granted baseline before probing revocation', () => {
   const runtime = flow.slice(flow.indexOf('trap write_summary EXIT'));
   const beforeGrant = runtime.indexOf('assert_send_sms_runtime_permission_granted "send-sms-runtime-permission-granted-before-launch.txt"');

@@ -256,16 +256,28 @@ assert_send_sms_runtime_permission_denied() {
 set_send_sms_appop() {
   local mode="$1"
   local evidence="$2"
-  if ! adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1; then
-    echo "UID AppOp command failed; checking effective mode." >> "$OUT_DIR/$evidence"
+  local uid_status=0
+  local package_status=0
+  : > "$OUT_DIR/$evidence"
+
+  set +e
+  adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
+  uid_status=$?
+  adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
+  package_status=$?
+  set -e
+
+  printf 'uid_set_status=%s\npackage_set_status=%s\n' "$uid_status" "$package_status" >> "$OUT_DIR/$evidence"
+  if [[ "$uid_status" -ne 0 ]]; then
+    echo "UID AppOp command failed; package boundary is the persistence fallback." >> "$OUT_DIR/$evidence"
   fi
+  if [[ "$package_status" -ne 0 ]]; then
+    echo "Package AppOp command failed; persistent SEND_SMS AppOp state cannot be established." >> "$OUT_DIR/$evidence"
+    return 1
+  fi
+
   sleep 1
   adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  if [[ "$mode" == "allow" ]] || ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
-    adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
-    sleep 1
-    adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  fi
 }
 
 assert_send_sms_appop_denied() {
