@@ -314,7 +314,12 @@ PYPREFIX
   echo "Phone Core private timeline did not record incoming signal prefix $prefix."
   return 1
 }
-capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
+capture() {
+  adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"
+  test -s "$FLOW_OUTPUT_DIR/$1.png"
+  adb logcat -d -v time > "$FLOW_OUTPUT_DIR/$1-logcat.txt"
+  node "$FLOW_SCRIPT_DIR/android-logcat-analysis.cjs" "$FLOW_OUTPUT_DIR/$1-logcat.txt" "$FLOW_OUTPUT_DIR/$1-crash-anr.json"
+}
 
 # This is the first application launch after the workflow's fresh APK install. Exercise a second
 # process launch as well so cold_install_and_relaunch is a real per-lane proof, not report metadata.

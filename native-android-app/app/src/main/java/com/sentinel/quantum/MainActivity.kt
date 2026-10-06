@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.sentinel.quantum.ui.design.phoneCoreTestId
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -169,6 +170,7 @@ class MainActivity : ComponentActivity() {
                                         BottomNavTarget.COMMUNICATIONS -> currentRoute == Screen.CommunicationsHub.route
                                     }
                                     NavigationBarItem(
+                                        modifier = Modifier.phoneCoreTestId("main_nav_${entry.target.name.lowercase(java.util.Locale.ROOT)}"),
                                         selected = selected,
                                         onClick = {
                                             when (entry.target) {
@@ -270,7 +272,7 @@ class MainActivity : ComponentActivity() {
 
 @androidx.compose.runtime.Composable
 private fun SentinelBrandLoading() {
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    Box(Modifier.fillMaxSize().background(Color.Black).phoneCoreTestId("main_brand_loading")) {
         Image(
             painter = painterResource(R.drawable.sentinel_soldier_loading),
             contentDescription = stringResource(R.string.loading_sentinel_image_description),

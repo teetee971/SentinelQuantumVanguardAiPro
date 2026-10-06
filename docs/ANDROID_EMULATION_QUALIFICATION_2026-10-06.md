@@ -1,0 +1,72 @@
+# Android developer qualification — 6 October 2026
+
+Initial checkout: clean `main`, `5719103f`. No AGENTS.md was found in the
+checkout. Modules: app (minSdk 24, targetSdk 36, compileSdk 37), wearable-contract,
+wearable-security. Existing emulator lanes are API 24/29/36/37. The independent
+instrumentation workflow remains during the existing shadow rollout.
+
+## Execution evidence inspected
+
+Run [37470803395](https://github.com/teetee971/SentinelQuantumVanguardAiPro/actions/runs/37470803395)
+is historical evidence for PR source `7877d119`, not for this checkout. Host tests,
+lint, builds and connected instrumentation passed; API 24/29 runtime passed;
+API 36/37 runtime failed. Downloaded API 37 artifact 11417921173 confirms:
+synthetic calls and SENT/DELIVERED SMS callbacks completed, then SEND_SMS
+AppOp denial remained `allow`. The existing gate correctly stayed red.
+
+## Changes to the gate
+
+- AppOp setup writes a fresh observation each time and requires two consistent
+  observations, bounded to ten infrastructure attempts. Historical denial, query
+  failure and contradictory modes cannot pass. The product action is not retried.
+- Real MainActivity bottom navigation, Android Back, recreation and relaunch are
+  instrumented. Activation, dialer keypad and SMS surfaces also undergo recreation.
+  Static navigation smoke tests now reject blank rendered surfaces.
+- API 37 additionally runs the two real UI tests at 1080×2400/420 dpi and
+  1440×3120/480 dpi. Eleven screenshots per profile accompany content, selection,
+  click and title layout assertions. This is resolution equivalence, not Samsung
+  OEM validation. Contrast, full-screen overlaps, keyboard and landscape have not
+  received exhaustive automated visual comparison.
+- Screening records monotonic callback-to-response duration in microseconds after
+  responding, including role/emergency/rule-engine fail-open paths. Every observed
+  response must stay strictly below 500,000 µs to qualify its lane.
+- Logcat analysis attributes failures to package/PID/stack. Product exceptions,
+  ANRs, crashes and unexplained process death fail. Explicit harness force-stops
+  remain recorded; system findings remain visible. Screenshots in runtime flows
+  trigger log analysis and retain the corresponding buffer/report.
+- Qualification JSON is extended with capability status, test, evidence,
+  timestamp, environment, reason and deviceRequired. Markdown and crash/ANR JSON,
+  properties and both APKs are archived. Empty/placeholder PNGs are rejected.
+
+## Voice and physical boundary
+
+VoiceStudioActivity records and plays a private local preview. LiveKitVoiceAudioProcessor
+processes direct Float32/FloatS16 frames through SentinelVoipVoicePipeline and
+LiveVoiceTransformEngine; SentinelLiveKitCallTransport provides a client room boundary.
+No production screen currently instantiates that transport. Unit tests exercise
+DSP/processor and transport contracts, but no outgoing transformed production call
+has been demonstrated. A token issuer, signaling/room service and PSTN gateway
+remain required. Ordinary ROLE_DIALER/InCallService APIs provide no public SIM
+uplink capture/transformation/reinjection path.
+
+Carrier calls/SMS/MMS, physical SIM/multi-SIM, audio quality/Bluetooth, Samsung
+lockscreen/battery/OEM behavior, Wear OS transport and voice end-to-end remain
+DEVICE_REQUIRED. Synthetic modem success cannot upgrade these to PHYSICAL_VALIDATED.
+The global `passed` flag remains false until complete current-commit evidence exists.
+
+## Reproduction
+
+```sh
+node scripts/check-phone-core-emulation-gate.js
+node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js
+npm run test:android-product-truth
+cd native-android-app
+./gradlew :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:lintDebug :wearable-contract:test :wearable-security:test --no-daemon
+./gradlew :app:connectedDebugAndroidTest --no-daemon
+bash ../scripts/android-viewport-qualification.sh "$EVIDENCE_DIR"
+```
+
+CI result and qualification artifacts are authoritative for their recorded commit,
+not for a later documentation update or branch head. SDK/Java/proxy setup failures
+must be reported separately from product failures. This cloud executor initially
+had Java 21 and no SDK/KVM; Android SDK and Java 17 were installed for local work.

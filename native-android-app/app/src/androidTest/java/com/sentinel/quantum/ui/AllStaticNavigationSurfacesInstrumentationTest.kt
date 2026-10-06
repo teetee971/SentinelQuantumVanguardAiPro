@@ -1,6 +1,11 @@
 package com.sentinel.quantum.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import org.junit.Assert.assertTrue
 import androidx.compose.ui.test.onRoot
 import androidx.navigation.compose.rememberNavController
 import com.sentinel.quantum.navigation.NavGraph
@@ -51,5 +56,16 @@ class AllStaticNavigationSurfacesInstrumentationTest {
         }
         composeRule.waitForIdle()
         composeRule.onRoot(useUnmergedTree = true).fetchSemanticsNode()
+        val visibleText = composeRule.onAllNodes(
+            SemanticsMatcher("nonblank production text") {
+                it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text.isNotBlank() } == true
+            }, useUnmergedTree = true
+        ).fetchSemanticsNodes()
+        assertTrue("$route rendered an empty surface", visibleText.isNotEmpty())
+        composeRule.onAllNodes(
+            SemanticsMatcher("nonblank production text") {
+                it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text.isNotBlank() } == true
+            }, useUnmergedTree = true
+        )[0].assertIsDisplayed()
     }
 }
