@@ -42,8 +42,12 @@ internal object IncomingSmsDeliveryStore {
         if (!isValid(record) || maxPendingRecords <= 0) return PersistState.FAILED
         val directory = directory(filesDir) ?: return PersistState.FAILED
         cleanTemporaryFiles(directory)
+        cleanInvalidRecordFiles(directory)
         val target = recordFile(directory, record.id) ?: return PersistState.FAILED
-        if (target.isFile) return PersistState.EXISTING
+        if (target.isFile) {
+            if (decodeRecordFile(target, record.id) != null) return PersistState.EXISTING
+            if (!runCatching { target.delete() }.getOrDefault(false)) return PersistState.FAILED
+        }
 
         val pending = directory.listFiles().orEmpty().count { it.isFile && RECORD_FILE.matches(it.name) }
         if (pending >= maxPendingRecords) return PersistState.CAPACITY_EXCEEDED
@@ -77,7 +81,12 @@ internal object IncomingSmsDeliveryStore {
             runCatching { temporary.delete() }
             return PersistState.FAILED
         }
-        return if (target.isFile) PersistState.CREATED else PersistState.FAILED
+        return if (target.isFile && decodeRecordFile(target, record.id) == record) {
+            PersistState.CREATED
+        } else {
+            runCatching { target.delete() }
+            PersistState.FAILED
+        }
     }
 
     @Synchronized
@@ -85,21 +94,10 @@ internal object IncomingSmsDeliveryStore {
         if (!ID.matches(id)) return null
         val directory = directory(filesDir, create = false) ?: return null
         val target = recordFile(directory, id) ?: return null
-        if (!target.isFile || target.length() !in 1..MAX_RECORD_BYTES) return null
-        return runCatching {
-            DataInputStream(BufferedInputStream(FileInputStream(target))).use { input ->
-                if (input.readInt() != FORMAT_VERSION) return null
-                val record = Record(
-                    id = input.readUTF(),
-                    address = input.readUTF(),
-                    body = input.readUTF(),
-                    receivedAtMs = input.readLong(),
-                    sentAtMs = if (input.readBoolean()) input.readLong() else null,
-                    subscriptionId = if (input.readBoolean()) input.readInt() else null
-                )
-                record.takeIf(::isValid)
-            }
-        }.getOrNull()
+        if (!target.isFile) return null
+        val decoded = decodeRecordFile(target, id)
+        if (decoded == null) runCatching { target.delete() }
+        return decoded
     }
 
     @Synchronized
@@ -114,6 +112,7 @@ internal object IncomingSmsDeliveryStore {
     fun pendingIds(filesDir: File): List<String> {
         val directory = directory(filesDir, create = false) ?: return emptyList()
         cleanTemporaryFiles(directory)
+        cleanInvalidRecordFiles(directory)
         return directory.listFiles().orEmpty()
             .asSequence()
             .filter { it.isFile && RECORD_FILE.matches(it.name) && it.length() in 1..MAX_RECORD_BYTES }
@@ -144,6 +143,24 @@ internal object IncomingSmsDeliveryStore {
                 updateBytes(digest, body.toByteArray(Charsets.UTF_8))
             }
             digest.digest().joinToString("") { "%02x".format(it) }
+        }.getOrNull()
+    }
+
+    private fun decodeRecordFile(target: File, expectedId: String): Record? {
+        if (!target.isFile || target.length() !in 1..MAX_RECORD_BYTES || !ID.matches(expectedId)) return null
+        return runCatching {
+            DataInputStream(BufferedInputStream(FileInputStream(target))).use { input ->
+                if (input.readInt() != FORMAT_VERSION) return@use null
+                val record = Record(
+                    id = input.readUTF(),
+                    address = input.readUTF(),
+                    body = input.readUTF(),
+                    receivedAtMs = input.readLong(),
+                    sentAtMs = if (input.readBoolean()) input.readLong() else null,
+                    subscriptionId = if (input.readBoolean()) input.readInt() else null
+                )
+                record.takeIf { it.id == expectedId && isValid(it) }
+            }
         }.getOrNull()
     }
 
@@ -178,6 +195,15 @@ internal object IncomingSmsDeliveryStore {
         directory.listFiles().orEmpty()
             .filter { it.isFile && it.name.startsWith(".") && it.name.endsWith(".tmp") }
             .forEach { file -> runCatching { file.delete() } }
+    }
+
+    private fun cleanInvalidRecordFiles(directory: File) {
+        directory.listFiles().orEmpty()
+            .filter { it.isFile && RECORD_FILE.matches(it.name) }
+            .forEach { file ->
+                val id = file.name.removeSuffix(RECORD_SUFFIX)
+                if (decodeRecordFile(file, id) == null) runCatching { file.delete() }
+            }
     }
 
     private fun updateBytes(digest: MessageDigest, bytes: ByteArray) {
