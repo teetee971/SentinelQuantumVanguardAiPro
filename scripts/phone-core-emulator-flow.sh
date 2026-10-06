@@ -127,6 +127,20 @@ wait_logcat_marker() {
   echo "Expected PII-free Android lifecycle marker was not observed: $marker"
   return 1
 }
+wait_emulator_call_absent() {
+  local number="$1"
+  local evidence="$FLOW_OUTPUT_DIR/gsm-list-${number}.txt"
+  for _ in $(seq 1 30); do
+    adb emu gsm list > "$evidence" 2>&1 || true
+    if ! grep -Fq "$number" "$evidence"; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  echo "Emulator modem still exposes call $number after bounded teardown wait."
+  cat "$evidence" 2>/dev/null || true
+  return 1
+}
 tap_text() {
   fresh_ui
   local coordinates
@@ -160,14 +174,13 @@ PYFOCUS
   echo "Inline reply input did not receive focus."
   return 1
 }
-wait_private_timeline_event() {
+private_timeline_has_event() {
   local direction="$1"
   local signal="$2"
   local kind="${3:-CALL}"
-  local evidence="$FLOW_OUTPUT_DIR/phone-private-timeline-${direction,,}-${signal,,}.xml"
-  for _ in $(seq 1 20); do
-    if adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null && \
-      python3 - "$evidence" "$direction" "$signal" "$kind" <<'PYTIMELINE'
+  local evidence="${4:-$FLOW_OUTPUT_DIR/phone-private-timeline-${direction,,}-${signal,,}.xml}"
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null && \
+    python3 - "$evidence" "$direction" "$signal" "$kind" <<'PYTIMELINE'
 import json, sys, xml.etree.ElementTree as ET
 path, direction, signal, kind = sys.argv[1:]
 try:
@@ -184,7 +197,16 @@ matched = any(
 )
 sys.exit(0 if matched else 1)
 PYTIMELINE
-    then return 0; fi
+}
+wait_private_timeline_event() {
+  local direction="$1"
+  local signal="$2"
+  local kind="${3:-CALL}"
+  local evidence="$FLOW_OUTPUT_DIR/phone-private-timeline-${direction,,}-${signal,,}.xml"
+  for _ in $(seq 1 20); do
+    if private_timeline_has_event "$direction" "$signal" "$kind" "$evidence"; then
+      return 0
+    fi
     sleep 1
   done
   adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$evidence" 2>/dev/null || true
@@ -258,29 +280,49 @@ adb emu gsm accept "$FLOW_NUMBER"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
 capture 03-incoming-active-evidence
 adb emu gsm cancel "$FLOW_NUMBER"
-# Do not start the outgoing probe until Telecom has published the end of the incoming session.
-# A fixed sleep can race call teardown and make isOutgoingCallPermitted() legitimately return false.
-wait_text "Appel terminé"
+# The emulator modem is the lifecycle authority for this synthetic call. A localized UI string is
+# not a teardown oracle and can disappear before or after Telecom finishes releasing the account.
+wait_emulator_call_absent "$FLOW_NUMBER"
 capture 04-ended-call
 
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 
-# Outgoing call originates from Sentinel's own button and keeps the explicit InCall UI proof.
-adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
-wait_text "Appeler"
-tap_text "Appeler"
-wait_text "Composition" "En communication"
-if ! python3 - "$FLOW_XML" <<'PY'
-import sys, xml.etree.ElementTree as ET
-sys.exit(0 if any("En communication" in (n.get("text", "") + n.get("content-desc", "")) for n in ET.parse(sys.argv[1]).iter("node")) else 1)
-PY
-then adb emu gsm accept 5550101; fi
-wait_text "En communication"
-wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"
+# Outgoing calls can remain temporarily denied while Telecom finishes releasing the previous call,
+# even after the emulator modem reports it absent. Keep the production fail-closed policy intact and
+# retry the user action for a bounded window until InCallService records the real ACTIVE transition.
+FLOW_OUTGOING_ACTIVE=0
+FLOW_OUTGOING_EVIDENCE="$FLOW_OUTPUT_DIR/phone-private-timeline-outgoing-incall_active.xml"
+for FLOW_ATTEMPT in $(seq 1 12); do
+  adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
+  wait_text "Appeler"
+  tap_text "Appeler"
+  for _ in $(seq 1 3); do
+    # The emulator modem may require an explicit transition from dialing to active.
+    adb emu gsm accept 5550101 >/dev/null 2>&1 || true
+    if private_timeline_has_event "OUTGOING" "INCALL_ACTIVE" "CALL" "$FLOW_OUTGOING_EVIDENCE"; then
+      FLOW_OUTGOING_ACTIVE=1
+      break
+    fi
+    sleep 0.5
+  done
+  if [[ "$FLOW_OUTGOING_ACTIVE" == "1" ]]; then
+    break
+  fi
+  sleep 0.5
+done
+if [[ "$FLOW_OUTGOING_ACTIVE" != "1" ]]; then
+  capture failure
+  adb shell run-as "$FLOW_PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$FLOW_OUTGOING_EVIDENCE" 2>/dev/null || true
+  echo "Sentinel did not establish the outgoing emulator call within the bounded Telecom recovery window."
+  exit 1
+fi
+# Connected-state and app-owned in-call-surface proofs are separate: require both.
+wait_private_timeline_event "LOCAL" "INCALL_UI_SHOWN"
+wait_text "Raccrocher"
 capture 05-outgoing-call
 tap_text "Raccrocher"
-wait_text "Appel terminé"
+wait_emulator_call_absent 5550101
 
 adb shell am start -W -a android.intent.action.MAIN -n "$FLOW_PACKAGE/.SmsComposeActivity"
 adb emu sms send "$FLOW_SMS_NUMBER" "Sentinel emulator reply test"
