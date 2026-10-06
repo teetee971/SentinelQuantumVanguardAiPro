@@ -50,6 +50,13 @@ test('provider projection is role-gated, replay-safe and WorkManager-backed', ()
   assert.match(worker, /Telephony\.Sms\.Inbox\.CONTENT_URI/);
 });
 
+test('role-loss retry window retires private SMS content instead of leaking spool capacity', () => {
+  assert.match(worker, /ROLE_RETRY_WINDOW_MS = 7L \* 24L \* 60L \* 60L \* 1000L/);
+  assert.match(worker, /IncomingSmsDeliveryStore\.delete\(applicationContext\.filesDir, record\.id\)/);
+  assert.match(worker, /if \(retired\) Result\.success\(\) else Result\.retry\(\)/);
+  assert.match(worker, /contenu privé retiré/);
+});
+
 test('startup recovery itself runs off the Application main thread', () => {
   assert.match(application, /IncomingSmsRecoveryWorker\.schedule\(this\)/);
   assert.doesNotMatch(application, /IncomingSmsDeliveryStore\.pendingIds/);
