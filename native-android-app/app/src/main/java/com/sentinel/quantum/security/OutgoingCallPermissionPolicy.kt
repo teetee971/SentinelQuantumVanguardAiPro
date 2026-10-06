@@ -1,16 +1,18 @@
 package com.sentinel.quantum.security
 
 /**
- * Fail-closed decision boundary for TelecomManager.isOutgoingCallPermitted().
+ * Fail-closed authority boundary for ordinary carrier/PSTN placement.
  *
- * Android 8.0+ exposes an explicit oracle for a selected PhoneAccount. A negative answer or an
- * unreadable oracle must never be converted into a call attempt. On API 24-25 the oracle does not
- * exist, so the already validated active PhoneAccount is handed to Telecom and the platform owns
- * the final routing decision.
+ * TelecomManager.isOutgoingCallPermitted() cannot authorize a framework SIM on behalf of a
+ * third-party/default dialer. Phone Core therefore accepts only a PhoneAccount that Android
+ * marks CAPABILITY_SIM_SUBSCRIPTION and revalidates that capability immediately before placeCall().
  */
 object OutgoingCallPermissionPolicy {
-    enum class State { ALLOWED, DENIED, UNKNOWN, API_NOT_SUPPORTED }
+    enum class AccountAuthority { FRAMEWORK_SIM, UNVERIFIED }
 
-    fun mayPlaceCall(state: State): Boolean =
-        state == State.ALLOWED || state == State.API_NOT_SUPPORTED
+    fun classify(frameworkSimCapability: Boolean): AccountAuthority =
+        if (frameworkSimCapability) AccountAuthority.FRAMEWORK_SIM else AccountAuthority.UNVERIFIED
+
+    fun mayPlacePstnCall(authority: AccountAuthority): Boolean =
+        authority == AccountAuthority.FRAMEWORK_SIM
 }
