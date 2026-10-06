@@ -9,6 +9,7 @@ FLOW_NUMBER="5550100"
 FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+FLOW_INCOMING_TRANSPORT_PID=""
 
 role_holders() {
   local full_role="$1"
@@ -131,6 +132,48 @@ wait_logcat_marker() {
   done
   echo "Expected PII-free Android lifecycle marker was not observed: $marker"
   return 1
+}
+start_api37_incoming_answer_transport_bridge() {
+  local evidence="$FLOW_OUTPUT_DIR/api37-incoming-answer-transport.txt"
+  local marker_file="$FLOW_OUTPUT_DIR/api37-incoming-answer-marker.txt"
+  FLOW_INCOMING_TRANSPORT_PID=""
+  if [[ "$FLOW_API" -lt 37 ]]; then
+    printf 'not_required api=%s\n' "$FLOW_API" > "$evidence"
+    return 0
+  fi
+
+  # Android 17's synthetic GSM transport can disconnect an answered emulator call before its modem
+  # state follows Telecom to ACTIVE. The bridge is deliberately host-only and fail-closed: it waits
+  # for Telecom's RINGING -> ANSWERED transition, which is emitted only after Sentinel submitted
+  # Call.answer(), before asking the emulator modem to synchronize. The independent private-timeline
+  # INCALL_ACTIVE assertion below remains the application-level success oracle. This is emulator
+  # qualification evidence only and must never be presented as physical-device certification.
+  : > "$evidence"
+  : > "$marker_file"
+  (
+    local marker_status=0
+    set +e
+    set +o pipefail
+    timeout 5s adb logcat -v brief -T 1 2>>"$evidence" \
+      | grep -m1 -F 'CallsManager: setCallState RINGING(RINGING) -> ANSWERED' > "$marker_file"
+    marker_status=$?
+    set -o pipefail
+    set -e
+    if [[ "$marker_status" -ne 0 || ! -s "$marker_file" ]]; then
+      printf 'telecom_answer_marker_missing status=%s\n' "$marker_status" >> "$evidence"
+      return 1
+    fi
+    cat "$marker_file" >> "$evidence"
+    printf 'transport_sync=adb_emu_gsm_accept api=%s number=%s\n' "$FLOW_API" "$FLOW_NUMBER" >> "$evidence"
+    adb emu gsm accept "$FLOW_NUMBER" >> "$evidence" 2>&1
+  ) &
+  FLOW_INCOMING_TRANSPORT_PID=$!
+}
+wait_api37_incoming_answer_transport_bridge() {
+  if [[ -n "${FLOW_INCOMING_TRANSPORT_PID:-}" ]]; then
+    wait "$FLOW_INCOMING_TRANSPORT_PID"
+    FLOW_INCOMING_TRANSPORT_PID=""
+  fi
 }
 wait_emulator_call_absent() {
   local number="$1"
@@ -348,11 +391,13 @@ capture 02-incoming-call
 # This event is recorded by InCallService only after it receives the ringing call and posts
 # its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
-# Exercise Sentinel's answer path, not a modem-side answer on behalf of the application.
-# An app-owned stable control plus the independent ACTIVE timeline event proves the effect.
+# Exercise Sentinel's answer path. On API 37 only, arm the emulator transport bridge before the tap;
+# the bridge itself remains blocked until Telecom proves Sentinel's Call.answer() reached ANSWERED.
 open_incoming_call_notification
 wait_text "phone_core_answer"
+start_api37_incoming_answer_transport_bridge
 tap_text "phone_core_answer"
+wait_api37_incoming_answer_transport_bridge
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
 capture 03-incoming-active-evidence
 adb emu gsm cancel "$FLOW_NUMBER"
