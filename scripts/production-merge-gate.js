@@ -147,11 +147,29 @@ function retryDelayMs(response, attempt, baseDelayMs) {
   return Math.min(baseDelayMs * (2 ** (attempt - 1)), 8000);
 }
 
+function retryDeadlineError(url, requestedDelayMs, remainingMs) {
+  return new Error(
+    `GitHub API retry deadline exceeded for ${url}: requested ${requestedDelayMs}ms with ${Math.max(0, remainingMs)}ms remaining`
+  );
+}
+
+async function sleepForGitHubRetry(url, delayMs, { deadlineMs, now, sleep }) {
+  if (Number.isFinite(deadlineMs)) {
+    const remainingMs = deadlineMs - now();
+    if (remainingMs <= 0 || delayMs > remainingMs) {
+      throw retryDeadlineError(url, delayMs, remainingMs);
+    }
+  }
+  await sleep(delayMs);
+}
+
 export async function githubJson(url, token, {
   fetchImpl = fetch,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   maxAttempts = GITHUB_API_MAX_ATTEMPTS,
-  baseDelayMs = GITHUB_API_BASE_DELAY_MS
+  baseDelayMs = GITHUB_API_BASE_DELAY_MS,
+  deadlineMs = Number.POSITIVE_INFINITY,
+  now = Date.now
 } = {}) {
   if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
     throw new Error('GitHub API maxAttempts must be a positive integer');
@@ -159,52 +177,71 @@ export async function githubJson(url, token, {
   if (!Number.isFinite(baseDelayMs) || baseDelayMs < 0) {
     throw new Error('GitHub API baseDelayMs must be non-negative');
   }
+  if (!(deadlineMs === Number.POSITIVE_INFINITY || Number.isFinite(deadlineMs))) {
+    throw new Error('GitHub API deadlineMs must be finite or positive infinity');
+  }
+  if (typeof now !== 'function') {
+    throw new Error('GitHub API now must be a function');
+  }
 
   let lastError = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (Number.isFinite(deadlineMs) && now() >= deadlineMs) {
+      throw retryDeadlineError(url, 0, deadlineMs - now());
+    }
+
+    let response;
     try {
-      const response = await fetchImpl(url, {
+      response = await fetchImpl(url, {
         headers: {
           Accept: 'application/vnd.github+json',
           Authorization: `Bearer ${token}`,
           'X-GitHub-Api-Version': '2022-11-28'
         }
       });
-
-      if (response.ok) return response.json();
-
-      const error = new Error(`GitHub API ${response.status} for ${url}`);
-      if (!isRetryableGitHubStatus(response.status) || attempt === maxAttempts) throw error;
-
-      lastError = error;
-      const delayMs = retryDelayMs(response, attempt, baseDelayMs);
-      console.warn(`Transient ${error.message}; retry ${attempt}/${maxAttempts} after ${delayMs}ms.`);
-      await sleep(delayMs);
     } catch (error) {
-      // Explicit non-retryable HTTP failures must fail immediately. Network/transport
-      // exceptions have no status and are retried within the same bounded budget.
-      if (/^GitHub API \d+ for /.test(String(error?.message || ''))) {
-        const status = Number(String(error.message).match(/^GitHub API (\d+)/)?.[1]);
-        if (!isRetryableGitHubStatus(status) || attempt === maxAttempts) throw error;
-      } else if (attempt === maxAttempts) {
+      if (attempt === maxAttempts) {
         throw new Error(`GitHub API transport failure for ${url} after ${maxAttempts} attempts: ${error?.message || error}`);
       }
-
       lastError = error;
       const delayMs = Math.min(baseDelayMs * (2 ** (attempt - 1)), 8000);
       console.warn(`Transient GitHub API transport failure for ${url}; retry ${attempt}/${maxAttempts} after ${delayMs}ms.`);
-      await sleep(delayMs);
+      await sleepForGitHubRetry(url, delayMs, { deadlineMs, now, sleep });
+      continue;
     }
+
+    if (response.ok) {
+      try {
+        return await response.json();
+      } catch (error) {
+        if (attempt === maxAttempts) {
+          throw new Error(`GitHub API response body failure for ${url} after ${maxAttempts} attempts: ${error?.message || error}`);
+        }
+        lastError = error;
+        const delayMs = Math.min(baseDelayMs * (2 ** (attempt - 1)), 8000);
+        console.warn(`Transient GitHub API response body failure for ${url}; retry ${attempt}/${maxAttempts} after ${delayMs}ms.`);
+        await sleepForGitHubRetry(url, delayMs, { deadlineMs, now, sleep });
+        continue;
+      }
+    }
+
+    const error = new Error(`GitHub API ${response.status} for ${url}`);
+    if (!isRetryableGitHubStatus(response.status) || attempt === maxAttempts) throw error;
+
+    lastError = error;
+    const delayMs = retryDelayMs(response, attempt, baseDelayMs);
+    console.warn(`Transient ${error.message}; retry ${attempt}/${maxAttempts} after ${delayMs}ms.`);
+    await sleepForGitHubRetry(url, delayMs, { deadlineMs, now, sleep });
   }
 
   throw lastError || new Error(`GitHub API request failed for ${url}`);
 }
 
-async function fetchChangedFiles(repository, pullNumber, token) {
+async function fetchChangedFiles(repository, pullNumber, token, githubOptions = {}) {
   const files = [];
   for (let page = 1; page <= 30; page += 1) {
     const url = `https://api.github.com/repos/${repository}/pulls/${pullNumber}/files?per_page=100&page=${page}`;
-    const payload = await githubJson(url, token);
+    const payload = await githubJson(url, token, githubOptions);
     if (!Array.isArray(payload)) throw new Error('Unexpected pull files response');
     files.push(...payload.map((entry) => entry.filename).filter(Boolean));
     if (payload.length < 100) return files;
@@ -212,14 +249,14 @@ async function fetchChangedFiles(repository, pullNumber, token) {
   throw new Error('Pull request changed-file list exceeds supported bound');
 }
 
-async function fetchWorkflowRuns(repository, workflow, sha, token) {
+async function fetchWorkflowRuns(repository, workflow, sha, token, githubOptions = {}) {
   const params = new URLSearchParams({
     head_sha: sha,
     event: 'pull_request',
     per_page: '20'
   });
   const url = `https://api.github.com/repos/${repository}/actions/workflows/${encodeURIComponent(workflow)}/runs?${params}`;
-  const payload = await githubJson(url, token);
+  const payload = await githubJson(url, token, githubOptions);
   if (!Array.isArray(payload.workflow_runs)) throw new Error(`Unexpected workflow response for ${workflow}`);
   return payload.workflow_runs;
 }
@@ -242,17 +279,18 @@ export async function runProductionMergeGate({
     throw new Error('Invalid pull request identity in event payload');
   }
 
-  const changedFiles = await fetchChangedFiles(repository, pullNumber, token);
+  const deadline = Date.now() + timeoutMs;
+  const githubOptions = { deadlineMs: deadline };
+  const changedFiles = await fetchChangedFiles(repository, pullNumber, token, githubOptions);
   const required = requiredWorkflowsForPaths(changedFiles);
   console.log(`Production gate head: ${expectedSha}`);
   console.log(`Changed files: ${changedFiles.length}`);
   console.log(`Required workflows (${required.length}): ${required.join(', ')}`);
 
-  const deadline = Date.now() + timeoutMs;
   while (true) {
     let pending = false;
     for (const workflow of required) {
-      const runs = await fetchWorkflowRuns(repository, workflow, expectedSha, token);
+      const runs = await fetchWorkflowRuns(repository, workflow, expectedSha, token, githubOptions);
       const latest = selectLatestExactHeadRun(runs, expectedSha);
       const evaluation = evaluateWorkflowRun(latest);
       const runLabel = latest ? `run ${latest.id}` : 'no exact-head run';
@@ -272,10 +310,11 @@ export async function runProductionMergeGate({
       console.log(`Production Merge Gate passed for exact head ${expectedSha}.`);
       return { expectedSha, changedFiles, required };
     }
-    if (Date.now() >= deadline) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) {
       throw new Error(`Timed out waiting for exact-head production evidence for ${expectedSha}`);
     }
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
+    await new Promise((resolve) => setTimeout(resolve, Math.min(pollMs, remainingMs)));
   }
 }
 

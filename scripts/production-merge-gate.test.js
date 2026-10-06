@@ -186,6 +186,49 @@ test('GitHub API retry honors Retry-After for transient responses', async () => 
   assert.deepEqual(sleeps, [2000]);
 });
 
+test('Retry-After cannot overshoot the production-gate request deadline', async () => {
+  let calls = 0;
+  const sleeps = [];
+  await assert.rejects(
+    githubJson('https://api.github.com/example', 'token', {
+      fetchImpl: async () => {
+        calls += 1;
+        return response(503, {}, '3600');
+      },
+      sleep: async (ms) => sleeps.push(ms),
+      baseDelayMs: 1,
+      deadlineMs: 10_000,
+      now: () => 9_000
+    }),
+    /GitHub API retry deadline exceeded.*requested 3600000ms.*1000ms remaining/
+  );
+  assert.equal(calls, 1);
+  assert.deepEqual(sleeps, []);
+});
+
+test('successful HTTP response with transient body-read failure is retried within the same budget', async () => {
+  let calls = 0;
+  const sleeps = [];
+  const payload = await githubJson('https://api.github.com/example', 'token', {
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) {
+        return {
+          ...response(200),
+          async json() { throw new TypeError('socket reset while reading response body'); }
+        };
+      }
+      return response(200, { ok: true });
+    },
+    sleep: async (ms) => sleeps.push(ms),
+    baseDelayMs: 1
+  });
+
+  assert.deepEqual(payload, { ok: true });
+  assert.equal(calls, 2);
+  assert.deepEqual(sleeps, [1]);
+});
+
 test('GitHub API retry fails immediately for non-retryable authentication errors', async () => {
   let calls = 0;
   await assert.rejects(
