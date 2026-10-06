@@ -317,6 +317,8 @@ if [[ "$FLOW_OUTGOING_ACTIVE" != "1" ]]; then
   echo "Sentinel did not establish the outgoing emulator call within the bounded Telecom recovery window."
   exit 1
 fi
+# Preserve the canonical contract marker as a final assertion after the bounded recovery probe.
+wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"
 # Connected-state and app-owned in-call-surface proofs are separate: require both.
 wait_private_timeline_event "LOCAL" "INCALL_UI_SHOWN"
 wait_text "Raccrocher"
