@@ -11,8 +11,18 @@ test('emergency handoff targets an external Android phone surface without choosi
   assert.match(handoff, /Intent\.ACTION_DIAL/);
   assert.match(handoff, /telecom\.systemDialerPackage/);
   assert.match(handoff, /telecom\.defaultDialerPackage/);
+  assert.match(handoff, /resolvedPackage != preferredPackage/);
   assert.match(handoff, /resolvedPackage == context\.packageName/);
   assert.doesNotMatch(handoff, /TelecomManager\.EXTRA_PHONE_ACCOUNT_HANDLE/);
   assert.doesNotMatch(handoff, /placeCall\(/);
   assert.doesNotMatch(handoff, /ACTION_CALL/);
+});
+
+test('API 24-28 emergency handoff cannot resolve implicitly back to Sentinel', () => {
+  assert.match(handoff, /findLegacySystemDialer\(context, intent\)/);
+  assert.match(handoff, /PackageManager\.MATCH_SYSTEM_ONLY/);
+  assert.match(handoff, /queryIntentActivities\(/);
+  assert.match(handoff, /\.firstOrNull \{ it\.isNotBlank\(\) && it != context\.packageName \}/);
+  assert.match(handoff, /\} \?: return false\s*\n\s*\/\/ Keep emergency handoff explicit/);
+  assert.match(handoff, /intent\.setPackage\(preferredPackage\)/);
 });
