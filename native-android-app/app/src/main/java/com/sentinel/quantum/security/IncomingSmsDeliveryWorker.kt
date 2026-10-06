@@ -27,7 +27,21 @@ class IncomingSmsDeliveryWorker(
             Projection.RETRY -> Result.retry()
             Projection.ROLE_UNAVAILABLE -> {
                 val age = (System.currentTimeMillis() - record.receivedAtMs).coerceAtLeast(0L)
-                if (age < ROLE_RETRY_WINDOW_MS) Result.retry() else Result.success()
+                if (age < ROLE_RETRY_WINDOW_MS) {
+                    Result.retry()
+                } else {
+                    val retired = IncomingSmsDeliveryStore.delete(applicationContext.filesDir, record.id)
+                    LocalLogger(applicationContext).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "DefaultSms",
+                        if (retired) {
+                            "Spool SMS entrant expiré après perte prolongée du rôle SMS; contenu privé retiré"
+                        } else {
+                            "Spool SMS entrant expiré mais suppression privée impossible; nouvelle tentative planifiée"
+                        }
+                    )
+                    if (retired) Result.success() else Result.retry()
+                }
             }
         }
     }
