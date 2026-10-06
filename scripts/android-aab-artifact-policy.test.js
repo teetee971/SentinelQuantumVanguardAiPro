@@ -24,6 +24,13 @@ test('optional bundletool does not silently claim semantic validation or mask fa
   assert.doesNotMatch(validation, /jarsigner|\|\| true/);
 });
 
+test('Play Console packaging policy accepts literal or bounded CI-overridable default versionCode', () => {
+  assert.match(workflow, /versionCode\[\[:space:\]\]\+\(\[0-9\]\+\)/);
+  assert.match(workflow, /def\[\[:space:\]\]\+sentinelVersionCode/);
+  assert.match(workflow, /if \[\[ -z "\$VERSION_CODE" \]\]; then/);
+  assert.match(workflow, /test -n "\$VERSION_CODE"/);
+  assert.match(workflow, /test "\$VERSION_CODE" -gt 0/);
+});
 
 test('unsigned validation AAB cannot be mistaken for a publishable release artifact', () => {
   assert.match(workflow, /^name: Build Android App Bundle \(Unsigned Validation\)$/m);
