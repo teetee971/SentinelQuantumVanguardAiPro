@@ -49,11 +49,28 @@ function analyzeLogcat(log, packageName = 'com.sentinel.quantum') {
       stack.push(lines[next]);
     }
     const context = stack.join('\n');
+    const prior = lines.slice(Math.max(0, index - 96), index).join('\n');
+    const following = lines.slice(index + 1, Math.min(lines.length, index + 96)).join('\n');
+    // Android's instrumentation UiAutomation accessibility client can receive a
+    // final Binder accessibility event after AndroidJUnitRunner has torn down its
+    // Handler. API 37 logs that platform-only race as IllegalStateException in the
+    // target PID after ActivityManager explicitly reports "finished inst". It is
+    // harness teardown, not product execution. Keep the exception visible, but
+    // exempt only this exact, bounded lifecycle signature; any product frame or
+    // the same dead-Handler error during normal execution still fails the gate.
+    const expectedTestTeardown = kind === 'EXCEPTION' && Boolean(pid) &&
+      /Handler \(android\.os\.Handler\).*sending message to a Handler on a dead thread/.test(context) &&
+      /android\.accessibilityservice\.AccessibilityService\$IAccessibilityServiceClientWrapper\.onAccessibilityEvent/.test(context) &&
+      /android\.os\.HandlerExecutor\.execute/.test(context) &&
+      !ownedReference.test(context) && !ownedFrame.test(context) &&
+      new RegExp(`Force stopping ${escaped} .*finished inst`).test(prior) &&
+      new RegExp(`Killing ${pid}:${escaped}\\b.*finished inst`).test(`${prior}\n${following}`);
     const product = ownedReference.test(line) || (pid && ownedPids.has(pid)) ||
       ((kind === 'CRASH' || kind === 'EXCEPTION') && (ownedReference.test(context) || ownedFrame.test(context))) || /SentinelLifecycle/.test(line);
     const deathPid = line.match(/\(pid (\d+)\)/)?.[1];
     const expectedDeath = kind === 'PROCESS_DEATH' && expectedKills.has(deathPid);
-    const classification = expectedDeath ? 'EXPECTED_HARNESS_STOP' : product ? 'PRODUCT' :
+    const classification = expectedDeath ? 'EXPECTED_HARNESS_STOP' :
+      expectedTestTeardown ? 'EXPECTED_TEST_TEARDOWN' : product ? 'PRODUCT' :
       kind === 'CRASH' && !/Process:|Fatal signal.*\([^)]*\)/.test(context) ? 'UNKNOWN' : 'SYSTEM';
     findings.push({ line: index + 1, kind, classification, pid: pid || null, message: line });
   }
