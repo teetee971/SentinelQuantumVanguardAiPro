@@ -11,8 +11,8 @@ if (sentinelVersionCodeRaw) {
         throw new GradleException('SENTINEL_VERSION_CODE must be a positive decimal integer.')
     }
     sentinelVersionCode = sentinelVersionCodeRaw.toInteger()
-    if (sentinelVersionCode < 7 || sentinelVersionCode > 2100000000) {
-        throw new GradleException('SENTINEL_VERSION_CODE must be between 7 and 2100000000.')
+    if (sentinelVersionCode < 1 || sentinelVersionCode > 2100000000) {
+        throw new GradleException('SENTINEL_VERSION_CODE must be between 1 and 2100000000.')
     }
 }
 
@@ -283,4 +283,3 @@ tasks.register('exportReleaseDependencyInventory') {
         )
     }
 }
-
