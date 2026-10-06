@@ -51,7 +51,10 @@ def recv_until(sock: socket.socket, needles: tuple[str, ...], timeout_s: float) 
 
 
 def authenticate_console(sock: socket.socket, evidence: Path, token_file: Path) -> None:
-    greeting = recv_until(sock, ("Authentication required", "OK", "KO"), 1.5)
+    # Android's documented console banner ends with an initial OK even when authentication is
+    # required. Consume that complete banner first; otherwise its stale OK could be mistaken for
+    # the response to the later auth or gsm command.
+    greeting = recv_until(sock, ("OK", "KO"), 1.5)
     if greeting:
         append_line(evidence, "console_greeting=" + greeting.replace("\r", " ").replace("\n", " | ").strip())
     if "KO" in greeting:
