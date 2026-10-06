@@ -1,0 +1,207 @@
+name: Phone Core framework SIM patch once
+
+on:
+  push:
+    branches:
+      - recovery/phone-core-emulator-phase2-20261005
+    paths:
+      - .github/workflows/phone-core-framework-sim-patch-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: recovery/phone-core-emulator-phase2-20261005
+          fetch-depth: 0
+
+      - name: Apply fail-closed framework SIM routing correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          dialer_path = Path('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt')
+          dialer = dialer_path.read_text(encoding='utf-8')
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              return text.replace(old, new, 1)
+
+          dialer = replace_once(
+              dialer,
+              'import android.telecom.PhoneAccountHandle\nimport android.telecom.TelecomManager',
+              'import android.telecom.PhoneAccount\nimport android.telecom.PhoneAccountHandle\nimport android.telecom.TelecomManager',
+              'PhoneAccount import'
+          )
+
+          old_handles = '''        if (handles.isEmpty()) return CallLineLoadResult.Available(emptyList())
+
+        val subscriptionLabels: Map<Int, String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {'''
+          new_handles = '''        if (handles.isEmpty()) return CallLineLoadResult.Available(emptyList())
+
+        // Only framework-owned PSTN/SIM accounts may appear as selectable carrier lines. Android
+        // reserves CAPABILITY_SIM_SUBSCRIPTION for the built-in telephony stack; third-party VoIP
+        // accounts must never be presented as a SIM or routed through this Phone Core path.
+        val frameworkSimHandles = buildList {
+            for (handle in handles) {
+                val account = try {
+                    telecom.getPhoneAccount(handle)
+                } catch (_: SecurityException) {
+                    return CallLineLoadResult.LookupFailed
+                } catch (_: RuntimeException) {
+                    return CallLineLoadResult.LookupFailed
+                }
+                if (account?.hasCapabilities(PhoneAccount.CAPABILITY_SIM_SUBSCRIPTION) == true) {
+                    add(handle)
+                }
+            }
+        }
+        if (frameworkSimHandles.isEmpty()) return CallLineLoadResult.Available(emptyList())
+
+        val subscriptionLabels: Map<Int, String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {'''
+          dialer = replace_once(dialer, old_handles, new_handles, 'framework SIM filter')
+
+          if dialer.count('handles.mapNotNull { handle ->') != 1:
+              raise SystemExit('subscription label source: expected one handles.mapNotNull')
+          dialer = dialer.replace('handles.mapNotNull { handle ->', 'frameworkSimHandles.mapNotNull { handle ->', 1)
+          if dialer.count('val lines = handles.mapIndexed { index, handle ->') != 1:
+              raise SystemExit('line source: expected one handles.mapIndexed')
+          dialer = dialer.replace(
+              'val lines = handles.mapIndexed { index, handle ->',
+              'val lines = frameworkSimHandles.mapIndexed { index, handle ->',
+              1
+          )
+
+          old_oracle = '''        val outgoingPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                if (telecom.isOutgoingCallPermitted(selectedLine.handle)) {
+                    OutgoingCallPermissionPolicy.State.ALLOWED
+                } else {
+                    OutgoingCallPermissionPolicy.State.DENIED
+                }
+            } catch (_: SecurityException) {
+                OutgoingCallPermissionPolicy.State.UNKNOWN
+            } catch (_: RuntimeException) {
+                OutgoingCallPermissionPolicy.State.UNKNOWN
+            }
+        } else {
+            OutgoingCallPermissionPolicy.State.API_NOT_SUPPORTED
+        }
+        if (!OutgoingCallPermissionPolicy.mayPlaceCall(outgoingPermissionState)) {
+            callActionStatus = when (outgoingPermissionState) {
+                OutgoingCallPermissionPolicy.State.DENIED ->
+                    "Android signale que cette ligne n’est pas autorisée pour un appel sortant. Aucun appel n’a été lancé."
+                else ->
+                    "Android n’a pas pu confirmer l’autorisation d’appel sortant sur cette ligne. Aucun appel n’a été lancé."
+            }
+            return
+        }'''
+          new_oracle = '''        // isOutgoingCallPermitted() is an own/self-managed PhoneAccount oracle: Android enforces
+        // PhoneAccountHandle ownership and MANAGE_OWN_CALLS before answering it. A default dialer
+        // therefore cannot use that API to pre-authorize the framework SIM account. Re-read the
+        // selected PhoneAccount instead and fail closed unless Android still marks it as a built-in
+        // SIM subscription immediately before placeCall().
+        val selectedAccount = try {
+            telecom.getPhoneAccount(selectedLine.handle)
+        } catch (_: SecurityException) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        }
+        val accountAuthority = OutgoingCallPermissionPolicy.classify(
+            frameworkSimCapability = selectedAccount
+                ?.hasCapabilities(PhoneAccount.CAPABILITY_SIM_SUBSCRIPTION) == true
+        )
+        if (!OutgoingCallPermissionPolicy.mayPlacePstnCall(accountAuthority)) {
+            callActionStatus =
+                "Android n’a pas pu confirmer que la ligne sélectionnée est une SIM système active. Aucun appel n’a été lancé."
+            return
+        }'''
+          dialer = replace_once(dialer, old_oracle, new_oracle, 'outgoing permission oracle')
+
+          if 'isOutgoingCallPermitted' in dialer.replace('isOutgoingCallPermitted() is an own/self-managed PhoneAccount oracle', ''):
+              raise SystemExit('isOutgoingCallPermitted executable usage remains in dialer')
+          dialer_path.write_text(dialer, encoding='utf-8')
+
+          policy = '''package com.sentinel.quantum.security
+
+/**
+ * Fail-closed authority boundary for ordinary carrier/PSTN placement.
+ *
+ * TelecomManager.isOutgoingCallPermitted() cannot authorize a framework SIM on behalf of a
+ * third-party/default dialer: Android requires the queried PhoneAccountHandle to belong to the
+ * caller and requires MANAGE_OWN_CALLS. Phone Core therefore accepts only a PhoneAccount that
+ * Android itself marks CAPABILITY_SIM_SUBSCRIPTION, and revalidates that capability immediately
+ * before TelecomManager.placeCall(). Unknown or non-SIM accounts remain blocked.
+ */
+object OutgoingCallPermissionPolicy {
+    enum class AccountAuthority { FRAMEWORK_SIM, UNVERIFIED }
+
+    fun classify(frameworkSimCapability: Boolean): AccountAuthority =
+        if (frameworkSimCapability) AccountAuthority.FRAMEWORK_SIM else AccountAuthority.UNVERIFIED
+
+    fun mayPlacePstnCall(authority: AccountAuthority): Boolean =
+        authority == AccountAuthority.FRAMEWORK_SIM
+}
+'''
+          Path('native-android-app/app/src/main/java/com/sentinel/quantum/security/OutgoingCallPermissionPolicy.kt').write_text(policy, encoding='utf-8')
+
+          policy_test = '''package com.sentinel.quantum.security
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class OutgoingCallPermissionPolicyTest {
+    @Test fun frameworkSimCapabilityIsAccepted() {
+        assertEquals(
+            OutgoingCallPermissionPolicy.AccountAuthority.FRAMEWORK_SIM,
+            OutgoingCallPermissionPolicy.classify(frameworkSimCapability = true)
+        )
+        assertTrue(
+            OutgoingCallPermissionPolicy.mayPlacePstnCall(
+                OutgoingCallPermissionPolicy.AccountAuthority.FRAMEWORK_SIM
+            )
+        )
+    }
+
+    @Test fun missingFrameworkSimCapabilityFailsClosed() {
+        assertEquals(
+            OutgoingCallPermissionPolicy.AccountAuthority.UNVERIFIED,
+            OutgoingCallPermissionPolicy.classify(frameworkSimCapability = false)
+        )
+        assertFalse(
+            OutgoingCallPermissionPolicy.mayPlacePstnCall(
+                OutgoingCallPermissionPolicy.AccountAuthority.UNVERIFIED
+            )
+        )
+    }
+}
+'''
+          Path('native-android-app/app/src/test/java/com/sentinel/quantum/security/OutgoingCallPermissionPolicyTest.kt').write_text(policy_test, encoding='utf-8')
+          PY
+
+      - name: Commit correction and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'sentinel-ci'
+          git config user.email 'sentinel-ci@users.noreply.github.com'
+          git rm .github/workflows/phone-core-framework-sim-patch-once.yml
+          git add native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt \
+                  native-android-app/app/src/main/java/com/sentinel/quantum/security/OutgoingCallPermissionPolicy.kt \
+                  native-android-app/app/src/test/java/com/sentinel/quantum/security/OutgoingCallPermissionPolicyTest.kt
+          git diff --cached --check
+          git diff --cached --quiet && { echo 'No patch produced'; exit 1; }
+          git commit -m 'fix(phone-core): validate framework SIM before PSTN call'
+          git push origin HEAD:recovery/phone-core-emulator-phase2-20261005
