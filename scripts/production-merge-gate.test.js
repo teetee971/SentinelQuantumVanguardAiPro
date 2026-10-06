@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   ANDROID_WORKFLOWS,
@@ -79,6 +80,22 @@ test('production gate timeout exceeds the longest dependent emulator critical pa
   assert.ok(
     DEFAULT_GATE_TIMEOUT_MS > EMULATION_MAX_CRITICAL_PATH_MS,
     'merge gate timeout must exceed 45m host + 60m dependent emulator matrix'
+  );
+});
+
+test('required CodeQL Android waiter outlives the production merge gate', () => {
+  const workflow = readFileSync('.github/workflows/codeql-analysis.yml', 'utf8');
+  const androidJob = workflow.match(/analyze-android:[\s\S]*$/)?.[0] ?? '';
+  const jobTimeoutMinutes = Number(androidJob.match(/timeout-minutes:\s*(\d+)/)?.[1] ?? 0);
+  const waiterDeadlineSeconds = Number(androidJob.match(/DEADLINE=\$\(\(SECONDS \+ (\d+)\)\)/)?.[1] ?? 0);
+
+  assert.ok(
+    waiterDeadlineSeconds * 1000 > DEFAULT_GATE_TIMEOUT_MS,
+    'required CodeQL waiter must outlive Production Merge Gate'
+  );
+  assert.ok(
+    jobTimeoutMinutes * 60 > waiterDeadlineSeconds + (20 * 60),
+    'required CodeQL job needs headroom for build/extraction before its waiter'
   );
 });
 
