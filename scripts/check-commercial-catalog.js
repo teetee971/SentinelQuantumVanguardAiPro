@@ -31,8 +31,13 @@ export function capabilityMap(registry) {
 export function moduleTechnicalState(module, capabilities) {
   const required = module.required_capabilities ?? [];
   if (required.length === 0) {
+    // A permanent-free module is technically ready without a capability dependency only when it is
+    // already declared INCLUDED. INCLUDED_WHEN_READY explicitly says some technical qualification
+    // is still outstanding; treating an empty dependency list as ready would silently bypass that
+    // future prerequisite (for example physical wearable validation).
+    const dependencyFreeReady = module.permanent_free === true && module.offer === 'INCLUDED';
     return {
-      ready: module.permanent_free === true,
+      ready: dependencyFreeReady,
       missing: [],
       unavailable: []
     };
