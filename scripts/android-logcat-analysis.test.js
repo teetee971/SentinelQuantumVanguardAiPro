@@ -39,6 +39,28 @@ test('a real product frame still attributes an exception without a process-start
   assert.equal(report.result, 'FAIL');
   assert.equal(report.failures[0].classification, 'PRODUCT');
 });
+test('instrumentation accessibility teardown race stays visible but does not fail product health', () => {
+  const log = 'I/ActivityManager( 1): Start proc 42:com.sentinel.quantum/u0a1\n' +
+    'I/TestRunner( 42): finished: navigation(com.sentinel.quantum.ui.MainNavigationQualificationTest)\n' +
+    'I/ActivityManager( 1): Force stopping com.sentinel.quantum appid=10001 user=0: finished inst\n' +
+    'W/LegacyMessageQueue( 42): java.lang.IllegalStateException: Handler (android.os.Handler) {1} sending message to a Handler on a dead thread\n' +
+    'W/LegacyMessageQueue( 42): at android.os.HandlerExecutor.execute(HandlerExecutor.java:42)\n' +
+    'W/LegacyMessageQueue( 42): at android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper.onAccessibilityEvent(AccessibilityService.java:2990)\n' +
+    'I/ActivityManager( 1): Killing 42:com.sentinel.quantum/u0a1 (adj 0): stop com.sentinel.quantum due to finished inst\n';
+  const report = analyzeLogcat(log);
+  assert.equal(report.result, 'PASS');
+  assert.equal(report.failures.length, 0);
+  assert.equal(report.findings[0].classification, 'EXPECTED_TEST_TEARDOWN');
+});
+test('dead Handler in the product PID still fails outside explicit instrumentation teardown', () => {
+  const log = 'I/ActivityManager( 1): Start proc 42:com.sentinel.quantum/u0a1\n' +
+    'W/LegacyMessageQueue( 42): java.lang.IllegalStateException: Handler (android.os.Handler) {1} sending message to a Handler on a dead thread\n' +
+    'W/LegacyMessageQueue( 42): at android.os.HandlerExecutor.execute(HandlerExecutor.java:42)\n' +
+    'W/LegacyMessageQueue( 42): at android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper.onAccessibilityEvent(AccessibilityService.java:2990)\n';
+  const report = analyzeLogcat(log);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.failures[0].classification, 'PRODUCT');
+});
 test('product ANR and unexplained death fail; explicit force-stop remains documented', () => {
   assert.equal(analyzeLogcat('E/ActivityManager( 1): ANR in com.sentinel.quantum\n').result, 'FAIL');
   const death = 'I/ActivityManager( 1): Process com.sentinel.quantum (pid 42) has died: fg TOP\n';
