@@ -75,7 +75,6 @@ exit 64
       PATH: `${bin}:${process.env.PATH}`,
       FAKE_LOGCAT_FILE: logcatFile,
       FAKE_SERIAL: serial || `emulator-${port}`,
-      SENTINEL_EMULATOR_CONSOLE_HOST: '127.0.0.1',
       SENTINEL_EMULATOR_CONSOLE_TOKEN_FILE: token,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -98,10 +97,11 @@ exit 64
   return result;
 }
 
-test('API 37 bridge consumes banner OK, authenticates, synchronizes on causal answer request, then requires ANSWERED -> ACTIVE', async () => {
+test('API 37 bridge consumes banner OK, authenticates locally, synchronizes on causal answer request, then requires ANSWERED -> ACTIVE', async () => {
   const result = await runFixture({ lines: [REQUEST, ANSWERED, ACTIVE] });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.match(result.evidence, /console_target=127\.0\.0\.1:\d+/);
   assert.match(result.evidence, /console_greeting=.*Authentication required.*OK/);
   assert.match(result.evidence, /console_auth_response=OK/);
   assert.match(result.marker, /CallSequencingController: answerCall/);
