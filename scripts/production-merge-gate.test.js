@@ -83,12 +83,22 @@ test('production gate timeout exceeds the longest dependent emulator critical pa
   );
 });
 
+test('production merge workflow job outlives its internal waiter', () => {
+  const workflow = readFileSync('.github/workflows/production-merge-gate.yml', 'utf8');
+  const jobTimeoutMinutes = Number(workflow.match(/timeout-minutes:\s*(\d+)/)?.[1] ?? 0);
+  assert.ok(
+    jobTimeoutMinutes * 60 * 1000 > DEFAULT_GATE_TIMEOUT_MS + (5 * 60 * 1000),
+    'Production Merge Gate job must keep headroom beyond its internal polling deadline'
+  );
+});
+
 test('required CodeQL Android waiter outlives the production merge gate', () => {
   const workflow = readFileSync('.github/workflows/codeql-analysis.yml', 'utf8');
   const androidJob = workflow.match(/analyze-android:[\s\S]*$/)?.[0] ?? '';
   const jobTimeoutMinutes = Number(androidJob.match(/timeout-minutes:\s*(\d+)/)?.[1] ?? 0);
   const waiterDeadlineSeconds = Number(androidJob.match(/DEADLINE=\$\(\(SECONDS \+ (\d+)\)\)/)?.[1] ?? 0);
 
+  assert.match(androidJob, /"production-merge-gate\.yml"/);
   assert.ok(
     waiterDeadlineSeconds * 1000 > DEFAULT_GATE_TIMEOUT_MS,
     'required CodeQL waiter must outlive Production Merge Gate'
