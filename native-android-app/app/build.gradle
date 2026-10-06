@@ -151,3 +151,136 @@ dependencies {
 ksp {
     arg('room.schemaLocation', "$projectDir/schemas")
 }
+
+// Release-evidence native dependency graph. This is intentionally generated from
+// the resolved releaseRuntimeClasspath rather than declared dependencies so the
+// evidence reflects the dependency graph actually selected by Gradle.
+tasks.register('exportReleaseDependencyInventory') {
+    group = 'verification'
+    description = 'Exports the resolved Android release dependency graph for release evidence.'
+
+    def outputFile = layout.buildDirectory.file('reports/release-dependencies.json')
+    outputs.file(outputFile)
+
+    doLast {
+        def configuration = configurations.findByName('releaseRuntimeClasspath')
+        if (configuration == null || !configuration.canBeResolved) {
+            throw new GradleException('releaseRuntimeClasspath configuration is unavailable or not resolvable')
+        }
+
+        def resolution = configuration.incoming.resolutionResult
+        def componentKey = { id ->
+            if (id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
+                return "pkg:maven/${id.group}/${id.module}@${id.version}"
+            }
+            if (id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
+                return "gradle-project:${id.buildTreePath}"
+            }
+            return "component:${id.displayName}"
+        }
+
+        def components = resolution.allComponents.collect { component ->
+            def id = component.id
+            def record = [
+                key: componentKey(id),
+                display_name: id.displayName
+            ]
+            if (id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
+                record.type = 'module'
+                record.group = id.group
+                record.name = id.module
+                record.version = id.version
+                record.purl = record.key
+            } else if (id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
+                record.type = 'project'
+                record.project_path = id.projectPath
+                record.build_tree_path = id.buildTreePath
+            } else {
+                record.type = 'component'
+            }
+            record
+        }.sort { a, b -> a.key <=> b.key }
+
+        def keys = components.collect { it.key } as Set
+        if (keys.size() != components.size()) {
+            throw new GradleException('Resolved dependency graph contains duplicate component keys')
+        }
+
+        def unresolved = []
+        def relationships = []
+        resolution.allDependencies.each { dependency ->
+            if (dependency instanceof org.gradle.api.artifacts.result.ResolvedDependencyResult) {
+                def from = componentKey(dependency.from.id)
+                def to = componentKey(dependency.selected.id)
+                if (!keys.contains(from) || !keys.contains(to)) {
+                    throw new GradleException("Dependency edge references an unknown component: ${from} -> ${to}")
+                }
+                relationships << [
+                    from: from,
+                    to: to,
+                    requested: dependency.requested.displayName,
+                    constraint: dependency.constraint
+                ]
+            } else if (dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
+                unresolved << [
+                    from: componentKey(dependency.from.id),
+                    requested: dependency.requested.displayName,
+                    failure: (dependency.failure?.message ?: 'resolution failed').take(1024)
+                ]
+            } else {
+                unresolved << [
+                    from: componentKey(dependency.from.id),
+                    requested: dependency.requested.displayName,
+                    failure: 'unsupported dependency result type'
+                ]
+            }
+        }
+        if (!unresolved.isEmpty()) {
+            throw new GradleException(
+                'Unresolved release dependencies: ' +
+                    groovy.json.JsonOutput.toJson(unresolved)
+            )
+        }
+
+        relationships = relationships
+            .unique { relationship ->
+                groovy.json.JsonOutput.toJson([
+                    relationship.from,
+                    relationship.to,
+                    relationship.requested,
+                    relationship.constraint
+                ])
+            }
+            .sort { a, b ->
+                groovy.json.JsonOutput.toJson([a.from, a.to, a.requested, a.constraint]) <=>
+                    groovy.json.JsonOutput.toJson([b.from, b.to, b.requested, b.constraint])
+            }
+
+        def payload = [
+            schema_version: 2,
+            configuration: 'releaseRuntimeClasspath',
+            root_component: componentKey(resolution.root.id),
+            component_count: components.size(),
+            relationship_count: relationships.size(),
+            components: components,
+            relationships: relationships
+        ]
+
+        if (payload.component_count < 1 || payload.relationship_count < 1) {
+            throw new GradleException('Resolved release dependency graph is unexpectedly empty')
+        }
+
+        def target = outputFile.get().asFile
+        target.parentFile.mkdirs()
+        target.setText(
+            groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(payload)) +
+                System.lineSeparator(),
+            'UTF-8'
+        )
+        logger.lifecycle(
+            "Release dependency graph: ${target} " +
+                "(${payload.component_count} components, ${payload.relationship_count} relationships)"
+        )
+    }
+}
+
