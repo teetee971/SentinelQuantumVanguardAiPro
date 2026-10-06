@@ -233,8 +233,6 @@ set_send_sms_appop() {
   local mode="$1"
   local evidence="$2"
   local observation="$OUT_DIR/${evidence%.txt}-current.txt"
-  local conflicting="allow|default"
-  if [[ "$mode" == allow ]]; then conflicting="ignore|deny|errored|default"; fi
   local stable=0
   : > "$OUT_DIR/$evidence"
   # RoleController permission reconciliation is asynchronous after revoke/grant.
@@ -247,8 +245,7 @@ set_send_sms_appop() {
     sleep 0.5
     adb shell appops get "$PACKAGE" SEND_SMS > "$observation" 2>&1 || return 1
     cat "$observation" >> "$OUT_DIR/$evidence"
-    if grep -Eiq "SEND_SMS: *${mode}([;[:space:]]|$)" "$observation" &&
-       ! grep -Eiq "SEND_SMS: *($conflicting)([;[:space:]]|$)" "$observation"; then
+    if node "$SCRIPT_DIR/android-appops-state.cjs" "$observation" "$mode" >> "$OUT_DIR/$evidence" 2>&1; then
       stable=$((stable + 1))
       if [[ "$stable" -ge 2 ]]; then return 0; fi
     else
@@ -263,8 +260,7 @@ set_send_sms_appop() {
 assert_send_sms_appop_denied() {
   local evidence="$1"
   adb shell appops get "$PACKAGE" SEND_SMS > "$OUT_DIR/$evidence" 2>&1
-  if ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence" ||
-     grep -Eiq 'SEND_SMS: *(allow|default)([;[:space:]]|$)' "$OUT_DIR/$evidence"; then
+  if ! node "$SCRIPT_DIR/android-appops-state.cjs" "$OUT_DIR/$evidence" denied; then
     echo "SEND_SMS AppOp was not observably denied."
     cat "$OUT_DIR/$evidence"
     return 1

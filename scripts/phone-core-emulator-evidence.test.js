@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, existsSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { sendSmsAppOpState } from './android-appops-state.cjs';
 
 // Host regressions exercise the real shell or report code with isolated fixtures.
 // These fixtures are never Android, modem, or physical qualification evidence.
@@ -104,7 +105,8 @@ test('host provenance refuses a checkout different from the workflow commit', ()
 function shellFunction(name) {
   const start = revocation.indexOf(`${name}() {`);
   assert.notEqual(start, -1);
-  return revocation.slice(start, revocation.indexOf('\n}', start) + 2);
+  const scriptDir = new URL('.', import.meta.url).pathname.replaceAll("'", "'\\''");
+  return `SCRIPT_DIR='${scriptDir}'\n` + revocation.slice(start, revocation.indexOf('\n}', start) + 2);
 }
 
 for (const [name, output, status, expected] of [
@@ -151,7 +153,8 @@ test('UID denial with no observed effect falls back to package mode and restores
 for (const [name, query, expected] of [
   ['historical denial followed by allow must fail', 'COUNT=$((COUNT + 1)); if [[ "$COUNT" == 1 ]]; then echo "SEND_SMS: ignore"; else echo "SEND_SMS: allow"; fi', 1],
   ['failed query with denial stdout must fail', 'echo "SEND_SMS: ignore"; return 1', 1],
-  ['contradictory UID/package modes must fail', 'printf "Uid mode: SEND_SMS: ignore\\nSEND_SMS: allow\\n"', 1],
+  ['UID ignore overrides the recorded package allow', 'printf "Uid mode: SEND_SMS: ignore\\nSEND_SMS: allow\\n"', 0],
+  ['contradictory current UID modes must fail', 'printf "Uid mode: SEND_SMS: ignore\\nUid mode: SEND_SMS: allow\\n"', 1],
   ['two fresh consistent denial observations pass', 'echo "SEND_SMS: ignore"', 0]
 ]) {
   test(name, () => {
@@ -163,6 +166,17 @@ for (const [name, query, expected] of [
       if (expected === 0) assert.equal(readFileSync(join(dir, 'deny.txt'), 'utf8').match(/attempt=/g).length, 2);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
+}
+
+for (const [name, dump, effective] of [
+  ['UID denial dominates package allow', 'Uid mode: SEND_SMS: ignore\nSEND_SMS: allow; time=+13s ago', 'ignore'],
+  ['default allowed UID policy defers to package', 'Uid mode: SEND_SMS: allow\nSEND_SMS: ignore', 'ignore'],
+  ['MODE_DEFAULT is not an explicit denial', 'Uid mode: SEND_SMS: default\nSEND_SMS: ignore', 'default'],
+  ['contradictory package records', 'SEND_SMS: ignore\nSEND_SMS: allow', 'UNKNOWN'],
+  ['malformed UID cannot fall back', 'Uid mode: SEND_SMS: corrupted\nSEND_SMS: ignore', 'UNKNOWN'],
+  ['diagnostics cannot be ownership/effective evidence', 'Error reading SEND_SMS: ignore', 'UNKNOWN']
+]) {
+  test(`SEND_SMS effective mode: ${name}`, () => assert.equal(sendSmsAppOpState(dump).effectiveMode, effective));
 }
 
 // A valid deterministic PNG fixture; never used as emulator evidence.

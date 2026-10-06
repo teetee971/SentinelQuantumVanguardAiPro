@@ -21,8 +21,7 @@ for profile in standard s24plus-equivalent; do
   adb shell wm dismiss-keyguard
   adb shell wm size > "$OUT/viewport/$profile-size.txt"
   adb shell wm density > "$OUT/viewport/$profile-density.txt"
-  if ! grep -Fxq "Override size: $size" "$OUT/viewport/$profile-size.txt" ||
-    ! grep -Fxq "Override density: $density" "$OUT/viewport/$profile-density.txt"; then
+  if ! python3 ../scripts/android-viewport-state.py "$OUT/viewport/$profile-size.txt" "$OUT/viewport/$profile-density.txt" "$size" "$density" > "$OUT/viewport/$profile-effective.json"; then
     echo "Viewport $profile did not reach requested $size / $density dpi."
     cat "$OUT/viewport/$profile-size.txt" "$OUT/viewport/$profile-density.txt"
     exit 1

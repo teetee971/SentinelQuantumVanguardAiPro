@@ -18,7 +18,7 @@ AppOp denial remained `allow`. The existing gate correctly stayed red.
 
 - AppOp setup writes a fresh observation each time and requires two consistent
   observations, bounded to ten infrastructure attempts. Historical denial, query
-  failure and contradictory modes cannot pass. The product action is not retried.
+  failure and ambiguous same-level modes cannot pass. The product action is not retried.
 - Real MainActivity bottom navigation, Android Back, recreation and relaunch are
   instrumented. Activation, dialer keypad and SMS surfaces also undergo recreation.
   Static navigation smoke tests now reject blank rendered surfaces. An instrumented
@@ -97,6 +97,28 @@ initial 320×640 framebuffer. Its AVD now starts with the emulator's supported
 1440×3120 framebuffer and 480 dpi, independently checked after boot. Requested
 overrides and captured PNG dimensions remain exact blocking assertions.
 
+Run 37485953260 confirms the corrected API 24 cold launch and full API 29 gate.
+Android 16's collector diagnostics show the device briefly offline; three immediate
+reads failed before a later read recovered. Reconnection now requires two booted
+shell round trips with bounded infrastructure backoff, retaining every failed read.
+
+The API 37 native framebuffer now reports exactly 1440×3120/480 dpi. WMS omits
+the redundant Override line when the requested size/density equals physical;
+the viewport parser checks the effective override if present, otherwise physical.
+It still rejects the captured 1080×1920 clamp, malformed/duplicate data and a
+physical match that hides a conflicting override.
+
+API 36 also exposed an overly strict AppOp oracle: UID ignore plus package allow
+was rejected before the independent UI denial check. Android 16
+[AppOpsService](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android16-release/services/core/java/com/android/server/appop/AppOpsService.java)
+applies non-default UID policy first; SEND_SMS's default is MODE_ALLOWED in
+[AppOpsManager](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android16-release/core/java/android/app/AppOpsManager.java).
+The shared parser respects that hierarchy. It still rejects ambiguous same-level
+records, stale/query-failed observations and MODE_DEFAULT as explicit denial.
+Two fresh observations, held SMS role, granted runtime permission and a genuinely
+disabled Sentinel send control remain mandatory. Raw AppOp parsing alone cannot
+prove the product's effective denial behavior.
+
 ## Voice and physical boundary
 
 VoiceStudioActivity records and plays a private local preview. LiveKitVoiceAudioProcessor
@@ -117,7 +139,7 @@ The global `passed` flag remains false until complete current-commit evidence ex
 
 ```sh
 node scripts/check-phone-core-emulation-gate.js
-node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js scripts/android-logcat-collect.test.js
+node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js scripts/android-logcat-collect.test.js scripts/android-viewport-qualification.test.js
 npm run test:android-product-truth
 cd native-android-app
 ./gradlew :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:lintDebug :wearable-contract:test :wearable-security:test --no-daemon

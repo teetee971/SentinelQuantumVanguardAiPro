@@ -38,5 +38,26 @@ NODE
   if [[ "$status" == 1 ]] && grep -Eq 'device offline|no devices/emulators found|device .* not found' "$errors"; then transient=1; fi
   if [[ "$transient" != 1 || "$attempt" == 3 ]]; then exit 1; fi
   timeout 15s adb wait-for-device
+  # wait-for-device can return during a brief reconnect before the next stream
+  # is usable. Require two actual shell round trips and boot readiness; backoff
+  # applies only to the aborted infrastructure read, never to a product action.
+  sleep "$attempt"
+  stable=0
+  ready=0
+  readiness_deadline=$((SECONDS + 15))
+  for observation in $(seq 1 20); do
+    if [[ "$SECONDS" -ge "$readiness_deadline" ]]; then break; fi
+    boot_status=0
+    timeout 5s adb shell getprop sys.boot_completed > "$OUTPUT.readiness-$attempt.txt" 2> "$OUTPUT.readiness-$attempt.stderr" || boot_status=$?
+    if [[ "$boot_status" == 0 ]] && [[ "$(tr -d '\r\n' < "$OUTPUT.readiness-$attempt.txt")" == 1 ]]; then
+      stable=$((stable + 1))
+      if [[ "$stable" -ge 2 ]]; then ready=1; break; fi
+    else stable=0; fi
+    sleep 0.5
+  done
+  if [[ "$ready" != 1 ]]; then
+    echo 'ADB did not regain stable booted shell communication for logcat collection.' >&2
+    exit 1
+  fi
 done
 exit 1

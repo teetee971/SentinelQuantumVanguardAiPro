@@ -29,7 +29,7 @@ jobs:
         run: node scripts/check-phone-core-emulation-gate.js
 
       - name: Test emulator evidence failure paths
-        run: node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js scripts/android-logcat-collect.test.js
+        run: node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js scripts/android-logcat-collect.test.js scripts/android-viewport-qualification.test.js
 
       - name: Validate Android product truth
         run: npm run test:android-product-truth
@@ -525,6 +525,7 @@ jobs:
           const nonEmpty = (name, minBytes = 1) => exists(name) && fs.statSync(file(name)).size >= minBytes;
           const read = (name) => exists(name) ? fs.readFileSync(file(name), 'utf8') : '';
           const { analyzeLogcat, isScreenshot } = require(path.join(process.env.GITHUB_WORKSPACE || path.resolve('..'), 'scripts/android-logcat-analysis.cjs'));
+          const { sendSmsAppOpState } = require(path.join(process.env.GITHUB_WORKSPACE || path.resolve('..'), 'scripts/android-appops-state.cjs'));
           const screenshot = (name) => exists(name) && isScreenshot(fs.readFileSync(file(name)));
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => read(name).split(/\r?\n/)
@@ -619,8 +620,7 @@ jobs:
             revocation?.effective_permission_denial_fail_closed === true &&
             revocation?.effective_permission_probe === 'SEND_SMS_APP_OP_DENIED' &&
             screenshot('08-sms-effective-permission-denied.png') &&
-            /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt')) &&
-            !/SEND_SMS:\s*(allow|default)(?:[;\s]|$)/i.test(read('send-sms-appop-denied-after-launch.txt'));
+            ['ignore', 'deny', 'errored'].includes(sendSmsAppOpState(read('send-sms-appop-denied-after-launch.txt')).effectiveMode);
           const roleRevocationFailClosed = modernPhoneCore &&
             revocation?.schema_version === 2 &&
             revocation?.role_revocation_fail_closed === true &&
