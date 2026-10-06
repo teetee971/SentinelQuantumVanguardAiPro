@@ -137,7 +137,10 @@ export function isRetryableGitHubStatus(status) {
 }
 
 function retryDelayMs(response, attempt, baseDelayMs) {
-  const retryAfterSeconds = Number(response?.headers?.get?.('retry-after'));
+  const retryAfterHeader = response?.headers?.get?.('retry-after');
+  const retryAfterSeconds = retryAfterHeader == null || retryAfterHeader === ''
+    ? Number.NaN
+    : Number(retryAfterHeader);
   if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) {
     return retryAfterSeconds * 1000;
   }
