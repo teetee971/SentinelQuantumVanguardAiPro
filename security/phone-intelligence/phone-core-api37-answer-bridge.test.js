@@ -76,13 +76,13 @@ function executeBridge({ api, marker = false, acceptFails = false }) {
   fs.writeFileSync(adb, `#!/usr/bin/env bash
 set -eu
 printf '%s\\n' "$*" >> "$ADB_CALLS_FILE"
-if [[ "${1:-}" == "logcat" ]]; then
-  if [[ "${ADB_LOGCAT_MARKER:-0}" == "1" ]]; then
+if [[ "\${1:-}" == "logcat" ]]; then
+  if [[ "\${ADB_LOGCAT_MARKER:-0}" == "1" ]]; then
     printf '%s\\n' 'I/Telecom: CallsManager: setCallState RINGING(RINGING) -> ANSWERED'
   fi
   exit 0
 fi
-if [[ "$*" == "emu gsm accept 5550100" && "${ADB_ACCEPT_FAIL:-0}" == "1" ]]; then
+if [[ "$*" == "emu gsm accept 5550100" && "\${ADB_ACCEPT_FAIL:-0}" == "1" ]]; then
   exit 23
 fi
 exit 0
