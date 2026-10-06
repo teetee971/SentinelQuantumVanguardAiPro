@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   ANDROID_WORKFLOWS,
+  DEFAULT_GATE_TIMEOUT_MS,
+  EMULATION_MAX_CRITICAL_PATH_MS,
   SECURITY_FUZZ_WORKFLOWS,
   UNIVERSAL_WORKFLOWS,
   WEB_WORKFLOWS,
@@ -70,6 +72,13 @@ test('workflow changes for Android or web require the affected gate family', () 
   expectIncludes(
     requiredWorkflowsForPaths(['.github/workflows/lighthouse-preproduction.yml']),
     WEB_WORKFLOWS
+  );
+});
+
+test('production gate timeout exceeds the longest dependent emulator critical path', () => {
+  assert.ok(
+    DEFAULT_GATE_TIMEOUT_MS > EMULATION_MAX_CRITICAL_PATH_MS,
+    'merge gate timeout must exceed 45m host + 60m dependent emulator matrix'
   );
 });
 
