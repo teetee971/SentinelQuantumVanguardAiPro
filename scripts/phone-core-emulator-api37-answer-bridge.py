@@ -101,7 +101,9 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
     marker_file.write_text("", encoding="utf-8")
 
     port = discover_console_port()
-    host = os.environ.get("SENTINEL_EMULATOR_CONSOLE_HOST", "127.0.0.1")
+    # The Android emulator console is a host-local qualification channel. Do not permit an
+    # environment override here: a remote socket would violate the emulator-only trust boundary.
+    host = "127.0.0.1"
     token_path = Path(
         os.environ.get(
             "SENTINEL_EMULATOR_CONSOLE_TOKEN_FILE",
