@@ -14,7 +14,12 @@ SEND_SMS_PM_REVOCATION_OBSERVABLE=false
 EFFECTIVE_PERMISSION_DENIAL_PROVEN=false
 ROLE_REVOCATION_PROVEN=false
 
-capture() { adb exec-out screencap -p > "$OUT_DIR/$1.png" || true; }
+capture() {
+  adb exec-out screencap -p > "$OUT_DIR/$1.png"
+  test -s "$OUT_DIR/$1.png"
+  bash "$SCRIPT_DIR/android-logcat-collect.sh" "$OUT_DIR/$1-logcat.txt"
+  node "$SCRIPT_DIR/android-logcat-analysis.cjs" "$OUT_DIR/$1-logcat.txt" "$OUT_DIR/$1-crash-anr.json"
+}
 
 dump_ui() {
   adb shell rm -f /sdcard/sentinel-revocation.xml
@@ -116,10 +121,9 @@ PYDISABLED
 }
 
 assert_no_crash() {
-  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-    adb logcat -d -v time | tail -n 400
-    return 1
-  fi
+  local evidence="$OUT_DIR/revocation-health-logcat.txt"
+  bash "$SCRIPT_DIR/android-logcat-collect.sh" "$evidence" > "$evidence.collection.stdout" || return 1
+  node "$SCRIPT_DIR/android-logcat-analysis.cjs" "$evidence" "$OUT_DIR/revocation-health-crash-anr.json"
 }
 
 role_holders() {
@@ -227,25 +231,35 @@ probe_pm_revoke_send_sms() {
 set_send_sms_appop() {
   local mode="$1"
   local evidence="$2"
-  # Recent RoleController versions grant a UID-level mode. Android 10 can instead
-  # retain only a package mode. Try UID first, then the package boundary if the UID
-  # denial did not become observable. The caller must still prove denial after launch.
-  if ! adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1; then
-    echo "UID AppOp command failed; checking effective mode." >> "$OUT_DIR/$evidence"
-  fi
-  sleep 1
-  adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  if [[ "$mode" == "allow" ]] || ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
-    adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
-    sleep 1
-    adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  fi
+  local observation="$OUT_DIR/${evidence%.txt}-current.txt"
+  local stable=0
+  : > "$OUT_DIR/$evidence"
+  # RoleController permission reconciliation is asynchronous after revoke/grant.
+  # Only setup is retried: never replay the protected product action. Every query
+  # replaces the observation; a historical denial must not hide a later allow.
+  for attempt in $(seq 1 10); do
+    printf 'attempt=%s requested_mode=%s\n' "$attempt" "$mode" >> "$OUT_DIR/$evidence"
+    adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1 || return 1
+    adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1 || return 1
+    sleep 0.5
+    adb shell appops get "$PACKAGE" SEND_SMS > "$observation" 2>&1 || return 1
+    cat "$observation" >> "$OUT_DIR/$evidence"
+    if node "$SCRIPT_DIR/android-appops-state.cjs" "$observation" "$mode" >> "$OUT_DIR/$evidence" 2>&1; then
+      stable=$((stable + 1))
+      if [[ "$stable" -ge 2 ]]; then return 0; fi
+    else
+      stable=0
+    fi
+  done
+  echo "SEND_SMS AppOp setup did not converge to $mode; last observation:"
+  cat "$observation"
+  return 1
 }
 
 assert_send_sms_appop_denied() {
   local evidence="$1"
   adb shell appops get "$PACKAGE" SEND_SMS > "$OUT_DIR/$evidence" 2>&1
-  if ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
+  if ! node "$SCRIPT_DIR/android-appops-state.cjs" "$OUT_DIR/$evidence" denied; then
     echo "SEND_SMS AppOp was not observably denied."
     cat "$OUT_DIR/$evidence"
     return 1
@@ -288,7 +302,8 @@ PY
 screening_callback_count() {
   local evidence="$OUT_DIR/screening-callback-count-logcat.txt"
   local count
-  if ! adb logcat -d -v brief > "$evidence"; then
+  if ! bash "$SCRIPT_DIR/android-logcat-collect.sh" "$evidence" > "$evidence.collection.stdout" 2> "$evidence.collection.stderr"; then
+    cat "$evidence.collection.stderr" >&2
     echo "Screening callback oracle is unreadable; absence cannot be qualified." >&2
     return 2
   fi

@@ -54,7 +54,9 @@ fun SentinelTopBar(
                     Text(
                         text = it,
                         style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
+                        // Keep the full state/navigation subtitle readable on the
+                        // minimum-width Android viewport used by qualification.
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         color = Color(0xFFBAC4D8)
                     )
@@ -180,4 +182,3 @@ fun SentinelHero(
         }
     }
 }
-

@@ -105,7 +105,10 @@ const expectedRequiredChecks = [
   'sms_all_parts_delivered_callback',
   'role_revocation_fail_closed',
   'effective_permission_denial_fail_closed',
-  'no_crash_or_anr'
+  'no_crash_or_anr',
+  'main_navigation_and_recreation',
+  'viewport_ui_qualification',
+  'call_screening_response_budget'
 ];
 if (!sameArray(emulation?.required_checks, expectedRequiredChecks)) {
   errors.push('emulator required_checks must exactly match the evidence keys produced by qualification.json');
@@ -246,8 +249,11 @@ for (const marker of [
   'phone-core-emulator-revocation-flow.sh',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
-  'FATAL EXCEPTION:',
-  'ANR in com\\.sentinel\\.quantum',
+  'analyzeLogcat',
+  'crash-anr.json',
+  'duration_us',
+  'viewport_ui_qualification',
+  'main_navigation_and_recreation',
   'schema_version: 3',
   'physical_modem_claim: false',
   'commercial_release_claim: false',
@@ -305,6 +311,7 @@ for (const marker of [
 
 for (const marker of [
   'wait_role_held android.app.role.CALL_SCREENING',
+  'android-logcat-collect.sh',
   'dumpsys role',
   'adb emu gsm call',
   'wait_logcat_marker "CallScreeningService:onScreenCall"',
@@ -318,6 +325,7 @@ for (const marker of [
 
 for (const marker of [
   'remove-role-holder',
+  'android-logcat-collect.sh',
   'pm revoke',
   'appops set',
   'set_send_sms_appop ignore',
@@ -332,6 +340,10 @@ for (const marker of [
   'wait_role_absent android.app.role.CALL_SCREENING',
   'assert_no_crash'
 ]) requireText(revocationFlow, marker, 'Phone Core revocation flow');
+
+for (const [name, source] of [['runtime', runtimeFlow], ['revocation', revocationFlow]]) {
+  if (/adb logcat -d/.test(source)) errors.push(`${name}: critical logcat reads must use the shared fail-closed collector`);
+}
 
 if (errors.length) {
   console.error('PHONE CORE EMULATION SHADOW GATE: BLOCKED');

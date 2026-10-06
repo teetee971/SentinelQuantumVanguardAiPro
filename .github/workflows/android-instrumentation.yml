@@ -106,7 +106,20 @@ jobs:
             -gpu swiftshader_indirect \
             > "$EMULATOR_LOG" 2>&1 &
           EMULATOR_PID=$!
-          trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+          cleanup() {
+            local status=$?
+            trap - EXIT
+            local output="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-evidence"
+            mkdir -p "$output"
+            # UTP uninstalls the app. MediaStore screenshots survive, but the AVD
+            # must still be running when they are pulled. Preserve the test status.
+            if [[ "$API_LEVEL" -ge 29 ]]; then screenshot_source=/sdcard/Pictures/SentinelQualification;
+            else screenshot_source=/sdcard/Android/data/com.sentinel.quantum/files/qualification; fi
+            timeout 30s adb pull "$screenshot_source" "$output/screenshots" > "$output/screenshot-pull.txt" 2>&1 || true
+            kill "$EMULATOR_PID" >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
 
           DEVICE_READY=0
           for _ in $(seq 1 90); do
@@ -226,5 +239,6 @@ jobs:
             native-android-app/app/build/outputs/androidTest-results/connected/
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-emulator.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-tests.log
+            ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-evidence/
           if-no-files-found: warn
           retention-days: 14

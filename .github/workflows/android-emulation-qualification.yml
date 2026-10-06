@@ -29,7 +29,7 @@ jobs:
         run: node scripts/check-phone-core-emulation-gate.js
 
       - name: Test emulator evidence failure paths
-        run: node scripts/phone-core-emulator-evidence.test.js
+        run: node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js scripts/android-logcat-collect.test.js scripts/android-viewport-qualification.test.js
 
       - name: Validate Android product truth
         run: npm run test:android-product-truth
@@ -144,6 +144,16 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload qualification APKs separately from host reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Android-Qualification-APKs-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            native-android-app/app/build/outputs/apk/debug/app-debug.apk
+            native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          if-no-files-found: error
+          retention-days: 14
+
   emulator-matrix:
     name: PhoneCore-Emulation-Qualification API ${{ matrix.api_level }}
     needs: contract-and-host-tests
@@ -217,11 +227,26 @@ jobs:
             EMULATOR_ACCEL_ARGS=(-accel on)
           fi
 
+          EMULATOR_VIEWPORT_ARGS=()
+          if [[ "$API_LEVEL" == "37" ]]; then
+            # WMS clamps forced dimensions relative to the initial framebuffer.
+            # The default 320x640 AVD capped the requested height at 1920 px.
+            EMULATOR_VIEWPORT_ARGS=(-skin 1440x3120)
+            python3 - "$HOME/.android/avd/$AVD_NAME.avd/config.ini" <<'PYDENSITY'
+          from pathlib import Path
+          import sys
+          path = Path(sys.argv[1])
+          lines = [line for line in path.read_text().splitlines() if not line.startswith('hw.lcd.density=')]
+          path.write_text('\n'.join(lines + ['hw.lcd.density=480']) + '\n')
+          PYDENSITY
+          fi
+
           "$ANDROID_HOME/emulator/emulator" \
             -avd "$AVD_NAME" \
             -no-window -no-audio -no-boot-anim -no-metrics \
             -no-snapshot-load -no-snapshot-save \
             "${EMULATOR_ACCEL_ARGS[@]}" \
+            "${EMULATOR_VIEWPORT_ARGS[@]}" \
             -gpu swiftshader_indirect \
             > "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/sentinel-emulator.pid"
@@ -269,8 +294,12 @@ jobs:
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
-          adb shell input keyevent KEYCODE_WAKEUP || true
-          adb shell wm dismiss-keyguard || true
+          adb shell input keyevent KEYCODE_WAKEUP
+          adb shell wm dismiss-keyguard
+          if [[ "$API_LEVEL" == "37" ]]; then
+            adb shell wm size > "$RUNNER_TEMP/sentinel-initial-display.txt"
+            grep -Fxq 'Physical size: 1440x3120' "$RUNNER_TEMP/sentinel-initial-display.txt"
+          fi
 
       - name: Run connected instrumentation suite
         id: instrumentation
@@ -327,6 +356,34 @@ jobs:
               ./gradlew :app:connectedDebugAndroidTest --stacktrace --no-daemon
           fi
 
+      - name: Analyze instrumentation runtime before log reset
+        if: always() && steps.instrumentation.outcome != 'skipped'
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api_level }}
+        run: |
+          set -euo pipefail
+          OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
+          mkdir -p "$OUTPUT"
+          # API 24's app-owned images are deleted by the next pm clear. Pull
+          # before resetting the runtime scope, while the AVD is still alive.
+          if [[ "$API_LEVEL" -ge 29 ]]; then SCREENSHOT_SOURCE=/sdcard/Pictures/SentinelQualification;
+          else SCREENSHOT_SOURCE=/sdcard/Android/data/com.sentinel.quantum/files/qualification; fi
+          SCREENSHOT_STATUS=0
+          timeout 30s adb pull "$SCREENSHOT_SOURCE" "$OUTPUT/instrumentation-screenshots-before-reset" > "$OUTPUT/instrumentation-screenshot-pull.txt" 2>&1 || SCREENSHOT_STATUS=$?
+          printf '%s\n' "$SCREENSHOT_STATUS" > "$OUTPUT/instrumentation-screenshot-pull-status.txt"
+          bash ../scripts/android-logcat-collect.sh "$OUTPUT/instrumentation-logcat.txt"
+          node ../scripts/android-logcat-analysis.cjs "$OUTPUT/instrumentation-logcat.txt" "$OUTPUT/instrumentation-crash-anr.json"
+          test "$SCREENSHOT_STATUS" -eq 0
+
+      - name: Run viewport UI qualification
+        id: viewport
+        if: matrix.api_level == 37
+        working-directory: ./native-android-app
+        shell: bash
+        run: bash ../scripts/android-viewport-qualification.sh "$RUNNER_TEMP/phone-core-emulation-api37"
+
       - name: Run emulator application/runtime qualification
         id: runtime
         working-directory: ./native-android-app
@@ -360,21 +417,66 @@ jobs:
             bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
             bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
           else
+            wait_min_sdk_foreground() {
+              local name="$1" stable=0 role_dialog_dismissed=0
+              for _ in $(seq 1 40); do
+                timeout 10s adb shell dumpsys activity activities > "$OUTPUT/$name-foreground.txt"
+                if grep -Eq 'mResumedActivity:.* u0 com\.sentinel\.quantum/\.(MainActivity|PhoneCoreActivationActivity)[[:space:]}]' "$OUTPUT/$name-foreground.txt"; then
+                  stable=$((stable + 1))
+                  if [[ "$stable" -ge 2 ]]; then
+                    adb shell pidof com.sentinel.quantum > "$OUTPUT/$name-pid.txt"
+                    test -s "$OUTPUT/$name-pid.txt"
+                    return 0
+                  fi
+                else
+                  stable=0
+                  # The legitimate first-run dialer role prompt owns the top
+                  # activity. Cancel only that observed dialog, once; then prove
+                  # the real activation surface resumed without a request loop.
+                  if [[ "$role_dialog_dismissed" -eq 0 ]] &&
+                    grep -Eq 'mResumedActivity:.* u0 com\.android\.server\.telecom/[^[:space:]}]*ChangeDefaultDialerDialog[[:space:]}]' "$OUTPUT/$name-foreground.txt"; then
+                    cp "$OUTPUT/$name-foreground.txt" "$OUTPUT/$name-role-dialog.txt"
+                    adb exec-out screencap -p > "$OUTPUT/$name-role-dialog.png"
+                    # Legacy Telecom's dialog ignores Back. Tap its real negative
+                    # button, bounded to the observed Telecom window; never grant
+                    # a role just to make this cold-launch gate pass.
+                    adb shell uiautomator dump --compressed /sdcard/sentinel-min-sdk-role.xml
+                    adb shell cat /sdcard/sentinel-min-sdk-role.xml > "$OUTPUT/$name-role-dialog.xml"
+                    coordinates="$(python3 - "$OUTPUT/$name-role-dialog.xml" <<'PYCANCEL'
+          import re, sys, xml.etree.ElementTree as ET
+          candidates = [n for n in ET.parse(sys.argv[1]).iter('node') if
+              n.get('package') == 'com.android.server.telecom' and n.get('resource-id') == 'android:id/button2' and
+              n.get('clickable') == 'true' and n.get('enabled') == 'true']
+          if len(candidates) != 1: raise SystemExit('Expected one Telecom cancel button')
+          bounds = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', candidates[0].get('bounds', ''))
+          if not bounds: raise SystemExit('Invalid Telecom button bounds')
+          x1, y1, x2, y2 = map(int, bounds.groups())
+          if x2 <= x1 or y2 <= y1: raise SystemExit('Empty Telecom button')
+          print((x1+x2)//2, (y1+y2)//2)
+          PYCANCEL
+                    )"
+                    read -r cancel_x cancel_y <<< "$coordinates"
+                    adb shell input tap "$cancel_x" "$cancel_y"
+                    role_dialog_dismissed=1
+                  fi
+                fi
+                sleep 0.5
+              done
+              echo "Sentinel did not remain in the foreground after $name."
+              return 1
+            }
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1
-            sleep 3
-            adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
-            adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-              echo "Crash/ANR detected on minSdk first launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            wait_min_sdk_foreground min-sdk-first
+            adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png"
+            bash ../scripts/android-logcat-collect.sh "$OUTPUT/min-sdk-first-logcat.txt"
+            node ../scripts/android-logcat-analysis.cjs "$OUTPUT/min-sdk-first-logcat.txt" "$OUTPUT/min-sdk-first-crash-anr.json"
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
-            sleep 3
-            adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-second-pid.txt"
-            adb exec-out screencap -p > "$OUTPUT/02-min-sdk-second-launch.png" || true
+            wait_min_sdk_foreground min-sdk-second
+            adb exec-out screencap -p > "$OUTPUT/02-min-sdk-second-launch.png"
+            bash ../scripts/android-logcat-collect.sh "$OUTPUT/min-sdk-second-logcat.txt"
+            node ../scripts/android-logcat-analysis.cjs "$OUTPUT/min-sdk-second-logcat.txt" "$OUTPUT/min-sdk-second-crash-anr.json"
           fi
 
       - name: Collect qualification evidence even after failure
@@ -389,13 +491,20 @@ jobs:
           HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}
           INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
           RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          VIEWPORT_OUTCOME: ${{ steps.viewport.outcome }}
         run: |
           set -euo pipefail
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           LOGCAT_STATUS=0
-          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
+          if [[ "$API_LEVEL" -ge 29 ]]; then SCREENSHOT_SOURCE=/sdcard/Pictures/SentinelQualification;
+          else SCREENSHOT_SOURCE=/sdcard/Android/data/com.sentinel.quantum/files/qualification; fi
+          timeout 30s adb pull "$SCREENSHOT_SOURCE" "$OUTPUT/instrumentation-screenshots" > "$OUTPUT/screenshot-pull.txt" 2>&1 || true
+          bash ../scripts/android-logcat-collect.sh "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
+          adb shell getprop > "$OUTPUT/emulator-properties.txt" 2>&1 || true
+          adb shell wm size > "$OUTPUT/emulator-size.txt" 2>&1 || true
+          adb shell wm density > "$OUTPUT/emulator-density.txt" 2>&1 || true
           adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
           adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
           adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
@@ -415,7 +524,9 @@ jobs:
           const exists = (name) => fs.existsSync(file(name));
           const nonEmpty = (name, minBytes = 1) => exists(name) && fs.statSync(file(name)).size >= minBytes;
           const read = (name) => exists(name) ? fs.readFileSync(file(name), 'utf8') : '';
-          const screenshot = (name) => nonEmpty(name, 256);
+          const { analyzeLogcat, isScreenshot } = require(path.join(process.env.GITHUB_WORKSPACE || path.resolve('..'), 'scripts/android-logcat-analysis.cjs'));
+          const { sendSmsAppOpState } = require(path.join(process.env.GITHUB_WORKSPACE || path.resolve('..'), 'scripts/android-appops-state.cjs'));
+          const screenshot = (name) => exists(name) && isScreenshot(fs.readFileSync(file(name)));
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => read(name).split(/\r?\n/)
             .some((line) => line.trim() === 'com.sentinel.quantum');
@@ -497,6 +608,8 @@ jobs:
           const coldRelaunchObserved = modernPhoneCore
             ? screenshot('01-dialer-first-launch.png') && screenshot('01b-dialer-relaunch.png')
             : nonEmpty('min-sdk-first-pid.txt') && nonEmpty('min-sdk-second-pid.txt') &&
+              ['min-sdk-first', 'min-sdk-second'].every((name) =>
+                /mResumedActivity:.* u0 com\.sentinel\.quantum\/\.(MainActivity|PhoneCoreActivationActivity)[\s}]/.test(read(`${name}-foreground.txt`))) &&
               screenshot('01-min-sdk-first-launch.png') && screenshot('02-min-sdk-second-launch.png');
           const restoredRolesObserved = modernPhoneCore &&
             packageHeld('sms-role-restored.txt') &&
@@ -507,7 +620,7 @@ jobs:
             revocation?.effective_permission_denial_fail_closed === true &&
             revocation?.effective_permission_probe === 'SEND_SMS_APP_OP_DENIED' &&
             screenshot('08-sms-effective-permission-denied.png') &&
-            /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt'));
+            ['ignore', 'deny', 'errored'].includes(sendSmsAppOpState(read('send-sms-appop-denied-after-launch.txt')).effectiveMode);
           const roleRevocationFailClosed = modernPhoneCore &&
             revocation?.schema_version === 2 &&
             revocation?.role_revocation_fail_closed === true &&
@@ -515,8 +628,21 @@ jobs:
             screenshot('10-sms-role-revoked.png') &&
             screenshot('11-dialer-role-revoked.png') &&
             screenshot('12-call-screening-role-revoked.png');
-          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') &&
-            !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+          const crashAnalysis = analyzeLogcat(read('logcat.txt'));
+          fs.writeFileSync(file('crash-anr.json'), JSON.stringify(crashAnalysis, null, 2) + '\n');
+          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && crashAnalysis.result === 'PASS';
+          const screeningLatencies = [...read('logcat.txt').matchAll(/CallScreeningService:response duration_us=(\d+) reason=([a-z_]+)/g)]
+            .map((match) => ({ duration_us: Number(match[1]), reason: match[2] }));
+          const screeningBudgetPassed = screeningLatencies.length > 0 && screeningLatencies.every((entry) => entry.duration_us < 500000);
+          let viewport = null;
+          if (exists('viewport/summary.json')) {
+            try { viewport = JSON.parse(read('viewport/summary.json')); }
+            catch (error) { viewport = { parse_error: String(error) }; }
+          }
+          const viewportPassed = process.env.VIEWPORT_OUTCOME === 'success' && viewport?.result === 'PASS' &&
+            ['standard', 's24plus-equivalent'].every((profile) => viewport.profiles?.some((entry) =>
+              entry.profile === profile && entry.result === 'PASS' && entry.tests === 3 &&
+              entry.screenshots?.length === 11 && entry.screenshots.every((screen) => screenshot(`viewport/${profile}/${screen}.png`))));
           const instrumentationKey = `connected_instrumentation_api${api}`;
 
           const checks = {
@@ -531,6 +657,11 @@ jobs:
               instrumentationEvidencePassed && instrumentationEvidenceText.includes('AllStaticNavigationSurfacesInstrumentationTest') && completedInstrumentationClass('AllStaticNavigationSurfacesInstrumentationTest'),
             standalone_activity_surfaces_render:
               instrumentationEvidencePassed && instrumentationEvidenceText.includes('StandaloneActivitySmokeInstrumentationTest') && completedInstrumentationClass('StandaloneActivitySmokeInstrumentationTest'),
+            main_navigation_and_recreation: instrumentationEvidencePassed && completedInstrumentationClass('MainNavigationQualificationTest') &&
+              ['realBottomNavigationBackAndRecreation', 'phoneCoreDialerAndSmsSurfacesAreVisibleAfterRecreation', 'textLayoutOracleRejectsEllipsis']
+                .every((method) => instrumentationEvidenceText.includes(method)),
+            viewport_ui_qualification: api === 37 ? viewportPassed : null,
+            call_screening_response_budget: modernPhoneCore ? screeningBudgetPassed : null,
             min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
             cold_install_and_relaunch: coldRelaunchObserved,
             phone_core_setup_resume: modernPhoneCore
@@ -559,6 +690,7 @@ jobs:
             'all_static_navigation_surfaces_render',
             'standalone_activity_surfaces_render',
             'cold_install_and_relaunch',
+            'main_navigation_and_recreation',
             'no_crash_or_anr'
           ];
           const required = api === 24
@@ -567,6 +699,8 @@ jobs:
                 ...commonRequired,
                 'phone_core_setup_resume',
                 'synthetic_call_screening_observed',
+                'call_screening_response_budget',
+                ...(api === 37 ? ['viewport_ui_qualification'] : []),
                 'incoming_call_telecom_flow',
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',
@@ -590,6 +724,33 @@ jobs:
             evidenceFailures.push('package_state');
           }
 
+          const timestamp = new Date().toISOString();
+          const environment = { type: 'ANDROID_EMULATOR', api_level: api, commit: process.env.BUILT_COMMIT,
+            properties: 'emulator-properties.txt', physical_validation: false };
+          const hostChecks = new Set(['android_app_unit_tests', 'wearable_contract_unit_tests',
+            'wearable_security_unit_tests', 'android_lint', 'phone_number_canonicalization_contract',
+            'multi_sim_submit_readiness_contract']);
+          const hostArtifact = `PhoneCore-Host-Qualification-${process.env.SOURCE_HEAD_SHA}`;
+          const evidenceFor = (name) => hostChecks.has(name) ? [hostArtifact, `${hostArtifact}/provenance.json`] :
+            name === 'viewport_ui_qualification' ? ['viewport/summary.json', 'viewport/'] :
+            name === 'no_crash_or_anr' ? ['crash-anr.json', 'logcat.txt'] :
+            name === 'call_screening_response_budget' ? ['logcat.txt'] :
+            /navigation|instrumentation|render|setup_resume/.test(name) ? [api === 24 ? api24LogPath : connectedResultsRoot] :
+            /revocation|denial/.test(name) ? ['revocation-summary.json'] : ['qualification.json', 'logcat.txt'];
+          const capabilities = Object.entries(checks).map(([capability, passed]) => ({
+            capability, status: passed === true ? (hostChecks.has(capability) ? 'HOST_TESTED' : 'EMULATOR_TESTED') : passed === false ? 'FAILED' : 'UNKNOWN',
+            test: capability, result: passed === true ? 'PASS' : passed === false ? 'FAIL' : 'NOT_EXECUTED',
+            evidence: evidenceFor(capability), timestamp,
+            environment: hostChecks.has(capability) ? { type: 'HOST', api_level: null,
+              commit: process.env.BUILT_COMMIT, physical_validation: false } : environment,
+            reason: passed === false ? (capability === 'viewport_ui_qualification' && viewport?.parse_error || 'Required execution or evidence invariant not satisfied; inspect artifacts') :
+              passed === null ? 'Outside this API lane' : null,
+            deviceRequired: /call_|sms|sim|revocation/.test(capability)
+          }));
+          for (const capability of ['carrier_calls', 'carrier_mms', 'bluetooth_audio', 'samsung_oem', 'voice_call_end_to_end', 'wear_os_transport']) {
+            capabilities.push({ capability, status: 'DEVICE_REQUIRED', test: null, result: 'NOT_EXECUTED',
+              evidence: [], timestamp, environment, reason: 'No physical or end-to-end service evidence in this gate', deviceRequired: true });
+          }
           const report = {
             schema_version: 3,
             qualification: 'ANDROID_APPLICATION_EMULATION',
@@ -619,14 +780,32 @@ jobs:
             },
             required_checks_for_lane: required,
             evidence_failures: evidenceFailures,
-            checks
+            checks, timestamp, environment, capabilities, screening_latencies: screeningLatencies
           };
           fs.writeFileSync(file('qualification.json'), JSON.stringify(report, null, 2) + '\n');
+          fs.writeFileSync(file('qualification.md'), `# Android emulator qualification\n\nCommit: ${report.build_commit}\nAPI: ${api}\nResult: ${report.result}\nScope: developer qualification; physical validation pending.\n\n| Capability | Status | Result | Evidence |\n| --- | --- | --- | --- |\n` +
+            capabilities.map((entry) => `| ${entry.capability} | ${entry.status} | ${entry.result} | ${entry.evidence.join(', ')} |`).join('\n') + '\n');
           if (evidenceFailures.length) {
             console.error(`Emulator evidence incomplete for API ${api}: ${evidenceFailures.join(', ')}`);
             process.exit(1);
           }
           NODE
+
+      - name: Upload compact qualification reports and viewport screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Android-Qualification-Summary-API${{ matrix.api_level }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/qualification.json
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/qualification.md
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/crash-anr.json
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/emulator-properties.txt
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/apk.sha256
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/viewport/summary.json
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/viewport/*/*.png
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload emulator qualification evidence
         if: always()
@@ -639,7 +818,7 @@ jobs:
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api_level }}-tests.log
             native-android-app/app/build/reports/androidTests/connected/
             native-android-app/app/build/outputs/androidTest-results/connected/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
       - name: Stop emulator

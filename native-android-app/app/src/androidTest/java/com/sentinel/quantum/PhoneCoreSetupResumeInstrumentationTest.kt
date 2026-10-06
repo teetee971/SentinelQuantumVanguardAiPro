@@ -46,6 +46,32 @@ class PhoneCoreSetupResumeInstrumentationTest {
     }
 
     @Test
+    fun wizardLifecyclePersistsWithoutManufacturingRuntimeReadiness() {
+        assertEquals(PhoneCoreSetupWizardStore.LifecycleState.NOT_STARTED, PhoneCoreSetupWizardStore(context).lifecycleState())
+        PhoneCoreSetupWizardStore(context).markOffered()
+        assertEquals(PhoneCoreSetupWizardStore.LifecycleState.OFFERED, PhoneCoreSetupWizardStore(context).lifecycleState())
+        PhoneCoreSetupWizardStore(context).markInProgress()
+        PhoneCoreSetupWizardStore(context).markAttemptedTarget("role:android.app.role.DIALER")
+        assertEquals(PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS, PhoneCoreSetupWizardStore(context).lifecycleState())
+        assertEquals("role:android.app.role.DIALER", PhoneCoreSetupWizardStore(context).attemptedTargetKey())
+        PhoneCoreSetupWizardStore(context).markDeferred()
+        assertEquals(PhoneCoreSetupWizardStore.LifecycleState.DEFERRED, PhoneCoreSetupWizardStore(context).lifecycleState())
+        assertFalse(prefs.getBoolean(KEY_COMPLETED, false))
+        // Completion is presentation history. Real Android facts still decide readiness.
+        val before = PhoneCoreRuntimeFacts.read(context)
+        PhoneCoreSetupWizardStore(context).markCompleted()
+        assertEquals(PhoneCoreSetupWizardStore.LifecycleState.COMPLETED, PhoneCoreSetupWizardStore(context).lifecycleState())
+        assertEquals(null, PhoneCoreSetupWizardStore(context).attemptedTargetKey())
+        assertEquals(before, PhoneCoreRuntimeFacts.read(context))
+        if (!PhoneCoreSetupWizardStore.softwarePrerequisitesReady(before)) {
+            org.junit.Assert.assertTrue(PhoneCoreSetupWizardStore.shouldOpenSetup(true, before))
+        }
+        PhoneCoreSetupWizardStore(context).markInProgress()
+        assertFalse("repair must invalidate legacy completed=true", prefs.getBoolean(KEY_COMPLETED, false))
+        assertEquals(PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS, PhoneCoreSetupWizardStore(context).lifecycleState())
+    }
+
+    @Test
     fun interruptedFirstRunResumesWithoutFalseCompletion() {
         val intent = Intent(context, PhoneCoreActivationActivity::class.java)
             .putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
