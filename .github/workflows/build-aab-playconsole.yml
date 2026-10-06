@@ -63,7 +63,10 @@ jobs:
           test "$TARGET_SDK" -ge 34
           echo "targetSdk OK: $TARGET_SDK (>= 34)"
 
-          VERSION_CODE=$(grep -m1 "versionCode" app/build.gradle | grep -Eo '[0-9]+')
+          VERSION_CODE=$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\1/p' app/build.gradle | head -n1)
+          if [[ -z "$VERSION_CODE" ]]; then
+            VERSION_CODE=$(sed -nE 's/^[[:space:]]*def[[:space:]]+sentinelVersionCode[[:space:]]*=[[:space:]]*([0-9]+).*/\1/p' app/build.gradle | head -n1)
+          fi
           test -n "$VERSION_CODE"
           test "$VERSION_CODE" -gt 0
           echo "versionCode OK: $VERSION_CODE"
