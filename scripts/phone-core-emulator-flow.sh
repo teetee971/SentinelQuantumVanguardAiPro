@@ -130,14 +130,18 @@ wait_logcat_marker() {
 wait_emulator_call_absent() {
   local number="$1"
   local evidence="$FLOW_OUTPUT_DIR/gsm-list-${number}.txt"
+  local modem_status=0
   for _ in $(seq 1 30); do
-    adb emu gsm list > "$evidence" 2>&1 || true
-    if ! grep -Fq "$number" "$evidence"; then
+    set +e
+    adb emu gsm list > "$evidence" 2>&1
+    modem_status=$?
+    set -e
+    if [[ "$modem_status" -eq 0 ]] && ! grep -Fq "$number" "$evidence"; then
       return 0
     fi
     sleep 0.5
   done
-  echo "Emulator modem still exposes call $number after bounded teardown wait."
+  echo "Emulator modem could not prove call $number absent after bounded teardown wait (last gsm-list status: $modem_status)."
   cat "$evidence" 2>/dev/null || true
   return 1
 }
