@@ -133,15 +133,12 @@ role_holders() {
   direct_status=$?
   set -e
   if [[ "$direct_status" -eq 0 && "$direct_output" != *"Unknown command"* ]]; then
-    # Accept only a holder list, never shell diagnostics containing the package name.
     if ! grep -Evq '^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$|^$' <<< "$direct_output"; then
       printf '%s\n' "$direct_output"
       return 0
     fi
   fi
 
-  # Android 10/API 29 has add/remove role shell commands but no get-role-holders command.
-  # Persist the dump so the shared parser can distinguish empty, incomplete and unknown roles.
   local role_dump="$OUT_DIR/role-state-current.txt"
   if ! adb shell dumpsys role > "$role_dump" 2>/dev/null; then
     return 1
@@ -165,7 +162,6 @@ wait_role_absent() {
   local holders
   local observation="unknown"
   for _ in $(seq 1 20); do
-    # A failed oracle is UNKNOWN, never proof that Android removed the role.
     if holders="$(role_holders "$full_role")"; then
       if ! grep -Fxq "$PACKAGE" <<< "$holders"; then return 0; fi
       observation="held"
@@ -208,6 +204,19 @@ permission_granted() {
     grep -E "${permission}: granted=true" >/dev/null
 }
 
+assert_send_sms_runtime_permission_granted() {
+  local evidence="$1"
+  if ! adb shell dumpsys package "$PACKAGE" > "$OUT_DIR/$evidence" 2>&1; then
+    echo "SEND_SMS runtime grant baseline is unreadable."
+    return 1
+  fi
+  if ! grep -Eq 'android\.permission\.SEND_SMS: granted=true' "$OUT_DIR/$evidence"; then
+    echo "SEND_SMS runtime grant baseline is not proven."
+    grep -E 'android\.permission\.SEND_SMS:' "$OUT_DIR/$evidence" || true
+    return 1
+  fi
+}
+
 probe_pm_revoke_send_sms() {
   local output="$OUT_DIR/send-sms-pm-revoke-observation.txt"
   set +e
@@ -215,6 +224,12 @@ probe_pm_revoke_send_sms() {
   local status=$?
   set -e
   sleep 1
+  if [[ "$status" -ne 0 ]]; then
+    printf 'pm_revoke_status=%s\nobservable=false\nreason=pm_revoke_command_failed\n' "$status" >> "$output"
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+    echo "SEND_SMS pm revoke failed; runtime revocation cannot be attributed to the probe."
+    return 1
+  fi
   if permission_granted android.permission.SEND_SMS; then
     printf 'pm_revoke_status=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
@@ -241,29 +256,48 @@ assert_send_sms_runtime_permission_denied() {
 set_send_sms_appop() {
   local mode="$1"
   local evidence="$2"
-  # Recent RoleController versions grant a UID-level mode. Android 10 can instead
-  # retain only a package mode. Try UID first, then the package boundary if the UID
-  # denial did not become observable. The caller must still prove denial after launch.
-  if ! adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1; then
-    echo "UID AppOp command failed; checking effective mode." >> "$OUT_DIR/$evidence"
+  local uid_status=0
+  local package_status=0
+  : > "$OUT_DIR/$evidence"
+
+  set +e
+  adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
+  uid_status=$?
+  adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
+  package_status=$?
+  set -e
+
+  printf 'uid_set_status=%s\npackage_set_status=%s\n' "$uid_status" "$package_status" >> "$OUT_DIR/$evidence"
+  if [[ "$uid_status" -ne 0 ]]; then
+    echo "UID AppOp command failed; package boundary is the persistence fallback." >> "$OUT_DIR/$evidence"
   fi
+  if [[ "$package_status" -ne 0 ]]; then
+    echo "Package AppOp command failed; persistent SEND_SMS AppOp state cannot be established." >> "$OUT_DIR/$evidence"
+    return 1
+  fi
+
   sleep 1
   adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  if [[ "$mode" == "allow" ]] || ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
-    adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
-    sleep 1
-    adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  fi
 }
 
 assert_send_sms_appop_denied() {
   local evidence="$1"
   adb shell appops get "$PACKAGE" SEND_SMS > "$OUT_DIR/$evidence" 2>&1
-  if ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
-    echo "SEND_SMS AppOp was not observably denied."
+
+  if grep -Eiq 'Uid mode:.*SEND_SMS: *(allow|foreground)' "$OUT_DIR/$evidence"; then
+    echo "SEND_SMS AppOp has an explicit UID-level allow; package denial is not effective."
     cat "$OUT_DIR/$evidence"
     return 1
   fi
+  if grep -Eiq 'Uid mode:.*SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
+    return 0
+  fi
+  if grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
+    return 0
+  fi
+  echo "SEND_SMS AppOp was not observably denied."
+  cat "$OUT_DIR/$evidence"
+  return 1
 }
 
 launch_sms_surface() {
@@ -323,8 +357,6 @@ assert_modem_call_absent() {
     echo "Protected dial action created modem call $number while DIALER role was revoked."
     exit 1
   fi
-  # OK-only modem output cannot prove protected-action absence either. Require a
-  # readable empty live Telecom section before and after the revoked dial action.
   local telecom_evidence="$OUT_DIR/${evidence%.txt}-telecom.txt"
   adb shell dumpsys telecom > "$telecom_evidence"
   if ! python3 "$SCRIPT_DIR/phone-core-emulator-telecom-calls.py" "$telecom_evidence"; then
@@ -339,8 +371,6 @@ wait_incoming_call_observed() {
   for _ in $(seq 1 15); do
     adb emu gsm list > "$OUT_DIR/$evidence"
     if grep -Fq "$number" "$OUT_DIR/$evidence"; then return 0; fi
-    # Some emulator versions return only OK from gsm list even while Telecom rings.
-    # A new InCallService notification event independently proves the incoming call.
     local notifications
     notifications="$(timeline_signal_prefix_count 'CALL_NOTIFICATION_POSTED')" || return 2
     if [[ "$notifications" -gt "$INCOMING_NOTIFICATION_BEFORE" ]]; then return 0; fi
@@ -378,11 +408,11 @@ for permission in SEND_SMS READ_SMS RECEIVE_SMS READ_PHONE_STATE; do
   adb shell pm grant "$PACKAGE" "android.permission.$permission" >/dev/null 2>&1 || true
 done
 assert_sms_role_held
+assert_send_sms_runtime_permission_granted "send-sms-runtime-permission-granted-before-launch.txt"
 
-# Start from an actionable SMS surface, then ask Android for the strongest effective-denial probe
-# that the current framework actually exposes. Android 17 can keep the default-SMS SEND_SMS AppOp
-# at allow while still permitting an observable runtime-permission revocation.
 launch_sms_surface "sms-before-effective-denial-launch.txt"
+assert_sms_role_held
+assert_send_sms_runtime_permission_granted "send-sms-runtime-permission-granted-after-launch.txt"
 probe_pm_revoke_send_sms
 ensure_role_held android.app.role.SMS
 
@@ -395,8 +425,6 @@ if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" == "true" ]]; then
   assert_sms_role_held
   assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-after-launch.txt"
 else
-  # Some RoleController versions immediately restore the role-managed runtime grant. In that case,
-  # retain the established AppOp probe used by older emulator lanes.
   adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
   EFFECTIVE_PERMISSION_PROBE="SEND_SMS_APP_OP_DENIED"
   EFFECTIVE_PERMISSION_NOTE="ROLE_SMS restored the runtime grant, so the effective-denial proof used the SEND_SMS AppOp and verified the protected UI stayed non-actionable."
@@ -424,7 +452,6 @@ if [[ "$EFFECTIVE_PERMISSION_PROBE" == "SEND_SMS_APP_OP_DENIED" ]]; then
 fi
 adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
 
-# ROLE_SMS revocation: the protected send action must remain disabled and must not reacquire the role.
 adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
 wait_role_absent android.app.role.SMS
 launch_sms_surface "sms-role-revoked-launch.txt"
@@ -446,7 +473,6 @@ launch_sms_surface "sms-restored-launch.txt"
 assert_no_crash
 assert_sms_role_held
 
-# DIALER role: a real tap on Appeler must not create any emulator-modem call while the role is absent.
 adb shell cmd role remove-role-holder --user 0 android.app.role.DIALER "$PACKAGE"
 wait_role_absent android.app.role.DIALER
 adb shell am force-stop "$PACKAGE"
@@ -463,10 +489,6 @@ assert_no_crash
 adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
 ensure_role_held android.app.role.DIALER
 
-# CALL_SCREENING role: Telecom may still invoke the default dialer's service. A real incoming
-# call must not create a CALL_SCREENED:* engine decision while the screening role is absent.
-# Callback invocation is recorded separately. Timeline read/parse errors are fatal because
-# an unreadable evidence source must never be interpreted as a zero-count proof.
 adb shell cmd role remove-role-holder --user 0 android.app.role.CALL_SCREENING "$PACKAGE"
 wait_role_absent android.app.role.CALL_SCREENING
 SCREENING_CALLBACK_BEFORE="$(screening_callback_count)"

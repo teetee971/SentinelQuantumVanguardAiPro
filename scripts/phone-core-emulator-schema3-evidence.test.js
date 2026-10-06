@@ -1,0 +1,150 @@
+import assert from 'node:assert/strict';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import test from 'node:test';
+
+const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qualification.yml', import.meta.url), 'utf8');
+const step = workflow.split('- name: Collect qualification evidence even after failure\n')[1];
+assert.ok(step, 'collector step exists');
+const reportCode = step.split("node <<'NODE'\n")[1].split('\n          NODE')[0];
+
+function fixture(alter = () => {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-schema3-report-'));
+  const output = join(dir, 'evidence');
+  mkdirSync(output);
+  const put = (name, content) => writeFileSync(join(output, name), content);
+  const remove = (name) => { const path = join(output, name); if (existsSync(path)) unlinkSync(path); };
+  for (const name of [
+    '01-dialer-first-launch', '01b-dialer-relaunch', '02-incoming-call', '03-incoming-active-evidence',
+    '05-outgoing-call', '06-thread', '07-inline-reply', '08-sms-effective-permission-denied',
+    '10-sms-role-revoked', '11-dialer-role-revoked', '12-call-screening-role-revoked'
+  ]) put(name + '.png', Buffer.alloc(300));
+  for (const name of ['sms-role-restored', 'dialer-role-restored', 'call-screening-role-restored']) {
+    put(name + '.txt', 'com.sentinel.quantum\n');
+  }
+  put('logcat.txt', 'SentinelLifecycle: schema3 fixture\n');
+  put('logcat-status.txt', '0\n');
+  put('package.txt', 'Package [com.sentinel.quantum]\n');
+  put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
+  put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall\n');
+  put('phone-private-timeline-prefix.xml', 'CALL_SCREENED:ALLOW\n');
+  put('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT\n');
+  put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED\n');
+  put('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE\n');
+  put('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE\n');
+  put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
+  put('revocation-summary.json', JSON.stringify({
+    schema_version: 2,
+    effective_permission_denial_fail_closed: true,
+    role_revocation_fail_closed: true,
+    effective_permission_probe: 'SEND_SMS_APP_OP_DENIED'
+  }));
+
+  const results = join(dir, 'app/build/outputs/androidTest-results');
+  mkdirSync(results, { recursive: true });
+  const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest']
+    .map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('');
+  writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
+
+  alter({ put, remove, output });
+  const sha = 'a'.repeat(40);
+  const result = spawnSync(process.execPath, ['-e', reportCode], {
+    cwd: dir,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      RUNNER_TEMP: dir,
+      API_LEVEL: '36',
+      OUTPUT: output,
+      HOST_CONTRACT_RESULT: 'success',
+      INSTRUMENTATION_OUTCOME: 'success',
+      RUNTIME_OUTCOME: 'success',
+      BUILT_COMMIT: sha,
+      GITHUB_SHA: sha,
+      SOURCE_HEAD_SHA: 'b'.repeat(40),
+      SOURCE_BASE_SHA: 'c'.repeat(40),
+      SOURCE_HEAD_REF: 'fixture-branch',
+      GITHUB_EVENT_NAME: 'pull_request'
+    }
+  });
+  assert.ok(existsSync(join(output, 'qualification.json')), result.stderr || result.stdout);
+  const report = JSON.parse(readFileSync(join(output, 'qualification.json'), 'utf8'));
+  return { dir, result, report };
+}
+
+function schema3(probe) {
+  return JSON.stringify({
+    schema_version: 3,
+    effective_permission_denial_fail_closed: true,
+    role_revocation_fail_closed: true,
+    effective_permission_probe: probe
+  });
+}
+
+function expectPass(alter) {
+  const run = fixture(alter);
+  try {
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.equal(run.report.result, 'PASS');
+    assert.equal(run.report.checks.effective_permission_denial_fail_closed, true);
+  } finally { rmSync(run.dir, { recursive: true, force: true }); }
+}
+
+function expectDenialFail(alter) {
+  const run = fixture(alter);
+  try {
+    assert.notEqual(run.result.status, 0);
+    assert.equal(run.report.result, 'FAIL');
+    assert.equal(run.report.checks.effective_permission_denial_fail_closed, false);
+    assert.ok(run.report.evidence_failures.includes('effective_permission_denial_fail_closed'));
+  } finally { rmSync(run.dir, { recursive: true, force: true }); }
+}
+
+test('schema 2 AppOp evidence remains backward compatible', () => expectPass(() => {}));
+
+test('schema 3 accepts runtime permission denial with matching evidence', () => expectPass(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  put('send-sms-runtime-permission-denied-after-launch.txt', 'android.permission.SEND_SMS: granted=false\n');
+  put('revocation-summary.json', schema3('SEND_SMS_RUNTIME_PERMISSION_REVOKED'));
+}));
+
+test('schema 3 accepts AppOp denial with matching evidence', () => expectPass(({ put }) => {
+  put('revocation-summary.json', schema3('SEND_SMS_APP_OP_DENIED'));
+}));
+
+test('runtime probe rejects missing runtime-denial evidence', () => expectDenialFail(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  remove('send-sms-runtime-permission-denied-after-launch.txt');
+  put('revocation-summary.json', schema3('SEND_SMS_RUNTIME_PERMISSION_REVOKED'));
+}));
+
+test('runtime probe rejects granted=true evidence', () => expectDenialFail(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  put('send-sms-runtime-permission-denied-after-launch.txt', 'android.permission.SEND_SMS: granted=true\n');
+  put('revocation-summary.json', schema3('SEND_SMS_RUNTIME_PERMISSION_REVOKED'));
+}));
+
+test('runtime probe cannot be satisfied by mismatched AppOp evidence', () => expectDenialFail(({ put, remove }) => {
+  remove('send-sms-runtime-permission-denied-after-launch.txt');
+  put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
+  put('revocation-summary.json', schema3('SEND_SMS_RUNTIME_PERMISSION_REVOKED'));
+}));
+
+test('unknown effective-permission probe is rejected', () => expectDenialFail(({ put }) => {
+  put('revocation-summary.json', schema3('UNKNOWN_PROBE'));
+}));
+
+test('unsupported revocation evidence schema is rejected', () => expectDenialFail(({ put }) => {
+  put('revocation-summary.json', JSON.stringify({
+    schema_version: 4,
+    effective_permission_denial_fail_closed: true,
+    role_revocation_fail_closed: true,
+    effective_permission_probe: 'SEND_SMS_APP_OP_DENIED'
+  }));
+}));
+
+test('missing revocation summary is rejected', () => expectDenialFail(({ remove }) => {
+  remove('revocation-summary.json');
+}));
