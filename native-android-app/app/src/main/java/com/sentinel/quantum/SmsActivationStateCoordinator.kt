@@ -29,12 +29,6 @@ internal class SmsActivationStateCoordinator(
         val authorizationBlockers: Set<SmsActivationDiagnostics.Blocker>
     )
 
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val diagnostics = SmsActivationDiagnostics(application.applicationContext)
-    private val appOpsManager = application.getSystemService(AppOpsManager::class.java)
-    private var visibleComposer = WeakReference<SmsComposeActivity>(null)
-    private var lastFingerprint: AuthorizationFingerprint? = readFingerprint()
-
     private val authorizationBlockers = setOf(
         SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED,
         SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED,
@@ -42,6 +36,12 @@ internal class SmsActivationStateCoordinator(
         SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED,
         SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED
     )
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val diagnostics = SmsActivationDiagnostics(application.applicationContext)
+    private val appOpsManager = application.getSystemService(AppOpsManager::class.java)
+    private var visibleComposer = WeakReference<SmsComposeActivity>(null)
+    private var lastFingerprint: AuthorizationFingerprint? = readFingerprint()
 
     private val permissionListener = android.content.pm.PackageManager.OnPermissionsChangedListener { uid ->
         if (uid == Process.myUid()) scheduleRevalidation()
@@ -67,7 +67,14 @@ internal class SmsActivationStateCoordinator(
             // A permission-role transition can settle just after onResume. Re-read once after the
             // framework has had a chance to finish reconciliation; a changed fingerprint recreates
             // the composer exactly once because lastFingerprint is updated before recreation.
-            mainHandler.postDelayed({ revalidateVisibleComposer(activity) }, SETTLE_RECHECK_MS)
+            mainHandler.postDelayed(
+                {
+                    if (visibleComposer.get() === activity) {
+                        revalidateVisibleComposer(activity)
+                    }
+                },
+                SETTLE_RECHECK_MS
+            )
         }
 
         override fun onActivityPaused(activity: Activity) {
