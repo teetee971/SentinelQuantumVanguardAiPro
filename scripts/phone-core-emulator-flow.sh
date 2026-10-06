@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Synthetic communications on the isolated CI emulator only. No physical certification.
 set -euo pipefail
+FLOW_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FLOW_OUTPUT_DIR="${1:?Screenshot output directory required}"
 mkdir -p "$FLOW_OUTPUT_DIR"
 FLOW_PACKAGE="com.sentinel.quantum"
@@ -131,12 +132,15 @@ wait_emulator_call_absent() {
   local number="$1"
   local evidence="$FLOW_OUTPUT_DIR/gsm-list-${number}.txt"
   local modem_status=0
+  local telecom_evidence="$FLOW_OUTPUT_DIR/telecom-after-${number}.txt"
   for _ in $(seq 1 30); do
     set +e
     adb emu gsm list > "$evidence" 2>&1
     modem_status=$?
     set -e
-    if [[ "$modem_status" -eq 0 ]] && ! grep -Fq "$number" "$evidence"; then
+    if [[ "$modem_status" -eq 0 ]] && ! grep -Fq "$number" "$evidence" &&
+      adb shell dumpsys telecom > "$telecom_evidence" 2>&1 &&
+      python3 "$FLOW_SCRIPT_DIR/phone-core-emulator-telecom-calls.py" "$telecom_evidence"; then
       return 0
     fi
     sleep 0.5
@@ -292,15 +296,15 @@ capture 04-ended-call
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 
-# Outgoing calls can remain temporarily denied while Telecom finishes releasing the previous call,
-# even after the emulator modem reports it absent. Keep the production fail-closed policy intact and
-# retry the user action for a bounded window until InCallService records the real ACTIVE transition.
+# Place exactly once. Timeline persistence is asynchronous: retrying placement while waiting for
+# INCALL_ACTIVE can create a second call and leave the first ACTIVE after the UI hangs up the second.
+# Wait within the existing bounded observation window; never change production SIM authorization.
 FLOW_OUTGOING_ACTIVE=0
 FLOW_OUTGOING_EVIDENCE="$FLOW_OUTPUT_DIR/phone-private-timeline-outgoing-incall_active.xml"
+adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
+wait_text "Appeler"
+tap_text "Appeler"
 for FLOW_ATTEMPT in $(seq 1 12); do
-  adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
-  wait_text "Appeler"
-  tap_text "Appeler"
   for _ in $(seq 1 3); do
     # The emulator modem may require an explicit transition from dialing to active.
     adb emu gsm accept 5550101 >/dev/null 2>&1 || true

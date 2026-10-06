@@ -76,6 +76,10 @@ test('outgoing emulator qualification preserves fail-closed app policy and waits
 
   assert.ok(retryIndex >= 0, 'outgoing recovery window must be explicit and bounded');
   assert.ok(dialIndex > retryIndex, 'Sentinel must originate the outgoing probe from its dialer');
+  const pollIndex = flow.indexOf('for FLOW_ATTEMPT in $(seq 1 12); do', dialIndex);
+  assert.ok(pollIndex > dialIndex, 'placement must precede the observation loop');
+  assert.doesNotMatch(flow.slice(pollIndex, activeIndex), /tap_text|am start/,
+    'asynchronous timeline persistence must never cause duplicate outgoing placement');
   assert.ok(activeIndex > dialIndex, 'connected-state proof must come from the private runtime timeline');
   assert.ok(uiEvidenceIndex > activeIndex, 'app-owned in-call UI proof must remain independently required');
   assert.ok(hangupIndex > uiEvidenceIndex, 'the Sentinel hang-up control must still be exercised');
@@ -87,4 +91,57 @@ test('outgoing emulator qualification preserves fail-closed app policy and waits
     /wait_text \"Composition\"|wait_text \"En communication\"/,
     'localized transient call-state labels must not gate functional qualification'
   );
+});
+
+function telecomOracle(dump) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-telecom-oracle-'));
+  try {
+    const file = path.join(tmp, 'telecom.txt');
+    fs.writeFileSync(file, dump);
+    return spawnSync('python3', ['scripts/phone-core-emulator-telecom-calls.py', file], { encoding: 'utf8' });
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+const liveCall = '    [Call id=TC@2, state=ACTIVE, tpac=ComponentInfo{com.android.phone/TelephonyConnectionService}, handle=tel:*****01], voip=false';
+const telecomDump = (entries) => `Init Path: On mainline\nCallsManager: \n  mCalls: \n${entries}  mCallAudioManager:\n    Historical Events:\n      [Call id=TC@1, state=ACTIVE, handle=tel:*****00]\n`;
+
+test('Telecom teardown rejects the orphan ACTIVE call observed in the API 37 failure', () => {
+  assert.equal(telecomOracle(telecomDump(liveCall + '\n')).status, 1);
+  assert.equal(telecomOracle(telecomDump(liveCall.replace('ACTIVE', 'DISCONNECTED') + '\n')).status, 1);
+  assert.equal(telecomOracle(telecomDump('')).status, 0, 'historical ACTIVE calls must not prevent teardown');
+});
+
+test('Telecom teardown never treats missing, truncated or ambiguous dumps as empty', () => {
+  for (const dump of ['OK\n', 'CallsManager:\n  mCalls:\n', telecomDump('') + '  mCalls:\n',
+    telecomDump('    unexpected payload\n'), 'Permission Denial: dumpsys telecom']) {
+    const result = telecomOracle(dump);
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /UNKNOWN/);
+  }
+});
+
+test('OK-only modem output cannot mask an ACTIVE Telecom call', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-combined-teardown-'));
+  try {
+    const script = `
+set -u
+FLOW_OUTPUT_DIR="$1"
+FLOW_SCRIPT_DIR="$2"
+sleep() { :; }
+adb() {
+  if [[ "$1" == "emu" ]]; then printf 'OK\\n'; else
+    printf 'CallsManager:\\n  mCalls:\\n    [Call id=TC@2, state=ACTIVE, handle=tel:*****01]\\n  mCallAudioManager:\\n'
+  fi
+}
+${extractShellFunction('wait_emulator_call_absent', 'tap_text')}
+wait_emulator_call_absent 5550101
+`;
+    const result = spawnSync('bash', ['-c', script, 'sentinel-test', tmp, path.resolve('scripts')], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0, 'a live Telecom call must prevent modem-only false PASS');
+    assert.match(result.stdout, /could not prove call/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
