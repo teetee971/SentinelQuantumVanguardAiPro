@@ -138,7 +138,9 @@ adb() {
 ${extractShellFunction('wait_emulator_call_absent', 'tap_text')}
 wait_emulator_call_absent 5550101
 `;
-    const result = spawnSync('bash', ['-c', script, 'sentinel-test', tmp, path.resolve('scripts')], { encoding: 'utf8' });
+    const fixture = path.join(tmp, 'teardown-fixture.sh');
+    fs.writeFileSync(fixture, script, { mode: 0o600 });
+    const result = spawnSync('bash', [fixture, tmp, path.resolve('scripts')], { encoding: 'utf8' });
     assert.notEqual(result.status, 0, 'a live Telecom call must prevent modem-only false PASS');
     assert.match(result.stdout, /could not prove call/);
   } finally {
@@ -160,7 +162,9 @@ SCRIPT_DIR="$2"
 adb() { if [[ "$1" == "emu" ]]; then printf 'OK\\n'; else printf 'CallsManager:\\n  mCalls:\\n    [Call id=TC@1, state=DIALING, handle=tel:*****97]\\n  mCallAudioManager:\\n'; fi; }
 ${source.slice(start, end)}
 assert_modem_call_absent 5550197 probe.txt`;
-    const result = spawnSync('bash', ['-c', script, 'test', temp, path.resolve('scripts')], { encoding: 'utf8' });
+    const fixture = path.join(temp, 'revoked-fixture.sh');
+    fs.writeFileSync(fixture, script, { mode: 0o600 });
+    const result = spawnSync('bash', [fixture, temp, path.resolve('scripts')], { encoding: 'utf8' });
     assert.notEqual(result.status, 0);
     assert.match(result.stdout, /live or UNKNOWN Telecom/);
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
