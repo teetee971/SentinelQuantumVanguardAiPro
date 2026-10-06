@@ -169,3 +169,12 @@ assert_modem_call_absent 5550197 probe.txt`;
     assert.match(result.stdout, /live or UNKNOWN Telecom/);
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 });
+
+
+test('incoming answer is performed by Sentinel UI and proved by InCall ACTIVE, not modem acceptance', () => {
+  const ready = flow.indexOf('wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"');
+  const answer = flow.indexOf('tap_text "phone_core_answer"', ready);
+  const active = flow.indexOf('wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"', answer);
+  assert.ok(ready >= 0 && answer > ready && active > answer);
+  assert.doesNotMatch(flow.slice(ready, active), /adb emu gsm accept/);
+});

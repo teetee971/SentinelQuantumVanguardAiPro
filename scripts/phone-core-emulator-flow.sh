@@ -290,7 +290,11 @@ capture 02-incoming-call
 # This event is recorded by InCallService only after it receives the ringing call and posts
 # its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
-adb emu gsm accept "$FLOW_NUMBER"
+# Exercise Sentinel's answer path, not a modem-side answer on behalf of the application.
+# An app-owned stable control plus the independent ACTIVE timeline event proves the effect.
+adb shell am start -W -n "$FLOW_PACKAGE/.SentinelInCallActivity"
+wait_text "phone_core_answer"
+tap_text "phone_core_answer"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
 capture 03-incoming-active-evidence
 adb emu gsm cancel "$FLOW_NUMBER"
