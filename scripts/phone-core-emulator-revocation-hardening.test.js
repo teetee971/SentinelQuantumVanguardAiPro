@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
@@ -26,13 +25,23 @@ test('runtime revocation cannot be credited when pm revoke fails', () => {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('successful pm revoke plus denied state is the only runtime-revocation success path', () => {
+test('successful pm revoke plus denied state qualifies runtime revocation', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-revoke-success-'));
   try {
     const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=false\nsleep(){ :; }\nadb(){ return 0; }\npermission_granted(){ return 1; }\n${shellFunction('probe_pm_revoke_send_sms')}\nprobe_pm_revoke_send_sms\nprintf '%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
     const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /true/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('successful pm revoke followed by RoleController grant selects AppOp fallback', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-revoke-restored-'));
+  try {
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=true\nsleep(){ :; }\nadb(){ return 0; }\npermission_granted(){ return 0; }\n${shellFunction('probe_pm_revoke_send_sms')}\nprobe_pm_revoke_send_sms\nprintf '%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /false/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
