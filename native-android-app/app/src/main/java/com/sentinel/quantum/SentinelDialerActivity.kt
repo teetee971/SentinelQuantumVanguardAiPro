@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telephony.SubscriptionManager
@@ -293,6 +294,24 @@ class SentinelDialerActivity : ComponentActivity() {
         }
         if (handles.isEmpty()) return CallLineLoadResult.Available(emptyList())
 
+        // Only framework-owned PSTN/SIM accounts may appear as selectable carrier lines.
+        // Android reserves CAPABILITY_SIM_SUBSCRIPTION for the built-in telephony stack.
+        val frameworkSimHandles = buildList {
+            for (handle in handles) {
+                val account = try {
+                    telecom.getPhoneAccount(handle)
+                } catch (_: SecurityException) {
+                    return CallLineLoadResult.LookupFailed
+                } catch (_: RuntimeException) {
+                    return CallLineLoadResult.LookupFailed
+                }
+                if (account?.hasCapabilities(PhoneAccount.CAPABILITY_SIM_SUBSCRIPTION) == true) {
+                    add(handle)
+                }
+            }
+        }
+        if (frameworkSimHandles.isEmpty()) return CallLineLoadResult.Available(emptyList())
+
         val subscriptionLabels: Map<Int, String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val telephony = getSystemService(TelephonyManager::class.java)
             val subscriptions = try {
@@ -303,7 +322,7 @@ class SentinelDialerActivity : ComponentActivity() {
             } catch (_: RuntimeException) {
                 emptyMap()
             }
-            handles.mapNotNull { handle ->
+            frameworkSimHandles.mapNotNull { handle ->
                 val subId = runCatching { telephony.getSubscriptionId(handle) }
                     .getOrDefault(SubscriptionManager.INVALID_SUBSCRIPTION_ID)
                 val info = subscriptions[subId] ?: return@mapNotNull null
@@ -319,7 +338,7 @@ class SentinelDialerActivity : ComponentActivity() {
             getSystemService(TelephonyManager::class.java)
         } else null
 
-        val lines = handles.mapIndexed { index, handle ->
+        val lines = frameworkSimHandles.mapIndexed { index, handle ->
             val subId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 runCatching { telephony?.getSubscriptionId(handle) }
                     .getOrNull()
@@ -468,28 +487,23 @@ class SentinelDialerActivity : ComponentActivity() {
         }
         selectedCallAccount = selectedLine.handle
 
-        val outgoingPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                if (telecom.isOutgoingCallPermitted(selectedLine.handle)) {
-                    OutgoingCallPermissionPolicy.State.ALLOWED
-                } else {
-                    OutgoingCallPermissionPolicy.State.DENIED
-                }
-            } catch (_: SecurityException) {
-                OutgoingCallPermissionPolicy.State.UNKNOWN
-            } catch (_: RuntimeException) {
-                OutgoingCallPermissionPolicy.State.UNKNOWN
-            }
-        } else {
-            OutgoingCallPermissionPolicy.State.API_NOT_SUPPORTED
+        // isOutgoingCallPermitted() is an own/self-managed PhoneAccount oracle. A default
+        // dialer cannot use it to pre-authorize a framework SIM account. Re-read the selected
+        // PhoneAccount and fail closed unless Android still marks it as a SIM subscription.
+        val selectedAccount = try {
+            telecom.getPhoneAccount(selectedLine.handle)
+        } catch (_: SecurityException) {
+            null
+        } catch (_: RuntimeException) {
+            null
         }
-        if (!OutgoingCallPermissionPolicy.mayPlaceCall(outgoingPermissionState)) {
-            callActionStatus = when (outgoingPermissionState) {
-                OutgoingCallPermissionPolicy.State.DENIED ->
-                    "Android signale que cette ligne n’est pas autorisée pour un appel sortant. Aucun appel n’a été lancé."
-                else ->
-                    "Android n’a pas pu confirmer l’autorisation d’appel sortant sur cette ligne. Aucun appel n’a été lancé."
-            }
+        val accountAuthority = OutgoingCallPermissionPolicy.classify(
+            frameworkSimCapability = selectedAccount
+                ?.hasCapabilities(PhoneAccount.CAPABILITY_SIM_SUBSCRIPTION) == true
+        )
+        if (!OutgoingCallPermissionPolicy.mayPlacePstnCall(accountAuthority)) {
+            callActionStatus =
+                "Android n’a pas pu confirmer que la ligne sélectionnée est une SIM système active. Aucun appel n’a été lancé."
             return
         }
         val extras = Bundle().apply {
