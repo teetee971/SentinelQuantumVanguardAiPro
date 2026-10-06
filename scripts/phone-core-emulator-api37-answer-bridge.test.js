@@ -31,7 +31,10 @@ async function runFixture({ lines, gsmResponse = 'OK\n', serial = null }) {
 
   const server = net.createServer(socket => {
     socket.setEncoding('utf8');
-    socket.write('Android Console: Authentication required\n');
+    // Match Android's documented console protocol: the initial authentication-required banner
+    // itself terminates with OK. The bridge must consume this banner-level OK before sending auth,
+    // otherwise it could attribute a stale response to a later command.
+    socket.write('Android Console: Authentication required\nUse auth <auth_token> to authenticate\nOK\n');
     let buffer = '';
     socket.on('data', chunk => {
       buffer += chunk;
@@ -95,10 +98,12 @@ exit 64
   return result;
 }
 
-test('API 37 bridge preauthenticates console, synchronizes on causal answer request, then requires ANSWERED -> ACTIVE', async () => {
+test('API 37 bridge consumes banner OK, authenticates, synchronizes on causal answer request, then requires ANSWERED -> ACTIVE', async () => {
   const result = await runFixture({ lines: [REQUEST, ANSWERED, ACTIVE] });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.match(result.evidence, /console_greeting=.*Authentication required.*OK/);
+  assert.match(result.evidence, /console_auth_response=OK/);
   assert.match(result.marker, /CallSequencingController: answerCall/);
   assert.match(result.evidence, /transport_sync=emulator_console_gsm_accept api=37 number=5550100/);
   assert.match(result.evidence, /RINGING\(RINGING\) -> ANSWERED/);
@@ -113,10 +118,13 @@ test('API 37 bridge cannot synthesize transport without a causal Telecom answer 
   assert.match(result.evidence, /missing Telecom bridge evidence: answer_request/);
 });
 
-test('API 37 bridge fails closed when emulator console rejects gsm accept', async () => {
+test('banner OK cannot mask rejection of the later gsm accept command', async () => {
   const result = await runFixture({ lines: [REQUEST, ANSWERED, ACTIVE], gsmResponse: 'KO\n' });
   assert.notEqual(result.status, 0);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.match(result.evidence, /console_greeting=.*OK/);
+  assert.match(result.evidence, /console_auth_response=OK/);
+  assert.match(result.evidence, /console_gsm_accept_response=KO/);
   assert.doesNotMatch(result.evidence, /transport_sync=/);
   assert.match(result.evidence, /emulator console gsm accept failed/);
 });
