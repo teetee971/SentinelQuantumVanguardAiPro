@@ -502,14 +502,23 @@ jobs:
             packageHeld('sms-role-restored.txt') &&
             packageHeld('dialer-role-restored.txt') &&
             packageHeld('call-screening-role-restored.txt');
-          const effectivePermissionDenied = modernPhoneCore &&
-            revocation?.schema_version === 2 &&
-            revocation?.effective_permission_denial_fail_closed === true &&
+          const appOpDeniedEvidence =
             revocation?.effective_permission_probe === 'SEND_SMS_APP_OP_DENIED' &&
-            screenshot('08-sms-effective-permission-denied.png') &&
             /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt'));
+          const runtimePermissionDeniedEvidence =
+            revocation?.effective_permission_probe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' &&
+            /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-runtime-permission-denied-after-launch.txt'));
+          const revocationSchemaSupported = revocation?.schema_version === 2 || revocation?.schema_version === 3;
+          const effectivePermissionEvidenceValid = revocation?.schema_version === 2
+            ? appOpDeniedEvidence
+            : appOpDeniedEvidence || runtimePermissionDeniedEvidence;
+          const effectivePermissionDenied = modernPhoneCore &&
+            revocationSchemaSupported &&
+            revocation?.effective_permission_denial_fail_closed === true &&
+            screenshot('08-sms-effective-permission-denied.png') &&
+            effectivePermissionEvidenceValid;
           const roleRevocationFailClosed = modernPhoneCore &&
-            revocation?.schema_version === 2 &&
+            revocationSchemaSupported &&
             revocation?.role_revocation_fail_closed === true &&
             restoredRolesObserved &&
             screenshot('10-sms-role-revoked.png') &&
@@ -615,7 +624,7 @@ jobs:
               instrumentation: api === 24 ? 'raw adb instrumentation log' : 'Gradle connected test XML',
               instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
-              revocation: modernPhoneCore ? 'revocation-summary.json + UI/AppOp evidence' : null
+              revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null
             },
             required_checks_for_lane: required,
             evidence_failures: evidenceFailures,
