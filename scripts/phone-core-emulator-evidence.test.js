@@ -18,6 +18,28 @@ const reportCode = nodeCodeForStep('Collect qualification evidence even after fa
 const hostProvenanceCode = nodeCodeForStep('Record host evidence provenance');
 const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.url).pathname;
 
+test('runtime setup rejects failed or unconfirmed data resets and failed log-buffer resets', () => {
+  const runtime = workflow.split('- name: Run emulator application/runtime qualification\n')[1];
+  const start = runtime.indexOf('          adb shell pm clear');
+  const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
+  assert.ok(start >= 0 && end > start);
+  const reset = runtime.slice(start, end);
+  for (const [dataStatus, dataOutput, logStatus, expected] of [
+    [0, 'Success', 0, 0], [1, 'Success', 0, 1], [0, 'Failed', 0, 1], [0, 'Success', 1, 1]
+  ]) {
+    const dir = mkdtempSync(join(tmpdir(), 'sentinel-runtime-reset-'));
+    try {
+      const fixture = join(dir, 'reset.sh');
+      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nadb() {\n case "$*" in\n 'shell pm clear com.sentinel.quantum') printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'install -r fixture.apk') echo INSTALL_EXECUTED;;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
+      const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
+      assert.equal(result.status, expected, result.stderr);
+      assert.equal(result.stdout.includes('FRESH_RUNTIME_SCOPE'), expected === 0);
+      if (dataStatus !== 0 || dataOutput !== 'Success') assert.doesNotMatch(result.stdout, /INSTALL_EXECUTED/);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  }
+  assert.doesNotMatch(runtime, /adb shell am start[^\n]*min-sdk-(?:first|second)-launch[^\n]*\|\| true/);
+});
+
 for (const [name, dump, status, holders] of [
   ['complete empty API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n}\n{\nname=android.app.role.SMS\nholders=com.sentinel.quantum\n} ] }', 0, ''],
   ['complete held API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=com.sentinel.quantum\n} ] }', 0, 'com.sentinel.quantum'],

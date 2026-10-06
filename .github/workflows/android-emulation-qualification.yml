@@ -343,12 +343,14 @@ jobs:
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
           APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' -type f -print -quit)
           test -n "$APK_PATH"
-          adb shell pm clear com.sentinel.quantum >/dev/null 2>&1 || true
-          adb install -r "$APK_PATH"
-
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
-          adb logcat -c >/dev/null 2>&1 || true
+          # Runtime evidence must start from a fresh app scope and fresh log buffer.
+          # A failed reset must not reuse instrumentation events as runtime evidence.
+          adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
+          grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
+          adb install -r "$APK_PATH"
+          adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
 
           if [[ "$API_LEVEL" -ge 29 ]]; then
             # Role establishment and proof are owned by the runtime scripts. They use the modern
@@ -357,7 +359,7 @@ jobs:
             bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
           else
             adb shell am force-stop com.sentinel.quantum
-            adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1 || true
+            adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1
             sleep 3
             adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
@@ -367,7 +369,7 @@ jobs:
               exit 1
             fi
             adb shell am force-stop com.sentinel.quantum
-            adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1 || true
+            adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
             sleep 3
             adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-second-pid.txt"
             adb exec-out screencap -p > "$OUTPUT/02-min-sdk-second-launch.png" || true
