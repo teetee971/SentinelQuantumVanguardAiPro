@@ -18,23 +18,25 @@ const reportCode = nodeCodeForStep('Collect qualification evidence even after fa
 const hostProvenanceCode = nodeCodeForStep('Record host evidence provenance');
 const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.url).pathname;
 
-test('runtime setup rejects failed or unconfirmed data resets and failed log-buffer resets', () => {
+test('runtime setup installs after UTP cleanup, then rejects failed or unconfirmed data/log resets', () => {
   const runtime = workflow.split('- name: Run emulator application/runtime qualification\n')[1];
-  const start = runtime.indexOf('          adb shell pm clear');
+  const start = runtime.indexOf('          adb install -r');
   const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
   assert.ok(start >= 0 && end > start);
   const reset = runtime.slice(start, end);
-  for (const [dataStatus, dataOutput, logStatus, expected] of [
-    [0, 'Success', 0, 0], [1, 'Success', 0, 1], [0, 'Failed', 0, 1], [0, 'Success', 1, 1]
+  for (const [installStatus, dataStatus, dataOutput, logStatus, expected] of [
+    [0, 0, 'Success', 0, 0], [1, 0, 'Success', 0, 1], [0, 1, 'Success', 0, 1], [0, 0, 'Failed', 0, 1], [0, 0, 'Success', 1, 1]
   ]) {
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-runtime-reset-'));
     try {
       const fixture = join(dir, 'reset.sh');
-      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nadb() {\n case "$*" in\n 'shell pm clear com.sentinel.quantum') printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'install -r fixture.apk') echo INSTALL_EXECUTED;;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
+      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
       const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
       assert.equal(result.status, expected, result.stderr);
       assert.equal(result.stdout.includes('FRESH_RUNTIME_SCOPE'), expected === 0);
-      if (dataStatus !== 0 || dataOutput !== 'Success') assert.doesNotMatch(result.stdout, /INSTALL_EXECUTED/);
+      assert.match(result.stdout, /INSTALL_EXECUTED/);
+      if (installStatus !== 0) assert.equal(existsSync(join(dir, 'runtime-app-reset.txt')), false);
+      if (installStatus !== 0 || dataStatus !== 0 || dataOutput !== 'Success') assert.equal(existsSync(join(dir, 'runtime-logcat-reset.txt')), false);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   }
   assert.doesNotMatch(runtime, /adb shell am start[^\n]*min-sdk-(?:first|second)-launch[^\n]*\|\| true/);

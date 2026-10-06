@@ -347,9 +347,11 @@ jobs:
           mkdir -p "$OUTPUT"
           # Runtime evidence must start from a fresh app scope and fresh log buffer.
           # A failed reset must not reuse instrumentation events as runtime evidence.
+          # UTP removes the app after connected tests on modern API lanes. Install
+          # the exact runtime APK before requiring a successful app-data reset.
+          adb install -r "$APK_PATH"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
-          adb install -r "$APK_PATH"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
 
           if [[ "$API_LEVEL" -ge 29 ]]; then
