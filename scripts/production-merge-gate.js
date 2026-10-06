@@ -30,6 +30,12 @@ export const SECURITY_FUZZ_WORKFLOWS = Object.freeze(['security-fuzz.yml']);
 export const EMULATION_MAX_CRITICAL_PATH_MS = (45 + 60) * 60 * 1000;
 export const DEFAULT_GATE_TIMEOUT_MS = 170 * 60 * 1000;
 
+// GitHub occasionally returns transient 5xx/429 responses while Actions are
+// being indexed. A production gate must fail closed on real workflow failures,
+// but must not convert a short control-plane outage into a false code failure.
+export const GITHUB_API_MAX_ATTEMPTS = 5;
+export const GITHUB_API_BASE_DELAY_MS = 1000;
+
 const ANDROID_WORKFLOW_FILES = new Set([
   '.github/workflows/android-emulation-qualification.yml',
   '.github/workflows/build-native-android.yml',
@@ -126,18 +132,69 @@ export function evaluateWorkflowRun(run) {
   return { state: 'pass', reason: 'SUCCESS' };
 }
 
-async function githubJson(url, token) {
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${token}`,
-      'X-GitHub-Api-Version': '2022-11-28'
-    }
-  });
-  if (!response.ok) {
-    throw new Error(`GitHub API ${response.status} for ${url}`);
+export function isRetryableGitHubStatus(status) {
+  return status === 429 || (status >= 500 && status <= 599);
+}
+
+function retryDelayMs(response, attempt, baseDelayMs) {
+  const retryAfterSeconds = Number(response?.headers?.get?.('retry-after'));
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) {
+    return retryAfterSeconds * 1000;
   }
-  return response.json();
+  return Math.min(baseDelayMs * (2 ** (attempt - 1)), 8000);
+}
+
+export async function githubJson(url, token, {
+  fetchImpl = fetch,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  maxAttempts = GITHUB_API_MAX_ATTEMPTS,
+  baseDelayMs = GITHUB_API_BASE_DELAY_MS
+} = {}) {
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
+    throw new Error('GitHub API maxAttempts must be a positive integer');
+  }
+  if (!Number.isFinite(baseDelayMs) || baseDelayMs < 0) {
+    throw new Error('GitHub API baseDelayMs must be non-negative');
+  }
+
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetchImpl(url, {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          Authorization: `Bearer ${token}`,
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      });
+
+      if (response.ok) return response.json();
+
+      const error = new Error(`GitHub API ${response.status} for ${url}`);
+      if (!isRetryableGitHubStatus(response.status) || attempt === maxAttempts) throw error;
+
+      lastError = error;
+      const delayMs = retryDelayMs(response, attempt, baseDelayMs);
+      console.warn(`Transient ${error.message}; retry ${attempt}/${maxAttempts} after ${delayMs}ms.`);
+      await sleep(delayMs);
+    } catch (error) {
+      // Explicit non-retryable HTTP failures must fail immediately. Network/transport
+      // exceptions have no status and are retried within the same bounded budget.
+      if (/^GitHub API \d+ for /.test(String(error?.message || ''))) {
+        const status = Number(String(error.message).match(/^GitHub API (\d+)/)?.[1]);
+        if (!isRetryableGitHubStatus(status) || attempt === maxAttempts) throw error;
+      } else if (attempt === maxAttempts) {
+        throw new Error(`GitHub API transport failure for ${url} after ${maxAttempts} attempts: ${error?.message || error}`);
+      }
+
+      lastError = error;
+      const delayMs = Math.min(baseDelayMs * (2 ** (attempt - 1)), 8000);
+      console.warn(`Transient GitHub API transport failure for ${url}; retry ${attempt}/${maxAttempts} after ${delayMs}ms.`);
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError || new Error(`GitHub API request failed for ${url}`);
 }
 
 async function fetchChangedFiles(repository, pullNumber, token) {
