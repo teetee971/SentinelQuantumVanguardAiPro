@@ -172,7 +172,7 @@ assert_modem_call_absent 5550197 probe.txt`;
 });
 
 
-test('incoming answer stays Sentinel-owned while API 37 bridges synthetic transport only after Telecom ANSWERED', () => {
+test('incoming answer stays Sentinel-owned while API 37 synchronizes transport inside the causal Telecom accept window', () => {
   const bridge = extractShellFunction(
     'start_api37_incoming_answer_transport_bridge',
     'wait_api37_incoming_answer_transport_bridge'
@@ -185,20 +185,25 @@ test('incoming answer stays Sentinel-owned while API 37 bridges synthetic transp
   assert.doesNotMatch(bridge, /adb emu gsm accept/, 'the shell must not race Telecom with a second adb modem command');
 
   const answerRequest = answerBridgeHelper.indexOf('if not answer_requested and ANSWER_REQUEST_MARKER in line:');
-  const answeredMarker = answerBridgeHelper.indexOf(
-    'if answer_requested and not answered and ANSWERED_MARKER in line:',
+  const acceptRequest = answerBridgeHelper.indexOf(
+    'if answer_requested and not accept_requested and REQUEST_ACCEPT_MARKER in line:',
     answerRequest
   );
-  const modemAccept = answerBridgeHelper.indexOf('console.sendall', answeredMarker);
+  const modemAccept = answerBridgeHelper.indexOf('console.sendall', acceptRequest);
+  const answeredMarker = answerBridgeHelper.indexOf(
+    'if synchronized and not answered and ANSWERED_MARKER in line:',
+    modemAccept
+  );
   const activeMarker = answerBridgeHelper.indexOf(
     'if synchronized and answered and not active and ACTIVE_MARKER in line:',
-    modemAccept
+    answeredMarker
   );
 
   assert.ok(answerRequest >= 0, 'the helper must first observe Sentinel-owned Telecom answer intent');
-  assert.ok(answeredMarker > answerRequest, 'transport synchronization must wait for causal Telecom ANSWERED');
-  assert.ok(modemAccept > answeredMarker, 'emulator console gsm accept must occur only after Telecom ANSWERED');
-  assert.ok(activeMarker > modemAccept, 'a later Telecom ACTIVE transition must remain mandatory');
+  assert.ok(acceptRequest > answerRequest, 'modem synchronization must wait for causal Telecom REQUEST_ACCEPT');
+  assert.ok(modemAccept > acceptRequest, 'emulator console gsm accept must occur only after REQUEST_ACCEPT');
+  assert.ok(answeredMarker > modemAccept, 'Telecom ANSWERED must be observed after transport synchronization');
+  assert.ok(activeMarker > answeredMarker, 'a later Telecom ACTIVE transition must remain mandatory');
 
   const ready = flow.indexOf('wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"');
   const openUi = flow.indexOf('open_incoming_call_notification', ready);

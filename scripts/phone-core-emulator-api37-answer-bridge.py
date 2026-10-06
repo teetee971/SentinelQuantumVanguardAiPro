@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Synchronize Android 17 emulator GSM transport after a real Telecom answer request.
+"""Synchronize Android 17 emulator GSM transport inside a real Telecom answer request.
 
 This helper is host-only qualification infrastructure. It keeps the emulator console
 connection open before the UI tap, observes Telecom's causal answer-transaction marker,
-then waits for that same flow to enter ANSWERED before sending the synthetic modem accept
-command without paying a second adb startup cost. It still requires a later Telecom ACTIVE
-transition; the shell harness separately requires Sentinel's private INCALL_ACTIVE evidence.
+then waits for Telecom's REQUEST_ACCEPT event before asking the synthetic modem to accept
+the same incoming call. This places transport synchronization after Sentinel's answer action
+has been accepted by Telecom but before the telephony connection is expected to settle.
+A later Telecom ANSWERED -> ACTIVE transition remains mandatory; the shell harness separately
+requires Sentinel's private INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ import time
 ANSWER_REQUEST_MARKER = (
     "CallSequencingController: answerCall: Beginning call sequencing transaction for answering incoming call."
 )
+REQUEST_ACCEPT_MARKER = "REQUEST_ACCEPT"
 ANSWERED_MARKER = "CallsManager: setCallState RINGING(RINGING) -> ANSWERED"
 ACTIVE_MARKER = "CallsManager: setCallState ANSWERED(ANSWERED) -> ACTIVE"
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
@@ -126,8 +129,9 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
         selector.register(logcat.stdout, selectors.EVENT_READ)
         deadline = time.monotonic() + timeout_s
         answer_requested = False
-        answered = False
+        accept_requested = False
         synchronized = False
+        answered = False
         active = False
         try:
             while time.monotonic() < deadline:
@@ -145,13 +149,15 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                         append_line(evidence, line)
                         answer_requested = True
                         continue
-                    # Android 17 can re-materialize an already-accepted modem call as a new
-                    # unknown Telecom call if gsm accept is issued at answer-transaction start.
-                    # Wait until Telecom has committed the app-owned call to ANSWERED, then use
-                    # the already-open console socket to advance only that transport window.
-                    if answer_requested and not answered and ANSWERED_MARKER in line:
+
+                    # API 37 evidence established two unsafe windows for the synthetic modem:
+                    # - synchronizing at answerCall start can disconnect TC@1 and create an unknown TC@2;
+                    # - synchronizing after Telecom has already committed ANSWERED can drive TC@1 to HOLDING.
+                    # REQUEST_ACCEPT sits between those windows: Telecom has causally accepted Sentinel's
+                    # Call.answer() request, but the telephony connection has not yet settled its radio state.
+                    if answer_requested and not accept_requested and REQUEST_ACCEPT_MARKER in line:
                         append_line(evidence, line)
-                        answered = True
+                        accept_requested = True
                         console.sendall(f"gsm accept {number}\n".encode("utf-8"))
                         response = recv_until(console, ("OK", "KO"), 1.0)
                         append_line(
@@ -167,18 +173,26 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                         )
                         synchronized = True
                         continue
+
+                    if synchronized and not answered and ANSWERED_MARKER in line:
+                        append_line(evidence, line)
+                        answered = True
+                        continue
+
                     if synchronized and answered and not active and ACTIVE_MARKER in line:
                         append_line(evidence, line)
                         active = True
-                    if answer_requested and answered and synchronized and active:
+                    if answer_requested and accept_requested and synchronized and answered and active:
                         return
             missing = []
             if not answer_requested:
                 missing.append("answer_request")
-            if not answered:
-                missing.append("answered")
+            if not accept_requested:
+                missing.append("request_accept")
             if not synchronized:
                 missing.append("transport_sync")
+            if not answered:
+                missing.append("answered")
             if not active:
                 missing.append("active")
             raise RuntimeError("missing Telecom bridge evidence: " + ",".join(missing))
