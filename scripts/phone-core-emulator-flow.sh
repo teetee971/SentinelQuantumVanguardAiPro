@@ -258,7 +258,10 @@ adb emu gsm accept "$FLOW_NUMBER"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
 capture 03-incoming-active-evidence
 adb emu gsm cancel "$FLOW_NUMBER"
-sleep 1
+# Do not start the outgoing probe until Telecom has published the end of the incoming session.
+# A fixed sleep can race call teardown and make isOutgoingCallPermitted() legitimately return false.
+wait_text "Appel terminé"
+capture 04-ended-call
 
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
