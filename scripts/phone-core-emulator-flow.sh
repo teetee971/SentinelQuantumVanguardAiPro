@@ -142,31 +142,20 @@ start_api37_incoming_answer_transport_bridge() {
     return 0
   fi
 
-  # Android 17's synthetic GSM transport can disconnect an answered emulator call before its modem
-  # state follows Telecom to ACTIVE. The bridge is deliberately host-only and fail-closed: it waits
-  # for Telecom's RINGING -> ANSWERED transition, which is emitted only after Sentinel submitted
-  # Call.answer(), before asking the emulator modem to synchronize. The independent private-timeline
-  # INCALL_ACTIVE assertion below remains the application-level success oracle. This is emulator
-  # qualification evidence only and must never be presented as physical-device certification.
+  # Android 17 can drop the synthetic incoming GSM leg within only a few milliseconds after
+  # Telecom begins answering. Paying the startup cost of a second `adb emu` command after ANSWERED
+  # is therefore nondeterministic. Arm a host-only helper before the tap: it pre-authenticates a
+  # local emulator-console socket, waits for Telecom's causal answer-transaction marker (emitted
+  # only after Sentinel requested Call.answer()), synchronizes the synthetic modem immediately,
+  # then requires Telecom ANSWERED -> ACTIVE. The independent private INCALL_ACTIVE assertion below
+  # remains mandatory. This never runs below API 37 and never accepts a non-emulator adb target.
   : > "$evidence"
   : > "$marker_file"
-  (
-    local marker_status=0
-    set +e
-    set +o pipefail
-    timeout 5s adb logcat -v brief -T 1 2>>"$evidence" \
-      | grep -m1 -F 'CallsManager: setCallState RINGING(RINGING) -> ANSWERED' > "$marker_file"
-    marker_status=$?
-    set -o pipefail
-    set -e
-    if [[ "$marker_status" -ne 0 || ! -s "$marker_file" ]]; then
-      printf 'telecom_answer_marker_missing status=%s\n' "$marker_status" >> "$evidence"
-      return 1
-    fi
-    cat "$marker_file" >> "$evidence"
-    printf 'transport_sync=adb_emu_gsm_accept api=%s number=%s\n' "$FLOW_API" "$FLOW_NUMBER" >> "$evidence"
-    adb emu gsm accept "$FLOW_NUMBER" >> "$evidence" 2>&1
-  ) &
+  python3 "$FLOW_SCRIPT_DIR/phone-core-emulator-api37-answer-bridge.py" \
+    --number "$FLOW_NUMBER" \
+    --evidence "$evidence" \
+    --marker-file "$marker_file" \
+    --timeout 5 &
   FLOW_INCOMING_TRANSPORT_PID=$!
 }
 wait_api37_incoming_answer_transport_bridge() {
@@ -391,8 +380,9 @@ capture 02-incoming-call
 # This event is recorded by InCallService only after it receives the ringing call and posts
 # its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
-# Exercise Sentinel's answer path. On API 37 only, arm the emulator transport bridge before the tap;
-# the bridge itself remains blocked until Telecom proves Sentinel's Call.answer() reached ANSWERED.
+# Exercise Sentinel's answer path. On API 37 only, arm the preconnected emulator-console bridge
+# before the tap. The helper waits for Telecom's causal answer transaction, synchronizes transport,
+# then requires platform ANSWERED -> ACTIVE; the private INCALL_ACTIVE oracle remains independent.
 open_incoming_call_notification
 wait_text "phone_core_answer"
 start_api37_incoming_answer_transport_bridge
