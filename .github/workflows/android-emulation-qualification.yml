@@ -29,7 +29,7 @@ jobs:
         run: node scripts/check-phone-core-emulation-gate.js
 
       - name: Test emulator evidence failure paths
-        run: node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js
+        run: node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js scripts/android-logcat-collect.test.js
 
       - name: Validate Android product truth
         run: npm run test:android-product-truth
@@ -227,11 +227,26 @@ jobs:
             EMULATOR_ACCEL_ARGS=(-accel on)
           fi
 
+          EMULATOR_VIEWPORT_ARGS=()
+          if [[ "$API_LEVEL" == "37" ]]; then
+            # WMS clamps forced dimensions relative to the initial framebuffer.
+            # The default 320x640 AVD capped the requested height at 1920 px.
+            EMULATOR_VIEWPORT_ARGS=(-skin 1440x3120)
+            python3 - "$HOME/.android/avd/$AVD_NAME.avd/config.ini" <<'PYDENSITY'
+          from pathlib import Path
+          import sys
+          path = Path(sys.argv[1])
+          lines = [line for line in path.read_text().splitlines() if not line.startswith('hw.lcd.density=')]
+          path.write_text('\n'.join(lines + ['hw.lcd.density=480']) + '\n')
+          PYDENSITY
+          fi
+
           "$ANDROID_HOME/emulator/emulator" \
             -avd "$AVD_NAME" \
             -no-window -no-audio -no-boot-anim -no-metrics \
             -no-snapshot-load -no-snapshot-save \
             "${EMULATOR_ACCEL_ARGS[@]}" \
+            "${EMULATOR_VIEWPORT_ARGS[@]}" \
             -gpu swiftshader_indirect \
             > "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/sentinel-emulator.pid"
@@ -281,6 +296,10 @@ jobs:
           adb shell settings put global animator_duration_scale 0
           adb shell input keyevent KEYCODE_WAKEUP
           adb shell wm dismiss-keyguard
+          if [[ "$API_LEVEL" == "37" ]]; then
+            adb shell wm size > "$RUNNER_TEMP/sentinel-initial-display.txt"
+            grep -Fxq 'Physical size: 1440x3120' "$RUNNER_TEMP/sentinel-initial-display.txt"
+          fi
 
       - name: Run connected instrumentation suite
         id: instrumentation
@@ -354,7 +373,7 @@ jobs:
           SCREENSHOT_STATUS=0
           timeout 30s adb pull "$SCREENSHOT_SOURCE" "$OUTPUT/instrumentation-screenshots-before-reset" > "$OUTPUT/instrumentation-screenshot-pull.txt" 2>&1 || SCREENSHOT_STATUS=$?
           printf '%s\n' "$SCREENSHOT_STATUS" > "$OUTPUT/instrumentation-screenshot-pull-status.txt"
-          adb logcat -d -v time > "$OUTPUT/instrumentation-logcat.txt"
+          bash ../scripts/android-logcat-collect.sh "$OUTPUT/instrumentation-logcat.txt"
           node ../scripts/android-logcat-analysis.cjs "$OUTPUT/instrumentation-logcat.txt" "$OUTPUT/instrumentation-crash-anr.json"
           test "$SCREENSHOT_STATUS" -eq 0
 
@@ -418,7 +437,26 @@ jobs:
                     grep -Eq 'mResumedActivity:.* u0 com\.android\.server\.telecom/[^[:space:]}]*ChangeDefaultDialerDialog[[:space:]}]' "$OUTPUT/$name-foreground.txt"; then
                     cp "$OUTPUT/$name-foreground.txt" "$OUTPUT/$name-role-dialog.txt"
                     adb exec-out screencap -p > "$OUTPUT/$name-role-dialog.png"
-                    adb shell input keyevent KEYCODE_BACK
+                    # Legacy Telecom's dialog ignores Back. Tap its real negative
+                    # button, bounded to the observed Telecom window; never grant
+                    # a role just to make this cold-launch gate pass.
+                    adb shell uiautomator dump --compressed /sdcard/sentinel-min-sdk-role.xml
+                    adb shell cat /sdcard/sentinel-min-sdk-role.xml > "$OUTPUT/$name-role-dialog.xml"
+                    coordinates="$(python3 - "$OUTPUT/$name-role-dialog.xml" <<'PYCANCEL'
+          import re, sys, xml.etree.ElementTree as ET
+          candidates = [n for n in ET.parse(sys.argv[1]).iter('node') if
+              n.get('package') == 'com.android.server.telecom' and n.get('resource-id') == 'android:id/button2' and
+              n.get('clickable') == 'true' and n.get('enabled') == 'true']
+          if len(candidates) != 1: raise SystemExit('Expected one Telecom cancel button')
+          bounds = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', candidates[0].get('bounds', ''))
+          if not bounds: raise SystemExit('Invalid Telecom button bounds')
+          x1, y1, x2, y2 = map(int, bounds.groups())
+          if x2 <= x1 or y2 <= y1: raise SystemExit('Empty Telecom button')
+          print((x1+x2)//2, (y1+y2)//2)
+          PYCANCEL
+                    )"
+                    read -r cancel_x cancel_y <<< "$coordinates"
+                    adb shell input tap "$cancel_x" "$cancel_y"
                     role_dialog_dismissed=1
                   fi
                 fi
@@ -431,13 +469,13 @@ jobs:
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1
             wait_min_sdk_foreground min-sdk-first
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png"
-            adb logcat -d -v time > "$OUTPUT/min-sdk-first-logcat.txt"
+            bash ../scripts/android-logcat-collect.sh "$OUTPUT/min-sdk-first-logcat.txt"
             node ../scripts/android-logcat-analysis.cjs "$OUTPUT/min-sdk-first-logcat.txt" "$OUTPUT/min-sdk-first-crash-anr.json"
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
             wait_min_sdk_foreground min-sdk-second
             adb exec-out screencap -p > "$OUTPUT/02-min-sdk-second-launch.png"
-            adb logcat -d -v time > "$OUTPUT/min-sdk-second-logcat.txt"
+            bash ../scripts/android-logcat-collect.sh "$OUTPUT/min-sdk-second-logcat.txt"
             node ../scripts/android-logcat-analysis.cjs "$OUTPUT/min-sdk-second-logcat.txt" "$OUTPUT/min-sdk-second-crash-anr.json"
           fi
 
@@ -462,7 +500,7 @@ jobs:
           if [[ "$API_LEVEL" -ge 29 ]]; then SCREENSHOT_SOURCE=/sdcard/Pictures/SentinelQualification;
           else SCREENSHOT_SOURCE=/sdcard/Android/data/com.sentinel.quantum/files/qualification; fi
           timeout 30s adb pull "$SCREENSHOT_SOURCE" "$OUTPUT/instrumentation-screenshots" > "$OUTPUT/screenshot-pull.txt" 2>&1 || true
-          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
+          bash ../scripts/android-logcat-collect.sh "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
           adb shell getprop > "$OUTPUT/emulator-properties.txt" 2>&1 || true
           adb shell wm size > "$OUTPUT/emulator-size.txt" 2>&1 || true

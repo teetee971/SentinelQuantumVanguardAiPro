@@ -78,6 +78,25 @@ that observation, cancels only that observed dialog once, then requires the
 activation activity to resume. It does not grant the role or accept a system
 dialog as the application's foreground proof.
 
+Run 37482587606 revealed a separate collection failure: the first Android 16
+runtime logcat read exited 255 and its 413,696-byte output ended mid-line during
+boot records. The transport/root cause is not proven by that incomplete buffer.
+The shared collector now retains stdout, stderr, exit code and analysis for each
+read, with at most three retries for aborted streams/watchdog expiry. It never
+clears logs or replays application actions. A product failure observed even in
+an aborted partial read fails immediately and cannot be replaced by a later
+successful read. Empty reads and persistent/non-transient failures remain red.
+
+The completed qualification run 37482587731 passed API 29, including role
+revocations/AppOp denial and observed screening durations 6,244/10,169/608 µs.
+It stayed red on API 24: the legacy Telecom dialog ignored Back, so the harness
+now uses its observed, enabled negative button and requires actual resumption.
+API 36 also exposed an aborted logcat read. API 37 correctly rejected a viewport
+of 1080×1920 when 1080×2400 was requested: WMS clamped the height relative to the
+initial 320×640 framebuffer. Its AVD now starts with the emulator's supported
+1440×3120 framebuffer and 480 dpi, independently checked after boot. Requested
+overrides and captured PNG dimensions remain exact blocking assertions.
+
 ## Voice and physical boundary
 
 VoiceStudioActivity records and plays a private local preview. LiveKitVoiceAudioProcessor
@@ -98,7 +117,7 @@ The global `passed` flag remains false until complete current-commit evidence ex
 
 ```sh
 node scripts/check-phone-core-emulation-gate.js
-node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js
+node --test scripts/phone-core-emulator-evidence.test.js scripts/android-logcat-analysis.test.js scripts/android-logcat-collect.test.js
 npm run test:android-product-truth
 cd native-android-app
 ./gradlew :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:lintDebug :wearable-contract:test :wearable-security:test --no-daemon

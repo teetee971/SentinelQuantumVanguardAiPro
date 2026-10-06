@@ -17,7 +17,7 @@ ROLE_REVOCATION_PROVEN=false
 capture() {
   adb exec-out screencap -p > "$OUT_DIR/$1.png"
   test -s "$OUT_DIR/$1.png"
-  adb logcat -d -v time > "$OUT_DIR/$1-logcat.txt"
+  bash "$SCRIPT_DIR/android-logcat-collect.sh" "$OUT_DIR/$1-logcat.txt"
   node "$SCRIPT_DIR/android-logcat-analysis.cjs" "$OUT_DIR/$1-logcat.txt" "$OUT_DIR/$1-crash-anr.json"
 }
 

@@ -317,7 +317,7 @@ PYPREFIX
 capture() {
   adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"
   test -s "$FLOW_OUTPUT_DIR/$1.png"
-  adb logcat -d -v time > "$FLOW_OUTPUT_DIR/$1-logcat.txt"
+  bash "$FLOW_SCRIPT_DIR/android-logcat-collect.sh" "$FLOW_OUTPUT_DIR/$1-logcat.txt"
   node "$FLOW_SCRIPT_DIR/android-logcat-analysis.cjs" "$FLOW_OUTPUT_DIR/$1-logcat.txt" "$FLOW_OUTPUT_DIR/$1-crash-anr.json"
 }
 

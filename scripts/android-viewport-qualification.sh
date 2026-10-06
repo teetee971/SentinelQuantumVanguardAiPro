@@ -21,17 +21,24 @@ for profile in standard s24plus-equivalent; do
   adb shell wm dismiss-keyguard
   adb shell wm size > "$OUT/viewport/$profile-size.txt"
   adb shell wm density > "$OUT/viewport/$profile-density.txt"
-  grep -Fxq "Override size: $size" "$OUT/viewport/$profile-size.txt"
-  grep -Fxq "Override density: $density" "$OUT/viewport/$profile-density.txt"
+  if ! grep -Fxq "Override size: $size" "$OUT/viewport/$profile-size.txt" ||
+    ! grep -Fxq "Override density: $density" "$OUT/viewport/$profile-density.txt"; then
+    echo "Viewport $profile did not reach requested $size / $density dpi."
+    cat "$OUT/viewport/$profile-size.txt" "$OUT/viewport/$profile-density.txt"
+    exit 1
+  fi
   timeout --signal=INT --kill-after=10s 180s adb shell am instrument -w -r \
     -e class com.sentinel.quantum.ui.MainNavigationQualificationTest \
     -e qualificationProfile "$profile" \
     com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner \
     > "$OUT/viewport/$profile-tests.txt" 2>&1
-  adb logcat -d -v time > "$OUT/viewport/$profile-logcat.txt"
+  bash ../scripts/android-logcat-collect.sh "$OUT/viewport/$profile-logcat.txt"
   node ../scripts/android-logcat-analysis.cjs "$OUT/viewport/$profile-logcat.txt" "$OUT/viewport/$profile-crash-anr.json"
   # am instrument often exits 0 even for assertion failures. Require all three methods.
-  grep -Eq '^OK \(3 tests\)' "$OUT/viewport/$profile-tests.txt"
+  if ! grep -Eq '^OK \(3 tests\)' "$OUT/viewport/$profile-tests.txt"; then
+    cat "$OUT/viewport/$profile-tests.txt"
+    exit 1
+  fi
   if grep -Eq '^FAILURES!!!|INSTRUMENTATION_FAILED|Process crashed|INSTRUMENTATION_STATUS_CODE: -[1234]' "$OUT/viewport/$profile-tests.txt"; then
     cat "$OUT/viewport/$profile-tests.txt"
     exit 1

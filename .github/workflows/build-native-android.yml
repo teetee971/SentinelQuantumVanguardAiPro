@@ -415,7 +415,22 @@ jobs:
             -gpu swiftshader_indirect \
             > "$RUNNER_TEMP/sentinel-emulator.log" 2>&1 &
           EMULATOR_PID=$!
-          trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+          cleanup_phone_core() {
+            local status=$? device_status=0 properties_status=0
+            trap - EXIT
+            local output="$RUNNER_TEMP/phone-core-ui"
+            mkdir -p "$output"
+            timeout 10s adb devices -l > "$output/final-adb-devices.txt" 2>&1 || device_status=$?
+            timeout 10s adb shell getprop > "$output/final-emulator-properties.txt" 2>&1 || properties_status=$?
+            printf '%s\n' "$device_status" > "$output/final-adb-devices.status"
+            printf '%s\n' "$properties_status" > "$output/final-emulator-properties.status"
+            if bash ../scripts/android-logcat-collect.sh "$output/final-logcat.txt"; then
+              node ../scripts/android-logcat-analysis.cjs "$output/final-logcat.txt" "$output/final-crash-anr.json" || status=1
+            else status=1; fi
+            kill "$EMULATOR_PID" >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup_phone_core EXIT
 
           DEVICE_READY=0
           for _ in $(seq 1 90); do
@@ -457,6 +472,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: PhoneCore-Android16-UI-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/phone-core-ui/
+          path: |
+            ${{ runner.temp }}/phone-core-ui/
+            ${{ runner.temp }}/sentinel-emulator.log
           if-no-files-found: warn
           retention-days: 14
