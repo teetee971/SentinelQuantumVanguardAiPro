@@ -69,7 +69,8 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             subscriptionId = subscriptionId
         )
 
-        when (IncomingSmsDeliveryStore.persist(appContext.filesDir, record)) {
+        val persistState = IncomingSmsDeliveryStore.persist(appContext.filesDir, record)
+        when (persistState) {
             IncomingSmsDeliveryStore.PersistState.CREATED,
             IncomingSmsDeliveryStore.PersistState.EXISTING -> {
                 val scheduled = runCatching {
@@ -77,9 +78,17 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                     true
                 }.getOrDefault(false)
                 if (!scheduled) {
+                    // For an EXISTING replay, retain the original durable receive timestamp. Using
+                    // this broadcast's new wall-clock timestamp would defeat exact provider replay
+                    // lookup and could duplicate a message after a previous insert/cleanup crash.
+                    val projectionRecord = if (persistState == IncomingSmsDeliveryStore.PersistState.EXISTING) {
+                        IncomingSmsDeliveryStore.read(appContext.filesDir, id) ?: record
+                    } else {
+                        record
+                    }
                     val projected = IncomingSmsDeliveryWorker.projectImmediately(
                         context = appContext,
-                        record = record,
+                        record = projectionRecord,
                         deleteStageOnSuccess = true
                     )
                     if (!projected) logCaptureFailure(appContext)
