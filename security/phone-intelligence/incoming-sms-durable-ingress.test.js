@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+
+const receiver = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt',
+  'utf8'
+);
+const store = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingSmsDeliveryStore.kt',
+  'utf8'
+);
+const worker = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingSmsDeliveryWorker.kt',
+  'utf8'
+);
+const recovery = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingSmsRecoveryWorker.kt',
+  'utf8'
+);
+const application = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelApplication.kt',
+  'utf8'
+);
+
+test('SMS_DELIVER captures durable state instead of queueing PendingResult in memory', () => {
+  assert.match(receiver, /IncomingSmsDeliveryStore\.persist\(appContext\.filesDir, record\)/);
+  assert.match(receiver, /IncomingSmsDeliveryWorker\.schedule\(appContext, id\)/);
+  assert.match(receiver, /IncomingSmsDeliveryWorker\.projectImmediately/);
+  assert.doesNotMatch(receiver, /Executors\.newSingleThreadExecutor/);
+  assert.doesNotMatch(receiver, /goAsync\(\)/);
+});
+
+test('SMS durable spool is bounded, fsynced and idempotency-keyed', () => {
+  assert.match(store, /MAX_PENDING_RECORDS = 512/);
+  assert.match(store, /MAX_RECORD_BYTES = 64L \* 1024L/);
+  assert.match(store, /stream\.fd\.sync\(\)/);
+  assert.match(store, /MessageDigest\.getInstance\("SHA-256"\)/);
+  assert.match(store, /PersistState\.CAPACITY_EXCEEDED/);
+  assert.match(store, /if \(target\.isFile\) return PersistState\.EXISTING/);
+});
+
+test('provider projection is role-gated, replay-safe and WorkManager-backed', () => {
+  assert.match(worker, /readSmsRoleStateFailClosed\(\)/);
+  assert.match(worker, /ProviderLookup\.FOUND/);
+  assert.match(worker, /ProviderLookup\.UNKNOWN -> return Projection\.RETRY/);
+  assert.match(worker, /enqueueUniqueWork/);
+  assert.match(worker, /ExistingWorkPolicy\.KEEP/);
+  assert.match(worker, /BackoffPolicy\.EXPONENTIAL/);
+  assert.match(worker, /Telephony\.Sms\.Inbox\.CONTENT_URI/);
+});
+
+test('startup recovery itself runs off the Application main thread', () => {
+  assert.match(application, /IncomingSmsRecoveryWorker\.schedule\(this\)/);
+  assert.doesNotMatch(application, /IncomingSmsDeliveryStore\.pendingIds/);
+  assert.match(recovery, /IncomingSmsDeliveryStore\.pendingIds\(applicationContext\.filesDir\)/);
+  assert.match(recovery, /OneTimeWorkRequestBuilder<IncomingSmsRecoveryWorker>/);
+});
