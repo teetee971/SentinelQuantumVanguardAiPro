@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
 import android.telephony.SubscriptionManager
@@ -44,6 +45,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.ui.design.phoneCoreTestId
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -56,6 +59,7 @@ import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallLineSelectionPolicy
+import com.sentinel.quantum.security.OutgoingCallPermissionPolicy
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallHistoryInsights
 import com.sentinel.quantum.security.CallHistoryPresentationPolicy
@@ -68,6 +72,8 @@ import com.sentinel.quantum.ui.design.PhoneCoreUiState
 import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.security.EmergencyCallGuard
+import com.sentinel.quantum.security.EmergencyCallHandoff
+import com.sentinel.quantum.security.EmergencyNumberOracle
 import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
@@ -183,6 +189,20 @@ class SentinelDialerActivity : ComponentActivity() {
         }
 
     private fun requestDialerRole(number: String) {
+        val safeNumber = sanitizeDialNumber(number)
+        if (safeNumber != null && EmergencyNumberOracle.isEmergency(this, safeNumber)) {
+            pendingNumber = null
+            assistedConfirmationNumber = null
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
+            val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+            callActionStatus = if (handedOff) {
+                "Appel d’urgence transféré au téléphone système."
+            } else {
+                "Android n’a pas pu ouvrir le téléphone système pour cet appel d’urgence."
+            }
+            return
+        }
         pendingNumber = number
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val request = AndroidRoleReadPolicy.readOrNull {
@@ -276,6 +296,24 @@ class SentinelDialerActivity : ComponentActivity() {
         }
         if (handles.isEmpty()) return CallLineLoadResult.Available(emptyList())
 
+        // Only framework-owned PSTN/SIM accounts may appear as selectable carrier lines.
+        // Android reserves CAPABILITY_SIM_SUBSCRIPTION for the built-in telephony stack.
+        val frameworkSimHandles = buildList {
+            for (handle in handles) {
+                val account = try {
+                    telecom.getPhoneAccount(handle)
+                } catch (_: SecurityException) {
+                    return CallLineLoadResult.LookupFailed
+                } catch (_: RuntimeException) {
+                    return CallLineLoadResult.LookupFailed
+                }
+                if (account?.hasCapabilities(PhoneAccount.CAPABILITY_SIM_SUBSCRIPTION) == true) {
+                    add(handle)
+                }
+            }
+        }
+        if (frameworkSimHandles.isEmpty()) return CallLineLoadResult.Available(emptyList())
+
         val subscriptionLabels: Map<Int, String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val telephony = getSystemService(TelephonyManager::class.java)
             val subscriptions = try {
@@ -286,7 +324,7 @@ class SentinelDialerActivity : ComponentActivity() {
             } catch (_: RuntimeException) {
                 emptyMap()
             }
-            handles.mapNotNull { handle ->
+            frameworkSimHandles.mapNotNull { handle ->
                 val subId = runCatching { telephony.getSubscriptionId(handle) }
                     .getOrDefault(SubscriptionManager.INVALID_SUBSCRIPTION_ID)
                 val info = subscriptions[subId] ?: return@mapNotNull null
@@ -302,7 +340,7 @@ class SentinelDialerActivity : ComponentActivity() {
             getSystemService(TelephonyManager::class.java)
         } else null
 
-        val lines = handles.mapIndexed { index, handle ->
+        val lines = frameworkSimHandles.mapIndexed { index, handle ->
             val subId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 runCatching { telephony?.getSubscriptionId(handle) }
                     .getOrNull()
@@ -326,8 +364,35 @@ class SentinelDialerActivity : ComponentActivity() {
         if (assistedConfirmationNumber != null && assistedConfirmationNumber != safeNumber) {
             assistedConfirmationNumber = null
         }
+        val platformConfirmsEmergency = EmergencyNumberOracle.isEmergency(this, safeNumber)
+        if (platformConfirmsEmergency && !holdsDialerRole()) {
+            assistedConfirmationNumber = null
+            assistedConfirmationBypassNumber = null
+            assistedConfirmationBypassExpiresAtMs = 0L
+            val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+            callActionStatus = if (handedOff) {
+                "Appel d’urgence transféré au téléphone système."
+            } else {
+                "Android n’a pas pu ouvrir le téléphone système pour cet appel d’urgence."
+            }
+            return
+        }
         if (!holdsDialerRole()) {
             callActionStatus = "Rôle Téléphone requis. Aucun appel n’a été lancé."
+            return
+        }
+        if (
+            platformConfirmsEmergency &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            val handedOff = EmergencyCallHandoff.openSystemDialer(this, safeNumber)
+            if (handedOff) {
+                callActionStatus = "Appel d’urgence transféré au téléphone système."
+            } else {
+                pendingNumber = safeNumber
+                callActionStatus = "Autorisation Android d’appel requise pour transmettre cet appel d’urgence."
+                callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            }
             return
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
@@ -337,11 +402,6 @@ class SentinelDialerActivity : ComponentActivity() {
             return
         }
         val telecom = getSystemService(TelecomManager::class.java)
-        val platformConfirmsEmergency = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            runCatching {
-                getSystemService(TelephonyManager::class.java).isEmergencyNumber(safeNumber)
-            }.getOrDefault(false)
-        } else false
         if (!EmergencyCallGuard.requiresExplicitPhoneAccountSelection(platformConfirmsEmergency)) {
             assistedConfirmationNumber = null
             assistedConfirmationBypassNumber = null
@@ -429,9 +489,25 @@ class SentinelDialerActivity : ComponentActivity() {
         }
         selectedCallAccount = selectedLine.handle
 
-        val outgoingPermissionHint = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            runCatching { telecom.isOutgoingCallPermitted(selectedLine.handle) }.getOrNull()
-        } else null
+        // isOutgoingCallPermitted() is an own/self-managed PhoneAccount oracle. A default
+        // dialer cannot use it to pre-authorize a framework SIM account. Re-read the selected
+        // PhoneAccount and fail closed unless Android still marks it as a SIM subscription.
+        val selectedAccount = try {
+            telecom.getPhoneAccount(selectedLine.handle)
+        } catch (_: SecurityException) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        }
+        val accountAuthority = OutgoingCallPermissionPolicy.classify(
+            frameworkSimCapability = selectedAccount
+                ?.hasCapabilities(PhoneAccount.CAPABILITY_SIM_SUBSCRIPTION) == true
+        )
+        if (!OutgoingCallPermissionPolicy.mayPlacePstnCall(accountAuthority)) {
+            callActionStatus =
+                "Android n’a pas pu confirmer que la ligne sélectionnée est une SIM système active. Aucun appel n’a été lancé."
+            return
+        }
         val extras = Bundle().apply {
             putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, selectedLine.handle)
         }
@@ -443,8 +519,7 @@ class SentinelDialerActivity : ComponentActivity() {
         callActionStatus = if (failure == null) {
             "Demande d’appel transmise à Android via " + selectedLine.label + "."
         } else {
-            val hint = if (outgoingPermissionHint == false) " La ligne était signalée indisponible par Android." else ""
-            "Android n’a pas pu démarrer l’appel sur " + selectedLine.label + "." + hint
+            "Android n’a pas pu démarrer l’appel sur " + selectedLine.label + "."
         }
     }
 
@@ -870,11 +945,11 @@ class SentinelDialerActivity : ComponentActivity() {
                                     Button(
                                         onClick = { if (holdsDialerRole()) placeCallIfReady(number) else requestDialerRole(number) },
                                         enabled = sanitizeDialNumber(number) != null,
-                                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                                        modifier = Modifier.weight(1f).heightIn(min = 56.dp).phoneCoreTestId("phone_core_call")
                                     ) {
                                         Icon(Icons.Default.Phone, null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Appeler")
+                                        Text(stringResource(R.string.phone_core_call))
                                     }
                                     FilledTonalIconButton(
                                         onClick = {
@@ -926,9 +1001,10 @@ class SentinelDialerActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth()
                         )
                         ScrollableTabRow(selectedTabIndex = phoneTab, edgePadding = 0.dp) {
-                            listOf("Clavier", "Récents", "Répertoire", "Réglages").forEachIndexed { index, label ->
+                            listOf(stringResource(R.string.phone_core_keypad), "Récents", "Répertoire", "Réglages").forEachIndexed { index, label ->
                                 Tab(
                                     selected = phoneTab == index,
+                                    modifier = Modifier.phoneCoreTestId("phone_core_tab_$index"),
                                     onClick = {
                                         phoneTab = index
                                         if (index == 1) {

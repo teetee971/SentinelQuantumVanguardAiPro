@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   ANDROID_WORKFLOWS,
+  DEFAULT_GATE_TIMEOUT_MS,
+  EMULATION_MAX_CRITICAL_PATH_MS,
   SECURITY_FUZZ_WORKFLOWS,
   UNIVERSAL_WORKFLOWS,
   WEB_WORKFLOWS,
@@ -26,11 +29,12 @@ test('docs-only changes require universal gates without unrelated Android or web
   expectExcludes(required, SECURITY_FUZZ_WORKFLOWS);
 });
 
-test('Android-only changes require APK, AAB and instrumentation', () => {
+test('Android-only changes require Phone Core emulation, APK, AAB and legacy instrumentation', () => {
   const required = requiredWorkflowsForPaths([
     'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt'
   ]);
   expectIncludes(required, [...UNIVERSAL_WORKFLOWS, ...ANDROID_WORKFLOWS]);
+  assert.ok(required.includes('android-emulation-qualification.yml'));
   expectExcludes(required, WEB_WORKFLOWS);
 });
 
@@ -63,8 +67,45 @@ test('workflow changes for Android or web require the affected gate family', () 
     ANDROID_WORKFLOWS
   );
   expectIncludes(
+    requiredWorkflowsForPaths(['.github/workflows/android-emulation-qualification.yml']),
+    ANDROID_WORKFLOWS
+  );
+  expectIncludes(
     requiredWorkflowsForPaths(['.github/workflows/lighthouse-preproduction.yml']),
     WEB_WORKFLOWS
+  );
+});
+
+test('production gate timeout exceeds the longest dependent emulator critical path', () => {
+  assert.ok(
+    DEFAULT_GATE_TIMEOUT_MS > EMULATION_MAX_CRITICAL_PATH_MS,
+    'merge gate timeout must exceed 45m host + 60m dependent emulator matrix'
+  );
+});
+
+test('production merge workflow job outlives its internal waiter', () => {
+  const workflow = readFileSync('.github/workflows/production-merge-gate.yml', 'utf8');
+  const jobTimeoutMinutes = Number(workflow.match(/timeout-minutes:\s*(\d+)/)?.[1] ?? 0);
+  assert.ok(
+    jobTimeoutMinutes * 60 * 1000 > DEFAULT_GATE_TIMEOUT_MS + (5 * 60 * 1000),
+    'Production Merge Gate job must keep headroom beyond its internal polling deadline'
+  );
+});
+
+test('required CodeQL Android waiter outlives the production merge gate', () => {
+  const workflow = readFileSync('.github/workflows/codeql-analysis.yml', 'utf8');
+  const androidJob = workflow.match(/analyze-android:[\s\S]*$/)?.[0] ?? '';
+  const jobTimeoutMinutes = Number(androidJob.match(/timeout-minutes:\s*(\d+)/)?.[1] ?? 0);
+  const waiterDeadlineSeconds = Number(androidJob.match(/DEADLINE=\$\(\(SECONDS \+ (\d+)\)\)/)?.[1] ?? 0);
+
+  assert.match(androidJob, /"production-merge-gate\.yml"/);
+  assert.ok(
+    waiterDeadlineSeconds * 1000 > DEFAULT_GATE_TIMEOUT_MS,
+    'required CodeQL waiter must outlive Production Merge Gate'
+  );
+  assert.ok(
+    jobTimeoutMinutes * 60 > waiterDeadlineSeconds + (20 * 60),
+    'required CodeQL job needs headroom for build/extraction before its waiter'
   );
 });
 

@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
+import android.telephony.SubscriptionManager
 import java.util.concurrent.Executors
 
 /**
@@ -45,6 +46,9 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
     }
 
     private fun processDelivery(context: Context, intent: Intent) {
+        // The default handler may change while this broadcast waits for the serial worker.
+        // Re-read Android at the asynchronous processing boundary instead of retaining onReceive's truth.
+        if (!holdsSmsRole(context)) return
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty() || messages.size > MAX_SMS_PARTS) {
             LocalLogger(context).log(
@@ -81,8 +85,11 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_INBOX)
             put(Telephony.Sms.READ, 0)
             put(Telephony.Sms.SEEN, 0)
-            val subscriptionId = intent.getIntExtra("subscription", -1)
-            if (subscriptionId >= 0) put(Telephony.Sms.SUBSCRIPTION_ID, subscriptionId)
+            val subscriptionId = sequenceOf(
+                intent.getIntExtra(EXTRA_SUBSCRIPTION_INDEX, SubscriptionManager.INVALID_SUBSCRIPTION_ID),
+                intent.getIntExtra(EXTRA_LEGACY_SUBSCRIPTION, SubscriptionManager.INVALID_SUBSCRIPTION_ID)
+            ).firstOrNull { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID && it >= 0 }
+            subscriptionId?.let { put(Telephony.Sms.SUBSCRIPTION_ID, it) }
         }
 
         val inserted = runCatching {
@@ -153,6 +160,8 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     private companion object {
+        const val EXTRA_SUBSCRIPTION_INDEX = "android.telephony.extra.SUBSCRIPTION_INDEX"
+        const val EXTRA_LEGACY_SUBSCRIPTION = "subscription"
         val WORKER = Executors.newSingleThreadExecutor { task ->
             Thread(task, "sentinel-sms-deliver").apply { isDaemon = true }
         }

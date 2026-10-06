@@ -5,18 +5,20 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.telephony.PhoneNumberUtils
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
-import android.net.Uri
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import java.security.SecureRandom
 
 /**
  * Real SMS sending primitive for the user-selected default-SMS client.
- * It refuses to send unless Sentinel actually holds ROLE_SMS and SEND_SMS is granted.
+ * It refuses to send unless Sentinel actually holds ROLE_SMS and the effective Android
+ * authorization (runtime permission plus associated AppOp, when defined) allows the operation.
  */
 class SentinelSmsSender(private val context: Context) {
 
@@ -29,16 +31,40 @@ class SentinelSmsSender(private val context: Context) {
         val partCount: Int? = null
     )
 
+    private data class PreparedSubmission(
+        val subscriptionId: Int,
+        val manager: SmsManager,
+        val parts: ArrayList<String>
+    )
+
+    private data class PreparedCallbacks(
+        val sendToken: Int,
+        val sent: ArrayList<PendingIntent>,
+        val delivered: ArrayList<PendingIntent>
+    )
+
     fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
         val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
             return SendResult(false, "INVALID_MESSAGE")
         }
         if (!holdsSmsRole()) return SendResult(false, "SMS_ROLE_NOT_HELD")
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
             return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
         }
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) {
+            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
+        }
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
+        }
+        if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
             return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
         }
         when (emergencyNumberState(normalized)) {
@@ -49,8 +75,10 @@ class SentinelSmsSender(private val context: Context) {
             EmergencyNumberState.NOT_EMERGENCY -> Unit
         }
 
-        var providerMessageId: Long? = null
-        return try {
+        // Everything in this phase happens before Sentinel creates an OUTBOX row and before any
+        // SmsManager send call. A failure here is conclusively a preparation failure, not an
+        // unknown telephony submission outcome.
+        val prepared = try {
             val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
             val activeIds = runCatching {
                 subscriptionManager.activeSubscriptionInfoList
@@ -80,12 +108,25 @@ class SentinelSmsSender(private val context: Context) {
             }
 
             val parts = manager.divideMessage(body)
-            val persistedMessageId = SmsConversationStore(context).insertOutgoingOutbox(
-                normalized,
-                body,
-                subscriptionId
-            ) ?: return SendResult(false, "OUTGOING_PROVIDER_PERSIST_FAILED")
-            providerMessageId = persistedMessageId
+            SmsSubmissionOutcomePolicy.reasonForPartCount(parts.size)?.let { reason ->
+                return SendResult(false, reason)
+            }
+            PreparedSubmission(subscriptionId, manager, parts)
+        } catch (_: Exception) {
+            return SendResult(false, SmsSubmissionOutcomePolicy.reasonForPreparationException())
+        }
+
+        val parts = prepared.parts
+        val conversations = SmsConversationStore(context)
+        val persistedMessageId = conversations.insertOutgoingOutbox(
+            normalized,
+            body,
+            prepared.subscriptionId
+        ) ?: return SendResult(false, "OUTGOING_PROVIDER_PERSIST_FAILED")
+
+        // PendingIntent construction is still pre-submission. If it fails, the modem has not been
+        // called and the durable OUTBOX row must be repaired to FAILED rather than left as SENDING.
+        val callbacks = try {
             val sendToken = nextRequestToken()
             fun statusIntent(action: String, partIndex: Int, delivered: Boolean): PendingIntent {
                 val callbackKind = if (delivered) "delivered" else "sent"
@@ -107,36 +148,68 @@ class SentinelSmsSender(private val context: Context) {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             }
+
+            val sent = ArrayList<PendingIntent>(parts.size)
+            val delivered = ArrayList<PendingIntent>(parts.size)
+            for (partIndex in parts.indices) {
+                sent += statusIntent(ACTION_SENT, partIndex, false)
+                delivered += statusIntent(ACTION_DELIVERED, partIndex, true)
+            }
+            PreparedCallbacks(sendToken, sent, delivered)
+        } catch (_: Exception) {
+            val repaired = conversations.markOutgoingFailed(persistedMessageId)
+            return SendResult(
+                accepted = false,
+                reason = SmsSubmissionOutcomePolicy.reasonForCallbackPreparationException(repaired),
+                subscriptionId = prepared.subscriptionId,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+        }
+
+        // Only this call boundary can have an indeterminate synchronous outcome: SmsManager may
+        // throw after Android has accepted one or more segments. Keep OUTBOX/PENDING in that case;
+        // validated SENT callbacks remain the only conclusive durable transition.
+        return try {
             if (parts.size <= 1) {
-                manager.sendTextMessage(
-                    normalized, null, body,
-                    statusIntent(ACTION_SENT, 0, false),
-                    statusIntent(ACTION_DELIVERED, 0, true)
+                prepared.manager.sendTextMessage(
+                    normalized,
+                    null,
+                    body,
+                    callbacks.sent.first(),
+                    callbacks.delivered.first()
                 )
             } else {
-                manager.sendMultipartTextMessage(
+                prepared.manager.sendMultipartTextMessage(
                     normalized,
                     null,
                     ArrayList(parts),
-                    ArrayList(parts.indices.map { statusIntent(ACTION_SENT, it, false) }),
-                    ArrayList(parts.indices.map { statusIntent(ACTION_DELIVERED, it, true) })
+                    callbacks.sent,
+                    callbacks.delivered
                 )
             }
             SendResult(
                 accepted = true,
                 reason = "SUBMITTED_TO_ANDROID_TELEPHONY",
-                subscriptionId = subscriptionId,
-                sendToken = sendToken,
+                subscriptionId = prepared.subscriptionId,
+                sendToken = callbacks.sendToken,
                 providerMessageId = persistedMessageId,
                 partCount = parts.size
             )
         } catch (_: Exception) {
-            // A synchronous SmsManager exception does not prove that no multipart segment crossed
-            // the telephony boundary. Keep the provider row in OUTBOX/PENDING; only validated SENT
-            // callbacks may conclusively transition the durable message to SENT or FAILED.
-            SendResult(false, SmsSubmissionOutcomePolicy.reasonForSynchronousException())
+            SendResult(
+                accepted = false,
+                reason = SmsSubmissionOutcomePolicy.reasonForSubmissionException(),
+                subscriptionId = prepared.subscriptionId,
+                sendToken = callbacks.sendToken,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
         }
     }
+
+    private fun hasEffectivePermission(permission: String): Boolean =
+        PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun sanitizeDestination(raw: String): String? {
         val value = raw.trim()

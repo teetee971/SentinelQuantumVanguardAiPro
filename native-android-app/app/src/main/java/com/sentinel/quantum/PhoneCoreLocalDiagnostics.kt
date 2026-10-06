@@ -8,10 +8,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.TelephonyManager
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
+import com.sentinel.quantum.security.SentinelMissedCallReceiver
 import com.sentinel.quantum.security.SmsNotificationHelper
 
 /**
@@ -45,6 +46,7 @@ internal object PhoneCoreLocalDiagnostics {
         val postNotificationsPermission: Boolean,
         val notificationsGloballyEnabled: Boolean,
         val callNotificationChannelEnabled: Boolean,
+        val missedCallNotificationChannelEnabled: Boolean,
         val smsNotificationChannelEnabled: Boolean,
         val fullScreenIntentAllowed: Boolean
     )
@@ -79,7 +81,7 @@ internal object PhoneCoreLocalDiagnostics {
                 }
             }
         fun granted(permission: String): Boolean =
-            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+            PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
         val callScreeningState = CallScreeningActivationPolicy.read(context)
         val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -126,6 +128,8 @@ internal object PhoneCoreLocalDiagnostics {
                 NotificationManagerCompat.from(context).areNotificationsEnabled(),
             callNotificationChannelEnabled =
                 SentinelCallNotificationHelper.isChannelEnabled(context),
+            missedCallNotificationChannelEnabled =
+                SentinelMissedCallReceiver.isChannelEnabled(context),
             smsNotificationChannelEnabled =
                 SmsNotificationHelper.isChannelEnabled(context),
             fullScreenIntentAllowed =

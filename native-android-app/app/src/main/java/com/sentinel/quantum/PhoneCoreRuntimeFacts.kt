@@ -4,15 +4,15 @@ import android.Manifest
 import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Telephony
 import android.telecom.TelecomManager
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
+import com.sentinel.quantum.security.SentinelMissedCallReceiver
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsNotificationHelper
 
@@ -29,7 +29,7 @@ internal object PhoneCoreRuntimeFacts {
         val callScreeningState = CallScreeningActivationPolicy.read(context)
         val notificationPermissionGranted =
             Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                hasEffectivePermission(context, Manifest.permission.POST_NOTIFICATIONS)
         val notificationsGloballyEnabled =
             NotificationManagerCompat.from(context).areNotificationsEnabled()
         val fullScreenIntentReady =
@@ -38,13 +38,13 @@ internal object PhoneCoreRuntimeFacts {
 
         return PhoneCoreSetupWizardStore.Facts(
             corePermissionsReady =
-                hasPermission(context, Manifest.permission.CALL_PHONE) &&
-                    hasPermission(context, Manifest.permission.READ_PHONE_STATE),
+                hasEffectivePermission(context, Manifest.permission.CALL_PHONE) &&
+                    hasEffectivePermission(context, Manifest.permission.READ_PHONE_STATE),
             dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
             dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
             callScreeningRoleHeld = callScreeningState == CallScreeningActivationPolicy.State.HELD,
             callScreeningRoleAvailable = callScreeningState != CallScreeningActivationPolicy.State.UNAVAILABLE,
-            callLogPermissionGranted = hasPermission(context, Manifest.permission.READ_CALL_LOG),
+            callLogPermissionGranted = hasEffectivePermission(context, Manifest.permission.READ_CALL_LOG),
             smsRoleHeld = smsRoleHeld,
             smsRoleAvailable = sms.smsRoleState != SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
             smsRuntimePermissionsReady = smsRoleHeld &&
@@ -53,20 +53,20 @@ internal object PhoneCoreRuntimeFacts {
                 SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED !in sms.blockers &&
                 SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED !in sms.blockers,
             mmsPermissionsReady =
-                hasPermission(context, Manifest.permission.RECEIVE_MMS) &&
-                    hasPermission(context, Manifest.permission.RECEIVE_WAP_PUSH),
+                hasEffectivePermission(context, Manifest.permission.RECEIVE_MMS) &&
+                    hasEffectivePermission(context, Manifest.permission.RECEIVE_WAP_PUSH),
             notificationChannelsReady =
                 notificationPermissionGranted &&
                     notificationsGloballyEnabled &&
                     SentinelCallNotificationHelper.isChannelEnabled(context) &&
+                    SentinelMissedCallReceiver.isChannelEnabled(context) &&
                     SmsNotificationHelper.isChannelEnabled(context) &&
                     fullScreenIntentReady
         )
     }
 
     fun hasOperationalCarrierEnvironment(context: Context): Boolean {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
-            PackageManager.PERMISSION_GRANTED) return false
+        if (!hasEffectivePermission(context, Manifest.permission.READ_PHONE_STATE)) return false
         return try {
             context.getSystemService(TelecomManager::class.java)
                 ?.callCapablePhoneAccounts.orEmpty().isNotEmpty() &&
@@ -78,8 +78,8 @@ internal object PhoneCoreRuntimeFacts {
         }
     }
 
-    private fun hasPermission(context: Context, permission: String): Boolean =
-        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    private fun hasEffectivePermission(context: Context, permission: String): Boolean =
+        PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun isRoleAvailable(context: Context, role: String): Boolean =
         AndroidRoleReadPolicy.readBoolean {

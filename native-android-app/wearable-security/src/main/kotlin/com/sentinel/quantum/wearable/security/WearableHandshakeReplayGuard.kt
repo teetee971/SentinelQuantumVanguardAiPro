@@ -13,9 +13,15 @@ data class WearableHandshakeChallenge(
 class WearableHandshakeReplayGuard(
     private val ttlMs: Long = 300_000L,
     private val clockMs: () -> Long = System::currentTimeMillis,
-    private val random: SecureRandom = SecureRandom()
+    private val random: SecureRandom = SecureRandom(),
+    private val elapsedClockMs: () -> Long = { System.nanoTime() / 1_000_000L }
 ) {
-    private val pending = mutableMapOf<String, WearableHandshakeChallenge>()
+    private data class PendingChallenge(
+        val challenge: WearableHandshakeChallenge,
+        val issuedElapsedMs: Long
+    )
+
+    private val pending = mutableMapOf<String, PendingChallenge>()
 
     init { require(ttlMs in 1_000L..900_000L) }
 
@@ -23,18 +29,20 @@ class WearableHandshakeReplayGuard(
     fun issue(stableId: String): WearableHandshakeChallenge {
         require(stableId.isNotBlank())
         val now = clockMs()
-        purgeExpired(now)
+        val elapsedNow = elapsedClockMs()
+        purgeExpired(now, elapsedNow)
+        val expiresAt = Math.addExact(now, ttlMs)
         val bytes = ByteArray(32).also(random::nextBytes)
         val nonce = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
-        return WearableHandshakeChallenge(nonce, stableId, now, now + ttlMs)
-            .also { pending[nonce] = it }
+        return WearableHandshakeChallenge(nonce, stableId, now, expiresAt)
+            .also { pending[nonce] = PendingChallenge(it, elapsedNow) }
     }
 
     @Synchronized
     fun consume(candidate: WearableHandshakeCandidate): Boolean {
         val now = clockMs()
-        purgeExpired(now)
-        val challenge = pending[candidate.challengeNonce] ?: return false
+        purgeExpired(now, elapsedClockMs())
+        val challenge = pending[candidate.challengeNonce]?.challenge ?: return false
         if (challenge.stableId != candidate.stableId ||
             candidate.issuedAtMs < challenge.issuedAtMs ||
             candidate.issuedAtMs > challenge.expiresAtMs ||
@@ -47,7 +55,13 @@ class WearableHandshakeReplayGuard(
     @Synchronized
     fun revokeAll() = pending.clear()
 
-    private fun purgeExpired(now: Long) {
-        pending.entries.removeIf { now > it.value.expiresAtMs }
+    private fun purgeExpired(now: Long, elapsedNow: Long) {
+        pending.entries.removeIf {
+            val elapsedAge = elapsedNow - it.value.issuedElapsedMs
+            // Wall time authenticates the transcript; monotonic time bounds nonce lifetime.
+            // Clock rollback invalidates the challenge instead of extending its replay window.
+            now < it.value.challenge.issuedAtMs || now > it.value.challenge.expiresAtMs ||
+                elapsedAge < 0 || elapsedAge > ttlMs
+        }
     }
 }

@@ -15,6 +15,8 @@ class VerifiedWearableHandshakeTest {
             sessionId = "session-1",
             protocolVersion = 1,
             capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
             signedTranscript = byteArrayOf(1),
             signature = byteArrayOf(2)
         )

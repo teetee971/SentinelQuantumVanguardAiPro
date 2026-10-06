@@ -35,8 +35,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.PermissionChecker
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -44,6 +44,7 @@ import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.PhoneCoreDiagnostics
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
+import com.sentinel.quantum.security.SentinelMissedCallReceiver
 import com.sentinel.quantum.security.SmsNotificationHelper
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
@@ -65,7 +66,7 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 class PhoneCoreActivationActivity : ComponentActivity() {
     private fun hasPermission(permission: String): Boolean =
-        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+        PermissionChecker.checkSelfPermission(this, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun holdsRole(role: String): Boolean =
         AndroidRoleReadPolicy.readBoolean {
@@ -133,6 +134,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SentinelCallNotificationHelper.ensureChannel(applicationContext)
+        SentinelMissedCallReceiver.ensureChannel(applicationContext)
         SmsNotificationHelper.ensureChannel(applicationContext)
         setContent {
             SentinelQuantumTheme {
@@ -231,7 +233,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             receiveMmsPermissionGranted = state.receiveMmsPermission,
                             receiveWapPushPermissionGranted = state.receiveWapPushPermission,
                             mmsSafePreviewValidated = mmsSafePreviewValidated,
-                            physicalDeviceValidated = physicalEvidence.fullyValidated
+                            physicalDeviceValidated = physicalEvidence.physicalDeviceValidated
                         )
                     )
                 }
@@ -244,7 +246,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     PhoneCoreRuntimeFacts.read(applicationContext)
                 }
                 val setupStep = remember(setupFacts) {
-                    PhoneCoreSetupWizardStore.nextStep(setupFacts)
+                    PhoneCoreSetupWizardStore.nextConfigurableStep(setupFacts)
                 }
                 val setupAtomicPermission = when (setupStep) {
                     PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS ->
@@ -495,7 +497,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                     if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                                         "L’autorisation Android des notifications n’est pas encore accordée. Les canaux et le plein écran seront vérifiés seulement après cette permission."
                                                     } else {
-                                                        "Les notifications restent incomplètes : vérifiez les notifications globales, les canaux Appels/SMS et, si Android le demande, le plein écran d’appel."
+                                                        "Les notifications restent incomplètes : vérifiez les notifications globales, les canaux Appels entrants/Appels manqués/SMS et, si Android le demande, le plein écran d’appel."
                                                     }
                                                 else ->
                                                     "Cette étape n’est pas encore accordée. Vérifiez les paramètres Android puis réessayez."
@@ -585,7 +587,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         OutlinedButton(
                                             onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
                                             modifier = Modifier.fillMaxWidth()
-                                        ) { Text("Autoriser les notifications appels & SMS") }
+                                        ) { Text("Autoriser les notifications de téléphonie") }
                                     } else {
                                         OutlinedButton(
                                             onClick = {
@@ -598,7 +600,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         ) {
                                             Text(
                                                 if (!state.notificationChannelsReady)
-                                                    "Réactiver les canaux Appels & SMS"
+                                                    "Réactiver les canaux de téléphonie"
                                                 else
                                                     "Ouvrir les réglages de notifications"
                                             )
@@ -606,7 +608,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     }
                                     if (!state.notificationChannelsReady) {
                                         Text(
-                                            "Au moins un canal système de téléphonie (appels entrants ou SMS) est désactivé. Le statut logiciel reste bloqué.",
+                                            "Au moins un canal système de téléphonie (appels entrants, appels manqués ou SMS) est désactivé. Le statut logiciel reste bloqué.",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.error
                                         )
@@ -835,6 +837,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 NotificationManagerCompat.from(this).areNotificationsEnabled(),
             notificationChannelsReady =
                 SentinelCallNotificationHelper.isChannelEnabled(this) &&
+                    SentinelMissedCallReceiver.isChannelEnabled(this) &&
                     SmsNotificationHelper.isChannelEnabled(this),
             smsSnapshot = smsDiagnostics.snapshot()
         )

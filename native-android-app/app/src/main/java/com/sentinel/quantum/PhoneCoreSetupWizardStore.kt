@@ -6,11 +6,20 @@ import android.content.Context
  * Persistent first-run Phone Core setup state.
  *
  * Runtime truth remains authoritative: [nextStep] is recomputed after every Android return.
- * Persistence only records whether a step has already been presented, so a refusal never
- * becomes a success and the app never loops system dialogs automatically.
+ * Persistence records only presentation/lifecycle state, never proof that a role or permission
+ * is currently granted. A refusal therefore never becomes success and a deferred assistant never
+ * turns a missing Android prerequisite into READY.
  */
 internal class PhoneCoreSetupWizardStore(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    enum class LifecycleState {
+        NOT_STARTED,
+        OFFERED,
+        IN_PROGRESS,
+        DEFERRED,
+        COMPLETED
+    }
 
     fun attemptedTargetKey(): String? =
         prefs.getString(KEY_ATTEMPTED_TARGET, null)
@@ -32,15 +41,49 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             .commit()
     }
 
+    fun lifecycleState(): LifecycleState {
+        val persisted = prefs.getString(KEY_LIFECYCLE_STATE, null)
+            ?.let { raw -> LifecycleState.entries.firstOrNull { it.name == raw } }
+        if (persisted != null) return persisted
+        return if (prefs.getBoolean(KEY_COMPLETED, false)) {
+            LifecycleState.COMPLETED
+        } else {
+            LifecycleState.NOT_STARTED
+        }
+    }
+
+    fun markOffered() = setLifecycleState(LifecycleState.OFFERED)
+
+    fun markInProgress() = setLifecycleState(LifecycleState.IN_PROGRESS)
+
+    fun markDeferred() {
+        if (lifecycleState() == LifecycleState.COMPLETED) return
+        setLifecycleState(LifecycleState.DEFERRED)
+    }
+
     fun markCompleted() {
         prefs.edit()
             .putBoolean(KEY_COMPLETED, true)
+            .putString(KEY_LIFECYCLE_STATE, LifecycleState.COMPLETED.name)
             .remove(KEY_ATTEMPTED_STEP)
             .remove(KEY_ATTEMPTED_TARGET)
             .commit()
     }
 
-    fun isCompleted(): Boolean = prefs.getBoolean(KEY_COMPLETED, false)
+    fun isCompleted(): Boolean = lifecycleState() == LifecycleState.COMPLETED
+
+    private fun setLifecycleState(state: LifecycleState) {
+        check(state != LifecycleState.COMPLETED) {
+            "COMPLETED must be persisted through markCompleted()"
+        }
+        // IN_PROGRESS is specifically used to recover after process death. Persist lifecycle
+        // transitions synchronously before launching Android-owned permission/role surfaces, and
+        // invalidate the legacy completion bit so a later migration can never resurrect stale READY.
+        prefs.edit()
+            .putBoolean(KEY_COMPLETED, false)
+            .putString(KEY_LIFECYCLE_STATE, state.name)
+            .commit()
+    }
 
     enum class Step {
         CORE_PERMISSIONS,
@@ -73,6 +116,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         private const val KEY_ATTEMPTED_STEP = "attempted_step"
         private const val KEY_ATTEMPTED_TARGET = "attempted_target"
         private const val KEY_COMPLETED = "completed"
+        private const val KEY_LIFECYCLE_STATE = "lifecycle_state_v1"
         private const val OPTIONAL_CONTACTS_PERMISSION = "android.permission.READ_CONTACTS"
 
         /**
@@ -105,18 +149,51 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         }
 
         /**
+         * Next step that Android can still act on without violating role-before-permission
+         * dependencies. An unavailable role does not become success and remains visible as
+         * the terminal blocker after every independent configurable branch has been handled.
+         */
+        fun nextConfigurableStep(facts: Facts): Step = when {
+            !facts.dialerRoleHeld && facts.dialerRoleAvailable -> Step.DIALER_ROLE
+            !facts.callScreeningRoleHeld && facts.callScreeningRoleAvailable -> Step.CALL_SCREENING_ROLE
+            facts.dialerRoleHeld && !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
+            facts.dialerRoleHeld && !facts.callLogPermissionGranted -> Step.CALL_LOG_PERMISSION
+            !facts.smsRoleHeld && facts.smsRoleAvailable -> Step.SMS_ROLE
+            facts.smsRoleHeld && !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
+            facts.smsRoleHeld && !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+            !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
+            else -> nextStep(facts)
+        }
+
+        /**
          * Single pure truth for the setup prerequisites represented by [Facts].
-         * A completed wizard preference is never used as proof: runtime facts remain authoritative.
+         * A wizard lifecycle state is never used as proof: runtime facts remain authoritative.
          */
         fun softwarePrerequisitesReady(facts: Facts): Boolean =
             nextStep(facts) == Step.COMPLETE
 
         /**
+         * Backward-compatible completion helper used by existing tests/callers.
          * Persisted completion is historical UX state, never runtime proof.
-         * A completed setup must reopen when Android facts later regress.
          */
         fun shouldOpenSetup(persistedCompleted: Boolean, facts: Facts): Boolean =
             !persistedCompleted || !softwarePrerequisitesReady(facts)
+
+        /**
+         * First-run/repair launch policy.
+         *
+         * - NOT_STARTED/OFFERED/IN_PROGRESS resume automatically.
+         * - DEFERRED stays quiet until the user explicitly opens Phone Core.
+         * - COMPLETED stays quiet while Android facts remain ready, but any later revocation
+         *   reopens the repair flow because runtime truth outranks persistence.
+         */
+        fun shouldAutoOpenSetup(state: LifecycleState, facts: Facts): Boolean = when (state) {
+            LifecycleState.DEFERRED -> false
+            LifecycleState.COMPLETED -> !softwarePrerequisitesReady(facts)
+            LifecycleState.NOT_STARTED,
+            LifecycleState.OFFERED,
+            LifecycleState.IN_PROGRESS -> true
+        }
 
         fun isStepActionable(step: Step, facts: Facts): Boolean = when (step) {
             Step.DIALER_ROLE -> facts.dialerRoleAvailable && !facts.dialerRoleHeld

@@ -76,7 +76,10 @@ jobs:
   analyze-android:
     name: Analyze Android (Java/Kotlin)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # This required ruleset check transitively waits for Production Merge Gate, which in turn
+    # waits for the dependent 45m host + 60m emulator matrix. Keep enough headroom for the
+    # CodeQL build/extraction that happens before the waiter starts.
+    timeout-minutes: 240
     permissions:
       actions: read
       contents: read
@@ -188,7 +191,10 @@ jobs:
             "lighthouse-preproduction.yml"
           )
 
-          DEADLINE=$((SECONDS + 2400))
+          # Production Merge Gate may legitimately consume up to 170 minutes while it waits for
+          # Phone Core emulation. This required ruleset check must outlive that gate rather than
+          # turn a slow-but-valid qualification into a false failure.
+          DEADLINE=$((SECONDS + 12600))
           POLL_SECONDS=15
 
           while true; do

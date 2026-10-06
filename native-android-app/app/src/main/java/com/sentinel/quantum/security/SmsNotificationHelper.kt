@@ -7,11 +7,10 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import com.sentinel.quantum.R
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.data.SettingsStore
@@ -31,10 +30,10 @@ object SmsNotificationHelper {
         notificationId: Int
     ): Boolean {
         if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(
+            PermissionChecker.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
+            ) != PermissionChecker.PERMISSION_GRANTED
         ) return false
 
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return false

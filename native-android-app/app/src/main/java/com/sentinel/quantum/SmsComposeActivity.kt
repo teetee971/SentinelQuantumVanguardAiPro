@@ -50,6 +50,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.ui.design.phoneCoreTestId
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -290,6 +292,7 @@ class SmsComposeActivity : ComponentActivity() {
                             "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
                             "INVALID_DESTINATION" -> "Numéro destinataire invalide."
                             "INVALID_MESSAGE" -> "Message invalide."
+                            "SMS_MULTIPART_LIMIT_EXCEEDED" -> "Ce message nécessite trop de parties SMS. Raccourcissez-le avant l’envoi."
                             else -> "Échec d’envoi."
                         }
                         if (result.accepted) {
@@ -350,6 +353,7 @@ class SmsComposeActivity : ComponentActivity() {
                         }
                         if (result.accepted) {
                             onAccepted()
+                            providerEpoch++
                         }
                     }
                 }
@@ -358,10 +362,14 @@ class SmsComposeActivity : ComponentActivity() {
                     val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
                         override fun onChange(selfChange: Boolean) { providerEpoch++ }
                     }
-                    val registered = conversations.canRead() && runCatching {
-                        contentResolver.registerContentObserver(Telephony.Sms.CONTENT_URI, true, observer)
-                    }.isSuccess
-                    onDispose { if (registered) runCatching { contentResolver.unregisterContentObserver(observer) } }
+                    val registeredUris = if (conversations.canRead()) {
+                        listOf(Telephony.Sms.CONTENT_URI, Telephony.Mms.CONTENT_URI).filter { uri ->
+                            runCatching { contentResolver.registerContentObserver(uri, true, observer) }.isSuccess
+                        }
+                    } else emptyList()
+                    onDispose {
+                        if (registeredUris.isNotEmpty()) runCatching { contentResolver.unregisterContentObserver(observer) }
+                    }
                 }
                 LaunchedEffect(providerEpoch, activationEpoch, selectedThreadId) {
                     val threadId = selectedThreadId
@@ -449,13 +457,14 @@ class SmsComposeActivity : ComponentActivity() {
                                                         replyDrafts = replyDrafts + (threadId to text.take(SentinelSmsSender.MAX_BODY_CHARS))
                                                     else status = "Cinq brouillons sont conservés. Terminez-en un avant d’en créer un autre."
                                                 },
-                                                label = { Text("Répondre") },
+                                                label = { Text(stringResource(R.string.phone_core_reply)) },
                                                 enabled = sanitizeSmsDestination(replyAddress) != null,
-                                                modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                                                modifier = Modifier.weight(1f).heightIn(min = 56.dp).phoneCoreTestId("phone_core_sms_reply"),
                                                 maxLines = 3
                                             )
                                             Button(
                                                 onClick = { submitSms(replyAddress, draft) { replyDrafts = replyDrafts - threadId } },
+                                                modifier = Modifier.phoneCoreTestId("phone_core_sms_reply_send"),
                                                 enabled = SmsSubmitReadiness.canSubmit(
                                                     activationCanSend = activationSnapshot.canSend,
                                                     activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
@@ -463,7 +472,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                     destinationPresent = sanitizeSmsDestination(replyAddress) != null,
                                                     bodyPresent = draft.isNotBlank()
                                                 )
-                                            ) { Icon(Icons.Default.Send, null); Spacer(Modifier.width(4.dp)); Text("Envoyer") }
+                                            ) { Icon(Icons.Default.Send, null); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.phone_core_send)) }
                                         }
                                         if (sanitizeSmsDestination(replyAddress) == null)
                                             Text("Cet expéditeur ne permet pas une réponse SMS.", style = MaterialTheme.typography.labelSmall)
@@ -716,7 +725,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         submitSms(destination, body) { body = "" }
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_send"),
                                 enabled = SmsSubmitReadiness.canSubmit(
                                     activationCanSend = activationSnapshot.canSend,
                                     activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
@@ -730,9 +739,9 @@ class SmsComposeActivity : ComponentActivity() {
                                 Text(
                                     when {
                                         mmsComposeMode && body.isBlank() && selectedMmsAttachments.isEmpty() -> "Ajouter un message ou une image"
-                                        mmsComposeMode -> "Envoyer le MMS"
+                                        mmsComposeMode -> stringResource(R.string.phone_core_send_mms)
                                         body.isBlank() -> "Écrire un message"
-                                        else -> "Envoyer"
+                                        else -> stringResource(R.string.phone_core_send)
                                     }
                                 )
                             }

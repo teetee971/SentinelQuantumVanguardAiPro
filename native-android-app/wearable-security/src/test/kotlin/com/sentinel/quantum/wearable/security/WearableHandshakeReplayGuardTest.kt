@@ -7,10 +7,12 @@ import org.junit.Test
 
 class WearableHandshakeReplayGuardTest {
     private var now = 100_000L
+    private var elapsed = 10_000L
     private fun guard() = WearableHandshakeReplayGuard(
         ttlMs = 5_000L,
         clockMs = { now },
-        random = SecureRandom()
+        random = SecureRandom(),
+        elapsedClockMs = { elapsed }
     )
 
     private fun candidate(challenge: WearableHandshakeChallenge, stableId: String = challenge.stableId, issuedAtMs: Long = challenge.issuedAtMs) =
@@ -38,6 +40,45 @@ class WearableHandshakeReplayGuardTest {
         val challenge = guard.issue("watch-1")
         now = challenge.expiresAtMs + 1
         assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun rejectsExpiredChallengeWhenWallClockIsFrozen() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        elapsed += 5_001L
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun wallClockRollbackPermanentlyInvalidatesChallenge() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        now--
+        assertFalse(guard.consume(candidate(challenge)))
+        now = challenge.issuedAtMs
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun monotonicClockRollbackPermanentlyInvalidatesChallenge() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        elapsed--
+        assertFalse(guard.consume(candidate(challenge)))
+        elapsed++
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun acceptsWithinBothClockWindows() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        now += 4_999L
+        elapsed += 4_999L
+        assertTrue(guard.consume(candidate(challenge)))
+    }
+
+    @Test(expected = ArithmeticException::class)
+    fun rejectsOverflowingWallClockDeadline() {
+        now = Long.MAX_VALUE - 1
+        guard().issue("watch-1")
     }
 
     @Test fun rejectsDifferentIdentityWithoutConsumingChallenge() {

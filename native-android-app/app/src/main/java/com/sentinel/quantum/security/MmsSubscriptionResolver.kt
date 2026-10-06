@@ -3,9 +3,8 @@ package com.sentinel.quantum.security
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.telephony.SubscriptionManager
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 
 /**
  * Single fail-closed source for the SIM/subscription attached to an incoming WAP/MMS broadcast.
@@ -58,8 +57,8 @@ internal object MmsSubscriptionResolver {
 
     private fun activeSubscriptions(context: Context): List<android.telephony.SubscriptionInfo> {
         if (
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
-            PackageManager.PERMISSION_GRANTED
+            PermissionChecker.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+            PermissionChecker.PERMISSION_GRANTED
         ) {
             return emptyList()
         }

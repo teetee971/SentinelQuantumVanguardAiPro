@@ -27,8 +27,11 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
         if (intent.action != TelecomManager.ACTION_SHOW_MISSED_CALLS_NOTIFICATION) return
         if (!holdsDialerRole(context)) return
 
+        // Treat the external broadcast as untrusted input even though the manifest requires the
+        // signature-only MODIFY_PHONE_STATE permission from its sender. We consume only a bounded
+        // aggregate count and deliberately ignore caller-number/account extras.
         val count = intent.getIntExtra(TelecomManager.EXTRA_NOTIFICATION_COUNT, 0)
-            .coerceAtLeast(0)
+            .coerceIn(0, MAX_MISSED_CALL_COUNT)
         val manager = NotificationManagerCompat.from(context)
         if (count == 0) {
             manager.cancel(NOTIFICATION_ID)
@@ -40,8 +43,8 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
                 PackageManager.PERMISSION_GRANTED
         ) return
         if (!manager.areNotificationsEnabled()) return
+        if (!isChannelEnabled(context)) return
 
-        ensureChannel(context)
         val openDialer = PendingIntent.getActivity(
             context,
             0,
@@ -49,18 +52,19 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val clearMissedCalls = readClearMissedCallsIntent(intent)
         val title = if (count == 1) "Appel manqué" else "$count appels manqués"
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
-            .setContentText("Ouvrir Sentinel pour consulter les appels récents.")
+            .setContentText("Ouvrir Sentinel Téléphone.")
             .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(openDialer)
             .setNumber(count)
-            .build()
-        manager.notify(NOTIFICATION_ID, notification)
+        clearMissedCalls?.let(builder::setDeleteIntent)
+        manager.notify(NOTIFICATION_ID, builder.build())
     }
 
     private fun holdsDialerRole(context: Context): Boolean =
@@ -75,23 +79,46 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
             }
         }
 
-    private fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val system = context.getSystemService(NotificationManager::class.java)
-        if (system.getNotificationChannel(CHANNEL_ID) != null) return
-        system.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_ID,
-                "Appels manqués Sentinel",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications d'appels manqués du composeur Sentinel"
-            }
-        )
-    }
+    @Suppress("DEPRECATION")
+    private fun readClearMissedCallsIntent(intent: Intent): PendingIntent? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(EXTRA_CLEAR_MISSED_CALLS_INTENT, PendingIntent::class.java)
+        } else {
+            intent.getParcelableExtra(EXTRA_CLEAR_MISSED_CALLS_INTENT)
+        }
 
-    private companion object {
-        const val CHANNEL_ID = "sentinel_missed_calls"
-        const val NOTIFICATION_ID = 5102
+    companion object {
+        private const val CHANNEL_ID = "sentinel_missed_calls"
+        private const val NOTIFICATION_ID = 5102
+        private const val MAX_MISSED_CALL_COUNT = 99
+
+        // System API on some Android SDK surfaces; keep the wire key literal for API 24+ support.
+        private const val EXTRA_CLEAR_MISSED_CALLS_INTENT =
+            "android.telecom.extra.CLEAR_MISSED_CALLS_INTENT"
+
+        /** Ensure the default-dialer missed-call channel exists without overriding user choices. */
+        fun ensureChannel(context: Context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+            val system = context.getSystemService(NotificationManager::class.java)
+            if (system.getNotificationChannel(CHANNEL_ID) != null) return
+            system.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    "Appels manqués Sentinel",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Notifications d'appels manqués du composeur Sentinel"
+                }
+            )
+        }
+
+        /** Channel truth only; global notification permission/state is evaluated separately. */
+        fun isChannelEnabled(context: Context): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+            ensureChannel(context)
+            val channel = context.getSystemService(NotificationManager::class.java)
+                .getNotificationChannel(CHANNEL_ID) ?: return false
+            return channel.importance != NotificationManager.IMPORTANCE_NONE
+        }
     }
 }

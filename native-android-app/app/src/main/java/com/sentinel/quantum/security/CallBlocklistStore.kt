@@ -61,7 +61,7 @@ class CallBlocklistStore(context: Context) {
 
     /** Screening-critical path: memory-only and fail-open until Application preload completes. */
     fun cachedScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
-        SCREENING_SNAPSHOT.activeAt(now)
+        cachedSnapshotForScreening(now)
 
     private fun refreshScreeningSnapshotAfterCommit() {
         SCREENING_SNAPSHOT = snapshot()
@@ -291,20 +291,28 @@ class CallBlocklistStore(context: Context) {
         return CallBlockMetadata.Entry(parts[0], parts[4], created, expires, origin)
     }
 
-    private companion object {
-        const val PREFERENCES = "sentinel_call_rules"
-        const val EXACT_HASHES = "blocked_number_hashes"
-        const val EXACT_METADATA = "blocked_number_metadata_v1"
-        const val PREFIXES = "blocked_prefixes"
-        const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
-        const val SIGNED_PACKAGE_ID = "signed_rule_package_id"
-        const val SIGNED_ISSUER_ID = "signed_rule_issuer_id"
-        const val SIGNED_KEY_ID = "signed_rule_key_id"
-        const val SIGNED_SEQUENCE = "signed_rule_sequence"
-        const val SIGNED_ISSUED_AT = "signed_rule_issued_at"
-        const val SIGNED_EXPIRES_AT = "signed_rule_expires_at"
-        const val SIGNED_PREFIXES = "signed_silence_prefixes"
-        val INSTALL_LOCK = Any()
+    companion object {
+        private const val PREFERENCES = "sentinel_call_rules"
+        private const val EXACT_HASHES = "blocked_number_hashes"
+        private const val EXACT_METADATA = "blocked_number_metadata_v1"
+        private const val PREFIXES = "blocked_prefixes"
+        private const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
+        private const val SIGNED_PACKAGE_ID = "signed_rule_package_id"
+        private const val SIGNED_ISSUER_ID = "signed_rule_issuer_id"
+        private const val SIGNED_KEY_ID = "signed_rule_key_id"
+        private const val SIGNED_SEQUENCE = "signed_rule_sequence"
+        private const val SIGNED_ISSUED_AT = "signed_rule_issued_at"
+        private const val SIGNED_EXPIRES_AT = "signed_rule_expires_at"
+        private const val SIGNED_PREFIXES = "signed_silence_prefixes"
+        private val INSTALL_LOCK = Any()
         @Volatile private var SCREENING_SNAPSHOT = Snapshot(emptySet(), emptySet(), emptySet())
+
+        /**
+         * CallScreeningService access point. This method reads process memory only: it does not
+         * construct a store, open SharedPreferences, initialize Room, access AndroidKeyStore or
+         * perform network I/O. Until preload completes it intentionally returns an empty snapshot.
+         */
+        internal fun cachedSnapshotForScreening(now: Long = System.currentTimeMillis()): Snapshot =
+            SCREENING_SNAPSHOT.activeAt(now)
     }
 }

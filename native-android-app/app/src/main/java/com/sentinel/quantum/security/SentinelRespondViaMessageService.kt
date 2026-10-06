@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.telephony.SubscriptionManager
 import java.util.concurrent.Executors
 
 /**
@@ -17,6 +18,12 @@ import java.util.concurrent.Executors
  * Android can dispatch the default-handler contract with sms/smsto or mms/mmsto URIs. The
  * URI scheme is therefore part of the transport decision and is validated fail-closed: an
  * MMS quick reply is never silently downgraded to SMS and an unknown scheme is never sent.
+ *
+ * Quick replies have no interactive SIM picker. Prefer the subscription attached by Telecom to
+ * the incoming call when present, including the historical "subscription" extra used by older
+ * Android releases. Otherwise fall back to Android's default SMS subscription. The transport
+ * layer still proves that the chosen subscription is active; stale or missing lines remain
+ * fail-closed instead of silently switching to another SIM.
  */
 class SentinelRespondViaMessageService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
@@ -31,12 +38,21 @@ class SentinelRespondViaMessageService : Service() {
         val destination = intent.data?.schemeSpecificPart.orEmpty().substringBefore('?')
         val body = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString().orEmpty()
         val appContext = applicationContext
+        val intentSubscriptionId = sequenceOf(
+            intent.getIntExtra(EXTRA_SUBSCRIPTION_INDEX, SubscriptionManager.INVALID_SUBSCRIPTION_ID),
+            intent.getIntExtra(EXTRA_LEGACY_SUBSCRIPTION, SubscriptionManager.INVALID_SUBSCRIPTION_ID)
+        ).firstOrNull { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID && it >= 0 }
+        val platformDefaultSmsSubscriptionId = SubscriptionManager.getDefaultSmsSubscriptionId()
+            .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+        val quickReplySubscriptionId = intentSubscriptionId ?: platformDefaultSmsSubscriptionId
         val submitted = runCatching {
             WORKER.execute {
                 try {
                     val outcome = when (scheme) {
                         "sms", "smsto" -> {
-                            val result = SentinelSmsSender(appContext).send(destination, body)
+                            val result = quickReplySubscriptionId?.let { subscriptionId ->
+                                SentinelSmsSender(appContext).send(destination, body, subscriptionId)
+                            } ?: SentinelSmsSender(appContext).send(destination, body)
                             QuickReplyOutcome(
                                 transport = "SMS",
                                 accepted = result.accepted,
@@ -46,7 +62,8 @@ class SentinelRespondViaMessageService : Service() {
                         "mms", "mmsto" -> {
                             val result = SentinelMmsSender(appContext).send(
                                 destination = destination,
-                                text = body
+                                text = body,
+                                requestedSubscriptionId = quickReplySubscriptionId
                             )
                             QuickReplyOutcome(
                                 transport = "MMS",
@@ -97,6 +114,8 @@ class SentinelRespondViaMessageService : Service() {
     )
 
     private companion object {
+        const val EXTRA_SUBSCRIPTION_INDEX = "android.telephony.extra.SUBSCRIPTION_INDEX"
+        const val EXTRA_LEGACY_SUBSCRIPTION = "subscription"
         val MAIN_HANDLER = Handler(Looper.getMainLooper())
         val WORKER = Executors.newSingleThreadExecutor { task ->
             Thread(task, "sentinel-respond-via-message").apply { isDaemon = true }

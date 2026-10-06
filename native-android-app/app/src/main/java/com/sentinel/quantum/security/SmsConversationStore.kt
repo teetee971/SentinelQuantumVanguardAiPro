@@ -38,6 +38,18 @@ internal object SmsTimestampOrder {
     // Keep provider dates intact; anomalous dates must not outrank real recent messages.
     fun sortTimestamp(originalDateMs: Long, nowMs: Long): Long =
         if (isAnomalous(originalDateMs, nowMs)) Long.MIN_VALUE else originalDateMs
+
+    /** Apply provider limits after separating plausible dates so hostile dates cannot fill the window. */
+    fun <T> loadWindow(
+        limit: Int,
+        loadPlausible: (Int) -> List<T>,
+        loadAnomalous: (Int) -> List<T>
+    ): List<T> {
+        require(limit > 0)
+        val normal = loadPlausible(limit).take(limit)
+        val remaining = limit - normal.size
+        return if (remaining == 0) normal else normal + loadAnomalous(remaining).take(remaining)
+    }
 }
 
 /** Pure mapping shared by provider reads and JVM tests. */
@@ -159,16 +171,8 @@ class SmsConversationStore(private val context: Context) {
         if (!canRead() || threadId <= 0L) return emptyList()
         val bounded = limit.coerceIn(1, MAX_MESSAGES)
         val nowMs = System.currentTimeMillis()
-        val sms = querySmsMessages(
-            selection = "${Telephony.Sms.THREAD_ID}=?",
-            selectionArgs = arrayOf(threadId.toString()),
-            sortOrder = "${Telephony.Sms.DATE} DESC LIMIT $bounded"
-        )
-        val mms = queryMmsMessages(
-            selection = "${Telephony.Mms.THREAD_ID}=?",
-            selectionArgs = arrayOf(threadId.toString()),
-            sortOrder = "${Telephony.Mms.DATE} DESC LIMIT $bounded"
-        )
+        val sms = recentSmsMessages(bounded, nowMs, threadId)
+        val mms = recentMmsMessages(bounded, nowMs, threadId)
         return (sms + mms)
             .sortedWith(
                 compareBy<Message> { SmsTimestampOrder.sortTimestamp(it.timestampMs, nowMs) }
@@ -177,39 +181,42 @@ class SmsConversationStore(private val context: Context) {
             .takeLast(bounded)
     }
 
-    private fun recentSmsMessages(limit: Int, nowMs: Long = System.currentTimeMillis()): List<Message> {
+    private fun recentSmsMessages(
+        limit: Int,
+        nowMs: Long = System.currentTimeMillis(),
+        threadId: Long? = null
+    ): List<Message> {
         val cutoff = SmsTimestampOrder.latestPlausibleTimestamp(nowMs).toString()
-        // Bound each query independently: future-dated rows cannot consume the recent window.
-        val normal = querySmsMessages(
-            selection = "${Telephony.Sms.DATE}>=? AND ${Telephony.Sms.DATE}<=?",
-            selectionArgs = arrayOf("0", cutoff),
-            sortOrder = "${Telephony.Sms.DATE} DESC LIMIT $limit"
+        fun load(datePredicate: String, queryLimit: Int): List<Message> = querySmsMessages(
+            selection = if (threadId == null) datePredicate else
+                "${Telephony.Sms.THREAD_ID}=? AND ($datePredicate)",
+            selectionArgs = if (threadId == null) arrayOf("0", cutoff) else
+                arrayOf(threadId.toString(), "0", cutoff),
+            sortOrder = "${Telephony.Sms.DATE} DESC LIMIT $queryLimit"
         )
-        val remaining = limit - normal.size
-        if (remaining == 0) return normal
-        val anomalous = querySmsMessages(
-            selection = "${Telephony.Sms.DATE}<? OR ${Telephony.Sms.DATE}>?",
-            selectionArgs = arrayOf("0", cutoff),
-            sortOrder = "${Telephony.Sms.DATE} DESC LIMIT $remaining"
+        return SmsTimestampOrder.loadWindow(limit,
+            loadPlausible = { load("${Telephony.Sms.DATE}>=? AND ${Telephony.Sms.DATE}<=?", it) },
+            loadAnomalous = { load("${Telephony.Sms.DATE}<? OR ${Telephony.Sms.DATE}>?", it) }
         )
-        return normal + anomalous
     }
 
-    private fun recentMmsMessages(limit: Int, nowMs: Long = System.currentTimeMillis()): List<Message> {
+    private fun recentMmsMessages(
+        limit: Int,
+        nowMs: Long = System.currentTimeMillis(),
+        threadId: Long? = null
+    ): List<Message> {
         val cutoffSeconds = SmsTimestampOrder.latestPlausibleTimestamp(nowMs) / 1000L
-        val normal = queryMmsMessages(
-            selection = "${Telephony.Mms.DATE}>=? AND ${Telephony.Mms.DATE}<=?",
-            selectionArgs = arrayOf("0", cutoffSeconds.toString()),
-            sortOrder = "${Telephony.Mms.DATE} DESC LIMIT $limit"
+        fun load(datePredicate: String, queryLimit: Int): List<Message> = queryMmsMessages(
+            selection = if (threadId == null) datePredicate else
+                "${Telephony.Mms.THREAD_ID}=? AND ($datePredicate)",
+            selectionArgs = if (threadId == null) arrayOf("0", cutoffSeconds.toString()) else
+                arrayOf(threadId.toString(), "0", cutoffSeconds.toString()),
+            sortOrder = "${Telephony.Mms.DATE} DESC LIMIT $queryLimit"
         )
-        val remaining = limit - normal.size
-        if (remaining == 0) return normal
-        val anomalous = queryMmsMessages(
-            selection = "${Telephony.Mms.DATE}<? OR ${Telephony.Mms.DATE}>?",
-            selectionArgs = arrayOf("0", cutoffSeconds.toString()),
-            sortOrder = "${Telephony.Mms.DATE} DESC LIMIT $remaining"
+        return SmsTimestampOrder.loadWindow(limit,
+            loadPlausible = { load("${Telephony.Mms.DATE}>=? AND ${Telephony.Mms.DATE}<=?", it) },
+            loadAnomalous = { load("${Telephony.Mms.DATE}<? OR ${Telephony.Mms.DATE}>?", it) }
         )
-        return normal + anomalous
     }
 
     private fun querySmsMessages(

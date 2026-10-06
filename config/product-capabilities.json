@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-10-04",
+  "updated_at": "2026-10-05",
   "capabilities": [
     {
       "id": "phone_core_android",
@@ -16,7 +16,7 @@
       "release_signed": false,
       "customer_available": false,
       "blockers": [
-        "14/14 physical Phone Core evidence has not been recorded on the current install scope",
+        "Signed physical-device validation of the 14 canonical Phone Core criteria has not been recorded; local or emulator 14/14 evidence is not sufficient",
         "No signed public Android release artifact is demonstrated"
       ],
       "evidence": [

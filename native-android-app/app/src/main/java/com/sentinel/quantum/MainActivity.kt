@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -90,6 +91,21 @@ private fun androidx.navigation.NavHostController.navigateBottomDestination(scre
 }
 
 class MainActivity : ComponentActivity() {
+    private val phoneCoreSetupLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        val wizard = PhoneCoreSetupWizardStore(applicationContext)
+        val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
+        if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)) {
+            wizard.markCompleted()
+        } else {
+            // Returning from the user-visible setup without satisfying every Android fact is a
+            // deliberate defer, never success. A process death while setup is open produces no
+            // callback, leaving IN_PROGRESS so the next cold launch can resume automatically.
+            wizard.markDeferred()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleShareIntent(intent)
@@ -207,21 +223,36 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
         val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
-        if (!PhoneCoreSetupWizardStore.shouldOpenSetup(wizard.isCompleted(), runtimeFacts)) return
+        var lifecycleState = wizard.lifecycleState()
 
-        // Persisted completion is only historical UX state. Android runtime truth is authoritative:
-        // if a role, permission, channel or full-screen capability is later revoked, reopen the
-        // activation center on the next cold launch instead of silently preserving a stale READY.
-        // STARTED is deliberately different from COMPLETED. If the user leaves Android's
-        // permission/role flow halfway through, the next cold launch reopens the wizard and
-        // resumes from the first prerequisite that Android still reports as missing.
-        val prefs = getSharedPreferences(FIRST_RUN_PREFS, MODE_PRIVATE)
-        if (!prefs.getBoolean(KEY_PHONE_CORE_SETUP_STARTED, false)) {
-            if (!prefs.edit().putBoolean(KEY_PHONE_CORE_SETUP_STARTED, true).commit()) return
+        // A user may defer the guided journey, then finish every prerequisite later from Android
+        // settings or the manually opened Phone Core center. Promote the persisted UX lifecycle to
+        // COMPLETED only when current Android facts independently prove readiness. This restores
+        // future auto-repair on revocation without ever turning DEFERRED itself into readiness.
+        if (
+            lifecycleState != PhoneCoreSetupWizardStore.LifecycleState.COMPLETED &&
+            PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)
+        ) {
+            wizard.markCompleted()
+            lifecycleState = PhoneCoreSetupWizardStore.LifecycleState.COMPLETED
         }
-        startActivity(Intent(this, PhoneCoreActivationActivity::class.java).apply {
-            putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
-        })
+
+        if (!PhoneCoreSetupWizardStore.shouldAutoOpenSetup(lifecycleState, runtimeFacts)) return
+
+        // Runtime truth remains authoritative. COMPLETED only suppresses the setup while Android
+        // still reports every prerequisite as ready. A later revocation enters repair mode again.
+        // DEFERRED suppresses automatic reopening but never changes any readiness fact. If the
+        // process dies while the activation screen is open, IN_PROGRESS remains persisted and the
+        // next cold launch resumes the assistant from the first fact Android still reports missing.
+        if (lifecycleState == PhoneCoreSetupWizardStore.LifecycleState.NOT_STARTED) {
+            wizard.markOffered()
+        }
+        wizard.markInProgress()
+        phoneCoreSetupLauncher.launch(
+            Intent(this, PhoneCoreActivationActivity::class.java).apply {
+                putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+            }
+        )
     }
 
     /**
@@ -234,10 +265,6 @@ class MainActivity : ComponentActivity() {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             SharedTextHolder.offer(intent.getStringExtra(Intent.EXTRA_TEXT))
         }
-    }
-    private companion object {
-        const val FIRST_RUN_PREFS = "sentinel_first_run_setup"
-        const val KEY_PHONE_CORE_SETUP_STARTED = "phone_core_setup_started_v2"
     }
 }
 

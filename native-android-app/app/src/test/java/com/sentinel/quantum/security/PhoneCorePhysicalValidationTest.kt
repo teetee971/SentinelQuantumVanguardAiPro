@@ -91,6 +91,8 @@ class PhoneCorePhysicalValidationTest {
         )
         assertTrue(evidence.fullyValidated)
         assertEquals(14, evidence.completedCount)
+        assertEquals("local_technical_qualification", evidence.evidenceScope)
+        assertFalse("Fourteen runtime observations cannot attest physical hardware or a carrier", evidence.physicalDeviceValidated)
     }
 
     @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
@@ -342,6 +344,15 @@ class PhoneCorePhysicalValidationTest {
             PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
             PhoneCorePhysicalValidation.criterionKind("outgoing_mms_sent")
         )
+    }
+
+    @Test fun localCriteriaDoNotPresentSyntheticCallbacksAsPhysicalOrCarrierValidation() {
+        val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
+        assertEquals(14, criteria.size)
+        criteria.forEach { criterion ->
+            val label = PhoneCorePhysicalValidation.criterionLabel(criterion).lowercase()
+            assertFalse(label, label.contains("réel") || label.contains("opérateur") || label.contains("physique"))
+        }
     }
 
     @Test fun allSchemaV5CriteriaHaveExplicitKindsAndUnknownFailsClosed() {

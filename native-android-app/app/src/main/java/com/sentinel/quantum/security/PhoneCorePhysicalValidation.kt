@@ -1,9 +1,10 @@
 package com.sentinel.quantum.security
 
 /**
- * Derives physical Phone Core validation from bounded local metadata and operational provider
- * probes observed by the current installed APK. No phone number, contact name, message body,
- * URL or subscription identifier is retained as validation evidence.
+ * Observes the fourteen local technical criteria from runtime metadata and provider probes.
+ * These observations can also come from an emulator. Even a complete local certificate does
+ * not establish physical hardware, carrier-network validation or commercial readiness.
+ * No phone number, contact name, message body, URL or subscription identifier is retained.
  */
 object PhoneCorePhysicalValidation {
     const val CERTIFICATION_SCHEMA_VERSION = 5
@@ -23,6 +24,11 @@ object PhoneCorePhysicalValidation {
         val callerIdUiShown: Boolean,
         val inCallUiShown: Boolean
     ) {
+        val evidenceScope: String get() = "local_technical_qualification"
+        // This model consumes no independently verified hardware/carrier evidence.
+        // Keep that claim separate from the fourteen observable runtime criteria below.
+        val physicalDeviceValidated: Boolean get() = false
+
         val completedCount: Int
             get() = listOf(
                 incomingCallConnected,
@@ -61,6 +67,7 @@ object PhoneCorePhysicalValidation {
                 if (!inCallUiShown) add("in_call_ui_shown")
             }
 
+        /** Completeness of the local technical certificate only, not physical validation. */
         val fullyValidated: Boolean
             get() = missingCriteria.isEmpty() && completedCount == requiredCount
     }
@@ -94,21 +101,21 @@ object PhoneCorePhysicalValidation {
     }
 
     fun criterionLabel(id: String): String = when (id) {
-        "incoming_call_connected" -> "Recevoir et décrocher un appel réel"
-        "outgoing_call_connected" -> "Passer un appel réel"
+        "incoming_call_connected" -> "Observer un appel entrant connecté dans Android"
+        "outgoing_call_connected" -> "Observer un appel sortant connecté dans Android"
         "call_screening_observed" -> "Observer le filtrage d’un appel entrant"
-        "contacts_provider_ready" -> "Vérifier l’accès réel aux contacts"
-        "call_history_provider_ready" -> "Vérifier l’accès réel à l’historique d’appels"
-        "incoming_sms_received" -> "Recevoir un SMS réel"
-        "outgoing_sms_submitted" -> "Envoyer un SMS réel"
-        "outgoing_sms_delivered" -> "Confirmer la livraison d’un SMS sortant"
-        "incoming_mms_safe_preview" -> "Recevoir et prévisualiser un MMS réel"
-        "outgoing_mms_sent" -> "Envoyer un MMS réel et obtenir le succès opérateur"
+        "contacts_provider_ready" -> "Vérifier l’accès aux contacts Android"
+        "call_history_provider_ready" -> "Vérifier l’accès à l’historique d’appels Android"
+        "incoming_sms_received" -> "Observer la réception d’un SMS dans Android"
+        "outgoing_sms_submitted" -> "Observer les callbacks Android d’envoi SMS"
+        "outgoing_sms_delivered" -> "Observer les callbacks Android de livraison SMS"
+        "incoming_mms_safe_preview" -> "Observer la réception et l’aperçu sécurisé d’un MMS"
+        "outgoing_mms_sent" -> "Observer le callback Android de succès MMS"
         "incoming_call_notification" -> "Observer une notification d’appel entrant"
         "incoming_sms_notification" -> "Observer une notification de SMS entrant"
         "caller_id_ui_shown" -> "Observer l’identification d’appel à l’écran"
         "in_call_ui_shown" -> "Observer l’interface Sentinel pendant un appel"
-        else -> "Effectuer le test physique requis"
+        else -> "Observation technique requise"
     }
 
     fun evaluateCertification(

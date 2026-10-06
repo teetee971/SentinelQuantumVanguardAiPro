@@ -87,4 +87,64 @@ class WearableMessageGuardTest {
             guard.evaluate(session, envelope(sequence = 9), now)
         )
     }
+
+    @Test fun retiredSessionSnapshotCannotResetCounterOrRegainAuthority() {
+        val guard = WearableMessageGuard()
+        assertEquals(WearableMessageDecision.ACCEPT, guard.evaluate(session, envelope(sequence = 8), now))
+        val next = session.copy(sessionId = "session-next", establishedAtMs = now)
+        assertEquals(WearableMessageDecision.ACCEPT,
+            guard.evaluate(next, envelope(sessionId = next.sessionId, sequence = 0), now))
+
+        assertEquals(WearableMessageDecision.WRONG_SESSION,
+            guard.evaluate(session, envelope(sequence = 8), now))
+        assertEquals(WearableMessageDecision.WRONG_SESSION,
+            guard.evaluate(session, envelope(sequence = 9), now))
+        assertEquals(WearableMessageDecision.DUPLICATE_OR_REPLAY,
+            guard.evaluate(next, envelope(sessionId = next.sessionId, sequence = 0), now))
+        assertEquals(WearableMessageDecision.ACCEPT,
+            guard.evaluate(next, envelope(sessionId = next.sessionId, sequence = 1), now))
+    }
+
+    @Test fun fullReplayLedgerRequiresRekeyWithoutEvictingOldSessionsOrBlockingCurrentChannel() {
+        val guard = WearableMessageGuard(maxRetiredSessions = 1)
+        val second = session.copy(sessionId = "session-second", establishedAtMs = now)
+        val third = session.copy(sessionId = "session-third", establishedAtMs = now)
+        assertEquals(WearableMessageDecision.ACCEPT, guard.evaluate(session, envelope(), now))
+        assertEquals(WearableMessageDecision.ACCEPT,
+            guard.evaluate(second, envelope(sessionId = second.sessionId, sequence = 0), now))
+        assertEquals(WearableMessageDecision.REKEY_REQUIRED,
+            guard.evaluate(third, envelope(sessionId = third.sessionId, sequence = 0), now))
+        assertEquals(WearableMessageDecision.WRONG_SESSION,
+            guard.evaluate(session, envelope(sequence = 2), now))
+        assertEquals(WearableMessageDecision.ACCEPT,
+            guard.evaluate(second, envelope(sessionId = second.sessionId, sequence = 1), now))
+    }
+
+    @Test fun acceptsFutureTimestampWithinConfiguredSkewAndRejectsBeyondBoundary() {
+        val guard = WearableMessageGuard(maxFutureSkewMs = 5_000)
+        assertEquals(WearableMessageDecision.ACCEPT,
+            guard.evaluate(session, envelope(sentAt = now + 5_000), now))
+        assertEquals(WearableMessageDecision.FUTURE_TIMESTAMP,
+            guard.evaluate(session, envelope(sequence = 2, sentAt = now + 5_001), now))
+    }
+
+    @Test fun timestampWindowsDoNotOverflowNearLongMaximum() {
+        val guard = WearableMessageGuard()
+        val nearMaximum = Long.MAX_VALUE - 1
+        assertEquals(WearableMessageDecision.ACCEPT,
+            guard.evaluate(session, envelope(sentAt = nearMaximum), nearMaximum))
+        assertEquals(WearableMessageDecision.ACCEPT,
+            guard.evaluate(session, envelope(sequence = 2, sentAt = Long.MAX_VALUE), nearMaximum))
+        assertEquals(WearableMessageDecision.EXPIRED,
+            guard.evaluate(session, envelope(sequence = 3, sentAt = 0), Long.MAX_VALUE))
+    }
+
+    @Test fun negativeTimestampCannotExploitAgeArithmeticOverflow() {
+        val guard = WearableMessageGuard()
+        assertEquals(WearableMessageDecision.INVALID_TIMESTAMP,
+            guard.evaluate(session, envelope(sentAt = Long.MIN_VALUE), now))
+        assertEquals(WearableMessageDecision.INVALID_TIMESTAMP,
+            guard.evaluate(session, envelope(), -1))
+        assertEquals(WearableMessageDecision.ACCEPT, guard.evaluate(session, envelope(), now))
+    }
 }

@@ -2,10 +2,9 @@ package com.sentinel.quantum.security
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 
 /**
  * Refreshable source for the SMS composer SIM selector.
@@ -22,10 +21,9 @@ class SmsSubscriptionState(private val context: Context) {
     }
 
     fun load(): Result {
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.READ_PHONE_STATE
-            ) != PackageManager.PERMISSION_GRANTED
+        if (
+            PermissionChecker.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+            PermissionChecker.PERMISSION_GRANTED
         ) {
             return Result.PermissionRequired
         }
