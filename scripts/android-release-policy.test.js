@@ -18,6 +18,33 @@ test('production Android releases require the protected environment and current 
   assert.match(workflow, /"\$TAG" != "v\$VERSION_NAME"/);
 });
 
+test('signed release qualification includes Phone Core and security boundary gates', () => {
+  const exactBlock = workflow.match(/EXACT_WORKFLOWS=\(([\s\S]*?)\n\s*\)/)?.[1] ?? '';
+  const scopedBlock = workflow.match(/PATH_SCOPED_WORKFLOWS=\(([\s\S]*?)\n\s*\)/)?.[1] ?? '';
+
+  for (const required of [
+    'android-emulation-qualification.yml',
+    'build-native-android.yml',
+    'build-aab-playconsole.yml',
+    'android-instrumentation.yml',
+    'proprietary-boundary-validation.yml',
+    'codeql-analysis.yml',
+  ]) {
+    assert.ok(exactBlock.includes(`"${required}"`), `missing exact release gate: ${required}`);
+  }
+
+  for (const required of [
+    'security-fuzz.yml',
+    'sentinel-api-origin-contract.yml',
+  ]) {
+    assert.ok(scopedBlock.includes(`"${required}"`), `missing path-scoped release gate: ${required}`);
+  }
+
+  assert.match(workflow, /event=push/);
+  assert.match(workflow, /compare_status/);
+  assert.match(workflow, /"\$compare_status" != "ahead" && "\$compare_status" != "identical"/);
+});
+
 test('release integrity records APK and AAB signer evidence and verifies checksums', () => {
   assert.match(workflow, /apksigner verify --verbose --print-certs/);
   assert.match(workflow, /\.apk\.certificates\.txt/);
