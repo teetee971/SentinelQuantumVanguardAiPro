@@ -5,6 +5,12 @@ import android.content.ContentValues
 import android.graphics.Bitmap
 import android.os.Build
 import android.provider.MediaStore
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.semantics.SemanticsActions
@@ -83,6 +89,27 @@ class MainNavigationQualificationTest {
         }
     }
 
+    @Test fun textLayoutOracleRejectsEllipsis() {
+        val label = "ORACLE_LONG_TEXT_CANNOT_FIT"
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.setContent { Text(label, Modifier.width(40.dp), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            }
+            compose.waitUntil(10_000) { compose.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty() }
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(label).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            assertTrue("The real ellipsized layout must be rejected", layouts.any { visiblyClipped(it) })
+            screenshot("negative-control-ellipsis")
+        }
+    }
+
+    private fun visiblyClipped(layout: TextLayoutResult): Boolean =
+        layout.multiParagraph.didExceedMaxLines || (0 until layout.lineCount).any { line ->
+            layout.isLineEllipsized(line) || layout.getLineLeft(line) < -1f ||
+                layout.getLineRight(line) > layout.size.width + 1f ||
+                layout.getLineBottom(line) > layout.size.height + 1f
+        }
+
     private fun title(value: String, substring: Boolean = false) {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("main_brand_loading").fetchSemanticsNodes().isEmpty() }
         compose.waitUntil(10_000) {
@@ -93,11 +120,15 @@ class MainNavigationQualificationTest {
         val layouts = mutableListOf<TextLayoutResult>()
         node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         assertTrue("$value has no text layout", layouts.isNotEmpty())
-        if (layouts.any { it.hasVisualOverflow }) screenshot("failure-${value.hashCode()}")
+        // MultiParagraph.width is the available paragraph width, whereas size may
+        // be the text's intrinsic width (e.g. SENTINEL: 67 vs 304 px). Comparing
+        // those widths labels fully visible titles as overflow. Check laid-out
+        // lines/ellipsis instead; 1 px accounts only for integer pixel rounding.
+        if (layouts.any { visiblyClipped(it) }) screenshot("failure-${value.hashCode()}")
         assertFalse("$value is visually truncated: " + layouts.joinToString {
             "size=${it.size}, paragraph=${it.multiParagraph.width}x${it.multiParagraph.height}, lines=${it.lineCount}, ellipsis=" +
                 (0 until it.lineCount).map { line -> it.isLineEllipsized(line) }
-        }, layouts.any { it.hasVisualOverflow })
+        }, layouts.any { visiblyClipped(it) })
     }
 
     private fun screenshot(name: String) {

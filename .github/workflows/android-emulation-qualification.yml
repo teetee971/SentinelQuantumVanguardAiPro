@@ -425,7 +425,9 @@ jobs:
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           LOGCAT_STATUS=0
-          adb pull /sdcard/Pictures/SentinelQualification "$OUTPUT/instrumentation-screenshots" > "$OUTPUT/screenshot-pull.txt" 2>&1 || true
+          if [[ "$API_LEVEL" -ge 29 ]]; then SCREENSHOT_SOURCE=/sdcard/Pictures/SentinelQualification;
+          else SCREENSHOT_SOURCE=/sdcard/Android/data/com.sentinel.quantum/files/qualification; fi
+          timeout 30s adb pull "$SCREENSHOT_SOURCE" "$OUTPUT/instrumentation-screenshots" > "$OUTPUT/screenshot-pull.txt" 2>&1 || true
           adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
           adb shell getprop > "$OUTPUT/emulator-properties.txt" 2>&1 || true
@@ -558,10 +560,14 @@ jobs:
           const screeningLatencies = [...read('logcat.txt').matchAll(/CallScreeningService:response duration_us=(\d+) reason=([a-z_]+)/g)]
             .map((match) => ({ duration_us: Number(match[1]), reason: match[2] }));
           const screeningBudgetPassed = screeningLatencies.length > 0 && screeningLatencies.every((entry) => entry.duration_us < 500000);
-          const viewport = exists('viewport/summary.json') ? JSON.parse(read('viewport/summary.json')) : null;
+          let viewport = null;
+          if (exists('viewport/summary.json')) {
+            try { viewport = JSON.parse(read('viewport/summary.json')); }
+            catch (error) { viewport = { parse_error: String(error) }; }
+          }
           const viewportPassed = process.env.VIEWPORT_OUTCOME === 'success' && viewport?.result === 'PASS' &&
             ['standard', 's24plus-equivalent'].every((profile) => viewport.profiles?.some((entry) =>
-              entry.profile === profile && entry.result === 'PASS' && entry.tests === 2 &&
+              entry.profile === profile && entry.result === 'PASS' && entry.tests === 3 &&
               entry.screenshots?.length === 11 && entry.screenshots.every((screen) => screenshot(`viewport/${profile}/${screen}.png`))));
           const instrumentationKey = `connected_instrumentation_api${api}`;
 
@@ -578,7 +584,7 @@ jobs:
             standalone_activity_surfaces_render:
               instrumentationEvidencePassed && instrumentationEvidenceText.includes('StandaloneActivitySmokeInstrumentationTest') && completedInstrumentationClass('StandaloneActivitySmokeInstrumentationTest'),
             main_navigation_and_recreation: instrumentationEvidencePassed && completedInstrumentationClass('MainNavigationQualificationTest') &&
-              ['realBottomNavigationBackAndRecreation', 'phoneCoreDialerAndSmsSurfacesAreVisibleAfterRecreation']
+              ['realBottomNavigationBackAndRecreation', 'phoneCoreDialerAndSmsSurfacesAreVisibleAfterRecreation', 'textLayoutOracleRejectsEllipsis']
                 .every((method) => instrumentationEvidenceText.includes(method)),
             viewport_ui_qualification: api === 37 ? viewportPassed : null,
             call_screening_response_budget: modernPhoneCore ? screeningBudgetPassed : null,
@@ -656,7 +662,7 @@ jobs:
             capability, status: passed === true ? 'EMULATOR_TESTED' : passed === false ? 'FAILED' : 'UNKNOWN',
             test: capability, result: passed === true ? 'PASS' : passed === false ? 'FAIL' : 'NOT_EXECUTED',
             evidence: evidenceFor(capability), timestamp, environment,
-            reason: passed === false ? 'Required execution or evidence invariant not satisfied; inspect artifacts' :
+            reason: passed === false ? (capability === 'viewport_ui_qualification' && viewport?.parse_error || 'Required execution or evidence invariant not satisfied; inspect artifacts') :
               passed === null ? 'Outside this API lane' : null,
             deviceRequired: /call_|sms|sim|revocation/.test(capability)
           }));

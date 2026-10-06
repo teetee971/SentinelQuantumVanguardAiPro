@@ -30,8 +30,8 @@ for profile in standard s24plus-equivalent; do
     > "$OUT/viewport/$profile-tests.txt" 2>&1
   adb logcat -d -v time > "$OUT/viewport/$profile-logcat.txt"
   node ../scripts/android-logcat-analysis.cjs "$OUT/viewport/$profile-logcat.txt" "$OUT/viewport/$profile-crash-anr.json"
-  # am instrument often exits 0 even for assertion failures. Require both methods.
-  grep -Eq '^OK \(2 tests\)' "$OUT/viewport/$profile-tests.txt"
+  # am instrument often exits 0 even for assertion failures. Require all three methods.
+  grep -Eq '^OK \(3 tests\)' "$OUT/viewport/$profile-tests.txt"
   if grep -Eq '^FAILURES!!!|INSTRUMENTATION_FAILED|Process crashed|INSTRUMENTATION_STATUS_CODE: -[1234]' "$OUT/viewport/$profile-tests.txt"; then
     cat "$OUT/viewport/$profile-tests.txt"
     exit 1
@@ -50,6 +50,6 @@ for profile, dimensions, density in [('standard', (1080, 2400), 420), ('s24plus-
         if len(data) < 256 or data[:8] != b'\x89PNG\r\n\x1a\n' or struct.unpack('>II', data[16:24]) != dimensions:
             raise SystemExit(f'Invalid screenshot/dimensions: {profile}/{screen}')
     profiles.append(dict(profile=profile, width=dimensions[0], height=dimensions[1], density=density,
-                         tests=2, result='PASS', screenshots=screens, oem_validation=False))
+                         tests=3, result='PASS', screenshots=screens, oem_validation=False))
 (root / 'summary.json').write_text(json.dumps(dict(schema_version=1, result='PASS', profiles=profiles), indent=2) + '\n')
 PY

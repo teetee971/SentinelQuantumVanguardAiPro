@@ -202,7 +202,7 @@ function fixture(overrides = {}, alter = () => {}) {
   put('revocation-summary.json', JSON.stringify({ schema_version: 2, effective_permission_denial_fail_closed: true, role_revocation_fail_closed: true, effective_permission_probe: 'SEND_SMS_APP_OP_DENIED' }));
   const results = join(dir, 'app/build/outputs/androidTest-results');
   mkdirSync(results, { recursive: true });
-  const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('') + ['realBottomNavigationBackAndRecreation', 'phoneCoreDialerAndSmsSurfacesAreVisibleAfterRecreation'].map((name) => `<testcase classname="com.sentinel.quantum.ui.MainNavigationQualificationTest" name="${name}"/>`).join('');
+  const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('') + ['realBottomNavigationBackAndRecreation', 'phoneCoreDialerAndSmsSurfacesAreVisibleAfterRecreation', 'textLayoutOracleRejectsEllipsis'].map((name) => `<testcase classname="com.sentinel.quantum.ui.MainNavigationQualificationTest" name="${name}"/>`).join('');
   writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
   const sha = 'a'.repeat(40);
   const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', GITHUB_WORKSPACE: new URL('..', import.meta.url).pathname, BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
@@ -278,7 +278,7 @@ function api24Evidence({ put, dir }, secondRenderStatus) {
   const event = (name, method, code) => `INSTRUMENTATION_STATUS: class=${name}\nINSTRUMENTATION_STATUS: test=${method}\nINSTRUMENTATION_STATUS_CODE: ${code}\n`;
   writeFileSync(join(dir, 'sentinel-instrumentation-api24-tests.log'),
     event(renderClass, 'homeRenders', 0) + event(renderClass, 'searchRenders', secondRenderStatus) +
-    event(standaloneClass, 'activityRenders', 0) + event('com.sentinel.quantum.ui.MainNavigationQualificationTest', 'realBottomNavigationBackAndRecreation', 0) + event('com.sentinel.quantum.ui.MainNavigationQualificationTest', 'phoneCoreDialerAndSmsSurfacesAreVisibleAfterRecreation', 0) + 'OK (5 tests)\n');
+    event(standaloneClass, 'activityRenders', 0) + event('com.sentinel.quantum.ui.MainNavigationQualificationTest', 'realBottomNavigationBackAndRecreation', 0) + event('com.sentinel.quantum.ui.MainNavigationQualificationTest', 'phoneCoreDialerAndSmsSurfacesAreVisibleAfterRecreation', 0) + event('com.sentinel.quantum.ui.MainNavigationQualificationTest', 'textLayoutOracleRejectsEllipsis', 0) + 'OK (6 tests)\n');
 }
 
 test('API 24 raw instrumentation requires every render test to pass', () => {
@@ -338,6 +338,16 @@ test('API 37 requires viewport execution and evidence', () => {
   assert.equal(result.status, 1);
   assert.equal(report.checks.viewport_ui_qualification, false);
   assert.ok(report.evidence_failures.includes('viewport_ui_qualification'));
+});
+test('corrupt viewport metadata produces a failed qualification report', () => {
+  const { result, report } = fixture({ API_LEVEL: '37', VIEWPORT_OUTCOME: 'success' }, ({ put, dir }) => {
+    mkdirSync(join(dir, 'evidence/viewport'));
+    put('viewport/summary.json', '{ interrupted write');
+  });
+  assert.equal(result.status, 1);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.viewport_ui_qualification, false);
+  assert.match(report.capabilities.find((entry) => entry.capability === 'viewport_ui_qualification').reason, /SyntaxError/);
 });
 test('every reported capability has provenance and physical limits', () => {
   const { result, report } = fixture();

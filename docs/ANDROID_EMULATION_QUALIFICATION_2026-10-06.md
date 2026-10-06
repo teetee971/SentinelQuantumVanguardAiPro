@@ -23,7 +23,7 @@ AppOp denial remained `allow`. The existing gate correctly stayed red.
   instrumented. Activation, dialer keypad and SMS surfaces also undergo recreation.
   Static navigation smoke tests now reject blank rendered surfaces. An instrumented
   negative control deliberately renders empty content and requires the oracle to fail.
-- API 37 additionally runs the two real UI tests at 1080×2400/420 dpi and
+- API 37 additionally runs two real UI tests and a clipping negative control at 1080×2400/420 dpi and
   1440×3120/480 dpi. Eleven screenshots per profile accompany content, selection,
   click and title layout assertions. This is resolution equivalence, not Samsung
   OEM validation. Contrast, full-screen overlaps, keyboard and landscape have not
@@ -39,6 +39,15 @@ AppOp denial remained `allow`. The existing gate correctly stayed red.
   timestamp, environment, reason and deviceRequired. Markdown and crash/ANR JSON,
   properties and both APKs are archived. APKs have a separate artifact so compact
   host reports remain independently downloadable. Empty/placeholder PNGs are rejected.
+
+The first instrumented attempt rejected short, fully fitted titles because
+`TextLayoutResult.hasVisualOverflow` compared intrinsic size with the paragraph's
+available width (SENTINEL: 67 versus 304 px, no ellipsis). The oracle now checks
+actual line bounds, ellipsis and exceeded line limits. One pixel of tolerance
+accounts for integer coordinate rounding; the deliberately ellipsized text must
+still fail the same predicate. Failure captures survive UTP through scoped
+MediaStore on API 29+; API 24 uses its app-owned external directory, pulled before
+teardown. A malformed viewport summary produces FAIL JSON/Markdown, not a lost report.
 
 ## Voice and physical boundary
 
