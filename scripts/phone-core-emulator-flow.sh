@@ -174,6 +174,49 @@ PY
   read -r FLOW_X FLOW_Y <<< "$coordinates"
   adb shell input tap "$FLOW_X" "$FLOW_Y"
 }
+open_incoming_call_notification() {
+  # The InCall activity is intentionally non-exported. Open its real notification
+  # PendingIntent as a user would; never relax the manifest or launch it as shell UID.
+  adb shell input keyevent KEYCODE_WAKEUP
+  adb shell wm dismiss-keyguard
+  adb shell cmd statusbar expand-notifications
+  for _ in $(seq 1 20); do
+    local coordinates=""
+    if fresh_ui && coordinates="$(python3 - "$FLOW_XML" "$FLOW_NUMBER" <<'PYNOTIFICATION'
+import re, sys, xml.etree.ElementTree as ET
+root = ET.parse(sys.argv[1]).getroot()
+parent = {child: node for node in root.iter() for child in node}
+for node in root.iter('node'):
+    if node.get('package') != 'com.android.systemui' or sys.argv[2] not in node.get('text', ''):
+        continue
+    row = node
+    while row is not None and not row.get('resource-id', '').endswith('/expandableNotificationRow'):
+        row = parent.get(row)
+    if row is None:
+        continue
+    if not any(n.get('text') == 'Sentinel Quantum Vanguard' for n in row.iter('node')):
+        continue
+    match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+    if match:
+        x1, y1, x2, y2 = map(int, match.groups())
+        if x2 > x1 and y2 > y1:
+            print((x1+x2)//2, (y1+y2)//2)
+            sys.exit(0)
+sys.exit(1)
+PYNOTIFICATION
+)"; then
+      local x y
+      read -r x y <<< "$coordinates"
+      adb shell input tap "$x" "$y"
+      return 0
+    fi
+    sleep 1
+  done
+  capture failure
+  echo "Sentinel incoming-call notification could not be observed and opened."
+  return 1
+}
+
 wait_reply_focus() {
   for _ in $(seq 1 15); do
     if fresh_ui && python3 - "$FLOW_XML" <<'PYFOCUS'
@@ -292,7 +335,7 @@ capture 02-incoming-call
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
 # Exercise Sentinel's answer path, not a modem-side answer on behalf of the application.
 # An app-owned stable control plus the independent ACTIVE timeline event proves the effect.
-adb shell am start -W -n "$FLOW_PACKAGE/.SentinelInCallActivity"
+open_incoming_call_notification
 wait_text "phone_core_answer"
 tap_text "phone_core_answer"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"

@@ -26,10 +26,10 @@ const node = (pkg, id, text, enabled = 'true') => `<node package="${pkg}" resour
 
 test('runtime taps the app-owned resource ID independently of language and accessibility text', () => {
   const xml = `<hierarchy>${node('other.package', 'phone_core_call', 'Appeler')}${node('com.sentinel.quantum', 'phone_core_call', 'Call')}</hierarchy>`;
-  const result = run(flow, 'tap_text', 'wait_reply_focus', 'tap_text phone_core_call', xml);
+  const result = run(flow, 'tap_text', 'open_incoming_call_notification', 'tap_text phone_core_call', xml);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /shell input tap 20 30/);
-  const decoy = run(flow, 'tap_text', 'wait_reply_focus', 'tap_text phone_core_call', `<hierarchy>${node('other.package', 'phone_core_call', 'Appeler')}</hierarchy>`);
+  const decoy = run(flow, 'tap_text', 'open_incoming_call_notification', 'tap_text phone_core_call', `<hierarchy>${node('other.package', 'phone_core_call', 'Appeler')}</hierarchy>`);
   assert.notEqual(decoy.status, 0);
 });
 
@@ -49,4 +49,15 @@ test('Phone Core automation never selects the six localized action labels', () =
   const modifier = fs.readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/PhoneCoreTestIds.kt', 'utf8');
   assert.match(modifier, /testTagsAsResourceId = true/);
   assert.doesNotMatch(modifier, /contentDescription/);
+});
+
+
+test('incoming UI opens only through the matching Sentinel notification PendingIntent', () => {
+  const xml = `<hierarchy><node package="com.android.systemui" resource-id="com.android.systemui:id/expandableNotificationRow">${node('com.android.systemui', 'android:id/app_name_text', 'Sentinel Quantum Vanguard')}${node('com.android.systemui', 'android:id/title', '5550100')}</node></hierarchy>`;
+  const result = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', 'FLOW_NUMBER=5550100; capture() { :; }; sleep() { :; }; open_incoming_call_notification', xml);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /shell input tap 20 30/);
+  const decoy = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', 'FLOW_NUMBER=5550100; capture() { :; }; sleep() { :; }; open_incoming_call_notification', xml.replace('Sentinel Quantum Vanguard', 'Other Dialer'));
+  assert.notEqual(decoy.status, 0);
+  assert.doesNotMatch(flow, /adb shell am start[^\n]*SentinelInCallActivity/);
 });
