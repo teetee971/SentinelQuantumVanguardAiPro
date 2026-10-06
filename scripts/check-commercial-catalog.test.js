@@ -44,6 +44,18 @@ test('checkout switch cannot make an unavailable technical capability sellable',
   assert.equal(access.reason, 'TECHNICAL_GATE');
 });
 
+test('INCLUDED_WHEN_READY without a canonical capability stays fail closed', () => {
+  const mutated = clone(catalog);
+  const wearable = mutated.modules.find((module) => module.id === 'wearable_basic');
+  assert.equal(wearable.permanent_free, true);
+  assert.equal(wearable.offer, 'INCLUDED_WHEN_READY');
+  assert.deepEqual(wearable.required_capabilities, []);
+
+  const access = evaluateCommercialAccess(wearable, mutated, capabilityMap(capabilities));
+  assert.equal(access.customerOfferable, false);
+  assert.equal(access.reason, 'TECHNICAL_GATE');
+});
+
 test('trial cannot bypass unavailable capability evidence', () => {
   const mutated = clone(catalog);
   mutated.commerce.checkout_enabled = true;
