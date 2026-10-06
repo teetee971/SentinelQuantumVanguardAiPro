@@ -96,8 +96,8 @@ parent = {child: node for node in root.iter() for child in node}
 matched = False
 for node in root.iter('node'):
     values = (node.get('text',''), node.get('content-desc',''), node.get('hint',''))
-    matched = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in values
-    if not matched:
+    is_match = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in values
+    if not is_match:
         continue
     cur = node
     while cur is not None:

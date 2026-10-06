@@ -42,6 +42,18 @@ test('revocation assertions reject missing or enabled stable controls with trans
   assert.equal(missing.status, 1);
 });
 
+test('revocation retains a disabled container match across following siblings without accepting unverified containers', () => {
+  const action = node('com.sentinel.quantum', 'phone_core_sms_send', 'Send', 'false');
+  const neighbor = node('com.sentinel.quantum', 'unrelated', 'Other content');
+  const invoke = 'assert_action_disabled phone_core_sms_send';
+  const result = run(revocation, 'assert_action_disabled', 'assert_no_crash', invoke, `<hierarchy>${action}${neighbor}</hierarchy>`);
+  assert.equal(result.status, 0, result.stderr);
+  const noContainer = run(revocation, 'assert_action_disabled', 'assert_no_crash', invoke, `<hierarchy>${action.replace('clickable="true"', 'clickable="false"')}${neighbor}</hierarchy>`);
+  assert.equal(noContainer.status, 1);
+  const enabled = run(revocation, 'assert_action_disabled', 'assert_no_crash', invoke, `<hierarchy>${action}${node('com.sentinel.quantum', 'phone_core_sms_send', 'Send', 'true')}${neighbor}</hierarchy>`);
+  assert.equal(enabled.status, 2);
+});
+
 test('Phone Core automation never selects the six localized action labels', () => {
   for (const source of [flow, revocation]) {
     assert.doesNotMatch(source, /(?:wait_text|tap_text|wait_ui_contains|tap_ui_text|scroll_until_ui_contains|assert_action_disabled) "(?:Clavier|Appeler|Raccrocher|Décrocher|Répondre|Envoyer)"/);
