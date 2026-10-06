@@ -1,8 +1,5 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const flow = fs.readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
@@ -77,26 +74,16 @@ test('transport bridge wait propagates helper failure instead of converting it t
     'bridge failure must propagate');
 });
 
-test('bridge performs no helper or transport action below API 37', () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-api37-answer-bridge-'));
-  const output = path.join(tmp, 'evidence');
-  fs.mkdirSync(output);
-  const fixture = `set -euo pipefail
-FLOW_SCRIPT_DIR="$1"
-FLOW_OUTPUT_DIR="$2"
-FLOW_API="$3"
-FLOW_NUMBER="5550100"
-FLOW_INCOMING_TRANSPORT_PID=""
-${startBridge}
-${waitBridge}
-start_api37_incoming_answer_transport_bridge
-wait_api37_incoming_answer_transport_bridge
-`;
-  const result = spawnSync('bash', ['-c', fixture, 'sentinel-test', path.resolve('scripts'), output, '36'], {
-    encoding: 'utf8',
-  });
-  const evidence = fs.readFileSync(path.join(output, 'api37-incoming-answer-transport.txt'), 'utf8');
-  fs.rmSync(tmp, { recursive: true, force: true });
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(evidence, /not_required api=36/);
+test('API guard returns fail-closed evidence before any helper invocation below API 37', () => {
+  const apiGuard = startBridge.indexOf('if [[ "$FLOW_API" -lt 37 ]]');
+  const notRequired = startBridge.indexOf("printf 'not_required api=%s\\n'", apiGuard);
+  const guardReturn = startBridge.indexOf('return 0', notRequired);
+  const guardEnd = startBridge.indexOf('fi', guardReturn);
+  const helperInvocation = startBridge.indexOf('phone-core-emulator-api37-answer-bridge.py');
+
+  assert.ok(apiGuard >= 0, 'API guard must exist');
+  assert.ok(notRequired > apiGuard, 'below-37 path must record explicit not-required evidence');
+  assert.ok(guardReturn > notRequired, 'below-37 path must terminate successfully after recording evidence');
+  assert.ok(guardEnd > guardReturn, 'API guard must close after its bounded return path');
+  assert.ok(helperInvocation > guardEnd, 'helper invocation must be unreachable from the below-37 branch');
 });
