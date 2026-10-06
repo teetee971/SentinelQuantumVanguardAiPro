@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "updated_at": "2026-10-05",
+  "updated_at": "2026-10-06",
   "certification_schema_version": 5,
   "rollout_mode": "shadow",
   "emulator_qualification": {
@@ -38,7 +38,7 @@
       "effective_permission_denial_fail_closed",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce portail automatise uniquement les preuves reproductibles sur Android Emulator. Une permission Android gérée par un rôle peut être automatiquement restaurée par le RoleController ; la qualification fail-closed vérifie donc aussi l'autorisation effective via l'AppOp associé. Elle ne constitue ni une preuve modem/opérateur physique ni une autorisation de revendiquer une production commerciale complète."
+    "scope_note": "Ce portail automatise uniquement les preuves reproductibles sur Android Emulator. Le fail-closed SMS conserve ROLE_SMS et prouve une autorisation effective réellement refusée : révocation runtime SEND_SMS lorsque le framework la rend observable, sinon AppOp SEND_SMS vérifié comme fallback. Dans les deux cas, l'action protégée doit rester non actionnable après retour au premier plan. Cette qualification ne constitue ni une preuve modem/opérateur physique ni une autorisation de revendiquer une production commerciale complète."
   },
   "commercial_release": {
     "physical_validation_required": true,
