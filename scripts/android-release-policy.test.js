@@ -7,6 +7,11 @@ const workflow = readFileSync(resolve('.github/workflows/android-release.yml'), 
 const upgradeWorkflow = readFileSync(resolve('.github/workflows/android-upgrade-safe-apk.yml'), 'utf8');
 const androidBuild = readFileSync(resolve('native-android-app/app/build.gradle'), 'utf8');
 
+const executableUpgradeWorkflow = upgradeWorkflow
+  .split('\n')
+  .filter((line) => !line.trimStart().startsWith('#'))
+  .join('\n');
+
 test('production Android releases require the protected environment and current main head', () => {
   assert.match(workflow, /environment:\s*\n\s+name: android-production/);
   assert.match(workflow, /\[\[ "\$SHA" != "\$MAIN_SHA" \]\]/);
@@ -69,7 +74,7 @@ test('upgrade-safe tester APK proves same signer and strictly increasing version
 });
 
 test('upgrade qualification cannot silently become uninstall/reinstall', () => {
-  assert.doesNotMatch(upgradeWorkflow, /adb\s+uninstall|pm\s+clear/i);
+  assert.doesNotMatch(executableUpgradeWorkflow, /adb\s+uninstall|pm\s+clear/i);
   assert.match(upgradeWorkflow, /uninstall_used_for_upgrade_proof": false/);
   assert.match(upgradeWorkflow, /same_signer_proven": true/);
   assert.match(upgradeWorkflow, /physical_validation": "not-executed"/);
