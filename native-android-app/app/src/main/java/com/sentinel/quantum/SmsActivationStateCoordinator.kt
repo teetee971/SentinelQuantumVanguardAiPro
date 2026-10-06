@@ -6,7 +6,6 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.Process
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import java.lang.ref.WeakReference
 
@@ -15,9 +14,11 @@ import java.lang.ref.WeakReference
  *
  * Android may kill/restart the default SMS app while role/permission reconciliation is still in
  * flight. A Compose snapshot taken during that transition can therefore outlive the framework
- * state it represented. This coordinator observes the framework authorization boundary outside the
- * activity and recreates only the visible SMS composer when the effective authorization fingerprint
- * actually changes. Draft destination/body state is rememberSaveable and survives recreation.
+ * state it represented. This coordinator observes SEND_SMS AppOp changes and revalidates the full
+ * authorization fingerprint whenever the composer becomes visible, including one delayed read for
+ * framework reconciliation that settles just after onResume. It recreates only the visible SMS
+ * composer when the effective authorization fingerprint actually changes. Draft destination/body
+ * state is rememberSaveable and survives recreation.
  *
  * The coordinator is deliberately read-only: it never grants a role, permission or AppOp.
  */
@@ -42,10 +43,6 @@ internal class SmsActivationStateCoordinator(
     private val appOpsManager = application.getSystemService(AppOpsManager::class.java)
     private var visibleComposer = WeakReference<SmsComposeActivity>(null)
     private var lastFingerprint: AuthorizationFingerprint? = readFingerprint()
-
-    private val permissionListener = android.content.pm.PackageManager.OnPermissionsChangedListener { uid ->
-        if (uid == Process.myUid()) scheduleRevalidation()
-    }
 
     private val appOpListener = AppOpsManager.OnOpChangedListener { op, packageName ->
         if (
@@ -90,7 +87,6 @@ internal class SmsActivationStateCoordinator(
 
     fun start() {
         application.registerActivityLifecycleCallbacks(activityCallbacks)
-        application.packageManager.addOnPermissionsChangeListener(permissionListener)
         appOpsManager?.startWatchingMode(
             AppOpsManager.OPSTR_SEND_SMS,
             application.packageName,
