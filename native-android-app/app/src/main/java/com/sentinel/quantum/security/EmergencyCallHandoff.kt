@@ -18,6 +18,11 @@ object EmergencyCallHandoff {
     fun openSystemDialer(context: Context, number: String): Boolean {
         if (number.isBlank()) return false
         val telecom = context.getSystemService(TelecomManager::class.java)
+        val intent = Intent(
+            Intent.ACTION_DIAL,
+            Uri.parse("tel:" + Uri.encode(number))
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
         val preferredPackage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             telecom.systemDialerPackage
                 ?.takeIf { it.isNotBlank() && it != context.packageName }
@@ -26,25 +31,35 @@ object EmergencyCallHandoff {
         } else {
             telecom.defaultDialerPackage
                 ?.takeIf { it.isNotBlank() && it != context.packageName }
-        }
+                ?: findLegacySystemDialer(context, intent)
+        } ?: return false
 
-        val intent = Intent(
-            Intent.ACTION_DIAL,
-            Uri.parse("tel:" + Uri.encode(number))
-        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (preferredPackage != null) intent.setPackage(preferredPackage)
-
+        // Keep emergency handoff explicit. If Sentinel is the selected default dialer on API 24-28,
+        // an implicit ACTION_DIAL would otherwise resolve straight back to Sentinel and defeat the
+        // safety handoff. MATCH_SYSTEM_ONLY is available from API 24, which is this app's minSdk.
+        intent.setPackage(preferredPackage)
         val resolvedPackage = runCatching {
             context.packageManager
                 .resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
                 ?.activityInfo
                 ?.packageName
         }.getOrNull() ?: return false
-        if (resolvedPackage == context.packageName) return false
+        if (resolvedPackage != preferredPackage || resolvedPackage == context.packageName) return false
 
         return runCatching {
             context.startActivity(intent)
             true
         }.getOrDefault(false)
     }
+
+    private fun findLegacySystemDialer(context: Context, dialIntent: Intent): String? = runCatching {
+        context.packageManager
+            .queryIntentActivities(
+                dialIntent,
+                PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY
+            )
+            .asSequence()
+            .mapNotNull { it.activityInfo?.packageName }
+            .firstOrNull { it.isNotBlank() && it != context.packageName }
+    }.getOrNull()
 }
