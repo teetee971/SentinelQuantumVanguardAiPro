@@ -51,10 +51,13 @@ Le générateur énumère tous les candidats littéraux Kotlin dans app/src/main
 compris chaînes techniques/commentaires, sans filtre linguistique susceptible de
 perdre des textes) et toutes les ressources string/plurals/string-array. Ce n'est
 pas une promesse que chaque candidat doit être traduit. Baseline après migration :
-6177 candidats dans 244 fichiers Kotlin, 380 ressources. Principales surfaces :
+6177 candidats dans 244 fichiers Kotlin, 373 ressources. Principales surfaces :
 composeur 191, InCall 61, SMS 209, activation 101, Caller ID 117 candidats.
 
-Sept actions sont maintenant des ressources FR/EN. Les actions d'automatisation
+Sept actions sont maintenant des ressources Android françaises. Le brouillon anglais
+`docs/i18n/phone_core_actions.en.xml` reste hors des ressources livrées : une locale
+partielle provoquait 366 erreurs MissingTranslation légitimes et ne constitue pas
+un support de langue utilisable. Le catalogue complet est requis avant activation. Les actions d'automatisation
 Clavier/Appeler/Décrocher/Raccrocher/Répondre/Envoyer utilisent des testTag exportés
 en resource-id app-owned. Les libellés d'accessibilité restent traduits séparément.
 Restent : migration des autres libellés/états, descriptions d'accessibilité,
