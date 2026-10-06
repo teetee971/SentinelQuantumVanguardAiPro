@@ -24,13 +24,20 @@ if [[ "$*" == 'shell getprop sys.boot_completed' ]]; then
   echo 1; exit 0
 fi
 if [[ "$1" == pull ]]; then
-  if [[ "$COLLECT_MODE" == pull-error ]]; then echo 'permission denied' >&2; exit 1; fi
+  if [[ "$COLLECT_MODE" == pull-error ]]; then
+    echo '[  0%] /data/local/tmp/sentinel-qualification-logcat.txt' >&2
+    echo 'permission denied' >&2
+    exit 1
+  fi
   if [[ "$COLLECT_MODE" == partial-sync-product-crash ]]; then crash > "$3"; exit 255; fi
   if [[ "$COLLECT_MODE" == pull-empty-once || "$COLLECT_MODE" == pull-empty-always ]]; then
     pull_count=0
     if [[ -f "$COLLECT_FIXTURE/pull-count" ]]; then read -r pull_count < "$COLLECT_FIXTURE/pull-count"; fi
     pull_count=$((pull_count + 1)); echo "$pull_count" > "$COLLECT_FIXTURE/pull-count"
-    if [[ "$COLLECT_MODE" == pull-empty-always || "$pull_count" == 1 ]]; then exit 1; fi
+    if [[ "$COLLECT_MODE" == pull-empty-always || "$pull_count" == 1 ]]; then
+      echo '[  0%] /data/local/tmp/sentinel-qualification-logcat.txt' >&2
+      exit 1
+    fi
   fi
   cp "$COLLECT_FIXTURE/device-buffer" "$3"; exit 0
 fi
@@ -98,11 +105,16 @@ for (const [mode, expected, reads] of [
       if (mode === 'pull-empty-once') {
         assert.equal(readFileSync(output + '.attempt-2.txt.capture.status', 'utf8').trim(), '0');
         assert.equal(readFileSync(output + '.attempt-2.txt.pull.status', 'utf8').trim(), '1');
+        assert.match(readFileSync(output + '.attempt-2.stderr', 'utf8'), /^\[  0%\]/);
         assert.equal(readFileSync(output + '.attempt-3.txt.pull.status', 'utf8').trim(), '0');
         assert.match(readFileSync(output, 'utf8'), /healthy transport/);
       }
       if (mode === 'pull-empty-always') {
         assert.equal(readFileSync(output + '.attempt-3.txt.pull.status', 'utf8').trim(), '1');
+        assert.equal(result.status, 1);
+      }
+      if (mode === 'pull-error') {
+        assert.match(readFileSync(output + '.attempt-2.stderr', 'utf8'), /permission denied/);
         assert.equal(result.status, 1);
       }
       if (mode.endsWith('product-crash')) {
