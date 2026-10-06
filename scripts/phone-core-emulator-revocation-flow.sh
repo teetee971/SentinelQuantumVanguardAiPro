@@ -2,6 +2,7 @@
 # Framework-level role/effective-permission denial is executed outside the target app process so
 # Android is free to kill/restart Sentinel exactly as it would on a real device.
 set -euo pipefail
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="${1:?Output directory required}"
 mkdir -p "$OUT_DIR"
 PACKAGE="com.sentinel.quantum"
@@ -306,6 +307,14 @@ assert_modem_call_absent() {
   adb emu gsm list > "$OUT_DIR/$evidence"
   if grep -Fq "$number" "$OUT_DIR/$evidence"; then
     echo "Protected dial action created modem call $number while DIALER role was revoked."
+    exit 1
+  fi
+  # OK-only modem output cannot prove protected-action absence either. Require a
+  # readable empty live Telecom section before and after the revoked dial action.
+  local telecom_evidence="$OUT_DIR/${evidence%.txt}-telecom.txt"
+  adb shell dumpsys telecom > "$telecom_evidence"
+  if ! python3 "$SCRIPT_DIR/phone-core-emulator-telecom-calls.py" "$telecom_evidence"; then
+    echo "Protected dial action has live or UNKNOWN Telecom state while DIALER role is revoked."
     exit 1
   fi
 }

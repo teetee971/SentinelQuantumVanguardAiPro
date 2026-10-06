@@ -145,3 +145,23 @@ wait_emulator_call_absent 5550101
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+
+test('revoked dial action also requires empty readable Telecom state despite OK-only modem output', () => {
+  const source = fs.readFileSync('scripts/phone-core-emulator-revocation-flow.sh', 'utf8');
+  const start = source.indexOf('assert_modem_call_absent() {');
+  const end = source.indexOf('\nwait_incoming_call_observed() {', start);
+  assert.ok(start >= 0 && end > start);
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-revoked-telecom-'));
+  try {
+    const script = `set -eu
+OUT_DIR="$1"
+SCRIPT_DIR="$2"
+adb() { if [[ "$1" == "emu" ]]; then printf 'OK\\n'; else printf 'CallsManager:\\n  mCalls:\\n    [Call id=TC@1, state=DIALING, handle=tel:*****97]\\n  mCallAudioManager:\\n'; fi; }
+${source.slice(start, end)}
+assert_modem_call_absent 5550197 probe.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', temp, path.resolve('scripts')], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stdout, /live or UNKNOWN Telecom/);
+  } finally { fs.rmSync(temp, { recursive: true, force: true }); }
+});
