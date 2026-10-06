@@ -26,6 +26,12 @@ fi
 if [[ "$1" == pull ]]; then
   if [[ "$COLLECT_MODE" == pull-error ]]; then echo 'permission denied' >&2; exit 1; fi
   if [[ "$COLLECT_MODE" == partial-sync-product-crash ]]; then crash > "$3"; exit 255; fi
+  if [[ "$COLLECT_MODE" == pull-empty-once || "$COLLECT_MODE" == pull-empty-always ]]; then
+    pull_count=0
+    if [[ -f "$COLLECT_FIXTURE/pull-count" ]]; then read -r pull_count < "$COLLECT_FIXTURE/pull-count"; fi
+    pull_count=$((pull_count + 1)); echo "$pull_count" > "$COLLECT_FIXTURE/pull-count"
+    if [[ "$COLLECT_MODE" == pull-empty-always || "$pull_count" == 1 ]]; then exit 1; fi
+  fi
   cp "$COLLECT_FIXTURE/device-buffer" "$3"; exit 0
 fi
 count=0
@@ -56,7 +62,8 @@ for (const [mode, expected, reads] of [
   ['flapping-boot', 0, 2], ['always-aborted', 1, 3], ['syntax-error', 1, 1],
   ['partial-product-crash', 1, 1], ['empty-success', 1, 1],
   ['snapshot-product-crash', 1, 2], ['partial-sync-product-crash', 1, 2],
-  ['capture-error-stale-file', 1, 2], ['pull-error', 1, 2], ['empty-snapshot', 1, 2]
+  ['capture-error-stale-file', 1, 2], ['pull-error', 1, 2], ['empty-snapshot', 1, 2],
+  ['pull-empty-once', 0, 3], ['pull-empty-always', 1, 3]
 ]) {
   test(`logcat collector: ${mode}`, () => {
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-logcat-read-'));
@@ -78,10 +85,25 @@ for (const [mode, expected, reads] of [
         assert.ok(existsSync(output + '.attempt-2.txt.capture.status'));
         assert.ok(existsSync(output + '.attempt-2.txt.pull.status'));
       }
+      if (reads > 2) {
+        assert.equal(readFileSync(output + '.attempt-3.mode', 'utf8').trim(), 'device-file-sync');
+        assert.ok(existsSync(output + '.attempt-3.txt.capture.status'));
+        assert.ok(existsSync(output + '.attempt-3.txt.pull.status'));
+      }
       if (mode === 'transient') {
         assert.match(readFileSync(output + '.attempt-1.txt', 'utf8'), /truncated/);
         assert.equal(readFileSync(output + '.attempt-1.status', 'utf8').trim(), '255');
         assert.match(readFileSync(output, 'utf8'), /healthy transport/);
+      }
+      if (mode === 'pull-empty-once') {
+        assert.equal(readFileSync(output + '.attempt-2.txt.capture.status', 'utf8').trim(), '0');
+        assert.equal(readFileSync(output + '.attempt-2.txt.pull.status', 'utf8').trim(), '1');
+        assert.equal(readFileSync(output + '.attempt-3.txt.pull.status', 'utf8').trim(), '0');
+        assert.match(readFileSync(output, 'utf8'), /healthy transport/);
+      }
+      if (mode === 'pull-empty-always') {
+        assert.equal(readFileSync(output + '.attempt-3.txt.pull.status', 'utf8').trim(), '1');
+        assert.equal(result.status, 1);
       }
       if (mode.endsWith('product-crash')) {
         assert.match(readFileSync(output, 'utf8'), /FATAL EXCEPTION/);
