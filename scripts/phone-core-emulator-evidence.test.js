@@ -2,3 +2,4 @@
 // regressions under the single entry point executed by the emulator host gate.
 import './phone-core-emulator-evidence-base.test.js';
 import './phone-core-emulator-sms-denial-preflight.test.js';
+import './phone-core-emulator-schema3-evidence.test.js';
