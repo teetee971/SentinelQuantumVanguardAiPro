@@ -182,26 +182,27 @@ open_incoming_call_notification() {
   adb shell cmd statusbar expand-notifications
   for _ in $(seq 1 20); do
     local coordinates=""
-    if fresh_ui && coordinates="$(python3 - "$FLOW_XML" "$FLOW_NUMBER" <<'PYNOTIFICATION'
+    if fresh_ui && coordinates="$(python3 - "$FLOW_XML" <<'PYNOTIFICATION'
 import re, sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.argv[1]).getroot()
-parent = {child: node for node in root.iter() for child in node}
-for node in root.iter('node'):
-    if node.get('package') != 'com.android.systemui' or sys.argv[2] not in node.get('text', ''):
+for row in root.iter('node'):
+    if row.get('package') != 'com.android.systemui' or row.get('resource-id') != 'com.android.systemui:id/expandableNotificationRow':
         continue
-    row = node
-    while row is not None and not row.get('resource-id', '').endswith('/expandableNotificationRow'):
-        row = parent.get(row)
-    if row is None:
+    if not any(n.get('package') == 'com.android.systemui' and n.get('resource-id') == 'android:id/app_name_text' and n.get('text') == 'Sentinel Quantum Vanguard' for n in row.iter('node')):
         continue
-    if not any(n.get('text') == 'Sentinel Quantum Vanguard' for n in row.iter('node')):
-        continue
-    match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
-    if match:
-        x1, y1, x2, y2 = map(int, match.groups())
-        if x2 > x1 and y2 > y1:
-            print((x1+x2)//2, (y1+y2)//2)
-            sys.exit(0)
+    # Lock-screen privacy may hide the caller. The notification body opens the
+    # content PendingIntent; its translated text/number is not a test identifier.
+    # CALL_NOTIFICATION_POSTED was already required, and answer + ACTIVE remain
+    # separate assertions after navigation.
+    for node in row.iter('node'):
+        if node.get('package') != 'com.android.systemui' or node.get('resource-id') not in ('android:id/text', 'android:id/title'):
+            continue
+        match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+        if match:
+            x1, y1, x2, y2 = map(int, match.groups())
+            if x2 > x1 and y2 > y1:
+                print((x1+x2)//2, (y1+y2)//2)
+                sys.exit(0)
 sys.exit(1)
 PYNOTIFICATION
 )"; then

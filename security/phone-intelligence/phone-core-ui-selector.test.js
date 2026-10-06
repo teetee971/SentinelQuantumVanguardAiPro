@@ -53,11 +53,13 @@ test('Phone Core automation never selects the six localized action labels', () =
 
 
 test('incoming UI opens only through the matching Sentinel notification PendingIntent', () => {
-  const xml = `<hierarchy><node package="com.android.systemui" resource-id="com.android.systemui:id/expandableNotificationRow">${node('com.android.systemui', 'android:id/app_name_text', 'Sentinel Quantum Vanguard')}${node('com.android.systemui', 'android:id/title', '5550100')}</node></hierarchy>`;
+  const xml = `<hierarchy><node package="com.android.systemui" resource-id="com.android.systemui:id/expandableNotificationRow">${node('com.android.systemui', 'android:id/app_name_text', 'Sentinel Quantum Vanguard')}${node('com.android.systemui', 'android:id/text', 'Incoming call')}</node></hierarchy>`;
   const result = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', 'FLOW_NUMBER=5550100; capture() { :; }; sleep() { :; }; open_incoming_call_notification', xml);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /shell input tap 20 30/);
   const decoy = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', 'FLOW_NUMBER=5550100; capture() { :; }; sleep() { :; }; open_incoming_call_notification', xml.replace('Sentinel Quantum Vanguard', 'Other Dialer'));
   assert.notEqual(decoy.status, 0);
+  const wrongPackage = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', 'capture() { :; }; sleep() { :; }; open_incoming_call_notification', xml.replaceAll('com.android.systemui', 'other.package'));
+  assert.notEqual(wrongPackage.status, 0);
   assert.doesNotMatch(flow, /adb shell am start[^\n]*SentinelInCallActivity/);
 });
