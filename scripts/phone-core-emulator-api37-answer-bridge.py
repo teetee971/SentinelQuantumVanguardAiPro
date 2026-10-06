@@ -2,12 +2,10 @@
 """Synchronize Android 17 emulator GSM transport inside a real Telecom answer request.
 
 This helper is host-only qualification infrastructure. It keeps the emulator console
-connection open before the UI tap, observes Telecom's causal answer-transaction marker,
-then waits for Telecom's REQUEST_ACCEPT event before asking the synthetic modem to accept
-the same incoming call. This places transport synchronization after Sentinel's answer action
-has been accepted by Telecom but before the telephony connection is expected to settle.
-A later Telecom ANSWERED -> ACTIVE transition remains mandatory; the shell harness separately
-requires Sentinel's private INCALL_ACTIVE evidence.
+connection open before the UI tap, observes one causal Telecom answer transaction, then
+synchronizes the synthetic modem only when REQUEST_ACCEPT belongs to that same transaction.
+The later ANSWERED and ACTIVE evidence must belong to the same Telecom call id. The shell
+harness separately requires Sentinel's private INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -25,15 +23,25 @@ import time
 ANSWER_REQUEST_MARKER = (
     "CallSequencingController: answerCall: Beginning call sequencing transaction for answering incoming call."
 )
-REQUEST_ACCEPT_MARKER = "REQUEST_ACCEPT"
-ANSWERED_MARKER = "CallsManager: setCallState RINGING(RINGING) -> ANSWERED"
-ACTIVE_MARKER = "CallsManager: setCallState ANSWERED(ANSWERED) -> ACTIVE"
+REQUEST_ACCEPT_RE = re.compile(r"RecordEntry (TC@\d+): REQUEST_ACCEPT\b")
+ANSWERED_RE = re.compile(
+    r"CallsManager: setCallState RINGING(?:\(RINGING\))? -> ANSWERED, call: \[Call id=(TC@\d+),"
+)
+ACTIVE_RE = re.compile(
+    r"CallsManager: setCallState ANSWERED(?:\(ANSWERED\))? -> ACTIVE, call: \[Call id=(TC@\d+),"
+)
+TRANSACTION_TOKEN_RE = re.compile(r"@([A-Za-z0-9]+)[^A-Za-z0-9]*$")
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
 
 
 def append_line(path: Path, line: str) -> None:
     with path.open("a", encoding="utf-8") as handle:
         handle.write(line.rstrip("\r\n") + "\n")
+
+
+def transaction_token(line: str) -> str | None:
+    match = TRANSACTION_TOKEN_RE.search(line.rstrip())
+    return match.group(1) if match else None
 
 
 def recv_until(sock: socket.socket, needles: tuple[str, ...], timeout_s: float) -> str:
@@ -54,9 +62,6 @@ def recv_until(sock: socket.socket, needles: tuple[str, ...], timeout_s: float) 
 
 
 def authenticate_console(sock: socket.socket, evidence: Path, token_file: Path) -> None:
-    # Android's documented console banner ends with an initial OK even when authentication is
-    # required. Consume that complete banner first; otherwise its stale OK could be mistaken for
-    # the response to the later auth or gsm command.
     greeting = recv_until(sock, ("OK", "KO"), 1.5)
     if greeting:
         append_line(evidence, "console_greeting=" + greeting.replace("\r", " ").replace("\n", " | ").strip())
@@ -104,8 +109,6 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
     marker_file.write_text("", encoding="utf-8")
 
     port = discover_console_port()
-    # The Android emulator console is a host-local qualification channel. Do not permit an
-    # environment override here: a remote socket would violate the emulator-only trust boundary.
     host = "127.0.0.1"
     token_path = Path(
         os.environ.get(
@@ -128,7 +131,8 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
         selector = selectors.DefaultSelector()
         selector.register(logcat.stdout, selectors.EVENT_READ)
         deadline = time.monotonic() + timeout_s
-        answer_requested = False
+        answer_transaction: str | None = None
+        call_id: str | None = None
         accept_requested = False
         synchronized = False
         answered = False
@@ -144,57 +148,72 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                     line = key.fileobj.readline()
                     if not line:
                         continue
-                    if not answer_requested and ANSWER_REQUEST_MARKER in line:
+
+                    if answer_transaction is None and ANSWER_REQUEST_MARKER in line:
+                        observed_transaction = transaction_token(line)
+                        append_line(evidence, line)
+                        if observed_transaction is None:
+                            append_line(evidence, "answer_request_missing_transaction_token=1")
+                            continue
+                        answer_transaction = observed_transaction
                         marker_file.write_text(line, encoding="utf-8")
-                        append_line(evidence, line)
-                        answer_requested = True
                         continue
 
-                    # API 37 evidence established two unsafe windows for the synthetic modem:
-                    # - synchronizing at answerCall start can disconnect TC@1 and create an unknown TC@2;
-                    # - synchronizing after Telecom has already committed ANSWERED can drive TC@1 to HOLDING.
-                    # REQUEST_ACCEPT sits between those windows: Telecom has causally accepted Sentinel's
-                    # Call.answer() request, but the telephony connection has not yet settled its radio state.
-                    if answer_requested and not accept_requested and REQUEST_ACCEPT_MARKER in line:
-                        append_line(evidence, line)
-                        accept_requested = True
-                        console.sendall(f"gsm accept {number}\n".encode("utf-8"))
-                        response = recv_until(console, ("OK", "KO"), 1.0)
-                        append_line(
-                            evidence,
-                            "console_gsm_accept_response="
-                            + response.replace("\r", " ").replace("\n", " | ").strip(),
-                        )
-                        if "OK" not in response or "KO" in response:
-                            raise RuntimeError("emulator console gsm accept failed")
-                        append_line(
-                            evidence,
-                            f"transport_sync=emulator_console_gsm_accept api=37 number={number}",
-                        )
-                        synchronized = True
-                        continue
+                    if answer_transaction is not None and not accept_requested:
+                        accept_match = REQUEST_ACCEPT_RE.search(line)
+                        if accept_match and transaction_token(line) == answer_transaction:
+                            call_id = accept_match.group(1)
+                            append_line(evidence, line)
+                            with marker_file.open("a", encoding="utf-8") as marker_handle:
+                                marker_handle.write(line)
+                            accept_requested = True
+                            console.sendall(f"gsm accept {number}\n".encode("utf-8"))
+                            response = recv_until(console, ("OK", "KO"), 1.0)
+                            append_line(
+                                evidence,
+                                "console_gsm_accept_response="
+                                + response.replace("\r", " ").replace("\n", " | ").strip(),
+                            )
+                            if "OK" not in response or "KO" in response:
+                                raise RuntimeError("emulator console gsm accept failed")
+                            append_line(
+                                evidence,
+                                f"transport_sync=emulator_console_gsm_accept api=37 number={number} call_id={call_id} transaction={answer_transaction}",
+                            )
+                            synchronized = True
+                            continue
 
-                    if synchronized and not answered and ANSWERED_MARKER in line:
-                        append_line(evidence, line)
-                        answered = True
-                        continue
+                    if synchronized and not answered and call_id is not None:
+                        answered_match = ANSWERED_RE.search(line)
+                        if (
+                            answered_match
+                            and answered_match.group(1) == call_id
+                            and transaction_token(line) == answer_transaction
+                        ):
+                            append_line(evidence, line)
+                            answered = True
+                            continue
 
-                    if synchronized and answered and not active and ACTIVE_MARKER in line:
-                        append_line(evidence, line)
-                        active = True
-                    if answer_requested and accept_requested and synchronized and answered and active:
+                    if synchronized and answered and not active and call_id is not None:
+                        active_match = ACTIVE_RE.search(line)
+                        if active_match and active_match.group(1) == call_id:
+                            append_line(evidence, line)
+                            active = True
+
+                    if answer_transaction and accept_requested and synchronized and answered and active:
                         return
+
             missing = []
-            if not answer_requested:
+            if answer_transaction is None:
                 missing.append("answer_request")
             if not accept_requested:
                 missing.append("request_accept")
             if not synchronized:
                 missing.append("transport_sync")
             if not answered:
-                missing.append("answered")
+                missing.append("answered_same_call")
             if not active:
-                missing.append("active")
+                missing.append("active_same_call")
             raise RuntimeError("missing Telecom bridge evidence: " + ",".join(missing))
         finally:
             selector.close()
@@ -224,7 +243,7 @@ def main() -> int:
     try:
         run_bridge(args.number, evidence, marker_file, args.timeout)
         return 0
-    except Exception as exc:  # qualification infrastructure must fail closed
+    except Exception as exc:
         evidence.parent.mkdir(parents=True, exist_ok=True)
         append_line(evidence, f"bridge_failure={type(exc).__name__}:{exc}")
         print(f"API 37 incoming-answer transport bridge failed: {exc}", file=sys.stderr)
