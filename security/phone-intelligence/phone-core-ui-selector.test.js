@@ -53,7 +53,7 @@ test('Phone Core automation never selects the six localized action labels', () =
 
 
 test('incoming UI opens only through the matching Sentinel notification PendingIntent', () => {
-  const xml = `<hierarchy><node package="com.android.systemui" resource-id="com.android.systemui:id/expandableNotificationRow">${node('com.android.systemui', 'android:id/app_name_text', 'Sentinel Quantum Vanguard')}${node('com.android.systemui', 'android:id/text', 'Incoming call')}</node></hierarchy>`;
+  const xml = `<hierarchy><node package="com.android.systemui" resource-id="com.android.systemui:id/expandableNotificationRow" clickable="true">${node('com.android.systemui', 'android:id/app_name_text', 'Sentinel Quantum Vanguard')}${node('com.android.systemui', 'android:id/text', 'Incoming call')}</node></hierarchy>`;
   const result = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', 'FLOW_NUMBER=5550100; capture() { :; }; sleep() { :; }; open_incoming_call_notification', xml);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /shell input tap 20 30/);
@@ -62,4 +62,21 @@ test('incoming UI opens only through the matching Sentinel notification PendingI
   const wrongPackage = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', 'capture() { :; }; sleep() { :; }; open_incoming_call_notification', xml.replaceAll('com.android.systemui', 'other.package'));
   assert.notEqual(wrongPackage.status, 0);
   assert.doesNotMatch(flow, /adb shell am start[^\n]*SentinelInCallActivity/);
+});
+
+
+test('notification navigation handles API 29 row IDs and API 37 compact caller headers without action labels', () => {
+  const api29 = `<hierarchy><node package="com.android.systemui" clickable="true">${node('com.android.systemui', 'android:id/app_name_text', 'Sentinel Quantum Vanguard')}${node('com.android.systemui', 'android:id/text', 'Appel entrant')}</node></hierarchy>`;
+  const compactRow = `<node package="com.android.systemui" resource-id="com.android.systemui:id/expandableNotificationRow" clickable="true">${node('com.android.systemui', 'android:id/title', '5550100 · Aucune information locale')}${node('com.android.systemui', 'android:id/text', 'Incoming call')}</node>`;
+  const invoke = 'FLOW_NUMBER=5550100; capture() { :; }; sleep() { :; }; open_incoming_call_notification';
+  for (const xml of [api29, `<hierarchy>${compactRow}</hierarchy>`]) {
+    const result = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', invoke, xml);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /shell input tap 20 30/);
+  }
+  for (const xml of [`<hierarchy>${compactRow}${compactRow}</hierarchy>`, `<hierarchy>${compactRow.replace('5550100 ·', '15550100 ·')}</hierarchy>`]) {
+    const result = run(flow, 'open_incoming_call_notification', 'wait_reply_focus', invoke, xml);
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(result.stdout, /shell input tap/);
+  }
 });

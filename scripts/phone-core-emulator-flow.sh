@@ -182,27 +182,41 @@ open_incoming_call_notification() {
   adb shell cmd statusbar expand-notifications
   for _ in $(seq 1 20); do
     local coordinates=""
-    if fresh_ui && coordinates="$(python3 - "$FLOW_XML" <<'PYNOTIFICATION'
+    if fresh_ui && coordinates="$(python3 - "$FLOW_XML" "$FLOW_NUMBER" <<'PYNOTIFICATION'
 import re, sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.argv[1]).getroot()
-for row in root.iter('node'):
-    if row.get('package') != 'com.android.systemui' or row.get('resource-id') != 'com.android.systemui:id/expandableNotificationRow':
+parents = {child: parent for parent in root.iter() for child in parent}
+rows = {}
+for node in root.iter('node'):
+    if node.get('package') != 'com.android.systemui' or node.get('resource-id') not in ('android:id/text', 'android:id/title'):
         continue
-    if not any(n.get('package') == 'com.android.systemui' and n.get('resource-id') == 'android:id/app_name_text' and n.get('text') == 'Sentinel Quantum Vanguard' for n in row.iter('node')):
+    row = parents.get(node)
+    while row is not None and row.get('clickable') != 'true':
+        row = parents.get(row)
+    if row is None or row.get('package') != 'com.android.systemui':
         continue
-    # Lock-screen privacy may hide the caller. The notification body opens the
-    # content PendingIntent; its translated text/number is not a test identifier.
-    # CALL_NOTIFICATION_POSTED was already required, and answer + ACTIVE remain
-    # separate assertions after navigation.
-    for node in row.iter('node'):
-        if node.get('package') != 'com.android.systemui' or node.get('resource-id') not in ('android:id/text', 'android:id/title'):
+    names = [n.get('text') for n in row.iter('node') if n.get('package') == 'com.android.systemui' and n.get('resource-id') == 'android:id/app_name_text']
+    titles = [n.get('text', '') for n in row.iter('node') if n.get('package') == 'com.android.systemui' and n.get('resource-id') == 'android:id/title']
+    # API 29 omits the row resource ID; API 37's compact CallStyle omits app_name.
+    # Use the nearest clickable SystemUI notification and require a unique match.
+    # A visible app name must match Sentinel; when absent the exact synthetic caller
+    # identifies only a navigation candidate. Sentinel's own answer resource ID and
+    # InCall ACTIVE are still mandatory afterwards: this never proves answer/ownership.
+    if names:
+        if names != ['Sentinel Quantum Vanguard']:
             continue
-        match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
-        if match:
-            x1, y1, x2, y2 = map(int, match.groups())
-            if x2 > x1 and y2 > y1:
-                print((x1+x2)//2, (y1+y2)//2)
-                sys.exit(0)
+    elif not any(t == sys.argv[2] or t.startswith(sys.argv[2] + ' · ') for t in titles):
+        continue
+    match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+    if match:
+        x1, y1, x2, y2 = map(int, match.groups())
+        if x2 > x1 and y2 > y1:
+            # Prefer the body to the header, keeping one candidate per notification.
+            if row not in rows or node.get('resource-id') == 'android:id/text':
+                rows[row] = ((x1+x2)//2, (y1+y2)//2)
+if len(rows) == 1:
+    print(*next(iter(rows.values())))
+    sys.exit(0)
 sys.exit(1)
 PYNOTIFICATION
 )"; then
