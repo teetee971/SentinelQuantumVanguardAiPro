@@ -36,7 +36,7 @@ for profile in standard s24plus-equivalent; do
     cat "$OUT/viewport/$profile-tests.txt"
     exit 1
   fi
-  adb pull "/sdcard/Android/data/com.sentinel.quantum/files/qualification/$profile" "$OUT/viewport/$profile"
+  adb pull "/sdcard/Pictures/SentinelQualification/$profile" "$OUT/viewport/$profile"
 done
 python3 - "$OUT/viewport" <<'PY'
 import json, pathlib, struct, sys

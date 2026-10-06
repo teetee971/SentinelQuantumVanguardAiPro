@@ -1,7 +1,10 @@
 package com.sentinel.quantum.ui
 
 import android.content.Context
+import android.content.ContentValues
 import android.graphics.Bitmap
+import android.os.Build
+import android.provider.MediaStore
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.semantics.SemanticsActions
@@ -14,6 +17,7 @@ import com.sentinel.quantum.PhoneCoreSetupWizardStore
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import java.io.File
+import java.io.ByteArrayOutputStream
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -89,17 +93,35 @@ class MainNavigationQualificationTest {
         val layouts = mutableListOf<TextLayoutResult>()
         node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         assertTrue("$value has no text layout", layouts.isNotEmpty())
-        assertFalse("$value is visually truncated", layouts.any { it.hasVisualOverflow })
+        if (layouts.any { it.hasVisualOverflow }) screenshot("failure-${value.hashCode()}")
+        assertFalse("$value is visually truncated: " + layouts.joinToString {
+            "size=${it.size}, paragraph=${it.multiParagraph.width}x${it.multiParagraph.height}, lines=${it.lineCount}, ellipsis=" +
+                (0 until it.lineCount).map { line -> it.isLineEllipsized(line) }
+        }, layouts.any { it.hasVisualOverflow })
     }
 
     private fun screenshot(name: String) {
         instrumentation.waitForIdleSync()
         val profile = InstrumentationRegistry.getArguments().getString("qualificationProfile", "default")
-        val dir = File(context.getExternalFilesDir(null), "qualification/$profile").apply { mkdirs() }
         val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+        val bytes = ByteArrayOutputStream()
         try {
-            File(dir, "$name.png").outputStream().use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+            assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes))
         } finally { bitmap.recycle() }
-        assertTrue("Missing screenshot $name", File(dir, "$name.png").length() > 256)
+        assertTrue("Missing screenshot $name", bytes.size() > 256)
+        if (Build.VERSION.SDK_INT >= 29) {
+            // Public test evidence survives UTP uninstall; scoped MediaStore needs no
+            // storage permission and does not weaken the production manifest.
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, "$name.png")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SentinelQualification/$profile")
+            }
+            val uri = requireNotNull(context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values))
+            requireNotNull(context.contentResolver.openOutputStream(uri)).use { it.write(bytes.toByteArray()) }
+        } else {
+            val dir = File(context.getExternalFilesDir(null), "qualification/$profile").apply { mkdirs() }
+            File(dir, "$name.png").writeBytes(bytes.toByteArray())
+        }
     }
 }

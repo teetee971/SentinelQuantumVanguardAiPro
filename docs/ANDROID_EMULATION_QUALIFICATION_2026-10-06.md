@@ -21,7 +21,8 @@ AppOp denial remained `allow`. The existing gate correctly stayed red.
   failure and contradictory modes cannot pass. The product action is not retried.
 - Real MainActivity bottom navigation, Android Back, recreation and relaunch are
   instrumented. Activation, dialer keypad and SMS surfaces also undergo recreation.
-  Static navigation smoke tests now reject blank rendered surfaces.
+  Static navigation smoke tests now reject blank rendered surfaces. An instrumented
+  negative control deliberately renders empty content and requires the oracle to fail.
 - API 37 additionally runs the two real UI tests at 1080×2400/420 dpi and
   1440×3120/480 dpi. Eleven screenshots per profile accompany content, selection,
   click and title layout assertions. This is resolution equivalence, not Samsung
@@ -36,7 +37,8 @@ AppOp denial remained `allow`. The existing gate correctly stayed red.
   trigger log analysis and retain the corresponding buffer/report.
 - Qualification JSON is extended with capability status, test, evidence,
   timestamp, environment, reason and deviceRequired. Markdown and crash/ANR JSON,
-  properties and both APKs are archived. Empty/placeholder PNGs are rejected.
+  properties and both APKs are archived. APKs have a separate artifact so compact
+  host reports remain independently downloadable. Empty/placeholder PNGs are rejected.
 
 ## Voice and physical boundary
 

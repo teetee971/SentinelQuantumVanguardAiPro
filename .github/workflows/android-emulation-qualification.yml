@@ -141,6 +141,14 @@ jobs:
             native-android-app/wearable-security/build/test-results/
             native-android-app/wearable-security/build/reports/tests/
             native-android-app/app/build/reports/lint-results-debug.*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload qualification APKs separately from host reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Android-Qualification-APKs-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
             native-android-app/app/build/outputs/apk/debug/app-debug.apk
             native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           if-no-files-found: error
@@ -329,6 +337,19 @@ jobs:
               ./gradlew :app:connectedDebugAndroidTest --stacktrace --no-daemon
           fi
 
+      - name: Analyze instrumentation runtime before log reset
+        if: always() && steps.instrumentation.outcome != 'skipped'
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api_level }}
+        run: |
+          set -euo pipefail
+          OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
+          mkdir -p "$OUTPUT"
+          adb logcat -d -v time > "$OUTPUT/instrumentation-logcat.txt"
+          node ../scripts/android-logcat-analysis.cjs "$OUTPUT/instrumentation-logcat.txt" "$OUTPUT/instrumentation-crash-anr.json"
+
       - name: Run viewport UI qualification
         id: viewport
         if: matrix.api_level == 37
@@ -404,6 +425,7 @@ jobs:
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           LOGCAT_STATUS=0
+          adb pull /sdcard/Pictures/SentinelQualification "$OUTPUT/instrumentation-screenshots" > "$OUTPUT/screenshot-pull.txt" 2>&1 || true
           adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
           adb shell getprop > "$OUTPUT/emulator-properties.txt" 2>&1 || true

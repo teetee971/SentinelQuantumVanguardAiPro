@@ -46,6 +46,13 @@ class AllStaticNavigationSurfacesInstrumentationTest {
     @Test fun aboutRenders() = render(Screen.About.route)
     @Test fun complianceRenders() = render(Screen.Compliance.route)
     @Test fun settingsRenders() = render(Screen.Settings.route)
+    @Test fun blankSurfaceCannotQualify() {
+        composeRule.setContent { }
+        composeRule.waitForIdle()
+        org.junit.Assert.assertThrows(AssertionError::class.java) {
+            assertVisibleContent("negative-control")
+        }
+    }
 
     private fun render(route: String) {
         composeRule.setContent {
@@ -56,6 +63,10 @@ class AllStaticNavigationSurfacesInstrumentationTest {
         }
         composeRule.waitForIdle()
         composeRule.onRoot(useUnmergedTree = true).fetchSemanticsNode()
+        assertVisibleContent(route)
+    }
+
+    private fun assertVisibleContent(route: String) {
         val visibleText = composeRule.onAllNodes(
             SemanticsMatcher("nonblank production text") {
                 it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text.isNotBlank() } == true
