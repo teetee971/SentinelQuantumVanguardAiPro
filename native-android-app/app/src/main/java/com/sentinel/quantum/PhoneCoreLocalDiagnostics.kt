@@ -8,7 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.TelephonyManager
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
@@ -81,7 +81,7 @@ internal object PhoneCoreLocalDiagnostics {
                 }
             }
         fun granted(permission: String): Boolean =
-            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+            PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
         val callScreeningState = CallScreeningActivationPolicy.read(context)
         val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
