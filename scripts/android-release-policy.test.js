@@ -47,10 +47,10 @@ test('releaseUnsigned explicitly clears any signing config inherited from releas
   assert.match(block, /signingConfig\s*=\s*null/);
 });
 
-test('Android versionCode accepts only a bounded explicit CI override', () => {
+test('Android versionCode accepts only a platform-bounded explicit CI override', () => {
   assert.match(androidBuild, /SENTINEL_VERSION_CODE/);
   assert.match(androidBuild, /sentinelVersionCodeRaw ==~ \/\^\[0-9\]\+\$\//);
-  assert.match(androidBuild, /sentinelVersionCode < 7 \|\| sentinelVersionCode > 2100000000/);
+  assert.match(androidBuild, /sentinelVersionCode < 1 \|\| sentinelVersionCode > 2100000000/);
   assert.match(androidBuild, /versionCode sentinelVersionCode/);
 });
 
@@ -64,13 +64,21 @@ test('upgrade-safe tester APK is manual, protected, and restricted to current ma
   assert.doesNotMatch(upgradeWorkflow, /debug\.keystore|assembleDebug|signingConfig\s+debug/i);
 });
 
-test('upgrade-safe tester APK proves same signer and strictly increasing versionCode', () => {
-  assert.match(upgradeWorkflow, /BASE_CODE=\$\(\(COMMIT_COUNT \* 10\)\)/);
-  assert.match(upgradeWorkflow, /CANDIDATE_CODE=\$\(\(BASE_CODE \+ 1\)\)/);
+test('upgrade proof follows the product versionCode instead of inventing a future-blocking code', () => {
+  assert.match(upgradeWorkflow, /def\[\[:space:\]\]\+sentinelVersionCode/);
+  assert.match(upgradeWorkflow, /CANDIDATE_CODE=.*sentinelVersionCode/);
+  assert.match(upgradeWorkflow, /BASE_CODE=\$\(\(CANDIDATE_CODE - 1\)\)/);
+  assert.doesNotMatch(upgradeWorkflow, /git rev-list --count|COMMIT_COUNT \* 10/);
   assert.match(upgradeWorkflow, /SENTINEL_VERSION_CODE: \$\{\{ steps\.versions\.outputs\.base_code \}\}/);
   assert.match(upgradeWorkflow, /SENTINEL_VERSION_CODE: \$\{\{ steps\.versions\.outputs\.candidate_code \}\}/);
+  assert.match(upgradeWorkflow, /candidate_matches_source_default": true/);
+});
+
+test('upgrade-safe tester APK proves same signer and an in-place N-1 to N replacement', () => {
   assert.match(upgradeWorkflow, /test "\$BASE_CERT" = "\$CANDIDATE_CERT"/);
   assert.match(upgradeWorkflow, /adb install -r "\$RUNNER_TEMP\/sentinel-candidate\.apk"/);
+  assert.match(upgradeWorkflow, /test "\$BEFORE_CODE" = "\$BASE_CODE"/);
+  assert.match(upgradeWorkflow, /test "\$AFTER_CODE" = "\$CANDIDATE_CODE"/);
 });
 
 test('upgrade qualification cannot silently become uninstall/reinstall', () => {
