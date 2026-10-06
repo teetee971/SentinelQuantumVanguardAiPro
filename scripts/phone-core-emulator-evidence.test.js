@@ -3,3 +3,4 @@
 import './phone-core-emulator-evidence-base.test.js';
 import './phone-core-emulator-sms-denial-preflight.test.js';
 import './phone-core-emulator-schema3-evidence.test.js';
+import './phone-core-emulator-revocation-orchestration.test.js';
