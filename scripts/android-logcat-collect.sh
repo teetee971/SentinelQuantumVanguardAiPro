@@ -8,6 +8,8 @@ for attempt in 1 2 3; do
   partial="$OUTPUT.attempt-$attempt.txt"
   errors="$OUTPUT.attempt-$attempt.stderr"
   status=0
+  capture_status=0
+  pull_status=0
   if [[ "$attempt" == 1 ]]; then
     printf 'direct-adb-stream\n' > "$OUTPUT.attempt-$attempt.mode"
     timeout --signal=INT --kill-after=5s 30s adb logcat -d -v time > "$partial" 2> "$errors" || status=$?
@@ -17,8 +19,6 @@ for attempt in 1 2 3; do
     # transport. Keep both exit codes; a failed capture cannot pass via an old file.
     printf 'device-file-sync\n' > "$OUTPUT.attempt-$attempt.mode"
     remote_log=/data/local/tmp/sentinel-qualification-logcat.txt
-    capture_status=0
-    pull_status=0
     timeout --signal=INT --kill-after=5s 30s adb shell "logcat -d -v time > $remote_log" \
       > "$partial.capture.stdout" 2> "$partial.capture.stderr" || capture_status=$?
     printf '%s\n' "$capture_status" > "$partial.capture.status"
@@ -57,6 +57,14 @@ NODE
   transient=0
   if [[ "$status" == 255 || "$status" == 124 || "$status" == 137 ]]; then transient=1; fi
   if [[ "$status" == 1 ]] && grep -Eq 'device offline|no devices/emulators found|device .* not found' "$errors"; then transient=1; fi
+  # Emulator 37.2.x has also returned exit 1 with no diagnostic from `adb pull`
+  # immediately after a successful on-device snapshot. The API-36 CI evidence from
+  # 2026-10-06 captured exactly that signature after a prior aborted direct stream,
+  # while a subsequent ADB read succeeded. Retry that transport-only condition once;
+  # missing files, permission errors and any diagnostic failure still fail closed.
+  if [[ "$attempt" -ge 2 && "$status" == 1 && "$capture_status" == 0 && "$pull_status" == 1 && ! -s "$errors" ]]; then
+    transient=1
+  fi
   if [[ "$transient" != 1 || "$attempt" == 3 ]]; then exit 1; fi
   timeout 15s adb wait-for-device
   # wait-for-device can return during a brief reconnect before the next stream
