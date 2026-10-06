@@ -97,7 +97,7 @@ exit 64
   return result;
 }
 
-test('API 37 bridge consumes banner OK, authenticates locally, synchronizes on causal answer request, then requires ANSWERED -> ACTIVE', async () => {
+test('API 37 bridge consumes banner OK, authenticates locally, waits for app-owned ANSWERED, then synchronizes transport and requires ACTIVE', async () => {
   const result = await runFixture({ lines: [REQUEST, ANSWERED, ACTIVE] });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
@@ -105,9 +105,39 @@ test('API 37 bridge consumes banner OK, authenticates locally, synchronizes on c
   assert.match(result.evidence, /console_greeting=.*Authentication required.*OK/);
   assert.match(result.evidence, /console_auth_response=OK/);
   assert.match(result.marker, /CallSequencingController: answerCall/);
-  assert.match(result.evidence, /transport_sync=emulator_console_gsm_accept api=37 number=5550100/);
   assert.match(result.evidence, /RINGING\(RINGING\) -> ANSWERED/);
+  assert.match(result.evidence, /transport_sync=emulator_console_gsm_accept api=37 number=5550100/);
   assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> ACTIVE/);
+  assert.ok(
+    result.evidence.indexOf('RINGING(RINGING) -> ANSWERED') < result.evidence.indexOf('transport_sync='),
+    'transport synchronization must happen only after Telecom commits ANSWERED'
+  );
+});
+
+test('API 37 bridge does not accept modem transport at answer-transaction start before ANSWERED', async () => {
+  const result = await runFixture({ lines: [REQUEST] });
+  assert.notEqual(result.status, 0);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.match(result.marker, /CallSequencingController: answerCall/);
+  assert.doesNotMatch(result.evidence, /transport_sync=/);
+  assert.match(result.evidence, /missing Telecom bridge evidence: answered,transport_sync,active/);
+});
+
+test('API 37 bridge rejects stale ANSWERED and ACTIVE evidence that predates the causal answer request', async () => {
+  const result = await runFixture({ lines: [ANSWERED, ACTIVE, REQUEST] });
+  assert.notEqual(result.status, 0);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.match(result.marker, /CallSequencingController: answerCall/);
+  assert.doesNotMatch(result.evidence, /transport_sync=/);
+  assert.match(result.evidence, /missing Telecom bridge evidence: answered,transport_sync,active/);
+});
+
+test('API 37 bridge ignores ACTIVE before ANSWERED and still requires a later causal ACTIVE transition', async () => {
+  const result = await runFixture({ lines: [REQUEST, ACTIVE, ANSWERED] });
+  assert.notEqual(result.status, 0);
+  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.match(result.evidence, /transport_sync=emulator_console_gsm_accept/);
+  assert.match(result.evidence, /missing Telecom bridge evidence: active/);
 });
 
 test('API 37 bridge cannot synthesize transport without a causal Telecom answer request', async () => {
@@ -115,7 +145,7 @@ test('API 37 bridge cannot synthesize transport without a causal Telecom answer 
   assert.notEqual(result.status, 0);
   assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.doesNotMatch(result.evidence, /transport_sync=/);
-  assert.match(result.evidence, /missing Telecom bridge evidence: answer_request/);
+  assert.match(result.evidence, /missing Telecom bridge evidence: answer_request,answered,transport_sync,active/);
 });
 
 test('banner OK cannot mask rejection of the later gsm accept command', async () => {

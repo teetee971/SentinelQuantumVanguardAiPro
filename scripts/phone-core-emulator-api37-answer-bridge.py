@@ -2,10 +2,10 @@
 """Synchronize Android 17 emulator GSM transport after a real Telecom answer request.
 
 This helper is host-only qualification infrastructure. It keeps the emulator console
-connection open before the UI tap, waits for Telecom's causal answer-transaction marker,
-then sends the synthetic modem accept command without paying a second adb startup cost.
-It still requires Telecom ANSWERED -> ACTIVE after synchronization; the shell harness
-separately requires Sentinel's private INCALL_ACTIVE evidence.
+connection open before the UI tap, observes Telecom's causal answer-transaction marker,
+then waits for that same flow to enter ANSWERED before sending the synthetic modem accept
+command without paying a second adb startup cost. It still requires a later Telecom ACTIVE
+transition; the shell harness separately requires Sentinel's private INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -125,8 +125,9 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
         selector = selectors.DefaultSelector()
         selector.register(logcat.stdout, selectors.EVENT_READ)
         deadline = time.monotonic() + timeout_s
-        synchronized = False
+        answer_requested = False
         answered = False
+        synchronized = False
         active = False
         try:
             while time.monotonic() < deadline:
@@ -139,9 +140,18 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                     line = key.fileobj.readline()
                     if not line:
                         continue
-                    if not synchronized and ANSWER_REQUEST_MARKER in line:
+                    if not answer_requested and ANSWER_REQUEST_MARKER in line:
                         marker_file.write_text(line, encoding="utf-8")
                         append_line(evidence, line)
+                        answer_requested = True
+                        continue
+                    # Android 17 can re-materialize an already-accepted modem call as a new
+                    # unknown Telecom call if gsm accept is issued at answer-transaction start.
+                    # Wait until Telecom has committed the app-owned call to ANSWERED, then use
+                    # the already-open console socket to advance only that transport window.
+                    if answer_requested and not answered and ANSWERED_MARKER in line:
+                        append_line(evidence, line)
+                        answered = True
                         console.sendall(f"gsm accept {number}\n".encode("utf-8"))
                         response = recv_until(console, ("OK", "KO"), 1.0)
                         append_line(
@@ -156,19 +166,19 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                             f"transport_sync=emulator_console_gsm_accept api=37 number={number}",
                         )
                         synchronized = True
-                    if ANSWERED_MARKER in line:
-                        append_line(evidence, line)
-                        answered = True
-                    if ACTIVE_MARKER in line:
+                        continue
+                    if synchronized and answered and not active and ACTIVE_MARKER in line:
                         append_line(evidence, line)
                         active = True
-                    if synchronized and answered and active:
+                    if answer_requested and answered and synchronized and active:
                         return
             missing = []
-            if not synchronized:
+            if not answer_requested:
                 missing.append("answer_request")
             if not answered:
                 missing.append("answered")
+            if not synchronized:
+                missing.append("transport_sync")
             if not active:
                 missing.append("active")
             raise RuntimeError("missing Telecom bridge evidence: " + ",".join(missing))
