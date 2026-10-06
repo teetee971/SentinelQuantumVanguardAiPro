@@ -23,6 +23,22 @@ test('system exceptions stay visible without inheriting an interleaved product s
   assert.equal(report.result, 'PASS');
   assert.equal(report.findings.length, 1);
 });
+test('an unrelated event from the same system PID cannot become an exception frame', () => {
+  const report = analyzeLogcat('E/DeviceLockServiceImpl( 598): Caused by: java.lang.IllegalStateException: provision state 0\n' +
+    'E/DeviceLockServiceImpl( 598): at android.devicelock.ParcelableException.readFromParcel(ParcelableException.java:39)\n' +
+    'E/DeviceLockServiceImpl( 598): ... 27 more\n' +
+    'I/ActivityTaskManager( 598): Displayed com.sentinel.quantum/.SentinelDialerActivity\n');
+  assert.equal(report.result, 'PASS');
+  assert.equal(report.findings[0].classification, 'SYSTEM');
+  assert.equal(report.findings.length, 1);
+});
+test('a real product frame still attributes an exception without a process-start record', () => {
+  const report = analyzeLogcat('10-06 14:34:09.578 598 601 E Telecom : java.lang.IllegalStateException: service failed\n' +
+    '10-06 14:34:09.579 7 8 I Other : interleaved\n' +
+    '10-06 14:34:09.580 598 601 E Telecom : at com.sentinel.quantum.SentinelInCallService.onCallAdded(Service.kt:10)\n');
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.failures[0].classification, 'PRODUCT');
+});
 test('product ANR and unexplained death fail; explicit force-stop remains documented', () => {
   assert.equal(analyzeLogcat('E/ActivityManager( 1): ANR in com.sentinel.quantum\n').result, 'FAIL');
   const death = 'I/ActivityManager( 1): Process com.sentinel.quantum (pid 42) has died: fg TOP\n';

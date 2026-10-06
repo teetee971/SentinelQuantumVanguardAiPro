@@ -5,12 +5,19 @@
 function analyzeLogcat(log, packageName = 'com.sentinel.quantum') {
   const escaped = packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const ownedReference = new RegExp(`${escaped}(?![\\w.])`);
+  const ownedFrame = new RegExp(`\\bat ${escaped}\\.`);
   const lines = log.split(/\r?\n/);
   const ownedPids = new Set();
   const expectedKills = new Set();
   const findings = [];
   const pidOf = (line) => line.match(/\b[VDIWEF]\/[^()]+\(\s*(\d+)\)/)?.[1] ||
     line.match(/^\d\d-\d\d\s+\S+\s+(\d+)\s+\d+\s+[VDIWEF]\s/)?.[1];
+  const recordOf = (line) => {
+    const brief = line.match(/\b[VDIWEF]\/([^()]+)\(\s*\d+\):\s?(.*)$/);
+    const thread = line.match(/^\d\d-\d\d\s+\S+\s+\d+\s+\d+\s+[VDIWEF]\s+([^:]+):\s?(.*)$/);
+    const match = brief || thread;
+    return match ? { tag: match[1].trim(), message: match[2] } : null;
+  };
   for (const line of lines) {
     if (!ownedReference.test(line)) continue;
     const start = line.match(/Start proc (\d+):/);
@@ -30,11 +37,20 @@ function analyzeLogcat(log, packageName = 'com.sentinel.quantum') {
       /\bE\/Sentinel|\bE\s+Sentinel/.test(line) ? 'PRODUCT_ERROR' : null;
     if (!kind) continue;
     const pid = pidOf(line);
-    // Fatal headers precede their process identity. Limit context to that PID so
-    // an interleaved system exception cannot inherit a nearby Sentinel stack.
-    const context = lines.slice(index, index + 24).filter((entry) => !pid || pidOf(entry) === pid).join('\n');
+    // Follow the exception record, not arbitrary nearby messages. system_server
+    // logs many unrelated components under the same PID: a later "Displayed
+    // com.sentinel.quantum" line is not a frame of DeviceLock's exception.
+    const record = recordOf(line);
+    const stack = [line];
+    for (let next = index + 1; record && next < Math.min(lines.length, index + 128); next++) {
+      if (pid && pidOf(lines[next]) !== pid) continue; // interleaved other process
+      const entry = recordOf(lines[next]);
+      if (!entry || entry.tag !== record.tag || !/^\s*(?:at |Caused by: |Suppressed: |\.\.\. \d+ more|Process: |(?:[\w$]+\.)+[\w$]*(?:Exception|Error)(?::|$))/.test(entry.message)) break;
+      stack.push(lines[next]);
+    }
+    const context = stack.join('\n');
     const product = ownedReference.test(line) || (pid && ownedPids.has(pid)) ||
-      ((kind === 'CRASH' || kind === 'EXCEPTION') && ownedReference.test(context)) || /SentinelLifecycle/.test(line);
+      ((kind === 'CRASH' || kind === 'EXCEPTION') && (ownedReference.test(context) || ownedFrame.test(context))) || /SentinelLifecycle/.test(line);
     const deathPid = line.match(/\(pid (\d+)\)/)?.[1];
     const expectedDeath = kind === 'PROCESS_DEATH' && expectedKills.has(deathPid);
     const classification = expectedDeath ? 'EXPECTED_HARNESS_STOP' : product ? 'PRODUCT' :

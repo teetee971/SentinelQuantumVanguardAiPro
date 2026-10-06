@@ -49,6 +49,23 @@ still fail the same predicate. Failure captures survive UTP through scoped
 MediaStore on API 29+; API 24 uses its app-owned external directory, pulled before
 teardown. A malformed viewport summary produces FAIL JSON/Markdown, not a lost report.
 
+The first runtime attempt also exposed an attribution defect: a DeviceLock
+exception in system_server inherited a nearby ActivityTaskManager display event
+for Sentinel. Attribution now follows the exception's actual stack records,
+including real Sentinel frames, and stops at unrelated same-PID events. The
+captured Android 16 buffer retains all 52 system findings with zero product
+failures after reanalysis; negative tests still reject product exceptions.
+Host JVM tests/lint are labelled HOST_TESTED with host artifact provenance;
+they cannot be described as EMULATOR_TESTED merely because their result appears
+in an emulator report.
+
+With the corrected oracle, run 37480125025 detected genuine Communications
+subtitle truncation on API 24 (256 px, one ellipsized line). Artifact 11420319191
+contains the screenshot showing "canaux extern...". SentinelTopBar now permits
+two subtitle lines while retaining the existing theme, title and bar structure.
+The existing real navigation assertion remains the regression test; the oracle
+is not weakened to accept this truncation.
+
 ## Voice and physical boundary
 
 VoiceStudioActivity records and plays a private local preview. LiveKitVoiceAudioProcessor

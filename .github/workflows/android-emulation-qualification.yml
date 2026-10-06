@@ -653,15 +653,22 @@ jobs:
           const timestamp = new Date().toISOString();
           const environment = { type: 'ANDROID_EMULATOR', api_level: api, commit: process.env.BUILT_COMMIT,
             properties: 'emulator-properties.txt', physical_validation: false };
-          const evidenceFor = (name) => name === 'viewport_ui_qualification' ? ['viewport/summary.json', 'viewport/'] :
+          const hostChecks = new Set(['android_app_unit_tests', 'wearable_contract_unit_tests',
+            'wearable_security_unit_tests', 'android_lint', 'phone_number_canonicalization_contract',
+            'multi_sim_submit_readiness_contract']);
+          const hostArtifact = `PhoneCore-Host-Qualification-${process.env.SOURCE_HEAD_SHA}`;
+          const evidenceFor = (name) => hostChecks.has(name) ? [hostArtifact, `${hostArtifact}/provenance.json`] :
+            name === 'viewport_ui_qualification' ? ['viewport/summary.json', 'viewport/'] :
             name === 'no_crash_or_anr' ? ['crash-anr.json', 'logcat.txt'] :
             name === 'call_screening_response_budget' ? ['logcat.txt'] :
             /navigation|instrumentation|render|setup_resume/.test(name) ? [api === 24 ? api24LogPath : connectedResultsRoot] :
             /revocation|denial/.test(name) ? ['revocation-summary.json'] : ['qualification.json', 'logcat.txt'];
           const capabilities = Object.entries(checks).map(([capability, passed]) => ({
-            capability, status: passed === true ? 'EMULATOR_TESTED' : passed === false ? 'FAILED' : 'UNKNOWN',
+            capability, status: passed === true ? (hostChecks.has(capability) ? 'HOST_TESTED' : 'EMULATOR_TESTED') : passed === false ? 'FAILED' : 'UNKNOWN',
             test: capability, result: passed === true ? 'PASS' : passed === false ? 'FAIL' : 'NOT_EXECUTED',
-            evidence: evidenceFor(capability), timestamp, environment,
+            evidence: evidenceFor(capability), timestamp,
+            environment: hostChecks.has(capability) ? { type: 'HOST', api_level: null,
+              commit: process.env.BUILT_COMMIT, physical_validation: false } : environment,
             reason: passed === false ? (capability === 'viewport_ui_qualification' && viewport?.parse_error || 'Required execution or evidence invariant not satisfied; inspect artifacts') :
               passed === null ? 'Outside this API lane' : null,
             deviceRequired: /call_|sms|sim|revocation/.test(capability)

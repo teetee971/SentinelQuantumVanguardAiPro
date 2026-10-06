@@ -357,9 +357,13 @@ test('every reported capability has provenance and physical limits', () => {
     assert.ok(entry.timestamp && entry.environment && entry.capability);
     assert.ok(Array.isArray(entry.evidence));
     assert.equal(typeof entry.deviceRequired, 'boolean');
-    if (entry.result === 'PASS') assert.equal(entry.status, 'EMULATOR_TESTED');
+    if (entry.result === 'PASS') assert.equal(entry.status, entry.environment.type === 'HOST' ? 'HOST_TESTED' : 'EMULATOR_TESTED');
   }
   assert.equal(report.capabilities.find((entry) => entry.capability === 'voice_call_end_to_end').status, 'DEVICE_REQUIRED');
+  const unitTests = report.capabilities.find((entry) => entry.capability === 'android_app_unit_tests');
+  assert.equal(unitTests.status, 'HOST_TESTED');
+  assert.equal(unitTests.environment.api_level, null);
+  assert.ok(unitTests.evidence[0].startsWith('PhoneCore-Host-Qualification-'));
 });
 
 test('a skipped named instrumentation class cannot qualify a rendered surface', () => {
