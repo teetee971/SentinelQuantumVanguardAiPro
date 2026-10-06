@@ -309,6 +309,19 @@ launch_sms_surface() {
     -n "$PACKAGE/.SmsComposeActivity" > "$OUT_DIR/$output"
 }
 
+wait_app_backgrounded() {
+  for _ in $(seq 1 25); do
+    if ! adb shell dumpsys activity activities 2>/dev/null |
+      grep -E 'mResumedActivity:.*com\.sentinel\.quantum' >/dev/null; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  echo "Sentinel did not reach a proven background state before the foreground-return probe."
+  adb shell dumpsys activity activities > "$OUT_DIR/sms-background-wait-failure.txt" 2>&1 || true
+  return 1
+}
+
 timeline_signal_prefix_count() {
   local prefix="$1"
   if ! adb shell run-as "$PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$TIMELINE_XML" 2>/dev/null; then
@@ -418,16 +431,17 @@ ensure_role_held android.app.role.SMS
 
 if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" == "true" ]]; then
   EFFECTIVE_PERMISSION_PROBE="SEND_SMS_RUNTIME_PERMISSION_REVOKED"
-  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS remained held while Android exposed a real SEND_SMS runtime-permission revocation; Sentinel stayed fail-closed before and after foreground return."
+  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS remained held while Android exposed a real SEND_SMS runtime-permission revocation; Sentinel stayed fail-closed before and after a proven foreground return."
   assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-state.txt"
   adb shell input keyevent KEYCODE_HOME
+  wait_app_backgrounded
   launch_sms_surface "sms-send-runtime-permission-denied-launch.txt" warm
   assert_sms_role_held
   assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-after-launch.txt"
 else
   adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
   EFFECTIVE_PERMISSION_PROBE="SEND_SMS_APP_OP_DENIED"
-  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS restored the runtime grant, so the effective-denial proof used the SEND_SMS AppOp and verified the protected UI stayed non-actionable."
+  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS restored the runtime grant; the foreground-return probe therefore re-applied and re-verified an effective SEND_SMS AppOp denial before Sentinel UI qualification."
   set_send_sms_appop ignore "send-sms-appop-deny.txt"
   assert_send_sms_appop_denied "send-sms-appop-denied-state.txt"
   if ! permission_granted android.permission.SEND_SMS; then
@@ -435,8 +449,13 @@ else
     exit 1
   fi
   adb shell input keyevent KEYCODE_HOME
+  wait_app_backgrounded
   launch_sms_surface "sms-send-appop-denied-launch.txt" warm
   assert_sms_role_held
+  # Modern RoleController builds can legitimately reconcile the default SMS AppOp while the app
+  # returns to foreground. Re-apply the denial only after that transition, then require the
+  # effective UID/package oracle to prove it before inspecting Sentinel's UI.
+  set_send_sms_appop ignore "send-sms-appop-reassert-after-launch.txt"
   assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"
 fi
 
