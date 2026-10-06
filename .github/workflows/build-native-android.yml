@@ -111,11 +111,20 @@ jobs:
           node ../scripts/check-android-apk-secrets.js "$APK_PATH"
 
       - name: Install and launch APK on Android 10 emulator
+        id: android10
         timeout-minutes: 30
         working-directory: ./native-android-app
         shell: bash
         run: |
           set -euo pipefail
+          LAUNCH_EVIDENCE="$RUNNER_TEMP/android10-launch-health"
+          mkdir -p "$LAUNCH_EVIDENCE"
+          printf '%s\n' "$GITHUB_SHA" > "$LAUNCH_EVIDENCE/commit.txt"
+          assert_launch_health() {
+            local phase="$1"
+            bash ../scripts/android-logcat-collect.sh "$LAUNCH_EVIDENCE/$phase-logcat.txt" || return 1
+            node ../scripts/android-logcat-analysis.cjs "$LAUNCH_EVIDENCE/$phase-logcat.txt" "$LAUNCH_EVIDENCE/$phase-crash-anr.json"
+          }
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
 
@@ -190,11 +199,17 @@ jobs:
             exit 1
           fi
 
+          adb shell getprop > "$LAUNCH_EVIDENCE/emulator-properties.txt"
+          test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = 29
+          adb shell input keyevent KEYCODE_WAKEUP
+          adb shell wm dismiss-keyguard
           adb install -r "$APK_PATH"
           adb shell pm path com.sentinel.quantum | grep -q '^package:'
           # Some hosted Android 10 emulator images deny clearing individual log buffers.
           # Log clearing is diagnostic hygiene, not an installability gate.
-          adb logcat -c >/dev/null 2>&1 || true
+          RESET_STATUS=0
+          adb logcat -c > "$LAUNCH_EVIDENCE/first-log-reset.txt" 2>&1 || RESET_STATUS=$?
+          printf '%s\n' "$RESET_STATUS" > "$LAUNCH_EVIDENCE/first-log-reset.status"
           adb shell am start -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
 
           FIRST_RUN_READY=0
@@ -207,28 +222,26 @@ jobs:
               FIRST_RUN_READY=1
               break
             fi
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
-              echo "Sentinel crashed or ANR'd during launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
             sleep 1
           done
           if [[ "$FIRST_RUN_READY" != "1" ]]; then
             echo "Sentinel did not persist the canonical Phone Core setup lifecycle state within 30 seconds."
             adb shell dumpsys activity activities || true
             adb shell run-as com.sentinel.quantum sh -c 'for f in shared_prefs/*; do echo "=== $f ==="; cat "$f"; done' 2>/dev/null || true
-            adb logcat -d -v time | tail -n 400
+            assert_launch_health first-launch-failed
             exit 1
           fi
 
+          assert_launch_health first-launch
           adb shell pidof com.sentinel.quantum
 
           # An unfinished setup is intentionally resumable. Force-stop simulates the user
           # leaving the app during Android's permission/default-role flow. The next cold launch
           # must reopen PhoneCoreActivationActivity rather than losing progress.
           adb shell am force-stop com.sentinel.quantum
-          adb logcat -c >/dev/null 2>&1 || true
+          RESET_STATUS=0
+          adb logcat -c > "$LAUNCH_EVIDENCE/second-log-reset.txt" 2>&1 || RESET_STATUS=$?
+          printf '%s\n' "$RESET_STATUS" > "$LAUNCH_EVIDENCE/second-log-reset.status"
           # am start -W can return non-zero when Android immediately hands foreground
           # control to PermissionController/RoleController. The assertions below independently
           # require PhoneCoreActivationActivity or a specifically-bound permission/role activity,
@@ -268,23 +281,28 @@ jobs:
               break
             fi
 
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
-              echo "Sentinel crashed or ANR'd while resuming Phone Core setup."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
             sleep 1
           done
           if [[ "$SETUP_RESUMED" != "1" ]]; then
             echo "Unfinished Phone Core setup did not resume on the second cold launch."
             adb shell dumpsys activity activities || true
             adb shell run-as com.sentinel.quantum sh -c 'for f in shared_prefs/*; do echo "=== $f ==="; cat "$f"; done' 2>/dev/null || true
-            adb logcat -d -v time | tail -n 400
+            assert_launch_health setup-resume-failed
             exit 1
           fi
 
+          assert_launch_health setup-resume
           adb shell pidof com.sentinel.quantum
           adb shell am force-stop com.sentinel.quantum
+
+      - name: Upload Android 10 launch health evidence
+        if: always() && steps.android10.outcome != 'skipped'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Android10-Launch-Health-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/android10-launch-health/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Get version and prepare APK
         id: version
@@ -475,5 +493,5 @@ jobs:
           path: |
             ${{ runner.temp }}/phone-core-ui/
             ${{ runner.temp }}/sentinel-emulator.log
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14

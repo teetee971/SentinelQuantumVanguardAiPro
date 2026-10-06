@@ -791,6 +791,22 @@ jobs:
           }
           NODE
 
+      - name: Upload compact qualification reports and viewport screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Android-Qualification-Summary-API${{ matrix.api_level }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/qualification.json
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/qualification.md
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/crash-anr.json
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/emulator-properties.txt
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/apk.sha256
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/viewport/summary.json
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/viewport/*/*.png
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload emulator qualification evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -11,6 +11,7 @@ import { sendSmsAppOpState } from './android-appops-state.cjs';
 // These fixtures are never Android, modem, or physical qualification evidence.
 const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qualification.yml', import.meta.url), 'utf8');
 const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
+const runtimeFlow = readFileSync(new URL('./phone-core-emulator-flow.sh', import.meta.url), 'utf8');
 function nodeCodeForStep(name) {
   const step = workflow.split(`- name: ${name}\n`)[1];
   assert.ok(step, `Workflow step exists: ${name}`);
@@ -102,11 +103,18 @@ test('host provenance refuses a checkout different from the workflow commit', ()
     assert.equal(existsSync(join(dir, 'phone-core-host-evidence/provenance.json')), false);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
-function shellFunction(name) {
-  const start = revocation.indexOf(`${name}() {`);
+function shellFunction(name, source = revocation, scriptDirOverride) {
+  const start = source.indexOf(`${name}() {`);
   assert.notEqual(start, -1);
-  const scriptDir = new URL('.', import.meta.url).pathname.replaceAll("'", "'\\''");
-  return `SCRIPT_DIR='${scriptDir}'\n` + revocation.slice(start, revocation.indexOf('\n}', start) + 2);
+  const scriptDir = (scriptDirOverride || new URL('.', import.meta.url).pathname).replaceAll("'", "'\\''");
+  return `SCRIPT_DIR='${scriptDir}'\n` + source.slice(start, source.indexOf('\n}', start) + 2);
+}
+
+// Callback parsing consumes isolated collector output/status. The actual
+// collector's transport and attribution have separate executable regressions.
+function collectorFixture(dir, log) {
+  writeFileSync(join(dir, 'fixture-log.txt'), log);
+  writeFileSync(join(dir, 'android-logcat-collect.sh'), '#!/usr/bin/env bash\ncp "$SCRIPT_DIR/fixture-log.txt" "$1"\necho "collection diagnostic must not enter count"\nexit "$COLLECT_STATUS"\n');
 }
 
 for (const [name, output, status, expected] of [
@@ -427,7 +435,8 @@ test('evidence collection runs after failure and still writes a report', () => {
 test('logcat oracle failure cannot become a zero-callback revocation proof', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-logcat-test-'));
   try {
-    const result = spawnSync('bash', ['-c', `OUT_DIR="$1"\nadb() { return 1; }\n${shellFunction('screening_callback_count')}\nscreening_callback_count`, 'test', dir], { encoding: 'utf8' });
+    collectorFixture(dir, 'I/System( 7): partial read\n');
+    const result = spawnSync('bash', ['-c', `OUT_DIR="$1"\nexport SCRIPT_DIR COLLECT_STATUS=1\n${shellFunction('screening_callback_count', revocation, dir)}\nscreening_callback_count`, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 2, result.stderr);
     assert.equal(result.stdout, '');
   } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -456,19 +465,51 @@ test('revocation flow retains the preceding runtime logcat evidence', () => {
 });
 
 for (const [label, output, status] of [
-  ['readable zero callbacks', '', 0],
+  ['readable zero callbacks', 'I/System( 7): no callback', 0],
   ['readable callback invocation', 'CallScreeningService:onScreenCall', 0]
 ]) {
   test(label, () => {
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-logcat-test-'));
     try {
-      const script = `OUT_DIR="$1"\nadb() { printf '%s\\n' '${output}'; return ${status}; }\n${shellFunction('screening_callback_count')}\nscreening_callback_count`;
+      collectorFixture(dir, output + '\n');
+      const script = `OUT_DIR="$1"\nexport SCRIPT_DIR COLLECT_STATUS=${status}\n${shellFunction('screening_callback_count', revocation, dir)}\nscreening_callback_count`;
       const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
       assert.equal(result.status, 0, result.stderr);
-      assert.equal(result.stdout.trim(), output ? '1' : '0');
+      assert.equal(result.stdout.trim(), output.includes('CallScreeningService:onScreenCall') ? '1' : '0');
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 }
+
+test('a marker in an aborted collection cannot qualify a lifecycle callback', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-marker-read-'));
+  try {
+    collectorFixture(dir, 'CallScreeningService:onScreenCall\n');
+    const script = `FLOW_OUTPUT_DIR="$1"\nFLOW_SCRIPT_DIR="$1"\nexport SCRIPT_DIR COLLECT_STATUS=1\n${shellFunction('wait_logcat_marker', runtimeFlow, dir)}\nwait_logcat_marker CallScreeningService:onScreenCall callback.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(readFileSync(join(dir, 'callback.txt'), 'utf8'), /onScreenCall/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('failed role query containing the package cannot qualify ownership', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-role-read-'));
+  try {
+    const script = `FLOW_OUTPUT_DIR="$1"\nFLOW_PACKAGE=com.sentinel.quantum\nrole_holders() { echo com.sentinel.quantum; return 1; }\nsleep() { :; }\nadb() { :; }\n${shellFunction('wait_role_held', runtimeFlow)}\nwait_role_held android.app.role.SMS holders.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 1, result.stderr);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('crash assertion rejects unreadable logcat even in a conditional caller', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-health-read-'));
+  try {
+    collectorFixture(dir, 'I/System( 7): partial read\n');
+    const script = `OUT_DIR="$1"\nexport SCRIPT_DIR COLLECT_STATUS=1\n${shellFunction('assert_no_crash', revocation, dir)}\nif assert_no_crash; then echo FALSE_PASS; exit 0; else exit 1; fi`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 1, result.stderr);
+    assert.doesNotMatch(result.stdout, /FALSE_PASS/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
 
 for (const [label, modem, notificationCount, oracleStatus, expected] of [
   ['modem observation proves the incoming probe', '5550198', 1, 0, 0],

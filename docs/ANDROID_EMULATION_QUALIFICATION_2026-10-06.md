@@ -119,6 +119,24 @@ Two fresh observations, held SMS role, granted runtime permission and a genuinel
 disabled Sentinel send control remain mandatory. Raw AppOp parsing alone cannot
 prove the product's effective denial behavior.
 
+Run 37489963423 passes the complete API 24/29/37 lanes, including both API 37
+viewport profiles. API 36 proves the effective UID denial and disabled SMS UI,
+but fails on a remaining independent screening-callback logcat read. That read
+and the lifecycle-marker/health readers now use the common fail-closed collector.
+A failed role query containing the package name can no longer qualify ownership.
+Host negative controls cover these real shell decisions.
+
+The separate Android 16 lane in run 37489963309 still aborts bulk logcat streams
+despite successful booted shell round trips. The collector's bounded fallback now
+snapshots the same unfiltered buffer to a device file and retrieves it using ADB
+file sync. Capture and pull statuses and all partial buffers remain separate;
+failed capture, stale data, empty files and even crashes in failed partial pulls
+cannot pass. No application action is replayed. Android 10 APK-launch health uses
+the same analyzer and archives its logs/properties independently from the APK.
+This fallback requires confirmation from a later current-commit run.
+Compact JSON/Markdown reports and viewport screenshots also have a separate CI
+artifact; the full raw diagnostic archive remains available without truncation.
+
 ## Voice and physical boundary
 
 VoiceStudioActivity records and plays a private local preview. LiveKitVoiceAudioProcessor

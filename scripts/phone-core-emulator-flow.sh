@@ -39,8 +39,8 @@ wait_role_held() {
   local full_role="$1"
   local evidence="$2"
   for _ in $(seq 1 20); do
-    role_holders "$full_role" > "$FLOW_OUTPUT_DIR/$evidence" 2>&1 || true
-    if grep -Fxq "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
+    if role_holders "$full_role" > "$FLOW_OUTPUT_DIR/$evidence" 2>&1 &&
+      grep -Fxq "$FLOW_PACKAGE" "$FLOW_OUTPUT_DIR/$evidence"; then
       return 0
     fi
     sleep 0.5
@@ -125,7 +125,8 @@ wait_logcat_marker() {
   local marker="$1"
   local evidence="$2"
   for _ in $(seq 1 20); do
-    adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence" 2>/dev/null || true
+    bash "$FLOW_SCRIPT_DIR/android-logcat-collect.sh" "$FLOW_OUTPUT_DIR/$evidence" \
+      > "$FLOW_OUTPUT_DIR/$evidence.collection.stdout" || return 1
     if grep -Fq "$marker" "$FLOW_OUTPUT_DIR/$evidence"; then return 0; fi
     sleep 0.5
   done

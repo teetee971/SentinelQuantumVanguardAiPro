@@ -8,7 +8,28 @@ for attempt in 1 2 3; do
   partial="$OUTPUT.attempt-$attempt.txt"
   errors="$OUTPUT.attempt-$attempt.stderr"
   status=0
-  timeout --signal=INT --kill-after=5s 30s adb logcat -d -v time > "$partial" 2> "$errors" || status=$?
+  if [[ "$attempt" == 1 ]]; then
+    printf 'direct-adb-stream\n' > "$OUTPUT.attempt-$attempt.mode"
+    timeout --signal=INT --kill-after=5s 30s adb logcat -d -v time > "$partial" 2> "$errors" || status=$?
+  else
+    # Booted shell probes do not prove that a large stdout stream will survive.
+    # Snapshot the same unfiltered buffer on the device, then use ADB's file-sync
+    # transport. Keep both exit codes; a failed capture cannot pass via an old file.
+    printf 'device-file-sync\n' > "$OUTPUT.attempt-$attempt.mode"
+    remote_log=/data/local/tmp/sentinel-qualification-logcat.txt
+    capture_status=0
+    pull_status=0
+    timeout --signal=INT --kill-after=5s 30s adb shell "logcat -d -v time > $remote_log" \
+      > "$partial.capture.stdout" 2> "$partial.capture.stderr" || capture_status=$?
+    printf '%s\n' "$capture_status" > "$partial.capture.status"
+    : > "$partial"
+    timeout --signal=INT --kill-after=5s 30s adb pull "$remote_log" "$partial" \
+      > "$partial.pull.stdout" 2> "$partial.pull.stderr" || pull_status=$?
+    printf '%s\n' "$pull_status" > "$partial.pull.status"
+    if [[ ! -f "$partial" ]]; then : > "$partial"; fi
+    cat "$partial.capture.stderr" "$partial.pull.stderr" > "$errors"
+    if [[ "$capture_status" != 0 ]]; then status=$capture_status; else status=$pull_status; fi
+  fi
   printf '%s\n' "$status" > "$OUTPUT.attempt-$attempt.status"
   cp "$partial" "$OUTPUT"
   # Analyze even failed partial reads. A later read cannot erase observed product

@@ -121,10 +121,9 @@ PYDISABLED
 }
 
 assert_no_crash() {
-  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-    adb logcat -d -v time | tail -n 400
-    return 1
-  fi
+  local evidence="$OUT_DIR/revocation-health-logcat.txt"
+  bash "$SCRIPT_DIR/android-logcat-collect.sh" "$evidence" > "$evidence.collection.stdout" || return 1
+  node "$SCRIPT_DIR/android-logcat-analysis.cjs" "$evidence" "$OUT_DIR/revocation-health-crash-anr.json"
 }
 
 role_holders() {
@@ -303,7 +302,8 @@ PY
 screening_callback_count() {
   local evidence="$OUT_DIR/screening-callback-count-logcat.txt"
   local count
-  if ! adb logcat -d -v brief > "$evidence"; then
+  if ! bash "$SCRIPT_DIR/android-logcat-collect.sh" "$evidence" > "$evidence.collection.stdout" 2> "$evidence.collection.stderr"; then
+    cat "$evidence.collection.stderr" >&2
     echo "Screening callback oracle is unreadable; absence cannot be qualified." >&2
     return 2
   fi
