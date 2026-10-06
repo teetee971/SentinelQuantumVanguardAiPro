@@ -2,7 +2,7 @@ package com.sentinel.quantum
 
 import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
-import com.sentinel.quantum.security.IncomingSmsDeliveryWorker
+import com.sentinel.quantum.security.IncomingSmsRecoveryWorker
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 
@@ -23,7 +23,7 @@ class SentinelApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         SentinelSmsStatusReceiver.queueProviderRepair(this)
-        runCatching { IncomingSmsDeliveryWorker.schedulePendingNow(this) }
+        runCatching { IncomingSmsRecoveryWorker.schedule(this) }
         runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(this) }
 
         val store = CallBlocklistStore(this)
