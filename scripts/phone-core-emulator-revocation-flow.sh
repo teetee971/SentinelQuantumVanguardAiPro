@@ -125,26 +125,36 @@ wait_incoming_call_observed() {
   return 1
 }
 
-# Delegated full-scenario contract markers kept visible to the static qualification checker:
-# remove-role-holder
-# pm revoke
-# appops set
-# set_send_sms_appop ignore
-# adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode"
-# assert_send_sms_appop_denied
-# assert_sms_role_held
-# assert_action_disabled "phone_core_sms_send"
-# effective_permission_denial_fail_closed
-# assert_modem_call_absent
-# SCREENING_CALLBACK_BEFORE=
-# SCREENING_DECISION_BEFORE=
-# wait_role_absent android.app.role.CALL_SCREENING
-# assert_no_crash
-
 PRECHECK="$SCRIPT_DIR/phone-core-emulator-sms-denial-preflight.sh"
 IMPLEMENTATION="$SCRIPT_DIR/phone-core-emulator-revocation-impl.sh"
+
+validate_delegated_contract() {
+  test -s "$IMPLEMENTATION"
+  local marker
+  for marker in \
+    'remove-role-holder' \
+    'pm revoke' \
+    'appops set' \
+    'set_send_sms_appop ignore' \
+    'adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode"' \
+    'assert_send_sms_appop_denied' \
+    'assert_sms_role_held' \
+    'assert_action_disabled "phone_core_sms_send"' \
+    'effective_permission_denial_fail_closed' \
+    'assert_modem_call_absent' \
+    'SCREENING_CALLBACK_BEFORE=' \
+    'SCREENING_DECISION_BEFORE=' \
+    'wait_role_absent android.app.role.CALL_SCREENING' \
+    'assert_no_crash'; do
+    if ! grep -Fq "$marker" "$IMPLEMENTATION"; then
+      echo "Delegated revocation implementation is missing required contract marker: $marker"
+      return 1
+    fi
+  done
+}
+
 test -s "$PRECHECK"
-test -s "$IMPLEMENTATION"
+validate_delegated_contract
 bash "$PRECHECK" "$OUT_DIR"
 test -s "$OUT_DIR/sms-denial-transition-proof.json"
 bash "$IMPLEMENTATION" "$OUT_DIR"
