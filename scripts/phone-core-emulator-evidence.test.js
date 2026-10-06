@@ -271,6 +271,8 @@ test('missing logcat exit status cannot prove absence of crashes', () => {
 function api24Evidence({ put, dir }, secondRenderStatus) {
   put('min-sdk-first-pid.txt', '100\n');
   put('min-sdk-second-pid.txt', '200\n');
+  put('min-sdk-first-foreground.txt', 'mResumedActivity: ActivityRecord{123 u0 com.sentinel.quantum/.MainActivity t1}\n');
+  put('min-sdk-second-foreground.txt', 'mResumedActivity: ActivityRecord{456 u0 com.sentinel.quantum/.PhoneCoreActivationActivity t2}\n');
   put('01-min-sdk-first-launch.png', pngFixture());
   put('02-min-sdk-second-launch.png', pngFixture());
   const renderClass = 'com.sentinel.quantum.ui.AllStaticNavigationSurfacesInstrumentationTest';
@@ -293,6 +295,37 @@ test('API 24 passing render cannot hide an ignored test in the same class', () =
   assert.notEqual(result.status, 0);
   assert.equal(report.result, 'FAIL');
   assert.equal(report.checks.all_static_navigation_surfaces_render, false);
+});
+
+for (const foreground of ['mResumedActivity: ActivityRecord{123 u0 com.android.launcher/.MainActivity t1}\ncom.sentinel.quantum/.MainActivity',
+  'mResumedActivity: ActivityRecord{123 u0 com.sentinel.quantum.other/.MainActivity t1}', '']) {
+  test(`API 24 screenshots and a live PID cannot replace foreground proof: ${foreground.slice(0, 70)}`, () => {
+    const { result, report } = fixture({ API_LEVEL: '24' }, (files) => {
+      api24Evidence(files, 0);
+      files.put('min-sdk-second-foreground.txt', foreground);
+    });
+    assert.notEqual(result.status, 0);
+    assert.equal(report.checks.min_sdk_cold_launch, false);
+    assert.equal(report.checks.cold_install_and_relaunch, false);
+  });
+}
+
+test('real min-SDK foreground waiter cancels only the observed role dialog and never loops Back', () => {
+  const start = workflow.indexOf('wait_min_sdk_foreground() {');
+  const end = workflow.indexOf('\n            adb shell am force-stop', start);
+  assert.ok(start >= 0 && end > start);
+  const waiter = workflow.slice(start, end);
+  for (const [mode, expected, backs] of [['app', 0, 0], ['dialog-then-app', 0, 1], ['dialog-stuck', 1, 1], ['launcher', 1, 0], ['query-error', 7, 0]]) {
+    const dir = mkdtempSync(join(tmpdir(), 'sentinel-foreground-wait-'));
+    try {
+      const script = `set -euo pipefail\nOUTPUT="$1"\nMODE="$2"\nQUERIES=0\nBACKS=0\nsleep() { :; }\ntimeout() { shift; "$@"; }\nadb() {\n case "$*" in\n 'shell dumpsys activity activities')\n  QUERIES=$((QUERIES + 1))\n  case "$MODE" in\n   query-error) return 7;;\n   app) echo 'mResumedActivity: ActivityRecord{123 u0 com.sentinel.quantum/.PhoneCoreActivationActivity t1}';;\n   dialog-then-app) if [[ "$QUERIES" == 1 ]]; then echo 'mResumedActivity: ActivityRecord{123 u0 com.android.server.telecom/.components.ChangeDefaultDialerDialog t1}'; else echo 'mResumedActivity: ActivityRecord{456 u0 com.sentinel.quantum/.PhoneCoreActivationActivity t1}'; fi;;\n   dialog-stuck) echo 'mResumedActivity: ActivityRecord{123 u0 com.android.server.telecom/.components.ChangeDefaultDialerDialog t1}';;\n   launcher) echo 'mResumedActivity: ActivityRecord{123 u0 com.android.launcher/.MainActivity t1}';;\n  esac;;\n 'shell input keyevent KEYCODE_BACK') BACKS=$((BACKS + 1)); echo back >> "$OUTPUT/backs.txt";;\n 'exec-out screencap -p') printf 'diagnostic fixture';;\n 'shell pidof com.sentinel.quantum') echo 123;;\n *) return 99;;\n esac\n}\n${waiter}\nwait_min_sdk_foreground fixture\n`;
+      const result = spawnSync('bash', ['-c', script, 'fixture', dir, mode], { encoding: 'utf8' });
+      assert.equal(result.status, expected, result.stderr);
+      const observedBacks = existsSync(join(dir, 'backs.txt')) ? readFileSync(join(dir, 'backs.txt'), 'utf8').trim().split('\n').length : 0;
+      assert.equal(observedBacks, backs);
+      assert.equal(existsSync(join(dir, 'fixture-pid.txt')), expected === 0);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  }
 });
 
 for (const [name, env, failure] of [

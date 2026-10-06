@@ -347,8 +347,16 @@ jobs:
           set -euo pipefail
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
+          # API 24's app-owned images are deleted by the next pm clear. Pull
+          # before resetting the runtime scope, while the AVD is still alive.
+          if [[ "$API_LEVEL" -ge 29 ]]; then SCREENSHOT_SOURCE=/sdcard/Pictures/SentinelQualification;
+          else SCREENSHOT_SOURCE=/sdcard/Android/data/com.sentinel.quantum/files/qualification; fi
+          SCREENSHOT_STATUS=0
+          timeout 30s adb pull "$SCREENSHOT_SOURCE" "$OUTPUT/instrumentation-screenshots-before-reset" > "$OUTPUT/instrumentation-screenshot-pull.txt" 2>&1 || SCREENSHOT_STATUS=$?
+          printf '%s\n' "$SCREENSHOT_STATUS" > "$OUTPUT/instrumentation-screenshot-pull-status.txt"
           adb logcat -d -v time > "$OUTPUT/instrumentation-logcat.txt"
           node ../scripts/android-logcat-analysis.cjs "$OUTPUT/instrumentation-logcat.txt" "$OUTPUT/instrumentation-crash-anr.json"
+          test "$SCREENSHOT_STATUS" -eq 0
 
       - name: Run viewport UI qualification
         id: viewport
@@ -390,21 +398,47 @@ jobs:
             bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
             bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
           else
+            wait_min_sdk_foreground() {
+              local name="$1" stable=0 role_dialog_dismissed=0
+              for _ in $(seq 1 40); do
+                timeout 10s adb shell dumpsys activity activities > "$OUTPUT/$name-foreground.txt"
+                if grep -Eq 'mResumedActivity:.* u0 com\.sentinel\.quantum/\.(MainActivity|PhoneCoreActivationActivity)[[:space:]}]' "$OUTPUT/$name-foreground.txt"; then
+                  stable=$((stable + 1))
+                  if [[ "$stable" -ge 2 ]]; then
+                    adb shell pidof com.sentinel.quantum > "$OUTPUT/$name-pid.txt"
+                    test -s "$OUTPUT/$name-pid.txt"
+                    return 0
+                  fi
+                else
+                  stable=0
+                  # The legitimate first-run dialer role prompt owns the top
+                  # activity. Cancel only that observed dialog, once; then prove
+                  # the real activation surface resumed without a request loop.
+                  if [[ "$role_dialog_dismissed" -eq 0 ]] &&
+                    grep -Eq 'mResumedActivity:.* u0 com\.android\.server\.telecom/[^[:space:]}]*ChangeDefaultDialerDialog[[:space:]}]' "$OUTPUT/$name-foreground.txt"; then
+                    cp "$OUTPUT/$name-foreground.txt" "$OUTPUT/$name-role-dialog.txt"
+                    adb exec-out screencap -p > "$OUTPUT/$name-role-dialog.png"
+                    adb shell input keyevent KEYCODE_BACK
+                    role_dialog_dismissed=1
+                  fi
+                fi
+                sleep 0.5
+              done
+              echo "Sentinel did not remain in the foreground after $name."
+              return 1
+            }
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1
-            sleep 3
-            adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
+            wait_min_sdk_foreground min-sdk-first
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png"
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-              echo "Crash/ANR detected on minSdk first launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            adb logcat -d -v time > "$OUTPUT/min-sdk-first-logcat.txt"
+            node ../scripts/android-logcat-analysis.cjs "$OUTPUT/min-sdk-first-logcat.txt" "$OUTPUT/min-sdk-first-crash-anr.json"
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
-            sleep 3
-            adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-second-pid.txt"
+            wait_min_sdk_foreground min-sdk-second
             adb exec-out screencap -p > "$OUTPUT/02-min-sdk-second-launch.png"
+            adb logcat -d -v time > "$OUTPUT/min-sdk-second-logcat.txt"
+            node ../scripts/android-logcat-analysis.cjs "$OUTPUT/min-sdk-second-logcat.txt" "$OUTPUT/min-sdk-second-crash-anr.json"
           fi
 
       - name: Collect qualification evidence even after failure
@@ -535,6 +569,8 @@ jobs:
           const coldRelaunchObserved = modernPhoneCore
             ? screenshot('01-dialer-first-launch.png') && screenshot('01b-dialer-relaunch.png')
             : nonEmpty('min-sdk-first-pid.txt') && nonEmpty('min-sdk-second-pid.txt') &&
+              ['min-sdk-first', 'min-sdk-second'].every((name) =>
+                /mResumedActivity:.* u0 com\.sentinel\.quantum\/\.(MainActivity|PhoneCoreActivationActivity)[\s}]/.test(read(`${name}-foreground.txt`))) &&
               screenshot('01-min-sdk-first-launch.png') && screenshot('02-min-sdk-second-launch.png');
           const restoredRolesObserved = modernPhoneCore &&
             packageHeld('sms-role-restored.txt') &&

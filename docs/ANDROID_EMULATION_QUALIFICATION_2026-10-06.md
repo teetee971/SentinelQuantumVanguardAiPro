@@ -66,6 +66,18 @@ two subtitle lines while retaining the existing theme, title and bar structure.
 The existing real navigation assertion remains the regression test; the oracle
 is not weakened to accept this truncation.
 
+API 24 also requires two fresh observations of Sentinel's actual resumed
+MainActivity/setup activity for each cold launch; a surviving background PID and
+screenshots cannot prove foreground health. Per-launch logs undergo the same
+attributed analysis as modern runtime scenarios. Instrumentation screenshots
+are pulled before pm clear, which would otherwise delete API 24's private
+external evidence directory. The pull status is retained and blocks qualification.
+The legacy Telecom ChangeDefaultDialerDialog is a legitimate first-run system
+surface (confirmed in historical API 24 screenshots). The runtime harness saves
+that observation, cancels only that observed dialog once, then requires the
+activation activity to resume. It does not grant the role or accept a system
+dialog as the application's foreground proof.
+
 ## Voice and physical boundary
 
 VoiceStudioActivity records and plays a private local preview. LiveKitVoiceAudioProcessor
