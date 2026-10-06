@@ -22,7 +22,9 @@ test('release documentation follows the executable Android build baseline', () =
   const compileSdk = extract(/compileSdk\s+(\d+)/, appGradle, 'compileSdk');
   const targetSdk = extract(/targetSdk\s+(\d+)/, appGradle, 'targetSdk');
   const minSdk = extract(/minSdk\s+(\d+)/, appGradle, 'minSdk');
-  const versionCode = extract(/versionCode\s+(\d+)/, appGradle, 'versionCode');
+  const versionCode =
+    appGradle.match(/versionCode\s+(\d+)/)?.[1] ??
+    extract(/def\s+sentinelVersionCode\s*=\s*(\d+)/, appGradle, 'default versionCode');
   const versionName = extract(/versionName\s+"([^"]+)"/, appGradle, 'versionName');
 
   const paths = [
