@@ -57,12 +57,16 @@ NODE
   transient=0
   if [[ "$status" == 255 || "$status" == 124 || "$status" == 137 ]]; then transient=1; fi
   if [[ "$status" == 1 ]] && grep -Eq 'device offline|no devices/emulators found|device .* not found' "$errors"; then transient=1; fi
-  # Emulator 37.2.x has also returned exit 1 with no diagnostic from `adb pull`
-  # immediately after a successful on-device snapshot. The API-36 CI evidence from
-  # 2026-10-06 captured exactly that signature after a prior aborted direct stream,
-  # while a subsequent ADB read succeeded. Retry that transport-only condition once;
-  # missing files, permission errors and any diagnostic failure still fail closed.
-  if [[ "$attempt" -ge 2 && "$status" == 1 && "$capture_status" == 0 && "$pull_status" == 1 && ! -s "$errors" ]]; then
+  # Emulator 37.2.x can return exit 1 from `adb pull` after a successful
+  # on-device snapshot. ADB writes transfer progress to stderr, so "stderr is
+  # empty" is not a valid transport signature. Strip only the exact progress
+  # records for this known remote file; any other diagnostic (permission, missing
+  # file, offline, protocol error, etc.) remains a hard failure.
+  pull_diagnostics=""
+  if [[ "$attempt" -ge 2 ]]; then
+    pull_diagnostics="$(sed -E '/^\[[[:space:]]*[0-9]+%\][[:space:]]+\/data\/local\/tmp\/sentinel-qualification-logcat\.txt([[:space:]].*)?$/d' "$errors")"
+  fi
+  if [[ "$attempt" -ge 2 && "$status" == 1 && "$capture_status" == 0 && "$pull_status" == 1 && -z "$pull_diagnostics" ]]; then
     transient=1
   fi
   if [[ "$transient" != 1 || "$attempt" == 3 ]]; then exit 1; fi
