@@ -39,11 +39,12 @@ class SmsDeliveryRoleInstrumentationTest {
         assertFalse(noLongerDefault.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD)
         roleReads = 0
         packageReads = 0
-        val worker = SentinelSmsDeliverReceiver::class.java.getDeclaredMethod(
-            "processDelivery", Context::class.java, Intent::class.java
-        ).apply { isAccessible = true }
-        // Missing PDUs would fail parsing if a stale onReceive authorization were retained.
-        worker.invoke(SentinelSmsDeliverReceiver(), noLongerDefault, Intent(Telephony.Sms.Intents.SMS_DELIVER_ACTION))
+        // Exercise the current production entry point. Missing PDUs would reach parsing
+        // only if the receiver incorrectly retained a stale authorization decision.
+        SentinelSmsDeliverReceiver().onReceive(
+            noLongerDefault,
+            Intent(Telephony.Sms.Intents.SMS_DELIVER_ACTION)
+        )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) assertTrue(roleReads > 0)
         else assertTrue(packageReads > 0)
     }
