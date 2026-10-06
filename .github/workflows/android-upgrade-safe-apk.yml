@@ -73,28 +73,24 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > /tmp/sentinel-upgrade.keystore
           test -s /tmp/sentinel-upgrade.keystore
 
-      - name: Derive monotonic version codes from main history
+      - name: Derive proof versions from the product versionCode
         id: versions
         shell: bash
         run: |
           set -euo pipefail
-          COMMIT_COUNT="$(git rev-list --count HEAD)"
-          if ! [[ "$COMMIT_COUNT" =~ ^[0-9]+$ ]] || (( COMMIT_COUNT < 1 )); then
-            echo "ERROR: invalid commit count: $COMMIT_COUNT"
+          BUILD_FILE="native-android-app/app/build.gradle"
+          CANDIDATE_CODE="$(sed -nE 's/^[[:space:]]*def[[:space:]]+sentinelVersionCode[[:space:]]*=[[:space:]]*([0-9]+).*/\1/p' "$BUILD_FILE" | head -n1)"
+          if ! [[ "$CANDIDATE_CODE" =~ ^[0-9]+$ ]] || (( CANDIDATE_CODE < 2 || CANDIDATE_CODE > 2100000000 )); then
+            echo "ERROR: product versionCode cannot support an N-1 -> N upgrade proof: $CANDIDATE_CODE"
             exit 1
           fi
-          BASE_CODE=$((COMMIT_COUNT * 10))
-          CANDIDATE_CODE=$((BASE_CODE + 1))
-          if (( CANDIDATE_CODE > 2100000000 )); then
-            echo "ERROR: derived Android versionCode exceeds platform maximum"
-            exit 1
-          fi
-          VERSION_NAME="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' native-android-app/app/build.gradle)"
+          BASE_CODE=$((CANDIDATE_CODE - 1))
+          VERSION_NAME="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' "$BUILD_FILE" | head -n1)"
           test -n "$VERSION_NAME"
           echo "base_code=$BASE_CODE" >> "$GITHUB_OUTPUT"
           echo "candidate_code=$CANDIDATE_CODE" >> "$GITHUB_OUTPUT"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "Upgrade proof versionCode $BASE_CODE -> $CANDIDATE_CODE"
+          echo "Upgrade proof follows product versionCode $BASE_CODE -> $CANDIDATE_CODE"
 
       - name: Grant gradlew permission
         working-directory: native-android-app
@@ -153,7 +149,7 @@ jobs:
           sha256sum "$CANDIDATE_APK" > "$RUNNER_TEMP/sentinel-candidate.apk.sha256"
           sha256sum --check "$RUNNER_TEMP/sentinel-candidate.apk.sha256"
 
-      - name: Prove install N to N+1 without uninstall
+      - name: Prove install N-1 to N without uninstall
         timeout-minutes: 30
         shell: bash
         env:
@@ -241,6 +237,7 @@ jobs:
             "version_name": "$VERSION_NAME",
             "baseline_version_code": $BASE_CODE,
             "candidate_version_code": $CANDIDATE_CODE,
+            "candidate_matches_source_default": true,
             "source_commit": "$GITHUB_SHA",
             "source_ref": "$GITHUB_REF",
             "upgrade_install_command": "adb install -r",
