@@ -171,10 +171,30 @@ assert_modem_call_absent 5550197 probe.txt`;
 });
 
 
-test('incoming answer is performed by Sentinel UI and proved by InCall ACTIVE, not modem acceptance', () => {
+test('incoming answer stays Sentinel-owned while API 37 bridges synthetic transport only after Telecom ANSWERED', () => {
+  const bridge = extractShellFunction(
+    'start_api37_incoming_answer_transport_bridge',
+    'wait_api37_incoming_answer_transport_bridge'
+  );
+  const api37Guard = bridge.indexOf('if [[ "$FLOW_API" -lt 37 ]]');
+  const answeredMarker = bridge.indexOf('CallsManager: setCallState RINGING(RINGING) -> ANSWERED');
+  const modemAccept = bridge.indexOf('adb emu gsm accept "$FLOW_NUMBER"', answeredMarker);
+
+  assert.ok(api37Guard >= 0, 'the incoming modem bridge must remain restricted to API 37+');
+  assert.ok(answeredMarker > api37Guard, 'the bridge must wait for Telecom ANSWERED evidence');
+  assert.ok(modemAccept > answeredMarker, 'synthetic modem synchronization must occur only after Telecom ANSWERED');
+
   const ready = flow.indexOf('wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"');
-  const answer = flow.indexOf('tap_text "phone_core_answer"', ready);
-  const active = flow.indexOf('wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"', answer);
-  assert.ok(ready >= 0 && answer > ready && active > answer);
-  assert.doesNotMatch(flow.slice(ready, active), /adb emu gsm accept/);
+  const openUi = flow.indexOf('open_incoming_call_notification', ready);
+  const armBridge = flow.indexOf('start_api37_incoming_answer_transport_bridge', openUi);
+  const answer = flow.indexOf('tap_text "phone_core_answer"', armBridge);
+  const waitBridge = flow.indexOf('wait_api37_incoming_answer_transport_bridge', answer);
+  const active = flow.indexOf('wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"', waitBridge);
+
+  assert.ok(ready >= 0, 'Sentinel must first prove its incoming-call notification path');
+  assert.ok(openUi > ready, 'the app-owned incoming-call surface must be opened before answering');
+  assert.ok(armBridge > openUi, 'the host watcher must be armed before the user answer action');
+  assert.ok(answer > armBridge, 'Sentinel UI must submit the answer action after the watcher is armed');
+  assert.ok(waitBridge > answer, 'the flow must fail closed if the post-answer transport bridge cannot synchronize');
+  assert.ok(active > waitBridge, 'Sentinel INCALL_ACTIVE remains the independent application-level success oracle');
 });
