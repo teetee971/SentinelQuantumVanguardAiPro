@@ -1,38 +1,33 @@
 package com.sentinel.quantum.security
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OutgoingCallPermissionPolicyTest {
-    @Test fun explicitPlatformDenialBlocksCallPlacement() {
-        assertFalse(
-            OutgoingCallPermissionPolicy.mayPlaceCall(
-                OutgoingCallPermissionPolicy.State.DENIED
-            )
+    @Test
+    fun frameworkSimCapabilityIsAccepted() {
+        assertEquals(
+            OutgoingCallPermissionPolicy.AccountAuthority.FRAMEWORK_SIM,
+            OutgoingCallPermissionPolicy.classify(frameworkSimCapability = true)
         )
-    }
-
-    @Test fun unreadableModernOracleBlocksCallPlacement() {
-        assertFalse(
-            OutgoingCallPermissionPolicy.mayPlaceCall(
-                OutgoingCallPermissionPolicy.State.UNKNOWN
-            )
-        )
-    }
-
-    @Test fun explicitAllowancePermitsCallPlacement() {
         assertTrue(
-            OutgoingCallPermissionPolicy.mayPlaceCall(
-                OutgoingCallPermissionPolicy.State.ALLOWED
+            OutgoingCallPermissionPolicy.mayPlacePstnCall(
+                OutgoingCallPermissionPolicy.AccountAuthority.FRAMEWORK_SIM
             )
         )
     }
 
-    @Test fun legacyApiWithoutOracleKeepsTelecomFallback() {
-        assertTrue(
-            OutgoingCallPermissionPolicy.mayPlaceCall(
-                OutgoingCallPermissionPolicy.State.API_NOT_SUPPORTED
+    @Test
+    fun missingFrameworkSimCapabilityFailsClosed() {
+        assertEquals(
+            OutgoingCallPermissionPolicy.AccountAuthority.UNVERIFIED,
+            OutgoingCallPermissionPolicy.classify(frameworkSimCapability = false)
+        )
+        assertFalse(
+            OutgoingCallPermissionPolicy.mayPlacePstnCall(
+                OutgoingCallPermissionPolicy.AccountAuthority.UNVERIFIED
             )
         )
     }
