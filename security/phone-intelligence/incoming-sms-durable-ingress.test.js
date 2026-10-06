@@ -47,6 +47,12 @@ test('corrupt SMS spool records cannot masquerade as replay or poison bounded ca
   assert.match(store, /if \(!runCatching \{ target\.delete\(\) \}\.getOrDefault\(false\)\) return PersistState\.FAILED/);
 });
 
+test('existing replay fallback reuses durable receive identity when WorkManager submission fails', () => {
+  assert.match(receiver, /persistState == IncomingSmsDeliveryStore\.PersistState\.EXISTING/);
+  assert.match(receiver, /IncomingSmsDeliveryStore\.read\(appContext\.filesDir, id\) \?: record/);
+  assert.match(receiver, /record = projectionRecord/);
+});
+
 test('provider projection is role-gated, replay-safe and WorkManager-backed', () => {
   assert.match(worker, /readSmsRoleStateFailClosed\(\)/);
   assert.match(worker, /ProviderLookup\.FOUND/);
