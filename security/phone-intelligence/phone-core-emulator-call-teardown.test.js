@@ -1,8 +1,19 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const flow = fs.readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
+
+function extractShellFunction(name, nextName) {
+  const start = flow.indexOf(`${name}() {`);
+  const end = flow.indexOf(`\n${nextName}() {`, start);
+  assert.ok(start >= 0, `${name} must exist`);
+  assert.ok(end > start, `${name} must end before ${nextName}`);
+  return flow.slice(start, end);
+}
 
 test('incoming emulator call is fully torn down before the outgoing probe starts', () => {
   const cancelIndex = flow.indexOf('adb emu gsm cancel "$FLOW_NUMBER"');
@@ -26,6 +37,33 @@ test('incoming emulator call is fully torn down before the outgoing probe starts
     /adb emu gsm cancel \"\$FLOW_NUMBER\"\s*\nsleep 1\b/,
     'a fixed sleep is not a valid Telecom teardown oracle'
   );
+});
+
+test('modem teardown oracle fails closed when adb gsm-list evidence is unreadable', () => {
+  const waitFunction = extractShellFunction('wait_emulator_call_absent', 'tap_text');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-modem-oracle-'));
+  try {
+    const script = `
+set -u
+FLOW_OUTPUT_DIR="$1"
+sleep() { :; }
+adb() { printf 'transport unavailable\\n' >&2; return 17; }
+${waitFunction}
+wait_emulator_call_absent 5550100
+`;
+    const result = spawnSync('bash', ['-c', script, 'sentinel-test', tmp], {
+      encoding: 'utf8',
+    });
+
+    assert.notEqual(result.status, 0, 'an unreadable modem oracle must never prove call absence');
+    assert.match(
+      `${result.stdout}${result.stderr}`,
+      /could not prove call 5550100 absent/,
+      'failure must explicitly report that absence could not be proven'
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test('outgoing emulator qualification preserves fail-closed app policy and waits for runtime truth', () => {
