@@ -45,6 +45,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.ui.design.phoneCoreTestId
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -943,11 +945,11 @@ class SentinelDialerActivity : ComponentActivity() {
                                     Button(
                                         onClick = { if (holdsDialerRole()) placeCallIfReady(number) else requestDialerRole(number) },
                                         enabled = sanitizeDialNumber(number) != null,
-                                        modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                                        modifier = Modifier.weight(1f).heightIn(min = 56.dp).phoneCoreTestId("phone_core_call")
                                     ) {
                                         Icon(Icons.Default.Phone, null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Appeler")
+                                        Text(stringResource(R.string.phone_core_call))
                                     }
                                     FilledTonalIconButton(
                                         onClick = {
@@ -999,9 +1001,10 @@ class SentinelDialerActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth()
                         )
                         ScrollableTabRow(selectedTabIndex = phoneTab, edgePadding = 0.dp) {
-                            listOf("Clavier", "Récents", "Répertoire", "Réglages").forEachIndexed { index, label ->
+                            listOf(stringResource(R.string.phone_core_keypad), "Récents", "Répertoire", "Réglages").forEachIndexed { index, label ->
                                 Tab(
                                     selected = phoneTab == index,
+                                    modifier = Modifier.phoneCoreTestId("phone_core_tab_$index"),
                                     onClick = {
                                         phoneTab = index
                                         if (index == 1) {

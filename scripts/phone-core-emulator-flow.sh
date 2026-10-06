@@ -80,7 +80,11 @@ wait_text() {
 import sys, xml.etree.ElementTree as ET
 nodes = ET.parse(sys.argv[1]).iter('node')
 needles = sys.argv[2:]
-sys.exit(0 if any(any(needle in (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')) for needle in needles) for n in nodes) else 1)
+def matches(n, needle):
+    if needle.startswith('phone_core_'):
+        return n.get('resource-id') == needle and n.get('package') == 'com.sentinel.quantum'
+    return needle in (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', ''))
+sys.exit(0 if any(any(matches(n, needle) for needle in needles) for n in nodes) else 1)
 PY
     then return 0; fi
     sleep 1
@@ -155,7 +159,9 @@ tap_text() {
   coordinates="$(python3 - "$FLOW_XML" "$1" <<'PY'
 import re, sys, xml.etree.ElementTree as ET
 for node in ET.parse(sys.argv[1]).iter('node'):
-    if sys.argv[2] in (node.get('text', '') + ' ' + node.get('content-desc', '') + ' ' + node.get('hint', '')):
+    needle = sys.argv[2]
+    matched = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in (node.get('text', '') + ' ' + node.get('content-desc', '') + ' ' + node.get('hint', ''))
+    if matched:
         match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
         if match:
             x1, y1, x2, y2 = map(int, match.groups())
@@ -258,11 +264,11 @@ adb shell am force-stop "$FLOW_PACKAGE"
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
 adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
-wait_text "Clavier"
+wait_text "phone_core_tab_0"
 capture 01-dialer-first-launch
 adb shell am force-stop "$FLOW_PACKAGE"
 adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
-wait_text "Clavier"
+wait_text "phone_core_tab_0"
 capture 01b-dialer-relaunch
 
 adb shell input keyevent KEYCODE_SLEEP
@@ -302,8 +308,8 @@ adb shell wm dismiss-keyguard
 FLOW_OUTGOING_ACTIVE=0
 FLOW_OUTGOING_EVIDENCE="$FLOW_OUTPUT_DIR/phone-private-timeline-outgoing-incall_active.xml"
 adb shell am start -W -a android.intent.action.DIAL -d tel:5550101 -n "$FLOW_PACKAGE/.SentinelDialerActivity"
-wait_text "Appeler"
-tap_text "Appeler"
+wait_text "phone_core_call"
+tap_text "phone_core_call"
 for FLOW_ATTEMPT in $(seq 1 12); do
   for _ in $(seq 1 3); do
     # The emulator modem may require an explicit transition from dialing to active.
@@ -329,22 +335,22 @@ fi
 wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"
 # Connected-state and app-owned in-call-surface proofs are separate: require both.
 wait_private_timeline_event "LOCAL" "INCALL_UI_SHOWN"
-wait_text "Raccrocher"
+wait_text "phone_core_hangup"
 capture 05-outgoing-call
-tap_text "Raccrocher"
+tap_text "phone_core_hangup"
 wait_emulator_call_absent 5550101
 
 adb shell am start -W -a android.intent.action.MAIN -n "$FLOW_PACKAGE/.SmsComposeActivity"
 adb emu sms send "$FLOW_SMS_NUMBER" "Sentinel emulator reply test"
 wait_text "Sentinel emulator reply test"
 tap_text "Sentinel emulator reply test"
-wait_text "Répondre"
+wait_text "phone_core_sms_reply"
 capture 06-thread
-tap_text "Répondre"
+tap_text "phone_core_sms_reply"
 wait_reply_focus
 adb shell input text ReplyFromSentinel
 wait_text "ReplyFromSentinel"
-tap_text "Envoyer"
+tap_text "phone_core_sms_reply_send"
 adb shell input keyevent KEYCODE_BACK
 FLOW_REPLY_STORED=0
 for _ in $(seq 1 15); do

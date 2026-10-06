@@ -71,7 +71,7 @@ test('outgoing emulator qualification preserves fail-closed app policy and waits
   const dialIndex = flow.indexOf('android.intent.action.DIAL -d tel:5550101', retryIndex);
   const activeIndex = flow.indexOf('private_timeline_has_event "OUTGOING" "INCALL_ACTIVE"', dialIndex);
   const uiEvidenceIndex = flow.indexOf('wait_private_timeline_event "LOCAL" "INCALL_UI_SHOWN"', activeIndex);
-  const hangupIndex = flow.indexOf('tap_text "Raccrocher"', uiEvidenceIndex);
+  const hangupIndex = flow.indexOf('tap_text "phone_core_hangup"', uiEvidenceIndex);
   const modemEndedIndex = flow.indexOf('wait_emulator_call_absent 5550101', hangupIndex);
 
   assert.ok(retryIndex >= 0, 'outgoing recovery window must be explicit and bounded');

@@ -324,7 +324,7 @@ for (const marker of [
   'adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode"',
   'assert_send_sms_appop_denied',
   'assert_sms_role_held',
-  'assert_action_disabled "Envoyer"',
+  'assert_action_disabled "phone_core_sms_send"',
   'effective_permission_denial_fail_closed',
   'assert_modem_call_absent',
   'SCREENING_CALLBACK_BEFORE=',

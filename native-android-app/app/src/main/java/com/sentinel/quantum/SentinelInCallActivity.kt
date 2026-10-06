@@ -28,6 +28,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.ui.design.phoneCoreTestId
+import com.sentinel.quantum.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -436,7 +439,8 @@ private fun IncomingActions(snapshot: SentinelInCallService.CallSnapshot) {
         ) { SentinelInCallService.reject(snapshot.id) }
 
         CallActionCircle(
-            label = "Décrocher",
+            label = stringResource(R.string.phone_core_answer),
+            testId = "phone_core_answer",
             icon = Icons.Rounded.Call,
             containerColor = MaterialTheme.colorScheme.tertiary,
             contentColor = MaterialTheme.colorScheme.onTertiary,
@@ -501,7 +505,8 @@ private fun OngoingPrimaryControls(
                 )
 
                 CallActionCircle(
-                    label = "Clavier",
+                    label = stringResource(R.string.phone_core_keypad),
+                    testId = "phone_core_incall_keypad",
                     icon = Icons.Rounded.Dialpad,
                     containerColor = if (showDialpad) {
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
@@ -554,7 +559,8 @@ private fun OngoingPrimaryControls(
                 contentAlignment = Alignment.Center
             ) {
                 CallActionCircle(
-                    label = "Raccrocher",
+                    label = stringResource(R.string.phone_core_hangup),
+                    testId = "phone_core_hangup",
                     icon = Icons.Rounded.CallEnd,
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError,
@@ -706,7 +712,7 @@ private fun ActiveCallsPanel(calls: List<SentinelInCallService.CallSnapshot>) {
                 }
 
                 TextButton(onClick = { SentinelInCallService.disconnect(call.id) }) {
-                    Text("Raccrocher")
+                    Text(stringResource(R.string.phone_core_hangup))
                 }
             }
         }
@@ -721,6 +727,7 @@ private fun CallActionCircle(
     contentColor: Color,
     enabled: Boolean = true,
     selected: Boolean = false,
+    testId: String? = null,
     size: androidx.compose.ui.unit.Dp = 62.dp,
     onClick: () -> Unit
 ) {
@@ -733,6 +740,7 @@ private fun CallActionCircle(
             enabled = enabled,
             modifier = Modifier
                 .size(size)
+                .then(if (testId != null) Modifier.phoneCoreTestId(testId) else Modifier)
                 .semantics { contentDescription = label },
             shape = CircleShape,
             contentPadding = PaddingValues(0.dp),

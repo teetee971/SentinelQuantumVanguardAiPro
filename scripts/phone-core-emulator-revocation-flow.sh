@@ -29,7 +29,8 @@ import sys, xml.etree.ElementTree as ET
 needle = sys.argv[2]
 for node in ET.parse(sys.argv[1]).iter('node'):
     haystack = ' '.join([node.get('text',''), node.get('content-desc',''), node.get('hint','')])
-    if needle in haystack:
+    matched = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in haystack
+    if matched:
         sys.exit(0)
 sys.exit(1)
 PY
@@ -67,7 +68,8 @@ import re, sys, xml.etree.ElementTree as ET
 needle = sys.argv[2]
 for node in ET.parse(sys.argv[1]).iter('node'):
     haystack = ' '.join([node.get('text',''), node.get('content-desc',''), node.get('hint','')])
-    if needle not in haystack:
+    matched = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in haystack
+    if not matched:
         continue
     match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds',''))
     if match:
@@ -93,7 +95,8 @@ parent = {child: node for node in root.iter() for child in node}
 matched = False
 for node in root.iter('node'):
     values = (node.get('text',''), node.get('content-desc',''), node.get('hint',''))
-    if needle not in values:
+    matched = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in values
+    if not matched:
         continue
     cur = node
     while cur is not None:
@@ -374,8 +377,8 @@ launch_sms_surface "sms-send-appop-denied-launch.txt" warm
 assert_sms_role_held
 assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"
 scroll_until_ui_contains "Envoi SMS : autorisation Android requise."
-scroll_until_ui_contains "Envoyer"
-assert_action_disabled "Envoyer"
+scroll_until_ui_contains "phone_core_sms_send"
+assert_action_disabled "phone_core_sms_send"
 capture 08-sms-effective-permission-denied
 assert_no_crash
 EFFECTIVE_PERMISSION_DENIAL_PROVEN=true
@@ -387,11 +390,11 @@ adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
 wait_role_absent android.app.role.SMS
 launch_sms_surface "sms-role-revoked-launch.txt"
 scroll_until_ui_contains "rôle SMS disponible mais non accordé"
-scroll_until_ui_contains "Envoyer"
-assert_action_disabled "Envoyer"
-tap_ui_text "Envoyer"
+scroll_until_ui_contains "phone_core_sms_send"
+assert_action_disabled "phone_core_sms_send"
+tap_ui_text "phone_core_sms_send"
 sleep 1
-assert_action_disabled "Envoyer"
+assert_action_disabled "phone_core_sms_send"
 wait_role_absent android.app.role.SMS
 capture 10-sms-role-revoked
 assert_no_crash
@@ -410,9 +413,9 @@ wait_role_absent android.app.role.DIALER
 adb shell am force-stop "$PACKAGE"
 adb shell am start -W -a android.intent.action.DIAL -d "tel:$DIALER_PROBE_NUMBER" \
   -n "$PACKAGE/.SentinelDialerActivity" > "$OUT_DIR/dialer-role-revoked-launch.txt"
-wait_ui_contains "Appeler"
+wait_ui_contains "phone_core_call"
 assert_modem_call_absent "$DIALER_PROBE_NUMBER" "dialer-revoked-modem-before.txt"
-tap_ui_text "Appeler"
+tap_ui_text "phone_core_call"
 sleep 2
 assert_modem_call_absent "$DIALER_PROBE_NUMBER" "dialer-revoked-modem-after.txt"
 wait_role_absent android.app.role.DIALER
