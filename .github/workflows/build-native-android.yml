@@ -131,7 +131,7 @@ jobs:
               cat "$error" || true
               return 1
             fi
-            if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$evidence"; then
+            if ! python3 ../scripts/phone-core-logcat-crash-oracle.py "$evidence"; then
               echo "Sentinel crashed or ANR'd while ${context}."
               adb logcat -d -v time | tail -n 400 || true
               return 1
