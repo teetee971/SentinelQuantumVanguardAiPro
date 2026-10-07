@@ -1,0 +1,591 @@
+name: Build Native Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-android-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Android manifest security
+        run: node scripts/check-android-manifest.js
+
+      - name: Validate Android product truth
+        run: npm run test:android-product-truth
+
+      - name: Validate Android UI consistency
+        run: node scripts/check-android-ui-consistency.js
+
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+
+      - name: Verify native Android project boundary
+        working-directory: ./native-android-app
+        run: |
+          set -euo pipefail
+          test -f gradlew
+          test -f settings.gradle || test -f settings.gradle.kts
+          test -f app/build.gradle || test -f app/build.gradle.kts
+
+      - name: Grant execute permission for gradlew
+        working-directory: ./native-android-app
+        run: chmod +x ./gradlew
+
+      - name: Run Android unit tests
+        working-directory: ./native-android-app
+        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
+
+      - name: Run Android lint
+        working-directory: ./native-android-app
+        run: ./gradlew lintDebug --stacktrace --no-daemon
+
+      - name: Prove native release dependency graph
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew :app:exportReleaseDependencyInventory --stacktrace --no-daemon
+          test -s app/build/reports/release-dependencies.json
+          node -e 'const fs=require("fs"); const p="app/build/reports/release-dependencies.json"; const d=JSON.parse(fs.readFileSync(p,"utf8")); if(d.schema_version!==2 || d.configuration!=="releaseRuntimeClasspath" || !Number.isInteger(d.component_count) || !Number.isInteger(d.relationship_count) || !Array.isArray(d.components) || !Array.isArray(d.relationships) || d.component_count!==d.components.length || d.relationship_count!==d.relationships.length || d.component_count<1 || d.relationship_count<1 || !d.components.some(c=>c.key===d.root_component)) process.exit(1)'
+
+      - name: Build debug APK
+        working-directory: ./native-android-app
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
+
+      - name: Verify debug APK package, alignment and signature
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+          test -s "$APK_PATH"
+
+          BUILD_TOOLS_DIR=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n1)
+          test -n "$BUILD_TOOLS_DIR"
+          test -x "$BUILD_TOOLS_DIR/aapt"
+          test -x "$BUILD_TOOLS_DIR/zipalign"
+          test -x "$BUILD_TOOLS_DIR/apksigner"
+
+          PACKAGE_NAME=$("$BUILD_TOOLS_DIR/aapt" dump badging "$APK_PATH" | sed -n "s/^package: name='\([^\']*\)'.*/\1/p" | head -n1)
+          test "$PACKAGE_NAME" = "com.sentinel.quantum"
+          "$BUILD_TOOLS_DIR/zipalign" -c -P 16 -v 4 "$APK_PATH"
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK_PATH"
+
+      - name: Reject static secrets packaged in APK
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+          node ../scripts/check-android-apk-secrets.js "$APK_PATH"
+
+      - name: Install and launch APK on Android 10 emulator
+        timeout-minutes: 30
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+
+          # Shared oracle owns FATAL EXCEPTION: attribution and ANR in com\.sentinel\.quantum attribution.
+          assert_clean_logcat() {
+            local context="$1"
+            local slug="$2"
+            local evidence="$RUNNER_TEMP/${slug}-logcat-brief.txt"
+            local error="$RUNNER_TEMP/${slug}-logcat-error.txt"
+            local status=0
+            adb logcat -d -v brief > "$evidence" 2> "$error" || status=$?
+            if [[ "$status" -ne 0 ]]; then
+              echo "Unable to read logcat while ${context}; crash absence is UNKNOWN."
+              cat "$error" || true
+              return 1
+            fi
+            if ! python3 ../scripts/phone-core-logcat-crash-oracle.py "$evidence"; then
+              echo "Sentinel crashed or ANR'd while ${context}."
+              adb logcat -d -v time | tail -n 400 || true
+              return 1
+            fi
+          }
+
+          SDK_PACKAGES=("emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64")
+          SDK_READY=0
+          for attempt in 1 2 3; do
+            if timeout 600s sdkmanager "${SDK_PACKAGES[@]}"; then
+              SDK_READY=1
+              break
+            fi
+            echo "Android SDK package installation failed on attempt ${attempt}; removing partial emulator/system-image payloads before retry."
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-29/google_apis/x86_64"
+            if [[ "$attempt" -lt 3 ]]; then
+              sleep $((attempt * 5))
+            fi
+          done
+          if [[ "$SDK_READY" != "1" ]]; then
+            echo "Android SDK/emulator packages could not be installed after 3 clean attempts."
+            exit 1
+          fi
+
+          test -x "$ANDROID_HOME/emulator/emulator"
+          test -f "$ANDROID_HOME/system-images/android-29/google_apis/x86_64/package.xml"
+          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64"'
+
+          EMULATOR_ACCEL_ARGS=(-no-accel)
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            EMULATOR_ACCEL_ARGS=(-accel on)
+          fi
+
+          "$ANDROID_HOME/emulator/emulator" \
+            -avd sentinel_phone_core_ci \
+            -no-window -no-audio -no-boot-anim \
+            -no-snapshot-load -no-snapshot-save \
+            "${EMULATOR_ACCEL_ARGS[@]}" \
+            -gpu swiftshader_indirect \
+            > "$RUNNER_TEMP/sentinel-emulator.log" 2>&1 &
+          EMULATOR_PID=$!
+          trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+
+          DEVICE_READY=0
+          for _ in $(seq 1 90); do
+            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+              DEVICE_READY=1
+              break
+            fi
+            if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
+              echo "Android emulator exited before becoming available to adb."
+              cat "$RUNNER_TEMP/sentinel-emulator.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [[ "$DEVICE_READY" != "1" ]]; then
+            echo "Android emulator did not become available to adb within 180 seconds."
+            adb devices -l || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log"
+            exit 1
+          fi
+
+          BOOTED=0
+          for _ in $(seq 1 120); do
+            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" == "1" ]]; then
+              BOOTED=1
+              break
+            fi
+            sleep 2
+          done
+          if [[ "$BOOTED" != "1" ]]; then
+            cat "$RUNNER_TEMP/sentinel-emulator.log"
+            exit 1
+          fi
+
+          # sys.boot_completed can become 1 before PackageManager's binder endpoint is usable.
+          # Prove the package service is actually responsive before attempting installation.
+          PACKAGE_MANAGER_READY=0
+          PACKAGE_MANAGER_LOG=""
+          PACKAGE_MANAGER_ERR=""
+          for PACKAGE_ATTEMPT in $(seq 1 30); do
+            PACKAGE_MANAGER_LOG="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.txt"
+            PACKAGE_MANAGER_ERR="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.err"
+            set +e
+            adb shell cmd package list packages > "$PACKAGE_MANAGER_LOG" 2> "$PACKAGE_MANAGER_ERR"
+            PACKAGE_MANAGER_STATUS=$?
+            set -e
+            if [[ "$PACKAGE_MANAGER_STATUS" -eq 0 ]] && grep -q '^package:' "$PACKAGE_MANAGER_LOG"; then
+              PACKAGE_MANAGER_READY=1
+              break
+            fi
+            timeout 30s adb wait-for-device >/dev/null 2>&1 || true
+            sleep 1
+          done
+          if [[ "$PACKAGE_MANAGER_READY" != "1" ]]; then
+            echo "Android PackageManager did not become responsive after boot." >&2
+            [[ -n "$PACKAGE_MANAGER_LOG" ]] && cat "$PACKAGE_MANAGER_LOG" >&2 || true
+            [[ -n "$PACKAGE_MANAGER_ERR" ]] && cat "$PACKAGE_MANAGER_ERR" >&2 || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log" >&2 || true
+            exit 1
+          fi
+
+          # Retry only transport/service-startup failures. APK/package/signature errors remain
+          # immediately fatal and can never be converted into a flaky-infrastructure PASS.
+          INSTALL_STATUS=0
+          INSTALL_LOG=""
+          for INSTALL_ATTEMPT in $(seq 1 5); do
+            INSTALL_LOG="$RUNNER_TEMP/apk-install-attempt-${INSTALL_ATTEMPT}.txt"
+            set +e
+            adb install -r "$APK_PATH" > "$INSTALL_LOG" 2>&1
+            INSTALL_RC=$?
+            set -e
+            if [[ "$INSTALL_RC" -eq 0 ]]; then
+              INSTALL_STATUS=0
+              cat "$INSTALL_LOG"
+              break
+            fi
+
+            INSTALL_STATUS=$INSTALL_RC
+            cat "$INSTALL_LOG" >&2
+            if ! grep -Eiq 'Broken pipe|device offline|device still authorizing|closed|transport|no devices/emulators found|cannot connect' "$INSTALL_LOG"; then
+              echo "APK installation failed with a non-transient package/install error." >&2
+              exit "$INSTALL_RC"
+            fi
+
+            if [[ "$INSTALL_ATTEMPT" -lt 5 ]]; then
+              timeout 30s adb wait-for-device || true
+              sleep 1
+            fi
+          done
+          if [[ "$INSTALL_STATUS" != "0" ]]; then
+            echo "APK installation failed after bounded transient transport retries." >&2
+            [[ -n "$INSTALL_LOG" ]] && cat "$INSTALL_LOG" >&2 || true
+            exit 1
+          fi
+
+          adb shell pm path com.sentinel.quantum | grep -q '^package:'
+          # Some hosted Android 10 emulator images deny clearing individual log buffers.
+          # Log clearing is diagnostic hygiene, not an installability gate.
+          adb logcat -c >/dev/null 2>&1 || true
+          adb shell am start -n com.sentinel.quantum/.MainActivity | tee "$RUNNER_TEMP/sentinel-launch.txt"
+
+          FIRST_RUN_READY=0
+          for _ in $(seq 1 30); do
+            # MainActivity can become RESUMED before the Phone Core hand-off has completed.
+            # Require the canonical lifecycle state before force-stopping. IN_PROGRESS is
+            # not success: runtime Android facts remain authoritative and an interrupted
+            # setup must resume on the next cold launch.
+            if adb shell run-as com.sentinel.quantum cat shared_prefs/phone_core_setup_wizard_v2.xml 2>/dev/null | grep -Eq 'name="lifecycle_state_v1">(OFFERED|IN_PROGRESS)<'; then
+              FIRST_RUN_READY=1
+              break
+            fi
+            assert_clean_logcat "waiting for the first Phone Core setup launch" "sentinel-first-launch"
+            sleep 1
+          done
+          if [[ "$FIRST_RUN_READY" != "1" ]]; then
+            echo "Sentinel did not persist the canonical Phone Core setup lifecycle state within 30 seconds."
+            adb shell dumpsys activity activities || true
+            adb shell run-as com.sentinel.quantum sh -c 'for f in shared_prefs/*; do echo "=== $f ==="; cat "$f"; done' 2>/dev/null || true
+            adb logcat -d -v time | tail -n 400
+            exit 1
+          fi
+
+          adb shell pidof com.sentinel.quantum
+
+          # An unfinished setup is intentionally resumable. Force-stop simulates the user
+          # leaving the app during Android's permission/default-role flow. The next cold launch
+          # must reopen PhoneCoreActivationActivity rather than losing progress.
+          adb shell am force-stop com.sentinel.quantum
+          adb logcat -c >/dev/null 2>&1 || true
+          # am start -W can return non-zero when Android immediately hands foreground
+          # control to PermissionController/RoleController. The assertions below independently
+          # require PhoneCoreActivationActivity or a specifically-bound permission/role activity,
+          # and still fail on Sentinel crash/ANR.
+          SECOND_LAUNCH_STATUS=0
+          adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$RUNNER_TEMP/sentinel-second-launch.txt" 2>&1 || SECOND_LAUNCH_STATUS=$?
+          cat "$RUNNER_TEMP/sentinel-second-launch.txt"
+          if [[ "$SECOND_LAUNCH_STATUS" != "0" ]]; then
+            echo "am start -W returned $SECOND_LAUNCH_STATUS; validating foreground ownership and resultTo before deciding failure."
+          fi
+
+          SETUP_RESUMED=0
+          SETUP_DUMP="$RUNNER_TEMP/sentinel-setup-resume.txt"
+          for _ in $(seq 1 15); do
+            adb shell dumpsys activity activities > "$SETUP_DUMP" 2>/dev/null || true
+
+            # Direct proof: the activation center itself is foreground.
+            if grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$SETUP_DUMP"; then
+              SETUP_RESUMED=1
+              break
+            fi
+
+            # Equivalent proof during Android-controlled permission flow: GrantPermissionsActivity
+            # is foreground and its result target is specifically PhoneCoreActivationActivity.
+            if grep -Eq 'mResumedActivity.*permissioncontroller.*GrantPermissionsActivity|topResumedActivity=.*permissioncontroller.*GrantPermissionsActivity' "$SETUP_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$SETUP_DUMP"; then
+              SETUP_RESUMED=1
+              break
+            fi
+
+            # Equivalent proof for role-first activation: Android's role controller may own the
+            # foreground while ROLE_DIALER / ROLE_CALL_SCREENING is being requested. Accept it only
+            # when dumpsys binds the result specifically back to PhoneCoreActivationActivity.
+            if grep -Eiq 'mResumedActivity.*permissioncontroller.*role.*Activity|topResumedActivity=.*permissioncontroller.*role.*Activity' "$SETUP_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$SETUP_DUMP"; then
+              SETUP_RESUMED=1
+              break
+            fi
+
+            assert_clean_logcat "resuming Phone Core setup" "sentinel-setup-resume"
+            sleep 1
+          done
+          if [[ "$SETUP_RESUMED" != "1" ]]; then
+            echo "Unfinished Phone Core setup did not resume on the second cold launch."
+            adb shell dumpsys activity activities || true
+            adb shell run-as com.sentinel.quantum sh -c 'for f in shared_prefs/*; do echo "=== $f ==="; cat "$f"; done' 2>/dev/null || true
+            adb logcat -d -v time | tail -n 400
+            exit 1
+          fi
+
+          adb shell pidof com.sentinel.quantum
+          adb shell am force-stop com.sentinel.quantum
+
+      - name: Get version and prepare APK
+        id: version
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SOURCE_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
+          test -n "$VERSION_NAME"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-debug.apk"
+          cp "$APK_PATH" "$NEW_NAME"
+
+          echo "apk_name=${NEW_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Built APK: $NEW_NAME"
+          ls -lh "$NEW_NAME"
+
+          # Hash the delivered APK, not the surrounding Actions ZIP archive.
+          sha256sum "$NEW_NAME" > "${NEW_NAME}.sha256"
+          sha256sum --check "${NEW_NAME}.sha256"
+          BUILD_APK_NAME="$NEW_NAME" node <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const name = process.env.BUILD_APK_NAME;
+          const bytes = fs.readFileSync(name);
+          const identity = {
+            schema_version: 2,
+            channel: 'debug-physical-test-candidate',
+            apk_name: name,
+            apk_sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+            apk_size_bytes: bytes.length,
+            build_commit: process.env.GITHUB_SHA,
+            source_head_commit: process.env.SOURCE_HEAD_SHA,
+            source_base_commit: process.env.SOURCE_BASE_SHA || null,
+            source_head_ref: process.env.SOURCE_HEAD_REF,
+            source_ref: process.env.GITHUB_REF,
+            repository: process.env.GITHUB_REPOSITORY,
+            run_id: process.env.GITHUB_RUN_ID,
+            run_attempt: process.env.GITHUB_RUN_ATTEMPT,
+            physical_validation: 'not-executed',
+            functional_100_percent: false
+          };
+          fs.writeFileSync(`${name}.build.json`, JSON.stringify(identity, null, 2) + '\n');
+          NODE
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SentinelQuantumVanguard-APK-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            native-android-app/${{ steps.version.outputs.apk_name }}
+            native-android-app/${{ steps.version.outputs.apk_name }}.sha256
+            native-android-app/${{ steps.version.outputs.apk_name }}.build.json
+          if-no-files-found: error
+          retention-days: 14
+
+
+  phone-core-android16:
+    name: Phone Core on Android 16
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+      - name: Download the tested APK
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: SentinelQuantumVanguard-APK-${{ github.event.pull_request.head.sha || github.sha }}
+          path: native-android-app/ci-apk
+      - name: Verify Telecom and inline reply on Android 16
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH=$(find ci-apk -name "*.apk" -type f -print -quit)
+          test -n "$APK_PATH"
+
+          SDK_PACKAGES=("emulator" "platforms;android-36" "system-images;android-36;google_apis;x86_64")
+          SDK_READY=0
+          for attempt in 1 2 3; do
+            if timeout 600s sdkmanager "${SDK_PACKAGES[@]}"; then
+              SDK_READY=1
+              break
+            fi
+            echo "Android SDK package installation failed on attempt ${attempt}; removing partial emulator/system-image payloads before retry."
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-36/google_apis/x86_64"
+            if [[ "$attempt" -lt 3 ]]; then
+              sleep $((attempt * 5))
+            fi
+          done
+          if [[ "$SDK_READY" != "1" ]]; then
+            echo "Android SDK/emulator packages could not be installed after 3 clean attempts."
+            exit 1
+          fi
+
+          test -x "$ANDROID_HOME/emulator/emulator"
+          test -f "$ANDROID_HOME/system-images/android-36/google_apis/x86_64/package.xml"
+          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_api36_ci --package "system-images;android-36;google_apis;x86_64"'
+
+          EMULATOR_ACCEL_ARGS=(-no-accel)
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+            EMULATOR_ACCEL_ARGS=(-accel on)
+          fi
+
+          "$ANDROID_HOME/emulator/emulator" \
+            -avd sentinel_phone_core_api36_ci \
+            -no-window -no-audio -no-boot-anim \
+            -no-snapshot-load -no-snapshot-save \
+            "${EMULATOR_ACCEL_ARGS[@]}" \
+            -gpu swiftshader_indirect \
+            > "$RUNNER_TEMP/sentinel-emulator.log" 2>&1 &
+          EMULATOR_PID=$!
+          trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+
+          DEVICE_READY=0
+          for _ in $(seq 1 90); do
+            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+              DEVICE_READY=1
+              break
+            fi
+            if ! kill -0 "$EMULATOR_PID" >/dev/null 2>&1; then
+              echo "Android emulator exited before becoming available to adb."
+              cat "$RUNNER_TEMP/sentinel-emulator.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [[ "$DEVICE_READY" != "1" ]]; then
+            echo "Android emulator did not become available to adb within 180 seconds."
+            adb devices -l || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log"
+            exit 1
+          fi
+
+          BOOTED=0
+          for _ in $(seq 1 120); do
+            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" == "1" ]]; then
+              BOOTED=1
+              break
+            fi
+            sleep 2
+          done
+          if [[ "$BOOTED" != "1" ]]; then
+            cat "$RUNNER_TEMP/sentinel-emulator.log"
+            exit 1
+          fi
+
+          PACKAGE_MANAGER_READY=0
+          PACKAGE_MANAGER_LOG=""
+          PACKAGE_MANAGER_ERR=""
+          for PACKAGE_ATTEMPT in $(seq 1 30); do
+            PACKAGE_MANAGER_LOG="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.txt"
+            PACKAGE_MANAGER_ERR="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.err"
+            set +e
+            adb shell cmd package list packages > "$PACKAGE_MANAGER_LOG" 2> "$PACKAGE_MANAGER_ERR"
+            PACKAGE_MANAGER_STATUS=$?
+            set -e
+            if [[ "$PACKAGE_MANAGER_STATUS" -eq 0 ]] && grep -q '^package:' "$PACKAGE_MANAGER_LOG"; then
+              PACKAGE_MANAGER_READY=1
+              break
+            fi
+            timeout 30s adb wait-for-device >/dev/null 2>&1 || true
+            sleep 1
+          done
+          if [[ "$PACKAGE_MANAGER_READY" != "1" ]]; then
+            echo "Android 16 PackageManager did not become responsive after boot." >&2
+            [[ -n "$PACKAGE_MANAGER_LOG" ]] && cat "$PACKAGE_MANAGER_LOG" >&2 || true
+            [[ -n "$PACKAGE_MANAGER_ERR" ]] && cat "$PACKAGE_MANAGER_ERR" >&2 || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log" >&2 || true
+            exit 1
+          fi
+
+          INSTALL_STATUS=0
+          INSTALL_LOG=""
+          for INSTALL_ATTEMPT in $(seq 1 5); do
+            INSTALL_LOG="$RUNNER_TEMP/apk-install-attempt-${INSTALL_ATTEMPT}.txt"
+            set +e
+            adb install -r "$APK_PATH" > "$INSTALL_LOG" 2>&1
+            INSTALL_RC=$?
+            set -e
+            if [[ "$INSTALL_RC" -eq 0 ]]; then
+              INSTALL_STATUS=0
+              cat "$INSTALL_LOG"
+              break
+            fi
+
+            INSTALL_STATUS=$INSTALL_RC
+            cat "$INSTALL_LOG" >&2
+            if ! grep -Eiq 'Broken pipe|device offline|device still authorizing|closed|transport|no devices/emulators found|cannot connect' "$INSTALL_LOG"; then
+              echo "Android 16 APK installation failed with a non-transient package/install error." >&2
+              exit "$INSTALL_RC"
+            fi
+
+            if [[ "$INSTALL_ATTEMPT" -lt 5 ]]; then
+              timeout 30s adb wait-for-device || true
+              sleep 1
+            fi
+          done
+          if [[ "$INSTALL_STATUS" != "0" ]]; then
+            echo "Android 16 APK installation failed after bounded transient transport retries." >&2
+            [[ -n "$INSTALL_LOG" ]] && cat "$INSTALL_LOG" >&2 || true
+            exit 1
+          fi
+
+          adb shell pm path com.sentinel.quantum | grep -q '^package:'
+          bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"
+      - name: Upload Phone Core Android 16 screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: PhoneCore-Android16-UI-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/phone-core-ui/
+          if-no-files-found: warn
+          retention-days: 14
