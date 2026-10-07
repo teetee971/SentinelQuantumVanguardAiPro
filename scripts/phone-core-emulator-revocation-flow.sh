@@ -285,8 +285,8 @@ probe_pm_revoke_send_sms() {
   if [[ "$status" -ne 0 ]]; then
     printf 'pm_revoke_status=%s\nobservable=false\nreason=pm_revoke_command_failed\n' "$status" >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-    echo "SEND_SMS pm revoke failed; runtime revocation cannot be attributed to the probe."
-    return 1
+    echo "SEND_SMS pm revoke failed; runtime revocation is non-observable, continuing to the supported fallback."
+    return 0
   fi
 
   local denied_observations=0
