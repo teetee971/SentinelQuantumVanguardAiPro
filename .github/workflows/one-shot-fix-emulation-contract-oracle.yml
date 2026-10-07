@@ -1,0 +1,79 @@
+name: One-shot fix emulator contract oracle
+
+on:
+  push:
+    branches: [fix/phone-core-emulation-contract-oracle-on-api37]
+    paths:
+      - '.github/workflows/one-shot-fix-emulation-contract-oracle.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/phone-core-emulation-contract-oracle-on-api37
+          fetch-depth: 0
+
+      - name: Apply exact contract patch and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/check-phone-core-emulation-gate.js')
+          text = path.read_text()
+
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one match, found {count}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              "const workflow = read('.github', 'workflows', 'android-emulation-qualification.yml');\n",
+              "const workflow = read('.github', 'workflows', 'android-emulation-qualification.yml');\nconst crashOracle = read('scripts', 'phone-core-logcat-crash-oracle.py');\n",
+              'load shared crash oracle',
+          )
+          replace_once(
+              "  'phone-core-emulator-revocation-flow.sh',\n  'ACTUAL_API=',",
+              "  'phone-core-emulator-revocation-flow.sh',\n  'phone-core-logcat-crash-oracle.py',\n  'ACTUAL_API=',",
+              'workflow oracle wiring marker',
+          )
+          replace_once(
+              "  'PhoneCore-Emulation-Qualification',\n  'FATAL EXCEPTION:',\n  'ANR in com\\\\.sentinel\\\\.quantum',\n  'schema_version: 4',",
+              "  'PhoneCore-Emulation-Qualification',\n  'schema_version: 4',",
+              'remove comment-satisfiable crash markers',
+          )
+          replace_once(
+              "]) requireText(workflow, marker, 'shadow emulation workflow');\n\nif (workflow.includes('set-bypassing-role-qualification')) {",
+              "]) requireText(workflow, marker, 'shadow emulation workflow');\n\nfor (const marker of [\n  'FATAL EXCEPTION:',\n  'ANR_RE = re.compile',\n  'com\\\\.sentinel\\\\.quantum',\n  'UNATTRIBUTED_FATAL_EXCEPTION'\n]) requireText(crashOracle, marker, 'shared logcat crash oracle');\n\nif (workflow.includes('set-bypassing-role-qualification')) {",
+              'validate shared oracle source',
+          )
+
+          path.write_text(text)
+          PY
+
+          node --test \
+            scripts/phone-core-gate-truth-integration.test.js \
+            scripts/phone-core-workflow-oracle-integration.test.js \
+            scripts/phone-core-emulation-contract-oracle.test.js
+          node scripts/check-phone-core-emulation-gate.js
+          git diff --check -- scripts/check-phone-core-emulation-gate.js
+          git diff -- scripts/check-phone-core-emulation-gate.js
+
+      - name: Commit contract correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts/check-phone-core-emulation-gate.js
+          git commit -m 'fix(ci): validate shared crash oracle in emulator contract'
+          git push origin HEAD:fix/phone-core-emulation-contract-oracle-on-api37
