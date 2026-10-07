@@ -22,12 +22,14 @@ const waitBridge = extract(
   'wait_emulator_call_absent'
 );
 
-test('API 37 synchronization delegates to the preconnected emulator-only helper', () => {
-  const apiGuard = startBridge.indexOf('if [[ "$FLOW_API" -lt 37 ]]');
+test('API 36+ synchronization delegates to the preconnected emulator-only helper with exact API provenance', () => {
+  const apiGuard = startBridge.indexOf('if [[ "$FLOW_API" -lt 36 ]]');
   const helperInvocation = startBridge.indexOf('phone-core-emulator-api37-answer-bridge.py');
 
-  assert.ok(apiGuard >= 0, 'the modem bridge must be disabled below API 37');
-  assert.ok(helperInvocation > apiGuard, 'API 37 must delegate only after the API guard');
+  assert.ok(apiGuard >= 0, 'the modem bridge must be disabled only below API 36');
+  assert.ok(helperInvocation > apiGuard, 'API 36+ must delegate only after the API guard');
+  assert.match(startBridge, /--api "\$FLOW_API"/,
+    'the helper must receive the exact emulator API for provenance');
   assert.match(startBridge, /--number "\$FLOW_NUMBER"/);
   assert.match(startBridge, /--evidence "\$evidence"/);
   assert.match(startBridge, /--marker-file "\$marker_file"/);
@@ -70,6 +72,10 @@ test('low-latency helper synchronizes only after causal REQUEST_ACCEPT and still
     'ACTIVE must belong to the same Telecom call id');
   assert.match(helper, /SERIAL_RE = re\.compile\(r"\^emulator-/,
     'helper must reject non-emulator adb targets');
+  assert.match(helper, /parser\.add_argument\("--api", type=int, choices=\(36, 37\), required=True\)/,
+    'helper must accept only the qualified Android 16/17 emulator API set');
+  assert.doesNotMatch(helper, /api=37 number=/,
+    'bridge evidence must not hard-code API 37 when API 36 uses the same transport synchronizer');
   assert.match(helper, /socket\.create_connection/, 'console connection must be established before waiting for the tap');
   assert.doesNotMatch(helper, /subprocess\.run\(\s*\["adb", "emu"/, 'helper must not pay a second adb startup cost');
 });
@@ -105,16 +111,16 @@ test('transport bridge wait propagates helper failure instead of converting it t
     'bridge failure must propagate');
 });
 
-test('API guard returns fail-closed evidence before any helper invocation below API 37', () => {
-  const apiGuard = startBridge.indexOf('if [[ "$FLOW_API" -lt 37 ]]');
+test('API guard returns fail-closed not-required evidence before helper invocation below API 36', () => {
+  const apiGuard = startBridge.indexOf('if [[ "$FLOW_API" -lt 36 ]]');
   const notRequired = startBridge.indexOf("printf 'not_required api=%s\\n'", apiGuard);
   const guardReturn = startBridge.indexOf('return 0', notRequired);
   const guardEnd = startBridge.indexOf('fi', guardReturn);
   const helperInvocation = startBridge.indexOf('phone-core-emulator-api37-answer-bridge.py');
 
   assert.ok(apiGuard >= 0, 'API guard must exist');
-  assert.ok(notRequired > apiGuard, 'below-37 path must record explicit not-required evidence');
-  assert.ok(guardReturn > notRequired, 'below-37 path must terminate successfully after recording evidence');
+  assert.ok(notRequired > apiGuard, 'below-36 path must record explicit not-required evidence');
+  assert.ok(guardReturn > notRequired, 'below-36 path must terminate successfully after recording evidence');
   assert.ok(guardEnd > guardReturn, 'API guard must close after its bounded return path');
-  assert.ok(helperInvocation > guardEnd, 'helper invocation must be unreachable from the below-37 branch');
+  assert.ok(helperInvocation > guardEnd, 'helper invocation must be unreachable from the below-36 branch');
 });
