@@ -102,3 +102,21 @@ test('background oracle observes resumed-activity state instead of using a fixed
   assert.match(fn, /mResumedActivity:.*com\\\.sentinel\\\.quantum/);
   assert.match(fn, /return 1/);
 });
+
+test('revoked CALL_SCREENING requires both callback and decision counts to remain invariant', () => {
+  const revocationStart = runtime.indexOf('remove_role_holder android.app.role.CALL_SCREENING');
+  assert.ok(revocationStart >= 0, 'CALL_SCREENING revocation block must exist');
+  const block = runtime.slice(revocationStart);
+
+  const observation = block.indexOf('call-screening-revoked-callback-observation.txt');
+  const callbackGuard = block.indexOf('if [[ "$SCREENING_CALLBACK_AFTER" != "$SCREENING_CALLBACK_BEFORE" ]]', observation);
+  const decisionGuard = block.indexOf('if [[ "$SCREENING_DECISION_AFTER" != "$SCREENING_DECISION_BEFORE" ]]', callbackGuard);
+
+  assert.ok(observation >= 0, 'callback observation evidence must be written');
+  assert.ok(callbackGuard > observation, 'callback count must be enforced after observation');
+  assert.ok(decisionGuard > callbackGuard, 'private decision guard must remain independently enforced');
+
+  const callbackGuardBody = block.slice(callbackGuard, decisionGuard);
+  assert.match(callbackGuardBody, /CallScreeningService callback evidence advanced while CALL_SCREENING role was revoked\./);
+  assert.match(callbackGuardBody, /exit 1/);
+});
