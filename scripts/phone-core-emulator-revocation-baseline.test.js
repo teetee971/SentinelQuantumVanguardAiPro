@@ -59,24 +59,29 @@ printf 'observable=%s\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"
   }
 }
 
-test('SEND_SMS revocation probe rejects an unconfirmed granted baseline before issuing pm revoke', () => {
-  const { result, revokeCalled } = runProbe({
+test('SEND_SMS revocation probe rejects an unconfirmed granted baseline and falls back without issuing pm revoke', () => {
+  const { result, revokeCalled, evidence } = runProbe({
     initiallyGranted: false,
     revokeStatus: 1,
     revokeLeavesGranted: false
   });
-  assert.notEqual(result.status, 0, 'an already-denied permission must not qualify as a revocation transition');
+  assert.equal(result.status, 0, result.stderr);
   assert.equal(revokeCalled, false, 'pm revoke must not run until a granted baseline is proven');
+  assert.match(result.stdout, /observable=false/);
+  assert.match(evidence, /baseline_granted=false/);
+  assert.match(evidence, /reason=baseline_grant_not_proven/);
 });
 
-test('SEND_SMS revocation probe rejects a failed pm revoke command even if later state is denied', () => {
+test('SEND_SMS revocation probe rejects a failed pm revoke as runtime evidence and falls back', () => {
   const { result, evidence } = runProbe({
     initiallyGranted: true,
     revokeStatus: 1,
     revokeLeavesGranted: false
   });
-  assert.notEqual(result.status, 0, 'a failed revoke command must not qualify runtime revocation');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /observable=false/);
   assert.match(evidence, /pm_revoke_status=1/);
+  assert.match(evidence, /reason=pm_revoke_failed/);
 });
 
 test('SEND_SMS revocation probe qualifies a confirmed granted-to-denied transition', () => {
@@ -87,6 +92,7 @@ test('SEND_SMS revocation probe qualifies a confirmed granted-to-denied transiti
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /observable=true/);
+  assert.match(evidence, /baseline_granted=true/);
   assert.match(evidence, /pm_revoke_status=0/);
   assert.match(evidence, /observable=true/);
 });
