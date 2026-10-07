@@ -30,7 +30,7 @@ test('modern Android uses role removal, proves role absence and permission denia
     'EFFECTIVE_PERMISSION_PROBE="SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED"',
     'adb shell input keyevent KEYCODE_HOME',
     'wait_app_backgrounded',
-    'adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"',
+    'remove_role_holder android.app.role.SMS',
     'wait_role_absent android.app.role.SMS',
     'wait_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-state.txt"',
     'launch_sms_surface "sms-send-role-managed-permission-denied-launch.txt" warm',
