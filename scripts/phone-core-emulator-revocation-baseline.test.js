@@ -28,14 +28,18 @@ REVOKE_STATUS=${revokeStatus}
 REVOKE_LEAVES_GRANTED=${revokeLeavesGranted ? 'true' : 'false'}
 RESTORE_AFTER_DENIED_CHECKS=${restoreAfterDeniedChecks === null ? -1 : restoreAfterDeniedChecks}
 REVOKE_COMPLETED=false
-POST_REVOKE_PERMISSION_CHECKS=0
+printf '0\n' > "$OUT_DIR/post-revoke-permission-checks.txt"
 sleep() { :; }
 adb() {
   if [[ "$*" == "shell dumpsys package $PACKAGE" ]]; then
     if [[ "$REVOKE_COMPLETED" == "true" && "$GRANTED" == "false" && "$RESTORE_AFTER_DENIED_CHECKS" -ge 0 ]]; then
-      POST_REVOKE_PERMISSION_CHECKS=$((POST_REVOKE_PERMISSION_CHECKS + 1))
-      if [[ "$POST_REVOKE_PERMISSION_CHECKS" -gt "$RESTORE_AFTER_DENIED_CHECKS" ]]; then
-        GRANTED=true
+      local checks
+      checks="$(cat "$OUT_DIR/post-revoke-permission-checks.txt")"
+      checks=$((checks + 1))
+      printf '%s\n' "$checks" > "$OUT_DIR/post-revoke-permission-checks.txt"
+      if [[ "$checks" -gt "$RESTORE_AFTER_DENIED_CHECKS" ]]; then
+        echo 'android.permission.SEND_SMS: granted=true'
+        return 0
       fi
     fi
     if [[ "$GRANTED" == "true" ]]; then
@@ -106,6 +110,7 @@ test('SEND_SMS revocation probe qualifies a confirmed granted-to-denied transiti
   assert.match(result.stdout, /observable=true/);
   assert.match(evidence, /baseline_granted=true/);
   assert.match(evidence, /pm_revoke_status=0/);
+  assert.match(evidence, /denial_stability_observations=3/);
   assert.match(evidence, /observable=true/);
 });
 
@@ -129,5 +134,6 @@ test('SEND_SMS revocation probe rejects a transient denial restored by RoleContr
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /observable=false/, 'a single transient denied read must not qualify runtime revocation');
+  assert.match(evidence, /denial_stability_observations=1/);
   assert.match(evidence, /reason=role_controller_restored_runtime_permission/);
 });
