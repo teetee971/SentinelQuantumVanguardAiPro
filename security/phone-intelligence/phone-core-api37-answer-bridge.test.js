@@ -39,13 +39,16 @@ test('low-latency helper requires one causal Telecom transaction, same-call ANSW
   const acceptOracle = helper.indexOf('REQUEST_ACCEPT_RE = re.compile');
   const answeredOracle = helper.indexOf('ANSWERED_RE = re.compile');
   const activeOracle = helper.indexOf('ACTIVE_RE = re.compile');
-  const socketSend = helper.indexOf('gsm accept {number}');
+  const answeredState = helper.indexOf('answered = True');
+  const firstSocketSend = helper.indexOf('console.sendall(f"gsm accept {number}\\n".encode("utf-8"))');
 
   assert.ok(request >= 0, 'helper must wait for the Telecom answer transaction initiated by the app');
   assert.ok(acceptOracle >= 0, 'REQUEST_ACCEPT must be parsed as causal Telecom evidence');
   assert.ok(answeredOracle >= 0, 'Telecom ANSWERED evidence must remain required');
   assert.ok(activeOracle >= 0, 'Telecom ACTIVE evidence must remain required');
-  assert.ok(socketSend > request, 'synthetic modem synchronization must remain causally gated by the answer request');
+  assert.ok(answeredState >= 0, 'same-call ANSWERED must be established before modem synchronization');
+  assert.ok(firstSocketSend > answeredState,
+    'emulator gsm accept must be deferred until the same causal call is ANSWERED');
   assert.match(helper, /transaction_token\(line\) == answer_transaction/,
     'REQUEST_ACCEPT and ANSWERED must remain bound to the causal Telecom transaction');
   assert.match(helper, /answered_match\.group\(1\) == call_id/,
@@ -58,11 +61,11 @@ test('low-latency helper requires one causal Telecom transaction, same-call ANSW
   assert.doesNotMatch(helper, /subprocess\.run\(\s*\["adb", "emu"/, 'helper must not pay a second adb startup cost');
 });
 
-test('Android 17 may expose same-call ACTIVE through a Telecom InCall observer before CallsManager logs ACTIVE', () => {
-  assert.match(helper, /INCALL_ACTIVE_RE = re\.compile/,
-    'helper must recognize the Android 17 Telecom InCall observer ACTIVE representation');
-  assert.match(helper, /incall_active_match\.group\(1\) == call_id/,
-    'InCall ACTIVE evidence must remain bound to the same Telecom call id');
+test('public InCall ACTIVE projection cannot replace a real CallsManager transport ACTIVE transition', () => {
+  assert.doesNotMatch(helper, /INCALL_ACTIVE_RE/,
+    'public InCall state can project internal ANSWERED as ACTIVE and must not qualify transport');
+  assert.doesNotMatch(helper, /active_oracle=telecom_bluetooth_incall_observer/,
+    'Bluetooth InCall observer state must not be credited as transport-active evidence');
 });
 
 test('Sentinel answer action remains between bridge arming and final application ACTIVE proof', () => {
