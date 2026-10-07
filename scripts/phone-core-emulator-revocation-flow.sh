@@ -1,175 +1,181 @@
 #!/usr/bin/env bash
+# Framework-level role/effective-permission denial is executed outside the target app process so
+# Android is free to kill/restart Sentinel exactly as it would on a real device.
 set -euo pipefail
-
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+OUT_DIR="${1:?Output directory required}"
+mkdir -p "$OUT_DIR"
 PACKAGE="com.sentinel.quantum"
-OUT_DIR="${OUT_DIR:-artifacts/phone-core-revocation}"
-TIMELINE_XML="$OUT_DIR/phone-private-timeline.xml"
-DIALER_PROBE_NUMBER="5550199"
+XML="$OUT_DIR/revocation-window.xml"
+TIMELINE_XML="$OUT_DIR/revocation-phone-private-timeline.xml"
+DIALER_PROBE_NUMBER="5550197"
 SCREENING_PROBE_NUMBER="5550198"
 SEND_SMS_PM_REVOCATION_OBSERVABLE=false
 EFFECTIVE_PERMISSION_DENIAL_PROVEN=false
-EFFECTIVE_PERMISSION_PROBE="UNKNOWN"
-EFFECTIVE_PERMISSION_NOTE="Effective SEND_SMS denial not yet proven."
+EFFECTIVE_PERMISSION_PROBE="UNSET"
+EFFECTIVE_PERMISSION_NOTE="No effective SEND_SMS denial proof completed."
 ROLE_REVOCATION_PROVEN=false
 
-mkdir -p "$OUT_DIR"
+capture() { adb exec-out screencap -p > "$OUT_DIR/$1.png" || true; }
 
-capture() {
-  local name="$1"
-  adb exec-out screencap -p > "$OUT_DIR/$name.png"
+dump_ui() {
+  adb shell rm -f /sdcard/sentinel-revocation.xml
+  adb shell uiautomator dump --compressed /sdcard/sentinel-revocation.xml >/dev/null 2>&1 || return 1
+  adb shell cat /sdcard/sentinel-revocation.xml > "$XML"
+  test -s "$XML"
 }
 
-assert_no_crash() {
-  local evidence="$OUT_DIR/logcat-check.txt"
-  set +e
-  adb logcat -d -v threadtime > "$evidence" 2> "$evidence.stderr"
-  local status=$?
-  set -e
-  printf '%s\n' "$status" > "$evidence.status"
-  if [[ "$status" -ne 0 ]]; then
-    echo "Unable to read complete logcat evidence; crash absence is UNKNOWN."
-    cat "$evidence.stderr" 2>/dev/null || true
-    return 1
-  fi
-  if grep -Eiq '(FATAL EXCEPTION|ANR in com\.sentinel\.quantum|Process: com\.sentinel\.quantum.*has died)' "$evidence"; then
-    echo "Crash or ANR evidence detected for $PACKAGE."
-    grep -Ein '(FATAL EXCEPTION|ANR in com\.sentinel\.quantum|Process: com\.sentinel\.quantum.*has died)' "$evidence" || true
-    return 1
-  fi
+ui_contains() {
+  local needle="$1"
+  dump_ui && python3 - "$XML" "$needle" <<'PY'
+import sys, xml.etree.ElementTree as ET
+needle = sys.argv[2]
+for node in ET.parse(sys.argv[1]).iter('node'):
+    haystack = ' '.join([node.get('text',''), node.get('content-desc',''), node.get('hint','')])
+    matched = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in haystack
+    if matched:
+        sys.exit(0)
+sys.exit(1)
+PY
 }
 
 wait_ui_contains() {
   local needle="$1"
-  local dump="$OUT_DIR/ui.xml"
   for _ in $(seq 1 20); do
-    adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 || true
-    adb pull /sdcard/window.xml "$dump" >/dev/null 2>&1 || true
-    if [[ -f "$dump" ]] && grep -Fq "$needle" "$dump"; then return 0; fi
+    if ui_contains "$needle"; then return 0; fi
     sleep 1
   done
-  echo "UI text not found: $needle"
-  cat "$dump" 2>/dev/null || true
+  capture revocation-failure
+  echo "Expected UI evidence not found: $needle"
   return 1
 }
 
 scroll_until_ui_contains() {
   local needle="$1"
-  if wait_ui_contains "$needle"; then return 0; fi
-  for _ in $(seq 1 8); do
-    adb shell input swipe 540 1800 540 700 350 >/dev/null 2>&1 || true
-    if wait_ui_contains "$needle"; then return 0; fi
+  for _ in $(seq 1 12); do
+    if ui_contains "$needle"; then return 0; fi
+    adb shell input swipe 160 560 160 220 280 >/dev/null 2>&1 || true
+    sleep 0.4
   done
+  capture revocation-failure
+  echo "Expected UI evidence not found after scrolling: $needle"
   return 1
 }
 
 tap_ui_text() {
-  local text="$1"
-  local dump="$OUT_DIR/ui.xml"
-  adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1
-  adb pull /sdcard/window.xml "$dump" >/dev/null 2>&1
-  python3 - "$dump" "$text" <<'PY'
-import re, subprocess, sys, xml.etree.ElementTree as ET
-path, text = sys.argv[1:]
-root = ET.parse(path).getroot()
-for node in root.iter('node'):
-    if node.get('text') == text or node.get('content-desc') == text:
-        m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
-        if not m:
-            continue
-        x1, y1, x2, y2 = map(int, m.groups())
-        subprocess.run(['adb', 'shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2)], check=True)
-        sys.exit(0)
-raise SystemExit(f'No exact UI node found for {text!r}')
+  local needle="$1"
+  dump_ui
+  local coordinates
+  coordinates="$(python3 - "$XML" "$needle" <<'PY'
+import re, sys, xml.etree.ElementTree as ET
+needle = sys.argv[2]
+for node in ET.parse(sys.argv[1]).iter('node'):
+    haystack = ' '.join([node.get('text',''), node.get('content-desc',''), node.get('hint','')])
+    matched = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in haystack
+    if not matched:
+        continue
+    match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds',''))
+    if match:
+        x1, y1, x2, y2 = map(int, match.groups())
+        if x2 > x1 and y2 > y1:
+            print((x1+x2)//2, (y1+y2)//2)
+            sys.exit(0)
+sys.exit(1)
 PY
+)"
+  read -r x y <<< "$coordinates"
+  adb shell input tap "$x" "$y"
 }
 
 assert_action_disabled() {
-  local text="$1"
-  local dump="$OUT_DIR/ui.xml"
-  adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1
-  adb pull /sdcard/window.xml "$dump" >/dev/null 2>&1
-  python3 - "$dump" "$text" <<'PY'
+  local needle="$1"
+  dump_ui
+  python3 - "$XML" "$needle" <<'PYDISABLED'
 import sys, xml.etree.ElementTree as ET
-path, text = sys.argv[1:]
+path, needle = sys.argv[1:]
 root = ET.parse(path).getroot()
+parent = {child: node for node in root.iter() for child in node}
+matched = False
 for node in root.iter('node'):
-    if node.get('text') == text or node.get('content-desc') == text:
-        if node.get('enabled') == 'false':
-            raise SystemExit(0)
-        raise SystemExit(f'UI action {text!r} is enabled')
-raise SystemExit(f'UI action {text!r} is missing')
-PY
+    values = (node.get('text',''), node.get('content-desc',''), node.get('hint',''))
+    is_match = (node.get('resource-id') == needle and node.get('package') == 'com.sentinel.quantum') if needle.startswith('phone_core_') else needle in values
+    if not is_match:
+        continue
+    cur = node
+    while cur is not None:
+        if cur.get('clickable') == 'true':
+            matched = True
+            if cur.get('enabled') != 'false':
+                print(f'Protected action {needle!r} is still enabled: {cur.attrib}', file=sys.stderr)
+                sys.exit(2)
+            break
+        cur = parent.get(cur)
+if not matched:
+    print(f'No clickable action container found for {needle!r}', file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+PYDISABLED
+}
+
+assert_no_crash() {
+  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
+    adb logcat -d -v time | tail -n 400
+    return 1
+  fi
 }
 
 role_holders() {
   local full_role="$1"
-  local output status
+  local direct_output=""
+  local direct_status=0
   set +e
-  output="$(adb shell cmd role get-role-holders --user 0 "$full_role" 2>&1)"
-  status=$?
+  direct_output="$(adb shell cmd role get-role-holders --user 0 "$full_role" 2>&1 | tr -d '\r')"
+  direct_status=$?
   set -e
-  if [[ "$status" -eq 0 ]] && ! grep -Eiq '(error|exception|unknown command|unsupported)' <<<"$output"; then
-    printf '%s\n' "$output" | sed -e 's/\r$//' -e '/^[[:space:]]*$/d'
-    return 0
+  if [[ "$direct_status" -eq 0 && "$direct_output" != *"Unknown command"* ]]; then
+    # Accept only a holder list, never shell diagnostics containing the package name.
+    if ! grep -Evq '^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$|^$' <<< "$direct_output"; then
+      printf '%s\n' "$direct_output"
+      return 0
+    fi
   fi
 
-  local dumpsys="$OUT_DIR/dumpsys-role-${full_role##*.}.txt"
-  set +e
-  adb shell dumpsys role > "$dumpsys" 2>&1
-  status=$?
-  set -e
-  if [[ "$status" -ne 0 ]]; then
-    echo "Role oracle failed for $full_role." >&2
-    cat "$dumpsys" >&2 || true
-    return 2
+  # Android 10/API 29 has add/remove role shell commands but no get-role-holders command.
+  # Persist the dump so the shared parser can distinguish empty, incomplete and unknown roles.
+  local role_dump="$OUT_DIR/role-state-current.txt"
+  if ! adb shell dumpsys role > "$role_dump" 2>/dev/null; then
+    return 1
   fi
-  python3 - "$dumpsys" "$full_role" <<'PY'
-import re, sys
-path, role = sys.argv[1:]
-text = open(path, encoding='utf-8', errors='replace').read().replace('\r', '')
-entries = []
-patterns = [
-    re.compile(rf'(?m)^\s*{re.escape(role)}\s*:\s*\[([^\]\n]*)\]\s*$'),
-    re.compile(rf'(?m)^\s*{re.escape(role)}\s+holders\s*=\s*\[([^\]\n]*)\]\s*$'),
-]
-for pattern in patterns:
-    entries.extend(pattern.findall(text))
-if len(entries) != 1:
-    raise SystemExit(2)
-holders = [item.strip() for item in entries[0].split(',') if item.strip()]
-if any(not re.fullmatch(r'[A-Za-z0-9_.]+', item) for item in holders):
-    raise SystemExit(2)
-print('\n'.join(holders))
-PY
-}
-
-wait_role_absent() {
-  local full_role="$1"
-  for attempt in 1 2 3 4 5; do
-    local holders
-    set +e
-    holders="$(role_holders "$full_role")"
-    local status=$?
-    set -e
-    if [[ "$status" -eq 0 ]] && ! grep -Fxq "$PACKAGE" <<<"$holders"; then return 0; fi
-    sleep "$attempt"
-  done
-  echo "Unable to prove role $full_role is absent for $PACKAGE."
-  return 1
+  python3 "$(dirname "${BASH_SOURCE[0]}")/phone-core-emulator-role-holders.py" "$full_role" "$role_dump"
 }
 
 wait_role_held() {
   local full_role="$1"
-  for attempt in 1 2 3 4 5; do
-    local holders
-    set +e
-    holders="$(role_holders "$full_role")"
-    local status=$?
-    set -e
-    if [[ "$status" -eq 0 ]] && grep -Fxq "$PACKAGE" <<<"$holders"; then return 0; fi
-    sleep "$attempt"
+  for _ in $(seq 1 20); do
+    if role_holders "$full_role" | grep -Fxq "$PACKAGE"; then return 0; fi
+    sleep 0.5
   done
-  echo "Unable to prove role $full_role is held by $PACKAGE."
+  echo "$full_role was not restored to $PACKAGE."
+  adb shell dumpsys role > "$OUT_DIR/role-wait-held-failure.txt" 2>&1 || true
+  return 1
+}
+
+wait_role_absent() {
+  local full_role="$1"
+  local holders
+  local observation="unknown"
+  for _ in $(seq 1 20); do
+    # A failed oracle is UNKNOWN, never proof that Android removed the role.
+    if holders="$(role_holders "$full_role")"; then
+      if ! grep -Fxq "$PACKAGE" <<< "$holders"; then return 0; fi
+      observation="held"
+    else
+      observation="unknown"
+    fi
+    sleep 0.5
+  done
+  echo "$full_role absence could not be proven after explicit removal (last observation: $observation)."
+  adb shell dumpsys role > "$OUT_DIR/role-wait-absent-failure.txt" 2>&1 || true
   return 1
 }
 
@@ -206,14 +212,12 @@ probe_pm_revoke_send_sms() {
   local output="$OUT_DIR/send-sms-pm-revoke-observation.txt"
   : > "$output"
 
-  # This probe only answers whether a runtime-permission transition is observable.
-  # Non-observable/unsupported states are expected and must return success so the
-  # caller can safely fall back to the established AppOp denial proof.
+  # A post-revoke denied state is only evidence of a transition if the runtime
+  # permission was observably granted immediately before the revoke command.
   if ! permission_granted android.permission.SEND_SMS; then
     printf 'baseline_granted=false\nobservable=false\nreason=baseline_grant_not_proven\n' >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-    echo "SEND_SMS granted baseline could not be proven before runtime revocation; using fallback probe." >&2
-    return 0
+    echo "SEND_SMS granted baseline could not be proven before runtime revocation." >&2
+    return 1
   fi
   printf 'baseline_granted=true\n' >> "$output"
 
@@ -225,8 +229,8 @@ probe_pm_revoke_send_sms() {
   if [[ "$status" -ne 0 ]]; then
     printf 'observable=false\nreason=pm_revoke_failed\n' >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-    echo "SEND_SMS runtime revoke command failed with status $status; using fallback probe." >&2
-    return 0
+    echo "SEND_SMS runtime revoke command failed with status $status." >&2
+    return 1
   fi
 
   sleep 1
@@ -304,46 +308,55 @@ try:
     node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
     if node is None:
         raise ValueError('events node missing')
-    events = json.loads(node.text or '[]')
+    events = json.loads((node.text or '[]'))
     if not isinstance(events, list):
-        raise ValueError('events not a list')
-    print(sum(1 for item in events if isinstance(item, str) and item.startswith(prefix)))
+        raise ValueError('events payload is not a list')
 except Exception as exc:
-    print(f'Unable to parse private timeline: {exc}', file=sys.stderr)
-    raise SystemExit(2)
+    print(f'Invalid Phone Core private timeline evidence: {exc}', file=sys.stderr)
+    sys.exit(2)
+print(sum(1 for event in events if str(event.get('signal') or '').startswith(prefix)))
 PY
 }
 
 screening_callback_count() {
-  local output="$OUT_DIR/call-screening-callback-logcat.txt"
-  set +e
-  adb logcat -d -v brief 'SentinelLifecycle:I' '*:S' > "$output" 2> "$output.stderr"
-  local status=$?
-  set -e
-  printf '%s\n' "$status" > "$output.status"
-  if [[ "$status" -ne 0 ]]; then
-    echo "Unable to read screening callback logcat evidence." >&2
+  local evidence="$OUT_DIR/screening-callback-count-logcat.txt"
+  local count
+  if ! adb logcat -d -v brief > "$evidence"; then
+    echo "Screening callback oracle is unreadable; absence cannot be qualified." >&2
     return 2
   fi
-  grep -c 'CallScreeningService:onScreenCall' "$output" || true
+  if count="$(grep -F -c 'CallScreeningService:onScreenCall' "$evidence")"; then
+    printf '%s\n' "$count"
+  elif [[ "$count" == "0" ]]; then
+    printf '0\n'
+  else
+    return 2
+  fi
 }
 
 assert_modem_call_absent() {
   local number="$1"
   local evidence="$2"
-  adb emu gsm list > "$OUT_DIR/$evidence" 2>&1
+  adb emu gsm list > "$OUT_DIR/$evidence"
   if grep -Fq "$number" "$OUT_DIR/$evidence"; then
-    echo "Unexpected emulator modem call created for $number."
-    cat "$OUT_DIR/$evidence"
-    return 1
+    echo "Protected dial action created modem call $number while DIALER role was revoked."
+    exit 1
+  fi
+  # OK-only modem output cannot prove protected-action absence either. Require a
+  # readable empty live Telecom section before and after the revoked dial action.
+  local telecom_evidence="$OUT_DIR/${evidence%.txt}-telecom.txt"
+  adb shell dumpsys telecom > "$telecom_evidence"
+  if ! python3 "$SCRIPT_DIR/phone-core-emulator-telecom-calls.py" "$telecom_evidence"; then
+    echo "Protected dial action has live or UNKNOWN Telecom state while DIALER role is revoked."
+    exit 1
   fi
 }
 
 wait_incoming_call_observed() {
   local number="$1"
   local evidence="$2"
-  for _ in $(seq 1 10); do
-    adb emu gsm list > "$OUT_DIR/$evidence" 2>&1 || true
+  for _ in $(seq 1 15); do
+    adb emu gsm list > "$OUT_DIR/$evidence"
     if grep -Fq "$number" "$OUT_DIR/$evidence"; then return 0; fi
     # Some emulator versions return only OK from gsm list even while Telecom rings.
     # A new InCallService notification event independently proves the incoming call.
