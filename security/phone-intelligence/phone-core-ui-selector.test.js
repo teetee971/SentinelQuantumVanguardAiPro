@@ -22,6 +22,15 @@ function run(source, fn, next, invocation, xml) {
     return spawnSync('bash', ['-c', script, 'test', file], { encoding: 'utf8' });
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 }
+function runCrashOracle({ failuresBeforeSuccess, alwaysFail = false }) {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'phone-crash-oracle-'));
+  try {
+    const counter = path.join(temp, 'adb-count');
+    fs.writeFileSync(counter, '0');
+    const script = `set -eu\nSCRIPT_DIR="$1"\nCOUNTER="$2"\nsleep() { :; }\nadb() {\n  count=$(cat "$COUNTER")\n  count=$((count + 1))\n  printf '%s' "$count" > "$COUNTER"\n  if [[ "$1" == "logcat" && "$count" -le ${failuresBeforeSuccess} ]]; then\n    echo '- waiting for device -' >&2\n    return 1\n  fi\n  if [[ "$1" == "logcat" && "${alwaysFail ? '1' : '0'}" == "1" ]]; then\n    echo '- waiting for device -' >&2\n    return 1\n  fi\n  printf '%s\\n' 'I/Sentinel: clean runtime'\n}\n${extract(revocation, 'assert_no_crash', 'role_holders')}\nassert_no_crash`;
+    return spawnSync('bash', ['-c', script, 'test', path.resolve('scripts'), counter], { encoding: 'utf8' });
+  } finally { fs.rmSync(temp, { recursive: true, force: true }); }
+}
 const node = (pkg, id, text, enabled = 'true') => `<node package="${pkg}" resource-id="${id}" text="${text}" content-desc="User accessibility label" bounds="[10,20][30,40]" clickable="true" enabled="${enabled}"/>`;
 
 test('runtime taps the app-owned resource ID independently of language and accessibility text', () => {
@@ -40,6 +49,14 @@ test('revocation assertions reject missing or enabled stable controls with trans
   }
   const missing = run(revocation, 'assert_action_disabled', 'assert_no_crash', 'assert_action_disabled phone_core_sms_send', `<hierarchy>${node('other.package', 'phone_core_sms_send', 'Envoyer', 'false')}</hierarchy>`);
   assert.equal(missing.status, 1);
+});
+
+test('revocation crash oracle retries a transient unreadable adb logcat but still fails closed when adb stays unreadable', () => {
+  const transient = runCrashOracle({ failuresBeforeSuccess: 1 });
+  assert.equal(transient.status, 0, transient.stderr);
+  const persistent = runCrashOracle({ failuresBeforeSuccess: 0, alwaysFail: true });
+  assert.notEqual(persistent.status, 0);
+  assert.match(persistent.stderr, /Crash oracle is unreadable/);
 });
 
 test('revocation retains a disabled container match across following siblings without accepting unverified containers', () => {
