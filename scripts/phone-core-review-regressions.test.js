@@ -74,7 +74,7 @@ test('foreground-return oracle accepts modern resumed-activity fields but remain
   assert.match(fn, /ResumedActivity:/);
   assert.match(fn, /null/);
   assert.match(fn, /-z "\$resumed_line"/);
-  assert.match(fn, /com\\\.sentinel\\\.quantum/);
+  assert.match(fn, /com\.sentinel\.quantum/);
   assert.match(fn, /ActivityRecord/);
   assert.match(fn, /return 0/);
 });
