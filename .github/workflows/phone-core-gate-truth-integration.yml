@@ -5,8 +5,11 @@ on:
   pull_request:
     paths:
       - 'scripts/phone-core-gate-truth-integration.test.js'
+      - 'scripts/phone-core-workflow-oracle-integration.test.js'
       - 'scripts/phone-core-emulator-revocation-flow.sh'
       - 'scripts/phone-core-logcat-crash-oracle.py'
+      - '.github/workflows/android-emulation-qualification.yml'
+      - '.github/workflows/build-native-android.yml'
       - '.github/workflows/phone-core-gate-truth-integration.yml'
 
 permissions:
@@ -25,5 +28,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Run integration regression
-        run: node --test scripts/phone-core-gate-truth-integration.test.js
+      - name: Run integration regressions
+        run: >-
+          node --test
+          scripts/phone-core-gate-truth-integration.test.js
+          scripts/phone-core-workflow-oracle-integration.test.js
