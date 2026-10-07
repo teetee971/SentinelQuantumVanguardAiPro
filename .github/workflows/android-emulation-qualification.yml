@@ -345,6 +345,25 @@ jobs:
           test -n "$APK_PATH"
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
+
+          assert_clean_runtime_logcat() {
+            local context="$1"
+            local evidence="$OUTPUT/min-sdk-logcat-brief.txt"
+            local error="$OUTPUT/min-sdk-logcat-error.txt"
+            local status=0
+            adb logcat -d -v brief > "$evidence" 2> "$error" || status=$?
+            if [[ "$status" -ne 0 ]]; then
+              echo "Unable to read logcat while ${context}; crash absence is UNKNOWN."
+              cat "$error" || true
+              return 1
+            fi
+            if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$evidence"; then
+              echo "Crash/ANR detected while ${context}."
+              adb logcat -d -v time | tail -n 400 || true
+              return 1
+            fi
+          }
+
           # Runtime evidence must start from a fresh app scope and fresh log buffer.
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
@@ -365,11 +384,7 @@ jobs:
             sleep 3
             adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-              echo "Crash/ANR detected on minSdk first launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            assert_clean_runtime_logcat "qualifying the minSdk first launch"
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
             sleep 3
