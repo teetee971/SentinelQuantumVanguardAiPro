@@ -7,6 +7,9 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const verifier = path.resolve('scripts/verify-phone-core-physical-session.js');
+const policyPath = path.resolve('config/phone-core-production-gates.json');
+const schemaPath = path.resolve('config/phone-core-physical-session.schema.json');
+const protocolPath = path.resolve('docs/PHONE_CORE_PHYSICAL_VALIDATION.md');
 const SOURCE_SHA = '3a864a22db53fefcdf20f486b52fc5edfe4ab68b';
 const APK_SHA = 'a'.repeat(64);
 const CERT_SHA = 'b'.repeat(64);
@@ -65,6 +68,12 @@ function baseManifest({ allScenarios = true, allResiduals = true } = {}) {
 
 function writeSignedFixture(manifest, { tamperAfterSign = false } = {}) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-physical-proof-'));
+  const bin = path.join(tmp, 'bin');
+  const evidence = path.join(tmp, 'evidence.txt');
+  const marker = path.join(tmp, 'marker.txt');
+  const token = path.join(tmp, 'token');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(token, 'fixture-token\n');
   const manifestPath = path.join(tmp, 'session.json');
   const publicKeyPath = path.join(tmp, 'trusted-public-key.pem');
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
@@ -72,7 +81,7 @@ function writeSignedFixture(manifest, { tamperAfterSign = false } = {}) {
   if (tamperAfterSign) manifest.device.model = 'TAMPERED';
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   fs.writeFileSync(publicKeyPath, publicKey.export({ type: 'spki', format: 'pem' }));
-  return { tmp, manifestPath, publicKeyPath };
+  return { tmp, manifestPath, publicKeyPath, evidence, marker };
 }
 
 function run(manifest, options = {}) {
@@ -131,4 +140,33 @@ test('exact source SHA and APK digest are mandatory', { skip: !fs.existsSync(ver
   const result = run(manifest);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /source head/i);
+});
+
+test('production policy declares the machine-readable physical session contract', () => {
+  const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
+  const physical = policy.physical_session_manifest;
+  assert.ok(physical, 'physical_session_manifest policy is required');
+  assert.equal(physical.schema_version, 1);
+  assert.equal(physical.schema_path, 'config/phone-core-physical-session.schema.json');
+  assert.equal(physical.verifier_path, 'scripts/verify-phone-core-physical-session.js');
+  assert.equal(physical.attestation_kind, 'PHYSICAL_DEVICE');
+  assert.equal(physical.signature_algorithm, 'ed25519');
+  assert.deepEqual(physical.required_canonical_criteria, criteriaIds);
+  assert.deepEqual(physical.required_campaign_scenarios, scenarioIds);
+  assert.deepEqual(physical.required_commercial_residuals, residualIds);
+  assert.equal(physical.commercial_release_verdict, 'COMMERCIAL_RELEASE_ELIGIBLE');
+});
+
+test('physical session JSON schema and protocol document the same fail-closed boundary', () => {
+  assert.equal(fs.existsSync(schemaPath), true, 'physical session schema must exist');
+  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+  assert.equal(schema.properties?.attestation?.properties?.kind?.const, 'PHYSICAL_DEVICE');
+  assert.equal(schema.properties?.attestation?.properties?.algorithm?.const, 'ed25519');
+  assert.deepEqual(schema.required, ['schema_version', 'source_head_sha', 'apk', 'device', 'session', 'canonical_criteria', 'scenarios', 'residual_external_validation', 'attestation']);
+  const protocol = fs.readFileSync(protocolPath, 'utf8');
+  assert.match(protocol, /verify-phone-core-physical-session\.js/);
+  assert.match(protocol, /PHYSICAL_SESSION_INCOMPLETE/);
+  assert.match(protocol, /PHYSICAL_PHONE_CORE_PASS/);
+  assert.match(protocol, /COMMERCIAL_RELEASE_ELIGIBLE/);
+  assert.match(protocol, /Ed25519/i);
 });
