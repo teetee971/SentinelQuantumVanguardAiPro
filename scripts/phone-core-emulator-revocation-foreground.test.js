@@ -24,8 +24,34 @@ test('runtime-permission denial waits for a proven background transition before 
   );
 });
 
-test('AppOp denial is re-applied after the foreground return and before UI qualification', () => {
+test('modern Android uses role removal, proves role absence and permission denial, then qualifies UI', () => {
   ordered(
+    'elif [[ "$ANDROID_API" -ge 36 ]]',
+    'EFFECTIVE_PERMISSION_PROBE="SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED"',
+    'adb shell input keyevent KEYCODE_HOME',
+    'wait_app_backgrounded',
+    'adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"',
+    'wait_role_absent android.app.role.SMS',
+    'wait_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-state.txt"',
+    'launch_sms_surface "sms-send-role-managed-permission-denied-launch.txt" warm',
+    'wait_role_absent android.app.role.SMS',
+    'assert_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-after-launch.txt"',
+    'scroll_until_ui_contains "$EFFECTIVE_PERMISSION_UI_NEEDLE"',
+    'assert_action_disabled "phone_core_sms_send"'
+  );
+
+  const modernStart = runtime.indexOf('elif [[ "$ANDROID_API" -ge 36 ]]');
+  const legacyStart = runtime.indexOf('\nelse\n  adb shell pm grant "$PACKAGE" android.permission.SEND_SMS', modernStart);
+  assert.ok(modernStart >= 0 && legacyStart > modernStart, 'modern and legacy denial branches must be distinct');
+  const modernBranch = runtime.slice(modernStart, legacyStart);
+  assert.doesNotMatch(modernBranch, /set_send_sms_appop/);
+  assert.doesNotMatch(modernBranch, /assert_send_sms_appop_denied/);
+});
+
+test('legacy AppOp denial remains isolated behind the pre-API36 fallback', () => {
+  ordered(
+    'elif [[ "$ANDROID_API" -ge 36 ]]',
+    'else\n  adb shell pm grant "$PACKAGE" android.permission.SEND_SMS',
     'EFFECTIVE_PERMISSION_PROBE="SEND_SMS_APP_OP_DENIED"',
     'set_send_sms_appop ignore "send-sms-appop-deny.txt"',
     'adb shell input keyevent KEYCODE_HOME',
@@ -34,7 +60,7 @@ test('AppOp denial is re-applied after the foreground return and before UI quali
     'assert_sms_role_held',
     'set_send_sms_appop ignore "send-sms-appop-reassert-after-launch.txt"',
     'assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"',
-    'scroll_until_ui_contains "Envoi SMS : autorisation Android requise."',
+    'scroll_until_ui_contains "$EFFECTIVE_PERMISSION_UI_NEEDLE"',
     'assert_action_disabled "phone_core_sms_send"'
   );
 });
