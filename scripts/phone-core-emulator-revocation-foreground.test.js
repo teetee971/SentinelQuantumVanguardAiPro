@@ -105,7 +105,7 @@ test('background oracle requires a readable Activity snapshot before crediting b
   assert.match(fn, /mResumedActivity:/);
   assert.match(fn, /ResumedActivity:/);
   assert.match(fn, /topResumedActivity=/);
-  assert.match(fn, /com\\\.sentinel\\\.quantum/);
+  assert.match(fn, /com\.sentinel\.quantum/);
   assert.match(fn, /ActivityRecord/);
   assert.match(fn, /return 0/);
   assert.match(fn, /background state could not be proven/);
