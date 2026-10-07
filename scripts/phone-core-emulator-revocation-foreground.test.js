@@ -24,17 +24,17 @@ test('runtime-permission denial waits for a proven background transition before 
   );
 });
 
-test('modern Android uses role removal, proves role absence and permission denial, then qualifies UI', () => {
+test('modern Android archives role absence and permission denial before and after relaunch', () => {
   ordered(
     'elif [[ "$ANDROID_API" -ge 36 ]]',
     'EFFECTIVE_PERMISSION_PROBE="SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED"',
     'adb shell input keyevent KEYCODE_HOME',
     'wait_app_backgrounded',
     'remove_role_holder android.app.role.SMS',
-    'wait_role_absent android.app.role.SMS',
+    'wait_role_absent android.app.role.SMS "send-sms-role-managed-role-absent-state.txt"',
     'wait_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-state.txt"',
     'launch_sms_surface "sms-send-role-managed-permission-denied-launch.txt" warm',
-    'wait_role_absent android.app.role.SMS',
+    'wait_role_absent android.app.role.SMS "send-sms-role-managed-role-absent-after-launch.txt"',
     'assert_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-after-launch.txt"',
     'scroll_until_ui_contains "$EFFECTIVE_PERMISSION_UI_NEEDLE"',
     'assert_action_disabled "phone_core_sms_send"'
