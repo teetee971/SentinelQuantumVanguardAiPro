@@ -93,26 +93,6 @@ jobs:
               raise SystemExit('API36 test insertion anchor missing')
           test = test.replace(anchor, api36_test + anchor, 1)
           test_path.write_text(test)
-
-          teardown_path = Path('security/phone-intelligence/phone-core-emulator-call-teardown.test.js')
-          teardown = teardown_path.read_text()
-          teardown_replacements = [
-              ("test('incoming answer stays Sentinel-owned and API 37 evidence is bound to one Telecom transaction and call id', () => {",
-               "test('incoming answer stays Sentinel-owned and API 36/37 evidence is bound to one Telecom transaction and call id', () => {"),
-              ('const api37Guard = bridge.indexOf(\'if [[ "$FLOW_API" -lt 37 ]]\');',
-               'const api36Guard = bridge.indexOf(\'if [[ "$FLOW_API" -lt 36 ]]\');'),
-              ("const helperInvocation = bridge.indexOf('phone-core-emulator-api37-answer-bridge.py', api37Guard);",
-               "const helperInvocation = bridge.indexOf('phone-core-emulator-api37-answer-bridge.py', api36Guard);"),
-              ("assert.ok(api37Guard >= 0, 'the incoming modem bridge must remain restricted to API 37+');",
-               "assert.ok(api36Guard >= 0, 'the incoming modem bridge must remain restricted to API 36+');"),
-              ("assert.ok(helperInvocation > api37Guard, 'API 37 synchronization must delegate to the preconnected helper');",
-               "assert.ok(helperInvocation > api36Guard, 'API 36+ synchronization must delegate to the preconnected helper');"),
-          ]
-          for old, new in teardown_replacements:
-              if old not in teardown:
-                  raise SystemExit(f'teardown replacement anchor missing: {old!r}')
-              teardown = teardown.replace(old, new, 1)
-          teardown_path.write_text(teardown)
           PY
           node --test scripts/phone-core-emulator-api37-answer-bridge.test.js security/phone-intelligence/phone-core-api37-answer-bridge.test.js security/phone-intelligence/phone-core-emulator-call-teardown.test.js
           npm run test:android-product-truth
@@ -123,6 +103,6 @@ jobs:
           set -euo pipefail
           git config user.name 'teetee971'
           git config user.email 'thierrynaud2009@gmail.com'
-          git add scripts/phone-core-emulator-flow.sh scripts/phone-core-emulator-api37-answer-bridge.py scripts/phone-core-emulator-api37-answer-bridge.test.js security/phone-intelligence/phone-core-emulator-call-teardown.test.js
+          git add scripts/phone-core-emulator-flow.sh scripts/phone-core-emulator-api37-answer-bridge.py scripts/phone-core-emulator-api37-answer-bridge.test.js
           git commit -m 'fix(phone-core): synchronize API36 incoming modem transport'
           git push origin HEAD:fix/api37-incoming-answer-sync
