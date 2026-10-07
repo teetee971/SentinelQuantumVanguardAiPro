@@ -15,7 +15,7 @@ function shellFunction(name) {
   return revocation.slice(start, end + 2);
 }
 
-function runProbe({ revokeStatus, leavesGranted }) {
+function runProbe({ revokeStatus, leavesGranted, restoreAfterPermissionChecks = null }) {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-send-sms-revoke-'));
   try {
     const script = `
@@ -24,8 +24,10 @@ PACKAGE=com.sentinel.quantum
 OUT_DIR="$1"
 SEND_SMS_PM_REVOCATION_OBSERVABLE=false
 GRANTED=true
+PERMISSION_CHECKS=0
 REVOKE_STATUS=${revokeStatus}
 LEAVES_GRANTED=${leavesGranted ? 'true' : 'false'}
+RESTORE_AFTER_PERMISSION_CHECKS=${restoreAfterPermissionChecks ?? -1}
 sleep() { :; }
 adb() {
   if [[ "$*" == "shell pm revoke $PACKAGE android.permission.SEND_SMS" ]]; then
@@ -33,6 +35,10 @@ adb() {
     return "$REVOKE_STATUS"
   fi
   if [[ "$*" == "shell dumpsys package $PACKAGE" ]]; then
+    PERMISSION_CHECKS=$((PERMISSION_CHECKS + 1))
+    if [[ "$RESTORE_AFTER_PERMISSION_CHECKS" -ge 0 && "$PERMISSION_CHECKS" -gt "$RESTORE_AFTER_PERMISSION_CHECKS" ]]; then
+      GRANTED=true
+    fi
     if [[ "$GRANTED" == "true" ]]; then
       echo 'android.permission.SEND_SMS: granted=true'
     else
@@ -46,6 +52,7 @@ ${shellFunction('permission_granted')}
 ${shellFunction('probe_pm_revoke_send_sms')}
 probe_pm_revoke_send_sms
 printf 'observable=%s\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"
+printf 'permission_checks=%s\n' "$PERMISSION_CHECKS"
 `;
     return spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
   } finally {
@@ -69,4 +76,15 @@ test('RoleController restoration remains non-observable and returns control', ()
   const result = runProbe({ revokeStatus: 0, leavesGranted: true });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /observable=false/);
+});
+
+test('delayed RoleController restoration after the old three-sample window is still non-observable', () => {
+  const result = runProbe({
+    revokeStatus: 0,
+    leavesGranted: false,
+    restoreAfterPermissionChecks: 3,
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /observable=false/);
+  assert.match(result.stdout, /permission_checks=[4-9][0-9]*/);
 });
