@@ -511,21 +511,27 @@ jobs:
           const runtimePermissionDeniedEvidence =
             authorizationProbe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' &&
             /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-runtime-permission-denied-after-launch.txt'));
-          const roleManagedRoleAbsentEvidence =
-            /^role=android\.app\.role\.SMS$/m.test(read('send-sms-role-managed-role-absent-after-launch.txt')) &&
-            /^package=com\.sentinel\.quantum$/m.test(read('send-sms-role-managed-role-absent-after-launch.txt')) &&
-            /^absent=true$/m.test(read('send-sms-role-managed-role-absent-after-launch.txt'));
+          const roleAbsentEvidence = (name) =>
+            /^role=android\.app\.role\.SMS$/m.test(read(name)) &&
+            /^package=com\.sentinel\.quantum$/m.test(read(name)) &&
+            /^absent=true$/m.test(read(name));
+          const rawSendSmsPermissionStateEvidence = (name) =>
+            /android\.permission\.SEND_SMS:\s+granted=(true|false)/i.test(read(name));
+          const roleManagedRoleAbsentAfterEvidence =
+            roleAbsentEvidence('send-sms-role-managed-role-absent-after-launch.txt');
           const legacyRoleManagedPermissionDeniedEvidence =
             api >= 36 &&
             authorizationProbe === 'SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED' &&
-            roleManagedRoleAbsentEvidence &&
+            roleManagedRoleAbsentAfterEvidence &&
             /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-role-managed-permission-denied-after-launch.txt'));
           const roleAuthorizationEvidence =
             api >= 36 &&
             revocation?.schema_version === 5 &&
             authorizationProbe === 'SEND_SMS_ROLE_AUTHORIZATION_REVOKED' &&
-            roleManagedRoleAbsentEvidence &&
-            /android\.permission\.SEND_SMS:\s+granted=(true|false)/i.test(read('send-sms-role-managed-permission-state-after-launch.txt'));
+            roleAbsentEvidence('send-sms-role-managed-role-absent-state.txt') &&
+            rawSendSmsPermissionStateEvidence('send-sms-role-managed-permission-state.txt') &&
+            roleManagedRoleAbsentAfterEvidence &&
+            rawSendSmsPermissionStateEvidence('send-sms-role-managed-permission-state-after-launch.txt');
           const revocationSchemaSupported = [2, 3, 4, 5].includes(revocation?.schema_version);
           const smsAuthorizationEvidenceValid = revocation?.schema_version === 2
             ? appOpDeniedEvidence
