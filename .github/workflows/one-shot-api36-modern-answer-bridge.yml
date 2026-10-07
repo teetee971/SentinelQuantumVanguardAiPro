@@ -55,12 +55,9 @@ jobs:
               'def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout_s: float) -> None:',
               1,
           )
-          if helper.count('api=37 number={number}') != 1:
-              raise SystemExit('expected one hard-coded transport_sync API marker')
-          helper = helper.replace('api=37 number={number}', 'api={api} number={number}', 1)
-          if helper.count('api=37 number={number} call_id={call_id}') != 1:
-              raise SystemExit('expected one hard-coded recovery API marker')
-          helper = helper.replace('api=37 number={number} call_id={call_id}', 'api={api} number={number} call_id={call_id}', 1)
+          if helper.count('api=37 number={number}') != 2:
+              raise SystemExit(f'expected two hard-coded API markers, found {helper.count("api=37 number={number}")}')
+          helper = helper.replace('api=37 number={number}', 'api={api} number={number}')
           helper = helper.replace(
               '    parser = argparse.ArgumentParser()\n    parser.add_argument("--number", required=True)',
               '    parser = argparse.ArgumentParser()\n    parser.add_argument("--api", type=int, choices=(36, 37), required=True)\n    parser.add_argument("--number", required=True)',
