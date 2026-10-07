@@ -248,14 +248,21 @@ probe_pm_revoke_send_sms() {
     return 0
   fi
 
-  sleep 1
-  if permission_granted android.permission.SEND_SMS; then
-    printf 'observable=false\nreason=role_controller_restored_runtime_permission\n' >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-  else
-    printf 'observable=true\n' >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=true
-  fi
+  # A role-managed grant can be restored asynchronously. One transient denied read
+  # is not durable evidence, so require three consecutive observations one second apart.
+  local denied_observations=0
+  for observation in 1 2 3; do
+    sleep 1
+    if permission_granted android.permission.SEND_SMS; then
+      printf 'denial_stability_observations=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$denied_observations" >> "$output"
+      SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+      return 0
+    fi
+    denied_observations=$observation
+  done
+
+  printf 'denial_stability_observations=%s\nobservable=true\n' "$denied_observations" >> "$output"
+  SEND_SMS_PM_REVOCATION_OBSERVABLE=true
 }
 
 assert_send_sms_runtime_permission_denied() {
