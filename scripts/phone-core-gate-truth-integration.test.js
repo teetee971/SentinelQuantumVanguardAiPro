@@ -65,12 +65,17 @@ test('shared oracle rejects Sentinel failures without blaming unrelated Android 
   assert.notEqual(ambiguous.status, 0, 'unattributed fatal evidence must remain fail-closed');
 });
 
-test('API 29 SEND_SMS revoke evidence must reject transient one-read denial', () => {
+test('SEND_SMS revoke evidence requires repeated durable denial observations', () => {
   const fn = shellFunction('probe_pm_revoke_send_sms');
   assert.match(
     fn,
-    /for\s+observation\s+in\s+1\s+2\s+3/,
-    'one denied read after pm revoke is not durable evidence; require repeated observations'
+    /required_stability_observations=([2-9]|[1-9][0-9]+)/,
+    'one denied read after pm revoke is not durable evidence; require at least two observations'
+  );
+  assert.match(
+    fn,
+    /for\s+observation\s+in\s+\$\(seq\s+1\s+"\$required_stability_observations"\)/,
+    'probe must iterate over the declared stability window'
   );
   assert.match(fn, /denial_stability_observations=/);
   assert.match(fn, /role_controller_restored_runtime_permission/);
