@@ -71,6 +71,6 @@ test('foreground-return oracle requires a concrete non-Sentinel resumed activity
   assert.match(fn, /resumed_line=/);
   assert.match(fn, /mResumedActivity: null/);
   assert.match(fn, /-z "\$resumed_line"/);
-  assert.match(fn, /com\.sentinel\.quantum/);
+  assert.match(fn, /com\\\.sentinel\\\.quantum/);
   assert.match(fn, /return 0/);
 });
