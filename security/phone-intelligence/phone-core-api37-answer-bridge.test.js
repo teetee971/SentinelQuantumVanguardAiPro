@@ -58,6 +58,13 @@ test('low-latency helper requires one causal Telecom transaction, same-call ANSW
   assert.doesNotMatch(helper, /subprocess\.run\(\s*\["adb", "emu"/, 'helper must not pay a second adb startup cost');
 });
 
+test('Android 17 may expose same-call ACTIVE through a Telecom InCall observer before CallsManager logs ACTIVE', () => {
+  assert.match(helper, /INCALL_ACTIVE_RE = re\.compile/,
+    'helper must recognize the Android 17 Telecom InCall observer ACTIVE representation');
+  assert.match(helper, /incall_active_match\.group\(1\) == call_id/,
+    'InCall ACTIVE evidence must remain bound to the same Telecom call id');
+});
+
 test('Sentinel answer action remains between bridge arming and final application ACTIVE proof', () => {
   const incomingReady = flow.indexOf('wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"');
   const bridgeStart = flow.indexOf('start_api37_incoming_answer_transport_bridge', incomingReady);
