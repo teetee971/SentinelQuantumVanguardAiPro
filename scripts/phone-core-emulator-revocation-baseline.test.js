@@ -15,7 +15,7 @@ function shellFunction(name) {
   return revocation.slice(start, revocation.indexOf('\n}', start) + 2);
 }
 
-function runProbe({ initiallyGranted, revokeStatus, revokeLeavesGranted }) {
+function runProbe({ initiallyGranted, revokeStatus, revokeLeavesGranted, restoreAfterDeniedChecks = null }) {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-send-sms-revoke-'));
   try {
     const script = `
@@ -26,9 +26,18 @@ SEND_SMS_PM_REVOCATION_OBSERVABLE=false
 GRANTED=${initiallyGranted ? 'true' : 'false'}
 REVOKE_STATUS=${revokeStatus}
 REVOKE_LEAVES_GRANTED=${revokeLeavesGranted ? 'true' : 'false'}
+RESTORE_AFTER_DENIED_CHECKS=${restoreAfterDeniedChecks === null ? -1 : restoreAfterDeniedChecks}
+REVOKE_COMPLETED=false
+POST_REVOKE_PERMISSION_CHECKS=0
 sleep() { :; }
 adb() {
   if [[ "$*" == "shell dumpsys package $PACKAGE" ]]; then
+    if [[ "$REVOKE_COMPLETED" == "true" && "$GRANTED" == "false" && "$RESTORE_AFTER_DENIED_CHECKS" -ge 0 ]]; then
+      POST_REVOKE_PERMISSION_CHECKS=$((POST_REVOKE_PERMISSION_CHECKS + 1))
+      if [[ "$POST_REVOKE_PERMISSION_CHECKS" -gt "$RESTORE_AFTER_DENIED_CHECKS" ]]; then
+        GRANTED=true
+      fi
+    fi
     if [[ "$GRANTED" == "true" ]]; then
       echo 'android.permission.SEND_SMS: granted=true'
     else
@@ -38,6 +47,7 @@ adb() {
   fi
   if [[ "$*" == "shell pm revoke $PACKAGE android.permission.SEND_SMS" ]]; then
     printf 'called\n' >> "$OUT_DIR/revoke-called.txt"
+    REVOKE_COMPLETED=true
     if [[ "$REVOKE_LEAVES_GRANTED" == "false" ]]; then GRANTED=false; fi
     return "$REVOKE_STATUS"
   fi
@@ -99,7 +109,7 @@ test('SEND_SMS revocation probe qualifies a confirmed granted-to-denied transiti
   assert.match(evidence, /observable=true/);
 });
 
-test('SEND_SMS revocation probe treats RoleController restoration as non-observable and falls back', () => {
+test('SEND_SMS revocation probe treats immediate RoleController restoration as non-observable and falls back', () => {
   const { result, evidence } = runProbe({
     initiallyGranted: true,
     revokeStatus: 0,
@@ -107,5 +117,17 @@ test('SEND_SMS revocation probe treats RoleController restoration as non-observa
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /observable=false/);
+  assert.match(evidence, /reason=role_controller_restored_runtime_permission/);
+});
+
+test('SEND_SMS revocation probe rejects a transient denial restored by RoleController on a later observation', () => {
+  const { result, evidence } = runProbe({
+    initiallyGranted: true,
+    revokeStatus: 0,
+    revokeLeavesGranted: false,
+    restoreAfterDeniedChecks: 1
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /observable=false/, 'a single transient denied read must not qualify runtime revocation');
   assert.match(evidence, /reason=role_controller_restored_runtime_permission/);
 });
