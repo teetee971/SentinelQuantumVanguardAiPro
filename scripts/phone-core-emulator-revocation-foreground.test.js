@@ -93,13 +93,17 @@ test('emulator scope note distinguishes permission, role-authorization and legac
   assert.match(note, /SmsManager/i);
 });
 
-test('background oracle observes resumed-activity state instead of using a fixed sleep', () => {
+test('background oracle requires a readable Activity snapshot before crediting background state', () => {
   const start = flow.indexOf('wait_app_backgrounded() {');
   const end = flow.indexOf('\ntimeline_signal_prefix_count() {', start);
   assert.ok(start >= 0 && end > start, 'wait_app_backgrounded function must exist');
   const fn = flow.slice(start, end);
   assert.match(fn, /dumpsys activity activities/);
+  assert.match(fn, /status=\$\?/);
+  assert.match(fn, /if \[\[ "\$status" -ne 0 \]\]/);
+  assert.match(fn, /continue/);
   assert.match(fn, /mResumedActivity:.*com\\\.sentinel\\\.quantum/);
+  assert.match(fn, /background state could not be proven/);
   assert.match(fn, /return 1/);
 });
 
