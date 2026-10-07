@@ -118,10 +118,21 @@ PYDISABLED
 }
 
 assert_no_crash() {
-  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-    adb logcat -d -v time | tail -n 400
+  local brief_output=""
+  local brief_status=0
+  set +e
+  brief_output="$(adb logcat -d -v brief)"
+  brief_status=$?
+  set -e
+  if [[ "$brief_status" -ne 0 ]]; then
+    echo "Crash oracle is unreadable; cannot qualify crash-free state." >&2
     return 1
   fi
+  if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' <<< "$brief_output"; then
+    adb logcat -d -v time | tail -n 400 || true
+    return 1
+  fi
+  return 0
 }
 
 role_holders() {
