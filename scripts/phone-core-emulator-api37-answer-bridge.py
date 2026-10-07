@@ -3,12 +3,16 @@
 
 This helper is host-only qualification infrastructure. It keeps the emulator console
 connection open before the UI tap, observes one causal Telecom answer transaction, records
-REQUEST_ACCEPT for that transaction, then synchronizes the synthetic modem only after the
-same Telecom call reaches ANSWERED. The later ACTIVE evidence must belong to the same call
-id and must come from CallsManager transport state. Android 17 emulation can transiently map
-that same accepted call from ANSWERED to ON_HOLD; in that one observed state the helper
-permits one additional emulator-console accept and still requires the same call to reach
-ACTIVE. The shell harness separately requires Sentinel's private INCALL_ACTIVE evidence.
+REQUEST_ACCEPT for that transaction, then synchronizes the synthetic modem immediately after
+that Sentinel-owned REQUEST_ACCEPT. Waiting until Telecom reports ANSWERED is too late on
+Android 17 emulation: the framework answer path may already be accepting at the RIL boundary,
+and a second late console accept can disconnect the original call and recreate it under a new
+Telecom call id. Qualification still requires the same original Telecom call to reach ANSWERED
+and then ACTIVE; the earlier modem synchronization is not itself credited as answer success.
+Android 17 emulation can transiently map that same accepted call from ANSWERED to ON_HOLD; in
+that one observed state the helper permits one additional emulator-console accept and still
+requires the same call to reach ACTIVE. The shell harness separately requires Sentinel's
+private INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -109,6 +113,24 @@ def discover_console_port() -> int:
     return int(match.group(1))
 
 
+def send_console_accept(
+    console: socket.socket,
+    number: str,
+    evidence: Path,
+    *,
+    response_key: str,
+    failure_message: str,
+) -> None:
+    console.sendall(f"gsm accept {number}\n".encode("utf-8"))
+    response = recv_until(console, ("OK", "KO"), 1.0)
+    append_line(
+        evidence,
+        response_key + "=" + response.replace("\r", " ").replace("\n", " | ").strip(),
+    )
+    if "OK" not in response or "KO" in response:
+        raise RuntimeError(failure_message)
+
+
 def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float) -> None:
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text("", encoding="utf-8")
@@ -174,6 +196,21 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                             with marker_file.open("a", encoding="utf-8") as marker_handle:
                                 marker_handle.write(line)
                             accept_requested = True
+                            # The app-owned REQUEST_ACCEPT is the causal boundary. Synchronize
+                            # the emulator modem here, before Telecom's answer path races far
+                            # enough to recreate the synthetic call under a new TC@ id.
+                            send_console_accept(
+                                console,
+                                number,
+                                evidence,
+                                response_key="console_gsm_accept_response",
+                                failure_message="emulator console gsm accept failed",
+                            )
+                            append_line(
+                                evidence,
+                                f"transport_sync=emulator_console_gsm_accept api=37 number={number} call_id={call_id} transaction={answer_transaction}",
+                            )
+                            synchronized = True
                             continue
 
                     if accept_requested and not answered and call_id is not None:
@@ -185,35 +222,19 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                         ):
                             append_line(evidence, line)
                             answered = True
-                            console.sendall(f"gsm accept {number}\n".encode("utf-8"))
-                            response = recv_until(console, ("OK", "KO"), 1.0)
-                            append_line(
-                                evidence,
-                                "console_gsm_accept_response="
-                                + response.replace("\r", " ").replace("\n", " | ").strip(),
-                            )
-                            if "OK" not in response or "KO" in response:
-                                raise RuntimeError("emulator console gsm accept failed")
-                            append_line(
-                                evidence,
-                                f"transport_sync=emulator_console_gsm_accept api=37 number={number} call_id={call_id} transaction={answer_transaction}",
-                            )
-                            synchronized = True
                             continue
 
                     if synchronized and answered and not active and call_id is not None:
                         held_match = HELD_RE.search(line)
                         if held_match and held_match.group(1) == call_id and not recovery_attempted:
                             append_line(evidence, line)
-                            console.sendall(f"gsm accept {number}\n".encode("utf-8"))
-                            response = recv_until(console, ("OK", "KO"), 1.0)
-                            append_line(
+                            send_console_accept(
+                                console,
+                                number,
                                 evidence,
-                                "console_gsm_accept_recovery_response="
-                                + response.replace("\r", " ").replace("\n", " | ").strip(),
+                                response_key="console_gsm_accept_recovery_response",
+                                failure_message="emulator console gsm accept recovery failed",
                             )
-                            if "OK" not in response or "KO" in response:
-                                raise RuntimeError("emulator console gsm accept recovery failed")
                             recovery_attempted = True
                             append_line(
                                 evidence,
