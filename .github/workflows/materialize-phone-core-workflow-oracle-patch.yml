@@ -1,0 +1,44 @@
+name: Materialize Phone Core workflow oracle patch
+
+on:
+  push:
+    branches: [fix/phone-core-workflow-oracle-on-api37]
+    paths:
+      - 'scripts/materialize-phone-core-workflow-oracle-patch.py'
+      - '.github/workflows/materialize-phone-core-workflow-oracle-patch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/phone-core-workflow-oracle-on-api37
+          fetch-depth: 1
+
+      - name: Materialize and validate exact patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/materialize-phone-core-workflow-oracle-patch.py
+          node --test scripts/phone-core-gate-truth-integration.test.js scripts/phone-core-workflow-oracle-integration.test.js
+          git diff --check -- .github/workflows/android-emulation-qualification.yml .github/workflows/build-native-android.yml
+          test -s ci-patch-output/android-emulation-qualification.yml.txt
+          test -s ci-patch-output/build-native-android.yml.txt
+          git restore .github/workflows/android-emulation-qualification.yml .github/workflows/build-native-android.yml
+
+      - name: Publish ordinary patch payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add ci-patch-output/
+          git diff --cached --quiet && exit 0
+          git commit -m 'ci: materialize validated workflow oracle patch payloads'
+          git push origin HEAD:fix/phone-core-workflow-oracle-on-api37
