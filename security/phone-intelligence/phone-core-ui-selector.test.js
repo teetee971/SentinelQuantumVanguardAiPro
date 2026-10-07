@@ -27,8 +27,8 @@ function runCrashOracle({ failuresBeforeSuccess, alwaysFail = false }) {
   try {
     const counter = path.join(temp, 'adb-count');
     fs.writeFileSync(counter, '0');
-    const script = `set -eu\nSCRIPT_DIR="$1"\nCOUNTER="$2"\nsleep() { :; }\nadb() {\n  count=$(cat "$COUNTER")\n  count=$((count + 1))\n  printf '%s' "$count" > "$COUNTER"\n  if [[ "$1" == "logcat" && "$count" -le ${failuresBeforeSuccess} ]]; then\n    echo '- waiting for device -' >&2\n    return 1\n  fi\n  if [[ "$1" == "logcat" && "${alwaysFail ? '1' : '0'}" == "1" ]]; then\n    echo '- waiting for device -' >&2\n    return 1\n  fi\n  printf '%s\\n' 'I/Sentinel: clean runtime'\n}\n${extract(revocation, 'assert_no_crash', 'role_holders')}\nassert_no_crash`;
-    return spawnSync('bash', ['-c', script, 'test', path.resolve('scripts'), counter], { encoding: 'utf8' });
+    const script = `set -eu\nSCRIPT_DIR=/unused-test-oracle-dir\nCOUNTER="$1"\nsleep() { :; }\npython3() { cat >/dev/null; return 0; }\nadb() {\n  count=$(cat "$COUNTER")\n  count=$((count + 1))\n  printf '%s' "$count" > "$COUNTER"\n  if [[ "$1" == "logcat" && "$count" -le ${failuresBeforeSuccess} ]]; then\n    echo '- waiting for device -' >&2\n    return 1\n  fi\n  if [[ "$1" == "logcat" && "${alwaysFail ? '1' : '0'}" == "1" ]]; then\n    echo '- waiting for device -' >&2\n    return 1\n  fi\n  printf '%s\\n' 'I/Sentinel: clean runtime'\n}\n${extract(revocation, 'assert_no_crash', 'role_holders')}\nassert_no_crash`;
+    return spawnSync('bash', ['-c', script, 'test', counter], { encoding: 'utf8' });
   } finally { fs.rmSync(temp, { recursive: true, force: true }); }
 }
 const node = (pkg, id, text, enabled = 'true') => `<node package="${pkg}" resource-id="${id}" text="${text}" content-desc="User accessibility label" bounds="[10,20][30,40]" clickable="true" enabled="${enabled}"/>`;
