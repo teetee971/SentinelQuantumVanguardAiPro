@@ -36,6 +36,9 @@ HELD_RE = re.compile(
 ACTIVE_RE = re.compile(
     r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> ACTIVE, call: \[Call id=(TC@\d+),"
 )
+INCALL_ACTIVE_RE = re.compile(
+    r"BluetoothInCallService.*onStateChanged\(Call \[id: (TC@\d+), state: ACTIVE\b"
+)
 TRANSACTION_TOKEN_RE = re.compile(r"@([A-Za-z0-9]+)[^A-Za-z0-9]*$")
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
 
@@ -224,6 +227,13 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                         active_match = ACTIVE_RE.search(line)
                         if active_match and active_match.group(1) == call_id:
                             append_line(evidence, line)
+                            active = True
+                            continue
+
+                        incall_active_match = INCALL_ACTIVE_RE.search(line)
+                        if incall_active_match and incall_active_match.group(1) == call_id:
+                            append_line(evidence, line)
+                            append_line(evidence, "active_oracle=telecom_bluetooth_incall_observer")
                             active = True
 
                     if answer_transaction and accept_requested and synchronized and answered and active:
