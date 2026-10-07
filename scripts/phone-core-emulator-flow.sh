@@ -137,21 +137,22 @@ start_api37_incoming_answer_transport_bridge() {
   local evidence="$FLOW_OUTPUT_DIR/api37-incoming-answer-transport.txt"
   local marker_file="$FLOW_OUTPUT_DIR/api37-incoming-answer-marker.txt"
   FLOW_INCOMING_TRANSPORT_PID=""
-  if [[ "$FLOW_API" -lt 37 ]]; then
+  if [[ "$FLOW_API" -lt 36 ]]; then
     printf 'not_required api=%s\n' "$FLOW_API" > "$evidence"
     return 0
   fi
 
-  # Android 17 can drop the synthetic incoming GSM leg within only a few milliseconds after
-  # Telecom begins answering. Paying the startup cost of a second `adb emu` command after ANSWERED
-  # is therefore nondeterministic. Arm a host-only helper before the tap: it pre-authenticates a
-  # local emulator-console socket, waits for Telecom's causal answer-transaction marker (emitted
-  # only after Sentinel requested Call.answer()), synchronizes the synthetic modem immediately,
+  # Android 16/17 can leave the synthetic incoming GSM leg unsynchronized when Telecom answers,
+  # and Android 17 can drop/recreate it within only a few milliseconds. Paying the startup cost of a second
+  # `adb emu` command after ANSWERED is therefore nondeterministic. Arm a host-only helper before the tap:
+  # it pre-authenticates a local emulator-console socket, waits for Telecom's causal answer-transaction marker
+  # (emitted only after Sentinel requested Call.answer()), synchronizes the synthetic modem immediately,
   # then requires Telecom ANSWERED -> ACTIVE. The independent private INCALL_ACTIVE assertion below
-  # remains mandatory. This never runs below API 37 and never accepts a non-emulator adb target.
+  # remains mandatory. This never runs below API 36 and never accepts a non-emulator adb target.
   : > "$evidence"
   : > "$marker_file"
   python3 "$FLOW_SCRIPT_DIR/phone-core-emulator-api37-answer-bridge.py" \
+    --api "$FLOW_API" \
     --number "$FLOW_NUMBER" \
     --evidence "$evidence" \
     --marker-file "$marker_file" \

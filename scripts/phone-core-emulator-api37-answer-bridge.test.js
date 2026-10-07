@@ -24,7 +24,7 @@ async function listen(server) {
   return server.address().port;
 }
 
-async function runFixture({ lines, gsmResponse = 'OK\n', serial = null }) {
+async function runFixture({ lines, gsmResponse = 'OK\n', serial = null, api = 37 }) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-api37-console-'));
   const bin = path.join(tmp, 'bin');
   const evidence = path.join(tmp, 'evidence.txt');
@@ -70,7 +70,7 @@ exit 64
   const logcatFile = path.join(tmp, 'logcat.txt');
   fs.writeFileSync(logcatFile, lines.join('\n') + '\n');
 
-  const args = [helper, '--number', '5550100', '--evidence', evidence, '--marker-file', marker, '--timeout', '1.5'];
+  const args = [helper, '--api', String(api), '--number', '5550100', '--evidence', evidence, '--marker-file', marker, '--timeout', '1.5'];
   const child = spawn('python3', args, {
     env: {
       ...process.env,
@@ -108,6 +108,14 @@ test('API 37 bridge binds REQUEST_ACCEPT, ANSWERED and ACTIVE to one causal Tele
   assert.match(result.evidence, /transport_sync=.*call_id=TC@1 transaction=TX1/);
   assert.match(result.evidence, /RINGING\(RINGING\) -> ANSWERED/);
   assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> ACTIVE/);
+});
+
+test('API 36 bridge binds the same causal call and records API 36 provenance', async () => {
+  const compactAnswered = ANSWERED.replace('RINGING(RINGING)', 'RINGING');
+  const result = await runFixture({ api: 36, lines: [REQUEST, ACCEPT, compactAnswered, ACTIVE_COMPACT] });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.match(result.evidence, /transport_sync=.*api=36 .*call_id=TC@1 transaction=TX1/);
 });
 
 test('API 37 bridge accepts the compact ANSWERED -> ACTIVE log format for the same call', async () => {

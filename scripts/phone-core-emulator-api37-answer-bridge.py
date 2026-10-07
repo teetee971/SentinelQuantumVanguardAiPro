@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize Android 17 emulator GSM transport inside a real Telecom answer request.
+"""Synchronize Android 16/17 emulator GSM transport inside a real Telecom answer request.
 
 This helper is host-only qualification infrastructure. It keeps the emulator console
 connection open before the UI tap, observes one causal Telecom answer transaction, records
@@ -131,7 +131,7 @@ def send_console_accept(
         raise RuntimeError(failure_message)
 
 
-def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float) -> None:
+def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout_s: float) -> None:
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text("", encoding="utf-8")
     marker_file.write_text("", encoding="utf-8")
@@ -208,7 +208,7 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                             )
                             append_line(
                                 evidence,
-                                f"transport_sync=emulator_console_gsm_accept api=37 number={number} call_id={call_id} transaction={answer_transaction}",
+                                f"transport_sync=emulator_console_gsm_accept api={api} number={number} call_id={call_id} transaction={answer_transaction}",
                             )
                             synchronized = True
                             continue
@@ -238,7 +238,7 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                             recovery_attempted = True
                             append_line(
                                 evidence,
-                                f"transport_recovery=emulator_console_gsm_accept_from_hold api=37 number={number} call_id={call_id}",
+                                f"transport_recovery=emulator_console_gsm_accept_from_hold api={api} number={number} call_id={call_id}",
                             )
                             continue
 
@@ -279,6 +279,7 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--api", type=int, choices=(36, 37), required=True)
     parser.add_argument("--number", required=True)
     parser.add_argument("--evidence", required=True)
     parser.add_argument("--marker-file", required=True)
@@ -288,12 +289,12 @@ def main() -> int:
     evidence = Path(args.evidence)
     marker_file = Path(args.marker_file)
     try:
-        run_bridge(args.number, evidence, marker_file, args.timeout)
+        run_bridge(args.api, args.number, evidence, marker_file, args.timeout)
         return 0
     except Exception as exc:
         evidence.parent.mkdir(parents=True, exist_ok=True)
         append_line(evidence, f"bridge_failure={type(exc).__name__}:{exc}")
-        print(f"API 37 incoming-answer transport bridge failed: {exc}", file=sys.stderr)
+        print(f"API {args.api} incoming-answer transport bridge failed: {exc}", file=sys.stderr)
         return 1
 
 
