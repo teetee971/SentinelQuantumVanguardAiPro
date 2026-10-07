@@ -398,6 +398,7 @@ wait_app_backgrounded() {
   local evidence="$OUT_DIR/sms-background-activities.txt"
   local error_evidence="$OUT_DIR/sms-background-activities.err"
   local status=0
+  local resumed_line=""
   for attempt in $(seq 1 25); do
     set +e
     adb shell dumpsys activity activities > "$evidence" 2> "$error_evidence"
@@ -408,12 +409,22 @@ wait_app_backgrounded() {
       sleep 0.2
       continue
     fi
-    if ! grep -E 'mResumedActivity:.*com\.sentinel\.quantum' "$evidence" >/dev/null; then
+
+    resumed_line="$(grep -E 'mResumedActivity:' "$evidence" | tail -n 1 || true)"
+    if [[ -z "$resumed_line" || "$resumed_line" == *"mResumedActivity: null"* ]]; then
+      sleep 0.2
+      continue
+    fi
+    if grep -E 'mResumedActivity:.*com\.sentinel\.quantum' "$evidence" >/dev/null; then
+      sleep 0.2
+      continue
+    fi
+    if [[ "$resumed_line" =~ mResumedActivity:.*[[:space:]][^[:space:]]+/[^[:space:]]+ ]]; then
       return 0
     fi
     sleep 0.2
   done
-  echo "Sentinel background state could not be proven before the foreground-return probe."
+  echo "Sentinel background state could not be proven from a concrete non-Sentinel resumed activity before the foreground-return probe."
   cp "$evidence" "$OUT_DIR/sms-background-wait-failure.txt" 2>/dev/null || true
   cp "$error_evidence" "$OUT_DIR/sms-background-wait-failure.err" 2>/dev/null || true
   return 1
