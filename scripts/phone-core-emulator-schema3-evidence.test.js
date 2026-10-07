@@ -101,6 +101,14 @@ function schema5() {
   });
 }
 
+function putSchema5Boundary(put, rawState = 'android.permission.SEND_SMS: granted=true, flags=[ GRANTED_BY_ROLE ]\n') {
+  const absent = 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n';
+  put('send-sms-role-managed-role-absent-state.txt', absent);
+  put('send-sms-role-managed-permission-state.txt', rawState);
+  put('send-sms-role-managed-role-absent-after-launch.txt', absent);
+  put('send-sms-role-managed-permission-state-after-launch.txt', rawState);
+}
+
 function expectPass(alter, apiLevel = '36') {
   const run = fixture(alter, apiLevel);
   try {
@@ -172,8 +180,7 @@ test('schema 5 accepts role-based authorization denial when Android keeps SEND_S
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
   put('08-sms-authorization-denied.png', Buffer.alloc(300));
-  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
-  put('send-sms-role-managed-permission-state-after-launch.txt', 'android.permission.SEND_SMS: granted=true, flags=[ GRANTED_BY_ROLE ]\n');
+  putSchema5Boundary(put);
   put('revocation-summary.json', schema5());
 }));
 
@@ -181,25 +188,42 @@ test('schema 5 also accepts role-based authorization denial when the raw permiss
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
   put('08-sms-authorization-denied.png', Buffer.alloc(300));
-  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
-  put('send-sms-role-managed-permission-state-after-launch.txt', 'android.permission.SEND_SMS: granted=false\n');
+  putSchema5Boundary(put, 'android.permission.SEND_SMS: granted=false\n');
   put('revocation-summary.json', schema5());
 }));
 
-test('schema 5 rejects authorization proof without independently archived role absence', () => expectAuthorizationFail(({ put, remove }) => {
+test('schema 5 rejects authorization proof without pre-launch role absence', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
   put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  putSchema5Boundary(put);
+  remove('send-sms-role-managed-role-absent-state.txt');
+  put('revocation-summary.json', schema5());
+}));
+
+test('schema 5 rejects authorization proof without post-launch role absence', () => expectAuthorizationFail(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  remove('08-sms-effective-permission-denied.png');
+  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  putSchema5Boundary(put);
   remove('send-sms-role-managed-role-absent-after-launch.txt');
-  put('send-sms-role-managed-permission-state-after-launch.txt', 'android.permission.SEND_SMS: granted=true, flags=[ GRANTED_BY_ROLE ]\n');
   put('revocation-summary.json', schema5());
 }));
 
-test('schema 5 rejects authorization proof when raw permission state was not archived', () => expectAuthorizationFail(({ put, remove }) => {
+test('schema 5 rejects authorization proof without pre-launch raw permission state', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
   put('08-sms-authorization-denied.png', Buffer.alloc(300));
-  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
+  putSchema5Boundary(put);
+  remove('send-sms-role-managed-permission-state.txt');
+  put('revocation-summary.json', schema5());
+}));
+
+test('schema 5 rejects authorization proof without post-launch raw permission state', () => expectAuthorizationFail(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  remove('08-sms-effective-permission-denied.png');
+  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  putSchema5Boundary(put);
   remove('send-sms-role-managed-permission-state-after-launch.txt');
   put('revocation-summary.json', schema5());
 }));
@@ -208,7 +232,7 @@ test('schema 5 rejects ambiguous raw SEND_SMS permission evidence', () => expect
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
   put('08-sms-authorization-denied.png', Buffer.alloc(300));
-  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
+  putSchema5Boundary(put);
   put('send-sms-role-managed-permission-state-after-launch.txt', 'permission state unavailable\n');
   put('revocation-summary.json', schema5());
 }));
@@ -217,8 +241,7 @@ test('schema 5 role-authorization proof is forbidden below API 36', () => expect
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
   put('08-sms-authorization-denied.png', Buffer.alloc(300));
-  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
-  put('send-sms-role-managed-permission-state-after-launch.txt', 'android.permission.SEND_SMS: granted=true, flags=[ GRANTED_BY_ROLE ]\n');
+  putSchema5Boundary(put);
   put('revocation-summary.json', schema5());
 }, '29'));
 
