@@ -15,6 +15,7 @@ const ACTIVE_COMPACT = 'I/Telecom: CallsManager: setCallState ANSWERED -> ACTIVE
 const PUBLIC_INCALL_ACTIVE = 'I/BluetoothInCallService( 1202): onStateChanged(Call [id: TC@1, state: ACTIVE, audioProcessingUseCase: 0, details: []], state=4)';
 const HELD = 'I/Telecom: CallsManager: setCallState ANSWERED(ANSWERED) -> ON_HOLD, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sA(cap)@TX2🔒';
 const ACTIVE_FROM_HOLD = 'I/Telecom: CallsManager: setCallState ON_HOLD(ON_HOLD) -> ACTIVE, call: [Call id=TC@1, state=ON_HOLD, tpac=fixture], voip=false: CSW.sA(cap)@TX3🔒';
+const DISCONNECTED = 'I/Telecom: CallsManager: setCallState ANSWERED(ANSWERED) -> DISCONNECTED, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sDc(cap)@TX2🔒';
 
 async function listen(server) {
   await new Promise((resolve, reject) => {
@@ -99,64 +100,63 @@ exit 64
   return result;
 }
 
-test('API 37 bridge binds REQUEST_ACCEPT, ANSWERED and ACTIVE to one causal Telecom call', async () => {
+test('API 37 binds REQUEST_ACCEPT, ANSWERED and ACTIVE to one causal Telecom call without a second host answer', async () => {
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, ACTIVE] });
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.match(result.marker, /answerCall/);
   assert.match(result.marker, /TC@1: REQUEST_ACCEPT/);
-  assert.match(result.evidence, /transport_sync=.*call_id=TC@1 transaction=TX1/);
+  assert.match(result.evidence, /transport_sync=telecom_request_accept_no_console_mutation api=37 .*call_id=TC@1 transaction=TX1/);
   assert.match(result.evidence, /RINGING\(RINGING\) -> ANSWERED/);
   assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> ACTIVE/);
+  assert.doesNotMatch(result.evidence, /transport_pre_sync=/);
 });
 
-test('API 36 bridge binds the same causal call and records API 36 provenance', async () => {
+test('API 36 bridge binds the same causal call and records API 36 emulator synchronization', async () => {
   const compactAnswered = ANSWERED.replace('RINGING(RINGING)', 'RINGING');
   const result = await runFixture({ api: 36, lines: [REQUEST, ACCEPT, compactAnswered, ACTIVE_COMPACT] });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /transport_sync=.*api=36 .*call_id=TC@1 transaction=TX1/);
+  assert.match(result.evidence, /transport_sync=emulator_console_gsm_accept api=36 .*call_id=TC@1 transaction=TX1/);
 });
 
-test('API 37 bridge accepts the compact ANSWERED -> ACTIVE log format for the same call', async () => {
+test('API 37 accepts the compact ANSWERED -> ACTIVE log format for the same call', async () => {
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, ACTIVE_COMPACT] });
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
 });
 
-test('API 37 bridge recovers one same-call ANSWERED -> ON_HOLD transport transition before requiring ACTIVE', async () => {
+test('API 37 recovers one same-call ANSWERED -> ON_HOLD transport transition before requiring ACTIVE', async () => {
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, HELD, ACTIVE_FROM_HOLD] });
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
   assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> ON_HOLD/);
   assert.match(result.evidence, /transport_recovery=.*call_id=TC@1/);
   assert.match(result.evidence, /ON_HOLD\(ON_HOLD\) -> ACTIVE/);
 });
 
-test('API 37 pre-synchronizes modem at answer-transaction start but does not credit success before REQUEST_ACCEPT', async () => {
+test('API 37 does not mutate the emulator modem before causal REQUEST_ACCEPT', async () => {
   const result = await runFixture({ lines: [REQUEST] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /transport_pre_sync=.*api=37 .*transaction=TX1/);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.doesNotMatch(result.evidence, /transport_pre_sync=/);
   assert.doesNotMatch(result.evidence, /transport_sync=.*call_id=/);
   assert.match(result.evidence, /request_accept,transport_sync,answered_same_call,active_same_call/);
 });
 
-test('API 37 credits modem synchronization only after causal REQUEST_ACCEPT without crediting answer success', async () => {
+test('API 37 credits correlation only after causal REQUEST_ACCEPT without crediting answer success', async () => {
   const result = await runFixture({ lines: [REQUEST, ACCEPT] });
   assert.notEqual(result.status, 0, 'same-call ANSWERED and ACTIVE are still required for qualification');
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /transport_pre_sync=.*api=37 .*transaction=TX1/);
-  assert.match(result.evidence, /transport_sync=.*call_id=TC@1 transaction=TX1/);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.match(result.evidence, /transport_sync=telecom_request_accept_no_console_mutation api=37 .*call_id=TC@1 transaction=TX1/);
   assert.match(result.evidence, /answered_same_call,active_same_call/);
 });
 
-test('REQUEST_ACCEPT from a different Telecom transaction cannot credit modem synchronization', async () => {
+test('REQUEST_ACCEPT from a different Telecom transaction cannot credit API 37 correlation', async () => {
   const unrelatedAccept = ACCEPT.replace('@TX1🔒', '@OTHER🔒');
   const result = await runFixture({ lines: [REQUEST, unrelatedAccept, ANSWERED, ACTIVE] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /transport_pre_sync=.*transaction=TX1/);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.doesNotMatch(result.evidence, /transport_sync=.*call_id=/);
   assert.match(result.evidence, /request_accept,transport_sync,answered_same_call,active_same_call/);
 });
@@ -164,8 +164,7 @@ test('REQUEST_ACCEPT from a different Telecom transaction cannot credit modem sy
 test('stale REQUEST_ACCEPT before the causal answer request is rejected', async () => {
   const result = await runFixture({ lines: [ACCEPT, REQUEST, ANSWERED, ACTIVE] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /transport_pre_sync=.*transaction=TX1/);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.doesNotMatch(result.evidence, /transport_sync=.*call_id=/);
 });
 
@@ -173,7 +172,7 @@ test('ANSWERED from a different call id cannot qualify the causal call', async (
   const wrongAnswered = ANSWERED.replaceAll('TC@1', 'TC@2');
   const result = await runFixture({ lines: [REQUEST, ACCEPT, wrongAnswered, ACTIVE] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.match(result.evidence, /answered_same_call,active_same_call/);
 });
 
@@ -181,32 +180,42 @@ test('ACTIVE from a different call id cannot qualify the synchronized call', asy
   const wrongActive = ACTIVE.replaceAll('TC@1', 'TC@2');
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, wrongActive] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.match(result.evidence, /active_same_call/);
+});
+
+test('API 37 fails closed when the causal answered call disconnects even if a replacement call becomes ACTIVE', async () => {
+  const replacementActive = ACTIVE.replaceAll('TC@1', 'TC@2');
+  const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, DISCONNECTED, replacementActive] });
+  assert.notEqual(result.status, 0);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> DISCONNECTED/);
+  assert.match(result.evidence, /causal Telecom call TC@1 disconnected before ACTIVE/);
+  assert.doesNotMatch(result.evidence, /Call id=TC@2.*transport_sync/);
 });
 
 test('stale ANSWERED and ACTIVE before synchronization cannot qualify the causal call', async () => {
   const result = await runFixture({ lines: [ANSWERED, ACTIVE, REQUEST, ACCEPT] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.match(result.evidence, /answered_same_call,active_same_call/);
 });
 
 test('ACTIVE before ANSWERED cannot qualify the call', async () => {
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ACTIVE, ANSWERED] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.match(result.evidence, /active_same_call/);
 });
 
 test('public InCall ACTIVE projection cannot qualify transport ACTIVE', async () => {
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, PUBLIC_INCALL_ACTIVE] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
   assert.match(result.evidence, /active_same_call/);
 });
 
-test('answer request without a transaction token fails closed', async () => {
+test('answer request without a transaction token fails closed without touching the modem', async () => {
   const tokenless = REQUEST.replace(/@TX1🔒$/, '');
   const result = await runFixture({ lines: [tokenless, ACCEPT, ANSWERED, ACTIVE] });
   assert.notEqual(result.status, 0);
@@ -214,12 +223,11 @@ test('answer request without a transaction token fails closed', async () => {
   assert.match(result.evidence, /answer_request_missing_transaction_token=1/);
 });
 
-test('banner OK cannot mask rejection of API 37 pre-sync gsm accept', async () => {
-  const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, ACTIVE], gsmResponse: 'KO\n' });
+test('API 36 console rejection fails closed and cannot be credited as transport synchronization', async () => {
+  const result = await runFixture({ api: 36, lines: [REQUEST, ACCEPT, ANSWERED, ACTIVE], gsmResponse: 'KO\n' });
   assert.notEqual(result.status, 0);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /console_gsm_accept_pre_sync_response=KO/);
-  assert.doesNotMatch(result.evidence, /transport_pre_sync=/);
+  assert.match(result.evidence, /console_gsm_accept_response=KO/);
   assert.doesNotMatch(result.evidence, /transport_sync=/);
 });
 
