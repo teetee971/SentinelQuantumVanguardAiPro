@@ -376,15 +376,27 @@ launch_sms_surface() {
 }
 
 wait_app_backgrounded() {
-  for _ in $(seq 1 25); do
-    if ! adb shell dumpsys activity activities 2>/dev/null |
-      grep -E 'mResumedActivity:.*com\.sentinel\.quantum' >/dev/null; then
+  local evidence="$OUT_DIR/sms-background-activities.txt"
+  local error_evidence="$OUT_DIR/sms-background-activities.err"
+  local status=0
+  for attempt in $(seq 1 25); do
+    set +e
+    adb shell dumpsys activity activities > "$evidence" 2> "$error_evidence"
+    status=$?
+    set -e
+    printf 'attempt=%s\nadb_dumpsys_status=%s\n' "$attempt" "$status" >> "$error_evidence"
+    if [[ "$status" -ne 0 ]]; then
+      sleep 0.2
+      continue
+    fi
+    if ! grep -E 'mResumedActivity:.*com\.sentinel\.quantum' "$evidence" >/dev/null; then
       return 0
     fi
     sleep 0.2
   done
-  echo "Sentinel did not reach a proven background state before the foreground-return probe."
-  adb shell dumpsys activity activities > "$OUT_DIR/sms-background-wait-failure.txt" 2>&1 || true
+  echo "Sentinel background state could not be proven before the foreground-return probe."
+  cp "$evidence" "$OUT_DIR/sms-background-wait-failure.txt" 2>/dev/null || true
+  cp "$error_evidence" "$OUT_DIR/sms-background-wait-failure.err" 2>/dev/null || true
   return 1
 }
 
