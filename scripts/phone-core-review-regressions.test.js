@@ -66,11 +66,15 @@ test('incoming answer bridge must prove its log stream is armed before the answe
   assert.ok(start >= 0 && tap > start, 'bridge readiness must complete before the answer tap');
 });
 
-test('foreground-return oracle requires a concrete non-Sentinel resumed activity record', () => {
+test('foreground-return oracle accepts modern resumed-activity fields but remains fail-closed', () => {
   const fn = extractFunction(revocationFlow, 'wait_app_backgrounded', 'timeline_signal_prefix_count');
   assert.match(fn, /resumed_line=/);
-  assert.match(fn, /mResumedActivity: null/);
+  assert.match(fn, /mResumedActivity:/);
+  assert.match(fn, /topResumedActivity=/);
+  assert.match(fn, /ResumedActivity:/);
+  assert.match(fn, /null/);
   assert.match(fn, /-z "\$resumed_line"/);
   assert.match(fn, /com\\\.sentinel\\\.quantum/);
+  assert.match(fn, /ActivityRecord/);
   assert.match(fn, /return 0/);
 });
