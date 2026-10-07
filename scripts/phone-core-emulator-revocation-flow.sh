@@ -123,19 +123,25 @@ PYDISABLED
 assert_no_crash() {
   local brief_output=""
   local brief_status=0
-  set +e
-  brief_output="$(adb logcat -d -v brief)"
-  brief_status=$?
-  set -e
-  if [[ "$brief_status" -ne 0 ]]; then
-    echo "Crash oracle is unreadable; cannot qualify crash-free state." >&2
-    return 1
-  fi
-  if ! python3 "$SCRIPT_DIR/phone-core-logcat-crash-oracle.py" /dev/stdin <<< "$brief_output"; then
-    adb logcat -d -v time | tail -n 400 || true
-    return 1
-  fi
-  return 0
+  local max_read_attempts=3
+  for attempt in $(seq 1 "$max_read_attempts"); do
+    set +e
+    brief_output="$(adb logcat -d -v brief)"
+    brief_status=$?
+    set -e
+    if [[ "$brief_status" -eq 0 ]]; then
+      if ! python3 "$SCRIPT_DIR/phone-core-logcat-crash-oracle.py" /dev/stdin <<< "$brief_output"; then
+        adb logcat -d -v time | tail -n 400 || true
+        return 1
+      fi
+      return 0
+    fi
+    if [[ "$attempt" -lt "$max_read_attempts" ]]; then
+      sleep 1
+    fi
+  done
+  echo "Crash oracle is unreadable after ${max_read_attempts} bounded attempts; cannot qualify crash-free state." >&2
+  return 1
 }
 
 role_holders() {
