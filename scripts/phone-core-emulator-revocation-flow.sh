@@ -128,7 +128,8 @@ assert_no_crash() {
     echo "Crash oracle is unreadable; cannot qualify crash-free state." >&2
     return 1
   fi
-  if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' <<< "$brief_output"; then
+  local oracle="${SCRIPT_DIR:-$(pwd)/scripts}/phone-core-logcat-crash-oracle.py"
+  if ! python3 "$oracle" /dev/stdin <<< "$brief_output"; then
     adb logcat -d -v time | tail -n 400 || true
     return 1
   fi
