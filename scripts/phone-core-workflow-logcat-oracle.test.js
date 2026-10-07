@@ -14,6 +14,7 @@ const crashConsumers = [
   'scripts/phone-core-emulator-revocation-flow.sh'
 ];
 const oraclePath = 'scripts/phone-core-logcat-crash-oracle.py';
+const hostRegressionWorkflow = readFileSync('.github/workflows/phone-core-host-regressions.yml', 'utf8');
 
 const unsafeCrashOracle = /if\s+adb\s+logcat\s+-d\s+-v\s+brief\s*\|\s*grep\s+-E[q]?/m;
 
@@ -48,6 +49,15 @@ test('all Android crash qualification paths use the process-attributed crash ora
       `${path} must attribute FATAL EXCEPTION evidence to com.sentinel.quantum instead of failing on unrelated Android process crashes`
     );
   }
+});
+
+test('host regression workflow runs whenever the shared crash oracle changes', () => {
+  const occurrences = hostRegressionWorkflow.split("'scripts/phone-core-logcat-crash-oracle.py'").length - 1;
+  assert.equal(
+    occurrences,
+    2,
+    'shared crash oracle must trigger host regressions for both pull_request and push path filters'
+  );
 });
 
 function runOracle(logcat) {
