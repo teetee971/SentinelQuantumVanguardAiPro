@@ -410,16 +410,16 @@ wait_app_backgrounded() {
       continue
     fi
 
-    resumed_line="$(grep -E 'mResumedActivity:' "$evidence" | tail -n 1 || true)"
-    if [[ -z "$resumed_line" || "$resumed_line" == *"mResumedActivity: null"* ]]; then
+    resumed_line="$(grep -E '(mResumedActivity:|topResumedActivity=|ResumedActivity:)' "$evidence" | grep -Ev '(mResumedActivity:|topResumedActivity=|ResumedActivity:)[[:space:]]*null([[:space:]]|$)' | head -n 1 || true)"
+    if [[ -z "$resumed_line" ]]; then
       sleep 0.2
       continue
     fi
-    if grep -E 'mResumedActivity:.*com\.sentinel\.quantum' "$evidence" >/dev/null; then
+    if [[ "$resumed_line" == *"com.sentinel.quantum"* ]]; then
       sleep 0.2
       continue
     fi
-    if [[ "$resumed_line" =~ mResumedActivity:.*[[:space:]][^[:space:]]+/[^[:space:]]+ ]]; then
+    if [[ "$resumed_line" =~ (mResumedActivity:|topResumedActivity=|ResumedActivity:).*ActivityRecord\{.*[[:space:]][^[:space:]]+/[^[:space:]]+[[:space:]] ]]; then
       return 0
     fi
     sleep 0.2
