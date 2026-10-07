@@ -26,15 +26,15 @@ jobs:
           path = Path('scripts/phone-core-emulator-api37-answer-bridge.test.js')
           text = path.read_text()
           anchor = "test('REQUEST_ACCEPT from a different Telecom transaction cannot trigger modem synchronization', async () => {\n"
-          test = r'''test('synchronizes emulator modem immediately after causal REQUEST_ACCEPT without crediting answer success', async () => {
-  const result = await runFixture({ lines: [REQUEST, ACCEPT] });
-  assert.notEqual(result.status, 0, 'same-call ANSWERED and ACTIVE are still required for qualification');
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /transport_sync=.*call_id=TC@1 transaction=TX1/);
-  assert.match(result.evidence, /answered_same_call,active_same_call/);
-});
-
-'''
+          test = (
+              "test('synchronizes emulator modem immediately after causal REQUEST_ACCEPT without crediting answer success', async () => {\n"
+              "  const result = await runFixture({ lines: [REQUEST, ACCEPT] });\n"
+              "  assert.notEqual(result.status, 0, 'same-call ANSWERED and ACTIVE are still required for qualification');\n"
+              "  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);\n"
+              "  assert.match(result.evidence, /transport_sync=.*call_id=TC@1 transaction=TX1/);\n"
+              "  assert.match(result.evidence, /answered_same_call,active_same_call/);\n"
+              "});\n\n"
+          )
           if anchor not in text:
               raise SystemExit('test insertion anchor missing')
           path.write_text(text.replace(anchor, test + anchor, 1))
