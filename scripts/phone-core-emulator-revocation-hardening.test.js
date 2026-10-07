@@ -139,3 +139,44 @@ test('executed revocation flow routes every role removal through the retrying bo
     assert.match(runtime, new RegExp(`remove_role_holder ${role.replaceAll('.', '\\.')}`));
   }
 });
+
+test('screening callback oracle retries transient adb loss and accepts only a complete readable snapshot', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-screening-logcat-retry-'));
+  try {
+    const script = `set -e\nOUT_DIR="$1"\nCOUNT_FILE="$OUT_DIR/count"\nprintf '0\\n' > "$COUNT_FILE"\nsleep(){ :; }\nadb(){\n  count=$(cat "$COUNT_FILE")\n  count=$((count + 1))\n  printf '%s\\n' "$count" > "$COUNT_FILE"\n  if [[ "$count" -eq 1 ]]; then\n    printf 'partial logcat\\n'\n    printf 'transport reset\\n' >&2\n    return 7\n  fi\n  printf 'I/SentinelLifecycle: CallScreeningService:onScreenCall\\n'\n  return 0\n}\n${shellFunction('screening_callback_count')}\nscreening_callback_count before`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /^1\s*$/m);
+    assert.equal(readFileSync(join(dir, 'count'), 'utf8').trim(), '2');
+    assert.match(
+      readFileSync(join(dir, 'screening-callback-count-before-attempt-1.err'), 'utf8'),
+      /transport reset[\s\S]*adb_logcat_status=7/
+    );
+    assert.match(
+      readFileSync(join(dir, 'screening-callback-count-before-logcat.txt'), 'utf8'),
+      /CallScreeningService:onScreenCall/
+    );
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('screening callback oracle still fails closed after all bounded adb retries fail', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-screening-logcat-fail-'));
+  try {
+    const script = `set -e\nOUT_DIR="$1"\nCOUNT_FILE="$OUT_DIR/count"\nprintf '0\\n' > "$COUNT_FILE"\nsleep(){ :; }\nadb(){\n  count=$(cat "$COUNT_FILE")\n  count=$((count + 1))\n  printf '%s\\n' "$count" > "$COUNT_FILE"\n  printf 'partial logcat\\n'\n  printf 'transport unavailable\\n' >&2\n  return 7\n}\n${shellFunction('screening_callback_count')}\nif screening_callback_count after; then rc=0; else rc=$?; fi\nprintf 'rc=%s\\n' "$rc"`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /^rc=2\s*$/m);
+    assert.equal(readFileSync(join(dir, 'count'), 'utf8').trim(), '5');
+    assert.match(result.stderr, /unreadable after bounded ADB retries/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('screening callback oracle treats a successful zero-match snapshot as a proven zero', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-screening-logcat-zero-'));
+  try {
+    const script = `set -e\nOUT_DIR="$1"\nsleep(){ :; }\nadb(){ printf 'I/Other: no screening callback\\n'; return 0; }\n${shellFunction('screening_callback_count')}\nscreening_callback_count zero`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /^0\s*$/m);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
