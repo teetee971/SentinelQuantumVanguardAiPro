@@ -21,11 +21,12 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
+import queue
 import re
-import selectors
 import socket
 import subprocess
 import sys
+import threading
 import time
 
 ANSWER_REQUEST_MARKER = (
@@ -135,10 +136,18 @@ def send_console_accept(
         raise RuntimeError(failure_message)
 
 
-def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout_s: float) -> None:
+def run_bridge(
+    api: int,
+    number: str,
+    evidence: Path,
+    marker_file: Path,
+    ready_file: Path,
+    timeout_s: float,
+) -> None:
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text("", encoding="utf-8")
     marker_file.write_text("", encoding="utf-8")
+    ready_file.write_text("", encoding="utf-8")
 
     port = discover_console_port()
     host = "127.0.0.1"
@@ -160,8 +169,29 @@ def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout
             bufsize=1,
         )
         assert logcat.stdout is not None
-        selector = selectors.DefaultSelector()
-        selector.register(logcat.stdout, selectors.EVENT_READ)
+        line_queue: queue.Queue[str | None] = queue.Queue()
+        reader_started = threading.Event()
+
+        def pump_logcat() -> None:
+            reader_started.set()
+            try:
+                for line in logcat.stdout:
+                    line_queue.put(line)
+            finally:
+                line_queue.put(None)
+
+        reader = threading.Thread(
+            target=pump_logcat,
+            name="sentinel-phone-core-logcat-reader",
+            daemon=True,
+        )
+        reader.start()
+        if not reader_started.wait(timeout=min(1.0, max(0.1, timeout_s))):
+            raise RuntimeError("logcat reader did not become ready")
+        if logcat.poll() is not None and line_queue.empty():
+            raise RuntimeError("logcat exited before bridge readiness")
+        ready_file.write_text("bridge_ready=1\n", encoding="utf-8")
+
         deadline = time.monotonic() + timeout_s
         answer_transaction: str | None = None
         call_id: str | None = None
@@ -172,97 +202,97 @@ def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout
         active = False
         try:
             while time.monotonic() < deadline:
-                events = selector.select(timeout=min(0.1, max(0.0, deadline - time.monotonic())))
-                if not events:
-                    if logcat.poll() is not None:
+                remaining = max(0.0, deadline - time.monotonic())
+                try:
+                    line = line_queue.get(timeout=min(0.1, remaining))
+                except queue.Empty:
+                    if logcat.poll() is not None and line_queue.empty():
                         break
                     continue
-                for key, _ in events:
-                    line = key.fileobj.readline()
-                    if not line:
-                        continue
+                if line is None:
+                    break
 
-                    if answer_transaction is None and ANSWER_REQUEST_MARKER in line:
-                        observed_transaction = transaction_token(line)
+                if answer_transaction is None and ANSWER_REQUEST_MARKER in line:
+                    observed_transaction = transaction_token(line)
+                    append_line(evidence, line)
+                    if observed_transaction is None:
+                        append_line(evidence, "answer_request_missing_transaction_token=1")
+                        continue
+                    answer_transaction = observed_transaction
+                    marker_file.write_text(line, encoding="utf-8")
+                    continue
+
+                if answer_transaction is not None and not accept_requested:
+                    accept_match = REQUEST_ACCEPT_RE.search(line)
+                    if accept_match and transaction_token(line) == answer_transaction:
+                        call_id = accept_match.group(1)
                         append_line(evidence, line)
-                        if observed_transaction is None:
-                            append_line(evidence, "answer_request_missing_transaction_token=1")
-                            continue
-                        answer_transaction = observed_transaction
-                        marker_file.write_text(line, encoding="utf-8")
-                        continue
+                        with marker_file.open("a", encoding="utf-8") as marker_handle:
+                            marker_handle.write(line)
+                        accept_requested = True
 
-                    if answer_transaction is not None and not accept_requested:
-                        accept_match = REQUEST_ACCEPT_RE.search(line)
-                        if accept_match and transaction_token(line) == answer_transaction:
-                            call_id = accept_match.group(1)
-                            append_line(evidence, line)
-                            with marker_file.open("a", encoding="utf-8") as marker_handle:
-                                marker_handle.write(line)
-                            accept_requested = True
-
-                            if api == 36:
-                                send_console_accept(
-                                    console,
-                                    number,
-                                    evidence,
-                                    response_key="console_gsm_accept_response",
-                                    failure_message="emulator console gsm accept failed",
-                                )
-                                sync_kind = "emulator_console_gsm_accept"
-                            else:
-                                sync_kind = "telecom_request_accept_no_console_mutation"
-
-                            append_line(
-                                evidence,
-                                f"transport_sync={sync_kind} api={api} number={number} call_id={call_id} transaction={answer_transaction}",
-                            )
-                            synchronized = True
-                            continue
-
-                    if accept_requested and not answered and call_id is not None:
-                        answered_match = ANSWERED_RE.search(line)
-                        if (
-                            answered_match
-                            and answered_match.group(1) == call_id
-                            and transaction_token(line) == answer_transaction
-                        ):
-                            append_line(evidence, line)
-                            answered = True
-                            continue
-
-                    if synchronized and answered and not active and call_id is not None:
-                        disconnected_match = DISCONNECTED_RE.search(line)
-                        if disconnected_match and disconnected_match.group(1) == call_id:
-                            append_line(evidence, line)
-                            raise RuntimeError(
-                                f"causal Telecom call {call_id} disconnected before ACTIVE"
-                            )
-
-                        held_match = HELD_RE.search(line)
-                        if held_match and held_match.group(1) == call_id and not recovery_attempted:
-                            append_line(evidence, line)
+                        if api == 36:
                             send_console_accept(
                                 console,
                                 number,
                                 evidence,
-                                response_key="console_gsm_accept_recovery_response",
-                                failure_message="emulator console gsm accept recovery failed",
+                                response_key="console_gsm_accept_response",
+                                failure_message="emulator console gsm accept failed",
                             )
-                            recovery_attempted = True
-                            append_line(
-                                evidence,
-                                f"transport_recovery=emulator_console_gsm_accept_from_hold api={api} number={number} call_id={call_id}",
-                            )
-                            continue
+                            sync_kind = "emulator_console_gsm_accept"
+                        else:
+                            sync_kind = "telecom_request_accept_no_console_mutation"
 
-                        active_match = ACTIVE_RE.search(line)
-                        if active_match and active_match.group(1) == call_id:
-                            append_line(evidence, line)
-                            active = True
+                        append_line(
+                            evidence,
+                            f"transport_sync={sync_kind} api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                        )
+                        synchronized = True
+                        continue
 
-                    if answer_transaction and accept_requested and synchronized and answered and active:
-                        return
+                if accept_requested and not answered and call_id is not None:
+                    answered_match = ANSWERED_RE.search(line)
+                    if (
+                        answered_match
+                        and answered_match.group(1) == call_id
+                        and transaction_token(line) == answer_transaction
+                    ):
+                        append_line(evidence, line)
+                        answered = True
+                        continue
+
+                if synchronized and answered and not active and call_id is not None:
+                    disconnected_match = DISCONNECTED_RE.search(line)
+                    if disconnected_match and disconnected_match.group(1) == call_id:
+                        append_line(evidence, line)
+                        raise RuntimeError(
+                            f"causal Telecom call {call_id} disconnected before ACTIVE"
+                        )
+
+                    held_match = HELD_RE.search(line)
+                    if held_match and held_match.group(1) == call_id and not recovery_attempted:
+                        append_line(evidence, line)
+                        send_console_accept(
+                            console,
+                            number,
+                            evidence,
+                            response_key="console_gsm_accept_recovery_response",
+                            failure_message="emulator console gsm accept recovery failed",
+                        )
+                        recovery_attempted = True
+                        append_line(
+                            evidence,
+                            f"transport_recovery=emulator_console_gsm_accept_from_hold api={api} number={number} call_id={call_id}",
+                        )
+                        continue
+
+                    active_match = ACTIVE_RE.search(line)
+                    if active_match and active_match.group(1) == call_id:
+                        append_line(evidence, line)
+                        active = True
+
+                if answer_transaction and accept_requested and synchronized and answered and active:
+                    return
 
             missing = []
             if answer_transaction is None:
@@ -277,7 +307,6 @@ def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout
                 missing.append("active_same_call")
             raise RuntimeError("missing Telecom bridge evidence: " + ",".join(missing))
         finally:
-            selector.close()
             if logcat.poll() is None:
                 logcat.terminate()
                 try:
@@ -297,13 +326,15 @@ def main() -> int:
     parser.add_argument("--number", required=True)
     parser.add_argument("--evidence", required=True)
     parser.add_argument("--marker-file", required=True)
+    parser.add_argument("--ready-file", required=True)
     parser.add_argument("--timeout", type=float, default=5.0)
     args = parser.parse_args()
 
     evidence = Path(args.evidence)
     marker_file = Path(args.marker_file)
+    ready_file = Path(args.ready_file)
     try:
-        run_bridge(args.api, args.number, evidence, marker_file, args.timeout)
+        run_bridge(args.api, args.number, evidence, marker_file, ready_file, args.timeout)
         return 0
     except Exception as exc:
         evidence.parent.mkdir(parents=True, exist_ok=True)
