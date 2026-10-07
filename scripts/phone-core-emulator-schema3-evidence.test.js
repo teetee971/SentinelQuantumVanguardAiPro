@@ -106,7 +106,7 @@ function expectPass(alter, apiLevel = '36') {
   try {
     assert.equal(run.result.status, 0, run.result.stderr);
     assert.equal(run.report.result, 'PASS');
-    assert.equal(run.report.checks.effective_permission_denial_fail_closed, true);
+    assert.equal(run.report.checks.sms_authorization_denial_fail_closed, true);
   } finally { rmSync(run.dir, { recursive: true, force: true }); }
 }
 
@@ -115,28 +115,17 @@ function expectDenialFail(alter, apiLevel = '36') {
   try {
     assert.notEqual(run.result.status, 0);
     assert.equal(run.report.result, 'FAIL');
-    assert.equal(run.report.checks.effective_permission_denial_fail_closed, false);
-    assert.ok(run.report.evidence_failures.includes('effective_permission_denial_fail_closed'));
+    assert.equal(run.report.checks.sms_authorization_denial_fail_closed, false);
+    assert.ok(run.report.evidence_failures.includes('sms_authorization_denial_fail_closed'));
   } finally { rmSync(run.dir, { recursive: true, force: true }); }
 }
 
 function expectAuthorizationPass(alter, apiLevel = '36') {
-  const run = fixture(alter, apiLevel);
-  try {
-    assert.equal(run.result.status, 0, run.result.stderr);
-    assert.equal(run.report.result, 'PASS');
-    assert.equal(run.report.checks.sms_authorization_denial_fail_closed, true);
-  } finally { rmSync(run.dir, { recursive: true, force: true }); }
+  expectPass(alter, apiLevel);
 }
 
 function expectAuthorizationFail(alter, apiLevel = '36') {
-  const run = fixture(alter, apiLevel);
-  try {
-    assert.notEqual(run.result.status, 0);
-    assert.equal(run.report.result, 'FAIL');
-    assert.equal(run.report.checks.sms_authorization_denial_fail_closed, false);
-    assert.ok(run.report.evidence_failures.includes('sms_authorization_denial_fail_closed'));
-  } finally { rmSync(run.dir, { recursive: true, force: true }); }
+  expectDenialFail(alter, apiLevel);
 }
 
 test('schema 2 AppOp evidence remains backward compatible', () => expectPass(() => {}));
@@ -251,7 +240,7 @@ test('runtime probe cannot be satisfied by mismatched AppOp evidence', () => exp
   put('revocation-summary.json', schema3('SEND_SMS_RUNTIME_PERMISSION_REVOKED'));
 }));
 
-test('unknown effective-permission probe is rejected', () => expectDenialFail(({ put }) => {
+test('unknown SMS authorization probe is rejected', () => expectDenialFail(({ put }) => {
   put('revocation-summary.json', schema3('UNKNOWN_PROBE'));
 }));
 
