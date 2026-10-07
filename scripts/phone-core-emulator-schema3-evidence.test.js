@@ -83,6 +83,15 @@ function schema3(probe) {
   });
 }
 
+function schema4(probe) {
+  return JSON.stringify({
+    schema_version: 4,
+    effective_permission_denial_fail_closed: true,
+    role_revocation_fail_closed: true,
+    effective_permission_probe: probe
+  });
+}
+
 function expectPass(alter) {
   const run = fixture(alter);
   try {
@@ -114,6 +123,18 @@ test('schema 3 accepts AppOp denial with matching evidence', () => expectPass(({
   put('revocation-summary.json', schema3('SEND_SMS_APP_OP_DENIED'));
 }));
 
+test('schema 4 accepts role-managed SEND_SMS permission loss with matching evidence', () => expectPass(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  put('send-sms-role-managed-permission-denied-after-launch.txt', 'android.permission.SEND_SMS: granted=false\n');
+  put('revocation-summary.json', schema4('SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED'));
+}));
+
+test('schema 4 rejects role-managed proof when the permission-denial evidence is missing', () => expectDenialFail(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  remove('send-sms-role-managed-permission-denied-after-launch.txt');
+  put('revocation-summary.json', schema4('SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED'));
+}));
+
 test('runtime probe rejects missing runtime-denial evidence', () => expectDenialFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('send-sms-runtime-permission-denied-after-launch.txt');
@@ -138,7 +159,7 @@ test('unknown effective-permission probe is rejected', () => expectDenialFail(({
 
 test('unsupported revocation evidence schema is rejected', () => expectDenialFail(({ put }) => {
   put('revocation-summary.json', JSON.stringify({
-    schema_version: 4,
+    schema_version: 5,
     effective_permission_denial_fail_closed: true,
     role_revocation_fail_closed: true,
     effective_permission_probe: 'SEND_SMS_APP_OP_DENIED'
