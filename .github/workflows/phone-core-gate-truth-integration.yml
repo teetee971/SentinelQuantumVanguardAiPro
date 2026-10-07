@@ -7,6 +7,7 @@ on:
       - 'scripts/phone-core-gate-truth-integration.test.js'
       - 'scripts/phone-core-workflow-oracle-integration.test.js'
       - 'scripts/phone-core-emulation-contract-oracle.test.js'
+      - 'scripts/phone-core-emulator-revoke-fallback.test.js'
       - 'scripts/check-phone-core-emulation-gate.js'
       - 'scripts/phone-core-emulator-revocation-flow.sh'
       - 'scripts/phone-core-logcat-crash-oracle.py'
@@ -36,3 +37,4 @@ jobs:
           scripts/phone-core-gate-truth-integration.test.js
           scripts/phone-core-workflow-oracle-integration.test.js
           scripts/phone-core-emulation-contract-oracle.test.js
+          scripts/phone-core-emulator-revoke-fallback.test.js
