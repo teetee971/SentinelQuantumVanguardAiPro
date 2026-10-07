@@ -131,7 +131,7 @@ jobs:
               cat "$error" || true
               return 1
             fi
-            if grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum' "$evidence"; then
+            if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$evidence"; then
               echo "Sentinel crashed or ANR'd while ${context}."
               adb logcat -d -v time | tail -n 400 || true
               return 1
