@@ -178,6 +178,25 @@ wait_role_absent() {
   return 1
 }
 
+record_role_absent() {
+  local full_role="$1"
+  local evidence="$2"
+  local holders
+  if ! holders="$(role_holders "$full_role")"; then
+    echo "$full_role state is unreadable; absence evidence cannot be recorded."
+    return 1
+  fi
+  if grep -Fxq "$PACKAGE" <<< "$holders"; then
+    echo "$full_role is still held by $PACKAGE; absence evidence cannot be recorded."
+    return 1
+  fi
+  {
+    printf 'role=%s\n' "$full_role"
+    printf 'package=%s\n' "$PACKAGE"
+    printf 'absent=true\n'
+  } > "$OUT_DIR/$evidence"
+}
+
 remove_role_holder() {
   local full_role="$1"
   local slug="${full_role##*.}"
@@ -491,9 +510,11 @@ elif [[ "$ANDROID_API" -ge 36 ]]; then
   wait_app_backgrounded
   remove_role_holder android.app.role.SMS
   wait_role_absent android.app.role.SMS
+  record_role_absent android.app.role.SMS "send-sms-role-managed-role-absent-state.txt"
   wait_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-state.txt"
   launch_sms_surface "sms-send-role-managed-permission-denied-launch.txt" warm
   wait_role_absent android.app.role.SMS
+  record_role_absent android.app.role.SMS "send-sms-role-managed-role-absent-after-launch.txt"
   assert_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-after-launch.txt"
 else
   adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
