@@ -10,6 +10,7 @@ const errors = [];
 
 const gate = JSON.parse(read('config', 'phone-core-production-gates.json'));
 const workflow = read('.github', 'workflows', 'android-emulation-qualification.yml');
+const crashOracle = read('scripts', 'phone-core-logcat-crash-oracle.py');
 const legacyWorkflowPath = ['.github', 'workflows', 'android-instrumentation.yml'];
 const manifest = read('native-android-app', 'app', 'src', 'main', 'AndroidManifest.xml');
 const physicalValidation = read(
@@ -265,15 +266,21 @@ for (const marker of [
   'android_lint',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
+  'phone-core-logcat-crash-oracle.py',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
-  'FATAL EXCEPTION:',
-  'ANR in com\\.sentinel\\.quantum',
   'schema_version: 4',
   'physical_modem_claim: false',
   'commercial_release_claim: false',
   'sms_authorization_denial_fail_closed'
 ]) requireText(workflow, marker, 'shadow emulation workflow');
+
+for (const marker of [
+  'FATAL EXCEPTION:',
+  'ANR_RE = re.compile',
+  'com\\.sentinel\\.quantum',
+  'UNATTRIBUTED_FATAL_EXCEPTION'
+]) requireText(crashOracle, marker, 'shared logcat crash oracle');
 
 if (workflow.includes('set-bypassing-role-qualification')) {
   errors.push('emulator gate must never bypass Android role qualification');
