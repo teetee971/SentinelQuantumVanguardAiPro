@@ -290,7 +290,8 @@ probe_pm_revoke_send_sms() {
   fi
 
   local denied_observations=0
-  for observation in 1 2 3; do
+  local required_stability_observations=6
+  for observation in $(seq 1 "$required_stability_observations"); do
     sleep 1
     if permission_granted android.permission.SEND_SMS; then
       printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" "$denied_observations" >> "$output"
