@@ -1,0 +1,41 @@
+name: Phone Core Host Regressions
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/phone-core-emulator-evidence.test.js'
+      - 'scripts/phone-core-emulator-revocation-baseline.test.js'
+      - 'scripts/phone-core-emulator-revocation-flow.sh'
+      - '.github/workflows/android-emulation-qualification.yml'
+      - '.github/workflows/phone-core-host-regressions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/phone-core-emulator-evidence.test.js'
+      - 'scripts/phone-core-emulator-revocation-baseline.test.js'
+      - 'scripts/phone-core-emulator-revocation-flow.sh'
+      - '.github/workflows/android-emulation-qualification.yml'
+      - '.github/workflows/phone-core-host-regressions.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phone-core-host-regressions-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-regressions:
+    name: Phone Core evidence anti-false-green tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run Phone Core host regression tests
+        run: >-
+          node --test
+          scripts/phone-core-emulator-evidence.test.js
+          scripts/phone-core-emulator-revocation-baseline.test.js
