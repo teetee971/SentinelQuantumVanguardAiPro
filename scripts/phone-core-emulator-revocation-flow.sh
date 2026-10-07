@@ -214,10 +214,13 @@ probe_pm_revoke_send_sms() {
 
   # A post-revoke denied state is only evidence of a transition if the runtime
   # permission was observably granted immediately before the revoke command.
+  # A non-observable probe is not a gate failure: the caller must continue to
+  # the established AppOp fallback and prove effective denial there.
   if ! permission_granted android.permission.SEND_SMS; then
     printf 'baseline_granted=false\nobservable=false\nreason=baseline_grant_not_proven\n' >> "$output"
-    echo "SEND_SMS granted baseline could not be proven before runtime revocation." >&2
-    return 1
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+    echo "SEND_SMS granted baseline could not be proven before runtime revocation; using fallback probe." >&2
+    return 0
   fi
   printf 'baseline_granted=true\n' >> "$output"
 
@@ -229,8 +232,8 @@ probe_pm_revoke_send_sms() {
   if [[ "$status" -ne 0 ]]; then
     printf 'observable=false\nreason=pm_revoke_failed\n' >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-    echo "SEND_SMS runtime revoke command failed with status $status." >&2
-    return 1
+    echo "SEND_SMS runtime revoke command failed with status $status; using fallback probe." >&2
+    return 0
   fi
 
   sleep 1
