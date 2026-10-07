@@ -540,8 +540,11 @@ jobs:
             screenshot('10-sms-role-revoked.png') &&
             screenshot('11-dialer-role-revoked.png') &&
             screenshot('12-call-screening-role-revoked.png');
+          const crashOraclePath = process.env.GITHUB_WORKSPACE
+            ? path.join(process.env.GITHUB_WORKSPACE, 'scripts', 'phone-core-logcat-crash-oracle.py')
+            : path.resolve(process.env.PWD || '.', 'scripts', 'phone-core-logcat-crash-oracle.py');
           const crashOracle = exists('logcat.txt')
-            ? spawnSync('python3', ['../scripts/phone-core-logcat-crash-oracle.py', file('logcat.txt')], { encoding: 'utf8' })
+            ? spawnSync('python3', [crashOraclePath, file('logcat.txt')], { encoding: 'utf8' })
             : { status: 2 };
           const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') && crashOracle.status === 0;
           const instrumentationKey = `connected_instrumentation_api${api}`;
