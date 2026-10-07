@@ -204,6 +204,10 @@ for (const permissionBoundary of [smsDiagnostics, smsSender, mmsSender]) {
   requireText(permissionBoundary, 'PermissionChecker', 'effective SMS/MMS permission boundary');
 }
 requireText(smsDiagnostics, 'PermissionChecker.checkSelfPermission', 'SMS activation AppOp-aware truth');
+requireText(smsDiagnostics, 'ContextCompat.checkSelfPermission', 'SMS activation runtime-permission truth');
+if (!/private fun hasEffectivePermission\(permission: String\): Boolean\s*=\s*ContextCompat\.checkSelfPermission\(context, permission\)\s*==\s*PackageManager\.PERMISSION_GRANTED\s*&&\s*PermissionChecker\.checkSelfPermission\(context, permission\)\s*==\s*PermissionChecker\.PERMISSION_GRANTED/s.test(smsDiagnostics)) {
+  errors.push('SMS activation truth must require both raw runtime permission and AppOp-aware PermissionChecker authorization');
+}
 requireText(smsSender, 'PermissionChecker.checkSelfPermission', 'SMS send AppOp-aware truth');
 requireText(mmsSender, 'PermissionChecker.checkSelfPermission', 'MMS send AppOp-aware truth');
 
