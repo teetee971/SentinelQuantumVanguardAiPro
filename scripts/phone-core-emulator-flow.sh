@@ -136,6 +136,7 @@ wait_logcat_marker() {
 start_api37_incoming_answer_transport_bridge() {
   local evidence="$FLOW_OUTPUT_DIR/api37-incoming-answer-transport.txt"
   local marker_file="$FLOW_OUTPUT_DIR/api37-incoming-answer-marker.txt"
+  local ready_file="$FLOW_OUTPUT_DIR/api37-incoming-answer-ready.txt"
   FLOW_INCOMING_TRANSPORT_PID=""
   if [[ "$FLOW_API" -lt 36 ]]; then
     printf 'not_required api=%s\n' "$FLOW_API" > "$evidence"
@@ -143,21 +144,46 @@ start_api37_incoming_answer_transport_bridge() {
   fi
 
   # Android 16/17 can leave the synthetic incoming GSM leg unsynchronized when Telecom answers,
-  # and Android 17 can drop/recreate it within only a few milliseconds. Paying the startup cost of a second
-  # `adb emu` command after ANSWERED is therefore nondeterministic. Arm a host-only helper before the tap:
-  # it pre-authenticates a local emulator-console socket, waits for Telecom's causal answer-transaction marker
-  # (emitted only after Sentinel requested Call.answer()), synchronizes the synthetic modem immediately,
-  # then requires Telecom ANSWERED -> ACTIVE. The independent private INCALL_ACTIVE assertion below
-  # remains mandatory. This never runs below API 36 and never accepts a non-emulator adb target.
+  # and Android 17 can drop/recreate it within only a few milliseconds. Arm the host-only helper
+  # before the tap and wait until its live logcat reader is definitely attached. API 36 synchronizes
+  # the emulator modem only after causal REQUEST_ACCEPT; API 37 observes Telecom without a parallel
+  # host answer on the normal path. Both paths still require same-call ANSWERED -> ACTIVE plus the
+  # independent private INCALL_ACTIVE assertion below. This never accepts a non-emulator adb target.
   : > "$evidence"
   : > "$marker_file"
+  : > "$ready_file"
   python3 "$FLOW_SCRIPT_DIR/phone-core-emulator-api37-answer-bridge.py" \
     --api "$FLOW_API" \
     --number "$FLOW_NUMBER" \
     --evidence "$evidence" \
     --marker-file "$marker_file" \
+    --ready-file "$ready_file" \
     --timeout 5 &
   FLOW_INCOMING_TRANSPORT_PID=$!
+
+  for _ in $(seq 1 50); do
+    if grep -Fxq 'bridge_ready=1' "$ready_file" 2>/dev/null; then
+      return 0
+    fi
+    if ! kill -0 "$FLOW_INCOMING_TRANSPORT_PID" 2>/dev/null; then
+      set +e
+      wait "$FLOW_INCOMING_TRANSPORT_PID"
+      local bridge_status=$?
+      set -e
+      FLOW_INCOMING_TRANSPORT_PID=""
+      echo "Incoming answer transport bridge exited before readiness (status $bridge_status)."
+      cat "$evidence" 2>/dev/null || true
+      return 1
+    fi
+    sleep 0.1
+  done
+
+  echo "Incoming answer transport bridge did not become ready before the answer tap."
+  kill "$FLOW_INCOMING_TRANSPORT_PID" 2>/dev/null || true
+  wait "$FLOW_INCOMING_TRANSPORT_PID" 2>/dev/null || true
+  FLOW_INCOMING_TRANSPORT_PID=""
+  cat "$evidence" 2>/dev/null || true
+  return 1
 }
 wait_api37_incoming_answer_transport_bridge() {
   if [[ -n "${FLOW_INCOMING_TRANSPORT_PID:-}" ]]; then
@@ -381,9 +407,10 @@ capture 02-incoming-call
 # This event is recorded by InCallService only after it receives the ringing call and posts
 # its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
-# Exercise Sentinel's answer path. On API 37 only, arm the preconnected emulator-console bridge
-# before the tap. The helper waits for Telecom's causal answer transaction, synchronizes transport,
-# then requires platform ANSWERED -> ACTIVE; the private INCALL_ACTIVE oracle remains independent.
+# Exercise Sentinel's answer path. On API 36/37, arm the preconnected emulator-console bridge
+# before the tap and require its logcat reader readiness handshake. The helper then observes the
+# causal answer transaction; API 36 performs the allowed post-REQUEST_ACCEPT modem sync while API 37
+# leaves the normal answer path untouched. The private INCALL_ACTIVE oracle remains independent.
 open_incoming_call_notification
 wait_text "phone_core_answer"
 start_api37_incoming_answer_transport_bridge
