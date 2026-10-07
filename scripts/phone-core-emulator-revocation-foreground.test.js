@@ -40,8 +40,7 @@ test('modern Android archives role absence and raw permission truth before and a
     'wait_role_absent android.app.role.SMS "send-sms-role-managed-role-absent-after-launch.txt"',
     'archive_send_sms_runtime_permission_state "send-sms-role-managed-permission-state-after-launch.txt"',
     'scroll_until_ui_contains "$SMS_AUTHORIZATION_UI_NEEDLE"',
-    'assert_action_disabled "phone_core_sms_send"',
-    'capture 08-sms-authorization-denied'
+    'assert_action_disabled "phone_core_sms_send"'
   );
 
   const modernStart = runtime.indexOf('elif [[ "$ANDROID_API" -ge 36 ]]');
@@ -68,6 +67,18 @@ test('legacy AppOp denial remains isolated behind the pre-API36 fallback', () =>
     'assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"',
     'scroll_until_ui_contains "$SMS_AUTHORIZATION_UI_NEEDLE"',
     'assert_action_disabled "phone_core_sms_send"'
+  );
+});
+
+test('revocation screenshot keeps legacy schemas readable while schema 5 uses authorization naming', () => {
+  ordered(
+    'assert_action_disabled "phone_core_sms_send"',
+    'if [[ "$REVOCATION_SCHEMA_VERSION" -eq 5 ]]',
+    'capture 08-sms-authorization-denied',
+    'else',
+    'capture 08-sms-effective-permission-denied',
+    'fi',
+    'assert_no_crash'
   );
 });
 
