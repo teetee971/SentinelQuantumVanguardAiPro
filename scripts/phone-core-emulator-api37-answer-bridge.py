@@ -228,7 +228,6 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                         if active_match and active_match.group(1) == call_id:
                             append_line(evidence, line)
                             active = True
-                            continue
 
                         incall_active_match = INCALL_ACTIVE_RE.search(line)
                         if incall_active_match and incall_active_match.group(1) == call_id:
