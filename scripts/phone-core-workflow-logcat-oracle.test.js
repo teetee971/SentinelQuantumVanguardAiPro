@@ -9,6 +9,10 @@ const workflows = [
   '.github/workflows/build-native-android.yml',
   '.github/workflows/android-emulation-qualification.yml'
 ];
+const crashConsumers = [
+  ...workflows,
+  'scripts/phone-core-emulator-revocation-flow.sh'
+];
 const oraclePath = 'scripts/phone-core-logcat-crash-oracle.py';
 
 const unsafeCrashOracle = /if\s+adb\s+logcat\s+-d\s+-v\s+brief\s*\|\s*grep\s+-E[q]?/m;
@@ -35,8 +39,8 @@ test('Android workflows reject Sentinel crashes on any thread, not only the main
   }
 });
 
-test('Android workflows use the process-attributed crash oracle instead of matching every process crash', () => {
-  for (const path of workflows) {
+test('all Android crash qualification paths use the process-attributed crash oracle', () => {
+  for (const path of crashConsumers) {
     const source = readFileSync(path, 'utf8');
     assert.match(
       source,
