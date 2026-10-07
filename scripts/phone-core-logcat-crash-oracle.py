@@ -2,8 +2,9 @@
 """Classify Android logcat crash evidence for the Sentinel process.
 
 Exit 0 when the supplied log contains no attributable Sentinel fatal exception or ANR.
-Exit 1 when a fatal exception is attributed to com.sentinel.quantum, a Sentinel ANR is
-present, or a fatal exception cannot be attributed because its Process line is absent.
+Exit 1 when a fatal exception is attributed to com.sentinel.quantum or one of its
+Android secondary processes, a Sentinel ANR is present, or a fatal exception cannot
+be attributed because its Process line is absent.
 Exit 2 when the evidence file cannot be read.
 """
 
@@ -15,9 +16,13 @@ import sys
 
 PACKAGE = "com.sentinel.quantum"
 PROCESS_RE = re.compile(r"\bProcess:\s*([^,\s]+)")
-ANR_RE = re.compile(r"\bANR in com\.sentinel\.quantum(?:\s|\(|$)")
+ANR_RE = re.compile(r"\bANR in com\.sentinel\.quantum(?::[^\s(]+)?(?:\s|\(|$)")
 FATAL_MARKER = "FATAL EXCEPTION:"
 PROCESS_LOOKAHEAD_LINES = 8
+
+
+def is_sentinel_process(process_name: str) -> bool:
+    return process_name == PACKAGE or process_name.startswith(f"{PACKAGE}:")
 
 
 def has_attributed_failure(lines: list[str]) -> tuple[bool, str | None]:
@@ -34,7 +39,7 @@ def has_attributed_failure(lines: list[str]) -> tuple[bool, str | None]:
             pending_fatal = PROCESS_LOOKAHEAD_LINES
             same_line_process = PROCESS_RE.search(line)
             if same_line_process:
-                if same_line_process.group(1) == PACKAGE:
+                if is_sentinel_process(same_line_process.group(1)):
                     return True, "FATAL_EXCEPTION"
                 pending_fatal = 0
             continue
@@ -42,7 +47,7 @@ def has_attributed_failure(lines: list[str]) -> tuple[bool, str | None]:
         if pending_fatal > 0:
             process = PROCESS_RE.search(line)
             if process:
-                if process.group(1) == PACKAGE:
+                if is_sentinel_process(process.group(1)):
                     return True, "FATAL_EXCEPTION"
                 pending_fatal = 0
                 continue
