@@ -27,10 +27,13 @@ test('incoming-answer modem bridge is enabled for API 36+ and receives the actua
   );
 });
 
-test('bridge helper records dynamic API provenance and rejects unsupported APIs below 36', () => {
-  assert.match(helper, /add_argument\("--api"/);
-  assert.match(helper, /args\.api\s*<\s*36/);
-  assert.match(helper, /api=\{args\.api\}/);
+test('bridge helper records dynamic API provenance and rejects every unsupported API', () => {
+  assert.match(
+    helper,
+    /add_argument\("--api", type=int, choices=\(36, 37\), required=True\)/,
+    'the helper must whitelist only the qualified Android 16/17 API set'
+  );
+  assert.match(helper, /api=\{api\}/, 'transport evidence must use the API passed through the validated boundary');
   assert.doesNotMatch(
     helper,
     /api=37\b/,
@@ -51,7 +54,7 @@ test('API 36 extension preserves strict causal answer qualification and private 
   }
 
   const startBridge = flow.indexOf('start_api37_incoming_answer_transport_bridge');
-  const tapAnswer = flow.indexOf('tap_ui_text "phone_core_incoming_answer"', startBridge);
+  const tapAnswer = flow.indexOf('tap_text "phone_core_answer"', startBridge);
   const waitBridge = flow.indexOf('wait_api37_incoming_answer_transport_bridge', tapAnswer);
   const privateActive = flow.indexOf('wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"', waitBridge);
 
