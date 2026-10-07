@@ -119,3 +119,23 @@ test('executed flow proves a granted baseline before probing revocation', () => 
   assert.ok(beforeGrant >= 0 && beforeGrant < launch);
   assert.ok(launch < afterGrant && afterGrant < probe);
 });
+
+test('role removal retries one transient adb failure and only succeeds after absence is proven', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-role-remove-retry-'));
+  try {
+    const script = `set -e\nPACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nROLE_HELD=true\nREMOVE_ATTEMPTS=0\nsleep(){ :; }\nrole_holders(){ if [[ "$ROLE_HELD" == true ]]; then printf '%s\\n' "$PACKAGE"; fi; return 0; }\nadb(){\n  printf '%s\\n' "$*" >> "$OUT_DIR/calls.txt"\n  if [[ "$*" == 'shell cmd role remove-role-holder --user 0 android.app.role.SMS com.sentinel.quantum' ]]; then\n    REMOVE_ATTEMPTS=$((REMOVE_ATTEMPTS + 1))\n    if [[ "$REMOVE_ATTEMPTS" -eq 1 ]]; then return 1; fi\n    ROLE_HELD=false\n    return 0\n  fi\n  return 0\n}\n${shellFunction('wait_role_absent')}\n${shellFunction('remove_role_holder')}\nremove_role_holder android.app.role.SMS\nprintf 'attempts=%s\\n' "$REMOVE_ATTEMPTS"`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /attempts=2/);
+    const calls = readFileSync(join(dir, 'calls.txt'), 'utf8');
+    assert.equal((calls.match(/remove-role-holder/g) || []).length, 2);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('executed revocation flow routes every role removal through the retrying boundary', () => {
+  const runtime = flow.slice(flow.indexOf('trap write_summary EXIT'));
+  assert.doesNotMatch(runtime, /adb shell cmd role remove-role-holder/);
+  for (const role of ['android.app.role.SMS', 'android.app.role.DIALER', 'android.app.role.CALL_SCREENING']) {
+    assert.match(runtime, new RegExp(`remove_role_holder ${role.replaceAll('.', '\\.')}`));
+  }
+});
