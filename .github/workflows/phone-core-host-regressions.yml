@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/phone-core-emulator-evidence.test.js'
       - 'scripts/phone-core-emulator-revocation-baseline.test.js'
+      - 'scripts/phone-core-emulator-crash-oracle.test.js'
       - 'scripts/phone-core-emulator-revocation-flow.sh'
       - '.github/workflows/android-emulation-qualification.yml'
       - '.github/workflows/phone-core-host-regressions.yml'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'scripts/phone-core-emulator-evidence.test.js'
       - 'scripts/phone-core-emulator-revocation-baseline.test.js'
+      - 'scripts/phone-core-emulator-crash-oracle.test.js'
       - 'scripts/phone-core-emulator-revocation-flow.sh'
       - '.github/workflows/android-emulation-qualification.yml'
       - '.github/workflows/phone-core-host-regressions.yml'
@@ -39,3 +41,4 @@ jobs:
           node --test
           scripts/phone-core-emulator-evidence.test.js
           scripts/phone-core-emulator-revocation-baseline.test.js
+          scripts/phone-core-emulator-crash-oracle.test.js
