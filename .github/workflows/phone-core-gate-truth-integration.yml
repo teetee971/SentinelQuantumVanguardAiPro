@@ -8,6 +8,9 @@ on:
       - 'scripts/phone-core-workflow-oracle-integration.test.js'
       - 'scripts/phone-core-emulation-contract-oracle.test.js'
       - 'scripts/phone-core-emulator-revoke-fallback.test.js'
+      - 'scripts/phone-core-emulator-api36-answer-bridge-contract.test.js'
+      - 'scripts/phone-core-emulator-api37-answer-bridge.py'
+      - 'scripts/phone-core-emulator-flow.sh'
       - 'scripts/check-phone-core-emulation-gate.js'
       - 'scripts/phone-core-emulator-revocation-flow.sh'
       - 'scripts/phone-core-logcat-crash-oracle.py'
@@ -38,3 +41,4 @@ jobs:
           scripts/phone-core-workflow-oracle-integration.test.js
           scripts/phone-core-emulation-contract-oracle.test.js
           scripts/phone-core-emulator-revoke-fallback.test.js
+          scripts/phone-core-emulator-api36-answer-bridge-contract.test.js
