@@ -24,7 +24,8 @@ PACKAGE=com.sentinel.quantum
 OUT_DIR="$1"
 SEND_SMS_PM_REVOCATION_OBSERVABLE=false
 GRANTED=true
-PERMISSION_CHECKS=0
+COUNT_FILE="$OUT_DIR/permission-checks.txt"
+printf '0\n' > "$COUNT_FILE"
 REVOKE_STATUS=${revokeStatus}
 LEAVES_GRANTED=${leavesGranted ? 'true' : 'false'}
 RESTORE_AFTER_PERMISSION_CHECKS=${restoreAfterPermissionChecks ?? -1}
@@ -35,11 +36,11 @@ adb() {
     return "$REVOKE_STATUS"
   fi
   if [[ "$*" == "shell dumpsys package $PACKAGE" ]]; then
-    PERMISSION_CHECKS=$((PERMISSION_CHECKS + 1))
-    if [[ "$RESTORE_AFTER_PERMISSION_CHECKS" -ge 0 && "$PERMISSION_CHECKS" -gt "$RESTORE_AFTER_PERMISSION_CHECKS" ]]; then
-      GRANTED=true
-    fi
-    if [[ "$GRANTED" == "true" ]]; then
+    local checks
+    checks=$(cat "$COUNT_FILE")
+    checks=$((checks + 1))
+    printf '%s\n' "$checks" > "$COUNT_FILE"
+    if [[ "$LEAVES_GRANTED" == "true" || ( "$RESTORE_AFTER_PERMISSION_CHECKS" -ge 0 && "$checks" -gt "$RESTORE_AFTER_PERMISSION_CHECKS" ) ]]; then
       echo 'android.permission.SEND_SMS: granted=true'
     else
       echo 'android.permission.SEND_SMS: granted=false'
@@ -52,7 +53,7 @@ ${shellFunction('permission_granted')}
 ${shellFunction('probe_pm_revoke_send_sms')}
 probe_pm_revoke_send_sms
 printf 'observable=%s\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"
-printf 'permission_checks=%s\n' "$PERMISSION_CHECKS"
+printf 'permission_checks=%s\n' "$(cat "$COUNT_FILE")"
 `;
     return spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
   } finally {
