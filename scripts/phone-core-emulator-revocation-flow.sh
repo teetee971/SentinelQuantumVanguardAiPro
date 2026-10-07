@@ -413,19 +413,37 @@ PY
 }
 
 screening_callback_count() {
-  local evidence="$OUT_DIR/screening-callback-count-logcat.txt"
+  local phase="${1:-snapshot}"
+  local evidence="$OUT_DIR/screening-callback-count-${phase}-logcat.txt"
   local count
-  if ! adb logcat -d -v brief > "$evidence"; then
-    echo "Screening callback oracle is unreadable; absence cannot be qualified." >&2
-    return 2
-  fi
-  if count="$(grep -F -c 'CallScreeningService:onScreenCall' "$evidence")"; then
-    printf '%s\n' "$count"
-  elif [[ "$count" == "0" ]]; then
-    printf '0\n'
-  else
-    return 2
-  fi
+  local attempt
+  local attempt_evidence
+  local attempt_error
+  local status
+  rm -f "$evidence"
+  for attempt in 1 2 3 4 5; do
+    attempt_evidence="$OUT_DIR/screening-callback-count-${phase}-attempt-${attempt}.txt"
+    attempt_error="$OUT_DIR/screening-callback-count-${phase}-attempt-${attempt}.err"
+    if adb logcat -d -v brief > "$attempt_evidence" 2> "$attempt_error"; then
+      cp "$attempt_evidence" "$evidence"
+      if count="$(grep -F -c 'CallScreeningService:onScreenCall' "$evidence")"; then
+        printf '%s\n' "$count"
+        return 0
+      fi
+      if [[ "$count" == "0" ]]; then
+        printf '0\n'
+        return 0
+      fi
+      echo "Screening callback oracle count is unreadable; absence cannot be qualified." >&2
+      return 2
+    else
+      status=$?
+      printf 'adb_logcat_status=%s\n' "$status" >> "$attempt_error"
+    fi
+    sleep 0.5
+  done
+  echo "Screening callback oracle is unreadable after bounded ADB retries; absence cannot be qualified." >&2
+  return 2
 }
 
 assert_modem_call_absent() {
@@ -599,14 +617,14 @@ ensure_role_held android.app.role.DIALER
 
 remove_role_holder android.app.role.CALL_SCREENING
 wait_role_absent android.app.role.CALL_SCREENING
-SCREENING_CALLBACK_BEFORE="$(screening_callback_count)"
+SCREENING_CALLBACK_BEFORE="$(screening_callback_count before)"
 SCREENING_DECISION_BEFORE="$(timeline_signal_prefix_count 'CALL_SCREENED:')"
 INCOMING_NOTIFICATION_BEFORE="$(timeline_signal_prefix_count 'CALL_NOTIFICATION_POSTED')"
 adb shell input keyevent KEYCODE_SLEEP >/dev/null 2>&1 || true
 adb emu gsm call "$SCREENING_PROBE_NUMBER"
 wait_incoming_call_observed "$SCREENING_PROBE_NUMBER" "call-screening-revoked-modem.txt"
 sleep 3
-SCREENING_CALLBACK_AFTER="$(screening_callback_count)"
+SCREENING_CALLBACK_AFTER="$(screening_callback_count after)"
 SCREENING_DECISION_AFTER="$(timeline_signal_prefix_count 'CALL_SCREENED:')"
 printf 'callback_before=%s\ncallback_after=%s\n' "$SCREENING_CALLBACK_BEFORE" "$SCREENING_CALLBACK_AFTER" \
   > "$OUT_DIR/call-screening-revoked-callback-observation.txt"
