@@ -3,9 +3,11 @@ package com.sentinel.quantum.security
 import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
+import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 
 /**
@@ -13,8 +15,9 @@ import androidx.core.content.PermissionChecker
  *
  * This class never requests permissions and never changes the SMS role. It only reports what
  * Android has already granted so UI callers can remain fail-closed and ask for the minimum next
- * user action. Permission reads include their associated AppOp when Android defines one, so a
- * platform-level operation denial cannot be presented as an actionable send state.
+ * user action. Permission reads require both the raw runtime grant and the associated AppOp-aware
+ * PermissionChecker result when Android defines one, so neither a revoked runtime permission nor a
+ * platform-level operation denial can be presented as an actionable send state.
  */
 class SmsActivationDiagnostics(private val context: Context) {
     enum class State { READY, LIMITED, LOCKED }
@@ -108,7 +111,8 @@ class SmsActivationDiagnostics(private val context: Context) {
     }
 
     private fun hasEffectivePermission(permission: String): Boolean =
-        PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED &&
+            PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun smsRoleState(): SmsRoleState = context.readSmsRoleStateFailClosed()
 
