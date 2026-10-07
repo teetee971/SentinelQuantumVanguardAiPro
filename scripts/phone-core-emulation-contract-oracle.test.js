@@ -5,10 +5,12 @@ import { readFileSync } from 'node:fs';
 const contract = readFileSync('scripts/check-phone-core-emulation-gate.js', 'utf8');
 
 function workflowMarkerBlock(source) {
-  const start = source.indexOf('for (const marker of [');
-  assert.notEqual(start, -1, 'workflow marker contract exists');
-  const end = source.indexOf("requireText(workflow, marker, 'shadow emulation workflow');", start);
+  const terminator = "requireText(workflow, marker, 'shadow emulation workflow');";
+  const end = source.indexOf(terminator);
   assert.notEqual(end, -1, 'workflow marker contract terminator exists');
+
+  const start = source.lastIndexOf('for (const marker of [', end);
+  assert.notEqual(start, -1, 'workflow marker contract exists');
   return source.slice(start, end);
 }
 
