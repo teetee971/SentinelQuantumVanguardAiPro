@@ -1,0 +1,54 @@
+name: One-shot align revoke hardening oracle
+
+on:
+  push:
+    branches: [fix/api37-incoming-answer-sync]
+    paths:
+      - '.github/workflows/one-shot-align-revoke-hardening-test.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/api37-incoming-answer-sync
+          fetch-depth: 0
+
+      - name: Align historical oracle and verify full product-truth suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/phone-core-emulator-revocation-hardening.test.js')
+          text = path.read_text()
+          old = "    assert.match(result.stdout, /1\\|false/);\n"
+          new = "    assert.match(result.stdout, /0\\|false/);\n"
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'expected one obsolete pm-revoke return oracle, found {count}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+          npm run test:android-product-truth
+          node --test \
+            scripts/phone-core-emulator-revoke-fallback.test.js \
+            scripts/phone-core-emulator-revocation-hardening.test.js
+          git diff --check -- scripts/phone-core-emulator-revocation-hardening.test.js
+          git diff -- scripts/phone-core-emulator-revocation-hardening.test.js
+
+      - name: Commit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts/phone-core-emulator-revocation-hardening.test.js
+          git commit -m 'test(phone-core): align failed revoke fallback oracle'
+          git push origin HEAD:fix/api37-incoming-answer-sync
