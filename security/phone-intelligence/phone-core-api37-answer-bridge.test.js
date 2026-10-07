@@ -34,21 +34,34 @@ test('API 37 synchronization delegates to the preconnected emulator-only helper'
   assert.doesNotMatch(startBridge, /adb emu gsm accept/, 'the shell harness must not start a second adb modem command');
 });
 
-test('low-latency helper requires one causal Telecom transaction, same-call ANSWERED and same-call ACTIVE', () => {
+test('low-latency helper synchronizes only after causal REQUEST_ACCEPT and still requires same-call ANSWERED plus ACTIVE', () => {
   const request = helper.indexOf('CallSequencingController: answerCall: Beginning call sequencing transaction for answering incoming call.');
   const acceptOracle = helper.indexOf('REQUEST_ACCEPT_RE = re.compile');
   const answeredOracle = helper.indexOf('ANSWERED_RE = re.compile');
   const activeOracle = helper.indexOf('ACTIVE_RE = re.compile');
-  const answeredState = helper.indexOf('answered = True');
-  const firstSocketSend = helper.indexOf('console.sendall(f"gsm accept {number}\\n".encode("utf-8"))');
+  const acceptState = helper.indexOf('accept_requested = True');
+  const syncCall = helper.indexOf('send_console_accept(', acceptState);
+  const synchronizedState = helper.indexOf('synchronized = True', syncCall);
+  const answeredBlock = helper.indexOf('if accept_requested and not answered and call_id is not None:', synchronizedState);
+  const answeredState = helper.indexOf('answered = True', answeredBlock);
+  const activeBlock = helper.indexOf('if synchronized and answered and not active and call_id is not None:', answeredState);
+  const successGate = helper.indexOf('if answer_transaction and accept_requested and synchronized and answered and active:', activeBlock);
 
   assert.ok(request >= 0, 'helper must wait for the Telecom answer transaction initiated by the app');
   assert.ok(acceptOracle >= 0, 'REQUEST_ACCEPT must be parsed as causal Telecom evidence');
   assert.ok(answeredOracle >= 0, 'Telecom ANSWERED evidence must remain required');
   assert.ok(activeOracle >= 0, 'Telecom ACTIVE evidence must remain required');
-  assert.ok(answeredState >= 0, 'same-call ANSWERED must be established before modem synchronization');
-  assert.ok(firstSocketSend > answeredState,
-    'emulator gsm accept must be deferred until the same causal call is ANSWERED');
+  assert.ok(acceptState >= 0, 'causal REQUEST_ACCEPT must be established before modem synchronization');
+  assert.ok(syncCall > acceptState,
+    'emulator gsm accept must occur only after the causal REQUEST_ACCEPT boundary');
+  assert.ok(synchronizedState > syncCall,
+    'transport synchronization must be credited only after the console command succeeds');
+  assert.ok(answeredBlock > synchronizedState && answeredState > answeredBlock,
+    'same-call ANSWERED must still be observed after transport synchronization');
+  assert.ok(activeBlock > answeredState,
+    'same-call ACTIVE must remain downstream of ANSWERED');
+  assert.ok(successGate > activeBlock,
+    'bridge success must require causal request, synchronization, ANSWERED and ACTIVE together');
   assert.match(helper, /transaction_token\(line\) == answer_transaction/,
     'REQUEST_ACCEPT and ANSWERED must remain bound to the causal Telecom transaction');
   assert.match(helper, /answered_match\.group\(1\) == call_id/,
