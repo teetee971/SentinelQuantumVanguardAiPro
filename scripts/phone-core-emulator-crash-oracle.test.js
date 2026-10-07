@@ -43,6 +43,28 @@ test('assert_no_crash rejects an observed crash', () => {
   assert.notEqual(result.status, 0);
 });
 
+test('assert_no_crash rejects a crash in a Sentinel secondary Android process', () => {
+  const result = runAssertNoCrash({
+    logcatOutput: 'E/AndroidRuntime: FATAL EXCEPTION: worker\nProcess: com.sentinel.quantum:isolated_worker\n'
+  });
+  assert.notEqual(
+    result.status,
+    0,
+    'A package-owned secondary process crash must not be misclassified as an unrelated Android process'
+  );
+});
+
+test('assert_no_crash rejects an ANR in a Sentinel secondary Android process', () => {
+  const result = runAssertNoCrash({
+    logcatOutput: 'E/ActivityManager: ANR in com.sentinel.quantum:telecom\n'
+  });
+  assert.notEqual(
+    result.status,
+    0,
+    'A package-owned secondary process ANR must fail the runtime qualification gate'
+  );
+});
+
 test('assert_no_crash rejects an unreadable logcat oracle', () => {
   const result = runAssertNoCrash({ logcatStatus: 2, logcatOutput: '' });
   assert.notEqual(
