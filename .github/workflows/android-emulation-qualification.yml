@@ -242,7 +242,7 @@ jobs:
 
           BOOTED=0
           for _ in $(seq 1 120); do
-            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+            if [[ "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" == "$API_LEVEL" && "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
               BOOTED=1
               break
             fi
@@ -357,7 +357,7 @@ jobs:
               cat "$error" || true
               return 1
             fi
-            if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$evidence"; then
+            if ! python3 ../scripts/phone-core-logcat-crash-oracle.py "$evidence"; then
               echo "Crash/ANR detected while ${context}."
               adb logcat -d -v time | tail -n 400 || true
               return 1
@@ -421,6 +421,7 @@ jobs:
           BUILT_COMMIT="$(git rev-parse HEAD)" API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
           const api = Number(process.env.API_LEVEL);
           const output = process.env.OUTPUT;
           const modernPhoneCore = api >= 29;
@@ -539,8 +540,10 @@ jobs:
             screenshot('10-sms-role-revoked.png') &&
             screenshot('11-dialer-role-revoked.png') &&
             screenshot('12-call-screening-role-revoked.png');
-          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') &&
-            !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+          const crashOracle = exists('logcat.txt')
+            ? spawnSync('python3', ['../scripts/phone-core-logcat-crash-oracle.py', file('logcat.txt')], { encoding: 'utf8' })
+            : { status: 2 };
+          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') && crashOracle.status === 0;
           const instrumentationKey = `connected_instrumentation_api${api}`;
 
           const checks = {
