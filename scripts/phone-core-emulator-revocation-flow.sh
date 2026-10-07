@@ -545,7 +545,11 @@ fi
 scroll_until_ui_contains "$SMS_AUTHORIZATION_UI_NEEDLE"
 scroll_until_ui_contains "phone_core_sms_send"
 assert_action_disabled "phone_core_sms_send"
-capture 08-sms-authorization-denied
+if [[ "$REVOCATION_SCHEMA_VERSION" -eq 5 ]]; then
+  capture 08-sms-authorization-denied
+else
+  capture 08-sms-effective-permission-denied
+fi
 assert_no_crash
 SMS_AUTHORIZATION_DENIAL_PROVEN=true
 
