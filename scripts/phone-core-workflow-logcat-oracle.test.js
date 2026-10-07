@@ -19,3 +19,14 @@ test('Android workflows never treat an unreadable logcat pipe as crash-free evid
     );
   }
 });
+
+test('Android workflows reject Sentinel crashes on any thread, not only the main thread', () => {
+  for (const path of workflows) {
+    const source = readFileSync(path, 'utf8');
+    assert.doesNotMatch(
+      source,
+      /FATAL EXCEPTION: main/,
+      `${path} must not limit crash detection to the main thread because AndroidRuntime crashes may occur on worker or binder threads`
+    );
+  }
+});
