@@ -10,7 +10,7 @@ const step = workflow.split('- name: Collect qualification evidence even after f
 assert.ok(step, 'collector step exists');
 const reportCode = step.split("node <<'NODE'\n")[1].split('\n          NODE')[0];
 
-function fixture(alter = () => {}) {
+function fixture(alter = () => {}, apiLevel = '36') {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-schema3-report-'));
   const output = join(dir, 'evidence');
   mkdirSync(output);
@@ -56,7 +56,7 @@ function fixture(alter = () => {}) {
     env: {
       ...process.env,
       RUNNER_TEMP: dir,
-      API_LEVEL: '36',
+      API_LEVEL: apiLevel,
       OUTPUT: output,
       HOST_CONTRACT_RESULT: 'success',
       INSTRUMENTATION_OUTCOME: 'success',
@@ -92,8 +92,8 @@ function schema4(probe) {
   });
 }
 
-function expectPass(alter) {
-  const run = fixture(alter);
+function expectPass(alter, apiLevel = '36') {
+  const run = fixture(alter, apiLevel);
   try {
     assert.equal(run.result.status, 0, run.result.stderr);
     assert.equal(run.report.result, 'PASS');
@@ -101,8 +101,8 @@ function expectPass(alter) {
   } finally { rmSync(run.dir, { recursive: true, force: true }); }
 }
 
-function expectDenialFail(alter) {
-  const run = fixture(alter);
+function expectDenialFail(alter, apiLevel = '36') {
+  const run = fixture(alter, apiLevel);
   try {
     assert.notEqual(run.result.status, 0);
     assert.equal(run.report.result, 'FAIL');
@@ -123,17 +123,33 @@ test('schema 3 accepts AppOp denial with matching evidence', () => expectPass(({
   put('revocation-summary.json', schema3('SEND_SMS_APP_OP_DENIED'));
 }));
 
-test('schema 4 accepts role-managed SEND_SMS permission loss with matching evidence', () => expectPass(({ put, remove }) => {
+test('schema 4 accepts role-managed SEND_SMS permission loss with role-absence evidence on modern API', () => expectPass(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   put('send-sms-role-managed-permission-denied-after-launch.txt', 'android.permission.SEND_SMS: granted=false\n');
+  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
   put('revocation-summary.json', schema4('SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED'));
 }));
 
 test('schema 4 rejects role-managed proof when the permission-denial evidence is missing', () => expectDenialFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('send-sms-role-managed-permission-denied-after-launch.txt');
+  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
   put('revocation-summary.json', schema4('SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED'));
 }));
+
+test('schema 4 rejects role-managed proof when role-absence evidence is missing', () => expectDenialFail(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  put('send-sms-role-managed-permission-denied-after-launch.txt', 'android.permission.SEND_SMS: granted=false\n');
+  remove('send-sms-role-managed-role-absent-after-launch.txt');
+  put('revocation-summary.json', schema4('SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED'));
+}));
+
+test('schema 4 role-managed proof is forbidden below API 36', () => expectDenialFail(({ put, remove }) => {
+  remove('send-sms-appop-denied-after-launch.txt');
+  put('send-sms-role-managed-permission-denied-after-launch.txt', 'android.permission.SEND_SMS: granted=false\n');
+  put('send-sms-role-managed-role-absent-after-launch.txt', 'role=android.app.role.SMS\npackage=com.sentinel.quantum\nabsent=true\n');
+  put('revocation-summary.json', schema4('SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED'));
+}, '29'));
 
 test('runtime probe rejects missing runtime-denial evidence', () => expectDenialFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
