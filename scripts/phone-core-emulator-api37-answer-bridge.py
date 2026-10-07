@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-"""Synchronize Android 16/17 emulator GSM transport inside a real Telecom answer request.
+"""Correlate Android 16/17 emulator transport with one real Telecom answer request.
 
-This helper is host-only qualification infrastructure. It keeps the emulator console
-connection open before the UI tap, observes one causal Telecom answer transaction and still
-requires REQUEST_ACCEPT, ANSWERED and ACTIVE for the same Telecom call.
+This helper is host-only qualification infrastructure. It observes one causal Telecom answer
+transaction and requires REQUEST_ACCEPT, ANSWERED and ACTIVE for the same Telecom call.
 
-Android 17/API 37 has a tighter synthetic-modem race than Android 16/API 36: by the time
-Telecom emits REQUEST_ACCEPT, the framework may already have moved the causal call to ANSWERED
-while the emulator RIL still considers it ringing. Sending `gsm accept` only after
-REQUEST_ACCEPT can therefore disconnect that original call as MISSED and recreate transport
-under a new Telecom id. For API 37 only, the helper pre-synchronizes the emulator modem as soon
-as the transaction-scoped `answerCall` marker is observed. That pre-sync is never credited as
-answer success. Qualification still requires the later REQUEST_ACCEPT from that same Telecom
-transaction, binds its TC@ call id, and then requires that exact call to reach ANSWERED and
-real CallsManager ACTIVE. API 36 keeps synchronization at REQUEST_ACCEPT because that ordering
-is stable there. The shell harness separately requires Sentinel's private INCALL_ACTIVE
-evidence.
+Android 16/API 36 still needs an explicit emulator-console `gsm accept` after the causal
+REQUEST_ACCEPT. Android 17/API 37 must not receive that extra host-side answer while Telephony
+is already executing the app's answer request: forcing the synthetic modem ACTIVE in parallel
+can disconnect the causal TC@ call as MISSED and recreate the transport under a new TC@ id.
+For API 37 the helper therefore performs correlation only during the normal answer path and
+lets Telephony drive the modem. A console `gsm accept` is allowed only as a narrowly scoped
+recovery after the same causal call has explicitly transitioned from ANSWERED to ON_HOLD.
+Neither correlation nor recovery is enough for qualification: the exact REQUEST_ACCEPT call
+must still reach ANSWERED and real CallsManager ACTIVE. The shell harness separately requires
+Sentinel's private INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -42,6 +40,9 @@ HELD_RE = re.compile(
 )
 ACTIVE_RE = re.compile(
     r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> ACTIVE, call: \[Call id=(TC@\d+),"
+)
+DISCONNECTED_RE = re.compile(
+    r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> DISCONNECTED, call: \[Call id=(TC@\d+),"
 )
 TRANSACTION_TOKEN_RE = re.compile(r"@([A-Za-z0-9]+)[^A-Za-z0-9]*$")
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
@@ -164,7 +165,6 @@ def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout
         deadline = time.monotonic() + timeout_s
         answer_transaction: str | None = None
         call_id: str | None = None
-        pre_synchronized = False
         accept_requested = False
         synchronized = False
         answered = False
@@ -190,24 +190,6 @@ def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout
                             continue
                         answer_transaction = observed_transaction
                         marker_file.write_text(line, encoding="utf-8")
-
-                        if api == 37:
-                            # API 37 can complete the framework ANSWERED transition before a
-                            # post-REQUEST_ACCEPT console command reaches the synthetic modem.
-                            # Pre-sync here, but do not credit the transport until a matching
-                            # REQUEST_ACCEPT later binds this transaction to one TC@ call id.
-                            send_console_accept(
-                                console,
-                                number,
-                                evidence,
-                                response_key="console_gsm_accept_pre_sync_response",
-                                failure_message="emulator console gsm accept pre-sync failed",
-                            )
-                            append_line(
-                                evidence,
-                                f"transport_pre_sync=emulator_console_gsm_accept api={api} number={number} transaction={answer_transaction}",
-                            )
-                            pre_synchronized = True
                         continue
 
                     if answer_transaction is not None and not accept_requested:
@@ -227,12 +209,13 @@ def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout
                                     response_key="console_gsm_accept_response",
                                     failure_message="emulator console gsm accept failed",
                                 )
-                            elif not pre_synchronized:
-                                raise RuntimeError("API 37 REQUEST_ACCEPT observed without modem pre-sync")
+                                sync_kind = "emulator_console_gsm_accept"
+                            else:
+                                sync_kind = "telecom_request_accept_no_console_mutation"
 
                             append_line(
                                 evidence,
-                                f"transport_sync=emulator_console_gsm_accept api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                                f"transport_sync={sync_kind} api={api} number={number} call_id={call_id} transaction={answer_transaction}",
                             )
                             synchronized = True
                             continue
@@ -249,6 +232,13 @@ def run_bridge(api: int, number: str, evidence: Path, marker_file: Path, timeout
                             continue
 
                     if synchronized and answered and not active and call_id is not None:
+                        disconnected_match = DISCONNECTED_RE.search(line)
+                        if disconnected_match and disconnected_match.group(1) == call_id:
+                            append_line(evidence, line)
+                            raise RuntimeError(
+                                f"causal Telecom call {call_id} disconnected before ACTIVE"
+                            )
+
                         held_match = HELD_RE.search(line)
                         if held_match and held_match.group(1) == call_id and not recovery_attempted:
                             append_line(evidence, line)
