@@ -16,9 +16,9 @@ import java.lang.ref.WeakReference
  * flight. A Compose snapshot taken during that transition can therefore outlive the framework
  * state it represented. This coordinator observes SEND_SMS AppOp changes and revalidates the full
  * authorization fingerprint whenever the composer becomes visible, including one delayed read for
- * framework reconciliation that settles just after onResume. It recreates only the visible SMS
- * composer when the effective authorization fingerprint actually changes. Draft destination/body
- * state is rememberSaveable and survives recreation.
+ * framework reconciliation that settles just after onResume. When authorization changes, it asks
+ * the visible composer to refresh its activation epoch in place so attachments, SIM selection and
+ * in-flight send/callback state are not discarded by Activity recreation.
  *
  * The coordinator is deliberately read-only: it never grants a role, permission or AppOp.
  */
@@ -62,8 +62,8 @@ internal class SmsActivationStateCoordinator(
             visibleComposer = WeakReference(activity)
             revalidateVisibleComposer(activity)
             // A permission-role transition can settle just after onResume. Re-read once after the
-            // framework has had a chance to finish reconciliation; a changed fingerprint recreates
-            // the composer exactly once because lastFingerprint is updated before recreation.
+            // framework has had a chance to finish reconciliation; a changed fingerprint refreshes
+            // the existing composer exactly once because lastFingerprint is updated first.
             mainHandler.postDelayed(
                 {
                     if (visibleComposer.get() === activity) {
@@ -107,7 +107,7 @@ internal class SmsActivationStateCoordinator(
         val previous = lastFingerprint
         lastFingerprint = current
         if (previous != null && previous != current) {
-            activity.recreate()
+            activity.refreshActivationAuthorization()
         }
     }
 
