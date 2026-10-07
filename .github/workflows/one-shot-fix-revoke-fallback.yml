@@ -1,0 +1,51 @@
+name: One-shot fix SEND_SMS revoke fallback
+
+on:
+  push:
+    branches: [fix/phone-core-revoke-fallback-after-ee8675]
+    paths:
+      - '.github/workflows/one-shot-fix-revoke-fallback.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/phone-core-revoke-fallback-after-ee8675
+          fetch-depth: 0
+
+      - name: Apply exact fallback patch and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/phone-core-emulator-revocation-flow.sh')
+          text = path.read_text()
+          old = '''    SEND_SMS_PM_REVOCATION_OBSERVABLE=false\n    echo "SEND_SMS pm revoke failed; runtime revocation cannot be attributed to the probe."\n    return 1\n'''
+          new = '''    SEND_SMS_PM_REVOCATION_OBSERVABLE=false\n    echo "SEND_SMS pm revoke failed; runtime revocation is non-observable, continuing to the supported fallback."\n    return 0\n'''
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'expected exactly one pm revoke failure block, found {count}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+          node --test scripts/phone-core-emulator-revoke-fallback.test.js
+          git diff --check -- scripts/phone-core-emulator-revocation-flow.sh
+          git diff -- scripts/phone-core-emulator-revocation-flow.sh
+
+      - name: Commit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts/phone-core-emulator-revocation-flow.sh
+          git commit -m 'fix(phone-core): preserve AppOp fallback after pm revoke failure'
+          git push origin HEAD:fix/phone-core-revoke-fallback-after-ee8675
