@@ -2,13 +2,13 @@
 """Synchronize Android 17 emulator GSM transport inside a real Telecom answer request.
 
 This helper is host-only qualification infrastructure. It keeps the emulator console
-connection open before the UI tap, observes one causal Telecom answer transaction, then
-synchronizes the synthetic modem only when REQUEST_ACCEPT belongs to that same transaction.
-The later ANSWERED and ACTIVE evidence must belong to the same Telecom call id. Android 17
-emulation can transiently map that same accepted call from ANSWERED to ON_HOLD; in that one
-observed state the helper permits one additional emulator-console accept and still requires
-the same call to reach ACTIVE. The shell harness separately requires Sentinel's private
-INCALL_ACTIVE evidence.
+connection open before the UI tap, observes one causal Telecom answer transaction, records
+REQUEST_ACCEPT for that transaction, then synchronizes the synthetic modem only after the
+same Telecom call reaches ANSWERED. The later ACTIVE evidence must belong to the same call
+id and must come from CallsManager transport state. Android 17 emulation can transiently map
+that same accepted call from ANSWERED to ON_HOLD; in that one observed state the helper
+permits one additional emulator-console accept and still requires the same call to reach
+ACTIVE. The shell harness separately requires Sentinel's private INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -35,9 +35,6 @@ HELD_RE = re.compile(
 )
 ACTIVE_RE = re.compile(
     r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> ACTIVE, call: \[Call id=(TC@\d+),"
-)
-INCALL_ACTIVE_RE = re.compile(
-    r"BluetoothInCallService.*onStateChanged\(Call \[id: (TC@\d+), state: ACTIVE\b"
 )
 TRANSACTION_TOKEN_RE = re.compile(r"@([A-Za-z0-9]+)[^A-Za-z0-9]*$")
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
@@ -177,6 +174,17 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                             with marker_file.open("a", encoding="utf-8") as marker_handle:
                                 marker_handle.write(line)
                             accept_requested = True
+                            continue
+
+                    if accept_requested and not answered and call_id is not None:
+                        answered_match = ANSWERED_RE.search(line)
+                        if (
+                            answered_match
+                            and answered_match.group(1) == call_id
+                            and transaction_token(line) == answer_transaction
+                        ):
+                            append_line(evidence, line)
+                            answered = True
                             console.sendall(f"gsm accept {number}\n".encode("utf-8"))
                             response = recv_until(console, ("OK", "KO"), 1.0)
                             append_line(
@@ -191,17 +199,6 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                                 f"transport_sync=emulator_console_gsm_accept api=37 number={number} call_id={call_id} transaction={answer_transaction}",
                             )
                             synchronized = True
-                            continue
-
-                    if synchronized and not answered and call_id is not None:
-                        answered_match = ANSWERED_RE.search(line)
-                        if (
-                            answered_match
-                            and answered_match.group(1) == call_id
-                            and transaction_token(line) == answer_transaction
-                        ):
-                            append_line(evidence, line)
-                            answered = True
                             continue
 
                     if synchronized and answered and not active and call_id is not None:
@@ -227,12 +224,6 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                         active_match = ACTIVE_RE.search(line)
                         if active_match and active_match.group(1) == call_id:
                             append_line(evidence, line)
-                            active = True
-
-                        incall_active_match = INCALL_ACTIVE_RE.search(line)
-                        if incall_active_match and incall_active_match.group(1) == call_id:
-                            append_line(evidence, line)
-                            append_line(evidence, "active_oracle=telecom_bluetooth_incall_observer")
                             active = True
 
                     if answer_transaction and accept_requested and synchronized and answered and active:
