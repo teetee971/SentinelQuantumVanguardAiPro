@@ -4,7 +4,7 @@
 Exit 0 when the supplied log contains no attributable Sentinel fatal exception or ANR.
 Exit 1 when a fatal exception is attributed to com.sentinel.quantum or one of its
 Android secondary processes, a Sentinel ANR is present, or a fatal exception cannot
-be attributed because its Process line is absent.
+be attributed because its Process line is absent or another fatal begins first.
 Exit 2 when the evidence file cannot be read.
 """
 
@@ -33,6 +33,8 @@ def has_attributed_failure(lines: list[str]) -> tuple[bool, str | None]:
             return True, "ANR"
 
         if FATAL_MARKER in line:
+            if pending_fatal > 0:
+                return True, "OVERLAPPING_UNATTRIBUTED_FATAL_EXCEPTION"
             pending_fatal = PROCESS_LOOKAHEAD_LINES
             same_line_process = PROCESS_RE.search(line)
             if same_line_process:
