@@ -178,6 +178,32 @@ wait_role_absent() {
   return 1
 }
 
+remove_role_holder() {
+  local full_role="$1"
+  local slug="${full_role##*.}"
+  for attempt in 1 2 3 4 5; do
+    local evidence="$OUT_DIR/role-remove-${slug,,}-${attempt}.txt"
+    local status=0
+    set +e
+    adb shell cmd role remove-role-holder --user 0 "$full_role" "$PACKAGE" > "$evidence" 2>&1
+    status=$?
+    set -e
+    printf 'remove_status=%s\n' "$status" >> "$evidence"
+
+    # ADB can drop briefly when Android kills/restarts the app after role/permission mutation.
+    # The command may therefore report a transport failure even if the framework applied it.
+    # Only the independently observed role state is authoritative.
+    if wait_role_absent "$full_role"; then
+      return 0
+    fi
+    sleep "$attempt"
+  done
+  echo "Unable to remove Android role $full_role from $PACKAGE."
+  cat "$OUT_DIR"/role-remove-${slug,,}-*.txt 2>/dev/null || true
+  adb shell dumpsys role > "$OUT_DIR/role-remove-${slug,,}-failure-dumpsys.txt" 2>&1 || true
+  return 1
+}
+
 ensure_role_held() {
   local full_role="$1"
   local slug="${full_role##*.}"
@@ -463,7 +489,7 @@ elif [[ "$ANDROID_API" -ge 36 ]]; then
   EFFECTIVE_PERMISSION_UI_NEEDLE="rôle SMS disponible mais non accordé"
   adb shell input keyevent KEYCODE_HOME
   wait_app_backgrounded
-  adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
+  remove_role_holder android.app.role.SMS
   wait_role_absent android.app.role.SMS
   wait_send_sms_runtime_permission_denied "send-sms-role-managed-permission-denied-state.txt"
   launch_sms_surface "sms-send-role-managed-permission-denied-launch.txt" warm
@@ -501,7 +527,7 @@ elif [[ "$EFFECTIVE_PERMISSION_PROBE" == "SEND_SMS_ROLE_MANAGED_PERMISSION_REVOK
 fi
 adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
 
-adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
+remove_role_holder android.app.role.SMS
 wait_role_absent android.app.role.SMS
 launch_sms_surface "sms-role-revoked-launch.txt"
 scroll_until_ui_contains "rôle SMS disponible mais non accordé"
@@ -522,7 +548,7 @@ launch_sms_surface "sms-restored-launch.txt"
 assert_no_crash
 assert_sms_role_held
 
-adb shell cmd role remove-role-holder --user 0 android.app.role.DIALER "$PACKAGE"
+remove_role_holder android.app.role.DIALER
 wait_role_absent android.app.role.DIALER
 adb shell am force-stop "$PACKAGE"
 adb shell am start -W -a android.intent.action.DIAL -d "tel:$DIALER_PROBE_NUMBER" \
@@ -538,7 +564,7 @@ assert_no_crash
 adb shell input keyevent KEYCODE_BACK >/dev/null 2>&1 || true
 ensure_role_held android.app.role.DIALER
 
-adb shell cmd role remove-role-holder --user 0 android.app.role.CALL_SCREENING "$PACKAGE"
+remove_role_holder android.app.role.CALL_SCREENING
 wait_role_absent android.app.role.CALL_SCREENING
 SCREENING_CALLBACK_BEFORE="$(screening_callback_count)"
 SCREENING_DECISION_BEFORE="$(timeline_signal_prefix_count 'CALL_SCREENED:')"
