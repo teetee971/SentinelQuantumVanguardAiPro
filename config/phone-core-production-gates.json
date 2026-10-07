@@ -38,7 +38,7 @@
       "effective_permission_denial_fail_closed",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce portail automatise uniquement les preuves reproductibles sur Android Emulator. Le fail-closed SMS conserve ROLE_SMS et prouve une autorisation effective réellement refusée : révocation runtime SEND_SMS lorsque le framework la rend observable, sinon AppOp SEND_SMS vérifié comme fallback. Dans les deux cas, l'action protégée doit rester non actionnable après retour au premier plan. Cette qualification ne constitue ni une preuve modem/opérateur physique ni une autorisation de revendiquer une production commerciale complète."
+    "scope_note": "Ce portail automatise uniquement les preuves reproductibles sur Android Emulator. Le fail-closed SMS suit trois chemins distincts : lorsque la révocation runtime SEND_SMS est observable, ROLE_SMS est conservé et la permission doit être réellement refusée ; à partir d'API 36, si le RoleController restaure cette permission, ROLE_SMS est retiré et son absence ainsi que SEND_SMS granted=false sont prouvées avant et après relance ; sur les API antérieures, un AppOp SEND_SMS vérifié reste le fallback historique. Dans chaque cas, l'action protégée doit rester non actionnable après retour au premier plan. Cette qualification ne constitue ni une preuve modem/opérateur physique ni une autorisation de revendiquer une production commerciale complète."
   },
   "commercial_release": {
     "physical_validation_required": true,
