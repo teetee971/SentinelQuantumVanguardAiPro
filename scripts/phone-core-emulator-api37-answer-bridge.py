@@ -4,8 +4,11 @@
 This helper is host-only qualification infrastructure. It keeps the emulator console
 connection open before the UI tap, observes one causal Telecom answer transaction, then
 synchronizes the synthetic modem only when REQUEST_ACCEPT belongs to that same transaction.
-The later ANSWERED and ACTIVE evidence must belong to the same Telecom call id. The shell
-harness separately requires Sentinel's private INCALL_ACTIVE evidence.
+The later ANSWERED and ACTIVE evidence must belong to the same Telecom call id. Android 17
+emulation can transiently map that same accepted call from ANSWERED to ON_HOLD; in that one
+observed state the helper permits one additional emulator-console accept and still requires
+the same call to reach ACTIVE. The shell harness separately requires Sentinel's private
+INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -27,8 +30,11 @@ REQUEST_ACCEPT_RE = re.compile(r"RecordEntry (TC@\d+): REQUEST_ACCEPT\b")
 ANSWERED_RE = re.compile(
     r"CallsManager: setCallState RINGING(?:\(RINGING\))? -> ANSWERED, call: \[Call id=(TC@\d+),"
 )
+HELD_RE = re.compile(
+    r"CallsManager: setCallState ANSWERED(?:\(ANSWERED\))? -> ON_HOLD, call: \[Call id=(TC@\d+),"
+)
 ACTIVE_RE = re.compile(
-    r"CallsManager: setCallState ANSWERED(?:\(ANSWERED\))? -> ACTIVE, call: \[Call id=(TC@\d+),"
+    r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> ACTIVE, call: \[Call id=(TC@\d+),"
 )
 TRANSACTION_TOKEN_RE = re.compile(r"@([A-Za-z0-9]+)[^A-Za-z0-9]*$")
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
@@ -136,6 +142,7 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
         accept_requested = False
         synchronized = False
         answered = False
+        recovery_attempted = False
         active = False
         try:
             while time.monotonic() < deadline:
@@ -195,6 +202,25 @@ def run_bridge(number: str, evidence: Path, marker_file: Path, timeout_s: float)
                             continue
 
                     if synchronized and answered and not active and call_id is not None:
+                        held_match = HELD_RE.search(line)
+                        if held_match and held_match.group(1) == call_id and not recovery_attempted:
+                            append_line(evidence, line)
+                            console.sendall(f"gsm accept {number}\n".encode("utf-8"))
+                            response = recv_until(console, ("OK", "KO"), 1.0)
+                            append_line(
+                                evidence,
+                                "console_gsm_accept_recovery_response="
+                                + response.replace("\r", " ").replace("\n", " | ").strip(),
+                            )
+                            if "OK" not in response or "KO" in response:
+                                raise RuntimeError("emulator console gsm accept recovery failed")
+                            recovery_attempted = True
+                            append_line(
+                                evidence,
+                                f"transport_recovery=emulator_console_gsm_accept_from_hold api=37 number={number} call_id={call_id}",
+                            )
+                            continue
+
                         active_match = ACTIVE_RE.search(line)
                         if active_match and active_match.group(1) == call_id:
                             append_line(evidence, line)
