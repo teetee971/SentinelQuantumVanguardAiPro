@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+// Contract: an unobservable runtime-revoke probe is not a PASS. It must report
+// observable=false and return control so the caller can prove the AppOp fallback.
 const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
 
 function shellFunction(name) {
