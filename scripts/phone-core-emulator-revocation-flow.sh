@@ -121,10 +121,21 @@ PYDISABLED
 }
 
 assert_no_crash() {
-  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-    adb logcat -d -v time | tail -n 400
+  local brief_output=""
+  local brief_status=0
+  set +e
+  brief_output="$(adb logcat -d -v brief)"
+  brief_status=$?
+  set -e
+  if [[ "$brief_status" -ne 0 ]]; then
+    echo "Crash oracle is unreadable; cannot qualify crash-free state." >&2
     return 1
   fi
+  if ! python3 "$SCRIPT_DIR/phone-core-logcat-crash-oracle.py" /dev/stdin <<< "$brief_output"; then
+    adb logcat -d -v time | tail -n 400 || true
+    return 1
+  fi
+  return 0
 }
 
 role_holders() {
@@ -199,10 +210,6 @@ remove_role_holder() {
     status=$?
     set -e
     printf 'remove_status=%s\n' "$status" >> "$evidence"
-
-    # ADB can drop briefly when Android kills/restarts the app after role/permission mutation.
-    # The command may therefore report a transport failure even if the framework applied it.
-    # Only the independently observed role state is authoritative.
     if wait_role_absent "$full_role"; then
       return 0
     fi
@@ -275,20 +282,25 @@ probe_pm_revoke_send_sms() {
   adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS > "$output" 2>&1
   local status=$?
   set -e
-  sleep 1
   if [[ "$status" -ne 0 ]]; then
     printf 'pm_revoke_status=%s\nobservable=false\nreason=pm_revoke_command_failed\n' "$status" >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
     echo "SEND_SMS pm revoke failed; runtime revocation cannot be attributed to the probe."
     return 1
   fi
-  if permission_granted android.permission.SEND_SMS; then
-    printf 'pm_revoke_status=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-  else
-    printf 'pm_revoke_status=%s\nobservable=true\n' "$status" >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=true
-  fi
+
+  local denied_observations=0
+  for observation in 1 2 3; do
+    sleep 1
+    if permission_granted android.permission.SEND_SMS; then
+      printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" "$denied_observations" >> "$output"
+      SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+      return 0
+    fi
+    denied_observations=$observation
+  done
+  printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=true\n' "$status" "$denied_observations" >> "$output"
+  SEND_SMS_PM_REVOCATION_OBSERVABLE=true
 }
 
 assert_send_sms_runtime_permission_denied() {
@@ -506,8 +518,6 @@ payload = {
     'sms_authorization_denial_fail_closed': proven,
     'role_revocation_fail_closed': os.environ['ROLE_REVOCATION_PROVEN'] == 'true',
     'sms_authorization_probe': probe,
-    # Compatibility fields keep archived schema 2-4 readers meaningful while the
-    # canonical qualification key is sms_authorization_denial_fail_closed.
     'effective_permission_denial_fail_closed': proven,
     'effective_permission_probe': probe,
     'note': os.environ['SMS_AUTHORIZATION_NOTE']
@@ -640,9 +650,6 @@ SCREENING_CALLBACK_AFTER="$(screening_callback_count after)"
 SCREENING_DECISION_AFTER="$(timeline_signal_prefix_count 'CALL_SCREENED:')"
 printf 'callback_before=%s\ncallback_after=%s\n' "$SCREENING_CALLBACK_BEFORE" "$SCREENING_CALLBACK_AFTER" \
   > "$OUT_DIR/call-screening-revoked-callback-observation.txt"
-# Telecom may still dispatch onScreenCall to the default dialer after ROLE_CALL_SCREENING
-# is removed. Callback delivery is platform routing, not screening authorization. Sentinel's
-# private CALL_SCREENED:* decision timeline must remain invariant below.
 if [[ "$SCREENING_DECISION_AFTER" != "$SCREENING_DECISION_BEFORE" ]]; then
   adb emu gsm cancel "$SCREENING_PROBE_NUMBER" >/dev/null 2>&1 || true
   echo "Call-screening decision evidence advanced while CALL_SCREENING role was revoked."
