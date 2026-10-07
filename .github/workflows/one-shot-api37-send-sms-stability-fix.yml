@@ -1,0 +1,46 @@
+name: One-shot API37 SEND_SMS stability fix
+
+on:
+  push:
+    branches: [fix/api37-incoming-answer-sync]
+    paths:
+      - '.github/workflows/one-shot-api37-send-sms-stability-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/api37-incoming-answer-sync
+      - name: Extend SEND_SMS stability proof and verify regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('scripts/phone-core-emulator-revocation-flow.sh')
+          text = path.read_text()
+          old = "  local denied_observations=0\n  for observation in 1 2 3; do\n"
+          new = "  local denied_observations=0\n  local required_stability_observations=6\n  for observation in $(seq 1 \"$required_stability_observations\"); do\n"
+          if text.count(old) != 1:
+              raise SystemExit(f'expected exactly one legacy three-sample loop, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          node --test scripts/phone-core-emulator-revoke-fallback.test.js scripts/phone-core-emulator-revocation-hardening.test.js
+          git diff --check
+          git diff -- scripts/phone-core-emulator-revocation-flow.sh
+      - name: Commit tested fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'teetee971'
+          git config user.email 'thierrynaud2009@gmail.com'
+          git add scripts/phone-core-emulator-revocation-flow.sh
+          git commit -m 'fix(phone-core): reject delayed API37 SEND_SMS regrant'
+          git push origin HEAD:fix/api37-incoming-answer-sync
