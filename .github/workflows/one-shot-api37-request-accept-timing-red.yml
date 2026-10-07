@@ -1,0 +1,42 @@
+name: One-shot API37 REQUEST_ACCEPT timing RED
+
+on:
+  push:
+    branches: [fix/api37-incoming-answer-sync]
+    paths:
+      - '.github/workflows/one-shot-api37-request-accept-timing-red.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: fix/api37-incoming-answer-sync
+      - name: Prove current bridge waits too long to synchronize modem
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('scripts/phone-core-emulator-api37-answer-bridge.test.js')
+          text = path.read_text()
+          anchor = "test('REQUEST_ACCEPT from a different Telecom transaction cannot trigger modem synchronization', async () => {\n"
+          test = r'''test('synchronizes emulator modem immediately after causal REQUEST_ACCEPT without crediting answer success', async () => {
+  const result = await runFixture({ lines: [REQUEST, ACCEPT] });
+  assert.notEqual(result.status, 0, 'same-call ANSWERED and ACTIVE are still required for qualification');
+  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.match(result.evidence, /transport_sync=.*call_id=TC@1 transaction=TX1/);
+  assert.match(result.evidence, /answered_same_call,active_same_call/);
+});
+
+'''
+          if anchor not in text:
+              raise SystemExit('test insertion anchor missing')
+          path.write_text(text.replace(anchor, test + anchor, 1))
+          PY
+          node --test scripts/phone-core-emulator-api37-answer-bridge.test.js
