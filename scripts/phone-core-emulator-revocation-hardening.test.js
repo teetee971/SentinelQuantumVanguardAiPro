@@ -38,7 +38,7 @@ test('successful pm revoke plus denied state qualifies runtime revocation', () =
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('successful pm revoke followed by RoleController grant selects AppOp fallback', () => {
+test('successful pm revoke followed by RoleController grant marks runtime revocation unobservable', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-revoke-restored-'));
   try {
     const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=true\nsleep(){ :; }\nadb(){ return 0; }\npermission_granted(){ return 0; }\n${shellFunction('probe_pm_revoke_send_sms')}\nprobe_pm_revoke_send_sms\nprintf '%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
