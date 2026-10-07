@@ -12,6 +12,7 @@ const ACCEPT = 'I/Telecom: Event: RecordEntry TC@1: REQUEST_ACCEPT, null: ICA.aC
 const ANSWERED = 'I/Telecom: CallsManager: setCallState RINGING(RINGING) -> ANSWERED, call: [Call id=TC@1, state=RINGING, tpac=fixture], voip=false: ICA.aC->CSC.aC->CSFM.rF(csq)@TX1🔒';
 const ACTIVE = 'I/Telecom: CallsManager: setCallState ANSWERED(ANSWERED) -> ACTIVE, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sA(cap)@TX2🔒';
 const ACTIVE_COMPACT = 'I/Telecom: CallsManager: setCallState ANSWERED -> ACTIVE, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sA(cap)@TX2🔒';
+const PUBLIC_INCALL_ACTIVE = 'I/BluetoothInCallService( 1202): onStateChanged(Call [id: TC@1, state: ACTIVE, audioProcessingUseCase: 0, details: []], state=4)';
 const HELD = 'I/Telecom: CallsManager: setCallState ANSWERED(ANSWERED) -> ON_HOLD, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sA(cap)@TX2🔒';
 const ACTIVE_FROM_HOLD = 'I/Telecom: CallsManager: setCallState ON_HOLD(ON_HOLD) -> ACTIVE, call: [Call id=TC@1, state=ON_HOLD, tpac=fixture], voip=false: CSW.sA(cap)@TX3🔒';
 
@@ -148,12 +149,13 @@ test('stale REQUEST_ACCEPT before the causal answer request is rejected', async 
   assert.doesNotMatch(result.evidence, /transport_sync=/);
 });
 
-test('ANSWERED from a different call id cannot qualify the synchronized call', async () => {
+test('ANSWERED from a different call id cannot trigger modem synchronization', async () => {
   const wrongAnswered = ANSWERED.replaceAll('TC@1', 'TC@2');
   const result = await runFixture({ lines: [REQUEST, ACCEPT, wrongAnswered, ACTIVE] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /answered_same_call,active_same_call/);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.doesNotMatch(result.evidence, /transport_sync=/);
+  assert.match(result.evidence, /transport_sync,answered_same_call,active_same_call/);
 });
 
 test('ACTIVE from a different call id cannot qualify the synchronized call', async () => {
@@ -164,15 +166,23 @@ test('ACTIVE from a different call id cannot qualify the synchronized call', asy
   assert.match(result.evidence, /active_same_call/);
 });
 
-test('stale ANSWERED and ACTIVE before synchronization are rejected', async () => {
+test('stale ANSWERED and ACTIVE before synchronization cannot trigger modem synchronization', async () => {
   const result = await runFixture({ lines: [ANSWERED, ACTIVE, REQUEST, ACCEPT] });
   assert.notEqual(result.status, 0);
-  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
-  assert.match(result.evidence, /answered_same_call,active_same_call/);
+  assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.doesNotMatch(result.evidence, /transport_sync=/);
+  assert.match(result.evidence, /transport_sync,answered_same_call,active_same_call/);
 });
 
 test('ACTIVE before ANSWERED cannot qualify the call', async () => {
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ACTIVE, ANSWERED] });
+  assert.notEqual(result.status, 0);
+  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+  assert.match(result.evidence, /active_same_call/);
+});
+
+test('public InCall ACTIVE projection cannot qualify transport ACTIVE', async () => {
+  const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, PUBLIC_INCALL_ACTIVE] });
   assert.notEqual(result.status, 0);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
   assert.match(result.evidence, /active_same_call/);
