@@ -2,7 +2,8 @@
 """Classify Android logcat crash evidence for the Sentinel process.
 
 Exit 0 when the supplied log contains no attributable Sentinel fatal exception or ANR.
-Exit 1 when a fatal exception is attributed to com.sentinel.quantum or a Sentinel ANR is present.
+Exit 1 when a fatal exception is attributed to com.sentinel.quantum, a Sentinel ANR is
+present, or a fatal exception cannot be attributed because its Process line is absent.
 Exit 2 when the evidence file cannot be read.
 """
 
@@ -27,6 +28,9 @@ def has_attributed_failure(lines: list[str]) -> tuple[bool, str | None]:
             return True, "ANR"
 
         if FATAL_MARKER in line:
+            # A fatal marker without a process attribution is ambiguous evidence. Keep
+            # qualification fail-closed unless a following Process line proves the crash
+            # belongs to another Android process.
             pending_fatal = PROCESS_LOOKAHEAD_LINES
             same_line_process = PROCESS_RE.search(line)
             if same_line_process:
@@ -43,7 +47,11 @@ def has_attributed_failure(lines: list[str]) -> tuple[bool, str | None]:
                 pending_fatal = 0
                 continue
             pending_fatal -= 1
+            if pending_fatal == 0:
+                return True, "UNATTRIBUTED_FATAL_EXCEPTION"
 
+    if pending_fatal > 0:
+        return True, "UNATTRIBUTED_FATAL_EXCEPTION"
     return False, None
 
 
@@ -61,7 +69,7 @@ def main(argv: list[str]) -> int:
 
     failed, reason = has_attributed_failure(lines)
     if failed:
-        print(f"Sentinel runtime failure detected: {reason}", file=sys.stderr)
+        print(f"Sentinel runtime failure or ambiguous fatal evidence detected: {reason}", file=sys.stderr)
         return 1
     return 0
 
