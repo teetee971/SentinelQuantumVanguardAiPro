@@ -628,6 +628,11 @@ SCREENING_CALLBACK_AFTER="$(screening_callback_count after)"
 SCREENING_DECISION_AFTER="$(timeline_signal_prefix_count 'CALL_SCREENED:')"
 printf 'callback_before=%s\ncallback_after=%s\n' "$SCREENING_CALLBACK_BEFORE" "$SCREENING_CALLBACK_AFTER" \
   > "$OUT_DIR/call-screening-revoked-callback-observation.txt"
+if [[ "$SCREENING_CALLBACK_AFTER" != "$SCREENING_CALLBACK_BEFORE" ]]; then
+  adb emu gsm cancel "$SCREENING_PROBE_NUMBER" >/dev/null 2>&1 || true
+  echo "CallScreeningService callback evidence advanced while CALL_SCREENING role was revoked."
+  exit 1
+fi
 if [[ "$SCREENING_DECISION_AFTER" != "$SCREENING_DECISION_BEFORE" ]]; then
   adb emu gsm cancel "$SCREENING_PROBE_NUMBER" >/dev/null 2>&1 || true
   echo "Call-screening decision evidence advanced while CALL_SCREENING role was revoked."
