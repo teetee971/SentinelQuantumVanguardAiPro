@@ -510,7 +510,64 @@ jobs:
             exit 1
           fi
 
-          adb install -r "$APK_PATH"
+          PACKAGE_MANAGER_READY=0
+          PACKAGE_MANAGER_LOG=""
+          PACKAGE_MANAGER_ERR=""
+          for PACKAGE_ATTEMPT in $(seq 1 30); do
+            PACKAGE_MANAGER_LOG="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.txt"
+            PACKAGE_MANAGER_ERR="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.err"
+            set +e
+            adb shell cmd package list packages > "$PACKAGE_MANAGER_LOG" 2> "$PACKAGE_MANAGER_ERR"
+            PACKAGE_MANAGER_STATUS=$?
+            set -e
+            if [[ "$PACKAGE_MANAGER_STATUS" -eq 0 ]] && grep -q '^package:' "$PACKAGE_MANAGER_LOG"; then
+              PACKAGE_MANAGER_READY=1
+              break
+            fi
+            timeout 30s adb wait-for-device >/dev/null 2>&1 || true
+            sleep 1
+          done
+          if [[ "$PACKAGE_MANAGER_READY" != "1" ]]; then
+            echo "Android 16 PackageManager did not become responsive after boot." >&2
+            [[ -n "$PACKAGE_MANAGER_LOG" ]] && cat "$PACKAGE_MANAGER_LOG" >&2 || true
+            [[ -n "$PACKAGE_MANAGER_ERR" ]] && cat "$PACKAGE_MANAGER_ERR" >&2 || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log" >&2 || true
+            exit 1
+          fi
+
+          INSTALL_STATUS=0
+          INSTALL_LOG=""
+          for INSTALL_ATTEMPT in $(seq 1 5); do
+            INSTALL_LOG="$RUNNER_TEMP/apk-install-attempt-${INSTALL_ATTEMPT}.txt"
+            set +e
+            adb install -r "$APK_PATH" > "$INSTALL_LOG" 2>&1
+            INSTALL_RC=$?
+            set -e
+            if [[ "$INSTALL_RC" -eq 0 ]]; then
+              INSTALL_STATUS=0
+              cat "$INSTALL_LOG"
+              break
+            fi
+
+            INSTALL_STATUS=$INSTALL_RC
+            cat "$INSTALL_LOG" >&2
+            if ! grep -Eiq 'Broken pipe|device offline|device still authorizing|closed|transport|no devices/emulators found|cannot connect' "$INSTALL_LOG"; then
+              echo "Android 16 APK installation failed with a non-transient package/install error." >&2
+              exit "$INSTALL_RC"
+            fi
+
+            if [[ "$INSTALL_ATTEMPT" -lt 5 ]]; then
+              timeout 30s adb wait-for-device || true
+              sleep 1
+            fi
+          done
+          if [[ "$INSTALL_STATUS" != "0" ]]; then
+            echo "Android 16 APK installation failed after bounded transient transport retries." >&2
+            [[ -n "$INSTALL_LOG" ]] && cat "$INSTALL_LOG" >&2 || true
+            exit 1
+          fi
+
+          adb shell pm path com.sentinel.quantum | grep -q '^package:'
           bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"
       - name: Upload Phone Core Android 16 screenshots
         if: always()
