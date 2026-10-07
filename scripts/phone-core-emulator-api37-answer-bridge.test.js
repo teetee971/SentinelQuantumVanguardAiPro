@@ -25,11 +25,12 @@ async function listen(server) {
   return server.address().port;
 }
 
-async function runFixture({ lines, gsmResponse = 'OK\n', serial = null, api = 37 }) {
+async function runFixture({ lines, gsmResponse = 'OK\n', serial = null, api = 37, keepLogcatAlive = false }) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-api37-console-'));
   const bin = path.join(tmp, 'bin');
   const evidence = path.join(tmp, 'evidence.txt');
   const marker = path.join(tmp, 'marker.txt');
+  const ready = path.join(tmp, 'ready.txt');
   const token = path.join(tmp, 'token');
   const consoleCalls = [];
   fs.mkdirSync(bin);
@@ -64,6 +65,7 @@ if [[ "\${1:-}" == "get-serialno" ]]; then
 fi
 if [[ "\${1:-}" == "logcat" ]]; then
   cat "\${FAKE_LOGCAT_FILE}"
+  if [[ "\${FAKE_LOGCAT_KEEPALIVE:-0}" == "1" ]]; then sleep 3; fi
   exit 0
 fi
 exit 64
@@ -71,12 +73,13 @@ exit 64
   const logcatFile = path.join(tmp, 'logcat.txt');
   fs.writeFileSync(logcatFile, lines.join('\n') + '\n');
 
-  const args = [helper, '--api', String(api), '--number', '5550100', '--evidence', evidence, '--marker-file', marker, '--timeout', '1.5'];
+  const args = [helper, '--api', String(api), '--number', '5550100', '--evidence', evidence, '--marker-file', marker, '--ready-file', ready, '--timeout', '1.5'];
   const child = spawn('python3', args, {
     env: {
       ...process.env,
       PATH: `${bin}:${process.env.PATH}`,
       FAKE_LOGCAT_FILE: logcatFile,
+      FAKE_LOGCAT_KEEPALIVE: keepLogcatAlive ? '1' : '0',
       FAKE_SERIAL: serial || `emulator-${port}`,
       SENTINEL_EMULATOR_CONSOLE_TOKEN_FILE: token,
     },
@@ -95,6 +98,7 @@ exit 64
     calls: consoleCalls,
     evidence: fs.existsSync(evidence) ? fs.readFileSync(evidence, 'utf8') : '',
     marker: fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8') : '',
+    ready: fs.existsSync(ready) ? fs.readFileSync(ready, 'utf8') : '',
   };
   fs.rmSync(tmp, { recursive: true, force: true });
   return result;
@@ -104,12 +108,19 @@ test('API 37 binds REQUEST_ACCEPT, ANSWERED and ACTIVE to one causal Telecom cal
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, ACTIVE] });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls, ['auth fixture-token']);
+  assert.equal(result.ready.trim(), 'bridge_ready=1');
   assert.match(result.marker, /answerCall/);
   assert.match(result.marker, /TC@1: REQUEST_ACCEPT/);
   assert.match(result.evidence, /transport_sync=telecom_request_accept_no_console_mutation api=37 .*call_id=TC@1 transaction=TX1/);
   assert.match(result.evidence, /RINGING\(RINGING\) -> ANSWERED/);
   assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> ACTIVE/);
   assert.doesNotMatch(result.evidence, /transport_pre_sync=/);
+});
+
+test('API 37 drains a complete Telecom answer burst even when the logcat producer remains alive', async () => {
+  const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, ACTIVE], keepLogcatAlive: true });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> ACTIVE/);
 });
 
 test('API 36 bridge binds the same causal call and records API 36 emulator synchronization', async () => {
