@@ -107,20 +107,23 @@ test('background oracle requires a readable Activity snapshot before crediting b
   assert.match(fn, /return 1/);
 });
 
-test('revoked CALL_SCREENING requires both callback and decision counts to remain invariant', () => {
+test('revoked CALL_SCREENING records platform callbacks but only private screening decisions are authorization evidence', () => {
   const revocationStart = runtime.indexOf('remove_role_holder android.app.role.CALL_SCREENING');
   assert.ok(revocationStart >= 0, 'CALL_SCREENING revocation block must exist');
   const block = runtime.slice(revocationStart);
 
   const observation = block.indexOf('call-screening-revoked-callback-observation.txt');
-  const callbackGuard = block.indexOf('if [[ "$SCREENING_CALLBACK_AFTER" != "$SCREENING_CALLBACK_BEFORE" ]]', observation);
-  const decisionGuard = block.indexOf('if [[ "$SCREENING_DECISION_AFTER" != "$SCREENING_DECISION_BEFORE" ]]', callbackGuard);
+  const decisionGuard = block.indexOf('if [[ "$SCREENING_DECISION_AFTER" != "$SCREENING_DECISION_BEFORE" ]]', observation);
 
-  assert.ok(observation >= 0, 'callback observation evidence must be written');
-  assert.ok(callbackGuard > observation, 'callback count must be enforced after observation');
-  assert.ok(decisionGuard > callbackGuard, 'private decision guard must remain independently enforced');
+  assert.ok(observation >= 0, 'callback before/after evidence must remain archived');
+  assert.doesNotMatch(
+    block,
+    /if \[\[ "\$SCREENING_CALLBACK_AFTER" != "\$SCREENING_CALLBACK_BEFORE" \]\]/,
+    'default dialer callbacks may still arrive after ROLE_CALL_SCREENING removal and are not authorization'
+  );
+  assert.ok(decisionGuard > observation, 'private screening decisions must remain invariant after role removal');
 
-  const callbackGuardBody = block.slice(callbackGuard, decisionGuard);
-  assert.match(callbackGuardBody, /CallScreeningService callback evidence advanced while CALL_SCREENING role was revoked\./);
-  assert.match(callbackGuardBody, /exit 1/);
+  const decisionGuardBody = block.slice(decisionGuard, block.indexOf('wait_role_absent android.app.role.CALL_SCREENING', decisionGuard));
+  assert.match(decisionGuardBody, /Call-screening decision evidence advanced while CALL_SCREENING role was revoked\./);
+  assert.match(decisionGuardBody, /exit 1/);
 });
