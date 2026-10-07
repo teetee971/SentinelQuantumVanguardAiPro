@@ -187,19 +187,19 @@ test('incoming answer stays Sentinel-owned and API 37 evidence is bound to one T
   const answerRequest = answerBridgeHelper.indexOf('if answer_transaction is None and ANSWER_REQUEST_MARKER in line:');
   const acceptMatch = answerBridgeHelper.indexOf('accept_match = REQUEST_ACCEPT_RE.search(line)', answerRequest);
   const transactionBind = answerBridgeHelper.indexOf('transaction_token(line) == answer_transaction', acceptMatch);
-  const modemAccept = answerBridgeHelper.indexOf('console.sendall', transactionBind);
-  const answeredMatch = answerBridgeHelper.indexOf('answered_match = ANSWERED_RE.search(line)', modemAccept);
+  const answeredMatch = answerBridgeHelper.indexOf('answered_match = ANSWERED_RE.search(line)', transactionBind);
   const answeredCallBind = answerBridgeHelper.indexOf('answered_match.group(1) == call_id', answeredMatch);
-  const activeMatch = answerBridgeHelper.indexOf('active_match = ACTIVE_RE.search(line)', answeredCallBind);
+  const modemAccept = answerBridgeHelper.indexOf('console.sendall', answeredCallBind);
+  const activeMatch = answerBridgeHelper.indexOf('active_match = ACTIVE_RE.search(line)', modemAccept);
   const activeCallBind = answerBridgeHelper.indexOf('active_match.group(1) == call_id', activeMatch);
 
   assert.ok(answerRequest >= 0, 'the helper must first observe Sentinel-owned Telecom answer intent');
   assert.ok(acceptMatch > answerRequest, 'REQUEST_ACCEPT must be observed only after the causal answer request');
   assert.ok(transactionBind > acceptMatch, 'REQUEST_ACCEPT must belong to the same Telecom transaction');
-  assert.ok(modemAccept > transactionBind, 'emulator gsm accept must occur only after transaction binding');
-  assert.ok(answeredMatch > modemAccept, 'Telecom ANSWERED must be observed after transport synchronization');
+  assert.ok(answeredMatch > transactionBind, 'Telecom ANSWERED must follow the causal REQUEST_ACCEPT binding');
   assert.ok(answeredCallBind > answeredMatch, 'ANSWERED must belong to the same call id');
-  assert.ok(activeMatch > answeredCallBind, 'ACTIVE evidence must follow same-call ANSWERED');
+  assert.ok(modemAccept > answeredCallBind, 'emulator gsm accept must be deferred until same-call ANSWERED');
+  assert.ok(activeMatch > modemAccept, 'real CallsManager ACTIVE evidence must follow transport synchronization');
   assert.ok(activeCallBind > activeMatch, 'ACTIVE must belong to the same call id');
 
   const ready = flow.indexOf('wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"');
