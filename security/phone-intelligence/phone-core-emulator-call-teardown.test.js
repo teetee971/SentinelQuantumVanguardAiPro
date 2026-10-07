@@ -172,16 +172,17 @@ assert_modem_call_absent 5550197 probe.txt`;
 });
 
 
-test('incoming answer stays Sentinel-owned and API 37 evidence is bound to one Telecom transaction and call id', () => {
+test('incoming answer stays Sentinel-owned and API 36+ evidence is bound to one Telecom transaction and call id', () => {
   const bridge = extractShellFunction(
     'start_api37_incoming_answer_transport_bridge',
     'wait_api37_incoming_answer_transport_bridge'
   );
-  const api37Guard = bridge.indexOf('if [[ "$FLOW_API" -lt 37 ]]');
-  const helperInvocation = bridge.indexOf('phone-core-emulator-api37-answer-bridge.py', api37Guard);
+  const modernGuard = bridge.indexOf('if [[ "$FLOW_API" -lt 36 ]]');
+  const helperInvocation = bridge.indexOf('phone-core-emulator-api37-answer-bridge.py', modernGuard);
 
-  assert.ok(api37Guard >= 0, 'the incoming modem bridge must remain restricted to API 37+');
-  assert.ok(helperInvocation > api37Guard, 'API 37 synchronization must delegate to the preconnected helper');
+  assert.ok(modernGuard >= 0, 'the incoming modem bridge must remain restricted to API 36+');
+  assert.ok(helperInvocation > modernGuard, 'API 36+ synchronization must delegate to the preconnected helper');
+  assert.match(bridge, /--api "\$FLOW_API"/, 'bridge evidence must carry exact emulator API provenance');
   assert.doesNotMatch(bridge, /adb emu gsm accept/, 'the shell must not race Telecom with a second adb modem command');
 
   const answerRequest = answerBridgeHelper.indexOf('if answer_transaction is None and ANSWER_REQUEST_MARKER in line:');
