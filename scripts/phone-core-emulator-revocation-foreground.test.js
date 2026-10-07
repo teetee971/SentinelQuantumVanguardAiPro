@@ -4,6 +4,9 @@ import test from 'node:test';
 
 const flow = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
 const runtime = flow.slice(flow.indexOf('trap write_summary EXIT'));
+const productionGate = JSON.parse(
+  readFileSync(new URL('../config/phone-core-production-gates.json', import.meta.url), 'utf8')
+);
 
 function ordered(...needles) {
   let cursor = -1;
@@ -63,6 +66,15 @@ test('legacy AppOp denial remains isolated behind the pre-API36 fallback', () =>
     'scroll_until_ui_contains "$EFFECTIVE_PERMISSION_UI_NEEDLE"',
     'assert_action_disabled "phone_core_sms_send"'
   );
+});
+
+test('emulator scope note distinguishes held-role, role-managed and legacy AppOp denial paths', () => {
+  const note = productionGate.emulator_qualification?.scope_note || '';
+  assert.doesNotMatch(note, /Le fail-closed SMS conserve ROLE_SMS/);
+  assert.match(note, /ROLE_SMS.*conserv/i);
+  assert.match(note, /retir|retrait/i);
+  assert.match(note, /AppOp/i);
+  assert.match(note, /API 36/i);
 });
 
 test('background oracle observes resumed-activity state instead of using a fixed sleep', () => {
