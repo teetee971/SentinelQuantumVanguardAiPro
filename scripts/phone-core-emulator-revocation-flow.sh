@@ -210,16 +210,35 @@ permission_granted() {
 
 probe_pm_revoke_send_sms() {
   local output="$OUT_DIR/send-sms-pm-revoke-observation.txt"
+  : > "$output"
+
+  # A post-revoke denied state is only evidence of a transition if the runtime
+  # permission was observably granted immediately before the revoke command.
+  if ! permission_granted android.permission.SEND_SMS; then
+    printf 'baseline_granted=false\nobservable=false\nreason=baseline_grant_not_proven\n' >> "$output"
+    echo "SEND_SMS granted baseline could not be proven before runtime revocation." >&2
+    return 1
+  fi
+  printf 'baseline_granted=true\n' >> "$output"
+
   set +e
-  adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS > "$output" 2>&1
+  adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS >> "$output" 2>&1
   local status=$?
   set -e
+  printf 'pm_revoke_status=%s\n' "$status" >> "$output"
+  if [[ "$status" -ne 0 ]]; then
+    printf 'observable=false\nreason=pm_revoke_failed\n' >> "$output"
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+    echo "SEND_SMS runtime revoke command failed with status $status." >&2
+    return 1
+  fi
+
   sleep 1
   if permission_granted android.permission.SEND_SMS; then
-    printf 'pm_revoke_status=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" >> "$output"
+    printf 'observable=false\nreason=role_controller_restored_runtime_permission\n' >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
   else
-    printf 'pm_revoke_status=%s\nobservable=true\n' "$status" >> "$output"
+    printf 'observable=true\n' >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=true
   fi
 }
