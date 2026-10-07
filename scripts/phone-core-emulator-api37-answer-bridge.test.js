@@ -12,6 +12,8 @@ const ACCEPT = 'I/Telecom: Event: RecordEntry TC@1: REQUEST_ACCEPT, null: ICA.aC
 const ANSWERED = 'I/Telecom: CallsManager: setCallState RINGING(RINGING) -> ANSWERED, call: [Call id=TC@1, state=RINGING, tpac=fixture], voip=false: ICA.aC->CSC.aC->CSFM.rF(csq)@TX1🔒';
 const ACTIVE = 'I/Telecom: CallsManager: setCallState ANSWERED(ANSWERED) -> ACTIVE, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sA(cap)@TX2🔒';
 const ACTIVE_COMPACT = 'I/Telecom: CallsManager: setCallState ANSWERED -> ACTIVE, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sA(cap)@TX2🔒';
+const HELD = 'I/Telecom: CallsManager: setCallState ANSWERED(ANSWERED) -> ON_HOLD, call: [Call id=TC@1, state=ANSWERED, tpac=fixture], voip=false: CSW.sA(cap)@TX2🔒';
+const ACTIVE_FROM_HOLD = 'I/Telecom: CallsManager: setCallState ON_HOLD(ON_HOLD) -> ACTIVE, call: [Call id=TC@1, state=ON_HOLD, tpac=fixture], voip=false: CSW.sA(cap)@TX3🔒';
 
 async function listen(server) {
   await new Promise((resolve, reject) => {
@@ -111,6 +113,15 @@ test('API 37 bridge accepts the compact ANSWERED -> ACTIVE log format for the sa
   const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, ACTIVE_COMPACT] });
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100']);
+});
+
+test('API 37 bridge recovers one same-call ANSWERED -> ON_HOLD transport transition before requiring ACTIVE', async () => {
+  const result = await runFixture({ lines: [REQUEST, ACCEPT, ANSWERED, HELD, ACTIVE_FROM_HOLD] });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.calls, ['auth fixture-token', 'gsm accept 5550100', 'gsm accept 5550100']);
+  assert.match(result.evidence, /ANSWERED\(ANSWERED\) -> ON_HOLD/);
+  assert.match(result.evidence, /transport_recovery=.*call_id=TC@1/);
+  assert.match(result.evidence, /ON_HOLD\(ON_HOLD\) -> ACTIVE/);
 });
 
 test('API 37 bridge does not accept modem transport at answer-transaction start', async () => {
