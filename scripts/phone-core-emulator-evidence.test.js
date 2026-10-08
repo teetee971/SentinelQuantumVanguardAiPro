@@ -46,6 +46,7 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(workflow, /id:\s*setup_reboot/);
   assert.match(workflow, /adb shell am instrument[\s\S]*PhoneCoreSetupRebootPreparationInstrumentationTest/);
   assert.match(workflow, /adb shell reboot/);
+  assert.match(workflow, /timeout --signal=INT --kill-after=5s 30s \\\n\s+adb shell reboot/);
   assert.match(workflow, /ro\.build\.version\.sdk/);
   assert.match(workflow, /run-as com\.sentinel\.quantum cat shared_prefs\/phone_core_setup_wizard_v2\.xml/);
   assert.match(workflow, /Configuration initiale/);

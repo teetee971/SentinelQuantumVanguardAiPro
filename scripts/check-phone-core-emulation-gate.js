@@ -230,6 +230,7 @@ for (const marker of [
   'INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}',
   'id: setup_reboot',
   'adb shell reboot',
+  'timeout --signal=INT --kill-after=5s 30s',
   'SETUP_REBOOT_OUTCOME: ${{ steps.setup_reboot.outcome }}',
   'setupRebootObserved',
   'run-as com.sentinel.quantum cat shared_prefs/phone_core_setup_wizard_v2.xml',

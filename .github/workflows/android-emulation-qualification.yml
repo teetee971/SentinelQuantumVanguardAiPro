@@ -403,7 +403,15 @@ jobs:
           ! grep -Eq '<boolean name="completed" value="true"' "$OUTPUT/setup-reboot-state-before-reboot.xml"
 
           adb logcat -c
-          adb shell reboot > "$OUTPUT/setup-reboot-command.txt" 2>&1 || true
+          set +e
+          timeout --signal=INT --kill-after=5s 30s \
+            adb shell reboot > "$OUTPUT/setup-reboot-command.txt" 2>&1
+          REBOOT_COMMAND_STATUS=$?
+          set -e
+          if [[ "$REBOOT_COMMAND_STATUS" -eq 124 || "$REBOOT_COMMAND_STATUS" -eq 137 ]]; then
+            echo "Android reboot command exceeded its 30 second watchdog."
+            exit 1
+          fi
           timeout 180s adb wait-for-device
           BOOTED=0
           for _ in $(seq 1 120); do
