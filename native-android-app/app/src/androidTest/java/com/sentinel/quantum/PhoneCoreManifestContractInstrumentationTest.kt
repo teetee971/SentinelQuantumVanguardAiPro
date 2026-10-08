@@ -101,19 +101,27 @@ class PhoneCoreManifestContractInstrumentationTest {
     }
 
     @Test
-    fun intentionalUserEntrypointsRemainExported() {
-        val packageManager = context.packageManager
+    fun mainActivityRemainsExported() {
+        assertExportedUserEntrypoint(".MainActivity")
+    }
 
-        listOf(
-            ".MainActivity",
-            ".SentinelDialerActivity",
-            ".SmsComposeActivity"
-        ).forEach { name ->
-            assertTrue(
-                "$name must remain exported for its declared user/system intent",
-                packageManager.getActivityInfo(component(name), 0).exported
-            )
-        }
+    @Test
+    fun dialerActivityRemainsExported() {
+        assertExportedUserEntrypoint(".SentinelDialerActivity")
+    }
+
+    @Test
+    fun smsComposeActivityRemainsExported() {
+        assertExportedUserEntrypoint(".SmsComposeActivity")
+    }
+
+    private fun assertExportedUserEntrypoint(name: String) {
+        val packageManager = context.packageManager
+        val info = packageManager.getActivityInfo(component(name), 0)
+        assertTrue(
+            "$name must remain exported: actual=${info.exported}, component=${info.name}, package=${info.applicationInfo.packageName}",
+            info.exported
+        )
     }
 
     @Test
