@@ -103,7 +103,8 @@ test('first-run completion includes the same secure MMS prerequisite as Phone Co
     resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt'),
     'utf8'
   );
-  assert.match(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*=\s*true/);
+  assert.match(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*,/);
+  assert.doesNotMatch(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*=\s*true/);
   assert.match(setupStore, /facts\.mmsSafePreviewValidated/);
   assert.match(runtimeFacts, /MmsSafePreviewReadiness\.softwareValidated/);
   assert.match(
