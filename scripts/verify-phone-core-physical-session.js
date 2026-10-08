@@ -31,6 +31,8 @@ const REQUIRED_COMMERCIAL_RESIDUALS = [
   'physical_dual_sim_oem_compatibility'
 ];
 
+const RFC3339_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+
 function fail(message) {
   process.stderr.write(`PHONE CORE PHYSICAL SESSION: ${message}\n`);
   process.exit(1);
@@ -93,6 +95,14 @@ function requireText(value, label) {
   return value;
 }
 
+function requireDateTime(value, label) {
+  requireText(value, label);
+  if (!RFC3339_DATE_TIME.test(value) || !Number.isFinite(Date.parse(value))) {
+    fail(`${label} must be a valid date-time`);
+  }
+  return Date.parse(value);
+}
+
 function validateEvidenceMap(map, ids, label) {
   if (!map || typeof map !== 'object' || Array.isArray(map)) return [...ids];
   const nonPass = [];
@@ -134,8 +144,9 @@ requireText(manifest.device?.manufacturer, 'device manufacturer');
 requireText(manifest.device?.model, 'device model');
 requireText(manifest.device?.build_fingerprint, 'device build_fingerprint');
 if (!Number.isInteger(manifest.device?.api_level) || manifest.device.api_level < 1) fail('device api_level is required');
-requireText(manifest.session?.started_at, 'session started_at');
-requireText(manifest.session?.completed_at, 'session completed_at');
+const startedAt = requireDateTime(manifest.session?.started_at, 'session started_at');
+const completedAt = requireDateTime(manifest.session?.completed_at, 'session completed_at');
+if (completedAt <= startedAt) fail('session completed_at must be after session started_at');
 
 let publicKey;
 try {
