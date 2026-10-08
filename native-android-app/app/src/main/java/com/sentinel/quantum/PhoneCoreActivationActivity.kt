@@ -394,10 +394,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     ) {
                         PhoneCoreBrand(
                             context = "Activation",
-                            status = if (state.callsReady && smsModel.state == SmsActivationDiagnostics.State.READY) {
-                                "Prérequis appels et SMS prêts"
-                            } else {
-                                "Configuration Android incomplète"
+                            status = when {
+                                !mmsSafePreviewValidated ->
+                                    "Phone Core bloqué · aperçu MMS sécurisé indisponible"
+                                state.callsReady && smsModel.state == SmsActivationDiagnostics.State.READY ->
+                                    "Prérequis appels et SMS prêts"
+                                else ->
+                                    "Configuration Android incomplète"
                             },
                             modifier = Modifier.fillMaxWidth()
                         )

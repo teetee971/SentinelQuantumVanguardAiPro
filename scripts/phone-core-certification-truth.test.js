@@ -91,6 +91,10 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
 });
 
 test('first-run completion includes the same secure MMS prerequisite as Phone Core readiness', () => {
+  const activation = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'),
+    'utf8'
+  );
   const setupStore = readFileSync(
     resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt'),
     'utf8'
@@ -102,6 +106,10 @@ test('first-run completion includes the same secure MMS prerequisite as Phone Co
   assert.match(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*=\s*true/);
   assert.match(setupStore, /facts\.mmsSafePreviewValidated/);
   assert.match(runtimeFacts, /MmsSafePreviewReadiness\.softwareValidated/);
+  assert.match(
+    activation,
+    /status = when \{[\s\S]*!mmsSafePreviewValidated[\s\S]*Phone Core bloqué · aperçu MMS sécurisé indisponible/
+  );
 });
 
 
