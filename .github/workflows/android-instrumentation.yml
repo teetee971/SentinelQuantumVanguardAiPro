@@ -129,6 +129,19 @@ jobs:
           const root = process.env.REPORT_ROOT;
           const api = process.env.API_LEVEL;
           const escapeCommand = value => String(value).replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+          const decodeXml = value => String(value)
+            .replaceAll('&quot;', '"')
+            .replaceAll('&apos;', "'")
+            .replaceAll('&lt;', '<')
+            .replaceAll('&gt;', '>')
+            .replaceAll('&amp;', '&');
+          const compact = value => decodeXml(String(value ?? ''))
+            .replace(/<!\[CDATA\[/g, '')
+            .replace(/\]\]>/g, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 1200);
           const emit = message => console.log(`::error title=Android instrumentation failure::${escapeCommand(message)}`);
           const files = [];
           const walk = directory => {
@@ -147,9 +160,13 @@ jobs:
           const findings = [];
           for (const file of files) {
             const xml = fs.readFileSync(file, 'utf8');
-            for (const match of xml.matchAll(/<testcase\b[^>]*\bname="([^"]*)"[^>]*>[\s\S]*?<(failure|error)\b([^>]*)>/g)) {
-              const message = match[3].match(/\bmessage="([^"]*)"/)?.[1] ?? 'no failure message';
-              findings.push(`${file}: ${match[1]}: ${match[2]}: ${message}`);
+            for (const match of xml.matchAll(/<testcase\b[^>]*\bname="([^"]*)"[^>]*>([\s\S]*?)<\/testcase\s*>/g)) {
+              const failure = match[2].match(/<(failure|error)\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:failure|error)\s*>)/);
+              if (!failure) continue;
+              const attributeMessage = failure[2].match(/\bmessage="([^"]*)"/)?.[1];
+              const bodyMessage = compact(failure[3]);
+              const detail = compact(attributeMessage) || bodyMessage || 'failure body empty';
+              findings.push(`${file}: ${match[1]}: ${failure[1]}: ${detail}`);
             }
           }
           if (findings.length === 0) {

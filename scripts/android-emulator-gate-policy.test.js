@@ -45,4 +45,6 @@ test('instrumentation failures expose failing XML cases as check annotations', (
   assert.match(instrumentationWorkflow, /summarize_instrumentation_reports\(\)/);
   assert.match(instrumentationWorkflow, /::error title=Android instrumentation failure::/);
   assert.match(instrumentationWorkflow, /Instrumentation reports contain zero testcases/);
+  assert.match(instrumentationWorkflow, /failure body empty/);
+  assert.match(instrumentationWorkflow, /compact\(failure\[3\]\)/);
 });
