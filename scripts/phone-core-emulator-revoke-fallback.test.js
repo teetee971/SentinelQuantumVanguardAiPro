@@ -23,24 +23,29 @@ set -euo pipefail
 PACKAGE=com.sentinel.quantum
 OUT_DIR="$1"
 SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-GRANTED=true
 COUNT_FILE="$OUT_DIR/permission-checks.txt"
+REVOKED_FILE="$OUT_DIR/revoked.txt"
 printf '0\n' > "$COUNT_FILE"
+printf 'false\n' > "$REVOKED_FILE"
 REVOKE_STATUS=${revokeStatus}
 LEAVES_GRANTED=${leavesGranted ? 'true' : 'false'}
 RESTORE_AFTER_PERMISSION_CHECKS=${restoreAfterPermissionChecks ?? -1}
 sleep() { :; }
 adb() {
   if [[ "$*" == "shell pm revoke $PACKAGE android.permission.SEND_SMS" ]]; then
-    if [[ "$LEAVES_GRANTED" == "false" ]]; then GRANTED=false; fi
+    if [[ "$REVOKE_STATUS" -eq 0 ]]; then printf 'true\n' > "$REVOKED_FILE"; fi
     return "$REVOKE_STATUS"
   fi
   if [[ "$*" == "shell dumpsys package $PACKAGE" ]]; then
     local checks
+    local revoked
     checks=$(cat "$COUNT_FILE")
     checks=$((checks + 1))
     printf '%s\n' "$checks" > "$COUNT_FILE"
-    if [[ "$LEAVES_GRANTED" == "true" || ( "$RESTORE_AFTER_PERMISSION_CHECKS" -ge 0 && "$checks" -gt "$RESTORE_AFTER_PERMISSION_CHECKS" ) ]]; then
+    revoked=$(cat "$REVOKED_FILE")
+    if [[ "$revoked" != "true" ]]; then
+      echo 'android.permission.SEND_SMS: granted=true'
+    elif [[ "$LEAVES_GRANTED" == "true" || ( "$RESTORE_AFTER_PERMISSION_CHECKS" -ge 0 && "$checks" -gt "$RESTORE_AFTER_PERMISSION_CHECKS" ) ]]; then
       echo 'android.permission.SEND_SMS: granted=true'
     else
       echo 'android.permission.SEND_SMS: granted=false'
