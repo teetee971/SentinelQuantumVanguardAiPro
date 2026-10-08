@@ -95,6 +95,21 @@ export function auditProductTruth(sources) {
     errors.push('call screening: post-response Room, timeline and file logging must remain off the system callback thread');
   }
 
+  const lastScreeningResponse = callScreening.lastIndexOf('respondToCall(');
+  const callerIdEnrichment = callScreening.indexOf(
+    'val profile = CallerIdentityResolver.resolve('
+  );
+  const postResponseWorker = callScreening.indexOf('POST_RESPONSE_WORKER.execute');
+  if (
+    lastScreeningResponse < 0 ||
+    callerIdEnrichment < 0 ||
+    postResponseWorker < 0 ||
+    lastScreeningResponse > callerIdEnrichment ||
+    lastScreeningResponse > postResponseWorker
+  ) {
+    errors.push('call screening: Caller ID enrichment and optional telemetry must begin only after the final respondToCall boundary');
+  }
+
   const obsoleteCallLogDenials = [
     /\bne\s+lit\s+pas\s+le\s+journal\s+d['’]appels/iu,
     /\bne\s+lit\s+ni\s+(?:le\s+)?journal\s+d['’]appels/iu,
