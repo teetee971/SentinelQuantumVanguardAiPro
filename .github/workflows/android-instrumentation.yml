@@ -231,6 +231,25 @@ jobs:
               ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
           fi
 
+      - name: Dump Android instrumentation diagnostics
+        if: failure()
+        shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api-level }}
+        run: |
+          set -euo pipefail
+          DIAGNOSTICS="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-diagnostics"
+          mkdir -p "$DIAGNOSTICS"
+          adb devices -l > "$DIAGNOSTICS/adb-devices.txt" 2>&1 || true
+          adb shell getprop > "$DIAGNOSTICS/device-properties.txt" 2>&1 || true
+          adb shell dumpsys activity top > "$DIAGNOSTICS/activity-top.txt" 2>&1 || true
+          adb shell dumpsys activity processes > "$DIAGNOSTICS/activity-processes.txt" 2>&1 || true
+          adb shell dumpsys telecom > "$DIAGNOSTICS/telecom.txt" 2>&1 || true
+          adb shell dumpsys role > "$DIAGNOSTICS/roles.txt" 2>&1 || true
+          adb shell dumpsys package com.sentinel.quantum > "$DIAGNOSTICS/package.txt" 2>&1 || true
+          adb shell pm list instrumentation > "$DIAGNOSTICS/instrumentation-runners.txt" 2>&1 || true
+          adb logcat -d -v threadtime > "$DIAGNOSTICS/logcat.txt" 2>&1 || true
+
       - name: Validate modern instrumentation reports
         if: matrix.api-level != 24
         working-directory: ./native-android-app
@@ -278,5 +297,6 @@ jobs:
             native-android-app/app/build/outputs/androidTest-results/connected/
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-emulator.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-tests.log
+            ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-diagnostics/
           if-no-files-found: warn
           retention-days: 14

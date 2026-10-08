@@ -26,3 +26,16 @@ test('Android emulator qualification covers minimum, current and newest runtime 
   assert.match(instrumentationWorkflow, /connectedDebugAndroidTest/);
   assert.match(instrumentationWorkflow, /ACTUAL_API=.*ro\.build\.version\.sdk/);
 });
+
+test('instrumentation failures preserve runtime diagnostics before the emulator is stopped', () => {
+  assert.match(instrumentationWorkflow, /name: Dump Android instrumentation diagnostics/);
+  assert.match(instrumentationWorkflow, /if: failure\(\)/);
+  assert.match(instrumentationWorkflow, /adb logcat -d -v threadtime/);
+  assert.match(instrumentationWorkflow, /adb shell dumpsys telecom/);
+  assert.match(instrumentationWorkflow, /adb shell dumpsys role/);
+  assert.match(instrumentationWorkflow, /adb shell dumpsys package com\.sentinel\.quantum/);
+  assert.match(
+    instrumentationWorkflow,
+    /sentinel-instrumentation-api\$\{\{ matrix\.api-level \}\}-diagnostics/
+  );
+});
