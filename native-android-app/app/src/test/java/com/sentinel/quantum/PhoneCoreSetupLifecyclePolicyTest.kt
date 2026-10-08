@@ -13,6 +13,7 @@ class PhoneCoreSetupLifecyclePolicyTest {
         smsRoleHeld = ready,
         smsRuntimePermissionsReady = ready,
         mmsPermissionsReady = ready,
+        mmsSafePreviewValidated = ready,
         notificationChannelsReady = ready
     )
 

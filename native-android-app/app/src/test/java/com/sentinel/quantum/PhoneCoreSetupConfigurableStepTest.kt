@@ -16,6 +16,7 @@ class PhoneCoreSetupConfigurableStepTest {
         smsRoleAvailable: Boolean = true,
         smsPermissions: Boolean = false,
         mms: Boolean = false,
+        mmsSafePreviewValidated: Boolean = true,
         notifications: Boolean = false
     ) = PhoneCoreSetupWizardStore.Facts(
         corePermissionsReady = core,
@@ -28,6 +29,7 @@ class PhoneCoreSetupConfigurableStepTest {
         smsRoleAvailable = smsRoleAvailable,
         smsRuntimePermissionsReady = smsPermissions,
         mmsPermissionsReady = mms,
+        mmsSafePreviewValidated = mmsSafePreviewValidated,
         notificationChannelsReady = notifications
     )
 

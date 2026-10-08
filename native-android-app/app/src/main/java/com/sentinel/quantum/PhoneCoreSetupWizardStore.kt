@@ -109,7 +109,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         val smsRoleAvailable: Boolean = true,
         val smsRuntimePermissionsReady: Boolean,
         val mmsPermissionsReady: Boolean,
-        val mmsSafePreviewValidated: Boolean = true,
+        val mmsSafePreviewValidated: Boolean,
         val notificationChannelsReady: Boolean
     )
 
