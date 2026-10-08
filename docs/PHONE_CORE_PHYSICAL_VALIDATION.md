@@ -132,8 +132,18 @@ Le manifeste doit être lié sans ambiguïté au `source_head_sha`, au SHA-256 d
 à l'empreinte SHA-256 du certificat de signature, au modèle physique et au fingerprint
 OEM. Il contient les 14 critères canoniques, S01 à S26 et les quatre validations
 externes bloquantes de la release commerciale. Les références de preuves doivent
-pointer vers des éléments physiques expurgés ; les originaux restent dans le
-laboratoire lorsqu'ils contiennent des données personnelles.
+pointer vers des fichiers locaux expurgés placés sous le répertoire `evidence/`
+à côté du manifeste ; les originaux restent dans le laboratoire lorsqu'ils
+contiennent des données personnelles. Chaque référence `evidence_refs` doit être
+au format `evidence/nom-de-preuve.ext#sha256=<64 caractères hexadécimaux>`.
+Le SHA-256 est couvert par la signature Ed25519 du manifeste. Le vérificateur
+ouvre chaque fichier de preuve déclaré `PASS`, rejette les chemins traversants,
+les liens symboliques, les fichiers absents ou vides, et recalcule son empreinte.
+Le laboratoire doit fournir le répertoire `evidence/` lors de la vérification ;
+une URL ou un nom de fichier sans preuve présente ne suffit pas. La signature
+authentifie la déclaration du laboratoire, mais ne prouve pas à elle seule qu'un
+essai a réellement eu lieu : la confiance dans le signataire et l'audit des
+observations physiques demeurent indispensables.
 
 L'attestation doit être `PHYSICAL_DEVICE` et signée en **Ed25519** par une clé de
 laboratoire ou de release QA de confiance. La clé privée ne doit jamais être stockée

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 
 const REQUIRED_CANONICAL_CRITERIA = [
   'incoming_call_connected',
@@ -131,6 +132,54 @@ function requireDateTime(value, label) {
   return parsed;
 }
 
+const EVIDENCE_REF = /^(evidence\/[A-Za-z0-9_./-]+)#sha256=([0-9a-fA-F]{64})$/;
+
+function verifyEvidenceRef(ref, label) {
+  const match = EVIDENCE_REF.exec(ref);
+  if (!match) fail(label + ' must be a local evidence path with a signed SHA-256 digest');
+  const parts = match[1].split('/');
+  if (parts.some(part => !part || part === '.' || part === '..')) {
+    fail(label + ' contains an unsafe evidence path');
+  }
+
+  const root = path.dirname(path.resolve(options.manifestPath));
+  const evidencePath = path.resolve(root, ...parts);
+  if (!evidencePath.startsWith(root + path.sep)) {
+    fail(label + ' escapes the session directory');
+  }
+
+  let current = root;
+  try {
+    for (let index = 0; index < parts.length; index++) {
+      current = path.join(current, parts[index]);
+      const entry = fs.lstatSync(current);
+      if (entry.isSymbolicLink()) fail(label + ' must not use symbolic links');
+      if (index < parts.length - 1 && !entry.isDirectory()) fail(label + ' has a non-directory parent');
+      if (index === parts.length - 1 && !entry.isFile()) fail(label + ' is not a regular file');
+    }
+  } catch (error) {
+    fail(label + ' evidence file is unavailable or unsafe: ' + error.message);
+  }
+
+  let fd;
+  try {
+    fd = fs.openSync(evidencePath, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile() || stat.size < 1) fail(label + ' evidence file must be nonempty and regular');
+    const digest = crypto.createHash('sha256');
+    const buffer = Buffer.allocUnsafe(65536);
+    let bytesRead;
+    while ((bytesRead = fs.readSync(fd, buffer, 0, buffer.length, null)) > 0) {
+      digest.update(buffer.subarray(0, bytesRead));
+    }
+    if (digest.digest('hex') !== match[2].toLowerCase()) fail(label + ' evidence SHA-256 mismatch');
+  } catch (error) {
+    fail(label + ' evidence verification failed: ' + error.message);
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
 function validateEvidenceMap(map, ids, label) {
   if (!map || typeof map !== 'object' || Array.isArray(map)) return [...ids];
   const nonPass = [];
@@ -144,8 +193,14 @@ function validateEvidenceMap(map, ids, label) {
       nonPass.push(id);
       continue;
     }
-    if (entry.evidence_refs.some(ref => /(^|[\/_.-])(emulator|synthetic|mock)([\/_.-]|$)/i.test(ref))) {
-      fail(`${label}.${id} references non-physical evidence`);
+    if (new Set(entry.evidence_refs).size !== entry.evidence_refs.length) {
+      fail(label + '.' + id + ' repeats evidence references');
+    }
+    for (const ref of entry.evidence_refs) {
+      if (/(^|[\/_.-])(emulator|synthetic|mock)([\/_.-]|$)/i.test(ref)) {
+        fail(label + '.' + id + ' references non-physical evidence');
+      }
+      verifyEvidenceRef(ref, label + '.' + id);
     }
   }
   return nonPass;

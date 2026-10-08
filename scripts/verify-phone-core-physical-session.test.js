@@ -41,7 +41,10 @@ function signingPayload(manifest) {
 }
 
 function baseManifest({ allScenarios = true, allResiduals = true } = {}) {
-  const status = (id) => ({ status: 'PASS', evidence_refs: [`evidence/${id}.json`] });
+  const status = (id) => {
+    const digest = crypto.createHash('sha256').update('fixture-proof:' + id + '\n').digest('hex');
+    return { status: 'PASS', evidence_refs: ['evidence/' + id + '.txt#sha256=' + digest] };
+  };
   return {
     schema_version: 1,
     source_head_sha: SOURCE_SHA,
@@ -66,13 +69,22 @@ function baseManifest({ allScenarios = true, allResiduals = true } = {}) {
   };
 }
 
-function writeSignedFixture(manifest, { tamperAfterSign = false } = {}) {
+function writeSignedFixture(manifest, { tamperAfterSign = false, mutateFixture } = {}) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-physical-proof-'));
   const bin = path.join(tmp, 'bin');
   const evidence = path.join(tmp, 'evidence.txt');
   const marker = path.join(tmp, 'marker.txt');
   const token = path.join(tmp, 'token');
   fs.mkdirSync(bin);
+  fs.mkdirSync(path.join(tmp, 'evidence'));
+  fs.writeFileSync(marker, 'outside-evidence\n');
+  for (const map of [manifest.canonical_criteria, manifest.scenarios, manifest.residual_external_validation]) {
+    for (const [id, entry] of Object.entries(map)) {
+      if (entry.evidence_refs?.some(ref => ref.startsWith('evidence/' + id + '.txt#sha256='))) {
+        fs.writeFileSync(path.join(tmp, 'evidence', id + '.txt'), 'fixture-proof:' + id + '\n');
+      }
+    }
+  }
   fs.writeFileSync(token, 'fixture-token\n');
   const manifestPath = path.join(tmp, 'session.json');
   const publicKeyPath = path.join(tmp, 'trusted-public-key.pem');
@@ -81,7 +93,9 @@ function writeSignedFixture(manifest, { tamperAfterSign = false } = {}) {
   if (tamperAfterSign) manifest.device.model = 'TAMPERED';
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   fs.writeFileSync(publicKeyPath, publicKey.export({ type: 'spki', format: 'pem' }));
-  return { tmp, manifestPath, publicKeyPath, evidence, marker };
+  const fixture = { tmp, manifestPath, publicKeyPath, evidence, marker };
+  if (mutateFixture) mutateFixture(fixture);
+  return fixture;
 }
 
 function run(manifest, options = {}) {
@@ -105,6 +119,44 @@ test('fully signed exact-artifact physical evidence is commercially eligible', {
   const result = run(baseManifest());
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /COMMERCIAL_RELEASE_ELIGIBLE/);
+});
+
+test('signed PASS evidence rejects missing files', () => {
+  const result = run(baseManifest(), {
+    mutateFixture: fixture => fs.rmSync(path.join(fixture.tmp, 'evidence', 'S01.txt'))
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /evidence file is unavailable/i);
+});
+
+test('signed PASS evidence rejects altered file bytes', () => {
+  const result = run(baseManifest(), {
+    mutateFixture: fixture => fs.writeFileSync(path.join(fixture.tmp, 'evidence', 'S01.txt'), 'altered proof\n')
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /SHA-256 mismatch/i);
+});
+
+test('signed PASS evidence rejects symbolic links', () => {
+  const result = run(baseManifest(), {
+    mutateFixture: fixture => {
+      const file = path.join(fixture.tmp, 'evidence', 'S01.txt');
+      fs.rmSync(file);
+      fs.symlinkSync(fixture.marker, file);
+    }
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /symbolic links/i);
+});
+
+test('signed PASS evidence rejects traversal and missing digests', () => {
+  for (const ref of ['evidence/../marker.txt#sha256=' + 'a'.repeat(64), 'evidence/S01.txt']) {
+    const manifest = baseManifest();
+    manifest.scenarios.S01.evidence_refs = [ref];
+    const result = run(manifest);
+    assert.equal(result.status, 1, 'unsafe evidence ref must fail closed');
+    assert.match(result.stderr, /unsafe evidence path|signed SHA-256 digest/i);
+  }
 });
 
 test('phone-core can pass while unresolved commercial residuals still block release', { skip: !fs.existsSync(verifier) }, () => {
