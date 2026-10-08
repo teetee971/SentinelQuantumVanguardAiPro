@@ -64,3 +64,11 @@ test('in-call UI evidence waits for a rendered frame before recording visibility
     'the evidence path must re-check the live Telecom session after the frame'
   );
 });
+
+test('Telecom callback registration is idempotent across platform reconciliation', () => {
+  assert.match(
+    service,
+    /val newlyTracked = trackedCalls\.add\(call\)[\s\S]*?if \(newlyTracked\) \{[\s\S]*?call\.registerCallback\(callback/s,
+    'onCallAdded must not register a duplicate callback for a call already reconciled from Telecom'
+  );
+});

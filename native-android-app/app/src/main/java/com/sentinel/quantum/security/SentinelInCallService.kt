@@ -108,11 +108,13 @@ class SentinelInCallService : InCallService() {
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
-        trackedCalls.add(call)
+        val newlyTracked = trackedCalls.add(call)
         if (!callIds.containsKey(call)) {
             callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
         }
-        call.registerCallback(callback, Handler(Looper.getMainLooper()))
+        if (newlyTracked) {
+            call.registerCallback(callback, Handler(Looper.getMainLooper()))
+        }
         initializeAudioState()
         refreshForegroundCall()
         if (call.state != Call.STATE_RINGING) showInCallActivity()
