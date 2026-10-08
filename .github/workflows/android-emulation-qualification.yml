@@ -423,6 +423,11 @@ jobs:
           const fs = require('node:fs');
           const path = require('node:path');
           const { spawnSync } = require('node:child_process');
+          const { isValidPngFile } = require(path.join(
+            process.env.GITHUB_WORKSPACE || process.cwd(),
+            'scripts',
+            'phone-core-screenshot.cjs'
+          ));
           const api = Number(process.env.API_LEVEL);
           const output = process.env.OUTPUT;
           const modernPhoneCore = api >= 29;
@@ -432,7 +437,7 @@ jobs:
           const exists = (name) => fs.existsSync(file(name));
           const nonEmpty = (name, minBytes = 1) => exists(name) && fs.statSync(file(name)).size >= minBytes;
           const read = (name) => exists(name) ? fs.readFileSync(file(name), 'utf8') : '';
-          const screenshot = (name) => nonEmpty(name, 256);
+          const screenshot = (name) => isValidPngFile(file(name));
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => read(name).split(/\r?\n/)
             .some((line) => line.trim() === 'com.sentinel.quantum');

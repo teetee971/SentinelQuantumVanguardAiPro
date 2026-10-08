@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
@@ -9,6 +9,15 @@ const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qu
 const step = workflow.split('- name: Collect qualification evidence even after failure\n')[1];
 assert.ok(step, 'collector step exists');
 const reportCode = step.split("node <<'NODE'\n")[1].split('\n          NODE')[0];
+const ONE_PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64'
+);
+
+test('qualification screenshots use the strict PNG validator instead of a byte-count heuristic', () => {
+  assert.match(reportCode, /phone-core-screenshot\.cjs/);
+  assert.match(reportCode, /screenshot\s*=\s*\(name\)\s*=>\s*isValidPngFile\(file\(name\)\)/);
+});
 
 function fixture(alter = () => {}, apiLevel = '36') {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-schema3-report-'));
@@ -20,7 +29,7 @@ function fixture(alter = () => {}, apiLevel = '36') {
     '01-dialer-first-launch', '01b-dialer-relaunch', '02-incoming-call', '03-incoming-active-evidence',
     '05-outgoing-call', '06-thread', '07-inline-reply', '08-sms-effective-permission-denied',
     '10-sms-role-revoked', '11-dialer-role-revoked', '12-call-screening-role-revoked'
-  ]) put(name + '.png', Buffer.alloc(300));
+  ]) put(name + '.png', ONE_PIXEL_PNG);
   for (const name of ['sms-role-restored', 'dialer-role-restored', 'call-screening-role-restored']) {
     put(name + '.txt', 'com.sentinel.quantum\n');
   }
@@ -56,6 +65,7 @@ function fixture(alter = () => {}, apiLevel = '36') {
     env: {
       ...process.env,
       RUNNER_TEMP: dir,
+      GITHUB_WORKSPACE: resolve('.'),
       API_LEVEL: apiLevel,
       OUTPUT: output,
       HOST_CONTRACT_RESULT: 'success',
@@ -179,7 +189,7 @@ test('schema 4 role-managed proof is forbidden below API 36', () => expectDenial
 test('schema 5 accepts role-based authorization denial when Android keeps SEND_SMS granted by role metadata', () => expectAuthorizationPass(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put);
   put('revocation-summary.json', schema5());
 }));
@@ -187,7 +197,7 @@ test('schema 5 accepts role-based authorization denial when Android keeps SEND_S
 test('schema 5 also accepts role-based authorization denial when the raw permission happens to be revoked', () => expectAuthorizationPass(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put, 'android.permission.SEND_SMS: granted=false\n');
   put('revocation-summary.json', schema5());
 }));
@@ -195,7 +205,7 @@ test('schema 5 also accepts role-based authorization denial when the raw permiss
 test('schema 5 rejects authorization proof without pre-launch role absence', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put);
   remove('send-sms-role-managed-role-absent-state.txt');
   put('revocation-summary.json', schema5());
@@ -204,7 +214,7 @@ test('schema 5 rejects authorization proof without pre-launch role absence', () 
 test('schema 5 rejects authorization proof without post-launch role absence', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put);
   remove('send-sms-role-managed-role-absent-after-launch.txt');
   put('revocation-summary.json', schema5());
@@ -213,7 +223,7 @@ test('schema 5 rejects authorization proof without post-launch role absence', ()
 test('schema 5 rejects authorization proof without pre-launch raw permission state', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put);
   remove('send-sms-role-managed-permission-state.txt');
   put('revocation-summary.json', schema5());
@@ -222,7 +232,7 @@ test('schema 5 rejects authorization proof without pre-launch raw permission sta
 test('schema 5 rejects authorization proof without post-launch raw permission state', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put);
   remove('send-sms-role-managed-permission-state-after-launch.txt');
   put('revocation-summary.json', schema5());
@@ -231,7 +241,7 @@ test('schema 5 rejects authorization proof without post-launch raw permission st
 test('schema 5 rejects ambiguous raw SEND_SMS permission evidence', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put);
   put('send-sms-role-managed-permission-state-after-launch.txt', 'permission state unavailable\n');
   put('revocation-summary.json', schema5());
@@ -240,7 +250,7 @@ test('schema 5 rejects ambiguous raw SEND_SMS permission evidence', () => expect
 test('schema 5 role-authorization proof is forbidden below API 36', () => expectAuthorizationFail(({ put, remove }) => {
   remove('send-sms-appop-denied-after-launch.txt');
   remove('08-sms-effective-permission-denied.png');
-  put('08-sms-authorization-denied.png', Buffer.alloc(300));
+  put('08-sms-authorization-denied.png', ONE_PIXEL_PNG);
   putSchema5Boundary(put);
   put('revocation-summary.json', schema5());
 }, '29'));
