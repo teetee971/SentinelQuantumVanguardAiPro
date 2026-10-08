@@ -150,6 +150,14 @@ test('physical session timestamps must be parseable date-times', { skip: !fs.exi
   assert.match(result.stderr, /completed_at.*date-time/i);
 });
 
+test('physical session timestamps reject impossible calendar dates', { skip: !fs.existsSync(verifier) }, () => {
+  const manifest = baseManifest();
+  manifest.session.completed_at = '2026-02-31T22:30:00Z';
+  const result = run(manifest);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /completed_at.*date-time/i);
+});
+
 test('physical session completion must be strictly after start', { skip: !fs.existsSync(verifier) }, () => {
   const manifest = baseManifest();
   manifest.session.completed_at = manifest.session.started_at;
