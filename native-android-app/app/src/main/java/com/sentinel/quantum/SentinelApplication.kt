@@ -5,6 +5,7 @@ import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.IncomingSmsRecoveryWorker
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
+import com.sentinel.quantum.security.SmsSubmissionWatchdogWorker
 
 /**
  * Process-level initialization for exact-number call blocking and durable telecom repair.
@@ -23,6 +24,7 @@ class SentinelApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         SentinelSmsStatusReceiver.queueProviderRepair(this)
+        runCatching { SmsSubmissionWatchdogWorker.schedule(this) }
         runCatching { IncomingSmsRecoveryWorker.schedule(this) }
         runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(this) }
 

@@ -135,10 +135,14 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             markSent = { conversationStore.markOutgoingSent(providerMessageId) },
             markDelivery = { conversationStore.markDeliveryResult(providerMessageId, it) }
         )
-        if (providerUpdated && !runCatching {
-                progressStore.markProviderApplied(sendToken, providerMessageId, progress.state)
-            }.getOrDefault(false)) {
+        val providerApplied = providerUpdated && runCatching {
+            progressStore.markProviderApplied(sendToken, providerMessageId, progress.state)
+        }.getOrDefault(false)
+        if (providerUpdated && !providerApplied) {
             progressPersistenceFailed = true
+        }
+        if (providerApplied && progress.terminal) {
+            SmsOutgoingSubmissionStore(context).remove(sendToken, providerMessageId)
         }
         if (!providerUpdated) {
             queueProviderRepair(context)
@@ -220,6 +224,9 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                     if (!applied || !runCatching {
                             store.markProviderApplied(write.sendToken, id, write.outcome.state)
                         }.getOrDefault(false)) retry = true
+                    else if (write.outcome.terminal) {
+                        SmsOutgoingSubmissionStore(appContext).remove(write.sendToken, id)
+                    }
                 }
                 // Repair is a provider projection only; it must never manufacture physical proofs.
                 if (retry) queueProviderRepair(appContext)

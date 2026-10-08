@@ -167,6 +167,28 @@ class SentinelSmsSender(private val context: Context) {
             )
         }
 
+        val watchdogReady = runCatching {
+            val registered = SmsOutgoingSubmissionStore(context).register(
+                sendToken = callbacks.sendToken,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+            check(registered) { "SMS submission ledger unavailable" }
+            SmsSubmissionWatchdogWorker.schedule(context)
+            true
+        }.getOrDefault(false)
+        if (!watchdogReady) {
+            SmsOutgoingSubmissionStore(context).remove(callbacks.sendToken, persistedMessageId)
+            conversations.markOutgoingFailed(persistedMessageId)
+            return SendResult(
+                accepted = false,
+                reason = "SMS_SUBMISSION_WATCHDOG_UNAVAILABLE",
+                subscriptionId = prepared.subscriptionId,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+        }
+
         // Only this call boundary can have an indeterminate synchronous outcome: SmsManager may
         // throw after Android has accepted one or more segments. Keep OUTBOX/PENDING in that case;
         // validated SENT callbacks remain the only conclusive durable transition.

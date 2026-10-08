@@ -451,6 +451,46 @@ class SmsConversationStore(private val context: Context) {
         }.getOrDefault(false)
     }
 
+    /**
+     * Resolves a lost-callback submission without overwriting a row already made terminal by
+     * Android or a late callback. Missing rows are already resolved and therefore idempotent.
+     */
+    fun markOutgoingTimedOut(id: Long): Boolean {
+        if (!holdsSmsRole() || id <= 0L) return false
+        val uri = ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id)
+        return runCatching {
+            val values = ContentValues().apply {
+                put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_FAILED)
+                put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_FAILED)
+            }
+            val updated = context.contentResolver.update(
+                uri,
+                values,
+                "${Telephony.Sms.TYPE} IN (?,?)",
+                arrayOf(
+                    Telephony.Sms.MESSAGE_TYPE_OUTBOX.toString(),
+                    Telephony.Sms.MESSAGE_TYPE_QUEUED.toString()
+                )
+            )
+            if (updated == 1) return@runCatching true
+
+            context.contentResolver.query(
+                uri,
+                arrayOf(Telephony.Sms.TYPE),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) true
+                else {
+                    val type = cursor.getInt(0)
+                    type != Telephony.Sms.MESSAGE_TYPE_OUTBOX &&
+                        type != Telephony.Sms.MESSAGE_TYPE_QUEUED
+                }
+            } ?: false
+        }.getOrDefault(false)
+    }
+
     fun markDeliveryResult(id: Long, successful: Boolean): Boolean {
         if (!holdsSmsRole() || id <= 0L) return false
         val uri = ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, id)
