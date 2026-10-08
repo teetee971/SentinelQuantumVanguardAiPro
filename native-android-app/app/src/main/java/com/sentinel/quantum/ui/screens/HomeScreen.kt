@@ -128,7 +128,7 @@ fun HomeScreen(navController: NavController) {
             setOf("numero", "numéro", "recherche", "chercher", "identifier", "identification"),
             HomeDomain.COMMUNICATIONS,
             featured = true
-        ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+        ) { navController.navigate(Screen.Search.route) },
         HomeTool(
             "Bloquer un appel",
             "Gérer les règles locales de blocage et d’identification",
