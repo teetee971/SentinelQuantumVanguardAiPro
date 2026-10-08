@@ -142,6 +142,22 @@ test('exact source SHA and APK digest are mandatory', { skip: !fs.existsSync(ver
   assert.match(result.stderr, /source head/i);
 });
 
+test('physical session timestamps must be parseable date-times', { skip: !fs.existsSync(verifier) }, () => {
+  const manifest = baseManifest();
+  manifest.session.completed_at = 'not-a-date';
+  const result = run(manifest);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /completed_at.*date-time/i);
+});
+
+test('physical session completion must be strictly after start', { skip: !fs.existsSync(verifier) }, () => {
+  const manifest = baseManifest();
+  manifest.session.completed_at = manifest.session.started_at;
+  const result = run(manifest);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /completed_at.*after.*started_at/i);
+});
+
 test('production policy declares the machine-readable physical session contract', () => {
   const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
   const physical = policy.physical_session_manifest;
