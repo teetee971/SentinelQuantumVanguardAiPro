@@ -106,5 +106,14 @@ class SmsCallbackProgressStoreTest {
         assertNull(store.record(7, 8L, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, true, nowMs = 1003L))
         assertTrue(store.pendingProviderWrites(nowMs = 1003L).isEmpty())
     }
+
+    @Test fun malformedProviderAppliedFlagIsRejectedInsteadOfBecomingPendingState() {
+        val preferences = Preferences(emptySet())
+        preferences.values["7:8"] = "1000|1|1|0|||x"
+
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        assertTrue(store.pendingProviderWrites(nowMs = 1001L).isEmpty())
+    }
 }
 

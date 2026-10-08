@@ -163,11 +163,16 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         val deliveryFailed = parseIndexes(parts[6]) ?: return null
         if (sentOk.intersect(sentFailed).isNotEmpty()) return null
         if (deliveredOk.intersect(deliveryFailed).isNotEmpty()) return null
+        val providerApplied = when (parts.getOrNull(7)) {
+            null, "0" -> false
+            "1" -> true
+            else -> return null
+        }
 
         return Persisted(
             createdAtMs = created,
             terminal = terminal,
-            providerApplied = parts.getOrNull(7) == "1",
+            providerApplied = providerApplied,
             state = SmsCallbackProgress.State(
                 partCount = partCount,
                 sentOk = sentOk,
