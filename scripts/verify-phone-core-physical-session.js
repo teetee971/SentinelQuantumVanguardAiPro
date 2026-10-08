@@ -34,6 +34,7 @@ const REQUIRED_COMMERCIAL_RESIDUALS = [
 
 const RFC3339_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|([+-])(\d{2}):(\d{2}))$/;
 const VALID_SIM_MODES = new Set(['SINGLE_SIM', 'DUAL_SIM', 'MULTI_SIM']);
+const VALID_EVIDENCE_STATUSES = new Set(['PASS', 'FAIL', 'NOT_EXECUTED', 'UNKNOWN', 'NOT_REPORTED']);
 const ROOT_KEYS = new Set([
   'schema_version', 'source_head_sha', 'apk', 'device', 'session',
   'canonical_criteria', 'scenarios', 'residual_external_validation', 'attestation'
@@ -157,6 +158,20 @@ function requireDateTime(value, label) {
 
 const EVIDENCE_REF = /^(evidence\/[A-Za-z0-9_./-]+)#sha256=([0-9a-fA-F]{64})$/;
 
+function validateEvidenceEntryShape(entry, label) {
+  requireAllowedKeys(entry, EVIDENCE_ENTRY_KEYS, label);
+  if (!VALID_EVIDENCE_STATUSES.has(entry.status)) fail(`${label}.status is invalid`);
+  if (!Array.isArray(entry.evidence_refs) || entry.evidence_refs.length === 0) {
+    fail(`${label}.evidence_refs must be a nonempty array`);
+  }
+  if (entry.evidence_refs.some(ref => typeof ref !== 'string' || !EVIDENCE_REF.test(ref))) {
+    fail(`${label}.evidence_refs must contain signed local evidence references`);
+  }
+  if (new Set(entry.evidence_refs).size !== entry.evidence_refs.length) {
+    fail(`${label} repeats evidence references`);
+  }
+}
+
 function verifyEvidenceRef(ref, label) {
   const match = EVIDENCE_REF.exec(ref);
   if (!match) fail(label + ' must be a local evidence path with a signed SHA-256 digest');
@@ -204,25 +219,21 @@ function verifyEvidenceRef(ref, label) {
 }
 
 function validateEvidenceMap(map, ids, label) {
-  if (!map || typeof map !== 'object' || Array.isArray(map)) return [...ids];
+  requireObject(map, label);
+  for (const [entryId, entry] of Object.entries(map)) {
+    validateEvidenceEntryShape(entry, `${label}.${entryId}`);
+  }
+
   const nonPass = [];
   for (const id of ids) {
     const entry = map[id];
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    if (!entry) {
       nonPass.push(id);
       continue;
     }
-    requireAllowedKeys(entry, EVIDENCE_ENTRY_KEYS, `${label}.${id}`);
     if (entry.status !== 'PASS') {
       nonPass.push(id);
       continue;
-    }
-    if (!Array.isArray(entry.evidence_refs) || entry.evidence_refs.length === 0 || entry.evidence_refs.some(ref => typeof ref !== 'string' || ref.trim() === '')) {
-      nonPass.push(id);
-      continue;
-    }
-    if (new Set(entry.evidence_refs).size !== entry.evidence_refs.length) {
-      fail(label + '.' + id + ' repeats evidence references');
     }
     for (const ref of entry.evidence_refs) {
       if (/(^|[\/_.-])(emulator|synthetic|mock)([\/_.-]|$)/i.test(ref)) {
