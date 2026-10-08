@@ -1,7 +1,6 @@
 package com.sentinel.quantum
 
 import android.Manifest
-import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Context
 import android.os.Build
@@ -33,8 +32,7 @@ internal object PhoneCoreRuntimeFacts {
         val notificationsGloballyEnabled =
             NotificationManagerCompat.from(context).areNotificationsEnabled()
         val fullScreenIntentReady =
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
-                context.getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
+            SentinelCallNotificationHelper.isFullScreenIntentAllowed(context)
 
         return PhoneCoreSetupWizardStore.Facts(
             corePermissionsReady =

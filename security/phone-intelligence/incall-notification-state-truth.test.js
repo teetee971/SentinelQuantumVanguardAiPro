@@ -10,6 +10,10 @@ const service = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt',
   'utf8'
 );
+const helper = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt',
+  'utf8'
+);
 
 test('incoming call notification is cancelled only after observed Telecom state transition', () => {
   assert.match(receiver, /SentinelInCallService\.answer\(callId\)/);
@@ -23,5 +27,23 @@ test('incoming call notification is cancelled only after observed Telecom state 
     service,
     /if \(selected\?\.state != Call\.STATE_RINGING\) \{\s*SentinelCallNotificationHelper\.cancel\(this\)/s,
     'InCallService must own cancellation after observing a real non-ringing state'
+  );
+});
+
+test('incoming notification fails closed when Android denies full-screen intent use', () => {
+  assert.match(
+    helper,
+    /fun isFullScreenIntentAllowed\(context: Context\): Boolean/,
+    'the notification helper must expose one runtime truth for full-screen permission'
+  );
+  assert.match(
+    helper,
+    /canUseFullScreenIntent\(\) == true/,
+    'API 34+ full-screen intent permission must be observed from NotificationManager'
+  );
+  assert.match(
+    helper,
+    /if \(!isFullScreenIntentAllowed\(context\)\) return false/,
+    'notification submission must not be reported when full-screen use is denied'
   );
 });

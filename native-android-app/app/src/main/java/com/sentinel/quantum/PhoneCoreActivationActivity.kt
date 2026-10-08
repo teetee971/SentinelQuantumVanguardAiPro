@@ -1,7 +1,6 @@
 package com.sentinel.quantum
 
 import android.Manifest
-import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -142,8 +141,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var deniedPermissions by remember { mutableStateOf<Set<String>>(emptySet()) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
-                    getSystemService(NotificationManager::class.java).canUseFullScreenIntent()
+                val fullScreenIntentReady =
+                    SentinelCallNotificationHelper.isFullScreenIntentAllowed(this@PhoneCoreActivationActivity)
                 val smsActions = remember { SmsActivationActions(applicationContext) }
                 val setupWizard = remember { PhoneCoreSetupWizardStore(applicationContext) }
                 val installTimestampMs = remember { currentInstallTimestamp() }

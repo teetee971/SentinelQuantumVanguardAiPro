@@ -41,6 +41,7 @@ object SentinelCallNotificationHelper {
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
         ) return false
+        if (!isFullScreenIntentAllowed(context)) return false
 
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return false
@@ -143,4 +144,14 @@ object SentinelCallNotificationHelper {
             .getNotificationChannel(CHANNEL_ID)
         return channel != null && channel.importance != NotificationManager.IMPORTANCE_NONE
     }
+
+    /**
+     * Android 14+ lets the user revoke USE_FULL_SCREEN_INTENT independently of notification
+     * permission. A successful notify() is not a truthful incoming-call surface when that
+     * capability is denied, so callers must fail closed and use their fallback UI.
+     */
+    fun isFullScreenIntentAllowed(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+            context.getSystemService(NotificationManager::class.java)
+                ?.canUseFullScreenIntent() == true
 }
