@@ -23,12 +23,20 @@ const application = fs.readFileSync(
   'utf8'
 );
 
-test('SMS_DELIVER captures durable state instead of queueing PendingResult in memory', () => {
-  assert.match(receiver, /IncomingSmsDeliveryStore\.persist\(appContext\.filesDir, record\)/);
-  assert.match(receiver, /IncomingSmsDeliveryWorker\.schedule\(appContext, id\)/);
+test('SMS_DELIVER captures durable state and schedules idempotent projection', () => {
+  assert.match(receiver, /IncomingSmsDeliveryStore\.persist\(context\.filesDir, record\)/);
+  assert.match(receiver, /IncomingSmsDeliveryWorker\.schedule\(context, id\)/);
   assert.match(receiver, /IncomingSmsDeliveryWorker\.projectImmediately/);
   assert.doesNotMatch(receiver, /Executors\.newSingleThreadExecutor/);
-  assert.doesNotMatch(receiver, /goAsync\(\)/);
+});
+
+test('SMS capture and provider fallback never run on the broadcast main thread', () => {
+  assert.match(receiver, /val pendingResult = goAsync\(\)/);
+  assert.match(receiver, /RECEIVER_EXECUTOR\.execute/);
+  assert.match(receiver, /ArrayBlockingQueue/);
+  assert.match(receiver, /private fun processIncomingSms/);
+  assert.match(receiver, /pendingResult\.finish\(\)/);
+  assert.match(receiver, /LocalLogger\(appContext\)\.logAsync/);
 });
 
 test('SMS durable spool is bounded, fsynced and idempotency-keyed', () => {
@@ -49,7 +57,7 @@ test('corrupt SMS spool records cannot masquerade as replay or poison bounded ca
 
 test('existing replay fallback reuses durable receive identity when WorkManager submission fails', () => {
   assert.match(receiver, /persistState == IncomingSmsDeliveryStore\.PersistState\.EXISTING/);
-  assert.match(receiver, /IncomingSmsDeliveryStore\.read\(appContext\.filesDir, id\) \?: record/);
+  assert.match(receiver, /IncomingSmsDeliveryStore\.read\(context\.filesDir, id\) \?: record/);
   assert.match(receiver, /record = projectionRecord/);
 });
 
