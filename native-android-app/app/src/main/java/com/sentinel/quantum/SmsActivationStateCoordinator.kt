@@ -9,6 +9,17 @@ import android.os.Looper
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import java.lang.ref.WeakReference
 
+internal object SmsActivationAppOpsPolicy {
+    internal val operations = setOf(
+        AppOpsManager.OPSTR_SEND_SMS,
+        AppOpsManager.OPSTR_READ_SMS,
+        AppOpsManager.OPSTR_RECEIVE_SMS,
+        AppOpsManager.OPSTR_READ_PHONE_STATE
+    )
+
+    fun isRelevant(operation: String): Boolean = operation in operations
+}
+
 /**
  * Process-level guard against stale SMS authorization UI after Android mutates permissions/AppOps.
  *
@@ -46,7 +57,7 @@ internal class SmsActivationStateCoordinator(
 
     private val appOpListener = AppOpsManager.OnOpChangedListener { op, packageName ->
         if (
-            op == AppOpsManager.OPSTR_SEND_SMS &&
+            SmsActivationAppOpsPolicy.isRelevant(op) &&
             (packageName == null || packageName == application.packageName)
         ) {
             scheduleRevalidation()
@@ -87,11 +98,11 @@ internal class SmsActivationStateCoordinator(
 
     fun start() {
         application.registerActivityLifecycleCallbacks(activityCallbacks)
-        appOpsManager?.startWatchingMode(
-            AppOpsManager.OPSTR_SEND_SMS,
-            application.packageName,
-            appOpListener
-        )
+        appOpsManager?.let { manager ->
+            SmsActivationAppOpsPolicy.operations.forEach { operation ->
+                manager.startWatchingMode(operation, application.packageName, appOpListener)
+            }
+        }
     }
 
     private fun scheduleRevalidation() {
