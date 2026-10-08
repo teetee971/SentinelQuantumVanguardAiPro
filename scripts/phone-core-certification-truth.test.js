@@ -117,6 +117,17 @@ test('first-run completion includes the same secure MMS prerequisite as Phone Co
   );
 });
 
+test('first-run assistant never launches an Android surface before durable state commits', () => {
+  const main = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt'), 'utf8');
+  const activation = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'), 'utf8');
+  const setupStore = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt'), 'utf8');
+
+  assert.match(setupStore, /fun markInProgress\(\): Boolean/);
+  assert.match(setupStore, /private fun setLifecycleState\(state: LifecycleState\): Boolean/);
+  assert.match(main, /if \(!wizard\.markInProgress\(\)\) return/);
+  assert.match(activation, /if \(!setupWizard\.markAttemptedTarget\(setupTargetKey\)\) return/);
+});
+
 
 test('Phone Core readiness no longer owns the Wi-Fi scanner capability', () => {
   const diagnostics = readFileSync(

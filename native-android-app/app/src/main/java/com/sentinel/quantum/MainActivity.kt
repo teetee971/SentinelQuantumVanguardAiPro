@@ -233,8 +233,9 @@ class MainActivity : ComponentActivity() {
             lifecycleState != PhoneCoreSetupWizardStore.LifecycleState.COMPLETED &&
             PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)
         ) {
-            wizard.markCompleted()
-            lifecycleState = PhoneCoreSetupWizardStore.LifecycleState.COMPLETED
+            if (wizard.markCompleted()) {
+                lifecycleState = PhoneCoreSetupWizardStore.LifecycleState.COMPLETED
+            }
         }
 
         if (!PhoneCoreSetupWizardStore.shouldAutoOpenSetup(lifecycleState, runtimeFacts)) return
@@ -245,9 +246,9 @@ class MainActivity : ComponentActivity() {
         // process dies while the activation screen is open, IN_PROGRESS remains persisted and the
         // next cold launch resumes the assistant from the first fact Android still reports missing.
         if (lifecycleState == PhoneCoreSetupWizardStore.LifecycleState.NOT_STARTED) {
-            wizard.markOffered()
+            if (!wizard.markOffered()) return
         }
-        wizard.markInProgress()
+        if (!wizard.markInProgress()) return
         phoneCoreSetupLauncher.launch(
             Intent(this, PhoneCoreActivationActivity::class.java).apply {
                 putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)

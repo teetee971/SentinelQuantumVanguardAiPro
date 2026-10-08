@@ -300,7 +300,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val attemptedSetupTargetKey = remember(epoch) { setupWizard.attemptedTargetKey() }
 
                 fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
-                    setupWizard.markAttemptedTarget(setupTargetKey)
+                    if (!setupWizard.markAttemptedTarget(setupTargetKey)) return
                     when (step) {
                         PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
                             val permission = PhoneCoreSetupWizardStore.firstMissingPermission(

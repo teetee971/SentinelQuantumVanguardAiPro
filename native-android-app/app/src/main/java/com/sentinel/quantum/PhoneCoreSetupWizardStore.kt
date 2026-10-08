@@ -27,15 +27,15 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
                 // Legacy macro-step keys intentionally do not equal new atomic target keys.
             }
 
-    fun markAttemptedTarget(targetKey: String) {
-        prefs.edit()
+    fun markAttemptedTarget(targetKey: String): Boolean {
+        return prefs.edit()
             .putString(KEY_ATTEMPTED_TARGET, targetKey)
             .remove(KEY_ATTEMPTED_STEP)
             .commit()
     }
 
-    fun clearAttempted() {
-        prefs.edit()
+    fun clearAttempted(): Boolean {
+        return prefs.edit()
             .remove(KEY_ATTEMPTED_STEP)
             .remove(KEY_ATTEMPTED_TARGET)
             .commit()
@@ -52,17 +52,17 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         }
     }
 
-    fun markOffered() = setLifecycleState(LifecycleState.OFFERED)
+    fun markOffered(): Boolean = setLifecycleState(LifecycleState.OFFERED)
 
-    fun markInProgress() = setLifecycleState(LifecycleState.IN_PROGRESS)
+    fun markInProgress(): Boolean = setLifecycleState(LifecycleState.IN_PROGRESS)
 
-    fun markDeferred() {
-        if (lifecycleState() == LifecycleState.COMPLETED) return
-        setLifecycleState(LifecycleState.DEFERRED)
+    fun markDeferred(): Boolean {
+        if (lifecycleState() == LifecycleState.COMPLETED) return false
+        return setLifecycleState(LifecycleState.DEFERRED)
     }
 
-    fun markCompleted() {
-        prefs.edit()
+    fun markCompleted(): Boolean {
+        return prefs.edit()
             .putBoolean(KEY_COMPLETED, true)
             .putString(KEY_LIFECYCLE_STATE, LifecycleState.COMPLETED.name)
             .remove(KEY_ATTEMPTED_STEP)
@@ -72,14 +72,14 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
 
     fun isCompleted(): Boolean = lifecycleState() == LifecycleState.COMPLETED
 
-    private fun setLifecycleState(state: LifecycleState) {
+    private fun setLifecycleState(state: LifecycleState): Boolean {
         check(state != LifecycleState.COMPLETED) {
             "COMPLETED must be persisted through markCompleted()"
         }
         // IN_PROGRESS is specifically used to recover after process death. Persist lifecycle
         // transitions synchronously before launching Android-owned permission/role surfaces, and
         // invalidate the legacy completion bit so a later migration can never resurrect stale READY.
-        prefs.edit()
+        return prefs.edit()
             .putBoolean(KEY_COMPLETED, false)
             .putString(KEY_LIFECYCLE_STATE, state.name)
             .commit()
