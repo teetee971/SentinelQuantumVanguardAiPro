@@ -184,6 +184,7 @@ for (const marker of [
   'const val LIFECYCLE_TAG = "SentinelLifecycle"',
   'const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"',
   'const val RESPONSE_LATENCY_MARKER = "CallScreeningService:response_elapsed_ms="',
+  'const val MAX_PRE_RESPONSE_MS = 450L',
   'SystemClock.elapsedRealtime()',
   'logResponseLatency(startedAtElapsedMs)',
   'getSystemService(TelephonyManager::class.java).isEmergencyNumber',
@@ -192,6 +193,12 @@ for (const marker of [
   'SCREENING_FINGERPRINTER::cachedCandidates',
   'respondToCall(callDetails, CallResponse.Builder().build())'
 ]) requireText(callScreeningService, marker, 'CallScreeningService truth');
+const screeningBudgetMs = Number(
+  callScreeningService.match(/const val MAX_PRE_RESPONSE_MS = (\d+)L/)?.[1] ?? 0
+);
+if (screeningBudgetMs <= 0 || screeningBudgetMs >= 500) {
+  errors.push('CallScreeningService pre-response budget must remain strictly below the 500 ms physical gate');
+}
 requireText(callBlocklistStore, 'internal fun cachedSnapshotForScreening', 'memory-only screening cache');
 if (!/val verificationCode = if \(Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.R\)\s*\{\s*when \(callDetails\.callerNumberVerificationStatus\)/.test(callScreeningService)) {
   errors.push('callerNumberVerificationStatus requires Android 11/API 30; Android 10 must retain UNKNOWN without calling the accessor');
