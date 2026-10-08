@@ -47,4 +47,6 @@ test('instrumentation failures expose failing XML cases as check annotations', (
   assert.match(instrumentationWorkflow, /Instrumentation reports contain zero testcases/);
   assert.match(instrumentationWorkflow, /failure body empty/);
   assert.match(instrumentationWorkflow, /compact\(failure\[3\]\)/);
+  assert.match(instrumentationWorkflow, /AndroidJUnitRunner tail/);
+  assert.match(instrumentationWorkflow, /INSTRUMENTATION_LOG=\"\$INSTRUMENTATION_LOG\"/);
 });

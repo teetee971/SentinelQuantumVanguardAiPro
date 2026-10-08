@@ -123,7 +123,7 @@ jobs:
             adb logcat -d -v threadtime > "$DIAGNOSTICS/logcat.txt" 2>&1 || true
           }
           summarize_instrumentation_reports() {
-            REPORT_ROOT="app/build/outputs/androidTest-results/connected" API_LEVEL="$API_LEVEL" node <<'NODE'
+            REPORT_ROOT="app/build/outputs/androidTest-results/connected" API_LEVEL="$API_LEVEL" INSTRUMENTATION_LOG="$INSTRUMENTATION_LOG" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
           const root = process.env.REPORT_ROOT;
@@ -155,6 +155,11 @@ jobs:
           walk(root);
           if (files.length === 0) {
             emit(`API ${api}: instrumentation reports missing; no XML failure detail available`);
+            const log = process.env.INSTRUMENTATION_LOG;
+            if (log && fs.existsSync(log)) {
+              const tail = fs.readFileSync(log, 'utf8').split(/\r?\n/).filter(Boolean).slice(-40).join('\n');
+              if (tail) emit(`API ${api}: AndroidJUnitRunner tail:\n${tail}`);
+            }
             process.exit(0);
           }
           const findings = [];
