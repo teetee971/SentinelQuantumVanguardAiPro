@@ -252,8 +252,21 @@ assert_sms_role_held() {
 
 permission_granted() {
   local permission="$1"
-  adb shell dumpsys package "$PACKAGE" 2>/dev/null |
-    grep -E "${permission}: granted=true" >/dev/null
+  local snapshot escaped_permission
+  if ! snapshot="$(adb shell dumpsys package "$PACKAGE" 2>&1)"; then
+    return 2  # UNKNOWN: ADB failure is not evidence of denial.
+  fi
+  escaped_permission="${permission//./\\.}"
+  local granted=false denied=false
+  if grep -Eq "^[[:space:]]*${escaped_permission}: granted=true([,[:space:]]|$)" <<< "$snapshot"; then
+    granted=true
+  fi
+  if grep -Eq "^[[:space:]]*${escaped_permission}: granted=false([,[:space:]]|$)" <<< "$snapshot"; then
+    denied=true
+  fi
+  if [[ "$granted" == true && "$denied" == false ]]; then return 0; fi
+  if [[ "$granted" == false && "$denied" == true ]]; then return 1; fi
+  return 2  # UNKNOWN: missing or contradictory permission state.
 }
 
 assert_send_sms_runtime_permission_granted() {
@@ -285,7 +298,15 @@ archive_send_sms_runtime_permission_state() {
 probe_pm_revoke_send_sms() {
   local output="$OUT_DIR/send-sms-pm-revoke-observation.txt"
   : > "$output"
-  if ! permission_granted android.permission.SEND_SMS; then
+  local baseline_status=0
+  permission_granted android.permission.SEND_SMS || baseline_status=$?
+  if [[ "$baseline_status" -eq 2 ]]; then
+    printf 'baseline_granted=unknown\nobservable=false\nreason=baseline_permission_unknown\ntransition_observed=false\n' >> "$output"
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+    echo "SEND_SMS baseline is unreadable or contradictory; refusing to qualify revocation."
+    return 1
+  fi
+  if [[ "$baseline_status" -ne 0 ]]; then
     printf 'baseline_granted=false\nobservable=false\nreason=baseline_grant_not_proven\ntransition_observed=false\n' >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
     echo "SEND_SMS granted baseline is not proven; pm revoke will not be executed."
@@ -308,10 +329,18 @@ probe_pm_revoke_send_sms() {
   local required_stability_observations=6
   for observation in $(seq 1 "$required_stability_observations"); do
     sleep 1
-    if permission_granted android.permission.SEND_SMS; then
+    local permission_status=0
+    permission_granted android.permission.SEND_SMS || permission_status=$?
+    if [[ "$permission_status" -eq 0 ]]; then
       printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\ntransition_observed=false\n' "$status" "$denied_observations" >> "$output"
       SEND_SMS_PM_REVOCATION_OBSERVABLE=false
       return 0
+    fi
+    if [[ "$permission_status" -ne 1 ]]; then
+      printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=false\nreason=post_revoke_permission_unknown\ntransition_observed=false\n' "$status" "$denied_observations" >> "$output"
+      SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+      echo "SEND_SMS post-revocation state is unreadable or contradictory."
+      return 1
     fi
     denied_observations=$observation
   done
