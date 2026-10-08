@@ -24,6 +24,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Validate emulator qualification contract
         run: node scripts/check-phone-core-emulation-gate.js
@@ -109,8 +119,8 @@ jobs:
           BUILT_COMMIT="$(git rev-parse HEAD)" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
-          if (process.env.BUILT_COMMIT !== process.env.GITHUB_SHA) {
-            throw new Error('Host checkout does not match the workflow commit');
+          if (process.env.BUILT_COMMIT !== process.env.SOURCE_HEAD_SHA) {
+            throw new Error('Host checkout does not match the exact source head');
           }
           const output = path.join(process.env.RUNNER_TEMP, 'phone-core-host-evidence');
           fs.mkdirSync(output, { recursive: true });
@@ -165,6 +175,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -588,7 +608,7 @@ jobs:
           if (process.env.RUNTIME_OUTCOME !== 'success') evidenceFailures.push('runtime_execution');
           const validSha = (value) => /^[a-f0-9]{40}$/.test(value || '');
           const provenanceValid = validSha(process.env.BUILT_COMMIT) &&
-            process.env.BUILT_COMMIT === process.env.GITHUB_SHA &&
+            process.env.BUILT_COMMIT === process.env.SOURCE_HEAD_SHA &&
             validSha(process.env.SOURCE_HEAD_SHA) &&
             Boolean(process.env.SOURCE_HEAD_REF) &&
             (process.env.GITHUB_EVENT_NAME !== 'pull_request' || validSha(process.env.SOURCE_BASE_SHA));

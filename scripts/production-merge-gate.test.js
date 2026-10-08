@@ -76,6 +76,26 @@ test('workflow changes for Android or web require the affected gate family', () 
   );
 });
 
+test('Phone Core workflows checkout and assert the pull request source head', () => {
+  for (const workflowPath of [
+    '.github/workflows/android-emulation-qualification.yml',
+    '.github/workflows/build-native-android.yml',
+    '.github/workflows/android-instrumentation.yml'
+  ]) {
+    const workflow = readFileSync(workflowPath, 'utf8');
+    assert.match(
+      workflow,
+      /uses:\s*actions\/checkout@[^\n]+\n\s+with:\n\s+ref:\s*\$\{\{\s*github\.event\.pull_request\.head\.sha\s*\|\|\s*github\.sha\s*\}\}/,
+      `${workflowPath} must checkout the exact source head`
+    );
+    assert.match(
+      workflow,
+      /test\s+"\$\(git rev-parse HEAD\)"\s*=\s*"\$TARGET_SHA"/,
+      `${workflowPath} must fail closed when the checked out SHA differs`
+    );
+  }
+});
+
 test('production gate timeout exceeds the longest dependent emulator critical path', () => {
   assert.ok(
     DEFAULT_GATE_TIMEOUT_MS > EMULATION_MAX_CRITICAL_PATH_MS,

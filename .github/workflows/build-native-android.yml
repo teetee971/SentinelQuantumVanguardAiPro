@@ -26,6 +26,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Validate Android manifest security
         run: node scripts/check-android-manifest.js
@@ -323,7 +333,7 @@ jobs:
             apk_name: name,
             apk_sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
             apk_size_bytes: bytes.length,
-            build_commit: process.env.GITHUB_SHA,
+            build_commit: process.env.SOURCE_HEAD_SHA,
             source_head_commit: process.env.SOURCE_HEAD_SHA,
             source_base_commit: process.env.SOURCE_BASE_SHA || null,
             source_head_ref: process.env.SOURCE_HEAD_REF,
@@ -357,6 +367,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
