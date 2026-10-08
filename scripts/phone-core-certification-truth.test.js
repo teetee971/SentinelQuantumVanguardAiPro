@@ -105,6 +105,10 @@ test('first-run completion includes the same secure MMS prerequisite as Phone Co
   );
   assert.match(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*,/);
   assert.doesNotMatch(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*=\s*true/);
+  for (const field of ['dialerRoleAvailable', 'callScreeningRoleAvailable', 'smsRoleAvailable']) {
+    assert.match(setupStore, new RegExp(`${field}:\\s*Boolean\\s*,`));
+    assert.doesNotMatch(setupStore, new RegExp(`${field}:\\s*Boolean\\s*=\\s*true`));
+  }
   assert.match(setupStore, /facts\.mmsSafePreviewValidated/);
   assert.match(runtimeFacts, /MmsSafePreviewReadiness\.softwareValidated/);
   assert.match(
