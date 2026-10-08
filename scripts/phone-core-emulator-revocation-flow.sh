@@ -284,12 +284,21 @@ archive_send_sms_runtime_permission_state() {
 
 probe_pm_revoke_send_sms() {
   local output="$OUT_DIR/send-sms-pm-revoke-observation.txt"
+  : > "$output"
+  if ! permission_granted android.permission.SEND_SMS; then
+    printf 'baseline_granted=false\nobservable=false\nreason=baseline_grant_not_proven\ntransition_observed=false\n' >> "$output"
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+    echo "SEND_SMS granted baseline is not proven; pm revoke will not be executed."
+    return 0
+  fi
+  printf 'baseline_granted=true\n' >> "$output"
+
   set +e
-  adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS > "$output" 2>&1
+  adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS >> "$output" 2>&1
   local status=$?
   set -e
   if [[ "$status" -ne 0 ]]; then
-    printf 'pm_revoke_status=%s\nobservable=false\nreason=pm_revoke_command_failed\n' "$status" >> "$output"
+    printf 'pm_revoke_status=%s\nobservable=false\nreason=pm_revoke_command_failed\ntransition_observed=false\n' "$status" >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
     echo "SEND_SMS pm revoke failed; runtime revocation is non-observable, continuing to the supported fallback."
     return 0
@@ -300,13 +309,13 @@ probe_pm_revoke_send_sms() {
   for observation in $(seq 1 "$required_stability_observations"); do
     sleep 1
     if permission_granted android.permission.SEND_SMS; then
-      printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" "$denied_observations" >> "$output"
+      printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\ntransition_observed=false\n' "$status" "$denied_observations" >> "$output"
       SEND_SMS_PM_REVOCATION_OBSERVABLE=false
       return 0
     fi
     denied_observations=$observation
   done
-  printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=true\n' "$status" "$denied_observations" >> "$output"
+  printf 'pm_revoke_status=%s\ndenial_stability_observations=%s\nobservable=true\ntransition_observed=true\n' "$status" "$denied_observations" >> "$output"
   SEND_SMS_PM_REVOCATION_OBSERVABLE=true
 }
 
