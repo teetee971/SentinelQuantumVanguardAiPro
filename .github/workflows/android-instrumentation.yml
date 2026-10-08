@@ -226,6 +226,43 @@ jobs:
               ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
           fi
 
+      - name: Validate modern instrumentation reports
+        if: matrix.api-level != 24
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULTS_ROOT="app/build/outputs/androidTest-results/connected"
+          test -d "$RESULTS_ROOT"
+          TEST_COUNT="$(find "$RESULTS_ROOT" -type f -name '*.xml' -print | wc -l)"
+          test "$TEST_COUNT" -gt 0
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = 'app/build/outputs/androidTest-results/connected';
+          const files = [];
+          const walk = (directory) => {
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+              const full = path.join(directory, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.isFile() && full.endsWith('.xml')) files.push(full);
+            }
+          };
+          walk(root);
+          let testCases = 0;
+          for (const file of files) {
+            const xml = fs.readFileSync(file, 'utf8');
+            testCases += (xml.match(/<testcase\b/g) || []).length;
+            if (/<(?:skipped|failure|error)\b/.test(xml)) {
+              throw new Error(`Instrumentation report contains a skipped or failed testcase: ${file}`);
+            }
+          }
+          if (testCases === 0) {
+            throw new Error('Instrumentation reports contain zero testcases');
+          }
+          console.log(`Validated ${testCases} instrumentation testcases across ${files.length} XML reports.`);
+          NODE
+
       - name: Upload instrumentation reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

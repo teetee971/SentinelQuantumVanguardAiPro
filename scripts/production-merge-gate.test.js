@@ -96,6 +96,14 @@ test('Phone Core workflows checkout and assert the pull request source head', ()
   }
 });
 
+test('modern instrumentation lanes require non-empty, failure-free JUnit reports', () => {
+  const workflow = readFileSync('.github/workflows/android-instrumentation.yml', 'utf8');
+  assert.match(workflow, /if:\s*matrix\.api-level\s*!=\s*24/);
+  assert.match(workflow, /androidTest-results\/connected/);
+  assert.match(workflow, /test\s+"\$TEST_COUNT"\s+-gt\s+0/);
+  assert.match(workflow, /<\(\?:skipped\|failure\|error\)/);
+});
+
 test('production gate timeout exceeds the longest dependent emulator critical path', () => {
   assert.ok(
     DEFAULT_GATE_TIMEOUT_MS > EMULATION_MAX_CRITICAL_PATH_MS,
