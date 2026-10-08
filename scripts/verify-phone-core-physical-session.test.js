@@ -235,6 +235,25 @@ test('schema-required physical session metadata cannot be omitted from a signed 
   }
 });
 
+test('schema-forbidden additional properties are rejected even when signed', { skip: !fs.existsSync(verifier) }, () => {
+  const cases = [
+    ['root', manifest => { manifest.unexpected = true; }],
+    ['apk', manifest => { manifest.apk.unexpected = true; }],
+    ['device', manifest => { manifest.device.unexpected = true; }],
+    ['session', manifest => { manifest.session.unexpected = true; }],
+    ['attestation', manifest => { manifest.attestation.unexpected = true; }],
+    ['evidence entry', manifest => { manifest.scenarios.S01.unexpected = true; }]
+  ];
+
+  for (const [label, mutate] of cases) {
+    const manifest = baseManifest();
+    mutate(manifest);
+    const result = run(manifest);
+    assert.equal(result.status, 1, `${label} additional property must fail closed; stderr=${result.stderr}; stdout=${result.stdout}`);
+    assert.match(result.stderr, /additional|unexpected|unknown/i, `${label} must report a schema-boundary failure`);
+  }
+});
+
 test('production policy declares the machine-readable physical session contract', () => {
   const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
   const physical = policy.physical_session_manifest;
