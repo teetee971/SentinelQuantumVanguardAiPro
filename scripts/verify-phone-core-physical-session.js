@@ -32,6 +32,7 @@ const REQUIRED_COMMERCIAL_RESIDUALS = [
 ];
 
 const RFC3339_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|([+-])(\d{2}):(\d{2}))$/;
+const VALID_SIM_MODES = new Set(['SINGLE_SIM', 'DUAL_SIM', 'MULTI_SIM']);
 
 function fail(message) {
   process.stderr.write(`PHONE CORE PHYSICAL SESSION: ${message}\n`);
@@ -92,6 +93,11 @@ function requireHex(value, length, label) {
 
 function requireText(value, label) {
   if (typeof value !== 'string' || value.trim() === '') fail(`${label} is required`);
+  return value;
+}
+
+function requirePositiveInteger(value, label) {
+  if (!Number.isInteger(value) || value < 1) fail(`${label} is required`);
   return value;
 }
 
@@ -162,10 +168,16 @@ const expectedApkSha256 = requireHex(options.expectedApkSha256, 64, 'expected AP
 const expectedCertificateSha256 = requireHex(options.expectedCertificateSha256, 64, 'expected certificate SHA-256');
 
 requireText(manifest.apk?.package_name, 'APK package_name');
+requireText(manifest.apk?.version_name, 'APK version_name');
+requirePositiveInteger(manifest.apk?.version_code, 'APK version_code');
 requireText(manifest.device?.manufacturer, 'device manufacturer');
 requireText(manifest.device?.model, 'device model');
+requireText(manifest.device?.android_version, 'device android_version');
 requireText(manifest.device?.build_fingerprint, 'device build_fingerprint');
 if (!Number.isInteger(manifest.device?.api_level) || manifest.device.api_level < 1) fail('device api_level is required');
+requireText(manifest.session?.sim_mode, 'session sim_mode');
+if (!VALID_SIM_MODES.has(manifest.session.sim_mode)) fail('session sim_mode is invalid');
+requireText(manifest.session?.operator_context, 'session operator_context');
 const startedAt = requireDateTime(manifest.session?.started_at, 'session started_at');
 const completedAt = requireDateTime(manifest.session?.completed_at, 'session completed_at');
 if (completedAt <= startedAt) fail('session completed_at must be after session started_at');
