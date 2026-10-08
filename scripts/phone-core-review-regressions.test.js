@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -88,4 +88,42 @@ test('foreground-return oracle accepts modern resumed-activity fields but remain
   assert.match(fn, /com\.sentinel\.quantum/);
   assert.match(fn, /ActivityRecord/);
   assert.match(fn, /return 0/);
+});
+
+test('SEND_SMS revoke probe refuses pm revoke unless it proves a granted baseline itself', () => {
+  const fn = extractFunction(revocationFlow, 'probe_pm_revoke_send_sms', 'assert_send_sms_runtime_permission_denied');
+  assert.match(fn, /permission_granted android\.permission\.SEND_SMS/);
+  assert.match(fn, /baseline_granted=false/);
+  assert.match(fn, /baseline_grant_not_proven/);
+
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'sentinel-send-sms-baseline-'));
+  try {
+    const script = `
+set -euo pipefail
+PACKAGE=com.sentinel.quantum
+OUT_DIR="$1"
+SEND_SMS_PM_REVOCATION_OBSERVABLE=true
+sleep(){ :; }
+permission_granted(){ return 1; }
+adb(){
+  if [[ "$*" == 'shell pm revoke com.sentinel.quantum android.permission.SEND_SMS' ]]; then
+    printf 'called\n' > "$OUT_DIR/revoke-called.txt"
+    return 0
+  fi
+  return 0
+}
+${fn}
+probe_pm_revoke_send_sms
+printf 'observable=%s\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"
+`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.equal(existsSync(path.join(dir, 'revoke-called.txt')), false, 'pm revoke must not execute without a granted baseline');
+    assert.match(result.stdout, /observable=false/);
+    const evidence = readFileSync(path.join(dir, 'send-sms-pm-revoke-observation.txt'), 'utf8');
+    assert.match(evidence, /baseline_granted=false/);
+    assert.match(evidence, /reason=baseline_grant_not_proven/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
