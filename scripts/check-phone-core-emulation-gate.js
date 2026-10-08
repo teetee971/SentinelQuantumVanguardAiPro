@@ -308,6 +308,9 @@ for (const marker of [
   'executeShellCommand("am force-stop',
   'LifecycleState.IN_PROGRESS'
 ]) requireText(setupRebootTest, marker, 'setup reboot preparation instrumentation');
+if (setupRebootTest.includes('markAttemptedTarget(')) {
+  errors.push('setup reboot preparation must observe the UI target, not seed an artificial target');
+}
 
 for (const marker of [
   'AllStaticNavigationSurfacesInstrumentationTest',
