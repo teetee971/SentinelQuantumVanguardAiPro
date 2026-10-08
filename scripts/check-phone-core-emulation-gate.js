@@ -40,6 +40,10 @@ const setupResumeTest = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum',
   'PhoneCoreSetupResumeInstrumentationTest.kt'
 );
+const setupRebootTest = read(
+  'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum',
+  'PhoneCoreSetupRebootPreparationInstrumentationTest.kt'
+);
 const navigationSmoke = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui',
   'AllStaticNavigationSurfacesInstrumentationTest.kt'
@@ -224,6 +228,11 @@ for (const marker of [
   'id: instrumentation',
   'HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}',
   'INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}',
+  'id: setup_reboot',
+  'adb shell reboot',
+  'SETUP_REBOOT_OUTCOME: ${{ steps.setup_reboot.outcome }}',
+  'setupRebootObserved',
+  'run-as com.sentinel.quantum cat shared_prefs/phone_core_setup_wizard_v2.xml',
   "process.env.HOST_CONTRACT_RESULT === 'success'",
   "process.env.INSTRUMENTATION_OUTCOME === 'success'",
   'sentinel-instrumentation-api${api}-tests.log',
@@ -286,6 +295,13 @@ for (const marker of [
 if (setupResumeTest.includes('sendKeyDownUpSync')) {
   errors.push('setup-resume instrumentation must not require privileged key injection');
 }
+
+for (const marker of [
+  'PhoneCoreSetupRebootPreparationInstrumentationTest',
+  'preserve_state',
+  'executeShellCommand("am force-stop',
+  'LifecycleState.IN_PROGRESS'
+]) requireText(setupRebootTest, marker, 'setup reboot preparation instrumentation');
 
 for (const marker of [
   'AllStaticNavigationSurfacesInstrumentationTest',

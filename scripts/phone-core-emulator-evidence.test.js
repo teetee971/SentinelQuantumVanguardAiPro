@@ -42,6 +42,17 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
   assert.doesNotMatch(runtime, /adb shell am start[^\n]*min-sdk-(?:first|second)-launch[^\n]*\|\| true/);
 });
 
+test('emulator qualification proves setup state across a real reboot before runtime reset', () => {
+  assert.match(workflow, /id:\s*setup_reboot/);
+  assert.match(workflow, /adb shell am instrument[\s\S]*PhoneCoreSetupRebootPreparationInstrumentationTest/);
+  assert.match(workflow, /adb shell reboot/);
+  assert.match(workflow, /ro\.build\.version\.sdk/);
+  assert.match(workflow, /run-as com\.sentinel\.quantum cat shared_prefs\/phone_core_setup_wizard_v2\.xml/);
+  assert.match(workflow, /Configuration initiale/);
+  assert.match(reportCode, /SETUP_REBOOT_OUTCOME/);
+  assert.match(reportCode, /setupRebootObserved/);
+});
+
 for (const [name, dump, status, holders] of [
   ['complete empty API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n}\n{\nname=android.app.role.SMS\nholders=com.sentinel.quantum\n} ] }', 0, ''],
   ['complete held API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=com.sentinel.quantum\n} ] }', 0, 'com.sentinel.quantum'],
@@ -164,13 +175,15 @@ function fixture(overrides = {}, alter = () => {}) {
   put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
   for (const direction of ['incoming', 'outgoing']) put(`phone-private-timeline-${direction}-incall_active.xml`, 'INCALL_ACTIVE');
   put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
+  put('setup-reboot-state-after-reboot.xml', '<string name="lifecycle_state_v1">IN_PROGRESS</string>\n<string name="attempted_target">DIALER_ROLE</string>\n<boolean name="completed" value="false" />\n');
+  put('setup-reboot-ui.xml', '<node text="Configuration initiale" />\n');
   put('revocation-summary.json', JSON.stringify({ schema_version: 2, effective_permission_denial_fail_closed: true, role_revocation_fail_closed: true, effective_permission_probe: 'SEND_SMS_APP_OP_DENIED' }));
   const results = join(dir, 'app/build/outputs/androidTest-results');
   mkdirSync(results, { recursive: true });
   const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('');
   writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
   const sha = 'a'.repeat(40);
-  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: sha, SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
+  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', SETUP_REBOOT_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: sha, SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
   try {
     alter({ put, results, dir });
     const result = spawnSync(process.execPath, ['-e', reportCode], { cwd: dir, env, encoding: 'utf8' });
