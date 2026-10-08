@@ -26,3 +26,14 @@ test('Android emulator qualification covers minimum, current and newest runtime 
   assert.match(instrumentationWorkflow, /connectedDebugAndroidTest/);
   assert.match(instrumentationWorkflow, /ACTUAL_API=.*ro\.build\.version\.sdk/);
 });
+
+test('API 24 direct APK installs are bounded by explicit watchdogs', () => {
+  assert.match(
+    instrumentationWorkflow,
+    /timeout --signal=INT --kill-after=30s 180s adb install -r "\$APP_APK"/,
+  );
+  assert.match(
+    instrumentationWorkflow,
+    /timeout --signal=INT --kill-after=30s 180s adb install -r "\$TEST_APK"/,
+  );
+});
