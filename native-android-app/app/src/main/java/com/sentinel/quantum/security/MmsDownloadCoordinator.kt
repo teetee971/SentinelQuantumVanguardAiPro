@@ -111,7 +111,14 @@ object MmsDownloadCoordinator {
                 )
             Result.Requested(subscriptionId, canonicalFile.name)
         } catch (_: Exception) {
-            delete(context, canonicalFile.name)
+            // The platform may throw after accepting the request, leaving a callback or a partial
+            // payload in flight. Retain the staged target and both durable safety nets; deleting it
+            // here can turn an ambiguous transport outcome into permanent MMS loss.
+            LocalLogger(context.applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Requête de téléchargement MMS ambiguë; copie temporaire conservée pour reprise"
+            )
             Result.Rejected("MMS_DOWNLOAD_REQUEST_FAILED")
         }
     }

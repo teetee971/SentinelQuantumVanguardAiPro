@@ -73,6 +73,23 @@ test('incoming MMS journals identity before staging and binds both safety nets b
   assert.match(downloadRecoveryWorker, /allowQuarantine = false/);
 });
 
+test('transport request exceptions retain staged MMS until durable recovery decides its fate', () => {
+  const requestFailure = downloadCoordinator.match(
+    /catch \(_:\s*Exception\) \{([\s\S]*?)Result\.Rejected\("MMS_DOWNLOAD_REQUEST_FAILED"\)/
+  );
+  assert.ok(requestFailure, 'transport failure branch must remain explicit');
+  assert.doesNotMatch(
+    requestFailure[1],
+    /delete\(/,
+    'an exception after transport acceptance must not delete the callback target'
+  );
+  assert.match(
+    requestFailure[1],
+    /copie temporaire|reprise|journal/i,
+    'the retained target must be explained as recoverable state'
+  );
+});
+
 test('process-death recovery reconstructs the original incoming MMS cleanup deadline', () => {
   assert.match(
     downloadRecoveryWorker,
