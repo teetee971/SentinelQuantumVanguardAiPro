@@ -15,6 +15,39 @@ Les 14 identifiants de critères sont partagés avec le certificat technique loc
 5. Sélectionner explicitement la ligne utilisée lorsqu’il existe plusieurs SIM.
 6. Conserver séparément le relevé terrain et le certificat technique local. Un compteur local 14/14, même obtenu sur le même APK, ne doit pas être converti automatiquement en `physically_validated`.
 
+## Bundle signé consommé par la lane physique
+
+Le workflow manuel [android-physical-proof-verification.yml](../.github/workflows/android-physical-proof-verification.yml)
+ne fabrique aucune observation. Le laboratoire doit déposer dans un artifact, à la racine,
+les éléments suivants :
+
+```text
+session.json
+trust.json
+artifacts/app.apk
+artifacts/app.apk.certificates.txt
+evidence/S01...S26.<format>
+```
+
+`session.json` doit être signé en Ed25519 et contenir exactement les scénarios `S01` à
+`S26`. Chaque entrée `evidence_refs` doit pointer vers un fichier non vide du bundle.
+Les chemins absolus, `..`, séparateurs Windows et symlinks sont refusés. Le champ
+`artifact.apk.sha256` est le SHA-256 du fichier APK ; le certificat porte à la fois le
+hash du rapport et `certificate_sha256`, qui doit correspondre à l’empreinte
+`Signer #1 certificate SHA-256 digest` du rapport.
+
+Le `source_sha` signé doit correspondre à l’input `expected_source_sha` du workflow.
+La vérification locale équivalente est :
+
+```bash
+node scripts/verify-phone-core-physical-session.js \
+  session.json trust.json "$SOURCE_SHA"
+```
+
+Le fichier `trust.json` ne contient que les clés publiques Ed25519 autorisées par le
+laboratoire. Une clé inconnue, révoquée, un fichier manquant/vide, un digest divergent,
+un scénario absent ou un statut autre que `PASS` produit un verdict fermé `FAIL`.
+
 ## Relevé de session
 
 | Champ | Valeur à renseigner |

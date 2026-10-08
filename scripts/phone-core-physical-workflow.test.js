@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const workflowPath = '.github/workflows/android-physical-proof-verification.yml';
+const protocol = readFileSync('docs/PHONE_CORE_PHYSICAL_VALIDATION.md', 'utf8');
 let workflow = '';
 try {
   workflow = readFileSync(workflowPath, 'utf8');
@@ -32,4 +33,13 @@ test('physical proof workflow downloads an artifact and invokes the fail-closed 
 test('physical proof workflow does not classify emulator evidence as physical validation', () => {
   assert.doesNotMatch(workflow, /ANDROID_APPLICATION_EMULATION/);
   assert.doesNotMatch(workflow, /physical_validation:\s*false/);
+});
+
+test('physical protocol documents the exact signed bundle consumed by the workflow', () => {
+  assert.match(protocol, /session\.json/);
+  assert.match(protocol, /trust\.json/);
+  assert.match(protocol, /evidence_refs/);
+  assert.match(protocol, /verify-phone-core-physical-session\.js/);
+  assert.match(protocol, /expected_source_sha|SOURCE_SHA/);
+  assert.match(protocol, /S01[\s\S]*S26/);
 });
