@@ -125,12 +125,19 @@ PYINCOMING
 wait_logcat_marker() {
   local marker="$1"
   local evidence="$2"
+  local evidence_path="$FLOW_OUTPUT_DIR/$evidence"
+  local error_path="$FLOW_OUTPUT_DIR/$evidence.error"
   for _ in $(seq 1 20); do
-    adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence" 2>/dev/null || true
-    if grep -Fq "$marker" "$FLOW_OUTPUT_DIR/$evidence"; then return 0; fi
+    if adb logcat -d -v brief > "$evidence_path" 2>"$error_path"; then
+      if grep -Fq "$marker" "$evidence_path"; then return 0; fi
+    else
+      local status=$?
+      rm -f "$evidence_path"
+      printf 'adb_logcat_status=%s\n' "$status" >> "$error_path"
+    fi
     sleep 0.5
   done
-  echo "Expected PII-free Android lifecycle marker was not observed: $marker"
+  echo "Expected PII-free Android lifecycle marker was not observed from a successful adb snapshot: $marker"
   return 1
 }
 start_api37_incoming_answer_transport_bridge() {
