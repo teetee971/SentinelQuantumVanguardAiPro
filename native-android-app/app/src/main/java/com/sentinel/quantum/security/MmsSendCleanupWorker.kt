@@ -30,6 +30,7 @@ class MmsSendCleanupWorker(
         if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
             val recovered = runCatching {
                 MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
+                MmsSubmissionWatchdogWorker.schedule(applicationContext)
                 MmsSendPduStager.pruneExpired(applicationContext)
                 MmsDownloadCoordinator.pruneExpired(applicationContext)
                 MmsConversationStore(applicationContext).repairJournal()

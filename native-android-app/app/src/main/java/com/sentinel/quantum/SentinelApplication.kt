@@ -4,6 +4,7 @@ import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.IncomingSmsRecoveryWorker
 import com.sentinel.quantum.security.MmsSendCleanupWorker
+import com.sentinel.quantum.security.MmsSubmissionWatchdogWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 import com.sentinel.quantum.security.SmsSubmissionWatchdogWorker
 
@@ -27,6 +28,7 @@ class SentinelApplication : Application() {
         runCatching { SmsSubmissionWatchdogWorker.schedule(this) }
         runCatching { IncomingSmsRecoveryWorker.schedule(this) }
         runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(this) }
+        runCatching { MmsSubmissionWatchdogWorker.schedule(this) }
 
         val store = CallBlocklistStore(this)
         val screeningSnapshot = store.prepareScreeningSnapshot()

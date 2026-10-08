@@ -192,12 +192,13 @@ internal class MmsConversationStore(private val context: Context) {
     ): Boolean {
         if (!holdsSmsRole() || !MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
         val outcomeJournaled = journal.markResult(token, providerMessageId, successful, nowMs)
+        if (!outcomeJournaled) return false
         val updated = transitionMessageBox(providerMessageId, successful, nowMs)
         if (updated) {
             // A stale journal record is safe but noisy. Do not downgrade a confirmed provider write
             // if cleanup metadata itself is unavailable.
             journal.remove(token)
-        } else if (!outcomeJournaled) {
+        } else {
             LocalLogger(appContext).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsProvider",
@@ -205,6 +206,34 @@ internal class MmsConversationStore(private val context: Context) {
             )
         }
         return updated
+    }
+
+    /** Resolves an MMS whose transport callback was lost without overwriting a terminal row. */
+    fun markTransportTimedOut(providerMessageId: Long): Boolean {
+        if (!holdsSmsRole() || providerMessageId <= 0L) return false
+        val uri = ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId)
+        val values = ContentValues().apply {
+            put(Telephony.Mms.MESSAGE_BOX, Telephony.Mms.MESSAGE_BOX_FAILED)
+        }
+        return runCatching {
+            val updated = appContext.contentResolver.update(
+                uri,
+                values,
+                "${Telephony.Mms.MESSAGE_BOX}=?",
+                arrayOf(Telephony.Mms.MESSAGE_BOX_OUTBOX.toString())
+            )
+            if (updated == 1) return@runCatching true
+            appContext.contentResolver.query(
+                uri,
+                arrayOf(Telephony.Mms.MESSAGE_BOX),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) true
+                else cursor.getInt(0) != Telephony.Mms.MESSAGE_BOX_OUTBOX
+            } ?: false
+        }.getOrDefault(false)
     }
 
     /** Best-effort repair of incomplete builds and callback projections; never invents carrier proof. */
@@ -240,16 +269,32 @@ internal class MmsConversationStore(private val context: Context) {
 
     private fun transitionMessageBox(providerMessageId: Long, successful: Boolean, nowMs: Long): Boolean {
         if (providerMessageId <= 0L || nowMs < 0L) return false
+        val targetBox = if (successful) Telephony.Mms.MESSAGE_BOX_SENT else Telephony.Mms.MESSAGE_BOX_FAILED
         val values = ContentValues().apply {
             put(
                 Telephony.Mms.MESSAGE_BOX,
-                if (successful) Telephony.Mms.MESSAGE_BOX_SENT else Telephony.Mms.MESSAGE_BOX_FAILED
+                targetBox
             )
             if (successful) put(Telephony.Mms.DATE_SENT, nowMs / 1000L)
         }
         val uri = ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, providerMessageId)
         return runCatching {
-            appContext.contentResolver.update(uri, values, null, null) == 1
+            val updated = appContext.contentResolver.update(
+                uri,
+                values,
+                "${Telephony.Mms.MESSAGE_BOX}=?",
+                arrayOf(Telephony.Mms.MESSAGE_BOX_OUTBOX.toString())
+            )
+            if (updated == 1) return@runCatching true
+            appContext.contentResolver.query(
+                uri,
+                arrayOf(Telephony.Mms.MESSAGE_BOX),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                cursor.moveToFirst() && cursor.getInt(0) == targetBox
+            } ?: false
         }.getOrDefault(false)
     }
 

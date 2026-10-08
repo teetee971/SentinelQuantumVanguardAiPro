@@ -165,6 +165,32 @@ class SentinelMmsSender(private val context: Context) {
             }
         }
 
+        val watchdogReady = runCatching {
+            MmsSubmissionWatchdogWorker.schedule(context)
+            true
+        }.getOrDefault(false)
+        if (!watchdogReady) {
+            MmsSendPduStager.delete(context, staged.fileName)
+            val cleanupConfirmed = providerStore.abandonBeforeTransport(
+                staged.token,
+                providerMessageId
+            )
+            if (!cleanupConfirmed) {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsProvider",
+                    "Watchdog MMS indisponible; nettoyage provider non confirmé"
+                )
+            }
+            return SendResult(
+                false,
+                "MMS_SUBMISSION_WATCHDOG_UNAVAILABLE",
+                subscriptionId,
+                staged.token,
+                providerMessageId
+            )
+        }
+
         var transportInvocationStarted = false
         return try {
             val callbackIntent = Intent(context, SentinelMmsSendStatusReceiver::class.java)

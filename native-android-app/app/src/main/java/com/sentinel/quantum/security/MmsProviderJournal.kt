@@ -60,12 +60,27 @@ internal class MmsProviderJournal(context: Context) {
         providerMessageId: Long,
         successful: Boolean,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean = transition(
-        token,
-        providerMessageId,
-        if (successful) Phase.RESULT_SENT else Phase.RESULT_FAILED,
-        nowMs
-    )
+    ): Boolean {
+        if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return false
+        val current = read(token) ?: return false
+        if (current.providerMessageId != null && current.providerMessageId != providerMessageId) return false
+        if (current.phase == Phase.RESULT_SENT || current.phase == Phase.RESULT_FAILED) return false
+        return write(current.copy(
+            providerMessageId = providerMessageId,
+            phase = if (successful) Phase.RESULT_SENT else Phase.RESULT_FAILED,
+            updatedAtMs = nowMs
+        ))
+    }
+
+    fun staleTransportSubmissions(nowMs: Long = System.currentTimeMillis()): List<Record> {
+        if (nowMs < 0L) return emptyList()
+        return all().filter { record ->
+            record.providerMessageId != null &&
+                record.phase in setOf(Phase.READY, Phase.SUBMITTED, Phase.SUBMISSION_UNKNOWN) &&
+                nowMs >= record.updatedAtMs &&
+                nowMs - record.updatedAtMs >= MMS_CALLBACK_TIMEOUT_MS
+        }
+    }
 
     /**
      * A process restart makes a READY record ambiguous: Android may have been invoked immediately
@@ -145,6 +160,7 @@ internal class MmsProviderJournal(context: Context) {
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 1024
         private const val MAX_RECORDS = 256
+        const val MMS_CALLBACK_TIMEOUT_MS = 15L * 60L * 1000L
         private val TOKEN = Regex(
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
         )
