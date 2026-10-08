@@ -8,9 +8,12 @@ class PhoneCoreSetupLifecyclePolicyTest {
     private fun facts(ready: Boolean) = PhoneCoreSetupWizardStore.Facts(
         corePermissionsReady = ready,
         dialerRoleHeld = ready,
+        dialerRoleAvailable = ready,
         callScreeningRoleHeld = ready,
+        callScreeningRoleAvailable = ready,
         callLogPermissionGranted = ready,
         smsRoleHeld = ready,
+        smsRoleAvailable = ready,
         smsRuntimePermissionsReady = ready,
         mmsPermissionsReady = ready,
         mmsSafePreviewValidated = ready,
