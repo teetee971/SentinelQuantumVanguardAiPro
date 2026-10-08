@@ -28,8 +28,9 @@ test('Android emulator qualification covers minimum, current and newest runtime 
 });
 
 test('instrumentation failures preserve runtime diagnostics before the emulator is stopped', () => {
-  assert.match(instrumentationWorkflow, /name: Dump Android instrumentation diagnostics/);
-  assert.match(instrumentationWorkflow, /if: failure\(\)/);
+  assert.match(instrumentationWorkflow, /collect_instrumentation_diagnostics\(\)/);
+  assert.match(instrumentationWorkflow, /trap cleanup_instrumentation EXIT/);
+  assert.match(instrumentationWorkflow, /if \[\[ "\$status" -ne 0 \]\]; then/);
   assert.match(instrumentationWorkflow, /adb logcat -d -v threadtime/);
   assert.match(instrumentationWorkflow, /adb shell dumpsys telecom/);
   assert.match(instrumentationWorkflow, /adb shell dumpsys role/);
