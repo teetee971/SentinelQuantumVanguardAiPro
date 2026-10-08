@@ -254,6 +254,23 @@ test('schema-forbidden additional properties are rejected even when signed', { s
   }
 });
 
+test('every evidence-map entry must satisfy the schema even when it is not a required PASS', { skip: !fs.existsSync(verifier) }, () => {
+  const cases = [
+    ['extra malformed entry', manifest => { manifest.scenarios.EXTRA = { status: 'PASS' }; }],
+    ['invalid status', manifest => { manifest.scenarios.S01.status = 'MAYBE'; }],
+    ['missing evidence_refs', manifest => { manifest.scenarios.S01.status = 'FAIL'; delete manifest.scenarios.S01.evidence_refs; }],
+    ['non-object evidence map', manifest => { manifest.scenarios = []; }]
+  ];
+
+  for (const [label, mutate] of cases) {
+    const manifest = baseManifest();
+    mutate(manifest);
+    const result = run(manifest);
+    assert.equal(result.status, 1, `${label} must be schema-invalid; stderr=${result.stderr}; stdout=${result.stdout}`);
+    assert.match(result.stderr, /evidence|status|object|schema/i, `${label} must report an evidence-schema failure`);
+  }
+});
+
 test('production policy declares the machine-readable physical session contract', () => {
   const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
   const physical = policy.physical_session_manifest;
