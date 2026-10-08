@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+
+const service = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
+  'utf8'
+);
+
+test('slow local screening fails open before the Telecom response boundary', () => {
+  assert.match(
+    service,
+    /const val MAX_PRE_RESPONSE_MS = 450L/,
+    'screening must reserve margin below the 500 ms physical gate'
+  );
+  assert.match(
+    service,
+    /if \(responseBudgetExceeded\(startedAtElapsedMs\)\) \{[\s\S]*?respondOpen\(callDetails, startedAtElapsedMs\)[\s\S]*?return/s,
+    'an over-budget rule evaluation must fail open before a block/silence response'
+  );
+  assert.match(
+    service,
+    /private fun responseBudgetExceeded\(startedAtElapsedMs: Long\): Boolean =\s*\(SystemClock\.elapsedRealtime\(\) - startedAtElapsedMs\)\.coerceAtLeast\(0L\) >= MAX_PRE_RESPONSE_MS/s,
+    'the budget must use elapsed monotonic time and fail at the configured boundary'
+  );
+});

@@ -70,6 +70,14 @@ class SentinelCallScreeningService : CallScreeningService() {
             respondOpen(callDetails, startedAtElapsedMs)
             return
         }
+        // Keep a margin below the physical release gate (<500 ms before the Telecom response).
+        // The screening path is cache-only, but a corrupted or unexpectedly expensive local
+        // rule evaluation must fail open instead of spending the remaining Telecom deadline on a
+        // blocking/silencing decision.
+        if (responseBudgetExceeded(startedAtElapsedMs)) {
+            respondOpen(callDetails, startedAtElapsedMs)
+            return
+        }
         val response = CallResponse.Builder()
         when (decision.action) {
             CallRuleEngine.Action.BLOCK -> response
@@ -186,10 +194,14 @@ class SentinelCallScreeningService : CallScreeningService() {
         Log.i(LIFECYCLE_TAG, RESPONSE_LATENCY_MARKER + elapsedMs)
     }
 
+    private fun responseBudgetExceeded(startedAtElapsedMs: Long): Boolean =
+        (SystemClock.elapsedRealtime() - startedAtElapsedMs).coerceAtLeast(0L) >= MAX_PRE_RESPONSE_MS
+
     private companion object {
         const val LIFECYCLE_TAG = "SentinelLifecycle"
         const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
         const val RESPONSE_LATENCY_MARKER = "CallScreeningService:response_elapsed_ms="
+        const val MAX_PRE_RESPONSE_MS = 450L
         val SCREENING_FINGERPRINTER = CallNumberFingerprinter()
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
             threadName = "sentinel-call-screening-post-response"
