@@ -133,6 +133,31 @@ class PhoneCoreSetupWizardStoreTest {
         )
     }
 
+    @Test fun failedMmsSafePreviewIsVisibleButNeverOffersAFalseAndroidAction() {
+        val target = PhoneCoreSetupWizardStore.targetKey(PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW)
+        val runtime = facts(
+            core = true,
+            dialer = true,
+            screening = true,
+            callLog = true,
+            smsRole = true,
+            smsPermissions = true,
+            mms = true,
+            notifications = true,
+            mmsSafePreview = false
+        )
+        assertEquals(PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW, PhoneCoreSetupWizardStore.nextConfigurableStep(runtime))
+        assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW, runtime))
+        assertEquals(
+            false,
+            PhoneCoreSetupWizardStore.shouldOfferManualContinue(
+                targetKey = target,
+                lastAttemptedTargetKey = null,
+                actionable = false
+            )
+        )
+    }
+
     @Test fun completedSetupStaysClosedOnlyWhileRuntimeFactsRemainReady() {
         val ready = facts(true, true, true, true, true, true, true, true)
         assertEquals(false, PhoneCoreSetupWizardStore.shouldOpenSetup(true, ready))

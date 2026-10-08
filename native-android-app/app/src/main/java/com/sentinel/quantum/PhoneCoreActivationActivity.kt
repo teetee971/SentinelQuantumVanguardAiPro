@@ -451,8 +451,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
+                                    if (setupStep == PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW) {
+                                        Text(
+                                            "BLOQUÉ : le contrôle local de l’aperçu MMS sécurisé a échoué ou reste indisponible. Aucun contenu MMS réel ne sera ouvert ; le module Téléphonie restera verrouillé jusqu’à correction du décodeur.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
                                     if (
                                         setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE &&
+                                        setupStep != PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW &&
                                         PhoneCoreSetupWizardStore.shouldOfferManualContinue(
                                             targetKey = setupTargetKey,
                                             lastAttemptedTargetKey = attemptedSetupTargetKey,
@@ -501,21 +509,28 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                                     } else {
                                                         "Les notifications restent incomplètes : vérifiez les notifications globales, les canaux Appels entrants/Appels manqués/SMS et, si Android le demande, le plein écran d’appel."
                                                     }
+                                                PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW ->
+                                                    "Le contrôle local de l’aperçu MMS sécurisé est obligatoire avant de déclarer les prérequis logiciels prêts. Ouvrez le diagnostic technique pour examiner ce blocage ; aucun accès opérateur n’est requis pour ce contrôle."
                                                 else ->
                                                     "Cette étape n’est pas encore accordée. Vérifiez les paramètres Android puis réessayez."
                                             },
                                             style = MaterialTheme.typography.bodySmall
                                         )
-                                        if (PhoneCoreSetupWizardStore.isStepActionable(setupStep, setupFacts)) {
+                                        if (
+                                            setupStep != PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW &&
+                                            PhoneCoreSetupWizardStore.isStepActionable(setupStep, setupFacts)
+                                        ) {
                                             Button(
                                                 onClick = { setupWizard.clearAttempted(); epoch++ },
                                                 modifier = Modifier.fillMaxWidth()
                                             ) { Text("Réessayer cette étape") }
                                         }
-                                        OutlinedButton(
-                                            onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) { Text("Ouvrir les paramètres Android de Sentinel") }
+                                        if (setupStep != PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW) {
+                                            OutlinedButton(
+                                                onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) { Text("Ouvrir les paramètres Android de Sentinel") }
+                                        }
                                     }
                                 }
                             }
