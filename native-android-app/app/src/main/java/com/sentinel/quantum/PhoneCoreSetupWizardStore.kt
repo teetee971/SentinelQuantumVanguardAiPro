@@ -209,6 +209,14 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             else -> true
         }
 
+        /** True when the current blocker is an Android role the device cannot expose. */
+        fun isBlockedByUnavailableRole(step: Step, facts: Facts): Boolean = when (step) {
+            Step.DIALER_ROLE -> !facts.dialerRoleAvailable && !facts.dialerRoleHeld
+            Step.CALL_SCREENING_ROLE -> !facts.callScreeningRoleAvailable && !facts.callScreeningRoleHeld
+            Step.SMS_ROLE -> !facts.smsRoleAvailable && !facts.smsRoleHeld
+            else -> false
+        }
+
         /**
          * Returns the next missing permission that belongs to the essential setup contract.
          * READ_CONTACTS is intentionally skipped: contact-name enrichment is local and optional,

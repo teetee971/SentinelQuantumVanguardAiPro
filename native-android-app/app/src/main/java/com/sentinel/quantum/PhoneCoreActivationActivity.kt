@@ -477,7 +477,11 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             Text("Continuer l’activation")
                                         }
                                     }
-                                    if (setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE && attemptedSetupTargetKey == setupTargetKey) {
+                                    if (
+                                        setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE &&
+                                        (attemptedSetupTargetKey == setupTargetKey ||
+                                            PhoneCoreSetupWizardStore.isBlockedByUnavailableRole(setupStep, setupFacts))
+                                    ) {
                                         Text(
                                             when (setupStep) {
                                                 PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->

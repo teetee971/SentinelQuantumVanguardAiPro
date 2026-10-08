@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PhoneCoreSetupConfigurableStepTest {
@@ -56,6 +57,7 @@ class PhoneCoreSetupConfigurableStepTest {
             PhoneCoreSetupWizardStore.nextConfigurableStep(runtime)
         )
         assertFalse(PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, runtime))
+        assertTrue(PhoneCoreSetupWizardStore.isBlockedByUnavailableRole(PhoneCoreSetupWizardStore.Step.DIALER_ROLE, runtime))
     }
 
     @Test fun unavailableSmsRoleSkipsSmsAndMmsPermissionsButKeepsTruthBlocked() {
@@ -77,5 +79,6 @@ class PhoneCoreSetupConfigurableStepTest {
             PhoneCoreSetupWizardStore.nextConfigurableStep(afterNotifications)
         )
         assertFalse(PhoneCoreSetupWizardStore.softwarePrerequisitesReady(afterNotifications))
+        assertTrue(PhoneCoreSetupWizardStore.isBlockedByUnavailableRole(PhoneCoreSetupWizardStore.Step.SMS_ROLE, afterNotifications))
     }
 }
