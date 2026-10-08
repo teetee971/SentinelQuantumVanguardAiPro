@@ -4,7 +4,6 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -53,7 +52,11 @@ class PhoneCoreSetupRebootPreparationInstrumentationTest {
                 .putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
         )
         try {
-            scenario.moveToState(Lifecycle.State.RESUMED)
+            // The real first-run UI may immediately launch an Android-owned role/permission
+            // surface. ActivityScenario is then legitimately PAUSED until that surface returns;
+            // forcing RESUMED first makes the qualification fail before observing persistence.
+            waitForAttemptedTarget()
+            dismissSystemSetupDialog()
             instrumentation.waitForIdleSync()
         } finally {
             scenario.close()

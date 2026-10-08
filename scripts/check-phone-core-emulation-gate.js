@@ -325,6 +325,9 @@ if (!/fun dismissSystemSetupDialog\(\)/.test(setupRebootTest) ||
     !/cleanUpUnlessWorkflowWillReboot\(\)[\s\S]*dismissSystemSetupDialog\(\)/.test(setupRebootTest)) {
   errors.push('setup reboot preparation must dismiss any Android role/permission dialog before releasing ActivityScenario');
 }
+if (setupRebootTest.includes('scenario.moveToState(Lifecycle.State.RESUMED)')) {
+  errors.push('setup reboot preparation must observe the real paused/resumed state instead of forcing RESUMED behind an Android-owned dialog');
+}
 
 for (const marker of [
   'AllStaticNavigationSurfacesInstrumentationTest',
