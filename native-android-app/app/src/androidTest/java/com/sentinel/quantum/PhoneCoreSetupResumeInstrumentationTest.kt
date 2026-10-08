@@ -49,12 +49,26 @@ class PhoneCoreSetupResumeInstrumentationTest {
     fun interruptedFirstRunResumesWithoutFalseCompletion() {
         val intent = Intent(context, PhoneCoreActivationActivity::class.java)
             .putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+        val runtimeFactsBeforeLaunch = PhoneCoreRuntimeFacts.read(context)
+        val expectedStep = PhoneCoreSetupWizardStore.nextConfigurableStep(runtimeFactsBeforeLaunch)
+        val expectedStepActionable = PhoneCoreSetupWizardStore.isStepActionable(
+            expectedStep,
+            runtimeFactsBeforeLaunch
+        )
         PhoneCoreSetupWizardStore(context).markInProgress()
 
         val firstScenario = ActivityScenario.launch<PhoneCoreActivationActivity>(intent)
         try {
             val attemptedTarget = waitForAttemptedTarget()
-            assertNotNull("first-run setup must persist the target it attempted", attemptedTarget)
+            if (expectedStepActionable) {
+                assertNotNull("first-run setup must persist the target it attempted", attemptedTarget)
+            } else {
+                assertEquals(
+                    "an unavailable first setup prerequisite must remain blocked without a fake attempt",
+                    null,
+                    attemptedTarget
+                )
+            }
             assertFalse("interrupted setup must never persist completed=true", prefs.getBoolean(KEY_COMPLETED, false))
 
             dismissSystemSetupDialog()
@@ -71,7 +85,15 @@ class PhoneCoreSetupResumeInstrumentationTest {
             PhoneCoreSetupWizardStore(context).lifecycleState()
         )
         val persistedAttempt = prefs.getString(KEY_ATTEMPTED_TARGET, null)
-        assertNotNull("interrupted setup must retain its attempted target for resume", persistedAttempt)
+        if (expectedStepActionable) {
+            assertNotNull("interrupted setup must retain its attempted target for resume", persistedAttempt)
+        } else {
+            assertEquals(
+                "an unavailable prerequisite must remain blocked after process death",
+                null,
+                persistedAttempt
+            )
+        }
         assertFalse("interruption must not manufacture completion", prefs.getBoolean(KEY_COMPLETED, false))
 
         val resumedScenario = ActivityScenario.launch<PhoneCoreActivationActivity>(intent)
@@ -83,11 +105,19 @@ class PhoneCoreSetupResumeInstrumentationTest {
             resumedScenario.onActivity { activity ->
                 assertFalse("resumed setup activity finished unexpectedly", activity.isFinishing)
             }
-            assertEquals(
-                "resume must preserve the same unresolved target instead of skipping ahead",
-                persistedAttempt,
-                prefs.getString(KEY_ATTEMPTED_TARGET, null)
-            )
+            if (expectedStepActionable) {
+                assertEquals(
+                    "resume must preserve the same unresolved target instead of skipping ahead",
+                    persistedAttempt,
+                    prefs.getString(KEY_ATTEMPTED_TARGET, null)
+                )
+            } else {
+                assertEquals(
+                    "resume must not invent an attempted target for an unavailable prerequisite",
+                    null,
+                    prefs.getString(KEY_ATTEMPTED_TARGET, null)
+                )
+            }
             assertFalse(
                 "resumed incomplete setup must remain fail-closed",
                 prefs.getBoolean(KEY_COMPLETED, false)
