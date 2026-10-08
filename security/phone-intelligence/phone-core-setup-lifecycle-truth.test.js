@@ -42,7 +42,7 @@ test('interrupted setup remains resumable while completed setup reopens on runti
 
 test('lifecycle transitions are durable and invalidate legacy completion before Android handoff', () => {
   const setter = store.match(
-    /private fun setLifecycleState\(state: LifecycleState\) \{[\s\S]*?\n    \}/
+    /private fun setLifecycleState\(state: LifecycleState\): Boolean \{[\s\S]*?\n    \}/
   )?.[0] ?? '';
   assert.ok(setter, 'setLifecycleState must remain inspectable');
   assert.match(
