@@ -23,7 +23,6 @@ les éléments suivants :
 
 ```text
 session.json
-trust.json
 artifacts/app.apk
 artifacts/app.apk.certificates.txt
 evidence/S01...S26.<format>
@@ -41,12 +40,16 @@ La vérification locale équivalente est :
 
 ```bash
 node scripts/verify-phone-core-physical-session.js \
-  session.json trust.json "$SOURCE_SHA"
+  session.json config/phone-core-physical-proof-trust.json "$SOURCE_SHA"
 ```
 
-Le fichier `trust.json` ne contient que les clés publiques Ed25519 autorisées par le
-laboratoire. Une clé inconnue, révoquée, un fichier manquant/vide, un digest divergent,
-un scénario absent ou un statut autre que `PASS` produit un verdict fermé `FAIL`.
+Le fichier `config/phone-core-physical-proof-trust.json` est versionné dans la branche
+protégée et n’est jamais fourni par l’artefact du laboratoire. Le workflow utilise le
+vérificateur et cette racine de confiance depuis la branche par défaut, puis contrôle le
+SHA exact dans un checkout séparé. Une clé inconnue, révoquée ou absente, un fichier
+manquant/vide, un digest divergent, un scénario absent ou un statut autre que `PASS`
+produit un verdict fermé `FAIL`. Tant qu’une vraie clé publique Ed25519 du laboratoire
+n’a pas été ajoutée par revue, la configuration vide doit donc échouer fermé.
 
 ## Relevé de session
 

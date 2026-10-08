@@ -179,3 +179,16 @@ test('rejects a signed session bound to a different source head', async t => {
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /source sha mismatch/);
 });
+
+test('rejects a validly signed session when the trust root has no authorized keys', async t => {
+  const fixture = await makeFixture(t);
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: { schema_version: 1, allowed_keys: [] },
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /no authorized keys/);
+});

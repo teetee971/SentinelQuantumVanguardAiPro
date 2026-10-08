@@ -81,10 +81,11 @@ function add(errors, message) {
 
 function validateTrust(trust, errors) {
   if (!exactKeys(trust, ['schema_version', 'allowed_keys']) || trust.schema_version !== 1 ||
-      !Array.isArray(trust.allowed_keys) || trust.allowed_keys.length === 0 || trust.allowed_keys.length > 32) {
+      !Array.isArray(trust.allowed_keys) || trust.allowed_keys.length > 32) {
     add(errors, 'trust configuration invalid');
     return [];
   }
+  if (trust.allowed_keys.length === 0) add(errors, 'trust configuration has no authorized keys');
   const ids = new Set();
   return trust.allowed_keys.flatMap(entry => {
     if (!exactKeys(entry, ['key_id', 'public_key_pem', 'revoked']) ||
@@ -238,7 +239,7 @@ function main() {
   const expectedSourceSha = process.argv[4] || process.env.SOURCE_SHA;
   if (!manifestPath || !trustPath || !expectedSourceSha) {
     console.error('PHONE CORE PHYSICAL SESSION: FAIL');
-    console.error('usage: verify-phone-core-physical-session.js <session.json> <trust.json> <expected-source-sha>');
+    console.error('usage: verify-phone-core-physical-session.js <session.json> <trust-config.json> <expected-source-sha>');
     process.exitCode = 2;
     return;
   }
