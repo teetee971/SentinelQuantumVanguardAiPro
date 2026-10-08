@@ -90,6 +90,20 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
   assert.doesNotMatch(source, /wifiScanFresh|SIGNAL_WIFI_SCAN_FRESH|WIFI_SCAN_FRESH|Kind\.WIFI/);
 });
 
+test('first-run completion includes the same secure MMS prerequisite as Phone Core readiness', () => {
+  const setupStore = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt'),
+    'utf8'
+  );
+  const runtimeFacts = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt'),
+    'utf8'
+  );
+  assert.match(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*=\s*true/);
+  assert.match(setupStore, /facts\.mmsSafePreviewValidated/);
+  assert.match(runtimeFacts, /MmsSafePreviewReadiness\.softwareValidated/);
+});
+
 
 test('Phone Core readiness no longer owns the Wi-Fi scanner capability', () => {
   const diagnostics = readFileSync(

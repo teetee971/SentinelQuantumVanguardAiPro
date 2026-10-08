@@ -286,6 +286,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         val checks = listOf(state.receiveMmsPermission, state.receiveWapPushPermission)
                         checks.count { it } to checks.size
                     }
+                    PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW ->
+                        (if (mmsSafePreviewValidated) 1 else 0) to 1
                     PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS ->
                         if (notificationPermissionRequired) {
                             (if (hasPermission(Manifest.permission.POST_NOTIFICATIONS)) 1 else 0) to 1
@@ -344,6 +346,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 setupPermissionLauncher.launch(permission)
                             } else epoch++
                         }
+                        PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW -> epoch++
                         PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS -> {
                             if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                 setupPermissionInFlight = Manifest.permission.POST_NOTIFICATIONS
@@ -371,7 +374,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             setupTargetKey,
                             attemptedSetupTargetKey,
                             allowTargetAdvance = allowWizardAutoAdvance
-                        )
+                        ) && PhoneCoreSetupWizardStore.isStepActionable(setupStep, setupFacts)
                     ) {
                         allowWizardAutoAdvance = false
                         launchSetupStep(setupStep)

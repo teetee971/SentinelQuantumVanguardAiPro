@@ -93,6 +93,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         SMS_ROLE,
         SMS_PERMISSIONS,
         MMS_PERMISSIONS,
+        MMS_SAFE_PREVIEW,
         NOTIFICATION_CHANNELS,
         COMPLETE
     }
@@ -108,6 +109,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         val smsRoleAvailable: Boolean = true,
         val smsRuntimePermissionsReady: Boolean,
         val mmsPermissionsReady: Boolean,
+        val mmsSafePreviewValidated: Boolean = true,
         val notificationChannelsReady: Boolean
     )
 
@@ -133,6 +135,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.SMS_ROLE,
             Step.SMS_PERMISSIONS,
             Step.MMS_PERMISSIONS,
+            Step.MMS_SAFE_PREVIEW,
             Step.NOTIFICATION_CHANNELS
         )
 
@@ -144,6 +147,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             !facts.smsRoleHeld -> Step.SMS_ROLE
             !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
             !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+            !facts.mmsSafePreviewValidated -> Step.MMS_SAFE_PREVIEW
             !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
             else -> Step.COMPLETE
         }
@@ -161,6 +165,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             !facts.smsRoleHeld && facts.smsRoleAvailable -> Step.SMS_ROLE
             facts.smsRoleHeld && !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
             facts.smsRoleHeld && !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+            facts.smsRoleHeld && !facts.mmsSafePreviewValidated -> Step.MMS_SAFE_PREVIEW
             !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
             else -> nextStep(facts)
         }
@@ -199,6 +204,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.DIALER_ROLE -> facts.dialerRoleAvailable && !facts.dialerRoleHeld
             Step.CALL_SCREENING_ROLE -> facts.callScreeningRoleAvailable && !facts.callScreeningRoleHeld
             Step.SMS_ROLE -> facts.smsRoleAvailable && !facts.smsRoleHeld
+            Step.MMS_SAFE_PREVIEW -> false
             Step.COMPLETE -> false
             else -> true
         }
@@ -271,6 +277,8 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
                 "Ces autorisations servent uniquement aux opérations SMS que le rôle Android permet réellement à Sentinel d’exécuter."
             Step.MMS_PERMISSIONS ->
                 "Ces autorisations permettent la réception MMS. La capacité opérationnelle reste distincte tant qu’elle n’est pas validée sur appareil réel."
+            Step.MMS_SAFE_PREVIEW ->
+                "Sentinel vérifie localement que le décodeur MMS sécurisé accepte un contenu borné et rejette un contenu usurpé avant d’ouvrir un aperçu."
             Step.NOTIFICATION_CHANNELS ->
                 "Cette étape regroupe l’autorisation Android des notifications, les canaux Appels/SMS et le plein écran d’appel lorsqu’Android l’exige."
             Step.COMPLETE ->
@@ -286,6 +294,8 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
                 "L’accès au journal reste local et dépend simultanément du rôle Téléphone et de l’autorisation Android."
             Step.SMS_PERMISSIONS, Step.MMS_PERMISSIONS ->
                 "Aucun message n’est transmis à un service distant par le seul fait d’accorder ces autorisations."
+            Step.MMS_SAFE_PREVIEW ->
+                "Ce contrôle reste local : aucun contenu MMS réel n’est requis ni transmis pour valider ce prérequis logiciel."
             Step.NOTIFICATION_CHANNELS ->
                 "Le contenu sensible des notifications reste gouverné par les préférences Sentinel et les réglages système."
             Step.COMPLETE ->
@@ -300,6 +310,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.SMS_ROLE -> "Définir Sentinel comme application SMS"
             Step.SMS_PERMISSIONS -> "Autoriser l’envoi et la réception des SMS"
             Step.MMS_PERMISSIONS -> "Autoriser la réception des MMS"
+            Step.MMS_SAFE_PREVIEW -> "Vérifier l’aperçu MMS sécurisé"
             Step.NOTIFICATION_CHANNELS -> "Activer les notifications et le plein écran des appels"
             Step.COMPLETE -> "Prérequis logiciels prêts"
         }

@@ -10,6 +10,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.PermissionChecker
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
+import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SentinelMissedCallReceiver
 import com.sentinel.quantum.security.SmsActivationDiagnostics
@@ -53,6 +54,7 @@ internal object PhoneCoreRuntimeFacts {
             mmsPermissionsReady =
                 hasEffectivePermission(context, Manifest.permission.RECEIVE_MMS) &&
                     hasEffectivePermission(context, Manifest.permission.RECEIVE_WAP_PUSH),
+            mmsSafePreviewValidated = MmsSafePreviewReadiness.softwareValidated,
             notificationChannelsReady =
                 notificationPermissionGranted &&
                     notificationsGloballyEnabled &&
