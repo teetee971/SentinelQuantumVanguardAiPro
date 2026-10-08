@@ -142,6 +142,12 @@ class SentinelInCallActivity : ComponentActivity() {
                     val current = snapshot ?: return@LaunchedEffect
                     if (!resumed || recordedCallId == current.id ||
                         current.state == Call.STATE_DISCONNECTED || current.state == Call.STATE_DISCONNECTING) return@LaunchedEffect
+                    // Composition is not proof that a user-visible frame was presented. Wait
+                    // for the next frame and reject a Telecom session that ended in the gap.
+                    withFrameNanos { }
+                    if (SentinelInCallService.sessions.value.primary?.id != current.id) {
+                        return@LaunchedEffect
+                    }
                     val stored = withContext(Dispatchers.IO) {
                         runCatching {
                             physicalTimeline.append(

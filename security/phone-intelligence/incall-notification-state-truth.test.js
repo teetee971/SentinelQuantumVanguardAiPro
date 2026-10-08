@@ -14,6 +14,10 @@ const helper = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt',
   'utf8'
 );
+const activity = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt',
+  'utf8'
+);
 
 test('incoming call notification is cancelled only after observed Telecom state transition', () => {
   assert.match(receiver, /SentinelInCallService\.answer\(callId\)/);
@@ -45,5 +49,18 @@ test('incoming notification fails closed when Android denies full-screen intent 
     helper,
     /if \(!isFullScreenIntentAllowed\(context\)\) return false/,
     'notification submission must not be reported when full-screen use is denied'
+  );
+});
+
+test('in-call UI evidence waits for a rendered frame before recording visibility', () => {
+  assert.match(
+    activity,
+    /withFrameNanos\s*\{\s*\}/,
+    'UI evidence must wait for Compose to reach a frame boundary'
+  );
+  assert.match(
+    activity,
+    /withFrameNanos\s*\{\s*\}[\s\S]*SentinelInCallService\.sessions\.value\.primary\?\.id/s,
+    'the evidence path must re-check the live Telecom session after the frame'
   );
 });
