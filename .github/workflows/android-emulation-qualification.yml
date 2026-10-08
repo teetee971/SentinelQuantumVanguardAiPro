@@ -357,7 +357,6 @@ jobs:
           set -euo pipefail
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
-          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
           APP_APK="app/build/outputs/apk/debug/app-debug.apk"
           TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
           test -s "$APP_APK"

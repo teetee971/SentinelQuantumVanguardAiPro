@@ -43,6 +43,8 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
 });
 
 test('emulator qualification proves setup state across a real reboot before runtime reset', () => {
+  const setupReboot = workflow.split('- name: Reboot emulator and verify interrupted setup resumes\n')[1]
+    .split('- name: Run emulator application/runtime qualification\n')[0];
   assert.match(workflow, /id:\s*setup_reboot/);
   assert.match(workflow, /adb shell am instrument[\s\S]*PhoneCoreSetupRebootPreparationInstrumentationTest/);
   assert.match(workflow, /adb shell reboot/);
@@ -52,6 +54,7 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(workflow, /Configuration initiale/);
   assert.match(reportCode, /SETUP_REBOOT_OUTCOME/);
   assert.match(reportCode, /setupRebootObserved/);
+  assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
 });
 
 for (const [name, dump, status, holders] of [
