@@ -18,23 +18,29 @@ function shellFunction(name) {
 test('runtime revocation cannot be credited when pm revoke fails', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-revoke-status-'));
   try {
-    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=false\nsleep(){ :; }\nadb(){ return 7; }\npermission_granted(){ return 1; }\n${shellFunction('probe_pm_revoke_send_sms')}\nif probe_pm_revoke_send_sms; then rc=0; else rc=$?; fi\nprintf '%s|%s\\n' "$rc" "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=false\nsleep(){ :; }\nadb(){ return 7; }\npermission_granted(){ return 0; }\n${shellFunction('probe_pm_revoke_send_sms')}\nif probe_pm_revoke_send_sms; then rc=0; else rc=$?; fi\nprintf '%s|%s\\n' "$rc" "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
     const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /0\|false/);
     const evidence = readFileSync(join(dir, 'send-sms-pm-revoke-observation.txt'), 'utf8');
+    assert.match(evidence, /baseline_granted=true/);
     assert.match(evidence, /pm_revoke_status=7/);
     assert.match(evidence, /reason=pm_revoke_command_failed/);
+    assert.match(evidence, /transition_observed=false/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('successful pm revoke plus denied state qualifies runtime revocation', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-revoke-success-'));
   try {
-    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=false\nsleep(){ :; }\nadb(){ return 0; }\npermission_granted(){ return 1; }\n${shellFunction('probe_pm_revoke_send_sms')}\nprobe_pm_revoke_send_sms\nprintf '%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=false\nPERMISSION_CHECKS=0\nsleep(){ :; }\nadb(){ return 0; }\npermission_granted(){ PERMISSION_CHECKS=$((PERMISSION_CHECKS + 1)); if [[ "$PERMISSION_CHECKS" -eq 1 ]]; then return 0; fi; return 1; }\n${shellFunction('probe_pm_revoke_send_sms')}\nprobe_pm_revoke_send_sms\nprintf '%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
     const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /true/);
+    const evidence = readFileSync(join(dir, 'send-sms-pm-revoke-observation.txt'), 'utf8');
+    assert.match(evidence, /baseline_granted=true/);
+    assert.match(evidence, /denial_stability_observations=6/);
+    assert.match(evidence, /transition_observed=true/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -45,6 +51,23 @@ test('successful pm revoke followed by RoleController grant marks runtime revoca
     const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /false/);
+    const evidence = readFileSync(join(dir, 'send-sms-pm-revoke-observation.txt'), 'utf8');
+    assert.match(evidence, /reason=role_controller_restored_runtime_permission/);
+    assert.match(evidence, /transition_observed=false/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('transient SEND_SMS denial restored on a later observation is never credited as revocation', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-revoke-transient-'));
+  try {
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nSEND_SMS_PM_REVOCATION_OBSERVABLE=true\nPERMISSION_CHECKS=0\nsleep(){ :; }\nadb(){ return 0; }\npermission_granted(){ PERMISSION_CHECKS=$((PERMISSION_CHECKS + 1)); if [[ "$PERMISSION_CHECKS" -eq 1 || "$PERMISSION_CHECKS" -ge 3 ]]; then return 0; fi; return 1; }\n${shellFunction('probe_pm_revoke_send_sms')}\nprobe_pm_revoke_send_sms\nprintf '%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /false/);
+    const evidence = readFileSync(join(dir, 'send-sms-pm-revoke-observation.txt'), 'utf8');
+    assert.match(evidence, /denial_stability_observations=1/);
+    assert.match(evidence, /reason=role_controller_restored_runtime_permission/);
+    assert.match(evidence, /transition_observed=false/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
