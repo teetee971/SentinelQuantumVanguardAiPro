@@ -159,16 +159,22 @@ async function fetchChangedFiles(repository, pullNumber, token) {
   throw new Error('Pull request changed-file list exceeds supported bound');
 }
 
-async function fetchWorkflowRuns(repository, workflow, sha, token) {
-  const params = new URLSearchParams({
-    head_sha: sha,
-    event: 'pull_request',
-    per_page: '20'
-  });
-  const url = `https://api.github.com/repos/${repository}/actions/workflows/${encodeURIComponent(workflow)}/runs?${params}`;
-  const payload = await githubJson(url, token);
-  if (!Array.isArray(payload.workflow_runs)) throw new Error(`Unexpected workflow response for ${workflow}`);
-  return payload.workflow_runs;
+export async function fetchWorkflowRuns(repository, workflow, sha, token) {
+  const runs = [];
+  for (let page = 1; page <= 30; page += 1) {
+    const params = new URLSearchParams({
+      head_sha: sha,
+      event: 'pull_request',
+      per_page: '100',
+      page: String(page)
+    });
+    const url = `https://api.github.com/repos/${repository}/actions/workflows/${encodeURIComponent(workflow)}/runs?${params}`;
+    const payload = await githubJson(url, token);
+    if (!Array.isArray(payload.workflow_runs)) throw new Error(`Unexpected workflow response for ${workflow}`);
+    runs.push(...payload.workflow_runs);
+    if (payload.workflow_runs.length < 100) return runs;
+  }
+  throw new Error(`Workflow run list for ${workflow} exceeds supported bound`);
 }
 
 export async function runProductionMergeGate({

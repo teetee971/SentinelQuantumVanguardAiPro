@@ -9,6 +9,7 @@ import {
   UNIVERSAL_WORKFLOWS,
   WEB_WORKFLOWS,
   evaluateWorkflowRun,
+  fetchWorkflowRuns,
   requiredWorkflowsForPaths,
   selectLatestExactHeadRun
 } from './production-merge-gate.js';
@@ -143,6 +144,28 @@ test('exact-head selection rejects a workflow run belonging to another pull requ
   ], sha, 1609);
 
   assert.equal(selected.id, 10);
+});
+
+test('workflow run lookup paginates beyond the first hundred runs', async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedUrls = [];
+  globalThis.fetch = async (url) => {
+    requestedUrls.push(String(url));
+    const page = Number(new URL(url).searchParams.get('page'));
+    const workflowRuns = page === 1
+      ? Array.from({ length: 100 }, (_, index) => ({ id: index + 1 }))
+      : [{ id: 101 }];
+    return { ok: true, json: async () => ({ workflow_runs: workflowRuns }) };
+  };
+  try {
+    const runs = await fetchWorkflowRuns('owner/repo', 'android.yml', 'a'.repeat(40), 'token');
+    assert.equal(runs.length, 101);
+    assert.equal(requestedUrls.length, 2);
+    assert.equal(new URL(requestedUrls[0]).searchParams.get('per_page'), '100');
+    assert.equal(new URL(requestedUrls[1]).searchParams.get('page'), '2');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('missing and in-progress evidence waits while non-success completion fails closed', () => {
