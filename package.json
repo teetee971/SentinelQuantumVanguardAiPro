@@ -37,7 +37,7 @@
     "test:client-security": "node scripts/check-client-security.js",
     "test:credential-hygiene": "node scripts/check-credential-hygiene.js && node --test scripts/check-credential-hygiene.test.js",
     "test:android-manifest": "node scripts/check-android-manifest.js",
-    "test:android-product-truth": "node scripts/check-android-product-truth.js && node --test scripts/check-android-product-truth.test.js scripts/vpn-documentation-truth.test.js scripts/phone-core-certification-truth.test.js scripts/release-documentation-truth.test.js scripts/phone-core-navigation-contract.test.js scripts/verify-phone-core-physical-session.test.js",
+    "test:android-product-truth": "node scripts/check-android-product-truth.js && node --test scripts/check-android-product-truth.test.js scripts/vpn-documentation-truth.test.js scripts/phone-core-certification-truth.test.js scripts/release-documentation-truth.test.js scripts/phone-core-navigation-contract.test.js scripts/verify-phone-core-physical-session.test.js scripts/phone-core-physical-workflow.test.js",
     "test:android-release-policy": "node --test scripts/android-release-policy.test.js",
     "test:android-debug-artifact-policy": "node --test scripts/android-debug-artifact-policy.test.js",
     "test:android-install-smoke-policy": "node --test scripts/android-install-smoke-policy.test.js",
