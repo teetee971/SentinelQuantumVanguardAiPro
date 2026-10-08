@@ -101,11 +101,18 @@ export function requiredWorkflowsForPaths(files) {
   return [...required];
 }
 
-export function selectLatestExactHeadRun(runs, expectedSha) {
+export function selectLatestExactHeadRun(runs, expectedSha, expectedPullNumber = null) {
   const matching = (runs || []).filter((run) =>
     run &&
     run.head_sha === expectedSha &&
-    run.event === 'pull_request'
+    run.event === 'pull_request' &&
+    (
+      expectedPullNumber === null ||
+      (
+        Array.isArray(run.pull_requests) &&
+        run.pull_requests.some((pullRequest) => pullRequest?.number === expectedPullNumber)
+      )
+    )
   );
   matching.sort((a, b) =>
     Number(a.run_number || 0) - Number(b.run_number || 0) ||
@@ -193,7 +200,7 @@ export async function runProductionMergeGate({
     let pending = false;
     for (const workflow of required) {
       const runs = await fetchWorkflowRuns(repository, workflow, expectedSha, token);
-      const latest = selectLatestExactHeadRun(runs, expectedSha);
+      const latest = selectLatestExactHeadRun(runs, expectedSha, pullNumber);
       const evaluation = evaluateWorkflowRun(latest);
       const runLabel = latest ? `run ${latest.id}` : 'no exact-head run';
 
