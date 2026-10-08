@@ -68,16 +68,16 @@ for (const [name, dump, status, holders] of [
   });
 }
 
-test('archived host provenance preserves build, source, base and branch independently', () => {
+test('archived host provenance preserves exact build/source, base and branch provenance', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-host-provenance-'));
   try {
     const result = spawnSync(process.execPath, ['-e', hostProvenanceCode], { encoding: 'utf8', env: {
-      ...process.env, RUNNER_TEMP: dir, BUILT_COMMIT: 'a'.repeat(40), GITHUB_SHA: 'a'.repeat(40),
+      ...process.env, RUNNER_TEMP: dir, BUILT_COMMIT: 'b'.repeat(40), GITHUB_SHA: 'a'.repeat(40),
       SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch'
     } });
     assert.equal(result.status, 0, result.stderr);
     const report = JSON.parse(readFileSync(join(dir, 'phone-core-host-evidence/provenance.json'), 'utf8'));
-    assert.equal(report.built_commit, 'a'.repeat(40));
+    assert.equal(report.built_commit, 'b'.repeat(40));
     assert.equal(report.workflow_commit, 'a'.repeat(40));
     assert.equal(report.source_head_sha, 'b'.repeat(40));
     assert.equal(report.source_base_sha, 'c'.repeat(40));
@@ -170,7 +170,7 @@ function fixture(overrides = {}, alter = () => {}) {
   const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('');
   writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
   const sha = 'a'.repeat(40);
-  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
+  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: sha, SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
   try {
     alter({ put, results, dir });
     const result = spawnSync(process.execPath, ['-e', reportCode], { cwd: dir, env, encoding: 'utf8' });
@@ -180,12 +180,12 @@ function fixture(overrides = {}, alter = () => {}) {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-test('successful host fixture preserves distinct build, PR source, base, and branch provenance', () => {
+test('successful host fixture preserves exact build/source, base, and branch provenance', () => {
   const { result, report } = fixture();
   assert.equal(result.status, 0, result.stderr);
   assert.equal(report.result, 'PASS');
   assert.equal(report.build_commit, 'a'.repeat(40));
-  assert.equal(report.source_head_commit, 'b'.repeat(40));
+  assert.equal(report.source_head_commit, 'a'.repeat(40));
   assert.equal(report.source_base_commit, 'c'.repeat(40));
   assert.equal(report.source_head_ref, 'fixture-branch');
   assert.equal(report.apk_sha256, 'd'.repeat(64));
@@ -193,6 +193,15 @@ test('successful host fixture preserves distinct build, PR source, base, and bra
   assert.equal(report.evidence_scope, 'developer_qualification');
   assert.equal(report.physical_modem_claim, false);
   assert.equal(report.commercial_release_claim, false);
+});
+
+test('package lookup failure cannot masquerade as an installed application', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('package.txt', 'Unable to find package com.sentinel.quantum\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.match(report.evidence_failures.join('\n'), /package_state/);
 });
 
 for (const role of ['sms', 'dialer', 'call-screening']) {

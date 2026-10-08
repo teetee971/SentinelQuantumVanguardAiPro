@@ -439,6 +439,7 @@ jobs:
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => read(name).split(/\r?\n/)
             .some((line) => line.trim() === 'com.sentinel.quantum');
+          const packageStateConfirmed = /^Package \[com\.sentinel\.quantum\]$/m.test(read('package.txt'));
           const walk = (dir) => {
             if (!fs.existsSync(dir)) return [];
             return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -615,7 +616,7 @@ jobs:
           if (!provenanceValid) evidenceFailures.push('code_provenance');
           const apkSha256 = read('apk.sha256').match(/^([a-f0-9]{64})\s/);
           if (!apkSha256) evidenceFailures.push('apk_provenance');
-          if (!nonEmpty('package.txt') || !contains('package.txt', 'com.sentinel.quantum')) {
+          if (!nonEmpty('package.txt') || !packageStateConfirmed) {
             evidenceFailures.push('package_state');
           }
 
