@@ -192,10 +192,15 @@ function validateManifestShape(session, errors) {
   return true;
 }
 
-export function verifyPhoneCorePhysicalSession({ session, baseDir, trust, now = Date.now() }) {
+export function verifyPhoneCorePhysicalSession({ session, baseDir, trust, expectedSourceSha, now = Date.now() }) {
   const errors = [];
   if (!isPlainObject(session) || !validateManifestShape(session, errors)) {
     return { ok: false, verdict: 'FAIL', errors };
+  }
+  if (typeof expectedSourceSha !== 'string' || !SOURCE_SHA.test(expectedSourceSha)) {
+    add(errors, 'source binding missing or invalid');
+  } else if (session.source_sha !== expectedSourceSha) {
+    add(errors, 'source sha mismatch');
   }
   const trustedKeys = validateTrust(trust, errors);
   const signer = trustedKeys.find(entry => entry.key_id === session.signer_key_id && entry.revoked !== true);
@@ -230,9 +235,10 @@ export function verifyPhoneCorePhysicalSession({ session, baseDir, trust, now = 
 function main() {
   const manifestPath = process.argv[2];
   const trustPath = process.argv[3];
-  if (!manifestPath || !trustPath) {
+  const expectedSourceSha = process.argv[4] || process.env.SOURCE_SHA;
+  if (!manifestPath || !trustPath || !expectedSourceSha) {
     console.error('PHONE CORE PHYSICAL SESSION: FAIL');
-    console.error('usage: verify-phone-core-physical-session.js <session.json> <trust.json>');
+    console.error('usage: verify-phone-core-physical-session.js <session.json> <trust.json> <expected-source-sha>');
     process.exitCode = 2;
     return;
   }
@@ -243,7 +249,8 @@ function main() {
     const result = verifyPhoneCorePhysicalSession({
       session,
       baseDir: path.dirname(path.resolve(manifestPath)),
-      trust
+      trust,
+      expectedSourceSha
     });
     if (!result.ok) {
       console.error('PHONE CORE PHYSICAL SESSION: FAIL');

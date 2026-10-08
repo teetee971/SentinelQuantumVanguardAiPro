@@ -85,6 +85,7 @@ test('accepts a complete signed Phone Core physical session', async t => {
     session: fixture.session,
     baseDir: fixture.root,
     trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
     now: NOW
   });
   assert.deepEqual(result, { ok: true, verdict: 'PASS', errors: [] });
@@ -95,6 +96,7 @@ test('rejects an unknown status before accepting the verdict', async t => {
     session: fixture.session,
     baseDir: fixture.root,
     trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
     now: NOW
   });
   assert.equal(result.ok, false);
@@ -110,6 +112,7 @@ test('rejects traversal, symlink and empty evidence references', async t => {
     session: fixture.session,
     baseDir: fixture.root,
     trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
     now: NOW
   });
   assert.equal(result.ok, false);
@@ -125,6 +128,7 @@ test('rejects a symlinked or missing evidence file', async t => {
     session: fixture.session,
     baseDir: fixture.root,
     trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
     now: NOW
   });
   assert.equal(result.ok, false);
@@ -140,6 +144,7 @@ test('rejects missing scenarios and artifact digest substitution', async t => {
     session: fixture.session,
     baseDir: fixture.root,
     trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
     now: NOW
   });
   assert.equal(result.ok, false);
@@ -154,9 +159,23 @@ test('rejects an empty evidence file and a post-signature manifest mutation', as
     session: fixture.session,
     baseDir: fixture.root,
     trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
     now: NOW
   });
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /signature invalid/);
   assert.match(result.errors.join('\n'), /evidence reference invalid/);
+});
+
+test('rejects a signed session bound to a different source head', async t => {
+  const fixture = await makeFixture(t);
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'b'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /source sha mismatch/);
 });
