@@ -169,6 +169,11 @@ jobs:
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
+          # Compose instrumentation must start from an interactive emulator surface. A freshly
+          # booted AVD can be awake but still show the keyguard, which makes every UI matrix lane
+          # fail at the connected-test step without exercising the application.
+          adb shell input keyevent KEYCODE_WAKEUP || true
+          adb shell wm dismiss-keyguard || true
 
           if [[ "$API_LEVEL" == "24" ]]; then
             # AGP/UTP may leave connectedDebugAndroidTest waiting indefinitely after
