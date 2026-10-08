@@ -52,6 +52,10 @@ const standaloneSmoke = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui',
   'StandaloneActivitySmokeInstrumentationTest.kt'
 );
+const activationUi = read(
+  'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum',
+  'PhoneCoreActivationActivity.kt'
+);
 const runtimeFlow = read('scripts', 'phone-core-emulator-flow.sh');
 const revocationFlow = read('scripts', 'phone-core-emulator-revocation-flow.sh');
 const buildGradle = read('native-android-app', 'app', 'build.gradle');
@@ -321,6 +325,11 @@ for (const marker of [
   'VoiceStudioActivity::class.java',
   'ActivityScenario.launch'
 ]) requireText(standaloneSmoke, marker, 'standalone activity smoke');
+
+for (const marker of [
+  '!mmsSafePreviewValidated',
+  'Phone Core bloqué · aperçu MMS sécurisé indisponible'
+]) requireText(activationUi, marker, 'MMS locked Phone Core banner');
 
 for (const marker of [
   'wait_role_held android.app.role.CALL_SCREENING',
