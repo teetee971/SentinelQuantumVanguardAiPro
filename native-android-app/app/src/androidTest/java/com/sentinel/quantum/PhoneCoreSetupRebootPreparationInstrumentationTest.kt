@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,7 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Seeds an interrupted first-run session for the following workflow step to reboot the AVD.
+ * Observes an interrupted first-run session before the following workflow step reboots the AVD.
  *
  * The state is preserved only when the workflow explicitly passes preserve_state=true. Ordinary
  * connected-test runs clean up after themselves and therefore cannot leak wizard state.
@@ -43,9 +44,7 @@ class PhoneCoreSetupRebootPreparationInstrumentationTest {
     @Test
     fun leavesInterruptedSetupForRebootQualification() {
         val wizard = PhoneCoreSetupWizardStore(context)
-        val target = PhoneCoreSetupWizardStore.targetKey(PhoneCoreSetupWizardStore.Step.DIALER_ROLE)
         wizard.markInProgress()
-        wizard.markAttemptedTarget(target)
 
         val scenario = ActivityScenario.launch<PhoneCoreActivationActivity>(
             Intent(context, PhoneCoreActivationActivity::class.java)
@@ -58,11 +57,22 @@ class PhoneCoreSetupRebootPreparationInstrumentationTest {
             scenario.close()
         }
 
+        val attemptedBeforeStop = waitForAttemptedTarget()
+        assertNotNull("real activation UI must persist its current target before reboot", attemptedBeforeStop)
         instrumentation.uiAutomation.executeShellCommand("am force-stop ${context.packageName}").use { }
         val persisted = PhoneCoreSetupWizardStore(context)
         assertEquals(PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS, persisted.lifecycleState())
-        assertNotNull(persisted.attemptedTargetKey())
+        assertEquals(attemptedBeforeStop, persisted.attemptedTargetKey())
         check(!persisted.isCompleted()) { "reboot preparation must never manufacture COMPLETED" }
+    }
+
+    private fun waitForAttemptedTarget(): String? {
+        repeat(50) {
+            PhoneCoreSetupWizardStore(context).attemptedTargetKey()?.let { return it }
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(100)
+        }
+        return PhoneCoreSetupWizardStore(context).attemptedTargetKey()
     }
 
     private companion object {

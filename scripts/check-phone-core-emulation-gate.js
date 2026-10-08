@@ -304,6 +304,7 @@ if (setupResumeTest.includes('sendKeyDownUpSync')) {
 for (const marker of [
   'PhoneCoreSetupRebootPreparationInstrumentationTest',
   'preserve_state',
+  'waitForAttemptedTarget',
   'executeShellCommand("am force-stop',
   'LifecycleState.IN_PROGRESS'
 ]) requireText(setupRebootTest, marker, 'setup reboot preparation instrumentation');
