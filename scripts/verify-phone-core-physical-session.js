@@ -221,7 +221,16 @@ function verifyEvidenceRef(ref, label) {
 function validateEvidenceMap(map, ids, label) {
   requireObject(map, label);
   for (const [entryId, entry] of Object.entries(map)) {
-    validateEvidenceEntryShape(entry, `${label}.${entryId}`);
+    const entryLabel = `${label}.${entryId}`;
+    validateEvidenceEntryShape(entry, entryLabel);
+    if (entry.status === 'PASS') {
+      for (const ref of entry.evidence_refs) {
+        if (/(^|[\/_.-])(emulator|synthetic|mock)([\/_.-]|$)/i.test(ref)) {
+          fail(entryLabel + ' references non-physical evidence');
+        }
+        verifyEvidenceRef(ref, entryLabel);
+      }
+    }
   }
 
   const nonPass = [];
@@ -234,12 +243,6 @@ function validateEvidenceMap(map, ids, label) {
     if (entry.status !== 'PASS') {
       nonPass.push(id);
       continue;
-    }
-    for (const ref of entry.evidence_refs) {
-      if (/(^|[\/_.-])(emulator|synthetic|mock)([\/_.-]|$)/i.test(ref)) {
-        fail(label + '.' + id + ' references non-physical evidence');
-      }
-      verifyEvidenceRef(ref, label + '.' + id);
     }
   }
   return nonPass;

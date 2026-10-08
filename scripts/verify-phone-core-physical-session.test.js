@@ -284,6 +284,17 @@ test('schema-valid additional evidence entries remain allowed without changing r
   assert.match(result.stdout, /COMMERCIAL_RELEASE_ELIGIBLE/);
 });
 
+test('every additional PASS evidence entry must reference a verified file', { skip: !fs.existsSync(verifier) }, () => {
+  const manifest = baseManifest();
+  manifest.scenarios.EXTRA = {
+    status: 'PASS',
+    evidence_refs: ['evidence/MISSING-EXTRA.txt#sha256=' + 'a'.repeat(64)]
+  };
+  const result = run(manifest);
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /evidence|unavailable|missing/i);
+});
+
 test('production policy declares the machine-readable physical session contract', () => {
   const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
   const physical = policy.physical_session_manifest;
