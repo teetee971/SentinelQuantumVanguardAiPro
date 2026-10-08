@@ -219,6 +219,7 @@ def run_bridge(
                         append_line(evidence, "answer_request_missing_transaction_token=1")
                         continue
                     answer_transaction = observed_transaction
+                    deadline = time.monotonic() + timeout_s
                     marker_file.write_text(line, encoding="utf-8")
                     continue
 
