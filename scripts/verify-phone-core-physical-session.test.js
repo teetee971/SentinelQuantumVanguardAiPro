@@ -150,12 +150,16 @@ test('signed PASS evidence rejects symbolic links', () => {
 });
 
 test('signed PASS evidence rejects traversal and missing digests', () => {
-  for (const ref of ['evidence/../marker.txt#sha256=' + 'a'.repeat(64), 'evidence/S01.txt']) {
+  const cases = [
+    ['evidence/../marker.txt#sha256=' + 'a'.repeat(64), /unsafe evidence path/i],
+    ['evidence/S01.txt', /signed local evidence references|signed SHA-256 digest/i]
+  ];
+  for (const [ref, diagnostic] of cases) {
     const manifest = baseManifest();
     manifest.scenarios.S01.evidence_refs = [ref];
     const result = run(manifest);
     assert.equal(result.status, 1, 'unsafe evidence ref must fail closed');
-    assert.match(result.stderr, /unsafe evidence path|signed SHA-256 digest|signed local evidence references/i);
+    assert.match(result.stderr, diagnostic);
   }
 });
 
