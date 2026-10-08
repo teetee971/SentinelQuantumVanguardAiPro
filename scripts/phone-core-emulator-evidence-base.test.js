@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 // Host regressions exercise the real shell or report code with isolated fixtures.
@@ -17,6 +17,10 @@ function nodeCodeForStep(name) {
 const reportCode = nodeCodeForStep('Collect qualification evidence even after failure');
 const hostProvenanceCode = nodeCodeForStep('Record host evidence provenance');
 const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.url).pathname;
+const ONE_PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64'
+);
 
 test('runtime setup installs after UTP cleanup, then rejects failed or unconfirmed data/log resets', () => {
   const runtime = workflow.split('- name: Run emulator application/runtime qualification\n')[1];
@@ -152,7 +156,7 @@ function fixture(overrides = {}, alter = () => {}) {
   const output = join(dir, 'evidence');
   mkdirSync(output);
   const put = (name, content) => writeFileSync(join(output, name), content);
-  for (const name of ['01-dialer-first-launch', '01b-dialer-relaunch', '02-incoming-call', '03-incoming-active-evidence', '05-outgoing-call', '06-thread', '07-inline-reply', '08-sms-effective-permission-denied', '10-sms-role-revoked', '11-dialer-role-revoked', '12-call-screening-role-revoked']) put(name + '.png', Buffer.alloc(300));
+  for (const name of ['01-dialer-first-launch', '01b-dialer-relaunch', '02-incoming-call', '03-incoming-active-evidence', '05-outgoing-call', '06-thread', '07-inline-reply', '08-sms-effective-permission-denied', '10-sms-role-revoked', '11-dialer-role-revoked', '12-call-screening-role-revoked']) put(name + '.png', ONE_PIXEL_PNG);
   for (const name of ['sms-role-restored', 'dialer-role-restored', 'call-screening-role-restored']) put(name + '.txt', 'com.sentinel.quantum\n');
   put('logcat.txt', 'SentinelLifecycle: fixture only\n');
   put('logcat-status.txt', '0\n');
@@ -170,7 +174,7 @@ function fixture(overrides = {}, alter = () => {}) {
   const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('');
   writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
   const sha = 'a'.repeat(40);
-  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
+  const env = { ...process.env, GITHUB_WORKSPACE: resolve('.'), RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
   try {
     alter({ put, results, dir });
     const result = spawnSync(process.execPath, ['-e', reportCode], { cwd: dir, env, encoding: 'utf8' });
@@ -236,8 +240,8 @@ test('missing logcat exit status cannot prove absence of crashes', () => {
 function api24Evidence({ put, dir }, secondRenderStatus) {
   put('min-sdk-first-pid.txt', '100\n');
   put('min-sdk-second-pid.txt', '200\n');
-  put('01-min-sdk-first-launch.png', Buffer.alloc(300));
-  put('02-min-sdk-second-launch.png', Buffer.alloc(300));
+  put('01-min-sdk-first-launch.png', ONE_PIXEL_PNG);
+  put('02-min-sdk-second-launch.png', ONE_PIXEL_PNG);
   const renderClass = 'com.sentinel.quantum.ui.AllStaticNavigationSurfacesInstrumentationTest';
   const standaloneClass = 'com.sentinel.quantum.ui.StandaloneActivitySmokeInstrumentationTest';
   const event = (name, method, code) => `INSTRUMENTATION_STATUS: class=${name}\nINSTRUMENTATION_STATUS: test=${method}\nINSTRUMENTATION_STATUS_CODE: ${code}\n`;
