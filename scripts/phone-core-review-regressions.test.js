@@ -9,6 +9,7 @@ const coordinator = readFileSync('native-android-app/app/src/main/java/com/senti
 const composer = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt', 'utf8');
 const flow = readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
 const revocationFlow = readFileSync('scripts/phone-core-emulator-revocation-flow.sh', 'utf8');
+const answerBridge = readFileSync('scripts/phone-core-emulator-api37-answer-bridge.py', 'utf8');
 const crashOracle = path.resolve('scripts/phone-core-logcat-crash-oracle.py');
 
 function extractFunction(source, name, nextName) {
@@ -64,6 +65,16 @@ test('incoming answer bridge must prove its log stream is armed before the answe
   const start = flow.indexOf('start_api37_incoming_answer_transport_bridge');
   const tap = flow.indexOf('tap_text "phone_core_answer"', start);
   assert.ok(start >= 0 && tap > start, 'bridge readiness must complete before the answer tap');
+});
+
+test('incoming answer bridge gives the causal Telecom transaction a fresh timeout budget', () => {
+  const marker = answerBridge.indexOf('if answer_transaction is None and ANSWER_REQUEST_MARKER in line:');
+  const token = answerBridge.indexOf('answer_transaction = observed_transaction', marker);
+  const nextDeadline = answerBridge.indexOf('deadline = time.monotonic() + timeout_s', token);
+  const requestAccept = answerBridge.indexOf('if answer_transaction is not None and not accept_requested:', token);
+  assert.ok(marker >= 0 && token > marker, 'causal answer marker must establish a transaction token');
+  assert.ok(nextDeadline > token, 'causal answer transaction must reset the transport timeout budget');
+  assert.ok(nextDeadline < requestAccept, 'timeout reset must happen before waiting for REQUEST_ACCEPT/ANSWERED/ACTIVE');
 });
 
 test('foreground-return oracle accepts modern resumed-activity fields but remains fail-closed', () => {
