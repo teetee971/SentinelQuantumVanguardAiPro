@@ -155,7 +155,7 @@ test('signed PASS evidence rejects traversal and missing digests', () => {
     manifest.scenarios.S01.evidence_refs = [ref];
     const result = run(manifest);
     assert.equal(result.status, 1, 'unsafe evidence ref must fail closed');
-    assert.match(result.stderr, /unsafe evidence path|signed SHA-256 digest/i);
+    assert.match(result.stderr, /unsafe evidence path|signed SHA-256 digest|signed local evidence references/i);
   }
 });
 
@@ -214,7 +214,7 @@ test('physical session completion must be strictly after start', { skip: !fs.exi
   const manifest = baseManifest();
   manifest.session.completed_at = manifest.session.started_at;
   const result = run(manifest);
-  assert.equal(result.status, 1);
+  assert.equal(result.status, 1, result.stderr);
   assert.match(result.stderr, /completed_at.*after.*started_at/i);
 });
 
