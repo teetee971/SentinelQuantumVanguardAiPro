@@ -275,6 +275,15 @@ test('every evidence-map entry must satisfy the schema even when it is not a req
   }
 });
 
+test('schema-valid additional evidence entries remain allowed without changing required verdicts', { skip: !fs.existsSync(verifier) }, () => {
+  const manifest = baseManifest();
+  const digest = crypto.createHash('sha256').update('fixture-proof:EXTRA\n').digest('hex');
+  manifest.scenarios.EXTRA = { status: 'NOT_REPORTED', evidence_refs: ['evidence/EXTRA.txt#sha256=' + digest] };
+  const result = run(manifest);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /COMMERCIAL_RELEASE_ELIGIBLE/);
+});
+
 test('production policy declares the machine-readable physical session contract', () => {
   const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
   const physical = policy.physical_session_manifest;
