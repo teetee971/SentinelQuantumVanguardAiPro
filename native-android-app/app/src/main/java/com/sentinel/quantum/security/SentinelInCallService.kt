@@ -40,6 +40,9 @@ class SentinelInCallService : InCallService() {
     private var currentDirection = "UNKNOWN"
 
     private val trackedCalls = LinkedHashSet<Call>()
+    private val callbacksRegistered = java.util.Collections.synchronizedSet(
+        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    )
     private val callIds = java.util.IdentityHashMap<Call, String>()
     private val callDirections = java.util.IdentityHashMap<Call, String>()
     private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
@@ -81,10 +84,11 @@ class SentinelInCallService : InCallService() {
 
     override fun onUnbind(intent: Intent): Boolean {
         if (registry.detach(this)) {
-            trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+            trackedCalls.toList().forEach(::unregisterCallback)
             trackedCalls.clear()
+            callbacksRegistered.clear()
             callIds.clear()
-        callDirections.clear()
+            callDirections.clear()
             currentCall = null
             activeService = null
             currentDirection = "UNKNOWN"
@@ -97,24 +101,50 @@ class SentinelInCallService : InCallService() {
     /** Reconcile with the platform list when an activity resumes or Telecom brings us forward. */
     private fun synchronizePlatformCalls() {
         if (activeService !== this) return
-        calls.forEach { call ->
-            if (trackedCalls.add(call)) {
-                callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
-                call.registerCallback(callback, Handler(Looper.getMainLooper()))
-            }
-        }
+        calls.forEach(::trackCall)
         refreshForegroundCall(updateNotification = false)
     }
 
-    override fun onCallAdded(call: Call) {
-        super.onCallAdded(call)
+    /**
+     * Telecom may race callback delivery with call teardown, especially on vendor dialers.
+     * Keep the call visible when registration is rejected, but never let that framework race
+     * crash the in-call service. Reconciliation can retry registration on a later foreground.
+     */
+    private fun trackCall(call: Call): Boolean {
         val newlyTracked = trackedCalls.add(call)
         if (!callIds.containsKey(call)) {
             callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
         }
-        if (newlyTracked) {
-            call.registerCallback(callback, Handler(Looper.getMainLooper()))
+        if (!callbacksRegistered.contains(call)) {
+            runCatching {
+                call.registerCallback(callback, Handler(Looper.getMainLooper()))
+            }.onSuccess {
+                callbacksRegistered.add(call)
+            }.onFailure {
+                LocalLogger(this).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "InCall",
+                    "Callback Telecom indisponible; nouvelle tentative lors de la prochaine synchronisation"
+                )
+            }
         }
+        return newlyTracked
+    }
+
+    private fun unregisterCallback(call: Call) {
+        if (!callbacksRegistered.remove(call)) return
+        runCatching { call.unregisterCallback(callback) }.onFailure {
+            LocalLogger(this).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "InCall",
+                "Désinscription du callback Telecom refusée par le framework"
+            )
+        }
+    }
+
+    override fun onCallAdded(call: Call) {
+        super.onCallAdded(call)
+        trackCall(call)
         initializeAudioState()
         refreshForegroundCall()
         if (call.state != Call.STATE_RINGING) showInCallActivity()
@@ -127,8 +157,9 @@ class SentinelInCallService : InCallService() {
     }
 
     override fun onDestroy() {
-        trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+        trackedCalls.toList().forEach(::unregisterCallback)
         trackedCalls.clear()
+        callbacksRegistered.clear()
         callIds.clear()
         callDirections.clear()
         val ownedSession = registry.detach(this)
@@ -148,7 +179,7 @@ class SentinelInCallService : InCallService() {
     }
 
     override fun onCallRemoved(call: Call) {
-        call.unregisterCallback(callback)
+        unregisterCallback(call)
         trackedCalls.remove(call)
         callIds.remove(call)
         callDirections.remove(call)

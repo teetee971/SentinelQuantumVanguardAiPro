@@ -68,7 +68,12 @@ test('in-call UI evidence waits for a rendered frame before recording visibility
 test('Telecom callback registration is idempotent across platform reconciliation', () => {
   assert.match(
     service,
-    /val newlyTracked = trackedCalls\.add\(call\)[\s\S]*?if \(newlyTracked\) \{[\s\S]*?call\.registerCallback\(callback/s,
-    'onCallAdded must not register a duplicate callback for a call already reconciled from Telecom'
+    /private fun trackCall\(call: Call\): Boolean[\s\S]*?if \(!callbacksRegistered\.contains\(call\)\)[\s\S]*?call\.registerCallback\(callback/s,
+    'callback registration must be centralized behind an idempotent tracked-call guard'
+  );
+  assert.match(
+    service,
+    /override fun onCallAdded\(call: Call\)[\s\S]*?trackCall\(call\)/,
+    'onCallAdded must use the same guarded registration path as platform reconciliation'
   );
 });
