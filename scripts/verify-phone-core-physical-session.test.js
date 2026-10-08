@@ -166,6 +166,23 @@ test('physical session completion must be strictly after start', { skip: !fs.exi
   assert.match(result.stderr, /completed_at.*after.*started_at/i);
 });
 
+test('schema-required physical session metadata cannot be omitted from a signed manifest', { skip: !fs.existsSync(verifier) }, () => {
+  const cases = [
+    ['APK version_name', manifest => { delete manifest.apk.version_name; }],
+    ['APK version_code', manifest => { delete manifest.apk.version_code; }],
+    ['device android_version', manifest => { delete manifest.device.android_version; }],
+    ['session sim_mode', manifest => { delete manifest.session.sim_mode; }],
+    ['session operator_context', manifest => { delete manifest.session.operator_context; }]
+  ];
+
+  for (const [label, mutate] of cases) {
+    const manifest = baseManifest();
+    mutate(manifest);
+    const result = run(manifest);
+    assert.equal(result.status, 1, `${label} omission must fail closed; stderr=${result.stderr}; stdout=${result.stdout}`);
+  }
+});
+
 test('production policy declares the machine-readable physical session contract', () => {
   const policy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
   const physical = policy.physical_session_manifest;
