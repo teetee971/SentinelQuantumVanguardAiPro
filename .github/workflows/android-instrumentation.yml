@@ -122,6 +122,43 @@ jobs:
             adb shell pm list instrumentation > "$DIAGNOSTICS/instrumentation-runners.txt" 2>&1 || true
             adb logcat -d -v threadtime > "$DIAGNOSTICS/logcat.txt" 2>&1 || true
           }
+          summarize_instrumentation_reports() {
+            REPORT_ROOT="app/build/outputs/androidTest-results/connected" API_LEVEL="$API_LEVEL" node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = process.env.REPORT_ROOT;
+          const api = process.env.API_LEVEL;
+          const escapeCommand = value => String(value).replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+          const emit = message => console.log(`::error title=Android instrumentation failure::${escapeCommand(message)}`);
+          const files = [];
+          const walk = directory => {
+            if (!fs.existsSync(directory)) return;
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+              const full = path.join(directory, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.isFile() && full.endsWith('.xml')) files.push(full);
+            }
+          };
+          walk(root);
+          if (files.length === 0) {
+            emit(`API ${api}: instrumentation reports missing; no XML failure detail available`);
+            process.exit(0);
+          }
+          const findings = [];
+          for (const file of files) {
+            const xml = fs.readFileSync(file, 'utf8');
+            for (const match of xml.matchAll(/<testcase\b[^>]*\bname="([^"]*)"[^>]*>[\s\S]*?<(failure|error)\b([^>]*)>/g)) {
+              const message = match[3].match(/\bmessage="([^"]*)"/)?.[1] ?? 'no failure message';
+              findings.push(`${file}: ${match[1]}: ${match[2]}: ${message}`);
+            }
+          }
+          if (findings.length === 0) {
+            emit(`API ${api}: instrumentation failed but reports contain no parsed testcase failure; reports contain zero testcases or only infrastructure errors`);
+          } else {
+            findings.slice(0, 12).forEach(emit);
+          }
+          NODE
+          }
           cleanup_instrumentation() {
             local status=$?
             if [[ "$status" -ne 0 ]]; then
@@ -242,10 +279,12 @@ jobs:
 
             if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then
               echo "Android API 24 instrumentation command failed or exceeded its 15 minute watchdog (status ${INSTRUMENTATION_STATUS})."
+              summarize_instrumentation_reports
               exit "$INSTRUMENTATION_STATUS"
             fi
             if grep -Eq '^FAILURES!!!|^INSTRUMENTATION_FAILED:|Process crashed' "$INSTRUMENTATION_LOG"; then
               echo "Android API 24 instrumentation reported a test failure or crash."
+              summarize_instrumentation_reports
               exit 1
             fi
             if ! grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$INSTRUMENTATION_LOG"; then
@@ -253,8 +292,16 @@ jobs:
               exit 1
             fi
           else
+            set +e
             timeout --signal=INT --kill-after=30s 900s \
               ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
+            INSTRUMENTATION_STATUS=$?
+            set -e
+            if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then
+              echo "Android API ${API_LEVEL} connected instrumentation failed or exceeded its 15 minute watchdog (status ${INSTRUMENTATION_STATUS})."
+              summarize_instrumentation_reports
+              exit "$INSTRUMENTATION_STATUS"
+            fi
           fi
 
       - name: Validate modern instrumentation reports

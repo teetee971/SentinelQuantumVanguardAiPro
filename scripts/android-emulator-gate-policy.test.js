@@ -40,3 +40,9 @@ test('instrumentation failures preserve runtime diagnostics before the emulator 
     /sentinel-instrumentation-api\$\{\{ matrix\.api-level \}\}-diagnostics/
   );
 });
+
+test('instrumentation failures expose failing XML cases as check annotations', () => {
+  assert.match(instrumentationWorkflow, /summarize_instrumentation_reports\(\)/);
+  assert.match(instrumentationWorkflow, /::error title=Android instrumentation failure::/);
+  assert.match(instrumentationWorkflow, /Instrumentation reports contain zero testcases/);
+});
