@@ -31,11 +31,13 @@ test('physical proof workflow downloads an artifact and invokes the fail-closed 
   assert.match(workflow, /trusted-source\/config\/phone-core-physical-proof-trust\.json/);
 });
 
-test('physical proof trust root is repository-controlled and source checkout is isolated', () => {
+test('physical proof trust root is repository-controlled and untrusted source is never checked out', () => {
   assert.match(workflow, /path:\s*trusted-source/);
   assert.match(workflow, /ref:\s*\$\{\{ github\.event\.repository\.default_branch \}\}/);
-  assert.match(workflow, /path:\s*source-head/);
-  assert.match(workflow, /git -C source-head rev-parse HEAD/);
+  assert.match(workflow, /git -C trusted-source fetch --no-tags --depth=1 origin "\$EXPECTED_SOURCE_SHA"/);
+  assert.match(workflow, /git -C trusted-source rev-parse FETCH_HEAD/);
+  assert.doesNotMatch(workflow, /ref:\s*\$\{\{ inputs\.expected_source_sha \}\}/);
+  assert.doesNotMatch(workflow, /path:\s*source-head/);
   assert.doesNotMatch(workflow, /physical-session-bundle\/trust\.json/);
 });
 

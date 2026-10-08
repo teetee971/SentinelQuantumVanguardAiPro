@@ -44,19 +44,14 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           path: trusted-source
 
-      - name: Checkout exact exercised source head
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ inputs.expected_source_sha }}
-          path: source-head
-
-      - name: Assert exact source head
+      - name: Verify exercised source object without checking out untrusted code
         shell: bash
         env:
           EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
         run: |
           set -euo pipefail
-          test "$(git -C source-head rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          git -C trusted-source fetch --no-tags --depth=1 origin "$EXPECTED_SOURCE_SHA"
+          test "$(git -C trusted-source rev-parse FETCH_HEAD)" = "$EXPECTED_SOURCE_SHA"
 
       - name: Download physical lab evidence artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
