@@ -60,7 +60,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }.isSuccess
 
         if (!submitted) {
-            LocalLogger(appContext).log(
+            LocalLogger(appContext).logAsync(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
                 "Callback MMS non planifié : worker indisponible"

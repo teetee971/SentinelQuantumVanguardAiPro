@@ -26,6 +26,10 @@ const downloadReceiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDownloadReceiver.kt',
   'utf8'
 );
+const deliverReceiver = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt',
+  'utf8'
+);
 
 test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable global deadline', () => {
   assert.match(sendWorker, /fun schedule\(context: Context, fileName: String\)/);
@@ -88,6 +92,18 @@ test('transport request exceptions retain staged MMS until durable recovery deci
     /copie temporaire|reprise|journal/i,
     'the retained target must be explained as recoverable state'
   );
+});
+
+test('MMS broadcast saturation never performs synchronous file logging on the callback thread', () => {
+  for (const [name, source] of [
+    ['WAP_PUSH_DELIVER', deliverReceiver],
+    ['download callback', downloadReceiver]
+  ]) {
+    const fallback = source.match(/if \(!submitted\) \{([\s\S]*?)pendingResult\.finish\(\)/);
+    assert.ok(fallback, `${name} fallback must finish PendingResult`);
+    assert.match(fallback[1], /LocalLogger\(appContext\)\.logAsync/);
+    assert.doesNotMatch(fallback[1], /LocalLogger\(appContext\)\.log\(/);
+  }
 });
 
 test('process-death recovery reconstructs the original incoming MMS cleanup deadline', () => {

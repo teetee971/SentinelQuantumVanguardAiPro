@@ -41,7 +41,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         }.isSuccess
 
         if (!submitted) {
-            LocalLogger(appContext).log(
+            LocalLogger(appContext).logAsync(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDeliver",
                 "MMS entrant non planifié : worker indisponible"
