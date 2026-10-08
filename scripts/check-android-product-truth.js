@@ -24,6 +24,7 @@ const SOURCE_PATHS = Object.freeze({
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
   phoneCoreActivation: 'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
+  dialerActivity: 'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt',
   localLogger: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalLogger.kt',
   phoneCoreFrenchLabels: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt'
 });
@@ -47,7 +48,7 @@ export function auditProductTruth(sources) {
   const {
     manifest, strings, listing, architecture, privacy,
     callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
-    callScreening, localLogger, phoneCoreFrenchLabels, phoneCoreActivation
+    callScreening, localLogger, phoneCoreFrenchLabels, phoneCoreActivation, dialerActivity
   } = sources;
 
   const presented = { strings, listing, architecture };
@@ -58,6 +59,9 @@ export function auditProductTruth(sources) {
 
   if (!phoneCoreFrenchLabels.includes('\"MMS_ATTACHMENTS\" -> \"MMS entrants · aperçu sécurisé\"')) {
     errors.push('Phone Core MMS label must remain scoped to incoming safe preview until outgoing MMS is implemented and validated');
+  }
+  if (!dialerActivity.includes('MmsSafePreviewReadiness.softwareValidated')) {
+    errors.push('dialer Phone Core status must remain locked when the MMS safe-preview self-test fails');
   }
 
   const durablePhysicalEvidence =

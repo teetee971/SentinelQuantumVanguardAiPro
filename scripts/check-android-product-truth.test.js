@@ -288,6 +288,15 @@ test('rejects caller-id enrichment moved before the final screening response', (
   assert.ok(auditProductTruth(moved).some((e) => e.includes('final respondToCall')));
 });
 
+test('rejects a dialer READY state that ignores the MMS safe-preview self-test', () => {
+  const s = source();
+  s.dialerActivity = s.dialerActivity.replace(
+    '                        MmsSafePreviewReadiness.softwareValidated',
+    '                        /* regression fixture: MMS self-test ignored */ true'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('MMS safe-preview self-test')));
+});
+
 test('requires serialized local-log file access and async callback logging', () => {
   const s = source();
   s.localLogger = s.localLogger.replaceAll('synchronized(FILE_LOCK)', 'run');

@@ -68,6 +68,7 @@ import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
 import com.sentinel.quantum.security.PhoneFavoriteStore
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.ui.design.PhoneCoreUiState
 import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelState
@@ -796,7 +797,8 @@ class SentinelDialerActivity : ComponentActivity() {
                 val smsMmsPrerequisitesReady =
                     runtimeSetupFacts.smsRoleHeld &&
                         runtimeSetupFacts.smsRuntimePermissionsReady &&
-                        runtimeSetupFacts.mmsPermissionsReady
+                        runtimeSetupFacts.mmsPermissionsReady &&
+                        MmsSafePreviewReadiness.softwareValidated
                 val nextSetupLabel = PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)
                 val physicalEvidence by produceState(
                     initialValue = PhoneCorePhysicalValidation.evaluate(emptyList()),
