@@ -57,7 +57,10 @@ function safeRelativeFile(baseDir, relativePath, maxBytes) {
     try { stat = fs.lstatSync(current); } catch { return null; }
     if (stat.isSymbolicLink()) return null;
   }
-  const resolved = path.resolve(current);
+  // Re-resolve immediately before the final stat/read boundary. Component lstat checks reject
+  // ordinary symlinks; this second resolution also fails closed if a path is swapped before hash.
+  let resolved;
+  try { resolved = fs.realpathSync(current); } catch { return null; }
   if (!resolved.startsWith(`${root}${path.sep}`)) return null;
   let stat;
   try { stat = fs.statSync(resolved); } catch { return null; }
