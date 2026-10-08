@@ -279,7 +279,9 @@ for (const marker of [
   'ActivityScenario.launch<PhoneCoreActivationActivity>',
   'attempted_target',
   'completed',
-  'interruptedFirstRunResumesWithoutFalseCompletion'
+  'interruptedFirstRunResumesWithoutFalseCompletion',
+  'executeShellCommand("am force-stop',
+  'LifecycleState.IN_PROGRESS'
 ]) requireText(setupResumeTest, marker, 'setup resume instrumentation');
 if (setupResumeTest.includes('sendKeyDownUpSync')) {
   errors.push('setup-resume instrumentation must not require privileged key injection');

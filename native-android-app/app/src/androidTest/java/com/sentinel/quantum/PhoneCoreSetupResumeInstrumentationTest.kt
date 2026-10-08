@@ -49,6 +49,7 @@ class PhoneCoreSetupResumeInstrumentationTest {
     fun interruptedFirstRunResumesWithoutFalseCompletion() {
         val intent = Intent(context, PhoneCoreActivationActivity::class.java)
             .putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+        PhoneCoreSetupWizardStore(context).markInProgress()
 
         val firstScenario = ActivityScenario.launch<PhoneCoreActivationActivity>(intent)
         try {
@@ -61,6 +62,14 @@ class PhoneCoreSetupResumeInstrumentationTest {
             firstScenario.close()
         }
 
+        // ActivityScenario.close() destroys only the activity. Force-stop the target package as
+        // Android would after process death, then launch through the instrumentation boundary.
+        forceStopTargetProcess()
+        assertEquals(
+            "process death must preserve an interrupted setup lifecycle",
+            PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS,
+            PhoneCoreSetupWizardStore(context).lifecycleState()
+        )
         val persistedAttempt = prefs.getString(KEY_ATTEMPTED_TARGET, null)
         assertNotNull("interrupted setup must retain its attempted target for resume", persistedAttempt)
         assertFalse("interruption must not manufacture completion", prefs.getBoolean(KEY_COMPLETED, false))
@@ -114,6 +123,11 @@ class PhoneCoreSetupResumeInstrumentationTest {
             instrumentation.waitForIdleSync()
             SystemClock.sleep(100)
         }
+    }
+
+    private fun forceStopTargetProcess() {
+        instrumentation.uiAutomation.executeShellCommand("am force-stop ${context.packageName}").use { }
+        SystemClock.sleep(300)
     }
 
     private companion object {
