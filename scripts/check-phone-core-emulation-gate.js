@@ -321,6 +321,10 @@ for (const marker of [
 if (setupRebootTest.includes('markAttemptedTarget(')) {
   errors.push('setup reboot preparation must observe the UI target, not seed an artificial target');
 }
+if (!/fun dismissSystemSetupDialog\(\)/.test(setupRebootTest) ||
+    !/cleanUpUnlessWorkflowWillReboot\(\)[\s\S]*dismissSystemSetupDialog\(\)/.test(setupRebootTest)) {
+  errors.push('setup reboot preparation must dismiss any Android role/permission dialog before releasing ActivityScenario');
+}
 
 for (const marker of [
   'AllStaticNavigationSurfacesInstrumentationTest',

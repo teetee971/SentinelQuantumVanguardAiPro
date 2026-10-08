@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
@@ -36,6 +37,7 @@ class PhoneCoreSetupRebootPreparationInstrumentationTest {
 
     @After
     fun cleanUpUnlessWorkflowWillReboot() {
+        dismissSystemSetupDialog()
         if (!preserveState) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().commit()
         }
@@ -64,6 +66,28 @@ class PhoneCoreSetupRebootPreparationInstrumentationTest {
         assertEquals(PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS, persisted.lifecycleState())
         assertEquals(attemptedBeforeStop, persisted.attemptedTargetKey())
         check(!persisted.isCompleted()) { "reboot preparation must never manufacture COMPLETED" }
+    }
+
+    private fun dismissSystemSetupDialog() {
+        // Closing ActivityScenario does not own Android's role/permission surface. If the setup
+        // launch opened one, release it before the next instrumentation class or the following
+        // reboot step receives input behind a stale system dialog.
+        repeat(50) {
+            val owner = instrumentation.uiAutomation.rootInActiveWindow?.packageName?.toString()
+            if (owner in setOf(
+                    "com.android.permissioncontroller",
+                    "com.google.android.permissioncontroller",
+                    "com.android.packageinstaller",
+                    "com.google.android.packageinstaller",
+                    "com.android.server.telecom"
+                )) {
+                instrumentation.uiAutomation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                instrumentation.waitForIdleSync()
+                return
+            }
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(100)
+        }
     }
 
     private fun waitForAttemptedTarget(): String? {
