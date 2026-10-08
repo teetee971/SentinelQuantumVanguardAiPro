@@ -84,6 +84,7 @@ import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.security.SmsActivationRefreshPolicy
 import com.sentinel.quantum.security.SmsSubscriptionState
 import com.sentinel.quantum.security.SmsSubmitReadiness
+import com.sentinel.quantum.security.SmsSubmissionGate
 import com.sentinel.quantum.security.SmsThreadOrganizer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -163,6 +164,7 @@ class SmsComposeActivity : ComponentActivity() {
                     mutableStateOf(emptyList<MmsAttachmentLoader.LoadedAttachment>())
                 }
                 var status by remember { mutableStateOf<String?>(null) }
+                var submissionInFlight by remember { mutableStateOf(false) }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
                 var callbackProgress by remember { mutableStateOf<SmsCallbackProgress.State?>(null) }
@@ -223,6 +225,7 @@ class SmsComposeActivity : ComponentActivity() {
                 }
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val mmsSender = remember { SentinelMmsSender(applicationContext) }
+                val submissionGate = remember { SmsSubmissionGate() }
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val ioScope = rememberCoroutineScope()
@@ -279,35 +282,46 @@ class SmsComposeActivity : ComponentActivity() {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
                 fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
+                    val permit = submissionGate.tryAcquire()
+                    if (permit == null) {
+                        status = "Un envoi est déjà en cours. Vérifiez son statut avant de réessayer."
+                        return
+                    }
+                    submissionInFlight = true
                     ioScope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            sender.send(recipient, message, selectedSubscriptionId)
-                        }
-                        status = when (result.reason) {
-                            "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
-                            "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
-                            "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
-                            "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
-                            "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
-                            "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
-                            "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
-                            "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
-                            "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
-                            "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
-                            "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
-                            "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
-                            "INVALID_DESTINATION" -> "Numéro destinataire invalide."
-                            "INVALID_MESSAGE" -> "Message invalide."
-                            "SMS_MULTIPART_LIMIT_EXCEEDED" -> "Ce message nécessite trop de parties SMS. Raccourcissez-le avant l’envoi."
-                            else -> "Échec d’envoi."
-                        }
-                        if (result.accepted) {
-                            callbackProgress = null
-                            providerPersistenceFailed = false
-                            activeSendToken = result.sendToken
-                            activeProviderMessageId = result.providerMessageId
-                            onAccepted()
-                            providerEpoch++
+                        try {
+                            val result = withContext(Dispatchers.IO) {
+                                sender.send(recipient, message, selectedSubscriptionId)
+                            }
+                            status = when (result.reason) {
+                                "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
+                                "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
+                                "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
+                                "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
+                                "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
+                                "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
+                                "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
+                                "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
+                                "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                                "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                                "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
+                                "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
+                                "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                                "INVALID_MESSAGE" -> "Message invalide."
+                                "SMS_MULTIPART_LIMIT_EXCEEDED" -> "Ce message nécessite trop de parties SMS. Raccourcissez-le avant l’envoi."
+                                else -> "Échec d’envoi."
+                            }
+                            if (result.accepted) {
+                                callbackProgress = null
+                                providerPersistenceFailed = false
+                                activeSendToken = result.sendToken
+                                activeProviderMessageId = result.providerMessageId
+                                onAccepted()
+                                providerEpoch++
+                            }
+                        } finally {
+                            permit.release()
+                            submissionInFlight = false
                         }
                     }
                 }
@@ -317,49 +331,47 @@ class SmsComposeActivity : ComponentActivity() {
                     attachments: List<MmsAttachmentLoader.LoadedAttachment>,
                     onAccepted: () -> Unit
                 ) {
+                    val permit = submissionGate.tryAcquire()
+                    if (permit == null) {
+                        status = "Un envoi est déjà en cours. Vérifiez son statut avant de réessayer."
+                        return
+                    }
+                    submissionInFlight = true
                     ioScope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            mmsSender.send(
-                                destination = recipient,
-                                text = message,
-                                requestedSubscriptionId = selectedSubscriptionId,
-                                attachments = attachments.map {
-                                    SentinelMmsSender.Attachment(it.mimeType, it.payload)
-                                }
-                            )
-                        }
-                        status = when (result.reason) {
-                            "MMS_SUBMITTED_TO_ANDROID" ->
-                                "MMS confié à Android ; le résultat opérateur arrivera par callback."
-                            "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" ->
-                                "Choisissez la SIM à utiliser."
-                            "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" ->
-                                "La SIM sélectionnée n’est plus active."
-                            "NO_ACTIVE_SMS_SUBSCRIPTION" ->
-                                "Aucune SIM active compatible n’est détectée."
-                            "MMS_SUBSCRIPTION_LOOKUP_FAILED" ->
-                                "Impossible de vérifier les SIM actives."
-                            "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" ->
-                                "Permission d’accès à l’état téléphonique non accordée."
-                            "SMS_ROLE_NOT_HELD" ->
-                                "Sentinel n’est pas l’application SMS par défaut."
-                            "SEND_SMS_PERMISSION_NOT_GRANTED" ->
-                                "Permission d’envoi non accordée."
-                            "TELEPHONY_MESSAGING_UNAVAILABLE" ->
-                                "Cet appareil n’expose pas la téléphonie SMS/MMS Android."
-                            "INVALID_DESTINATION" ->
-                                "Numéro destinataire invalide."
-                            "EMPTY_MMS" ->
-                                "Ajoutez un message ou une image avant l’envoi."
-                            "TEXT_TOO_LARGE" ->
-                                "Le texte du MMS dépasse la limite de sécurité."
-                            "MMS_SUBMISSION_OUTCOME_UNKNOWN" ->
-                                "Android n’a pas confirmé la prise en charge du MMS. Ne le renvoyez pas avant vérification."
-                            else -> "Échec de préparation ou d’envoi du MMS."
-                        }
-                        if (result.accepted) {
-                            onAccepted()
-                            providerEpoch++
+                        try {
+                            val result = withContext(Dispatchers.IO) {
+                                mmsSender.send(
+                                    destination = recipient,
+                                    text = message,
+                                    requestedSubscriptionId = selectedSubscriptionId,
+                                    attachments = attachments.map {
+                                        SentinelMmsSender.Attachment(it.mimeType, it.payload)
+                                    }
+                                )
+                            }
+                            status = when (result.reason) {
+                                "MMS_SUBMITTED_TO_ANDROID" -> "MMS confié à Android ; le résultat opérateur arrivera par callback."
+                                "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
+                                "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active."
+                                "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM active compatible n’est détectée."
+                                "MMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
+                                "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
+                                "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
+                                "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi non accordée."
+                                "TELEPHONY_MESSAGING_UNAVAILABLE" -> "Cet appareil n’expose pas la téléphonie SMS/MMS Android."
+                                "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                                "EMPTY_MMS" -> "Ajoutez un message ou une image avant l’envoi."
+                                "TEXT_TOO_LARGE" -> "Le texte du MMS dépasse la limite de sécurité."
+                                "MMS_SUBMISSION_OUTCOME_UNKNOWN" -> "Android n’a pas confirmé la prise en charge du MMS. Ne le renvoyez pas avant vérification."
+                                else -> "Échec de préparation ou d’envoi du MMS."
+                            }
+                            if (result.accepted) {
+                                onAccepted()
+                                providerEpoch++
+                            }
+                        } finally {
+                            permit.release()
+                            submissionInFlight = false
                         }
                     }
                 }
@@ -739,6 +751,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     destinationPresent = destination.isNotBlank(),
                                     bodyPresent = body.isNotBlank() || (mmsComposeMode && selectedMmsAttachments.isNotEmpty())
                                 )
+                                    && !submissionInFlight
                             ) {
                                 Icon(Icons.Default.Send, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))

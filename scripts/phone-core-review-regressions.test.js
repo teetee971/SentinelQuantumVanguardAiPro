@@ -55,6 +55,14 @@ test('SMS authorization refresh does not recreate the composer and discard non-s
   assert.match(composer, /activationEpochState/);
 });
 
+test('SMS and MMS composer submissions share an idempotent in-flight gate', () => {
+  assert.match(composer, /val submissionGate = remember \{ SmsSubmissionGate\(\) \}/);
+  assert.equal((composer.match(/submissionGate\.tryAcquire\(\)/g) || []).length, 2);
+  assert.match(composer, /var submissionInFlight by remember \{ mutableStateOf\(false\) \}/);
+  assert.match(composer, /&& !submissionInFlight/);
+  assert.match(composer, /permit\.release\(\)/);
+});
+
 test('incoming answer bridge must prove its log stream is armed before the answer tap is allowed', () => {
   const startBridge = extractFunction(flow, 'start_api37_incoming_answer_transport_bridge', 'wait_api37_incoming_answer_transport_bridge');
   assert.match(startBridge, /ready_file=/);
