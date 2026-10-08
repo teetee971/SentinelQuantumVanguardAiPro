@@ -610,6 +610,8 @@ jobs:
 
           const callbackObserved = modernPhoneCore &&
             contains('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+          const screeningLatencyObserved = modernPhoneCore &&
+            /CallScreeningService:response_elapsed_ms=\d+/.test(read('call-screening-latency-logcat.txt'));
           const decisionObserved = api >= 36
             ? contains('phone-private-timeline-prefix.xml', 'CALL_SCREENED:')
             : null;
@@ -681,6 +683,7 @@ jobs:
               ? instrumentationEvidencePassed && setupRebootObserved && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest') && completedInstrumentationClass('PhoneCoreSetupResumeInstrumentationTest')
               : null,
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
+            screening_latency_observed: modernPhoneCore ? screeningLatencyObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
@@ -711,6 +714,7 @@ jobs:
                 ...commonRequired,
                 'phone_core_setup_resume',
                 'synthetic_call_screening_observed',
+                'screening_latency_observed',
                 'incoming_call_telecom_flow',
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',

@@ -99,7 +99,9 @@ export function auditProductTruth(sources) {
     errors.push('call screening: post-response Room, timeline and file logging must remain off the system callback thread');
   }
 
-  const lastScreeningResponse = callScreening.lastIndexOf('respondToCall(');
+  const lastScreeningResponse = callScreening.indexOf(
+    '        respondToCall(callDetails, response.build())'
+  );
   const callerIdEnrichment = callScreening.indexOf(
     'val profile = CallerIdentityResolver.resolve('
   );

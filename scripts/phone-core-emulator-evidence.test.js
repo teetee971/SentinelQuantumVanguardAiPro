@@ -54,6 +54,8 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(workflow, /Configuration initiale/);
   assert.match(reportCode, /SETUP_REBOOT_OUTCOME/);
   assert.match(reportCode, /setupRebootObserved/);
+  assert.match(reportCode, /screeningLatencyObserved/);
+  assert.match(reportCode, /screening_latency_observed/);
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
 });
 
@@ -174,6 +176,7 @@ function fixture(overrides = {}, alter = () => {}) {
   put('package.txt', 'Package [com.sentinel.quantum]\n');
   put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
   put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+  put('call-screening-latency-logcat.txt', 'CallScreeningService:response_elapsed_ms=12');
   put('phone-private-timeline-prefix.xml', 'CALL_SCREENED:ALLOW');
   put('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
   put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');

@@ -276,7 +276,9 @@ test('rejects call-screening post-response persistence on the callback thread', 
 
 test('rejects caller-id enrichment moved before the final screening response', () => {
   const s = source();
-  const finalResponse = s.callScreening.lastIndexOf('respondToCall(callDetails, response.build())');
+  const finalResponse = s.callScreening.indexOf(
+    '        respondToCall(callDetails, response.build())'
+  );
   assert.ok(finalResponse >= 0, 'fixture must contain the final response boundary');
   const moved = {
     ...s,

@@ -335,6 +335,7 @@ adb emu gsm call "$FLOW_NUMBER"
 # identity. Android 10 can fail emergency-number classification on an emulator even after callback
 # invocation, so CALL_SCREENED:* remains a stricter, separate rule-engine-decision proof.
 wait_logcat_marker "CallScreeningService:onScreenCall" "call-screening-callback-logcat.txt"
+wait_logcat_marker "CallScreeningService:response_elapsed_ms=" "call-screening-latency-logcat.txt"
 wait_incoming_sentinel_surface
 if [[ "$FLOW_API" -ge 36 ]]; then
   wait_private_timeline_signal_prefix "CALL_SCREENED:"

@@ -3,6 +3,7 @@ package com.sentinel.quantum.security
 import android.content.Intent
 import android.app.role.RoleManager
 import android.os.Build
+import android.os.SystemClock
 import android.telephony.PhoneNumberUtils
 import android.telephony.TelephonyManager
 import android.telecom.Call
@@ -17,6 +18,7 @@ class SentinelCallScreeningService : CallScreeningService() {
     override fun onScreenCall(callDetails: Call.Details) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
+        val startedAtElapsedMs = SystemClock.elapsedRealtime()
 
         // PII-free lifecycle marker used by emulator qualification to prove that Telecom actually
         // invoked Sentinel for an incoming screening callback. Keep it before emergency-number
@@ -32,7 +34,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
             }
         ) {
-            respondToCall(callDetails, CallResponse.Builder().build())
+            respondOpen(callDetails, startedAtElapsedMs)
             return
         }
 
@@ -49,7 +51,7 @@ class SentinelCallScreeningService : CallScreeningService() {
         // fail open rather than applying a blocking or silencing rule. The lifecycle marker above
         // may still prove callback invocation, but no CALL_SCREENED:* evidence is manufactured.
         if (emergency != false) {
-            respondToCall(callDetails, CallResponse.Builder().build())
+            respondOpen(callDetails, startedAtElapsedMs)
             return
         }
 
@@ -65,7 +67,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
-            respondToCall(callDetails, CallResponse.Builder().build())
+            respondOpen(callDetails, startedAtElapsedMs)
             return
         }
         val response = CallResponse.Builder()
@@ -81,6 +83,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             CallRuleEngine.Action.ALLOW -> Unit
         }
         respondToCall(callDetails, response.build())
+        logResponseLatency(startedAtElapsedMs)
 
         // Caller-ID rendering happens only after the mandatory platform response. The profile is
         // computed offline and contains no invented person or company identity.
@@ -173,9 +176,20 @@ class SentinelCallScreeningService : CallScreeningService() {
         }
     }
 
+    private fun respondOpen(callDetails: Call.Details, startedAtElapsedMs: Long) {
+        respondToCall(callDetails, CallResponse.Builder().build())
+        logResponseLatency(startedAtElapsedMs)
+    }
+
+    private fun logResponseLatency(startedAtElapsedMs: Long) {
+        val elapsedMs = (SystemClock.elapsedRealtime() - startedAtElapsedMs).coerceAtLeast(0L)
+        Log.i(LIFECYCLE_TAG, RESPONSE_LATENCY_MARKER + elapsedMs)
+    }
+
     private companion object {
         const val LIFECYCLE_TAG = "SentinelLifecycle"
         const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
+        const val RESPONSE_LATENCY_MARKER = "CallScreeningService:response_elapsed_ms="
         val SCREENING_FINGERPRINTER = CallNumberFingerprinter()
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
             threadName = "sentinel-call-screening-post-response"
