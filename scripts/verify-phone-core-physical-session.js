@@ -34,6 +34,15 @@ const REQUIRED_COMMERCIAL_RESIDUALS = [
 
 const RFC3339_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|([+-])(\d{2}):(\d{2}))$/;
 const VALID_SIM_MODES = new Set(['SINGLE_SIM', 'DUAL_SIM', 'MULTI_SIM']);
+const ROOT_KEYS = new Set([
+  'schema_version', 'source_head_sha', 'apk', 'device', 'session',
+  'canonical_criteria', 'scenarios', 'residual_external_validation', 'attestation'
+]);
+const APK_KEYS = new Set(['package_name', 'version_name', 'version_code', 'sha256', 'certificate_sha256']);
+const DEVICE_KEYS = new Set(['manufacturer', 'model', 'android_version', 'api_level', 'build_fingerprint']);
+const SESSION_KEYS = new Set(['started_at', 'completed_at', 'sim_mode', 'operator_context']);
+const ATTESTATION_KEYS = new Set(['kind', 'algorithm', 'signer_id', 'signature_base64']);
+const EVIDENCE_ENTRY_KEYS = new Set(['status', 'evidence_refs']);
 
 function fail(message) {
   process.stderr.write(`PHONE CORE PHYSICAL SESSION: ${message}\n`);
@@ -84,6 +93,20 @@ function readJson(path, label) {
   } catch (error) {
     fail(`cannot read ${label}: ${error.message}`);
   }
+}
+
+function requireObject(value, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) fail(`${label} must be an object`);
+  return value;
+}
+
+function requireAllowedKeys(value, allowedKeys, label) {
+  requireObject(value, label);
+  const additional = Object.keys(value).filter(key => !allowedKeys.has(key));
+  if (additional.length > 0) {
+    fail(`${label} contains additional properties: ${additional.sort().join(', ')}`);
+  }
+  return value;
 }
 
 function requireHex(value, length, label) {
@@ -185,7 +208,12 @@ function validateEvidenceMap(map, ids, label) {
   const nonPass = [];
   for (const id of ids) {
     const entry = map[id];
-    if (!entry || typeof entry !== 'object' || entry.status !== 'PASS') {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      nonPass.push(id);
+      continue;
+    }
+    requireAllowedKeys(entry, EVIDENCE_ENTRY_KEYS, `${label}.${id}`);
+    if (entry.status !== 'PASS') {
       nonPass.push(id);
       continue;
     }
@@ -208,6 +236,12 @@ function validateEvidenceMap(map, ids, label) {
 
 const options = parseArgs(process.argv.slice(2));
 const manifest = readJson(options.manifestPath, 'physical session manifest');
+
+requireAllowedKeys(manifest, ROOT_KEYS, 'manifest');
+requireAllowedKeys(manifest.apk, APK_KEYS, 'apk');
+requireAllowedKeys(manifest.device, DEVICE_KEYS, 'device');
+requireAllowedKeys(manifest.session, SESSION_KEYS, 'session');
+requireAllowedKeys(manifest.attestation, ATTESTATION_KEYS, 'attestation');
 
 if (manifest.schema_version !== 1) fail('unsupported physical session schema_version');
 if (manifest.attestation?.kind !== 'PHYSICAL_DEVICE') fail('attestation kind must be PHYSICAL_DEVICE');
