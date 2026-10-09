@@ -67,6 +67,8 @@ import com.sentinel.quantum.security.SentinelMmsSender
 import com.sentinel.quantum.security.MmsAttachmentLoader
 import com.sentinel.quantum.security.MmsSendEligibilityPolicy
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.MmsTransportStatusBus
+import com.sentinel.quantum.security.MmsTransportFeedback
 import com.sentinel.quantum.security.SmsCallbackProgress
 import com.sentinel.quantum.security.SmsCallbackFeedback
 import com.sentinel.quantum.security.SmsTimestampOrder
@@ -160,6 +162,8 @@ class SmsComposeActivity : ComponentActivity() {
                 var submissionInFlight by remember { mutableStateOf(false) }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
+                var activeMmsToken by remember { mutableStateOf<String?>(null) }
+                var activeMmsProviderMessageId by remember { mutableStateOf<Long?>(null) }
                 var callbackProgress by remember { mutableStateOf<SmsCallbackProgress.State?>(null) }
                 var providerPersistenceFailed by remember { mutableStateOf(false) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
@@ -313,6 +317,8 @@ class SmsComposeActivity : ComponentActivity() {
                                 providerPersistenceFailed = false
                                 activeSendToken = result.sendToken
                                 activeProviderMessageId = result.providerMessageId
+                                activeMmsToken = null
+                                activeMmsProviderMessageId = null
                                 if (result.accepted) onAccepted()
                                 providerEpoch++
                             }
@@ -370,8 +376,15 @@ class SmsComposeActivity : ComponentActivity() {
                                 "Android n’a pas confirmé la prise en charge du MMS. Ne le renvoyez pas avant vérification."
                             else -> "Échec de préparation ou d’envoi du MMS."
                         }
-                            if (result.accepted) {
-                                onAccepted()
+                            val outcomeCanBeObserved =
+                                result.token != null && result.providerMessageId != null &&
+                                    result.reason == "MMS_SUBMISSION_OUTCOME_UNKNOWN"
+                            if (result.accepted || outcomeCanBeObserved) {
+                                activeSendToken = null
+                                activeProviderMessageId = null
+                                activeMmsToken = result.token
+                                activeMmsProviderMessageId = result.providerMessageId
+                                if (result.accepted) onAccepted()
                                 providerEpoch++
                             }
                         } finally {
@@ -430,6 +443,22 @@ class SmsComposeActivity : ComponentActivity() {
                                 conversations.messagesForThread(threadId, 100)
                             }
                         }
+                    }
+                }
+                LaunchedEffect(activeMmsToken, activeMmsProviderMessageId) {
+                    if (activeMmsToken == null || activeMmsProviderMessageId == null) {
+                        return@LaunchedEffect
+                    }
+                    MmsTransportStatusBus.events.collectLatest { event ->
+                        if (
+                            event.token != activeMmsToken ||
+                                event.providerMessageId != activeMmsProviderMessageId
+                        ) return@collectLatest
+                        status = MmsTransportFeedback.message(
+                            successful = event.successful,
+                            providerWriteSucceeded = event.providerWriteSucceeded
+                        )
+                        providerEpoch++
                     }
                 }
 

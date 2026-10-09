@@ -67,10 +67,10 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                             context = appContext,
                             token = token,
                             providerMessageId = providerMessageId,
-                            successful = MmsSendResultClassifier.classify(
+                            outcome = MmsSendResultClassifier.classify(
                                 androidResultCode,
                                 httpStatus
-                            ).success
+                            )
                         )
                     }.getOrDefault(false)
                     runCatching { queueProviderRepair(appContext) }
@@ -92,10 +92,10 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                     context = appContext,
                     token = token,
                     providerMessageId = providerMessageId,
-                    successful = MmsSendResultClassifier.classify(
+                    outcome = MmsSendResultClassifier.classify(
                         androidResultCode,
                         httpStatus
-                    ).success
+                    )
                 )
             }.getOrDefault(false)
             if (!captured) {
@@ -114,10 +114,19 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         context: Context,
         token: String,
         providerMessageId: Long?,
-        successful: Boolean
+        outcome: MmsSendResultClassifier.Outcome
     ): Boolean {
         val providerId = providerMessageId ?: return false
-        if (!MmsProviderJournal(context).markResult(token, providerId, successful)) return false
+        if (!MmsProviderJournal(context).markResult(token, providerId, outcome.success)) return false
+        MmsTransportStatusBus.publish(
+            MmsTransportStatusBus.Event(
+                token = token,
+                providerMessageId = providerId,
+                successful = outcome.success,
+                providerWriteSucceeded = false,
+                signal = outcome.signal
+            )
+        )
         queueProviderRepair(context)
         return true
     }
@@ -161,6 +170,15 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                 )
                 queueProviderRepair(context)
             }
+            MmsTransportStatusBus.publish(
+                MmsTransportStatusBus.Event(
+                    token = token,
+                    providerMessageId = providerMessageId,
+                    successful = outcome.success,
+                    providerWriteSucceeded = providerUpdated,
+                    signal = outcome.signal
+                )
+            )
         } else {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
