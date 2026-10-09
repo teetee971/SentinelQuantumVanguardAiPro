@@ -5,6 +5,8 @@ import test from 'node:test';
 const senderPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSender.kt';
 const interlockPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsPreTransportTestInterlock.kt';
 const instrumentationPath = 'native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/MmsPreTransportRevocationInstrumentationTest.kt';
+const journalPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsProviderJournal.kt';
+const storePath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsConversationStore.kt';
 
 const sender = readFileSync(senderPath, 'utf8');
 
@@ -28,4 +30,28 @@ test('runtime MMS revocation race proves PDU/provider compensation before transp
   assert.match(instrumentation, /sentinel_mms_send/);
   assert.match(instrumentation, /providerMessageId/);
   assert.match(instrumentation, /PhonePrivateTimelineStore/);
+});
+
+test('MMS journal distinguishes proven READY from ambiguous TRANSPORT_STARTED across process death', () => {
+  const journal = readFileSync(journalPath, 'utf8');
+  const store = readFileSync(storePath, 'utf8');
+
+  assert.match(journal, /enum class Phase\s*\{[^}]*READY[^}]*TRANSPORT_STARTED[^}]*SUBMITTED/s);
+  assert.match(journal, /fun markTransportStarted\(/);
+  assert.match(store, /Phase\.READY/);
+  assert.match(store, /abandonBeforeTransport/);
+  assert.match(store, /Phase\.TRANSPORT_STARTED/);
+
+  const revalidation = sender.indexOf('revalidateBeforeTransport(subscriptionId)');
+  const journalBoundary = sender.indexOf('providerStore.markTransportStarted(', revalidation);
+  const inMemoryBoundary = sender.indexOf('transportInvocationStarted = true', revalidation);
+  const send = sender.indexOf('manager.sendMultimediaMessage(', revalidation);
+
+  assert.ok(journalBoundary > revalidation, 'durable MMS transport marker must follow final authorization revalidation');
+  assert.ok(inMemoryBoundary > journalBoundary, 'in-memory transport flag may flip only after durable transport marker');
+  assert.ok(send > inMemoryBoundary, 'MMS transport invocation must follow both durable and in-memory markers');
+
+  const reconcile = journal.slice(journal.indexOf('fun reconcileReadyAfterProcessDeath'));
+  assert.doesNotMatch(reconcile, /markSubmissionUnknown\(/,
+    'READY must remain a proven pre-transport state after process death');
 });
