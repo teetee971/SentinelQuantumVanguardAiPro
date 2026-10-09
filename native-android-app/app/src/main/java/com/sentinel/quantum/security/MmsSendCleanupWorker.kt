@@ -16,7 +16,21 @@ class MmsSendCleanupWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
-        inputData.getString(KEY_FILE_NAME)?.let { fileName ->
+        val fileName = inputData.getString(KEY_FILE_NAME)?.takeIf { it.isNotBlank() }
+        val processRestart = inputData.getBoolean(KEY_PROCESS_RESTART, false)
+        if (fileName == null && !processRestart) {
+            val recoveryScheduled = runCatching {
+                scheduleStartupRecovery(applicationContext)
+                true
+            }.getOrDefault(false)
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsSend",
+                "Identifiant de nettoyage MMS sortant manquant; demande non acquittée"
+            )
+            return if (recoveryScheduled) Result.failure() else Result.retry()
+        }
+        fileName?.let { fileName ->
             val expired = MmsSendPduStager.expire(applicationContext, fileName)
             if (!expired) {
                 LocalLogger(applicationContext).log(
@@ -27,7 +41,7 @@ class MmsSendCleanupWorker(
                 return Result.retry()
             }
         }
-        if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
+        if (processRestart) {
             val recovered = runCatching {
                 MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
                 MmsSubmissionWatchdogWorker.schedule(applicationContext)

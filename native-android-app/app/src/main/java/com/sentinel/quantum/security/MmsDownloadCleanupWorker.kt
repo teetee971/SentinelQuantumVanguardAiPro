@@ -22,7 +22,19 @@ class MmsDownloadCleanupWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
-        val fileName = inputData.getString(KEY_FILE_NAME) ?: return Result.success()
+        val fileName = inputData.getString(KEY_FILE_NAME)?.takeIf { it.isNotBlank() }
+        if (fileName == null) {
+            val recoveryScheduled = runCatching {
+                MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext)
+                true
+            }.getOrDefault(false)
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Identifiant de nettoyage MMS manquant; demande non acquittée"
+            )
+            return if (recoveryScheduled) Result.failure() else Result.retry()
+        }
         val outcome = runCatching {
             MmsDownloadRecovery.recover(
                 context = applicationContext,

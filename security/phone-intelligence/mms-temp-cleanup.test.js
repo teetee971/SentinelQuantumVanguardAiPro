@@ -74,6 +74,32 @@ test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable 
   assert.match(sendStager, /deleteInternal\(context, fileName, cancelCleanup = false\)/);
 });
 
+test('MMS workers do not acknowledge malformed requests without a file identity', () => {
+  for (const [name, source] of [
+    ['download cleanup', downloadWorker],
+    ['download recovery', downloadRecoveryWorker]
+  ]) {
+    assert.doesNotMatch(
+      source,
+      /inputData\.getString\(KEY_FILE_NAME\) \?: return Result\.success\(\)/,
+      `${name} must not report success when its file identity is missing`
+    );
+    assert.match(source, /MmsDownloadRecoveryWorker\.schedulePendingNow\(applicationContext\)/);
+  }
+
+  assert.match(sendWorker, /val fileName = inputData\.getString\(KEY_FILE_NAME\)\?\.takeIf \{ it\.isNotBlank\(\) \}/);
+  assert.match(sendWorker, /if \(fileName == null && !processRestart\)/);
+  const malformedSendBranch = sendWorker.match(
+    /if \(fileName == null && !processRestart\) \{([\s\S]*?)\n        \}/
+  );
+  assert.ok(malformedSendBranch, 'outgoing cleanup must expose its malformed-input boundary');
+  assert.doesNotMatch(
+    malformedSendBranch[1],
+    /Result\.success\(\)/,
+    'outgoing cleanup must recover pending MMS work before failing a malformed request'
+  );
+});
+
 test('incoming MMS journals identity before staging and binds both safety nets before Android transport starts', () => {
   const journalIndex = downloadCoordinator.indexOf('recoveryJournal.record');
   const fileCreateIndex = downloadCoordinator.indexOf('canonicalFile.createNewFile');
