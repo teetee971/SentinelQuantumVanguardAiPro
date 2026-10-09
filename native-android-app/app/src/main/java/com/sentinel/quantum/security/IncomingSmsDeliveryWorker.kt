@@ -109,8 +109,11 @@ class IncomingSmsDeliveryWorker(
 
             when (providerLookup(context, record)) {
                 ProviderLookup.FOUND -> {
-                    if (deleteStageOnSuccess) {
-                        IncomingSmsDeliveryStore.delete(context.filesDir, record.id)
+                    if (
+                        deleteStageOnSuccess &&
+                        !IncomingSmsDeliveryStore.delete(context.filesDir, record.id)
+                    ) {
+                        return Projection.RETRY
                     }
                     return Projection.SUCCESS
                 }
@@ -136,7 +139,9 @@ class IncomingSmsDeliveryWorker(
             if (deleteStageOnSuccess) {
                 // Provider durability is the primary product invariant. If private-stage cleanup
                 // fails, a later replay uses the exact provider identity and does not insert twice.
-                IncomingSmsDeliveryStore.delete(context.filesDir, record.id)
+                if (!IncomingSmsDeliveryStore.delete(context.filesDir, record.id)) {
+                    return Projection.RETRY
+                }
             }
             enrichBestEffort(context, record)
             return Projection.SUCCESS

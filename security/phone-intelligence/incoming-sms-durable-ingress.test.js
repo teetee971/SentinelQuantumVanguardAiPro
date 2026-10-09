@@ -93,6 +93,16 @@ test('unexpected SMS provider projection failures remain retryable', () => {
   assert.match(worker, /return when \(projection\)/);
 });
 
+test('SMS provider replay does not hide private spool cleanup failure', () => {
+  const foundBranch = worker.match(
+    /ProviderLookup\.FOUND -> \{([\s\S]*?)return Projection\.SUCCESS/
+  );
+  assert.ok(foundBranch, 'provider replay branch must remain explicit');
+  assert.match(foundBranch[1], /deleteStageOnSuccess/);
+  assert.match(foundBranch[1], /!IncomingSmsDeliveryStore\.delete\(/);
+  assert.match(foundBranch[1], /return Projection\.RETRY/);
+});
+
 test('role-loss retry window retires private SMS content instead of leaking spool capacity', () => {
   assert.match(worker, /ROLE_RETRY_WINDOW_MS = 7L \* 24L \* 60L \* 60L \* 1000L/);
   assert.match(worker, /IncomingSmsDeliveryStore\.delete\(applicationContext\.filesDir, record\.id\)/);
