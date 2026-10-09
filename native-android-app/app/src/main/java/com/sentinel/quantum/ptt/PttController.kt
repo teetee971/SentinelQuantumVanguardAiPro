@@ -55,6 +55,9 @@ class PttController(
     private fun onTransportEvent(event: PttTransport.Event) {
         when (event) {
             PttTransport.Event.Connected -> {
+                // A late success from an already cancelled connection attempt must never
+                // resurrect a READY session. READY is valid only while CONNECTING.
+                if (state != PttState.CONNECTING) return
                 lastFailure = null
                 state = PttState.READY
             }
@@ -66,8 +69,10 @@ class PttController(
             }
 
             PttTransport.Event.RemoteAudioStarted -> {
-                // Enforce half-duplex even if a transport reports remote media
-                // while the local floor was active.
+                // Remote media is meaningful only for a transport-confirmed live session.
+                // Ignore stale callbacks received before connection or after failure/teardown.
+                if (state != PttState.READY && state != PttState.TRANSMITTING) return
+                // Remote wins a collision so local capture is stopped before receive state.
                 stopTransmissionIfNeeded()
                 state = PttState.RECEIVING
             }
