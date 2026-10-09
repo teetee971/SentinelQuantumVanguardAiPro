@@ -84,8 +84,8 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
   assert.doesNotMatch(dialer, /"Configuration téléphone prête"/);
   assert.doesNotMatch(dialer, /"Configuration téléphone à terminer"/);
 
-  assert.match(uiStateTest, /onlyFourteenOfFourteenIsValidated/);
-  assert.match(uiStateTest, /thirteenOfFourteenCannotClaimValidated/);
+  assert.match(uiStateTest, /completePhysicalProofIsReady/);
+  assert.match(uiStateTest, /thirteenOfFourteenRemainsLimited/);
   assert.match(
     dialer,
     /physicalDeviceValidated\s*=\s*physicalEvidence\.physicalDeviceValidated/,
