@@ -11,6 +11,7 @@ const roleWorkflowPath = '.github/workflows/phone-core-role-sms-process-death.ym
 const journalPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitJournal.kt';
 const recoveryPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitRecoveryWorker.kt';
 const providerPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitProvider.kt';
+const statusReceiverPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsStatusReceiver.kt';
 const applicationPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelApplication.kt';
 
 const sender = readFileSync(senderPath, 'utf8');
@@ -78,6 +79,32 @@ test('SMS provider mutation is journaled before transport and only proven pre-tr
   assert.match(recovery,
     /SmsPreSubmitJournal\.Phase\.TRANSPORT_STARTED\s*->\s*Unit\b/,
     'TRANSPORT_STARTED must remain a no-op in the recovery dispatch');
+});
+
+test('durably persisted SMS callbacks retire only their matching TRANSPORT_STARTED ambiguity marker', () => {
+  const journal = readFileSync(journalPath, 'utf8');
+  const receiver = readFileSync(statusReceiverPath, 'utf8');
+
+  assert.match(journal, /fun removeTransportStartedForProvider\(/,
+    'journal must support provider-correlated retirement of transport ambiguity');
+  assert.match(journal,
+    /matches\.size\s*!=\s*1[\s\S]*return@synchronized\s+false/,
+    'journal cleanup must fail closed when provider correlation is not exactly one record');
+  assert.match(journal, /Phase\.TRANSPORT_STARTED/);
+
+  const progressRecorded = receiver.indexOf('progressStore.record(');
+  const nullGuard = receiver.indexOf('if (progress == null)', progressRecorded);
+  const ambiguityCleanup = receiver.indexOf('removeTransportStartedForProvider(providerMessageId)', nullGuard);
+  const providerPersist = receiver.indexOf('SmsProviderPersistence.persist(', ambiguityCleanup);
+  assert.ok(progressRecorded >= 0 && nullGuard > progressRecorded,
+    'callback progress must be durably attempted before ambiguity cleanup');
+  assert.ok(ambiguityCleanup > nullGuard,
+    'TRANSPORT_STARTED cleanup must happen only after durable callback progress exists');
+  assert.ok(providerPersist > ambiguityCleanup,
+    'provider projection may be repaired independently after ambiguity is durably resolved');
+  assert.match(receiver,
+    /if \(!progressPersistenceFailed\)[\s\S]*removeTransportStartedForProvider\(providerMessageId\)/,
+    'callback persistence failure must preserve TRANSPORT_STARTED for fail-closed recovery');
 });
 
 test('ROLE_SMS loss is qualified as an external process-death and durable recovery flow', () => {
