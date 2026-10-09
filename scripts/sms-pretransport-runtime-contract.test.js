@@ -64,12 +64,23 @@ test('SMS provider mutation is journaled before transport and only proven pre-tr
   assert.ok(markTransport > recordProvider, 'transport ambiguity marker must follow provider correlation');
   assert.ok(textSend > markTransport && multipartSend > markTransport, 'SmsManager may be entered only after durable TRANSPORT_STARTED');
 
-  // Scope the proof to the actual recovery filter and the when branch. A broad
-  // slice also includes the legitimate PROVIDER_READY -> FAILED repair path.
   assert.match(recovery,
     /val repairable = records\.filter\s*\{\s*it\.phase != SmsPreSubmitJournal\.Phase\.TRANSPORT_STARTED\s*\}/,
     'ambiguous TRANSPORT_STARTED records must be excluded before provider repair');
   assert.match(recovery,
     /SmsPreSubmitJournal\.Phase\.TRANSPORT_STARTED\s*->\s*Unit\b/,
     'TRANSPORT_STARTED must remain a no-op in the recovery dispatch');
+});
+
+test('ROLE_SMS revocation at final SMS boundary is recovered only after role restoration', () => {
+  const instrumentation = readFileSync(instrumentationPath, 'utf8');
+  assert.match(instrumentation, /remove-role-holder --user 0 android\.app\.role\.SMS/);
+  assert.match(instrumentation, /waitForSmsRoleAbsent\(/);
+  assert.match(instrumentation, /SMS_PRE_SUBMIT_REVALIDATION_FAILED_PROVIDER_REPAIR_FAILED/);
+  assert.match(instrumentation, /SmsPreSubmitJournal\.Phase\.PROVIDER_READY/);
+  assert.match(instrumentation, /add-role-holder --user 0 android\.app\.role\.SMS/);
+  assert.match(instrumentation, /SmsPreSubmitRecoveryWorker\.scheduleStartupRecovery\(context\)/);
+  assert.match(instrumentation, /waitForProviderFailedAndJournalCleared\(/);
+  assert.match(instrumentation, /No SENT callback may exist for a role-revoked pre-transport rejection/);
+  assert.match(instrumentation, /No DELIVERED callback may exist for a role-revoked pre-transport rejection/);
 });
