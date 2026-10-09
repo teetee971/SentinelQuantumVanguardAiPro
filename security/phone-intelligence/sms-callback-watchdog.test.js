@@ -30,7 +30,7 @@ const progressStore = fs.readFileSync(
 test('SMS submission registers a durable callback watchdog before entering telephony', () => {
   assert.ok(fs.existsSync(ledgerPath));
   assert.ok(fs.existsSync(workerPath));
-  const registerIndex = sender.indexOf('SmsOutgoingSubmissionStore(context).register');
+  const registerIndex = sender.indexOf('submissionStore.register');
   const transportIndex = sender.indexOf('sendTextMessage');
   assert.ok(registerIndex >= 0, 'submission must be recorded before transport');
   assert.ok(registerIndex < transportIndex, 'watchdog registration must precede SmsManager');
@@ -127,11 +127,11 @@ test('terminal callback progress validates its opaque key before being ignored',
   assert.ok(providerAppliedIndex > keyValidationIndex, 'provider-applied tombstones must not bypass key validation');
 });
 
-test('terminal SMS callbacks retire the watchdog only after provider acknowledgement', () => {
+test('resolved SMS submissions retire the watchdog only after provider acknowledgement', () => {
   assert.match(statusReceiver, /val providerApplied = providerUpdated/);
   assert.match(
     statusReceiver,
-    /if \(providerApplied && progress\.terminal\)[\s\S]*SmsOutgoingSubmissionStore\(context\)\.remove/
+    /if \(providerApplied && progress\.submissionResolved\)[\s\S]*SmsOutgoingSubmissionStore\(context\)\.remove/
   );
 });
 
