@@ -43,7 +43,20 @@ class SentinelSmsSender(private val context: Context) {
         val delivered: ArrayList<PendingIntent>
     )
 
-    fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
+    /**
+     * Serialize admission across every sender instance in this process. The durable ledger then
+     * protects the interval after this method returns and until every SENT callback has a verdict.
+     */
+    fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult =
+        synchronized(SUBMISSION_LOCK) {
+            sendSerialized(destination, body, requestedSubscriptionId)
+        }
+
+    private fun sendSerialized(
+        destination: String,
+        body: String,
+        requestedSubscriptionId: Int?
+    ): SendResult {
         val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
             return SendResult(false, "INVALID_MESSAGE")
@@ -73,6 +86,11 @@ class SentinelSmsSender(private val context: Context) {
             EmergencyNumberState.LOOKUP_FAILED ->
                 return SendResult(false, "EMERGENCY_NUMBER_CHECK_FAILED")
             EmergencyNumberState.NOT_EMERGENCY -> Unit
+        }
+
+        val submissionStore = SmsOutgoingSubmissionStore(context)
+        if (submissionStore.hasPendingSubmission()) {
+            return SendResult(false, "SMS_SUBMISSION_ALREADY_PENDING")
         }
 
         // Everything in this phase happens before Sentinel creates an OUTBOX row and before any
@@ -168,7 +186,7 @@ class SentinelSmsSender(private val context: Context) {
         }
 
         val watchdogReady = runCatching {
-            val registered = SmsOutgoingSubmissionStore(context).register(
+            val registered = submissionStore.register(
                 sendToken = callbacks.sendToken,
                 providerMessageId = persistedMessageId,
                 partCount = parts.size
@@ -178,7 +196,7 @@ class SentinelSmsSender(private val context: Context) {
             true
         }.getOrDefault(false)
         if (!watchdogReady) {
-            SmsOutgoingSubmissionStore(context).remove(callbacks.sendToken, persistedMessageId)
+            submissionStore.remove(callbacks.sendToken, persistedMessageId)
             conversations.markOutgoingFailed(persistedMessageId)
             return SendResult(
                 accepted = false,
@@ -271,6 +289,7 @@ class SentinelSmsSender(private val context: Context) {
         const val EXTRA_PART_COUNT = "sms.part_count"
         const val EXTRA_PROVIDER_MESSAGE_ID = "sms.provider_message_id"
         private val requestTokenRandom = SecureRandom()
+        private val SUBMISSION_LOCK = Any()
 
         /**
          * Process-local counters restart after process death and can therefore alias a still-pending
