@@ -73,6 +73,11 @@ test('incoming notification construction and cancellation contain OEM failures',
     /if \(!ensureChannel\(context\)\) return false/,
     'channel availability must reject when channel creation is refused'
   );
+  assert.match(
+    helper,
+    /context\.getSystemService\(NotificationManager::class\.java\)\s*\?\.getNotificationChannel\(CHANNEL_ID\)/,
+    'notification channel reads must fail closed when the OEM service is temporarily unavailable'
+  );
 });
 
 test('in-call UI evidence waits for a rendered frame before recording visibility', () => {

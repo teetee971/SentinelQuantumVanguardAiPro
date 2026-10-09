@@ -143,7 +143,7 @@ object SentinelCallNotificationHelper {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
         if (!ensureChannel(context)) return false
         val channel = context.getSystemService(NotificationManager::class.java)
-            .getNotificationChannel(CHANNEL_ID)
+            ?.getNotificationChannel(CHANNEL_ID)
         return channel != null && channel.importance != NotificationManager.IMPORTANCE_NONE
     }
 
