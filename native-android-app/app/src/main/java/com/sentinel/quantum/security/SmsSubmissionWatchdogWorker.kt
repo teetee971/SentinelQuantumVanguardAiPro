@@ -56,7 +56,13 @@ class SmsSubmissionWatchdogWorker(
                     retry = true
                     return@forEach
                 }
-                ledger.remove(submission.sendToken, submission.providerMessageId)
+                val ledgerRemoved = runCatching {
+                    ledger.remove(submission.sendToken, submission.providerMessageId)
+                }.getOrDefault(false)
+                if (!ledgerRemoved) {
+                    retry = true
+                    return@forEach
+                }
                 return@forEach
             }
 
@@ -68,7 +74,13 @@ class SmsSubmissionWatchdogWorker(
                 return@forEach
             }
 
-            ledger.remove(submission.sendToken, submission.providerMessageId)
+            val ledgerRemoved = runCatching {
+                ledger.remove(submission.sendToken, submission.providerMessageId)
+            }.getOrDefault(false)
+            if (!ledgerRemoved) {
+                retry = true
+                return@forEach
+            }
             runCatching {
                 PhonePrivateTimelineStore(appContext).append(
                     PhonePrivateTimeline.Event(
