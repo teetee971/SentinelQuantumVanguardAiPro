@@ -8,6 +8,7 @@ import test from 'node:test';
 const coordinator = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/SmsActivationStateCoordinator.kt', 'utf8');
 const composer = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt', 'utf8');
 const smsSender = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt', 'utf8');
+const mmsSender = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSender.kt', 'utf8');
 const flow = readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
 const revocationFlow = readFileSync('scripts/phone-core-emulator-revocation-flow.sh', 'utf8');
 const answerBridge = readFileSync('scripts/phone-core-emulator-api37-answer-bridge.py', 'utf8');
@@ -75,6 +76,21 @@ test('SMS sender revalidates authorization after callback preparation and immedi
   assert.ok(textSend > revalidation, 'single-part SmsManager submission must occur after revalidation');
   assert.ok(multipartSend > revalidation, 'multipart SmsManager submission must occur after revalidation');
   assert.match(smsSender.slice(revalidation, textSend), /markOutgoingFailed\(persistedMessageId\)/);
+});
+
+test('MMS sender revalidates authorization and selected SIM at the final pre-transport boundary', () => {
+  const callbackBoundary = mmsSender.indexOf('val callback = PendingIntent.getBroadcast(');
+  const managerBoundary = mmsSender.indexOf('val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)', callbackBoundary);
+  const revalidation = mmsSender.indexOf('revalidateBeforeTransport(subscriptionId)', managerBoundary);
+  const transportStarted = mmsSender.indexOf('transportInvocationStarted = true', managerBoundary);
+  const send = mmsSender.indexOf('manager.sendMultimediaMessage(', managerBoundary);
+
+  assert.ok(callbackBoundary >= 0 && managerBoundary > callbackBoundary, 'MMS callback and manager preparation must exist');
+  assert.ok(revalidation > managerBoundary, 'MMS authorization must be revalidated after all transport preparation');
+  assert.ok(transportStarted > revalidation && send > transportStarted, 'MMS transport must start only after final revalidation');
+  const compensation = mmsSender.slice(revalidation, transportStarted);
+  assert.match(compensation, /MmsSendPduStager\.delete\(context, staged\.fileName\)/);
+  assert.match(compensation, /providerStore\.abandonBeforeTransport\(/);
 });
 
 test('incoming answer bridge must prove its log stream is armed before the answer tap is allowed', () => {
