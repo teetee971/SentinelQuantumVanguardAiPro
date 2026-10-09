@@ -305,6 +305,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val attemptedSetupTargetKey = remember(epoch) { setupWizard.attemptedTargetKey() }
 
                 fun reportActivationActionError(message: String) {
+                    setupPermissionInFlight = null
+                    allowWizardAutoAdvance = false
                     activationActionError = message
                     epoch++
                 }
@@ -362,6 +364,38 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
 
+                fun launchPermissionOrReport(permission: String, failureMessage: String) {
+                    if (permission.isBlank()) {
+                        reportActivationActionError(failureMessage)
+                        return
+                    }
+                    try {
+                        activationActionError = null
+                        setupPermissionInFlight = permission
+                        setupPermissionLauncher.launch(permission)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationActionError(failureMessage)
+                    } catch (_: RuntimeException) {
+                        reportActivationActionError(failureMessage)
+                    }
+                }
+
+                fun launchPermissionsOrReport(permissions: Array<String>, failureMessage: String) {
+                    val requested = permissions.filter(String::isNotBlank).distinct().toTypedArray()
+                    if (requested.isEmpty()) {
+                        reportActivationActionError(failureMessage)
+                        return
+                    }
+                    try {
+                        activationActionError = null
+                        permissionsLauncher.launch(requested)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationActionError(failureMessage)
+                    } catch (_: RuntimeException) {
+                        reportActivationActionError(failureMessage)
+                    }
+                }
+
                 fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
                     setupPersistenceError = false
                     if (!setupWizard.markAttemptedTarget(setupTargetKey)) {
@@ -380,8 +414,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 )
                             )
                             if (permission != null) run {
-                                setupPermissionInFlight = permission
-                                setupPermissionLauncher.launch(permission)
+                                launchPermissionOrReport(
+                                    permission,
+                                    "Android n’a pas pu ouvrir la demande d’autorisation téléphonique. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                )
                             } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
@@ -396,8 +432,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             )
                         PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
                             run {
-                                setupPermissionInFlight = Manifest.permission.READ_CALL_LOG
-                                setupPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                                launchPermissionOrReport(
+                                    Manifest.permission.READ_CALL_LOG,
+                                    "Android n’a pas pu ouvrir la demande d’autorisation de l’historique. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                )
                             }
                         PhoneCoreSetupWizardStore.Step.SMS_ROLE -> {
                             launchSmsRoleActivation()
@@ -405,8 +443,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS -> {
                             val permission = smsRuntimePermissions.firstOrNull { !hasPermission(it) }
                             if (permission != null) run {
-                                setupPermissionInFlight = permission
-                                setupPermissionLauncher.launch(permission)
+                                launchPermissionOrReport(
+                                    permission,
+                                    "Android n’a pas pu ouvrir la demande d’autorisation SMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                )
                             } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS -> {
@@ -417,15 +457,19 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 )
                             )
                             if (permission != null) run {
-                                setupPermissionInFlight = permission
-                                setupPermissionLauncher.launch(permission)
+                                launchPermissionOrReport(
+                                    permission,
+                                    "Android n’a pas pu ouvrir la demande d’autorisation MMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                )
                             } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW -> epoch++
                         PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS -> {
                             if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
-                                setupPermissionInFlight = Manifest.permission.POST_NOTIFICATIONS
-                                setupPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                launchPermissionOrReport(
+                                    Manifest.permission.POST_NOTIFICATIONS,
+                                    "Android n’a pas pu ouvrir la demande d’autorisation des notifications. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                )
                             } else {
                                 launchSettingsOrReport(
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !fullScreenIntentReady) {
@@ -745,7 +789,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 if (!state.notificationPermissionReady || !state.notificationChannelsReady) {
                                     if (notificationPermissionRequired && !hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                         OutlinedButton(
-                                            onClick = { permissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS)) },
+                                            onClick = {
+                                                launchPermissionsOrReport(
+                                                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                                                    "Android n’a pas pu ouvrir la demande d’autorisation des notifications. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                                )
+                                            },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser les notifications de téléphonie") }
                                     } else {
@@ -823,8 +872,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     RoleManager.ROLE_DIALER,
                                     "Android n’a pas fourni de demande pour le rôle Téléphone. Vérifiez que ce rôle est disponible, puis réessayez."
                                 )
-                                !state.callPermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
-                                !state.phoneStatePermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.READ_PHONE_STATE))
+                                !state.callPermission -> launchPermissionsOrReport(
+                                    arrayOf(Manifest.permission.CALL_PHONE),
+                                    "Android n’a pas pu ouvrir la demande d’autorisation téléphonique. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                )
+                                !state.phoneStatePermission -> launchPermissionsOrReport(
+                                    arrayOf(Manifest.permission.READ_PHONE_STATE),
+                                    "Android n’a pas pu ouvrir la demande d’autorisation de l’état du téléphone. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                )
                                 !state.callLineAvailable -> epoch++
                             }
                         }
@@ -873,7 +928,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 if (SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS in smsModel.actions) {
                                     OutlinedButton(onClick = {
                                         val required = smsActions.permissionsFor(state.smsSnapshot)
-                                        if (required.isNotEmpty()) permissionsLauncher.launch(required) else epoch++
+                                        launchPermissionsOrReport(
+                                            required,
+                                            "Android n’a pas pu ouvrir la demande d’autorisation SMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                        )
                                     }, modifier = Modifier.fillMaxWidth()) { Text("Autoriser uniquement les permissions nécessaires") }
                                 }
                                 if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in smsModel.actions) {
@@ -898,7 +956,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 if (!state.receiveMmsPermission) add(Manifest.permission.RECEIVE_MMS)
                                 if (!state.receiveWapPushPermission) add(Manifest.permission.RECEIVE_WAP_PUSH)
                             }.toTypedArray()
-                            if (required.isNotEmpty()) permissionsLauncher.launch(required)
+                            launchPermissionsOrReport(
+                                required,
+                                "Android n’a pas pu ouvrir la demande d’autorisation MMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                            )
                         }
 
                         CapabilityCard(
@@ -918,7 +979,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)
                                 if (state.dialerRole && !state.callLogPermission) add(Manifest.permission.READ_CALL_LOG)
                             }.toTypedArray()
-                            if (optional.isNotEmpty()) permissionsLauncher.launch(optional)
+                            launchPermissionsOrReport(
+                                optional,
+                                "Android n’a pas pu ouvrir la demande d’autorisation des contacts et de l’historique. Vérifiez les paramètres de Sentinel, puis réessayez."
+                            )
                         }
 
                         if (deniedPermissions.isNotEmpty()) Card(
