@@ -801,7 +801,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 !state.dialerRole -> "Contacts séparés · rôle Téléphone requis pour l’historique"
                                 else -> "Autorisations de téléphonie manquantes"
                             },
-                            if (!state.contactsPermission || !state.callLogPermission) "Autoriser les données locales" else null
+                            if (!state.contactsPermission) "Autoriser les contacts"
+                            else if (state.dialerRole && !state.callLogPermission) "Autoriser l’historique"
+                            else null
                         ) {
                             val optional = buildList {
                                 if (!state.contactsPermission) add(Manifest.permission.READ_CONTACTS)

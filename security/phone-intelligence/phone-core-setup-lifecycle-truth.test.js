@@ -126,3 +126,20 @@ test('returning from setup does not swallow lifecycle persistence failures', () 
     'a failed callback write must return to a visible retry surface'
   );
 });
+
+test('contacts card does not expose a dead permission action before the dialer role exists', () => {
+  const cardStart = activation.indexOf('Icons.Default.Contacts');
+  const cardEnd = activation.indexOf('\n                        if (deniedPermissions.isNotEmpty())', cardStart);
+  assert.ok(cardStart >= 0 && cardEnd > cardStart, 'contacts capability card must remain inspectable');
+  const card = activation.slice(cardStart, cardEnd);
+  assert.match(
+    card,
+    /if \(!state\.contactsPermission\) "Autoriser les contacts"[\s\S]*else if \(state\.dialerRole && !state\.callLogPermission\)/,
+    'the action label must correspond to a permission that can actually be requested'
+  );
+  assert.doesNotMatch(
+    card,
+    /if \(!state\.contactsPermission \|\| !state\.callLogPermission\) "Autoriser les données locales"/,
+    'a missing call-log permission must not expose an empty action while the dialer role is absent'
+  );
+});
