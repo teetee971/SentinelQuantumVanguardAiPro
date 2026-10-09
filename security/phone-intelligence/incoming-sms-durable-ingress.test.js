@@ -107,6 +107,19 @@ test('an unreadable SMS spool file cannot be reported as a successful worker com
   assert.match(missingRecordBranch[1], /Result\.success\(\)/);
 });
 
+test('a missing SMS work identity cannot be reported as a successful projection', () => {
+  const missingIdentityBranch = worker.match(
+    /val id = inputData\.getString\(KEY_ID\)[\s\S]*?if \(id\.isNullOrBlank\(\)\) \{([\s\S]*?)\n        \}[\s\S]*?val record =/
+  );
+  assert.ok(missingIdentityBranch, 'worker must expose the missing-input boundary');
+  assert.doesNotMatch(
+    missingIdentityBranch[1],
+    /Result\.success\(\)/,
+    'a malformed WorkManager request must not silently acknowledge a pending SMS'
+  );
+  assert.match(worker, /IncomingSmsRecoveryWorker\.schedule\(applicationContext\)/);
+});
+
 test('SMS provider replay does not hide private spool cleanup failure', () => {
   const foundBranch = worker.match(
     /ProviderLookup\.FOUND -> \{([\s\S]*?)return Projection\.SUCCESS/

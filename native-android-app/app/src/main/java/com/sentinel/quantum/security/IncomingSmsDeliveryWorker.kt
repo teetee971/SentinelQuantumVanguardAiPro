@@ -18,7 +18,19 @@ class IncomingSmsDeliveryWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
-        val id = inputData.getString(KEY_ID) ?: return Result.success()
+        val id = inputData.getString(KEY_ID)
+        if (id.isNullOrBlank()) {
+            val recoveryScheduled = runCatching {
+                IncomingSmsRecoveryWorker.schedule(applicationContext)
+                true
+            }.getOrDefault(false)
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "DefaultSms",
+                "Identifiant de reprise SMS manquant; projection non acquittée"
+            )
+            return if (recoveryScheduled) Result.failure() else Result.retry()
+        }
         val record = IncomingSmsDeliveryStore.read(applicationContext.filesDir, id)
         if (record == null) {
             val retained = IncomingSmsDeliveryStore.hasPending(applicationContext.filesDir, id)
