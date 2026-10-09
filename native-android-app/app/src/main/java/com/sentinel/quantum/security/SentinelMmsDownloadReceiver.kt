@@ -146,7 +146,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         // provider/quarantine decision complete. Otherwise a process death after private persist
         // but before provider projection would strand a durable PDU with no subscription metadata
         // available to the recovery worker.
-        val data = runCatching { target.readBytes() }.getOrNull()
+        val data = runCatching {
+            MmsDownloadCoordinator.readBounded(target, size)
+        }.getOrNull()
         if (data == null || data.isEmpty()) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,

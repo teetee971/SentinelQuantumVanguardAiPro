@@ -108,6 +108,17 @@ test('private MMS persistence keeps its own non-empty transport size boundary', 
   );
 });
 
+test('download callback and recovery read staged MMS through a strict bounded reader', () => {
+  assert.match(downloadCoordinator, /internal fun readBounded\(/);
+  assert.match(downloadCoordinator, /FileInputStream/);
+  assert.match(downloadCoordinator, /input\.read\(\) != -1/);
+  assert.match(downloadCoordinator, /file\.length\(\) == expectedSize/);
+  assert.match(downloadReceiver, /MmsDownloadCoordinator\.readBounded\(target, size\)/);
+  assert.match(downloadRecoveryWorker, /MmsDownloadCoordinator\.readBounded\(target, sizeBefore\)/);
+  assert.doesNotMatch(downloadReceiver, /target\.readBytes\(\)/);
+  assert.doesNotMatch(downloadRecoveryWorker, /target\.readBytes\(\)/);
+});
+
 test('transport request exceptions retain staged MMS until durable recovery decides its fate', () => {
   const requestFailure = downloadCoordinator.match(
     /catch \(_:\s*Exception\) \{([\s\S]*?)Result\.Rejected\("MMS_DOWNLOAD_REQUEST_FAILED"\)/

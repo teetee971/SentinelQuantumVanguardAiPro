@@ -135,7 +135,9 @@ internal object MmsDownloadRecovery {
         if (modifiedBefore <= 0L || nowMs - modifiedBefore < STABLE_FILE_GRACE_MS) {
             return Outcome.RETRY
         }
-        val data = runCatching { target.readBytes() }.getOrNull() ?: return Outcome.RETRY
+        val data = runCatching {
+            MmsDownloadCoordinator.readBounded(target, sizeBefore)
+        }.getOrNull() ?: return Outcome.RETRY
         if (
             data.isEmpty() ||
             data.size.toLong() != sizeBefore ||

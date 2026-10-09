@@ -8,6 +8,7 @@ import android.provider.Telephony
 import android.telephony.SmsManager
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.FileInputStream
 import java.util.UUID
 
 /** Uses Android's public MMS transport API to retrieve a Notification.ind payload. */
@@ -247,6 +248,28 @@ object MmsDownloadCoordinator {
         context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     internal fun isValidStagedFileName(fileName: String): Boolean = FILE_NAME.matches(fileName)
+
+    /** Reads a completed transport file without trusting a concurrent size change. */
+    internal fun readBounded(file: File, expectedSize: Long): ByteArray? {
+        if (expectedSize !in 1L..MAX_DOWNLOADED_PDU_BYTES || expectedSize > Int.MAX_VALUE) {
+            return null
+        }
+        return try {
+            val bytes = ByteArray(expectedSize.toInt())
+            FileInputStream(file).use { input ->
+                var offset = 0
+                while (offset < bytes.size) {
+                    val read = input.read(bytes, offset, bytes.size - offset)
+                    if (read <= 0) return null
+                    offset += read
+                }
+                if (input.read() != -1) return null
+            }
+            bytes.takeIf { file.length() == expectedSize }
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     const val ACTION_DOWNLOAD_COMPLETE = "com.sentinel.quantum.MMS_DOWNLOAD_COMPLETE"
     const val EXTRA_FILE_NAME = "mms.download.file"
