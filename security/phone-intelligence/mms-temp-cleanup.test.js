@@ -190,3 +190,11 @@ test('MMS callback executors are bounded and reject saturation explicitly', () =
     assert.doesNotMatch(source, /Executors\.newSingleThreadExecutor/, `${name} must not use an unbounded queue`);
   }
 });
+
+test('MMS provider repair scheduling is coalesced across callback bursts', () => {
+  assert.match(sendStatusReceiver, /repairQueued = AtomicBoolean\(false\)/);
+  assert.match(sendStatusReceiver, /repairQueued\.compareAndSet\(false, true\)/);
+  assert.match(sendStatusReceiver, /fun queueProviderRepair\(context: Context\)/);
+  assert.match(sendStatusReceiver, /queueProviderRepair\(context\)/);
+  assert.match(sendStatusReceiver, /REPAIR_WORKER\.schedule/);
+});

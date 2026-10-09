@@ -9,6 +9,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Handles the explicit result callback for an outgoing MMS request.
@@ -105,13 +106,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                     "MmsProvider",
                     "Callback MMS reçu mais projection provider non confirmée; réparation journalisée"
                 )
-                runCatching {
-                    REPAIR_WORKER.schedule(
-                        { runCatching { providerStore.repairJournal() } },
-                        PROVIDER_REPAIR_DELAY_SECONDS,
-                        TimeUnit.SECONDS
-                    )
-                }
+                queueProviderRepair(context)
             }
         } else {
             LocalLogger(context).log(
@@ -157,9 +152,28 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         )
     }
 
+    private fun queueProviderRepair(context: Context) {
+        if (!repairQueued.compareAndSet(false, true)) return
+        val appContext = context.applicationContext
+        val scheduled = runCatching {
+            REPAIR_WORKER.schedule(
+                {
+                    // Clear before the repair so a callback arriving during the repair can
+                    // enqueue one bounded follow-up instead of being lost behind this pass.
+                    repairQueued.set(false)
+                    runCatching { MmsConversationStore(appContext).repairJournal() }
+                },
+                PROVIDER_REPAIR_DELAY_SECONDS,
+                TimeUnit.SECONDS
+            )
+        }.isSuccess
+        if (!scheduled) repairQueued.set(false)
+    }
+
     private companion object {
         const val PROVIDER_REPAIR_DELAY_SECONDS = 60L
         const val MAX_PENDING_CALLBACKS = 32
+        val repairQueued = AtomicBoolean(false)
         val WORKER = ThreadPoolExecutor(
             1,
             1,
