@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.Manifest
 import android.app.role.RoleManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -157,6 +158,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var setupPersistenceError by remember {
                     mutableStateOf(intent?.getBooleanExtra(EXTRA_SETUP_PERSISTENCE_ERROR, false) == true)
                 }
+                var activationActionError by remember { mutableStateOf<String?>(null) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
                     setupPermissionInFlight = null
@@ -302,6 +304,53 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val setupTargetKey = PhoneCoreSetupWizardStore.targetKey(setupStep, setupAtomicPermission)
                 val attemptedSetupTargetKey = remember(epoch) { setupWizard.attemptedTargetKey() }
 
+                fun reportActivationActionError(message: String) {
+                    activationActionError = message
+                    epoch++
+                }
+
+                fun launchActivationRole(role: String, failureMessage: String) {
+                    val request = roleIntent(role)
+                    if (request == null) {
+                        reportActivationActionError(failureMessage)
+                        return
+                    }
+                    try {
+                        activationActionError = null
+                        roleLauncher.launch(request)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationActionError(failureMessage)
+                    } catch (_: RuntimeException) {
+                        reportActivationActionError(failureMessage)
+                    }
+                }
+
+                fun launchSmsRoleActivation() {
+                    val request = try {
+                        smsActions.roleRequestIntent() ?: smsActions.legacyDefaultAppsIntent()
+                    } catch (_: RuntimeException) {
+                        null
+                    }
+                    if (request == null) {
+                        reportActivationActionError(
+                            "Android n’a pas fourni de sélecteur SMS utilisable. Vérifiez que le rôle SMS est encore disponible, puis réessayez."
+                        )
+                        return
+                    }
+                    try {
+                        activationActionError = null
+                        roleLauncher.launch(request)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationActionError(
+                            "Android n’a pas pu ouvrir le sélecteur SMS. Vérifiez les applications par défaut, puis réessayez."
+                        )
+                    } catch (_: RuntimeException) {
+                        reportActivationActionError(
+                            "Android a refusé l’ouverture du sélecteur SMS. Vérifiez les applications par défaut, puis réessayez."
+                        )
+                    }
+                }
+
                 fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
                     setupPersistenceError = false
                     if (!setupWizard.markAttemptedTarget(setupTargetKey)) {
@@ -325,17 +374,22 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             } else epoch++
                         }
                         PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
-                            roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch) ?: run { epoch++ }
+                            launchActivationRole(
+                                RoleManager.ROLE_DIALER,
+                                "Android n’a pas fourni de demande pour le rôle Téléphone. Vérifiez que ce rôle est disponible, puis réessayez."
+                            )
                         PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
-                            roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) ?: run { epoch++ }
+                            launchActivationRole(
+                                RoleManager.ROLE_CALL_SCREENING,
+                                "Android n’a pas fourni de demande pour le filtrage des appels. Vérifiez que ce rôle est disponible, puis réessayez."
+                            )
                         PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
                             run {
                                 setupPermissionInFlight = Manifest.permission.READ_CALL_LOG
                                 setupPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
                             }
                         PhoneCoreSetupWizardStore.Step.SMS_ROLE -> {
-                            val request = smsActions.roleRequestIntent() ?: smsActions.legacyDefaultAppsIntent()
-                            if (request != null) roleLauncher.launch(request) else epoch++
+                            launchSmsRoleActivation()
                         }
                         PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS -> {
                             val permission = smsRuntimePermissions.firstOrNull { !hasPermission(it) }
@@ -580,6 +634,33 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        activationActionError?.let { message ->
+                            Card(
+                                Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        "Action non effectuée",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Text(
+                                        message,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    OutlinedButton(
+                                        onClick = {
+                                            activationActionError = null
+                                            epoch++
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Actualiser l’état") }
+                                }
+                            }
+                        }
                         OutlinedButton(
                             onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, PhoneCoreDiagnosticActivity::class.java)) },
                             modifier = Modifier.fillMaxWidth()
@@ -719,7 +800,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         ) {
                             when {
-                                !state.dialerRole -> roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch)
+                                !state.dialerRole -> launchActivationRole(
+                                    RoleManager.ROLE_DIALER,
+                                    "Android n’a pas fourni de demande pour le rôle Téléphone. Vérifiez que ce rôle est disponible, puis réessayez."
+                                )
                                 !state.callPermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
                                 !state.phoneStatePermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.READ_PHONE_STATE))
                                 !state.callLineAvailable -> epoch++
@@ -737,7 +821,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             if (callScreeningState == CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD) {
                                 "Activer le filtrage"
                             } else null
-                        ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
+                        ) {
+                            launchActivationRole(
+                                RoleManager.ROLE_CALL_SCREENING,
+                                "Android n’a pas fourni de demande pour le filtrage des appels. Vérifiez que ce rôle est disponible, puis réessayez."
+                            )
+                        }
 
                         SectionTitle("Messages")
                         ElevatedCard(
@@ -757,10 +846,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 }
                                 Text(smsModel.detail, style = MaterialTheme.typography.bodySmall)
                                 if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in smsModel.actions) {
-                                    Button(onClick = {
-                                        val request = smsActions.roleRequestIntent() ?: smsActions.legacyDefaultAppsIntent()
-                                        if (request != null) roleLauncher.launch(request)
-                                    }, modifier = Modifier.fillMaxWidth()) { Text("Choisir Sentinel pour les SMS") }
+                                    Button(
+                                        onClick = { launchSmsRoleActivation() },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Choisir Sentinel pour les SMS") }
                                 }
                                 if (SmsActivationUiModel.Action.REQUEST_RUNTIME_PERMISSIONS in smsModel.actions) {
                                     OutlinedButton(onClick = {
