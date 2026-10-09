@@ -202,6 +202,41 @@ test('rejects a nonempty evidence substitution after signing', async t => {
   assert.match(result.errors.join('\n'), /evidence sha256 mismatch/);
 });
 
+test('rejects one reused evidence file pretending to prove every scenario', async t => {
+  const fixture = await makeFixture(t, session => {
+    const shared = session.evidence.S01.evidence_refs;
+    for (const scenario of PHONE_CORE_REQUIRED_SCENARIOS.slice(1)) {
+      session.evidence[scenario].evidence_refs = [...shared];
+    }
+  });
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /evidence is not uniquely bound: S02/);
+});
+
+test('rejects an artifact path used as scenario evidence even when its hash matches', async t => {
+  const fixture = await makeFixture(t, session => {
+    session.evidence.S01.evidence_refs = [
+      `artifacts/app.apk#sha256=${session.artifact.apk.sha256}`
+    ];
+  });
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /evidence reference invalid: S01/);
+});
+
 test('rejects a PASS session with unresolved residuals', async t => {
   const fixture = await makeFixture(t, session => {
     session.residuals = ['S24 latency measurement pending'];

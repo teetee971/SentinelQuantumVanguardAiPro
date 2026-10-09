@@ -208,6 +208,7 @@ function validateEvidence(session, baseDir, errors) {
     add(errors, 'evidence map invalid');
     return;
   }
+  const usedReferences = new Set();
   for (const scenario of PHONE_CORE_REQUIRED_SCENARIOS) {
     const record = session.evidence[scenario];
     if (!exactKeys(record, ['status', 'evidence_refs']) || record.status !== 'PASS' ||
@@ -216,9 +217,10 @@ function validateEvidence(session, baseDir, errors) {
       add(errors, `${scenario} evidence invalid`);
       continue;
     }
+    const validReferences = [];
     for (const reference of record.evidence_refs) {
       const match = typeof reference === 'string' ? EVIDENCE_REF.exec(reference) : null;
-      if (!match) {
+      if (!match || !match[1].startsWith('evidence/')) {
         add(errors, `evidence reference invalid: ${scenario}`);
         continue;
       }
@@ -227,8 +229,16 @@ function validateEvidence(session, baseDir, errors) {
         add(errors, `evidence reference invalid: ${scenario}`);
         continue;
       }
-      if (fileSha256(file, MAX_EVIDENCE_BYTES) !== match[2]) add(errors, `evidence sha256 mismatch: ${scenario}`);
+      if (fileSha256(file, MAX_EVIDENCE_BYTES) !== match[2]) {
+        add(errors, `evidence sha256 mismatch: ${scenario}`);
+        continue;
+      }
+      validReferences.push(match[0]);
     }
+    if (!validReferences.some(reference => !usedReferences.has(reference))) {
+      add(errors, `evidence is not uniquely bound: ${scenario}`);
+    }
+    validReferences.forEach(reference => usedReferences.add(reference));
   }
 }
 
