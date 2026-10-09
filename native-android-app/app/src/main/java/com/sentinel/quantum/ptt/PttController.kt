@@ -21,6 +21,7 @@ class PttController(
     private var listenerGeneration = 0L
     private var telecomCallPresent = false
     private var remoteAudioPending = false
+    private var teardownPending = false
 
     init {
         runCatching { registerListener() }
@@ -42,6 +43,9 @@ class PttController(
             lastFailure = "telecom_call_active"
             return
         }
+        // ERROR alone is not proof that the previous transport session is gone. When teardown
+        // has been requested, keep reconnect fail-closed until Event.Disconnected confirms it.
+        if (teardownPending) return
         if (state != PttState.DISCONNECTED && state != PttState.ERROR) return
 
         lastFailure = null
@@ -58,10 +62,13 @@ class PttController(
 
         runCatching { transport.connect() }
             .onFailure {
-                listenerGeneration += 1
-                disconnectTransportBestEffort()
+                remoteAudioPending = false
                 lastFailure = "connect_failed"
                 state = PttState.ERROR
+                teardownPending = true
+                // Keep this listener generation alive: a transport that partially connected may
+                // still deliver the Disconnected event required to release the reconnect gate.
+                disconnectTransportBestEffort()
             }
     }
 
@@ -77,10 +84,10 @@ class PttController(
         // A coroutine/WebRTC transport may acknowledge disconnect later. Keep the current
         // listener generation alive until Event.Disconnected arrives, otherwise the very
         // confirmation required to prove teardown would be fenced as stale.
+        teardownPending = true
         state = PttState.DISCONNECTING
         val requested = disconnectTransportBestEffort()
         if (!requested && state == PttState.DISCONNECTING) {
-            listenerGeneration += 1
             lastFailure = if (stopFailed) "transmit_stop_request_failed" else "disconnect_request_failed"
             state = PttState.ERROR
         }
@@ -151,6 +158,7 @@ class PttController(
             is PttTransport.Event.Disconnected -> {
                 // This event is the teardown authority. Only now may the session be reported
                 // disconnected and the listener generation be invalidated.
+                teardownPending = false
                 listenerGeneration += 1
                 if (state.requiresLocalTransmitStop()) requestStopTransmissionSafely()
                 remoteAudioPending = false
@@ -215,12 +223,14 @@ class PttController(
             }
 
             is PttTransport.Event.Failure -> {
-                listenerGeneration += 1
                 if (state.requiresLocalTransmitStop()) requestStopTransmissionSafely()
-                disconnectTransportBestEffort()
                 remoteAudioPending = false
                 lastFailure = event.reason
                 state = PttState.ERROR
+                teardownPending = true
+                // Failure is not teardown confirmation. Keep the listener alive until the
+                // transport explicitly reports Disconnected, then allow a later reconnect.
+                disconnectTransportBestEffort()
             }
         }
     }
@@ -233,11 +243,13 @@ class PttController(
     }
 
     private fun failClosedAfterStopRequestFailure() {
-        listenerGeneration += 1
-        disconnectTransportBestEffort()
         remoteAudioPending = false
         lastFailure = "transmit_stop_request_failed"
         state = PttState.ERROR
+        teardownPending = true
+        // Preserve the current listener generation so an asynchronous teardown confirmation can
+        // release the fail-closed reconnect gate.
+        disconnectTransportBestEffort()
     }
 
     private fun requestStartTransmissionSafely(): Boolean =
