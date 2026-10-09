@@ -399,5 +399,5 @@ jobs:
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-tests.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-sdk.txt
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-diagnostics/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14

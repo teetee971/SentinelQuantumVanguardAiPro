@@ -162,3 +162,10 @@ test('instrumentation failures expose failing XML cases as check annotations', (
   assert.match(instrumentationWorkflow, /AndroidJUnitRunner tail/);
   assert.match(instrumentationWorkflow, /INSTRUMENTATION_LOG=\"\$INSTRUMENTATION_LOG\"/);
 });
+
+test('critical instrumentation and Phone Core qualification uploads fail closed on missing evidence', () => {
+  const instrumentationUpload = instrumentationWorkflow.split('- name: Upload instrumentation reports\n')[1]?.split('\n      - name: ')[0] || '';
+  const qualificationUpload = emulationWorkflow.split('- name: Upload emulator qualification evidence\n')[1]?.split('\n      - name: ')[0] || '';
+  assert.match(instrumentationUpload, /if-no-files-found:\s*error/);
+  assert.match(qualificationUpload, /if-no-files-found:\s*error/);
+});

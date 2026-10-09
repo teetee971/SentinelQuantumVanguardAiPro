@@ -878,7 +878,7 @@ jobs:
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api_level }}-tests.log
             native-android-app/app/build/reports/androidTests/connected/
             native-android-app/app/build/outputs/androidTest-results/connected/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
       - name: Stop emulator
