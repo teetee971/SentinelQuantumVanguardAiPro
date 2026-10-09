@@ -114,7 +114,8 @@
         <activity
             android:name=".SentinelDialerActivity"
             android:exported="true"
-            tools:node="replace">
+            tools:node="replace"
+            tools:replace="android:exported">
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
