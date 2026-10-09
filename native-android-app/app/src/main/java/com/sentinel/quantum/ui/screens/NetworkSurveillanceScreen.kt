@@ -91,6 +91,15 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             .onFailure { statusMessage = "Impossible d’ouvrir les réglages Bluetooth sur cet appareil." }
     }
 
+    fun openPermissionSettings() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }
+            .onFailure { statusMessage = "Impossible d’ouvrir les paramètres d’autorisations sur cet appareil." }
+    }
+
     fun runWifiScan() {
         if (!wifiScanner.isWifiEnabled()) {
             isScanning = false
@@ -266,13 +275,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 Text(message, style = MaterialTheme.typography.bodyMedium)
                                 if (permissionDenied) {
                                     OutlinedButton(
-                                        onClick = {
-                                            val intent = Intent(
-                                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                                Uri.fromParts("package", context.packageName, null)
-                                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            context.startActivity(intent)
-                                        }
+                                        onClick = { openPermissionSettings() }
                                     ) {
                                         Text("Ouvrir les paramètres d'autorisations")
                                     }
