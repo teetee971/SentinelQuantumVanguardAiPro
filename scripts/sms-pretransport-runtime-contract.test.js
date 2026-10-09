@@ -93,9 +93,13 @@ test('ROLE_SMS loss is qualified as an external process-death and durable recove
   assert.match(fixture, /SmsPreSubmitRecoveryWorker\.scheduleStartupRecovery\(context\)/);
   assert.match(fixture, /Telephony\.Sms\.MESSAGE_TYPE_FAILED/);
   assert.match(fixture, /Telephony\.Sms\.STATUS_FAILED/);
-  assert.match(flow, /remove-role-holder --user 0 android\.app\.role\.SMS/);
-  assert.match(flow, /add-role-holder --user 0 android\.app\.role\.SMS/);
-  assert.match(flow, /pidof \"\$PACKAGE\"/);
+  assert.doesNotMatch(fixture, /SmsManager/,
+    'ROLE_SMS process-death fixture must never enter the telephony transport API');
+  assert.doesNotMatch(fixture, /SentinelSmsSender\(context\)\.send\s*\(/,
+    'ROLE_SMS process-death fixture must never invoke the production transport sender');
+  assert.match(flow, /cmd role remove-role-holder --user 0 "\$ROLE" "\$PACKAGE"/);
+  assert.match(flow, /cmd role add-role-holder --user 0 "\$ROLE" "\$PACKAGE"/);
+  assert.match(flow, /pidof "\$PACKAGE"/);
   assert.match(flow, /SmsRoleLossRecoveryInstrumentationTest/);
   assert.match(flow, /prepareProviderReadyFixture/);
   assert.match(flow, /recoverAfterRoleRestoration/);
