@@ -119,7 +119,7 @@ class MmsRoleLossRecoveryInstrumentationTest {
     }
 
     private fun requireExternalPhase(expected: String) {
-        val actual = instrumentation.arguments.getString(ARG_PHASE)
+        val actual = InstrumentationRegistry.getArguments().getString(ARG_PHASE)
         assumeTrue("External MMS ROLE_SMS phase $expected is not requested", actual == expected)
     }
 
