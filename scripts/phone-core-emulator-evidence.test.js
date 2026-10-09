@@ -73,11 +73,13 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
 });
 
-test('every runtime ADB operation is independently watchdog-bounded', () => {
-  assert.match(runtimeFlow, /ADB_COMMAND_TIMEOUT_SECONDS="\$\{ADB_COMMAND_TIMEOUT_SECONDS:-30\}"/);
-  assert.match(runtimeFlow, /ADB_COMMAND_KILL_GRACE_SECONDS="\$\{ADB_COMMAND_KILL_GRACE_SECONDS:-5\}"/);
-  assert.match(runtimeFlow, /command timeout[\s\S]*adb "\$@"/);
-  assert.match(runtimeFlow, /positive integer seconds/);
+test('every synthetic runtime script bounds each ADB operation independently', () => {
+  for (const script of [runtimeFlow, revocation]) {
+    assert.match(script, /ADB_COMMAND_TIMEOUT_SECONDS="\$\{ADB_COMMAND_TIMEOUT_SECONDS:-30\}"/);
+    assert.match(script, /ADB_COMMAND_KILL_GRACE_SECONDS="\$\{ADB_COMMAND_KILL_GRACE_SECONDS:-5\}"/);
+    assert.match(script, /command timeout[\s\S]*adb "\$@"/);
+    assert.match(script, /positive integer seconds/);
+  }
 });
 
 test('reboot preparation leaves process termination to the external workflow', () => {
