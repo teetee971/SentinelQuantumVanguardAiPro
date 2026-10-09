@@ -5,7 +5,8 @@ package com.sentinel.quantum.ptt
  *
  * This class does not own Android microphone permissions or audio routing. Those platform
  * concerns belong to a runtime adapter. A user press only requests publication; TRANSMITTING is
- * reported after the transport explicitly confirms LocalTransmissionStarted.
+ * reported after the transport explicitly confirms LocalTransmissionStarted. Likewise,
+ * DISCONNECTED is reported only after the transport confirms Disconnected.
  */
 class PttController(
     private val transport: PttTransport
@@ -65,16 +66,23 @@ class PttController(
     }
 
     fun disconnect() {
-        listenerGeneration += 1
-        val stopFailed = state.requiresLocalTransmitStop() && !requestStopTransmissionSafely()
-        val disconnectFailed = !disconnectTransportBestEffort()
-        remoteAudioPending = false
+        if (state == PttState.DISCONNECTED || state == PttState.DISCONNECTING) return
 
-        if (stopFailed || disconnectFailed) {
-            lastFailure = if (stopFailed) "transmit_stop_request_failed" else "disconnect_failed"
+        val stopFailed = state.requiresLocalTransmitStop() && !requestStopTransmissionSafely()
+        remoteAudioPending = false
+        if (stopFailed) {
+            lastFailure = "transmit_stop_request_failed"
+        }
+
+        // A coroutine/WebRTC transport may acknowledge disconnect later. Keep the current
+        // listener generation alive until Event.Disconnected arrives, otherwise the very
+        // confirmation required to prove teardown would be fenced as stale.
+        state = PttState.DISCONNECTING
+        val requested = disconnectTransportBestEffort()
+        if (!requested && state == PttState.DISCONNECTING) {
+            listenerGeneration += 1
+            lastFailure = if (stopFailed) "transmit_stop_request_failed" else "disconnect_request_failed"
             state = PttState.ERROR
-        } else {
-            state = PttState.DISCONNECTED
         }
     }
 
@@ -99,7 +107,7 @@ class PttController(
             disconnect()
         }
 
-        if (state == PttState.DISCONNECTED) {
+        if (state == PttState.DISCONNECTED || state == PttState.DISCONNECTING) {
             lastFailure = "telecom_call_active"
         }
     }
@@ -141,12 +149,12 @@ class PttController(
             }
 
             is PttTransport.Event.Disconnected -> {
-                // Once the current transport declares itself disconnected, invalidate its
-                // generation immediately so any trailing media callbacks are stale.
+                // This event is the teardown authority. Only now may the session be reported
+                // disconnected and the listener generation be invalidated.
                 listenerGeneration += 1
                 if (state.requiresLocalTransmitStop()) requestStopTransmissionSafely()
                 remoteAudioPending = false
-                lastFailure = event.reason
+                lastFailure = event.reason ?: lastFailure
                 state = PttState.DISCONNECTED
             }
 
