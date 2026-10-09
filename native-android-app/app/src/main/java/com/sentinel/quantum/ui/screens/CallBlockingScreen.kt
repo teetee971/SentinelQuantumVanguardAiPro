@@ -92,7 +92,7 @@ fun CallBlockingScreen(navController: NavController) {
         status = if (granted) {
             "Accès aux contacts accordé."
         } else {
-            "Accès aux contacts refusé. Caller ID restera limité aux données disponibles."
+            "Accès aux contacts refusé. L’identification de l’appelant restera limitée aux données disponibles."
         }
     }
 

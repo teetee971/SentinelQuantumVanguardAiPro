@@ -51,7 +51,7 @@ fun NumberSearchScreen() {
         topBar = {
             SentinelTopBar(
                 title = "Recherche",
-                subtitle = "Numéros & Caller ID"
+                subtitle = "Numéros & identification de l’appelant"
             )
         }
     ) { padding ->
