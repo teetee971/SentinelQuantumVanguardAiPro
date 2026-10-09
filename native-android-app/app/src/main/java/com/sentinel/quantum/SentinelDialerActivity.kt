@@ -112,6 +112,12 @@ private const val CALL_HISTORY_LOAD_LIMIT = 500
 @OptIn(ExperimentalMaterial3Api::class)
 class SentinelDialerActivity : ComponentActivity() {
     private var pendingNumber: String? = null
+    /**
+     * Android may reuse the dialer activity for a second ACTION_DIAL request. Keep that handoff
+     * observable by Compose instead of leaving the number from the first launch on screen.
+     */
+    private var externalDialNumber by mutableStateOf("")
+    private var externalDialRequestEpoch by mutableStateOf(0)
     private var callActionStatus by mutableStateOf<String?>(null)
     private var contactsPermissionGranted by mutableStateOf(false)
     private var openContactsAfterPermissionGrant by mutableStateOf(false)
@@ -597,10 +603,29 @@ class SentinelDialerActivity : ComponentActivity() {
     }
 
     private fun initialDialNumber(): String {
-        if (intent?.action != Intent.ACTION_DIAL) return ""
-        val uri = intent?.data ?: return ""
+        return dialNumberFromIntent(intent).orEmpty()
+    }
+
+    private fun dialNumberFromIntent(source: Intent?): String? {
+        if (source?.action != Intent.ACTION_DIAL) return ""
+        val uri = source.data ?: return ""
         if (!uri.scheme.equals("tel", ignoreCase = true)) return ""
-        return sanitizeDialNumber(uri.schemeSpecificPart.orEmpty()) ?: ""
+        return sanitizeDialNumber(uri.schemeSpecificPart.orEmpty())
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action != Intent.ACTION_DIAL) return
+        // A new external request supersedes any permission/role confirmation still in flight;
+        // never let its callback place the number from the previous request.
+        pendingNumber = null
+        assistedConfirmationNumber = null
+        assistedConfirmationBypassNumber = null
+        assistedConfirmationBypassExpiresAtMs = 0L
+        callActionStatus = null
+        externalDialNumber = dialNumberFromIntent(intent).orEmpty()
+        externalDialRequestEpoch++
     }
 
     private fun currentInstallTimestamp(): Long = runCatching {
@@ -647,6 +672,19 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactsLoading by remember { mutableStateOf(false) }
                 var contactListStatus by remember { mutableStateOf<String?>(null) }
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(externalDialRequestEpoch) {
+                    if (externalDialRequestEpoch == 0) return@LaunchedEffect
+                    number = externalDialNumber
+                    directoryStatus = if (number.isBlank()) {
+                        "Numéro reçu invalide ou indisponible."
+                    } else {
+                        "Saisissez un numéro pour l’identifier."
+                    }
+                    contactStatus = null
+                    reputationStatus = null
+                    showContacts = false
+                    showRecents = false
+                }
                 val context = this@SentinelDialerActivity
                 fun launchInternalActivityOrReport(request: Intent, failureMessage: String) {
                     try {
