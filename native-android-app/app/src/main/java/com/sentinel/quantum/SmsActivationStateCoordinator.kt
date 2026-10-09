@@ -20,6 +20,27 @@ internal object SmsActivationAppOpsPolicy {
     fun isRelevant(operation: String): Boolean = operation in operations
 }
 
+/** Keeps optional OEM AppOps watchers from becoming an Application-startup crash boundary. */
+internal object SmsActivationWatchRegistrationPolicy {
+    fun register(
+        operations: Iterable<String>,
+        registerOperation: (String) -> Unit
+    ): Int {
+        var registered = 0
+        operations.forEach { operation ->
+            try {
+                registerOperation(operation)
+                registered += 1
+            } catch (_: SecurityException) {
+                // onResume revalidation remains available when an OEM refuses this watcher.
+            } catch (_: RuntimeException) {
+                // Unsupported/vendor AppOps must not prevent Sentinel from starting.
+            }
+        }
+        return registered
+    }
+}
+
 /**
  * Process-level guard against stale SMS authorization UI after Android mutates permissions/AppOps.
  *
@@ -99,7 +120,7 @@ internal class SmsActivationStateCoordinator(
     fun start() {
         application.registerActivityLifecycleCallbacks(activityCallbacks)
         appOpsManager?.let { manager ->
-            SmsActivationAppOpsPolicy.operations.forEach { operation ->
+            SmsActivationWatchRegistrationPolicy.register(SmsActivationAppOpsPolicy.operations) { operation ->
                 manager.startWatchingMode(operation, application.packageName, appOpListener)
             }
         }
