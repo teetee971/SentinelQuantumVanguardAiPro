@@ -14,6 +14,7 @@ internal class MmsProviderJournal(context: Context) {
         BUILDING,
         ROOT_INSERTED,
         READY,
+        TRANSPORT_STARTED,
         SUBMITTED,
         SUBMISSION_UNKNOWN,
         RESULT_SENT,
@@ -49,6 +50,21 @@ internal class MmsProviderJournal(context: Context) {
     fun markReady(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
         transition(token, providerMessageId, Phase.READY, nowMs)
 
+    fun markTransportStarted(
+        token: String,
+        providerMessageId: Long,
+        nowMs: Long = System.currentTimeMillis()
+    ): Boolean {
+        val current = read(token) ?: return false
+        if (
+            current.phase != Phase.READY ||
+            current.providerMessageId != providerMessageId ||
+            providerMessageId <= 0L ||
+            nowMs < 0L
+        ) return false
+        return write(current.copy(phase = Phase.TRANSPORT_STARTED, updatedAtMs = nowMs))
+    }
+
     fun markSubmitted(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
         transition(token, providerMessageId, Phase.SUBMITTED, nowMs)
 
@@ -68,21 +84,13 @@ internal class MmsProviderJournal(context: Context) {
     )
 
     /**
-     * A process restart makes a READY record ambiguous: Android may have been invoked immediately
-     * before process death, or the process may have died just before invocation. Preserve the row
-     * and record uncertainty rather than deleting it or inventing a transport result.
+     * READY is now a durable proof that the transport boundary has not been entered. Process death
+     * must preserve that fact so recovery can safely compensate it once ROLE_SMS is held again.
+     * TRANSPORT_STARTED remains ambiguous and is intentionally left untouched.
      */
     fun reconcileReadyAfterProcessDeath(nowMs: Long = System.currentTimeMillis()): Int {
         if (nowMs < 0L) return 0
-        var changed = 0
-        all().forEach { record ->
-            val id = record.providerMessageId
-            if (record.phase == Phase.READY && id != null &&
-                markSubmissionUnknown(record.token, id, nowMs)) {
-                changed++
-            }
-        }
-        return changed
+        return 0
     }
 
     fun remove(token: String): Boolean =
