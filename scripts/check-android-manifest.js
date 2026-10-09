@@ -415,6 +415,15 @@ const defaultDialerActivityContract =
   /<activity\b(?=[^>]*android:name="\.SentinelDialerActivity")(?=[^>]*android:exported="true")(?=[^>]*tools:node="replace")(?=[^>]*tools:replace="android:exported")[^>]*>[\s\S]*?<action android:name="android\.intent\.action\.DIAL"\s*\/>[\s\S]*?<data android:scheme="tel"\s*\/>[\s\S]*?<\/activity>/s.test(manifest);
 const inCallUiMetadataContract =
   /<service\b(?=[^>]*android:name="\.security\.SentinelInCallService")[^>]*>[\s\S]*?<meta-data\b(?=[^>]*android:name="android\.telecom\.IN_CALL_SERVICE_UI")(?=[^>]*android:value="true")[^>]*\/>[\s\S]*?<\/service>/s.test(manifest);
+const inCallIncomingUiContract =
+  /currentSnapshot\.state == Call\.STATE_RINGING -> IncomingActions\(/.test(inCallActivity);
+const inCallCustomerActionContracts = [
+  /SentinelInCallService\.answer\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.reject\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.disconnect\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.hold\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.unhold\((?:snapshot|currentSnapshot)\.id\)/,
+].every((pattern) => pattern.test(inCallActivity));
 if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
     !protectedInCallService ||
     !protectedCallScreeningService ||
@@ -442,12 +451,8 @@ if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
     !callActionReceiver.includes('EXTRA_CALL_ID) != callId') ||
     !callActionReceiver.includes('SentinelInCallService.answer(callId)') ||
     !callActionReceiver.includes('SentinelInCallService.reject(callId)') ||
-    !inCallActivity.includes('IncomingActions(snapshot)') ||
-    !inCallActivity.includes('SentinelInCallService.answer(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.reject(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.disconnect(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.hold(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.unhold(snapshot.id)') ||
+    !inCallIncomingUiContract ||
+    !inCallCustomerActionContracts ||
     !inCallActivity.includes('SentinelInCallService.setMicrophoneMuted(snapshot.id, !it)') ||
     !inCallActivity.includes('SentinelInCallService.selectAudioRoute(snapshot.id, route.id)') ||
     !inCallActivity.includes('SentinelInCallService.startDtmf(callId, digit)') ||

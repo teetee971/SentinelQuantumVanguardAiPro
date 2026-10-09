@@ -351,9 +351,9 @@ assertImmersiveSurface(
     'CallerHero(',
     'OngoingPrimaryControls(',
     'CallActionCircle(',
-    'IncomingActions(snapshot)',
+    'currentSnapshot.state == Call.STATE_RINGING -> IncomingActions(',
     'DialpadPanel(snapshot)',
-    'DtmfPad(snapshot.id)',
+    'DtmfPad(snapshot.id, onActionFailure)',
   ]
 );
 

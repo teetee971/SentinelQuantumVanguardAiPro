@@ -6,6 +6,10 @@ const service = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt',
   'utf8'
 );
+const activity = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt',
+  'utf8'
+);
 
 test('Telecom UI actions share a fail-closed race boundary', () => {
   assert.match(
@@ -63,5 +67,33 @@ test('Telecom action failure reporting cannot rethrow through the service bounda
     service,
     /private fun performCallAction\([\s\S]*?\.onFailure \{[\s\S]*?runCatching \{[\s\S]*?onFailure\(\)\s*\}/,
     'failure-state publication must be contained after an OEM rejects a Telecom action'
+  );
+});
+
+test('critical in-call controls expose rejected Telecom commands to the customer UI', () => {
+  assert.match(
+    activity,
+    /onReject\s*=\s*\{[\s\S]*!SentinelInCallService\.reject\((?:snapshot|currentSnapshot)\.id\)/,
+    'reject failures must not disappear in the incoming-call UI'
+  );
+  assert.match(
+    activity,
+    /onAnswer\s*=\s*\{[\s\S]*!SentinelInCallService\.answer\((?:snapshot|currentSnapshot)\.id\)/,
+    'answer failures must not disappear in the incoming-call UI'
+  );
+  assert.match(
+    activity,
+    /onHangup\s*=\s*\{[\s\S]*!SentinelInCallService\.disconnect\((?:snapshot|currentSnapshot)\.id\)/,
+    'hang-up failures must not disappear in the in-call UI'
+  );
+  assert.match(
+    activity,
+    /onActionFailure\s*=\s*\{[\s\S]*!SentinelInCallService\.(hold|unhold)\(/,
+    'hold and resume failures must remain visible to the customer'
+  );
+  assert.match(
+    activity,
+    /actionStatus\?\.let \{[\s\S]*errorContainer[\s\S]*Text\(\s*message/s,
+    'the rejected command must be rendered in the pinned in-call surface'
   );
 });
