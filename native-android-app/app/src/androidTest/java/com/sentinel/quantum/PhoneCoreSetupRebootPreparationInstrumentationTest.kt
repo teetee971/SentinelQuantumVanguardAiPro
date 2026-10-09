@@ -64,7 +64,8 @@ class PhoneCoreSetupRebootPreparationInstrumentationTest {
 
         val attemptedBeforeStop = waitForAttemptedTarget()
         assertNotNull("real activation UI must persist its current target before reboot", attemptedBeforeStop)
-        instrumentation.uiAutomation.executeShellCommand("am force-stop ${context.packageName}").use { }
+        // The workflow stops the app and reboots the emulator *after* instrumentation exits.
+        // Stopping this package here would kill AndroidJUnitRunner before it reports success.
         val persisted = PhoneCoreSetupWizardStore(context)
         assertEquals(PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS, persisted.lifecycleState())
         assertEquals(attemptedBeforeStop, persisted.attemptedTargetKey())
