@@ -156,6 +156,8 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
                         true
                     } catch (_: IllegalArgumentException) {
                         true
+                    } catch (_: RuntimeException) {
+                        true
                     }
                 },
                 enabled = openable,
