@@ -14,6 +14,7 @@ import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import java.security.SecureRandom
+import java.util.UUID
 
 /**
  * Real SMS sending primitive for the user-selected default-SMS client.
@@ -117,12 +118,38 @@ class SentinelSmsSender(private val context: Context) {
         }
 
         val parts = prepared.parts
-        val conversations = SmsConversationStore(context)
-        val persistedMessageId = conversations.insertOutgoingOutbox(
-            normalized,
-            body,
-            prepared.subscriptionId
-        ) ?: return SendResult(false, "OUTGOING_PROVIDER_PERSIST_FAILED")
+        val preSubmitJournal = SmsPreSubmitJournal(context)
+        val preSubmitToken = UUID.randomUUID().toString()
+        val providerPreparedAtMs = System.currentTimeMillis()
+        if (!preSubmitJournal.begin(preSubmitToken, prepared.subscriptionId, providerPreparedAtMs)) {
+            return SendResult(false, PRE_SUBMIT_JOURNAL_UNAVAILABLE)
+        }
+
+        val persistedMessageId = SmsPreSubmitProvider.insertOutgoingOutbox(
+            context = context,
+            address = normalized,
+            body = body,
+            subscriptionId = prepared.subscriptionId,
+            timestampMs = providerPreparedAtMs
+        ) ?: run {
+            preSubmitJournal.remove(preSubmitToken)
+            return SendResult(false, "OUTGOING_PROVIDER_PERSIST_FAILED")
+        }
+        if (!preSubmitJournal.recordProvider(preSubmitToken, persistedMessageId)) {
+            val repaired = SmsPreSubmitProvider.markOutgoingFailed(context, persistedMessageId)
+            if (repaired) preSubmitJournal.remove(preSubmitToken)
+            return SendResult(
+                accepted = false,
+                reason = if (repaired) {
+                    PRE_SUBMIT_JOURNAL_PROVIDER_CORRELATION_FAILED
+                } else {
+                    PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED
+                },
+                subscriptionId = prepared.subscriptionId,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+        }
 
         // PendingIntent construction is still pre-submission. If it fails, the modem has not been
         // called and the durable OUTBOX row must be repaired to FAILED rather than left as SENDING.
@@ -157,7 +184,8 @@ class SentinelSmsSender(private val context: Context) {
             }
             PreparedCallbacks(sendToken, sent, delivered)
         } catch (_: Exception) {
-            val repaired = conversations.markOutgoingFailed(persistedMessageId)
+            val repaired = SmsPreSubmitProvider.markOutgoingFailed(context, persistedMessageId)
+            if (repaired) preSubmitJournal.remove(preSubmitToken)
             return SendResult(
                 accepted = false,
                 reason = SmsSubmissionOutcomePolicy.reasonForCallbackPreparationException(repaired),
@@ -176,10 +204,30 @@ class SentinelSmsSender(private val context: Context) {
         // "not submitted", so repair the OUTBOX row instead of returning an unknown outcome.
         val preSubmitFailure = revalidateBeforeSubmission(prepared.subscriptionId)
         if (preSubmitFailure != null) {
-            val repaired = conversations.markOutgoingFailed(persistedMessageId)
+            val repaired = SmsPreSubmitProvider.markOutgoingFailed(context, persistedMessageId)
+            if (repaired) preSubmitJournal.remove(preSubmitToken)
             return SendResult(
                 accepted = false,
                 reason = if (repaired) preSubmitFailure else PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED,
+                subscriptionId = prepared.subscriptionId,
+                sendToken = callbacks.sendToken,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+        }
+
+        // Persist ambiguity before entering SmsManager. If the process dies after this commit,
+        // recovery must preserve the provider row rather than inventing a definite send failure.
+        if (!preSubmitJournal.markTransportStarted(preSubmitToken, persistedMessageId)) {
+            val repaired = SmsPreSubmitProvider.markOutgoingFailed(context, persistedMessageId)
+            if (repaired) preSubmitJournal.remove(preSubmitToken)
+            return SendResult(
+                accepted = false,
+                reason = if (repaired) {
+                    PRE_SUBMIT_JOURNAL_TRANSPORT_MARK_FAILED
+                } else {
+                    PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED
+                },
                 subscriptionId = prepared.subscriptionId,
                 sendToken = callbacks.sendToken,
                 providerMessageId = persistedMessageId,
@@ -208,6 +256,7 @@ class SentinelSmsSender(private val context: Context) {
                     callbacks.delivered
                 )
             }
+            preSubmitJournal.remove(preSubmitToken)
             SendResult(
                 accepted = true,
                 reason = "SUBMITTED_TO_ANDROID_TELEPHONY",
@@ -217,6 +266,8 @@ class SentinelSmsSender(private val context: Context) {
                 partCount = parts.size
             )
         } catch (_: Exception) {
+            // TRANSPORT_STARTED deliberately remains durable: a synchronous exception cannot prove
+            // whether Android accepted one or more segments before throwing.
             SendResult(
                 accepted = false,
                 reason = SmsSubmissionOutcomePolicy.reasonForSubmissionException(),
@@ -303,6 +354,11 @@ class SentinelSmsSender(private val context: Context) {
         const val EXTRA_PROVIDER_MESSAGE_ID = "sms.provider_message_id"
         const val PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED =
             "SMS_PRE_SUBMIT_REVALIDATION_FAILED_PROVIDER_REPAIR_FAILED"
+        const val PRE_SUBMIT_JOURNAL_UNAVAILABLE = "SMS_PRE_SUBMIT_JOURNAL_UNAVAILABLE"
+        const val PRE_SUBMIT_JOURNAL_PROVIDER_CORRELATION_FAILED =
+            "SMS_PRE_SUBMIT_JOURNAL_PROVIDER_CORRELATION_FAILED"
+        const val PRE_SUBMIT_JOURNAL_TRANSPORT_MARK_FAILED =
+            "SMS_PRE_SUBMIT_JOURNAL_TRANSPORT_MARK_FAILED"
         private val requestTokenRandom = SecureRandom()
 
         /**
