@@ -235,10 +235,14 @@ function validateEvidence(session, baseDir, errors) {
       }
       validReferences.push(match[0]);
     }
+    const uniqueReferences = new Set(validReferences);
+    if (uniqueReferences.size !== validReferences.length) {
+      add(errors, `evidence references are duplicated: ${scenario}`);
+    }
     if (!validReferences.some(reference => !usedReferences.has(reference))) {
       add(errors, `evidence is not uniquely bound: ${scenario}`);
     }
-    validReferences.forEach(reference => usedReferences.add(reference));
+    uniqueReferences.forEach(reference => usedReferences.add(reference));
   }
 }
 

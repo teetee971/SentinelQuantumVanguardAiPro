@@ -31,7 +31,8 @@ evidence/S01...S26.<format>
 `session.json` doit être signé en Ed25519 et contenir exactement les scénarios `S01` à
 `S26`. Chaque entrée `evidence_refs` doit contenir une référence au format
 `evidence/<fichier>#sha256=<64 caractères hexadécimaux>` : le chemin doit pointer vers
-un fichier non vide du bundle et son contenu doit correspondre au digest signé.
+un fichier non vide du bundle et son contenu doit correspondre au digest signé. Une référence ne
+peut être répétée dans un même scénario ni réutilisée pour un autre scénario.
 Les chemins absolus, `..`, séparateurs Windows et symlinks sont refusés. Le champ
 `artifact.apk.sha256` est le SHA-256 du fichier APK ; le certificat porte à la fois le
 hash du rapport et `certificate_sha256`, qui doit correspondre à l’empreinte

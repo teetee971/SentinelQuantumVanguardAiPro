@@ -220,6 +220,24 @@ test('rejects one reused evidence file pretending to prove every scenario', asyn
   assert.match(result.errors.join('\n'), /evidence is not uniquely bound: S02/);
 });
 
+test('rejects duplicate evidence references inside one scenario', async t => {
+  const fixture = await makeFixture(t, session => {
+    session.evidence.S01.evidence_refs = [
+      ...session.evidence.S01.evidence_refs,
+      ...session.evidence.S01.evidence_refs
+    ];
+  });
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /evidence references are duplicated: S01/);
+});
+
 test('rejects an artifact path used as scenario evidence even when its hash matches', async t => {
   const fixture = await makeFixture(t, session => {
     session.evidence.S01.evidence_refs = [
