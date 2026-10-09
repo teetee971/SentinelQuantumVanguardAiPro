@@ -734,7 +734,7 @@ const smsNotificationSource = readRequired(smsNotificationPath);
 if (smsNotificationSource) {
   for (const marker of [
     'NotificationManagerCompat.from(context).areNotificationsEnabled()',
-    'if (!isChannelEnabled(context)) return false',
+    'if (!isChannelEnabled(context)) return@runCatching false',
   ]) {
     if (!smsNotificationSource.includes(marker)) {
       errors.push(`SMS notification truth marker missing (${marker}): ${smsNotificationPath}`);
