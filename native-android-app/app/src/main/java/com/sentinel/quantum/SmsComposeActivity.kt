@@ -90,6 +90,7 @@ import com.sentinel.quantum.security.SmsThreadOrganizer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
+import java.util.concurrent.CancellationException
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
@@ -223,7 +224,8 @@ class SmsComposeActivity : ComponentActivity() {
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val mmsSender = remember { SentinelMmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
-                val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
+                val localLogger = remember { LocalLogger(applicationContext) }
+                val smsAnalyzer = remember { SmsLinkAnalyzer(localLogger) }
                 val ioScope = rememberCoroutineScope()
                 val attachmentLoader = remember { MmsAttachmentLoader(applicationContext) }
                 val mmsAttachmentLauncher = rememberLauncherForActivityResult(
@@ -322,6 +324,15 @@ class SmsComposeActivity : ComponentActivity() {
                                 if (result.accepted) onAccepted()
                                 providerEpoch++
                             }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            localLogger.logAsync(
+                                LocalLogger.LogLevel.ERROR,
+                                "SmsCompose",
+                                "Exception inattendue durant l’envoi SMS : ${error::class.java.simpleName}"
+                            )
+                            status = "Impossible de terminer l’envoi SMS. Vérifiez le statut du message avant de réessayer."
                         } finally {
                             submissionInFlight = false
                         }
@@ -387,6 +398,15 @@ class SmsComposeActivity : ComponentActivity() {
                                 if (result.accepted) onAccepted()
                                 providerEpoch++
                             }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            localLogger.logAsync(
+                                LocalLogger.LogLevel.ERROR,
+                                "MmsCompose",
+                                "Exception inattendue durant l’envoi MMS : ${error::class.java.simpleName}"
+                            )
+                            status = "Impossible de terminer l’envoi MMS. Vérifiez le statut du message avant de réessayer."
                         } finally {
                             submissionInFlight = false
                         }
