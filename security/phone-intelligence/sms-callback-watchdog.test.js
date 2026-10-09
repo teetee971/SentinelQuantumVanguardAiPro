@@ -58,6 +58,13 @@ test('SMS watchdog retries when durable ledger retirement is not confirmed', () 
   assert.match(worker, /if \(!ledgerRemoved\) \{[\s\S]*retry = true/);
 });
 
+test('SMS watchdog retries when ledger enumeration fails', () => {
+  const worker = fs.readFileSync(workerPath, 'utf8');
+  assert.match(worker, /val staleSubmissions = runCatching \{[\s\S]*ledger\.stale\(\)/);
+  assert.match(worker, /getOrElse \{[\s\S]*return Result\.retry\(\)/);
+  assert.match(worker, /staleSubmissions\.forEach/);
+});
+
 test('terminal SMS callbacks retire the watchdog only after provider acknowledgement', () => {
   assert.match(statusReceiver, /val providerApplied = providerUpdated/);
   assert.match(

@@ -28,7 +28,18 @@ class SmsSubmissionWatchdogWorker(
             return Result.retry()
         }.associateBy { it.providerMessageId }
 
-        ledger.stale().forEach { submission ->
+        val staleSubmissions = runCatching {
+            ledger.stale()
+        }.getOrElse {
+            LocalLogger(appContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "SmsStatus",
+                "Lecture du ledger SMS impossible; nouvelle tentative durable planifiée"
+            )
+            return Result.retry()
+        }
+
+        staleSubmissions.forEach { submission ->
             val pending = pendingProviderWrites[submission.providerMessageId]
             if (
                 pending != null &&
