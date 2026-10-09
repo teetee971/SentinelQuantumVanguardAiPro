@@ -188,6 +188,37 @@ class SentinelMmsSender(private val context: Context) {
                 SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
             }
 
+            // Role, AppOps/runtime grants and SIM state may change while PDU/provider/callback
+            // preparation is running. Re-read them at the final safe point. If authorization is no
+            // longer valid, no Android transport call has happened, so remove the staged PDU and
+            // compensate the durable provider state instead of reporting an unknown outcome.
+            val preTransportFailure = revalidateBeforeTransport(subscriptionId)
+            if (preTransportFailure != null) {
+                MmsSendPduStager.delete(context, staged.fileName)
+                val cleanupConfirmed = providerStore.abandonBeforeTransport(
+                    staged.token,
+                    providerMessageId
+                )
+                if (!cleanupConfirmed) {
+                    LocalLogger(context).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "MmsProvider",
+                        "Autorisation MMS révoquée avant transport; nettoyage provider à reprendre"
+                    )
+                }
+                return SendResult(
+                    accepted = false,
+                    reason = if (cleanupConfirmed) {
+                        preTransportFailure
+                    } else {
+                        PRE_TRANSPORT_REVALIDATION_PROVIDER_REPAIR_FAILED
+                    },
+                    subscriptionId = subscriptionId,
+                    token = staged.token,
+                    providerMessageId = providerMessageId
+                )
+            }
+
             // From this instruction onward, a synchronous exception cannot prove that the platform
             // accepted no MMS bytes. Only callbacks may resolve that uncertainty.
             transportInvocationStarted = true
@@ -257,6 +288,44 @@ class SentinelMmsSender(private val context: Context) {
         }
     }
 
+    private fun revalidateBeforeTransport(subscriptionId: Int): String? {
+        if (
+            context.readSmsRoleStateFailClosed() !=
+                SmsActivationDiagnostics.SmsRoleState.HELD
+        ) {
+            return "SMS_ROLE_NOT_HELD"
+        }
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) !=
+                PackageManager.PERMISSION_GRANTED ||
+            !hasEffectivePermission(Manifest.permission.SEND_SMS)
+        ) {
+            return "SEND_SMS_PERMISSION_NOT_GRANTED"
+        }
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+                PackageManager.PERMISSION_GRANTED ||
+            !hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)
+        ) {
+            return "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
+        }
+
+        val activeIds = try {
+            context.getSystemService(SubscriptionManager::class.java)
+                .activeSubscriptionInfoList
+                .orEmpty()
+                .map { it.subscriptionId }
+                .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                .toSet()
+        } catch (_: SecurityException) {
+            return "MMS_SUBSCRIPTION_LOOKUP_FAILED"
+        } catch (_: RuntimeException) {
+            return "MMS_SUBSCRIPTION_LOOKUP_FAILED"
+        }
+        if (subscriptionId !in activeIds) return "REQUESTED_SUBSCRIPTION_NOT_ACTIVE"
+        return null
+    }
+
     private fun hasEffectivePermission(permission: String): Boolean =
         PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
@@ -265,5 +334,7 @@ class SentinelMmsSender(private val context: Context) {
         const val EXTRA_FILE_NAME = "mms.send.file"
         const val EXTRA_SUBSCRIPTION_ID = "mms.send.subscription"
         const val EXTRA_PROVIDER_MESSAGE_ID = "mms.send.provider_message_id"
+        const val PRE_TRANSPORT_REVALIDATION_PROVIDER_REPAIR_FAILED =
+            "MMS_PRE_TRANSPORT_REVALIDATION_FAILED_PROVIDER_REPAIR_FAILED"
     }
 }
