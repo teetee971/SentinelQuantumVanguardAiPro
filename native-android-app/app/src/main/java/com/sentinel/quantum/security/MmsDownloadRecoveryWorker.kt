@@ -287,7 +287,6 @@ internal object MmsDownloadRecovery {
             fileName = fileName,
             cancelCleanupWorker = !fromCleanupDeadline
         )
-    }
 
     private fun stagedFile(context: Context, fileName: String): File? {
         if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null
