@@ -67,7 +67,7 @@ const hasBoundedIngressExecutor = (source) =>
   source.includes('ThreadPoolExecutor(') &&
   source.includes('ArrayBlockingQueue<Runnable>') &&
   source.includes('ThreadPoolExecutor.AbortPolicy()') &&
-  source.includes('captureAndScheduleAfterSaturation') &&
+  source.includes('captureAndScheduleRecovery') &&
   source.includes('IncomingMmsWapIngressJournal') &&
   source.includes('IncomingMmsWapIngressRecoveryWorker');
 

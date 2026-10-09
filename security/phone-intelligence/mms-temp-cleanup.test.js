@@ -54,6 +54,10 @@ const sendStatusReceiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSendStatusReceiver.kt',
   'utf8'
 );
+const androidManifestGate = fs.readFileSync(
+  'scripts/check-android-manifest.js',
+  'utf8'
+);
 
 test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable global deadline', () => {
   assert.match(sendWorker, /fun schedule\(context: Context, fileName: String\)/);
@@ -273,6 +277,11 @@ test('MMS WAP saturation durably stages the PDU and defers provider work', () =>
     assert.match(source, /ThreadPoolExecutor\.AbortPolicy\(\)/, `${name} must reject saturation`);
     assert.doesNotMatch(source, /Executors\.newSingleThreadExecutor/, `${name} must not use an unbounded queue`);
   }
+});
+
+test('Android manifest gate tracks the current durable WAP recovery entry point', () => {
+  assert.match(androidManifestGate, /source\.includes\('captureAndScheduleRecovery'\)/);
+  assert.doesNotMatch(androidManifestGate, /source\.includes\('captureAndScheduleAfterSaturation'\)/);
 });
 
 test('WAP recovery removes unreadable staging before retiring its journal record', () => {
