@@ -64,7 +64,12 @@ test('SMS provider mutation is journaled before transport and only proven pre-tr
   assert.ok(markTransport > recordProvider, 'transport ambiguity marker must follow provider correlation');
   assert.ok(textSend > markTransport && multipartSend > markTransport, 'SmsManager may be entered only after durable TRANSPORT_STARTED');
 
-  const transportCase = recovery.slice(recovery.indexOf('SmsPreSubmitJournal.Phase.TRANSPORT_STARTED'));
-  assert.doesNotMatch(transportCase, /markOutgoingFailed/,
-    'ambiguous TRANSPORT_STARTED records must never be auto-converted to FAILED');
+  // Scope the proof to the actual recovery filter and the when branch. A broad
+  // slice also includes the legitimate PROVIDER_READY -> FAILED repair path.
+  assert.match(recovery,
+    /val repairable = records\.filter\s*\{\s*it\.phase != SmsPreSubmitJournal\.Phase\.TRANSPORT_STARTED\s*\}/,
+    'ambiguous TRANSPORT_STARTED records must be excluded before provider repair');
+  assert.match(recovery,
+    /SmsPreSubmitJournal\.Phase\.TRANSPORT_STARTED\s*->\s*Unit\b/,
+    'TRANSPORT_STARTED must remain a no-op in the recovery dispatch');
 });
