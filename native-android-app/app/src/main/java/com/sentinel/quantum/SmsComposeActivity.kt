@@ -299,12 +299,21 @@ class SmsComposeActivity : ComponentActivity() {
                             "SMS_MULTIPART_LIMIT_EXCEEDED" -> "Ce message nécessite trop de parties SMS. Raccourcissez-le avant l’envoi."
                             else -> "Échec d’envoi."
                         }
-                            if (result.accepted) {
+                            // SmsManager may throw after Android has accepted one or more
+                            // segments. The sender deliberately returns that indeterminate
+                            // outcome with the durable callback identity so this screen can
+                            // observe the conclusive SENT/DELIVERED callback without treating
+                            // the send as accepted or clearing the user's draft.
+                            val outcomeCanBeObserved =
+                                result.reason == "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" &&
+                                    result.sendToken != null &&
+                                    result.providerMessageId != null
+                            if (result.accepted || outcomeCanBeObserved) {
                                 callbackProgress = null
                                 providerPersistenceFailed = false
                                 activeSendToken = result.sendToken
                                 activeProviderMessageId = result.providerMessageId
-                                onAccepted()
+                                if (result.accepted) onAccepted()
                                 providerEpoch++
                             }
                         } finally {
