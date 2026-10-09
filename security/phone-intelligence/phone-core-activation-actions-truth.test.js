@@ -60,3 +60,16 @@ test('activation action failures render a recovery affordance', () => {
     'a failed system action must explain the failure and provide an explicit refresh'
   );
 });
+
+test('Phone Core internal surfaces use the same guarded launch boundary', () => {
+  assert.match(
+    activation,
+    /fun launchInternalActivityOrReport\(request: Intent, failureMessage: String\) \{[\s\S]*?startActivity\(request\)[\s\S]*?catch \(_: ActivityNotFoundException\)[\s\S]*?catch \(_: RuntimeException\)/,
+    'internal Phone Core activities must report missing or disabled components'
+  );
+  assert.equal(
+    (activation.match(/startActivity\(/g) ?? []).length,
+    1,
+    'Phone Core activation must route every internal activity launch through the helper'
+  );
+});

@@ -364,6 +364,17 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
 
+                fun launchInternalActivityOrReport(request: Intent, failureMessage: String) {
+                    try {
+                        activationActionError = null
+                        startActivity(request)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationActionError(failureMessage)
+                    } catch (_: RuntimeException) {
+                        reportActivationActionError(failureMessage)
+                    }
+                }
+
                 fun launchPermissionOrReport(permission: String, failureMessage: String) {
                     if (permission.isBlank()) {
                         reportActivationActionError(failureMessage)
@@ -723,7 +734,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
                         OutlinedButton(
-                            onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, PhoneCoreDiagnosticActivity::class.java)) },
+                            onClick = {
+                                launchInternalActivityOrReport(
+                                    Intent(this@PhoneCoreActivationActivity, PhoneCoreDiagnosticActivity::class.java),
+                                    "Android n’a pas pu ouvrir le diagnostic technique. Vérifiez l’installation de Sentinel, puis réessayez."
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Diagnostic technique")
@@ -1011,7 +1027,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Ouvrir les fonctions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Button(
-                                    onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, SentinelDialerActivity::class.java)) },
+                                    onClick = {
+                                        launchInternalActivityOrReport(
+                                            Intent(this@PhoneCoreActivationActivity, SentinelDialerActivity::class.java),
+                                            "Android n’a pas pu ouvrir le téléphone Sentinel. Vérifiez l’installation, puis réessayez."
+                                        )
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(Icons.Default.PhoneInTalk, null)
@@ -1019,7 +1040,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Text("Appels & contacts")
                                 }
                                 OutlinedButton(
-                                    onClick = { startActivity(Intent(this@PhoneCoreActivationActivity, SmsComposeActivity::class.java)) },
+                                    onClick = {
+                                        launchInternalActivityOrReport(
+                                            Intent(this@PhoneCoreActivationActivity, SmsComposeActivity::class.java),
+                                            "Android n’a pas pu ouvrir la messagerie Sentinel. Vérifiez l’installation, puis réessayez."
+                                        )
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(Icons.Default.Message, null)
