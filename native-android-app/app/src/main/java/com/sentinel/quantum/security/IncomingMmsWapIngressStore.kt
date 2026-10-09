@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.MessageDigest
 
@@ -81,9 +82,11 @@ internal object IncomingMmsWapIngressStore {
         if (IncomingMmsIdentity.persistedFileName(normalizedDigest) == null) return null
         val directory = directory(filesDir, create = false) ?: return null
         val target = safeChild(directory, "$normalizedDigest.$PDU_EXTENSION") ?: return null
-        if (!target.isFile || target.length() !in 1..MAX_PDU_BYTES) return null
+        val expectedSize = target.length()
+        if (!target.isFile || expectedSize !in 1..MAX_PDU_BYTES) return null
         return runCatching {
-            target.readBytes().takeIf { IncomingMmsIdentity.sha256Hex(it) == normalizedDigest }
+            readBounded(target, expectedSize)
+                ?.takeIf { IncomingMmsIdentity.sha256Hex(it) == normalizedDigest }
         }.getOrNull()
     }
 
@@ -112,6 +115,21 @@ internal object IncomingMmsWapIngressStore {
     private fun safeChild(directory: File, name: String): File? {
         val child = runCatching { File(directory, name).canonicalFile }.getOrNull() ?: return null
         return child.takeIf { it.parentFile == directory }
+    }
+
+    private fun readBounded(file: File, expectedSize: Long): ByteArray? {
+        if (expectedSize !in 1L..Int.MAX_VALUE.toLong()) return null
+        val bytes = ByteArray(expectedSize.toInt())
+        FileInputStream(file).use { input ->
+            var offset = 0
+            while (offset < bytes.size) {
+                val read = input.read(bytes, offset, bytes.size - offset)
+                if (read <= 0) return null
+                offset += read
+            }
+            if (input.read() != -1) return null
+        }
+        return bytes.takeIf { file.length() == expectedSize }
     }
 
     private fun digestFile(file: File): String? = runCatching {

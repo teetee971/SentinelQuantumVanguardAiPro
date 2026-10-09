@@ -221,6 +221,8 @@ test('MMS WAP saturation durably stages the PDU and defers provider work', () =>
   assert.match(wapStore, /MAX_STORED_WAP = 64/);
   assert.match(wapStore, /stream\.fd\.sync\(\)/);
   assert.match(wapStore, /IncomingMmsIdentity\.sha256Hex/);
+  assert.match(wapStore, /FileInputStream/);
+  assert.match(wapStore, /private fun readBounded/);
   assert.match(wapJournal, /MAX_RECORDS = 64/);
   assert.match(wapJournal, /commit\(\)/);
   assert.match(wapRecoveryWorker, /val journal = IncomingMmsWapIngressJournal\(applicationContext\)[\s\S]*journal\.all\(\)/);
