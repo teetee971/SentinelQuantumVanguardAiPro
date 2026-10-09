@@ -23,16 +23,18 @@ object EmergencyCallHandoff {
             Uri.parse("tel:" + Uri.encode(number))
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        val preferredPackage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            telecom.systemDialerPackage
-                ?.takeIf { it.isNotBlank() && it != context.packageName }
-                ?: telecom.defaultDialerPackage
+        val preferredPackage = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                telecom.systemDialerPackage
                     ?.takeIf { it.isNotBlank() && it != context.packageName }
-        } else {
-            telecom.defaultDialerPackage
-                ?.takeIf { it.isNotBlank() && it != context.packageName }
-                ?: findLegacySystemDialer(context, intent)
-        } ?: return false
+                    ?: telecom.defaultDialerPackage
+                        ?.takeIf { it.isNotBlank() && it != context.packageName }
+            } else {
+                telecom.defaultDialerPackage
+                    ?.takeIf { it.isNotBlank() && it != context.packageName }
+                    ?: findLegacySystemDialer(context, intent)
+            }
+        }.getOrNull() ?: return false
 
         // Keep emergency handoff explicit. If Sentinel is the selected default dialer on API 24-28,
         // an implicit ACTION_DIAL would otherwise resolve straight back to Sentinel and defeat the
