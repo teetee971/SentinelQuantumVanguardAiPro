@@ -5,6 +5,7 @@ import kotlinx.coroutines.delay
 import com.sentinel.quantum.R
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -78,6 +79,16 @@ fun CollectiveDefenseScreen(navController: NavController) {
             "Notifications Défense collective autorisées."
         } else {
             "Notifications refusées : les contrôles peuvent continuer sans alerte."
+        }
+    }
+
+    fun requestNotificationPermission() {
+        try {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } catch (_: ActivityNotFoundException) {
+            status = "Android n’a pas pu ouvrir la demande de notifications. Vérifiez les réglages, puis réessayez."
+        } catch (_: RuntimeException) {
+            status = "Android a refusé la demande de notifications. Vérifiez les réglages, puis réessayez."
         }
     }
 
@@ -312,9 +323,7 @@ fun CollectiveDefenseScreen(navController: NavController) {
                                     Manifest.permission.POST_NOTIFICATIONS
                                 ) != PackageManager.PERMISSION_GRANTED
                             ) {
-                                notificationPermissionLauncher.launch(
-                                    Manifest.permission.POST_NOTIFICATIONS
-                                )
+                                requestNotificationPermission()
                             } else {
                                 notificationsEnabled = enabled
                                 watchPreferences.notificationsEnabled = enabled
