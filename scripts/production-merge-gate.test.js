@@ -76,6 +76,24 @@ test('workflow changes for Android or web require the affected gate family', () 
   );
 });
 
+test('production merge gate cannot be manually dispatched into a skipped job or stale checkout', () => {
+  const workflow = readFileSync('.github/workflows/production-merge-gate.yml', 'utf8');
+  assert.doesNotMatch(workflow, /^\s+workflow_dispatch:\s*$/m);
+  assert.match(
+    workflow,
+    /uses:\s*actions\/checkout@[^\n]+\n\s+with:\n\s+ref:\s*\$\{\{\s*github\.event\.pull_request\.head\.sha\s*\}\}/
+  );
+  assert.match(workflow, /name: Assert exact source head[\s\S]*test "\$\(git rev-parse HEAD\)" = "\$TARGET_SHA"/);
+});
+
+test('CodeQL waiter scopes exact-head evidence to the current pull request', () => {
+  const workflow = readFileSync('.github/workflows/codeql-analysis.yml', 'utf8');
+  const waiter = workflow.slice(workflow.indexOf('Require universal pull request gates'));
+  assert.match(waiter, /pull_request\.number/);
+  assert.match(waiter, /pull_requests/);
+  assert.match(waiter, /select\(any\(\.pull_requests\[\]\?;/);
+});
+
 test('Phone Core workflows checkout and assert the pull request source head', () => {
   for (const workflowPath of [
     '.github/workflows/android-emulation-qualification.yml',

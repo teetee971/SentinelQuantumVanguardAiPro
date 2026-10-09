@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,7 +15,6 @@ concurrency:
 jobs:
   production-merge-gate:
     name: Production Merge Gate
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
@@ -27,6 +25,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test -n "$TARGET_SHA"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
