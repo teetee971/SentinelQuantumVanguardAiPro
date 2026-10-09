@@ -59,6 +59,10 @@ const phoneStatePermission = 'READ_PHONE_STATE';
 const callLogPermission = 'READ_CALL_LOG';
 const recordAudioPermission = 'RECORD_AUDIO';
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
+const hasBoundedCallbackExecutor = (source) =>
+  source.includes('ThreadPoolExecutor(') &&
+  source.includes('ArrayBlockingQueue<Runnable>') &&
+  source.includes('ThreadPoolExecutor.AbortPolicy()');
 
 if (declaredSmsRolePermissions.length > 0) {
   const smsPolicy = fs.readFileSync(
@@ -146,7 +150,7 @@ if (declaredSmsRolePermissions.length > 0) {
       !smsStatusReceiver.includes('partIndex != uriPartIndex') ||
       !smsStatusReceiver.includes('partCount != uriPartCount') ||
       !smsStatusReceiver.includes('val pendingResult = goAsync()') ||
-      !/Executors\.newSingleThread(?:Scheduled)?Executor\s*[({]/.test(smsStatusReceiver) ||
+      !hasBoundedCallbackExecutor(smsStatusReceiver) ||
       !smsDeliveryBus.includes('CALLBACK_REPLAY_CAPACITY = SmsCallbackProgress.MAX_PARTS * 4')) {
     errors.push('SMS status callbacks must be explicit, immutable, identity-bound, serial off-main, and replay-safe for fast multipart callbacks.');
   }
@@ -160,7 +164,7 @@ if (declaredSmsRolePermissions.length > 0) {
       (!guardedSmsRoleBoundary ||
        !mmsReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsReceiver.includes('val pendingResult = goAsync()') ||
-       !mmsReceiver.includes('Executors.newSingleThreadExecutor') ||
+       !hasBoundedCallbackExecutor(mmsReceiver) ||
        !mmsReceiver.includes('private fun processDelivery(') ||
        !mmsReceiver.includes('pendingResult.finish()') ||
        !mmsReceiver.includes('Intent(intent).putExtra("data", data.copyOf())') ||
@@ -185,7 +189,7 @@ if (declaredSmsRolePermissions.length > 0) {
        !mmsDownloadReceiver.includes('MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID') ||
        !mmsDownloadReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
-       !mmsDownloadReceiver.includes('Executors.newSingleThreadExecutor') ||
+       !hasBoundedCallbackExecutor(mmsDownloadReceiver) ||
        !mmsDownloadReceiver.includes('private fun processDownload(') ||
        !mmsDownloadReceiver.includes('pendingResult.finish()') ||
        !capturesMmsResultBeforeAsync ||
@@ -209,7 +213,7 @@ if (declaredSmsRolePermissions.length > 0) {
       !mmsSendStatusReceiver.includes('callbackUri.scheme != "sentinel-mms-send"') ||
       !mmsSendStatusReceiver.includes('callbackUri.host != "result"') ||
       !mmsSendStatusReceiver.includes('it == "$token.pdu"') ||
-      !mmsSendStatusReceiver.includes('Executors.newSingleThreadExecutor') ||
+      !hasBoundedCallbackExecutor(mmsSendStatusReceiver) ||
       !mmsSendStatusReceiver.includes('MmsSendPduStager.delete(context, fileName)') ||
       !capturesMmsSendResultBeforeAsync ||
       !mmsSendStager.includes('sentinel_mms_send') ||

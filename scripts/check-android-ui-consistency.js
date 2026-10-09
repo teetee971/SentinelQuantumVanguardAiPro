@@ -697,7 +697,9 @@ const respondViaMessagePath =
 const respondViaMessageSource = readRequired(respondViaMessagePath);
 if (respondViaMessageSource) {
   for (const marker of [
-    'Executors.newSingleThreadExecutor',
+    'ThreadPoolExecutor(',
+    'ArrayBlockingQueue<Runnable>',
+    'ThreadPoolExecutor.AbortPolicy()',
     'WORKER.execute',
     'SentinelSmsSender(appContext).send(destination, body)',
     'MAIN_HANDLER.post',

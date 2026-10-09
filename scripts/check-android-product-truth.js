@@ -80,7 +80,9 @@ export function auditProductTruth(sources) {
     localLogger.includes('val FILE_LOCK = Any()') &&
     localLogger.includes('synchronized(FILE_LOCK)') &&
     localLogger.includes('fun logAsync(') &&
-    localLogger.includes('ASYNC_WRITER = Executors.newSingleThreadExecutor') &&
+    localLogger.includes('ASYNC_WRITER = ThreadPoolExecutor') &&
+    localLogger.includes('ArrayBlockingQueue<Runnable>(MAX_PENDING_LOGS)') &&
+    localLogger.includes('ThreadPoolExecutor.AbortPolicy()') &&
     localLogger.includes('private val appContext = context.applicationContext');
   if (!serializedLocalLog) {
     errors.push('local logger: shared file access must remain serialized and system callbacks need an async logging path');
