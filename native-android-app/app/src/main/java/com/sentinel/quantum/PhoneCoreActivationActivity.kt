@@ -351,6 +351,17 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
 
+                fun launchSettingsOrReport(request: Intent, failureMessage: String) {
+                    try {
+                        activationActionError = null
+                        settingsLauncher.launch(request)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationActionError(failureMessage)
+                    } catch (_: RuntimeException) {
+                        reportActivationActionError(failureMessage)
+                    }
+                }
+
                 fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
                     setupPersistenceError = false
                     if (!setupWizard.markAttemptedTarget(setupTargetKey)) {
@@ -416,12 +427,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 setupPermissionInFlight = Manifest.permission.POST_NOTIFICATIONS
                                 setupPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             } else {
-                                settingsLauncher.launch(
+                                launchSettingsOrReport(
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !fullScreenIntentReady) {
                                         Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))
                                     } else {
                                         Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-                                    }
+                                    },
+                                    "Android n’a pas pu ouvrir les réglages de notifications. Vérifiez les paramètres de Sentinel, puis réessayez."
                                 )
                             }
                         }
@@ -626,7 +638,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         }
                                         if (setupStep != PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW) {
                                             OutlinedButton(
-                                                onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                                onClick = {
+                                                    launchSettingsOrReport(
+                                                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
+                                                        "Android n’a pas pu ouvrir les réglages de Sentinel. Vérifiez les paramètres système, puis réessayez."
+                                                    )
+                                                },
                                                 modifier = Modifier.fillMaxWidth()
                                             ) { Text("Ouvrir les paramètres Android de Sentinel") }
                                         }
@@ -734,9 +751,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     } else {
                                         OutlinedButton(
                                             onClick = {
-                                                settingsLauncher.launch(
+                                                launchSettingsOrReport(
                                                     Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+                                                    "Android n’a pas pu ouvrir les réglages de notifications. Vérifiez les paramètres de Sentinel, puis réessayez."
                                                 )
                                             },
                                             modifier = Modifier.fillMaxWidth()
@@ -760,9 +778,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 if (!fullScreenIntentReady && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                                     OutlinedButton(
                                         onClick = {
-                                            settingsLauncher.launch(
+                                            launchSettingsOrReport(
                                                 Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
-                                                    .setData(Uri.parse("package:$packageName"))
+                                                    .setData(Uri.parse("package:$packageName")),
+                                                "Android n’a pas pu ouvrir les réglages du plein écran d’appel. Vérifiez les paramètres de Sentinel, puis réessayez."
                                             )
                                         },
                                         modifier = Modifier.fillMaxWidth()
@@ -913,7 +932,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 OutlinedButton(
-                                    onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                    onClick = {
+                                        launchSettingsOrReport(
+                                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
+                                            "Android n’a pas pu ouvrir les réglages de Sentinel. Vérifiez les paramètres système, puis réessayez."
+                                        )
+                                    },
                                     modifier = Modifier.fillMaxWidth()
                                 ) { Text("Ouvrir les paramètres de Sentinel") }
                             }
