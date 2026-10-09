@@ -130,7 +130,11 @@ test('first-run assistant never launches an Android surface before durable state
   assert.match(setupStore, /fun markInProgress\(\): Boolean/);
   assert.match(setupStore, /private fun setLifecycleState\(state: LifecycleState\): Boolean/);
   assert.match(main, /if \(!wizard\.markInProgress\(\)\) return/);
-  assert.match(activation, /if \(!setupWizard\.markAttemptedTarget\(setupTargetKey\)\) return/);
+  assert.match(
+    activation,
+    /if \(!setupWizard\.markAttemptedTarget\(setupTargetKey\)\) \{[\s\S]*setupPersistenceError = true[\s\S]*return\s*\}/,
+    'the setup target must be durably recorded before launching Android and failures must stay visible'
+  );
 });
 
 

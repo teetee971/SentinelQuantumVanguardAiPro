@@ -154,6 +154,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
                 var allowWizardAutoAdvance by remember { mutableStateOf(false) }
+                var setupPersistenceError by remember { mutableStateOf(false) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
                     setupPermissionInFlight = null
@@ -300,7 +301,14 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val attemptedSetupTargetKey = remember(epoch) { setupWizard.attemptedTargetKey() }
 
                 fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
-                    if (!setupWizard.markAttemptedTarget(setupTargetKey)) return
+                    setupPersistenceError = false
+                    if (!setupWizard.markAttemptedTarget(setupTargetKey)) {
+                        // Do not hand control to Android until the target is durably recorded. A
+                        // failed commit must be visible and retryable instead of looking like a
+                        // permission/role request that Android silently ignored.
+                        setupPersistenceError = true
+                        return
+                    }
                     when (step) {
                         PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS -> {
                             val permission = PhoneCoreSetupWizardStore.firstMissingPermission(
@@ -454,6 +462,30 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
+                                    if (setupPersistenceError) {
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.errorContainer
+                                            )
+                                        ) {
+                                            Column(
+                                                Modifier.padding(12.dp),
+                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Text(
+                                                    "Impossible d’enregistrer la progression de l’assistant. Aucune demande Android n’a été lancée et Phone Core reste bloqué.",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                                )
+                                                OutlinedButton(
+                                                    onClick = { launchSetupStep(setupStep) },
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text("Réessayer l’enregistrement")
+                                                }
+                                            }
+                                        }
+                                    }
                                     if (setupStep == PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW) {
                                         Text(
                                             "BLOQUÉ : le contrôle local de l’aperçu MMS sécurisé a échoué ou reste indisponible. Aucun contenu MMS réel ne sera ouvert ; le module Téléphonie restera verrouillé jusqu’à correction du décodeur.",
@@ -464,6 +496,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     if (
                                         setupStep != PhoneCoreSetupWizardStore.Step.COMPLETE &&
                                         setupStep != PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW &&
+                                        !setupPersistenceError &&
                                         PhoneCoreSetupWizardStore.shouldOfferManualContinue(
                                             targetKey = setupTargetKey,
                                             lastAttemptedTargetKey = attemptedSetupTargetKey,

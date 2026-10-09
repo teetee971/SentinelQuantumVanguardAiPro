@@ -10,6 +10,10 @@ const store = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt',
   'utf8'
 );
+const activation = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
+  'utf8'
+);
 
 test('deferred setup is never readiness and can reconcile only from current Android facts', () => {
   assert.match(store, /DEFERRED/);
@@ -59,5 +63,23 @@ test('lifecycle transitions are durable and invalidate legacy completion before 
     setter,
     /\.apply\(\)/,
     'lifecycle transitions must not rely on asynchronous disk persistence'
+  );
+});
+
+test('setup target persistence failures remain visible and retryable', () => {
+  assert.match(
+    activation,
+    /var setupPersistenceError by remember \{ mutableStateOf\(false\) \}/,
+    'the activation surface must retain a user-visible persistence failure state'
+  );
+  assert.match(
+    activation,
+    /if \(!setupWizard\.markAttemptedTarget\(setupTargetKey\)\) \{[\s\S]*setupPersistenceError = true[\s\S]*return\s*\}/,
+    'a failed synchronous target write must block Android handoff and expose the failure'
+  );
+  assert.match(
+    activation,
+    /setupPersistenceError[\s\S]*Impossible d’enregistrer la progression[\s\S]*Réessayer l’enregistrement/,
+    'the user must be told why the action did not start and be offered a retry'
   );
 });
