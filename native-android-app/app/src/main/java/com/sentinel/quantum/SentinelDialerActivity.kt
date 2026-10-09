@@ -16,6 +16,7 @@ import android.provider.CallLog
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
@@ -212,6 +213,28 @@ class SentinelDialerActivity : ComponentActivity() {
             } else {
                 "Android a refusé l’ouverture du sélecteur d’application Téléphone pour l’historique."
             }
+        }
+    }
+
+    private fun launchPermissionOrReport(
+        launcher: ActivityResultLauncher<String>,
+        permission: String,
+        failureMessage: String,
+        onFailure: () -> Unit = {}
+    ) {
+        if (permission.isBlank()) {
+            onFailure()
+            callActionStatus = failureMessage
+            return
+        }
+        try {
+            launcher.launch(permission)
+        } catch (_: ActivityNotFoundException) {
+            onFailure()
+            callActionStatus = failureMessage
+        } catch (_: RuntimeException) {
+            onFailure()
+            callActionStatus = failureMessage
         }
     }
 
@@ -418,14 +441,24 @@ class SentinelDialerActivity : ComponentActivity() {
             } else {
                 pendingNumber = safeNumber
                 callActionStatus = "Autorisation Android d’appel requise pour transmettre cet appel d’urgence."
-                callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                launchPermissionOrReport(
+                    callPermissionLauncher,
+                    Manifest.permission.CALL_PHONE,
+                    "Android n’a pas pu ouvrir la demande d’autorisation d’appel d’urgence. Aucun appel n’a été lancé.",
+                    onFailure = { pendingNumber = null }
+                )
             }
             return
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             pendingNumber = safeNumber
             callActionStatus = "Autorisation Android d’appel requise."
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            launchPermissionOrReport(
+                callPermissionLauncher,
+                Manifest.permission.CALL_PHONE,
+                "Android n’a pas pu ouvrir la demande d’autorisation d’appel. Aucun appel n’a été lancé.",
+                onFailure = { pendingNumber = null }
+            )
             return
         }
         val telecom = getSystemService(TelecomManager::class.java)
@@ -475,7 +508,12 @@ class SentinelDialerActivity : ComponentActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
             pendingNumber = safeNumber
             callActionStatus = "Autorisez la détection des lignes afin que Sentinel ne choisisse jamais une SIM arbitrairement."
-            phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE)
+            launchPermissionOrReport(
+                phoneStatePermissionLauncher,
+                Manifest.permission.READ_PHONE_STATE,
+                "Android n’a pas pu ouvrir la demande d’accès à l’état du téléphone. Aucun appel n’a été lancé.",
+                onFailure = { pendingNumber = null }
+            )
             return
         }
 
@@ -715,7 +753,12 @@ class SentinelDialerActivity : ComponentActivity() {
                             refreshRecents()
                         } else {
                             openRecentsAfterCallLogPermissionGrant = false
-                            callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                            launchPermissionOrReport(
+                                callLogPermissionLauncher,
+                                Manifest.permission.READ_CALL_LOG,
+                                "Android n’a pas pu ouvrir la demande d’accès à l’historique. L’historique reste verrouillé.",
+                                onFailure = { openRecentsAfterCallLogPermissionGrant = false }
+                            )
                         }
                     }
                 }
@@ -737,7 +780,12 @@ class SentinelDialerActivity : ComponentActivity() {
                             refreshContacts()
                         } else {
                             openContactsAfterPermissionGrant = false
-                            contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                            launchPermissionOrReport(
+                                contactsPermissionLauncher,
+                                Manifest.permission.READ_CONTACTS,
+                                "Android n’a pas pu ouvrir la demande d’accès aux contacts. Le répertoire reste verrouillé.",
+                                onFailure = { openContactsAfterPermissionGrant = false }
+                            )
                         }
                     }
                 }
@@ -1038,12 +1086,22 @@ class SentinelDialerActivity : ComponentActivity() {
                                         phoneTab = index
                                         if (index == 1) {
                                             if (!holdsDialerRole()) requestDialerRoleForRecents()
-                                            else if (!callLogPermissionGranted) callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                                            else if (!callLogPermissionGranted) launchPermissionOrReport(
+                                                callLogPermissionLauncher,
+                                                Manifest.permission.READ_CALL_LOG,
+                                                "Android n’a pas pu ouvrir la demande d’accès à l’historique. L’historique reste verrouillé.",
+                                                onFailure = { openRecentsAfterCallLogPermissionGrant = false }
+                                            )
                                             else refreshRecents()
                                         }
                                         if (index == 2) {
                                             if (contactsPermissionGranted) refreshContacts()
-                                            else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                            else launchPermissionOrReport(
+                                                contactsPermissionLauncher,
+                                                Manifest.permission.READ_CONTACTS,
+                                                "Android n’a pas pu ouvrir la demande d’accès aux contacts. Le répertoire reste verrouillé.",
+                                                onFailure = { openContactsAfterPermissionGrant = false }
+                                            )
                                         }
                                     }
                                 ) {
@@ -1160,7 +1218,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                     when {
                                         !phoneStatePermissionGranted -> {
                                             Text("Autorisez la détection des lignes pour éviter tout choix arbitraire de SIM.", style = MaterialTheme.typography.bodySmall)
-                                            TextButton(onClick = { phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE) }) { Text("Autoriser") }
+                                            TextButton(
+                                                onClick = {
+                                                    launchPermissionOrReport(
+                                                        phoneStatePermissionLauncher,
+                                                        Manifest.permission.READ_PHONE_STATE,
+                                                        "Android n’a pas pu ouvrir la demande d’accès à l’état du téléphone. La sélection de ligne reste verrouillée."
+                                                    )
+                                                }
+                                            ) { Text("Autoriser") }
                                         }
                                         callLines.isEmpty() -> Text("Aucune ligne active détectée.", color = MaterialTheme.colorScheme.error)
                                         callLines.size == 1 -> Text(callLines.first().label + " · ligne unique active", style = MaterialTheme.typography.bodySmall)
