@@ -6,7 +6,9 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.telephony.SubscriptionManager
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Handles ACTION_RESPOND_VIA_MESSAGE when Sentinel is the user-selected default SMS app.
@@ -116,9 +118,16 @@ class SentinelRespondViaMessageService : Service() {
     private companion object {
         const val EXTRA_SUBSCRIPTION_INDEX = "android.telephony.extra.SUBSCRIPTION_INDEX"
         const val EXTRA_LEGACY_SUBSCRIPTION = "subscription"
+        const val MAX_PENDING_REPLIES = 32
         val MAIN_HANDLER = Handler(Looper.getMainLooper())
-        val WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-respond-via-message").apply { isDaemon = true }
-        }
+        val WORKER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_REPLIES),
+            { task -> Thread(task, "sentinel-respond-via-message").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
     }
 }

@@ -37,3 +37,10 @@ test('platform quick replies prefer the incoming-call subscription, then Android
     'MMS quick reply must use the same resolved subscription contract'
   );
 });
+
+test('respond-via-message processing uses a bounded queue and rejects saturation', () => {
+  assert.match(service, /ThreadPoolExecutor\(/);
+  assert.match(service, /ArrayBlockingQueue< Runnable >|ArrayBlockingQueue<Runnable>/);
+  assert.match(service, /ThreadPoolExecutor\.AbortPolicy\(\)/);
+  assert.doesNotMatch(service, /Executors\.newSingleThreadExecutor/);
+});
