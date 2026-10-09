@@ -296,7 +296,10 @@ test('MMS WAP saturation durably stages the PDU and defers provider work', () =>
   assert.match(wapRecoveryWorker, /nowMs - record\.receivedAtMs/);
   assert.match(wapRecoveryWorker, /journal\.remove\(record\.digestHex\)/);
   assert.match(wapRecoveryWorker, /Result\.retry\(\)/);
-  assert.match(application, /IncomingMmsWapIngressRecoveryWorker\.schedule\(this\)/);
+  assert.match(
+    application,
+    /scheduleRecovery\("récupération WAP Push MMS"\)[\s\S]*?IncomingMmsWapIngressRecoveryWorker\.schedule\(this@SentinelApplication\)/
+  );
 
   for (const [name, source] of [
     ['download callback', downloadReceiver],

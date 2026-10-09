@@ -6,6 +6,7 @@ import com.sentinel.quantum.security.IncomingSmsRecoveryWorker
 import com.sentinel.quantum.security.IncomingMmsWapIngressRecoveryWorker
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.MmsSubmissionWatchdogWorker
+import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 import com.sentinel.quantum.security.SmsSubmissionWatchdogWorker
 
@@ -25,17 +26,41 @@ import com.sentinel.quantum.security.SmsSubmissionWatchdogWorker
 class SentinelApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        SentinelSmsStatusReceiver.queueProviderRepair(this)
-        runCatching { SmsSubmissionWatchdogWorker.schedule(this) }
-        runCatching { IncomingSmsRecoveryWorker.schedule(this) }
-        runCatching { IncomingMmsWapIngressRecoveryWorker.schedule(this) }
-        runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(this) }
-        runCatching { MmsSubmissionWatchdogWorker.schedule(this) }
+        scheduleRecovery("réparation provider SMS") {
+            SentinelSmsStatusReceiver.queueProviderRepair(this@SentinelApplication)
+        }
+        scheduleRecovery("watchdog soumission SMS") {
+            SmsSubmissionWatchdogWorker.schedule(this@SentinelApplication)
+        }
+        scheduleRecovery("récupération SMS entrant") {
+            IncomingSmsRecoveryWorker.schedule(this@SentinelApplication)
+        }
+        scheduleRecovery("récupération WAP Push MMS") {
+            IncomingMmsWapIngressRecoveryWorker.schedule(this@SentinelApplication)
+        }
+        scheduleRecovery("nettoyage MMS sortant") {
+            MmsSendCleanupWorker.scheduleStartupRecovery(this@SentinelApplication)
+        }
+        scheduleRecovery("watchdog soumission MMS") {
+            MmsSubmissionWatchdogWorker.schedule(this@SentinelApplication)
+        }
 
         val store = CallBlocklistStore(this)
         val screeningSnapshot = store.prepareScreeningSnapshot()
         if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
             runCatching { store.prepareFingerprintKeys() }
+        }
+    }
+
+    private fun scheduleRecovery(label: String, action: () -> Unit) {
+        runCatching { action() }.onFailure {
+            runCatching {
+                LocalLogger(this).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "Recovery",
+                    "Planification de $label impossible; la prochaine initialisation retentera la récupération"
+                )
+            }
         }
     }
 }

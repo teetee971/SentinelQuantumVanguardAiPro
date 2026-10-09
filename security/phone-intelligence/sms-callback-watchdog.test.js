@@ -39,7 +39,10 @@ test('SMS submission registers a durable callback watchdog before entering telep
 });
 
 test('SMS watchdog survives process death and expires only still-pending provider rows', () => {
-  assert.match(application, /SmsSubmissionWatchdogWorker\.schedule\(this\)/);
+  assert.match(
+    application,
+    /scheduleRecovery\("watchdog soumission SMS"\)[\s\S]*?SmsSubmissionWatchdogWorker\.schedule\(this@SentinelApplication\)/
+  );
   const worker = fs.readFileSync(workerPath, 'utf8');
   assert.match(worker, /PeriodicWorkRequestBuilder/);
   assert.match(worker, /SmsOutgoingSubmissionStore\(appContext\)[\s\S]*ledger\.stale/);

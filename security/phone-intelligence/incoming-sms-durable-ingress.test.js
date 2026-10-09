@@ -138,7 +138,10 @@ test('role-loss retry window retires private SMS content instead of leaking spoo
 });
 
 test('startup recovery itself runs off the Application main thread', () => {
-  assert.match(application, /IncomingSmsRecoveryWorker\.schedule\(this\)/);
+  assert.match(
+    application,
+    /scheduleRecovery\("récupération SMS entrant"\)[\s\S]*?IncomingSmsRecoveryWorker\.schedule\(this@SentinelApplication\)/
+  );
   assert.doesNotMatch(application, /IncomingSmsDeliveryStore\.pendingIds/);
   assert.match(recovery, /IncomingSmsDeliveryStore\.pendingIds\(applicationContext\.filesDir\)/);
   assert.match(recovery, /OneTimeWorkRequestBuilder<IncomingSmsRecoveryWorker>/);
