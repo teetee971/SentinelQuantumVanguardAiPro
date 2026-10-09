@@ -30,6 +30,10 @@ const deliverReceiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt',
   'utf8'
 );
+const sendStatusReceiver = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSendStatusReceiver.kt',
+  'utf8'
+);
 
 test('outgoing MMS cleanup is bound to each staged PDU instead of a replaceable global deadline', () => {
   assert.match(sendWorker, /fun schedule\(context: Context, fileName: String\)/);
@@ -172,4 +176,17 @@ test('secondary prune uses the same final recovery lifecycle instead of raw-unli
   );
   assert.match(downloadCoordinator, /expire\(context, file\.name\)/);
   assert.match(downloadCoordinator, /!isValidStagedFileName\(it\.name\)/);
+});
+
+test('MMS callback executors are bounded and reject saturation explicitly', () => {
+  for (const [name, source] of [
+    ['WAP_PUSH_DELIVER', deliverReceiver],
+    ['download callback', downloadReceiver],
+    ['send callback', sendStatusReceiver]
+  ]) {
+    assert.match(source, /ThreadPoolExecutor\(/, `${name} must use a bounded executor`);
+    assert.match(source, /ArrayBlockingQueue< Runnable >|ArrayBlockingQueue<Runnable>/, `${name} queue must be bounded`);
+    assert.match(source, /ThreadPoolExecutor\.AbortPolicy\(\)/, `${name} must reject saturation`);
+    assert.doesNotMatch(source, /Executors\.newSingleThreadExecutor/, `${name} must not use an unbounded queue`);
+  }
 });

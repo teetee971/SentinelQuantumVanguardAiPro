@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Handles the explicit callback from Android's MMS download transport.
@@ -255,9 +257,16 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     }
 
     private companion object {
-        val WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-mms-download").apply { isDaemon = true }
-        }
+        const val MAX_PENDING_CALLBACKS = 32
+        val WORKER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { task -> Thread(task, "sentinel-mms-download").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
         val TOKEN = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
     }
 }

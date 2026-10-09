@@ -67,3 +67,10 @@ test('SMS watchdog ledger contains opaque bounded metadata only', () => {
   assert.match(ledger, /SharedPreferences/);
   assert.doesNotMatch(ledger, /body|address|destination/i);
 });
+
+test('SMS callback processing uses a bounded queue while repair remains scheduled', () => {
+  assert.match(statusReceiver, /ThreadPoolExecutor\(/);
+  assert.match(statusReceiver, /ArrayBlockingQueue< Runnable >|ArrayBlockingQueue<Runnable>/);
+  assert.match(statusReceiver, /ThreadPoolExecutor\.AbortPolicy\(\)/);
+  assert.match(statusReceiver, /REPAIR_SCHEDULER\.schedule/);
+});

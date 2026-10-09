@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -202,11 +204,12 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
 
     companion object {
         private val repairQueued = AtomicBoolean(false)
+        private const val MAX_PENDING_CALLBACKS = 64
 
         fun queueProviderRepair(context: Context) {
             if (!repairQueued.compareAndSet(false, true)) return
             val appContext = context.applicationContext
-            CALLBACK_EXECUTOR.schedule({
+            REPAIR_SCHEDULER.schedule({
                 repairQueued.set(false)
                 val store = SmsCallbackProgressStore(appContext)
                 var retry = false
@@ -235,8 +238,17 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
 
         const val CALLBACK_URI_SCHEME = "sentinel-sms-status"
         const val CALLBACK_URI_HOST = "callback"
-        private val CALLBACK_EXECUTOR = Executors.newSingleThreadScheduledExecutor { runnable ->
-            Thread(runnable, "SentinelSmsStatus").apply { isDaemon = true }
+        private val CALLBACK_EXECUTOR = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { runnable -> Thread(runnable, "SentinelSmsStatus").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
+        private val REPAIR_SCHEDULER = Executors.newSingleThreadScheduledExecutor { runnable ->
+            Thread(runnable, "SentinelSmsStatusRepair").apply { isDaemon = true }
         }
     }
 }

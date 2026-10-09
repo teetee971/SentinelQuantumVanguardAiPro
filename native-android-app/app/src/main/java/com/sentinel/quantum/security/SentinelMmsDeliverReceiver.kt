@@ -4,7 +4,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Bounded WAP/MMS intake for the default-SMS client.
@@ -205,9 +207,16 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     companion object {
-        private val WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-mms-deliver").apply { isDaemon = true }
-        }
+        private const val MAX_PENDING_CALLBACKS = 32
+        private val WORKER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { task -> Thread(task, "sentinel-mms-deliver").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
         private const val MMS_MIME_TYPE = "application/vnd.wap.mms-message"
         private const val MAX_PDU_BYTES = 512 * 1024
     }

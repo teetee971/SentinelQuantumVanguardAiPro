@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
 /**
@@ -157,9 +159,16 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
 
     private companion object {
         const val PROVIDER_REPAIR_DELAY_SECONDS = 60L
-        val WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-mms-send").apply { isDaemon = true }
-        }
+        const val MAX_PENDING_CALLBACKS = 32
+        val WORKER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { task -> Thread(task, "sentinel-mms-send").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
         val REPAIR_WORKER = Executors.newSingleThreadScheduledExecutor { task ->
             Thread(task, "sentinel-mms-provider-repair").apply { isDaemon = true }
         }
