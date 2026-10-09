@@ -44,3 +44,16 @@ test('microphone capability reads stay inside the same race boundary', () => {
     'mute capability reads must be contained before setMuted reaches Telecom'
   );
 });
+
+test('foreground activity launch cannot crash the Telecom service', () => {
+  assert.match(
+    service,
+    /private fun showInCallActivity\(\) \{\s*runCatching \{[\s\S]*?startActivity\(/,
+    'background or OEM activity launch failures must be contained at the service boundary'
+  );
+  assert.match(
+    service,
+    /private fun showInCallActivity\(\)[\s\S]*?onFailure \{[\s\S]*?Interface d[’']appel indisponible/s,
+    'a failed UI launch must remain observable without crashing Telecom'
+  );
+});

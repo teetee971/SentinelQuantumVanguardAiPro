@@ -303,10 +303,18 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun showInCallActivity() {
-        startActivity(
-            Intent(this, SentinelInCallActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        )
+        runCatching {
+            startActivity(
+                Intent(this, SentinelInCallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+        }.onFailure {
+            LocalLogger(this).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "InCall",
+                "Interface d’appel indisponible; l’état Telecom reste actif"
+            )
+        }
     }
 
     private fun initializeAudioState() {
