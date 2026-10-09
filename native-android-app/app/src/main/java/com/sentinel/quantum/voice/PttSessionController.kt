@@ -6,14 +6,15 @@ import kotlinx.coroutines.sync.withLock
 /**
  * Foreground push-to-talk state machine.
  *
- * The transport connection never implies microphone publication. Audio is published only
- * between [press] and [release]. Every transition that leaves TRANSMITTING attempts to disable
- * the microphone first so the controller fails closed.
+ * A successful [Transport.connect] must leave the microphone unpublished. Audio is published
+ * only between [press] and [release]. Every transition that leaves TRANSMITTING attempts to
+ * disable the microphone first so the controller fails closed.
  */
 class PttSessionController(
     private val transport: Transport
 ) {
     interface Transport {
+        /** Connect successfully only when the session is ready and microphone publication is off. */
         suspend fun connect(): Result<Unit>
         suspend fun setMicrophoneEnabled(enabled: Boolean): Result<Unit>
         suspend fun disconnect()
@@ -44,13 +45,6 @@ class PttSessionController(
         if (connection.isFailure) {
             state = State.FAILED
             return connection
-        }
-
-        val muted = transport.setMicrophoneEnabled(false)
-        if (muted.isFailure) {
-            runCatching { transport.disconnect() }
-            state = State.FAILED
-            return muted
         }
 
         state = State.READY
