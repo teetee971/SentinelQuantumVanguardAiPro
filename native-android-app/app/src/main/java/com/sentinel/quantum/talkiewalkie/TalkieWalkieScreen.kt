@@ -162,7 +162,7 @@ fun TalkieWalkieScreen(
             shape = RoundedCornerShape(16.dp),
             color = SentinelD1.Card,
             contentColor = Color.White,
-            onClick = actions.onAudioRouteClick
+            onClick = { actions.onAudioRouteClick() }
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
