@@ -59,6 +59,8 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(reportCode, /setupRebootObserved/);
   assert.match(reportCode, /screeningLatencyObserved/);
   assert.match(reportCode, /screening_latency_observed/);
+  assert.match(reportCode, /SCREENING_RESPONSE_BUDGET_MS = 450/);
+  assert.match(reportCode, /screeningLatencyValues\.every\(\(elapsedMs\) =>/);
   assert.match(reportCode, /CallScreeningService:response_sent=true/);
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
 });
@@ -237,6 +239,18 @@ test('successful host fixture preserves exact build/source, base, and branch pro
 test('screening latency without a successful Telecom response cannot qualify', () => {
   const { result, report } = fixture({}, ({ put }) => {
     put('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=false');
+  });
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.screening_latency_observed, false);
+  assert.ok(report.evidence_failures.includes('screening_latency_observed'));
+});
+
+test('screening latency at the service budget cannot qualify', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put(
+      'call-screening-latency-logcat.txt',
+      'CallScreeningService:response_elapsed_ms=450\nCallScreeningService:response_sent=true'
+    );
   });
   assert.equal(result.status, 1);
   assert.equal(report.checks.screening_latency_observed, false);

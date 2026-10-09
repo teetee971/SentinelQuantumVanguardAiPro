@@ -612,9 +612,16 @@ jobs:
             contains('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
           const screeningResponseSentObserved = modernPhoneCore &&
             contains('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=true');
+          const SCREENING_RESPONSE_BUDGET_MS = 450;
+          const screeningLatencyValues = [...read('call-screening-latency-logcat.txt').matchAll(
+            /CallScreeningService:response_elapsed_ms=(\d+)/g
+          )].map((match) => Number(match[1]));
           const screeningLatencyObserved = modernPhoneCore &&
             screeningResponseSentObserved &&
-            /CallScreeningService:response_elapsed_ms=\d+/.test(read('call-screening-latency-logcat.txt'));
+            screeningLatencyValues.length > 0 &&
+            screeningLatencyValues.every((elapsedMs) =>
+              Number.isSafeInteger(elapsedMs) && elapsedMs < SCREENING_RESPONSE_BUDGET_MS
+            );
           const decisionObserved = api >= 36
             ? contains('phone-private-timeline-prefix.xml', 'CALL_SCREENED:')
             : null;

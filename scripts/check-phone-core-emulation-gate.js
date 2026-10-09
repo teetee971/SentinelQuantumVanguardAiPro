@@ -105,6 +105,7 @@ const expectedRequiredChecks = [
   'cold_install_and_relaunch',
   'phone_core_setup_resume',
   'synthetic_call_screening_observed',
+  'screening_latency_observed',
   'synthetic_call_screening_decision_observed',
   'incoming_call_telecom_flow',
   'outgoing_call_telecom_flow',
