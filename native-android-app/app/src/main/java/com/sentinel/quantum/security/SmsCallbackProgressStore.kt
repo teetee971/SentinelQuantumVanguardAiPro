@@ -107,17 +107,31 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
     }
 
     private fun prune(nowMs: Long): Boolean {
-        val expired = preferences.all.mapNotNull { (key, value) ->
-            val raw = value as? String ?: return@mapNotNull key
-            val persisted = decode(raw, nowMs, enforceTtl = false) ?: return@mapNotNull key
-            if (nowMs - persisted.createdAtMs > TTL_MS) key else null
+        var storageHealthy = true
+        val expired = mutableListOf<String>()
+        preferences.all.forEach { (key, value) ->
+            val raw = value as? String
+            if (raw == null) {
+                storageHealthy = false
+                return@forEach
+            }
+            val persisted = decode(raw, nowMs, enforceTtl = false)
+            if (persisted == null) {
+                // Corruption is recovery evidence, not ordinary retention garbage. Preserve it so
+                // the current callback cannot recreate a fresh ledger entry over unknown history.
+                storageHealthy = false
+                return@forEach
+            }
+            if (nowMs - persisted.createdAtMs > TTL_MS) {
+                expired += key
+            }
         }
         if (expired.isNotEmpty()) {
             val editor = preferences.edit()
             expired.forEach(editor::remove)
-            return editor.commit()
+            if (!editor.commit()) storageHealthy = false
         }
-        return true
+        return storageHealthy
     }
 
     private fun trimToBound(nowMs: Long): Boolean {
@@ -213,4 +227,3 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         val LOCK = Any()
     }
 }
-
