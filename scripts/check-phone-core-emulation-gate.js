@@ -241,6 +241,7 @@ for (const marker of [
   ':wearable-contract:test',
   ':wearable-security:test',
   ':app:lintDebug',
+  'npm run test:phone-intelligence',
   'CallRuleEngineTest',
   'SmsSubmitReadinessTest',
   ':app:connectedDebugAndroidTest',
@@ -289,6 +290,12 @@ for (const marker of [
   'commercial_release_claim: false',
   'effective_permission_denial_fail_closed'
 ]) requireText(workflow, marker, 'shadow emulation workflow');
+
+const hostPhoneContractsStep = workflow.indexOf('- name: Test Phone Intelligence host contracts');
+const gradleSetupStep = workflow.indexOf('- name: Setup Java 17');
+if (hostPhoneContractsStep < 0 || gradleSetupStep < 0 || hostPhoneContractsStep > gradleSetupStep) {
+  errors.push('Phone Intelligence host contracts must run before Java/Gradle and emulator preparation');
+}
 
 if (workflow.includes('set-bypassing-role-qualification')) {
   errors.push('emulator gate must never bypass Android role qualification');

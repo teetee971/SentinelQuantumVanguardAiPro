@@ -44,6 +44,9 @@ jobs:
       - name: Validate Android product truth
         run: npm run test:android-product-truth
 
+      - name: Test Phone Intelligence host contracts
+        run: npm run test:phone-intelligence
+
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
