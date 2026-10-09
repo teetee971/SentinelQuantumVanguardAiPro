@@ -48,7 +48,7 @@ class PttTelecomInterlockTest {
         assertEquals("telecom_call_active", second.lastFailure)
     }
 
-    @Test fun detachDisconnectsLiveControllerBeforeReleasingOwnership() {
+    @Test fun detachRetainsOwnershipUntilTransportConfirmsDisconnected() {
         val interlock = PttTelecomInterlock()
         val firstTransport = FakePttTransport()
         val first = PttController(firstTransport)
@@ -59,14 +59,19 @@ class PttTelecomInterlockTest {
         firstTransport.emit(PttTransport.Event.Connected)
         assertEquals(PttState.READY, first.state)
 
-        assertTrue(interlock.detach(first))
+        assertFalse(interlock.detach(first))
 
         assertEquals(1, firstTransport.disconnectCount)
+        assertEquals(PttState.DISCONNECTING, first.state)
+        assertFalse(interlock.attach(second))
+
+        firstTransport.emit(PttTransport.Event.Disconnected())
+
         assertEquals(PttState.DISCONNECTED, first.state)
         assertTrue(interlock.attach(second))
     }
 
-    @Test fun failedDisconnectKeepsOwnershipFailClosed() {
+    @Test fun failedDisconnectRequestKeepsOwnershipFailClosed() {
         val interlock = PttTelecomInterlock()
         val firstTransport = FakePttTransport(disconnectThrows = true)
         val first = PttController(firstTransport)
@@ -80,7 +85,7 @@ class PttTelecomInterlockTest {
         assertFalse(interlock.detach(first))
 
         assertEquals(PttState.ERROR, first.state)
-        assertEquals("disconnect_failed", first.lastFailure)
+        assertEquals("disconnect_request_failed", first.lastFailure)
         assertFalse(interlock.attach(second))
     }
 
