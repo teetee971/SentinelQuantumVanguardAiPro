@@ -3,9 +3,9 @@ package com.sentinel.quantum.ptt
 /**
  * Transport-agnostic half-duplex push-to-talk state machine.
  *
- * This class does not own Android microphone permissions or audio routing. Those
- * platform concerns must be wired by a runtime adapter and may only start media
- * after this controller has entered TRANSMITTING.
+ * This class does not own Android microphone permissions or audio routing. Those platform
+ * concerns belong to a runtime adapter. A user press only requests publication; TRANSMITTING is
+ * reported after the transport explicitly confirms LocalTransmissionStarted.
  */
 class PttController(
     private val transport: PttTransport
@@ -19,6 +19,7 @@ class PttController(
     // A callback from an earlier connection must not control a later session.
     private var listenerGeneration = 0L
     private var telecomCallPresent = false
+    private var remoteAudioPending = false
 
     init {
         runCatching { registerListener() }
@@ -41,12 +42,13 @@ class PttController(
             return
         }
         if (state != PttState.DISCONNECTED && state != PttState.ERROR) return
+
         lastFailure = null
+        remoteAudioPending = false
         state = PttState.CONNECTING
         listenerGeneration += 1
 
-        val listenerRegistered = runCatching { registerListener() }.isSuccess
-        if (!listenerRegistered) {
+        if (runCatching { registerListener() }.isFailure) {
             lastFailure = "listener_registration_failed"
             state = PttState.ERROR
             disconnectTransportBestEffort()
@@ -64,12 +66,12 @@ class PttController(
 
     fun disconnect() {
         listenerGeneration += 1
-
-        val stopFailed = state == PttState.TRANSMITTING && !stopTransmissionSafely()
+        val stopFailed = state.requiresLocalTransmitStop() && !requestStopTransmissionSafely()
         val disconnectFailed = !disconnectTransportBestEffort()
+        remoteAudioPending = false
 
         if (stopFailed || disconnectFailed) {
-            lastFailure = if (stopFailed) "transmit_stop_failed" else "disconnect_failed"
+            lastFailure = if (stopFailed) "transmit_stop_request_failed" else "disconnect_failed"
             state = PttState.ERROR
         } else {
             state = PttState.DISCONNECTED
@@ -77,9 +79,9 @@ class PttController(
     }
 
     /**
-     * Telecom always has priority over PTT. A live call tears down any PTT session and
+     * Telecom always has priority over PTT. A live carrier call tears down any PTT session and
      * blocks reconnect until Telecom reports no calls. Clearing the call never reconnects
-     * automatically; a new user action is required.
+     * automatically; another user action is required.
      */
     fun onTelecomCallPresenceChanged(present: Boolean) {
         telecomCallPresent = present
@@ -88,7 +90,9 @@ class PttController(
         if (state in setOf(
                 PttState.CONNECTING,
                 PttState.READY,
+                PttState.TRANSMIT_REQUESTED,
                 PttState.TRANSMITTING,
+                PttState.TRANSMIT_STOPPING,
                 PttState.RECEIVING
             )
         ) {
@@ -100,101 +104,145 @@ class PttController(
         }
     }
 
+    /** Returns true only when a transmit request was accepted or synchronously confirmed. */
     fun pressToTalk(): Boolean {
         if (telecomCallPresent || state != PttState.READY) return false
 
-        val started = runCatching { transport.startTransmitting() }.getOrDefault(false)
-        if (!started) {
-            lastFailure = "transmit_start_failed"
+        // Move to the pending state before invoking the adapter. Some deterministic or LAN
+        // transports may acknowledge synchronously from inside requestStartTransmitting().
+        state = PttState.TRANSMIT_REQUESTED
+        val accepted = requestStartTransmissionSafely()
+        if (!accepted && state == PttState.TRANSMIT_REQUESTED) {
+            state = PttState.READY
+            lastFailure = "transmit_start_request_failed"
             return false
         }
 
-        state = PttState.TRANSMITTING
-        return true
+        return state == PttState.TRANSMIT_REQUESTED || state == PttState.TRANSMITTING
     }
 
     fun releaseToTalk() {
-        if (state != PttState.TRANSMITTING) return
-        if (stopTransmissionSafely()) {
-            state = PttState.READY
-            return
-        }
+        if (state != PttState.TRANSMIT_REQUESTED && state != PttState.TRANSMITTING) return
 
-        // If muting the transport cannot be proven, invalidate the session and
-        // tear it down best-effort. Never report READY while microphone state is unknown.
-        listenerGeneration += 1
-        disconnectTransportBestEffort()
-        lastFailure = "transmit_stop_failed"
-        state = PttState.ERROR
+        // Set STOPPING first for the same synchronous-callback reason as pressToTalk().
+        state = PttState.TRANSMIT_STOPPING
+        val accepted = requestStopTransmissionSafely()
+        if (!accepted && state == PttState.TRANSMIT_STOPPING) {
+            failClosedAfterStopRequestFailure()
+        }
     }
 
     private fun onTransportEvent(event: PttTransport.Event) {
         when (event) {
             PttTransport.Event.Connected -> {
-                // A late success from an already cancelled connection attempt must never
-                // resurrect a READY session. READY is valid only while CONNECTING.
                 if (state != PttState.CONNECTING || telecomCallPresent) return
                 lastFailure = null
                 state = PttState.READY
             }
 
             is PttTransport.Event.Disconnected -> {
-                if (state == PttState.TRANSMITTING && !stopTransmissionSafely()) {
-                    listenerGeneration += 1
-                    disconnectTransportBestEffort()
-                    lastFailure = "transmit_stop_failed"
-                    state = PttState.ERROR
-                    return
-                }
+                // Once the current transport declares itself disconnected, invalidate its
+                // generation immediately so any trailing media callbacks are stale.
+                listenerGeneration += 1
+                if (state.requiresLocalTransmitStop()) requestStopTransmissionSafely()
+                remoteAudioPending = false
                 lastFailure = event.reason
                 state = PttState.DISCONNECTED
             }
 
-            PttTransport.Event.RemoteAudioStarted -> {
-                // Remote media is meaningful only for a transport-confirmed live session.
-                // Ignore stale callbacks received before connection or after failure/teardown.
-                if (state != PttState.READY && state != PttState.TRANSMITTING) return
+            PttTransport.Event.LocalTransmissionStarted -> {
+                when (state) {
+                    PttState.TRANSMIT_REQUESTED -> {
+                        if (telecomCallPresent) {
+                            state = PttState.TRANSMIT_STOPPING
+                            requestStopWhileStoppingOrFailClosed()
+                        } else {
+                            state = PttState.TRANSMITTING
+                        }
+                    }
 
-                // Remote wins a collision. If local capture cannot be stopped, fail closed
-                // instead of pretending the channel is safely half-duplex.
-                if (state == PttState.TRANSMITTING && !stopTransmissionSafely()) {
-                    listenerGeneration += 1
-                    disconnectTransportBestEffort()
-                    lastFailure = "transmit_stop_failed"
-                    state = PttState.ERROR
-                    return
+                    // Release may have raced a slow microphone publication. Re-issue the stop
+                    // request and never expose TRANSMITTING after the user already released.
+                    PttState.TRANSMIT_STOPPING -> requestStopWhileStoppingOrFailClosed()
+                    else -> Unit
                 }
-                state = PttState.RECEIVING
+            }
+
+            PttTransport.Event.LocalTransmissionStopped -> {
+                when (state) {
+                    PttState.TRANSMIT_STOPPING -> {
+                        state = if (remoteAudioPending) PttState.RECEIVING else PttState.READY
+                        remoteAudioPending = false
+                    }
+
+                    // A transport may autonomously revoke publication. Explicit stopped truth
+                    // wins over stale local state and closes the microphone gate.
+                    PttState.TRANSMITTING,
+                    PttState.TRANSMIT_REQUESTED -> state = PttState.READY
+                    else -> Unit
+                }
+            }
+
+            PttTransport.Event.RemoteAudioStarted -> {
+                when (state) {
+                    PttState.READY -> state = PttState.RECEIVING
+
+                    // Remote wins half-duplex arbitration. Do not claim RECEIVING until local
+                    // microphone publication is explicitly confirmed stopped.
+                    PttState.TRANSMIT_REQUESTED,
+                    PttState.TRANSMITTING -> {
+                        remoteAudioPending = true
+                        state = PttState.TRANSMIT_STOPPING
+                        requestStopWhileStoppingOrFailClosed()
+                    }
+
+                    PttState.TRANSMIT_STOPPING -> remoteAudioPending = true
+                    else -> Unit
+                }
             }
 
             PttTransport.Event.RemoteAudioStopped -> {
                 if (state == PttState.RECEIVING) state = PttState.READY
+                if (state == PttState.TRANSMIT_STOPPING) remoteAudioPending = false
             }
 
             is PttTransport.Event.Failure -> {
-                if (state == PttState.TRANSMITTING && !stopTransmissionSafely()) {
-                    listenerGeneration += 1
-                    disconnectTransportBestEffort()
-                    lastFailure = "transmit_stop_failed"
-                    state = PttState.ERROR
-                    return
-                }
-
-                // A transport failure does not prove that sockets/media were actually torn down.
-                // Invalidate this listener generation first, then close the transport best-effort
-                // before exposing ERROR to the owner. Late callbacks from the failed session are
-                // therefore fenced even if the adapter reports them after teardown begins.
                 listenerGeneration += 1
+                if (state.requiresLocalTransmitStop()) requestStopTransmissionSafely()
                 disconnectTransportBestEffort()
+                remoteAudioPending = false
                 lastFailure = event.reason
                 state = PttState.ERROR
             }
         }
     }
 
-    private fun stopTransmissionSafely(): Boolean =
-        runCatching { transport.stopTransmitting() }.isSuccess
+    private fun requestStopWhileStoppingOrFailClosed() {
+        val accepted = requestStopTransmissionSafely()
+        if (!accepted && state == PttState.TRANSMIT_STOPPING) {
+            failClosedAfterStopRequestFailure()
+        }
+    }
+
+    private fun failClosedAfterStopRequestFailure() {
+        listenerGeneration += 1
+        disconnectTransportBestEffort()
+        remoteAudioPending = false
+        lastFailure = "transmit_stop_request_failed"
+        state = PttState.ERROR
+    }
+
+    private fun requestStartTransmissionSafely(): Boolean =
+        runCatching { transport.requestStartTransmitting() }.isSuccess
+
+    private fun requestStopTransmissionSafely(): Boolean =
+        runCatching { transport.requestStopTransmitting() }.isSuccess
 
     private fun disconnectTransportBestEffort(): Boolean =
         runCatching { transport.disconnect() }.isSuccess
+
+    private fun PttState.requiresLocalTransmitStop(): Boolean =
+        this == PttState.TRANSMIT_REQUESTED ||
+            this == PttState.TRANSMITTING ||
+            this == PttState.TRANSMIT_STOPPING
 }

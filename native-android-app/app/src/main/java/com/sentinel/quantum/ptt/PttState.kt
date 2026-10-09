@@ -3,14 +3,18 @@ package com.sentinel.quantum.ptt
 /**
  * Runtime truth for the push-to-talk core.
  *
- * READY means that the transport has explicitly confirmed a live session. It must
- * never be inferred from a button press, requested connection, or UI lifecycle.
+ * READY means that the transport has explicitly confirmed a live session. A local transmit
+ * request is also split from actual microphone publication: TRANSMIT_REQUESTED and
+ * TRANSMIT_STOPPING are transitional states, while TRANSMITTING is entered only after an
+ * explicit LocalTransmissionStarted transport event.
  */
 enum class PttState {
     DISCONNECTED,
     CONNECTING,
     READY,
+    TRANSMIT_REQUESTED,
     TRANSMITTING,
+    TRANSMIT_STOPPING,
     RECEIVING,
     ERROR
 }

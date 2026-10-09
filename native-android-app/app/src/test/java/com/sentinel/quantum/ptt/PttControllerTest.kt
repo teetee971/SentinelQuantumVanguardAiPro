@@ -15,28 +15,66 @@ class PttControllerTest {
         assertFalse(transport.transmitting)
     }
 
-    @Test fun connectedTransportEnablesHalfDuplexTransmissionUntilRelease() {
+    @Test fun transmitRequestDoesNotClaimMicrophoneActiveBeforeConfirmation() {
         val transport = FakePttTransport()
-        val controller = PttController(transport)
+        val controller = readyController(transport)
 
-        controller.connect()
-        transport.emit(PttTransport.Event.Connected)
+        assertTrue(controller.pressToTalk())
+
+        assertEquals(PttState.TRANSMIT_REQUESTED, controller.state)
+        assertFalse(transport.transmitting)
+        assertEquals(1, transport.startRequestCount)
+
+        transport.emit(PttTransport.Event.LocalTransmissionStarted)
+        assertEquals(PttState.TRANSMITTING, controller.state)
+        assertTrue(transport.transmitting)
+
+        controller.releaseToTalk()
+        assertEquals(PttState.TRANSMIT_STOPPING, controller.state)
+        assertTrue(transport.transmitting)
+
+        transport.emit(PttTransport.Event.LocalTransmissionStopped)
         assertEquals(PttState.READY, controller.state)
+        assertFalse(transport.transmitting)
+    }
+
+    @Test fun synchronousMediaAcknowledgementsCannotRaceControllerState() {
+        val transport = FakePttTransport().apply { synchronousStartAck = true }
+        val controller = readyController(transport)
 
         assertTrue(controller.pressToTalk())
         assertEquals(PttState.TRANSMITTING, controller.state)
         assertTrue(transport.transmitting)
 
+        transport.synchronousStopAck = true
         controller.releaseToTalk()
+
+        assertEquals(PttState.READY, controller.state)
+        assertFalse(transport.transmitting)
+    }
+
+    @Test fun releaseBeforeStartConfirmationReissuesStopAfterLateStart() {
+        val transport = FakePttTransport()
+        val controller = readyController(transport)
+
+        assertTrue(controller.pressToTalk())
+        controller.releaseToTalk()
+        assertEquals(PttState.TRANSMIT_STOPPING, controller.state)
+        assertEquals(1, transport.stopRequestCount)
+
+        transport.emit(PttTransport.Event.LocalTransmissionStarted)
+
+        assertEquals(PttState.TRANSMIT_STOPPING, controller.state)
+        assertEquals(2, transport.stopRequestCount)
+
+        transport.emit(PttTransport.Event.LocalTransmissionStopped)
         assertEquals(PttState.READY, controller.state)
         assertFalse(transport.transmitting)
     }
 
     @Test fun incomingAudioBlocksLocalTransmissionForHalfDuplexSafety() {
         val transport = FakePttTransport()
-        val controller = PttController(transport)
-        controller.connect()
-        transport.emit(PttTransport.Event.Connected)
+        val controller = readyController(transport)
         transport.emit(PttTransport.Event.RemoteAudioStarted)
 
         assertEquals(PttState.RECEIVING, controller.state)
@@ -47,17 +85,32 @@ class PttControllerTest {
         assertEquals(PttState.READY, controller.state)
     }
 
+    @Test fun remoteAudioWinsPendingLocalTransmissionWithoutOverlap() {
+        val transport = FakePttTransport()
+        val controller = readyController(transport)
+        assertTrue(controller.pressToTalk())
+
+        transport.emit(PttTransport.Event.RemoteAudioStarted)
+
+        assertEquals(PttState.TRANSMIT_STOPPING, controller.state)
+        assertEquals(1, transport.stopRequestCount)
+        assertFalse(transport.transmitting)
+
+        transport.emit(PttTransport.Event.LocalTransmissionStopped)
+        assertEquals(PttState.RECEIVING, controller.state)
+    }
+
     @Test fun transportLossStopsTransmissionImmediatelyAndCannotFakeReady() {
         val transport = FakePttTransport()
-        val controller = PttController(transport)
-        controller.connect()
-        transport.emit(PttTransport.Event.Connected)
+        val controller = readyController(transport)
         assertTrue(controller.pressToTalk())
+        transport.emit(PttTransport.Event.LocalTransmissionStarted)
 
         transport.emit(PttTransport.Event.Disconnected("network_lost"))
 
         assertEquals(PttState.DISCONNECTED, controller.state)
         assertFalse(transport.transmitting)
+        assertTrue(transport.stopRequestCount > 0)
         assertEquals("network_lost", controller.lastFailure)
     }
 
@@ -116,10 +169,7 @@ class PttControllerTest {
 
     @Test fun transportFailureTearsDownLiveSessionBeforeLeavingError() {
         val transport = FakePttTransport()
-        val controller = PttController(transport)
-        controller.connect()
-        transport.emit(PttTransport.Event.Connected)
-        assertEquals(PttState.READY, controller.state)
+        val controller = readyController(transport)
 
         transport.emit(PttTransport.Event.Failure("socket_lost"))
 
@@ -140,41 +190,37 @@ class PttControllerTest {
         assertFalse(controller.pressToTalk())
     }
 
-    @Test fun synchronousTransmitStartExceptionKeepsMicrophoneGateClosed() {
-        val transport = FakePttTransport().apply { throwOnStart = true }
-        val controller = PttController(transport)
-        controller.connect()
-        transport.emit(PttTransport.Event.Connected)
+    @Test fun synchronousTransmitStartRequestExceptionKeepsMicrophoneGateClosed() {
+        val transport = FakePttTransport().apply { throwOnStartRequest = true }
+        val controller = readyController(transport)
 
         assertFalse(controller.pressToTalk())
 
         assertEquals(PttState.READY, controller.state)
-        assertEquals("transmit_start_failed", controller.lastFailure)
+        assertEquals("transmit_start_request_failed", controller.lastFailure)
         assertFalse(transport.transmitting)
     }
 
-    @Test fun synchronousTransmitStopExceptionTearsDownSessionAndFailsClosed() {
+    @Test fun synchronousTransmitStopRequestExceptionTearsDownSessionAndFailsClosed() {
         val transport = FakePttTransport()
-        val controller = PttController(transport)
-        controller.connect()
-        transport.emit(PttTransport.Event.Connected)
+        val controller = readyController(transport)
         assertTrue(controller.pressToTalk())
-        transport.throwOnStop = true
+        transport.emit(PttTransport.Event.LocalTransmissionStarted)
+        transport.throwOnStopRequest = true
 
         controller.releaseToTalk()
 
         assertEquals(PttState.ERROR, controller.state)
-        assertEquals("transmit_stop_failed", controller.lastFailure)
+        assertEquals("transmit_stop_request_failed", controller.lastFailure)
         assertTrue(transport.disconnectCount > 0)
         assertFalse(controller.pressToTalk())
     }
 
     @Test fun telecomCallInterruptsTransmissionAndNeverAutoResumes() {
         val transport = FakePttTransport()
-        val controller = PttController(transport)
-        controller.connect()
-        transport.emit(PttTransport.Event.Connected)
+        val controller = readyController(transport)
         assertTrue(controller.pressToTalk())
+        transport.emit(PttTransport.Event.LocalTransmissionStarted)
 
         controller.onTelecomCallPresenceChanged(true)
 
@@ -189,6 +235,13 @@ class PttControllerTest {
         assertFalse(controller.pressToTalk())
     }
 
+    private fun readyController(transport: FakePttTransport): PttController =
+        PttController(transport).also { controller ->
+            controller.connect()
+            transport.emit(PttTransport.Event.Connected)
+            assertEquals(PttState.READY, controller.state)
+        }
+
     private class FakePttTransport : PttTransport {
         private var listener: ((PttTransport.Event) -> Unit)? = null
         private val registrations = mutableListOf<(PttTransport.Event) -> Unit>()
@@ -196,11 +249,19 @@ class PttControllerTest {
             private set
         var listenerRegistrationCount = 0
             private set
+        var connectCount = 0
+            private set
         var disconnectCount = 0
             private set
+        var startRequestCount = 0
+            private set
+        var stopRequestCount = 0
+            private set
         var throwOnConnect = false
-        var throwOnStart = false
-        var throwOnStop = false
+        var throwOnStartRequest = false
+        var throwOnStopRequest = false
+        var synchronousStartAck = false
+        var synchronousStopAck = false
 
         override fun setEventListener(listener: (PttTransport.Event) -> Unit) {
             this.listener = listener
@@ -209,6 +270,7 @@ class PttControllerTest {
         }
 
         override fun connect() {
+            connectCount += 1
             if (throwOnConnect) error("connect boom")
         }
 
@@ -217,18 +279,25 @@ class PttControllerTest {
             transmitting = false
         }
 
-        override fun startTransmitting(): Boolean {
-            if (throwOnStart) error("start boom")
-            transmitting = true
-            return true
+        override fun requestStartTransmitting() {
+            startRequestCount += 1
+            if (throwOnStartRequest) error("start request boom")
+            if (synchronousStartAck) emit(PttTransport.Event.LocalTransmissionStarted)
         }
 
-        override fun stopTransmitting() {
-            if (throwOnStop) error("stop boom")
-            transmitting = false
+        override fun requestStopTransmitting() {
+            stopRequestCount += 1
+            if (throwOnStopRequest) error("stop request boom")
+            if (synchronousStopAck) emit(PttTransport.Event.LocalTransmissionStopped)
         }
 
         fun emit(event: PttTransport.Event) {
+            when (event) {
+                PttTransport.Event.LocalTransmissionStarted -> transmitting = true
+                PttTransport.Event.LocalTransmissionStopped,
+                is PttTransport.Event.Disconnected -> transmitting = false
+                else -> Unit
+            }
             listener?.invoke(event)
         }
 

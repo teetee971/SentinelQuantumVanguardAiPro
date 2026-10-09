@@ -106,9 +106,9 @@ class PttTelecomInterlockTest {
             if (disconnectThrows) error("disconnect failed")
         }
 
-        override fun startTransmitting(): Boolean = true
+        override fun requestStartTransmitting() = Unit
 
-        override fun stopTransmitting() = Unit
+        override fun requestStopTransmitting() = Unit
 
         fun emit(event: PttTransport.Event) {
             listener?.invoke(event)
