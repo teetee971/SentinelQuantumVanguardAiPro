@@ -126,7 +126,7 @@ if (homeSource) {
     'étapes prêtes',
     'étapes d’activation Android prêtes',
     'PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)',
-    'context.startActivity(Intent(context, SentinelDialerActivity::class.java))',
+    'fun launchPhoneSurface(request: Intent, surface: String)',
     'maxLines = 3',
   ]) {
     if (!homeSource.includes(marker)) {

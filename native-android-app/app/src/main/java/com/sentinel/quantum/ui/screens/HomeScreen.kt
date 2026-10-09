@@ -1,5 +1,6 @@
 package com.sentinel.quantum.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.compose.ui.res.stringResource
 import com.sentinel.quantum.R
@@ -88,6 +89,18 @@ fun HomeScreen(navController: NavController) {
     val readyCount = phoneCoreChecks.count { it }
     val phoneCoreReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneCoreFacts)
     val nextPhoneCoreStep = PhoneCoreSetupWizardStore.nextStep(phoneCoreFacts)
+    var actionStatus by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun launchPhoneSurface(request: Intent, surface: String) {
+        actionStatus = null
+        try {
+            context.startActivity(request)
+        } catch (_: ActivityNotFoundException) {
+            actionStatus = "Android n’a pas pu ouvrir $surface. Vérifiez l’installation de Sentinel, puis réessayez."
+        } catch (_: RuntimeException) {
+            actionStatus = "Android a refusé l’ouverture de $surface. Vérifiez l’installation de Sentinel, puis réessayez."
+        }
+    }
 
     val tools = listOf(
         HomeTool(
@@ -98,7 +111,12 @@ fun HomeScreen(navController: NavController) {
             HomeDomain.COMMUNICATIONS,
             capabilityId = "phone_core_android",
             featured = true
-        ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+        ) {
+            launchPhoneSurface(
+                Intent(context, SentinelDialerActivity::class.java),
+                "le composeur Téléphone"
+            )
+        },
         HomeTool(
             "Répertoire",
             "Retrouver vos contacts, appeler ou écrire en quelques secondes",
@@ -107,9 +125,10 @@ fun HomeScreen(navController: NavController) {
             HomeDomain.COMMUNICATIONS,
             featured = true
         ) {
-            context.startActivity(
+            launchPhoneSurface(
                 Intent(context, SentinelDialerActivity::class.java)
-                    .putExtra(SentinelDialerActivity.EXTRA_OPEN_CONTACTS, true)
+                    .putExtra(SentinelDialerActivity.EXTRA_OPEN_CONTACTS, true),
+                "le répertoire Téléphone"
             )
         },
         HomeTool(
@@ -120,7 +139,12 @@ fun HomeScreen(navController: NavController) {
             HomeDomain.COMMUNICATIONS,
             capabilityId = "phone_core_android",
             featured = true
-        ) { context.startActivity(Intent(context, SmsComposeActivity::class.java)) },
+        ) {
+            launchPhoneSurface(
+                Intent(context, SmsComposeActivity::class.java),
+                "la messagerie SMS/MMS"
+            )
+        },
         HomeTool(
             "Vérifier un numéro",
             "Pays, attribution officielle et signaux de risque disponibles",
@@ -278,6 +302,13 @@ fun HomeScreen(navController: NavController) {
                     "Traitement local" to SentinelD1.Cyan
                 )
             )
+            actionStatus?.let { status ->
+                Text(
+                    status,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
             OutlinedTextField(
                 value = toolQuery,
@@ -383,7 +414,10 @@ fun HomeScreen(navController: NavController) {
                 )
                 ElevatedCard(
                     onClick = {
-                        context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
+                        launchPhoneSurface(
+                            Intent(context, PhoneCoreActivationActivity::class.java),
+                            "la configuration Phone Core"
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
