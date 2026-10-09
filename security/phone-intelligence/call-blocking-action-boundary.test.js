@@ -23,6 +23,16 @@ test('call screening and contacts activation contain launch failures', () => {
     /status\?\.let \{[\s\S]*?Text\(it, style = MaterialTheme\.typography\.bodySmall/,
     'call blocking must render action failures'
   );
+  assert.match(
+    blocking,
+    /roleLauncher = rememberLauncherForActivityResult[\s\S]*?status = when \(screeningState\)/,
+    'role refusal or activation must be reflected in visible status'
+  );
+  assert.match(
+    blocking,
+    /contactsLauncher = rememberLauncherForActivityResult[\s\S]*?status = if \(granted\)/,
+    'contacts refusal must be reflected in visible status'
+  );
   assert.equal(
     (blocking.match(/(?:roleLauncher|contactsLauncher)\.launch\(/g) ?? []).length,
     2,

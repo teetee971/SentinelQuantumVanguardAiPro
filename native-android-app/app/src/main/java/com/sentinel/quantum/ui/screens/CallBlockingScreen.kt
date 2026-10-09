@@ -78,9 +78,22 @@ fun CallBlockingScreen(navController: NavController) {
     val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         screeningState = CallScreeningActivationPolicy.read(context)
+        status = when (screeningState) {
+            CallScreeningActivationPolicy.State.HELD ->
+                "Filtrage d’appel activé par Android."
+            CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD ->
+                "Activation du filtrage d’appel non confirmée. Vous pouvez réessayer."
+            CallScreeningActivationPolicy.State.UNAVAILABLE ->
+                "Le filtrage d’appel reste indisponible dans cette configuration Android."
+        }
     }
     val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         contactsAllowed = granted
+        status = if (granted) {
+            "Accès aux contacts accordé."
+        } else {
+            "Accès aux contacts refusé. Caller ID restera limité aux données disponibles."
+        }
     }
 
     fun launchCallScreeningRole() {
