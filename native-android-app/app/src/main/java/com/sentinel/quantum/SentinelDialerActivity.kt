@@ -189,6 +189,32 @@ class SentinelDialerActivity : ComponentActivity() {
             }
         }
 
+    private fun launchDialerRoleRequest(request: Intent, pendingCall: Boolean) {
+        try {
+            if (pendingCall) {
+                dialerRoleLauncher.launch(request)
+            } else {
+                recentsDialerRoleLauncher.launch(request)
+            }
+        } catch (_: ActivityNotFoundException) {
+            pendingNumber = null
+            openRecentsAfterDialerRoleGrant = false
+            callActionStatus = if (pendingCall) {
+                "Android n’a pas pu ouvrir le sélecteur d’application Téléphone. Aucun appel n’a été lancé."
+            } else {
+                "Android n’a pas pu ouvrir le sélecteur d’application Téléphone pour l’historique."
+            }
+        } catch (_: RuntimeException) {
+            pendingNumber = null
+            openRecentsAfterDialerRoleGrant = false
+            callActionStatus = if (pendingCall) {
+                "Android a refusé l’ouverture du sélecteur d’application Téléphone. Aucun appel n’a été lancé."
+            } else {
+                "Android a refusé l’ouverture du sélecteur d’application Téléphone pour l’historique."
+            }
+        }
+    }
+
     private fun requestDialerRole(number: String) {
         val safeNumber = sanitizeDialNumber(number)
         if (safeNumber != null && EmergencyNumberOracle.isEmergency(this, safeNumber)) {
@@ -216,7 +242,7 @@ class SentinelDialerActivity : ComponentActivity() {
             }
             if (request != null) {
                 callActionStatus = "Sélectionnez Sentinel comme application Téléphone pour continuer."
-                dialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = true)
             } else {
                 pendingNumber = null
                 callActionStatus = "Le rôle Téléphone n’est pas disponible sur cet appareil."
@@ -228,7 +254,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 )
             }
             if (request != null) {
-                dialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = true)
             } else {
                 pendingNumber = null
                 callActionStatus = "Android n’a pas pu ouvrir le sélecteur d’application Téléphone."
@@ -249,7 +275,7 @@ class SentinelDialerActivity : ComponentActivity() {
             }
             if (request != null) {
                 callActionStatus = "Sélectionnez Sentinel comme application Téléphone pour afficher l’historique."
-                recentsDialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = false)
             } else {
                 callActionStatus = "Le rôle Téléphone n’est pas disponible sur cet appareil."
             }
@@ -260,7 +286,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 )
             }
             if (request != null) {
-                recentsDialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = false)
             } else {
                 callActionStatus = "Android n’a pas pu ouvrir le sélecteur d’application Téléphone."
             }
