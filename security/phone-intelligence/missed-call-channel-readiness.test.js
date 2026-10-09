@@ -40,4 +40,14 @@ test('missed-call broadcast failures cannot escape the Telecom receiver', () => 
     /private fun handleReceive\(context: Context, intent: Intent\)/,
     'missed-call processing must remain isolated behind the guarded receiver entrypoint'
   );
+  assert.match(
+    receiver,
+    /fun ensureChannel\(context: Context\): Boolean = runCatching \{/,
+    'missed-call channel setup must fail closed when Android refuses the operation'
+  );
+  assert.match(
+    receiver,
+    /if \(!ensureChannel\(context\)\) return false/,
+    'missed-call channel truth must reject when channel setup is not confirmed'
+  );
 });

@@ -111,10 +111,11 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
             "android.telecom.extra.CLEAR_MISSED_CALLS_INTENT"
 
         /** Ensure the default-dialer missed-call channel exists without overriding user choices. */
-        fun ensureChannel(context: Context) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        fun ensureChannel(context: Context): Boolean = runCatching {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return@runCatching true
             val system = context.getSystemService(NotificationManager::class.java)
-            if (system.getNotificationChannel(CHANNEL_ID) != null) return
+                ?: return@runCatching false
+            if (system.getNotificationChannel(CHANNEL_ID) != null) return@runCatching true
             system.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
@@ -124,14 +125,15 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
                     description = "Notifications d'appels manqués du composeur Sentinel"
                 }
             )
-        }
+            true
+        }.getOrDefault(false)
 
         /** Channel truth only; global notification permission/state is evaluated separately. */
         fun isChannelEnabled(context: Context): Boolean {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
-            ensureChannel(context)
+            if (!ensureChannel(context)) return false
             val channel = context.getSystemService(NotificationManager::class.java)
-                .getNotificationChannel(CHANNEL_ID) ?: return false
+                ?.getNotificationChannel(CHANNEL_ID) ?: return false
             return channel.importance != NotificationManager.IMPORTANCE_NONE
         }
     }
