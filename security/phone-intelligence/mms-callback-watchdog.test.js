@@ -14,6 +14,14 @@ const sender = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSender.kt',
   'utf8'
 );
+const eligibility = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendEligibilityPolicy.kt',
+  'utf8'
+);
+const statusReceiver = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSendStatusReceiver.kt',
+  'utf8'
+);
 const cleanup = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendCleanupWorker.kt',
   'utf8'
@@ -52,4 +60,27 @@ test('late MMS callbacks cannot overwrite a timed-out or terminal journal outcom
   assert.match(journal, /fun markResult\([\s\S]*Phase\.RESULT_SENT[\s\S]*Phase\.RESULT_FAILED/);
   assert.match(store, /if \(!outcomeJournaled\) return false/);
   assert.match(store, /MESSAGE_BOX_FAILED/);
+});
+
+test('MMS rejects every negative subscription sentinel at each transport boundary', () => {
+  assert.match(
+    eligibility,
+    /if \(!MmsSubscriptionResolver\.isValidSubscriptionId\(subscriptionId\)\)/,
+    'eligibility must reject every negative subscription id, not only -1'
+  );
+  assert.match(
+    sender,
+    /\.filter\(MmsSubscriptionResolver::isValidSubscriptionId\)/,
+    'active MMS subscriptions must be filtered through the shared validity contract'
+  );
+  assert.match(
+    sender,
+    /\.takeIf\(MmsSubscriptionResolver::isValidSubscriptionId\)/,
+    'default MMS subscription must be filtered through the shared validity contract'
+  );
+  assert.match(
+    statusReceiver,
+    /if \(!MmsSubscriptionResolver\.isValidSubscriptionId\(subscriptionId\)\) return/,
+    'MMS callback identity must fail closed before asynchronous processing'
+  );
 });

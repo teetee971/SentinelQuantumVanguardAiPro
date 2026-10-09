@@ -31,7 +31,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
             SentinelMmsSender.EXTRA_SUBSCRIPTION_ID,
             SubscriptionManager.INVALID_SUBSCRIPTION_ID
         )
-        if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) return
 
         // Keep callbacks created by an older installed build processable. They do not carry the
         // provider correlation id introduced with the provider projection. Such a callback may

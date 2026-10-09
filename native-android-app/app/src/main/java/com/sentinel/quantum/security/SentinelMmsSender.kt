@@ -73,13 +73,13 @@ class SentinelMmsSender(private val context: Context) {
                 .activeSubscriptionInfoList
                 .orEmpty()
                 .map { it.subscriptionId }
-                .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                .filter(MmsSubscriptionResolver::isValidSubscriptionId)
                 .toSet()
         }.getOrElse {
             return SendResult(false, "MMS_SUBSCRIPTION_LOOKUP_FAILED")
         }
         val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
-            .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+            .takeIf(MmsSubscriptionResolver::isValidSubscriptionId)
         val selection = SmsSubscriptionSelectionPolicy.select(
             activeSubscriptionIds = activeIds,
             requestedSubscriptionId = requestedSubscriptionId,
