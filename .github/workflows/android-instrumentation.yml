@@ -71,6 +71,19 @@ jobs:
           SDK_PACKAGE_LEVEL: ${{ matrix.sdk_package_level }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           chmod +x ./gradlew
 
           SYSTEM_IMAGE="system-images;android-${SDK_PACKAGE_LEVEL};google_apis;x86_64"

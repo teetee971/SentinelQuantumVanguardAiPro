@@ -57,6 +57,13 @@ test('every emulator workflow step that talks to a device bounds ordinary ADB ca
   }
 });
 
+test('legacy instrumentation diagnostics and qualification also bound ordinary ADB calls', () => {
+  const block = instrumentationWorkflow.split('- name: Run connected Android tests\n')[1]?.split('\n      - name: ')[0] || '';
+  assert.match(block, /ADB_COMMAND_TIMEOUT_SECONDS="\$\{ADB_COMMAND_TIMEOUT_SECONDS:-30\}"/);
+  assert.match(block, /ADB_COMMAND_KILL_GRACE_SECONDS="\$\{ADB_COMMAND_KILL_GRACE_SECONDS:-5\}"/);
+  assert.match(block, /adb\(\)\s*\{[\s\S]*command timeout[\s\S]*ADB_BIN[\s\S]*"\$@"/);
+});
+
 test('Android emulator qualification covers minimum, current and newest runtime lanes', () => {
   assert.match(instrumentationWorkflow, /api-level:\s*24\b/);
   assert.match(instrumentationWorkflow, /api-level:\s*36\b/);
