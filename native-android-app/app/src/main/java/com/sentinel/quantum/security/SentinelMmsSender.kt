@@ -188,6 +188,9 @@ class SentinelMmsSender(private val context: Context) {
                 SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
             }
 
+            // Instrumentation can flip AppOps at this exact boundary. Release builds execute a no-op.
+            MmsPreTransportTestInterlock.beforeFinalAuthorizationRecheck()
+
             // Role, AppOps/runtime grants and SIM state may change while PDU/provider/callback
             // preparation is running. Re-read them at the final safe point. If authorization is no
             // longer valid, no Android transport call has happened, so remove the staged PDU and
