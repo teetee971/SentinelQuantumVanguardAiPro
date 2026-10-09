@@ -123,8 +123,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     fun runBluetoothScan() {
         isScanning = true
         covertDeviceAlerted = false
+        var observedBluetoothDevices: List<DiscoveredBluetoothDevice> = emptyList()
         bluetoothScanner.scan(
             onResults = { results ->
+                observedBluetoothDevices = results
                 bluetoothDevices = results
                 if (!covertDeviceAlerted && results.any { it.assessment.likelyTracker || it.assessment.likelyCameraOrRecorder || it.assessment.likelyBeacon }) {
                     covertDeviceAlerted = true
@@ -137,12 +139,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             },
             onScanFinished = {
                 isScanning = false
-                statusMessage = if (bluetoothDevices.isEmpty()) "Aucun appareil détecté pour l'instant." else null
+                statusMessage = if (observedBluetoothDevices.isEmpty()) "Aucun appareil détecté pour l'instant." else null
                 logger.log(
                     LocalLogger.LogLevel.INFO,
                     "NetworkSurveillance",
-                    "Scan Bluetooth local terminé : ${bluetoothDevices.size} appareil(s), " +
-                        "${bluetoothDevices.count { it.assessment.likelyTracker }} traceur(s) potentiel(s)."
+                    "Scan Bluetooth local terminé : ${observedBluetoothDevices.size} appareil(s), " +
+                        "${observedBluetoothDevices.count { it.assessment.likelyTracker }} traceur(s) potentiel(s)."
                 )
             }
         )
