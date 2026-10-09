@@ -75,6 +75,22 @@ class SmsCallbackProgressStoreTest {
         verifyTransitionSurvives(preferences)
     }
 
+    @Test fun corruptCurrentRecordIsPreservedAndCannotBeRecreatedAsFreshProgress() {
+        val preferences = Preferences(emptySet())
+        preferences.values["42:101"] = "corrupt"
+        val store = SmsCallbackProgressStore(preferences.preferences)
+        var storageFailure = false
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L, onPersistenceFailure = { storageFailure = true }
+        )
+
+        assertNull(outcome)
+        assertTrue(storageFailure)
+        assertEquals("corrupt", preferences.values["42:101"])
+    }
+
     private fun verifyTransitionSurvives(preferences: Preferences) {
         val store = SmsCallbackProgressStore(preferences.preferences)
         var storageFailure = false
@@ -132,4 +148,3 @@ class SmsCallbackProgressStoreTest {
         }
     }
 }
-
