@@ -9,12 +9,28 @@ package com.sentinel.quantum.ptt
  */
 internal class PttTelecomInterlock {
     private var controller: PttController? = null
+    private var detachPending: PttController? = null
     private var telecomCallPresent = false
 
     @Synchronized
     fun attach(candidate: PttController): Boolean {
         val current = controller
-        if (current != null && current !== candidate) return false
+        if (current != null && current !== candidate) {
+            // An asynchronous teardown may have completed after detach() returned false. The next
+            // owner can reclaim the slot only after the old controller has explicit DISCONNECTED
+            // truth; otherwise ownership remains fail-closed.
+            if (detachPending === current && current.state == PttState.DISCONNECTED) {
+                controller = null
+                detachPending = null
+            } else {
+                return false
+            }
+        }
+
+        if (controller === candidate && detachPending === candidate) {
+            if (candidate.state != PttState.DISCONNECTED) return false
+            detachPending = null
+        }
 
         controller = candidate
         candidate.onTelecomCallPresenceChanged(telecomCallPresent)
@@ -25,13 +41,25 @@ internal class PttTelecomInterlock {
     fun detach(candidate: PttController): Boolean {
         if (controller !== candidate) return false
 
-        if (candidate.state != PttState.DISCONNECTED) {
-            candidate.disconnect()
+        if (candidate.state == PttState.DISCONNECTED) {
+            controller = null
+            detachPending = null
+            return true
         }
-        if (candidate.state != PttState.DISCONNECTED) return false
 
-        controller = null
-        return true
+        detachPending = candidate
+        candidate.disconnect()
+
+        // A synchronous deterministic transport may already have acknowledged Disconnected.
+        if (candidate.state == PttState.DISCONNECTED) {
+            controller = null
+            detachPending = null
+            return true
+        }
+
+        // Keep ownership while DISCONNECTING or ERROR. A later retry, or an attach attempt by a
+        // replacement controller after explicit Disconnected, can complete the hand-off safely.
+        return false
     }
 
     @Synchronized
