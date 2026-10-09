@@ -1,5 +1,6 @@
 package com.sentinel.quantum.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
@@ -7,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -75,6 +77,19 @@ fun CommunicationsHubScreen(navController: NavController) {
         "À activer · définir Sentinel comme application Téléphone."
     }
     var showExternalChannels by remember { mutableStateOf(false) }
+    var actionStatus by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun launchPhoneSurface(request: Intent, surface: String) {
+        actionStatus = null
+        try {
+            context.startActivity(request)
+        } catch (_: ActivityNotFoundException) {
+            actionStatus = "Android n’a pas pu ouvrir $surface. Vérifiez l’installation de Sentinel, puis réessayez."
+        } catch (_: RuntimeException) {
+            actionStatus = "Android a refusé l’ouverture de $surface. Vérifiez l’installation de Sentinel, puis réessayez."
+        }
+    }
+
     val externalChannels = listOf(
         "WhatsApp" to "Ouverture ponctuelle depuis une fiche contact/numéro · pas de synchronisation",
         "Telegram" to "Non raccordé",
@@ -108,6 +123,13 @@ fun CommunicationsHubScreen(navController: NavController) {
                     "État explicite" to SentinelD1.Cyan
                 )
             )
+            actionStatus?.let { status ->
+                Text(
+                    status,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             SentinelSectionHeader(
                 title = "Actions essentielles",
                 subtitle = "Téléphoner, écrire et terminer l’activation sans chercher dans les réglages."
@@ -121,17 +143,26 @@ fun CommunicationsHubScreen(navController: NavController) {
                 },
                 actionLabel = if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneFacts)) "Tester" else "Continuer"
             ) {
-                context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
+                launchPhoneSurface(
+                    Intent(context, PhoneCoreActivationActivity::class.java),
+                    "la configuration Phone Core"
+                )
             }
             ChannelStatus("Appels", callsStatus, actionLabel = if (phoneFacts.dialerRoleHeld) "Ouvrir" else "Activer") {
-                context.startActivity(Intent(context, SentinelDialerActivity::class.java))
+                launchPhoneSurface(
+                    Intent(context, SentinelDialerActivity::class.java),
+                    "le composeur Téléphone"
+                )
             }
             ChannelStatus(
                 "SMS / MMS",
                 smsStatus,
                 actionLabel = if (smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD) "Ouvrir" else "Activer"
             ) {
-                context.startActivity(Intent(context, SmsComposeActivity::class.java))
+                launchPhoneSurface(
+                    Intent(context, SmsComposeActivity::class.java),
+                    "la messagerie SMS/MMS"
+                )
             }
             SentinelSectionHeader(
                 title = "Canaux externes",
