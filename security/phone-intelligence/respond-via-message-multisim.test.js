@@ -18,7 +18,8 @@ test('platform quick replies prefer the incoming-call subscription, then Android
   assert.match(service, /SubscriptionManager\.getDefaultSmsSubscriptionId\(\)/);
   assert.match(
     service,
-    /takeUnless\s*\{\s*it == SubscriptionManager\.INVALID_SUBSCRIPTION_ID\s*\}/
+    /takeIf\(MmsSubscriptionResolver::isValidSubscriptionId\)/,
+    'the platform default must reject every negative subscription sentinel'
   );
   assert.match(
     service,

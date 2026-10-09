@@ -82,7 +82,7 @@ class SmsActivationDiagnostics(private val context: Context) {
                     ?.activeSubscriptionInfoList
                     .orEmpty()
                     .map { it.subscriptionId }
-                    .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                    .filter(MmsSubscriptionResolver::isValidSubscriptionId)
                     .distinct()
             } catch (_: SecurityException) {
                 lookupFailed = true

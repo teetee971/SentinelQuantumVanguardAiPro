@@ -84,11 +84,11 @@ class SentinelSmsSender(private val context: Context) {
                 subscriptionManager.activeSubscriptionInfoList
                     .orEmpty()
                     .map { it.subscriptionId }
-                    .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                    .filter(MmsSubscriptionResolver::isValidSubscriptionId)
                     .toSet()
             }.getOrElse { return SendResult(false, "SMS_SUBSCRIPTION_LOOKUP_FAILED") }
             val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
-                .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                .takeIf(MmsSubscriptionResolver::isValidSubscriptionId)
             val selection = SmsSubscriptionSelectionPolicy.select(
                 activeSubscriptionIds = activeIds,
                 requestedSubscriptionId = requestedSubscriptionId,

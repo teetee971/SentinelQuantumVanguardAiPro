@@ -43,7 +43,7 @@ class SentinelRespondViaMessageService : Service() {
             intent.getIntExtra(EXTRA_LEGACY_SUBSCRIPTION, SubscriptionManager.INVALID_SUBSCRIPTION_ID)
         ).firstOrNull { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID && it >= 0 }
         val platformDefaultSmsSubscriptionId = SubscriptionManager.getDefaultSmsSubscriptionId()
-            .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+            .takeIf(MmsSubscriptionResolver::isValidSubscriptionId)
         val quickReplySubscriptionId = intentSubscriptionId ?: platformDefaultSmsSubscriptionId
         val submitted = runCatching {
             WORKER.execute {
