@@ -1,6 +1,7 @@
 package com.sentinel.quantum.ui.screens
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.content.pm.PackageManager
@@ -72,6 +73,7 @@ fun SettingsScreen(
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
     var externalLinkStatus by remember { mutableStateOf<String?>(null) }
+    var voiceStudioStatus by remember { mutableStateOf<String?>(null) }
     val ioScope = rememberCoroutineScope()
 
     fun openExternalPage(url: String) {
@@ -79,6 +81,18 @@ fun SettingsScreen(
             .onSuccess { externalLinkStatus = null }
             .onFailure { externalLinkStatus = "Impossible d’ouvrir cette page sur cet appareil." }
     }
+
+    fun openVoiceStudio() {
+        voiceStudioStatus = null
+        try {
+            context.startActivity(Intent(context, VoiceStudioActivity::class.java))
+        } catch (_: ActivityNotFoundException) {
+            voiceStudioStatus = "Android n’a pas pu ouvrir le Studio voix. Vérifiez l’installation de Sentinel, puis réessayez."
+        } catch (_: RuntimeException) {
+            voiceStudioStatus = "Android a refusé l’ouverture du Studio voix. Vérifiez l’installation de Sentinel, puis réessayez."
+        }
+    }
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -285,7 +299,7 @@ fun SettingsScreen(
             )
             ElevatedCard(
                 onClick = {
-                    context.startActivity(Intent(context, VoiceStudioActivity::class.java))
+                    openVoiceStudio()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -305,6 +319,9 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+            }
+            voiceStudioStatus?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
 
             HorizontalDivider()
