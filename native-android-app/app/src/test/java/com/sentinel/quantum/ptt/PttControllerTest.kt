@@ -200,6 +200,25 @@ class PttControllerTest {
         assertFalse(controller.pressToTalk())
     }
 
+    @Test fun transportFailureBlocksReconnectUntilTeardownConfirmation() {
+        val transport = FakePttTransport()
+        val controller = readyController(transport)
+
+        transport.emit(PttTransport.Event.Failure("socket_lost"))
+        controller.connect()
+
+        assertEquals(PttState.ERROR, controller.state)
+        assertEquals(1, transport.connectCount)
+        assertEquals("socket_lost", controller.lastFailure)
+
+        transport.emit(PttTransport.Event.Disconnected())
+        assertEquals(PttState.DISCONNECTED, controller.state)
+
+        controller.connect()
+        assertEquals(PttState.CONNECTING, controller.state)
+        assertEquals(2, transport.connectCount)
+    }
+
     @Test fun synchronousConnectExceptionFailsClosedInsteadOfStickingConnecting() {
         val transport = FakePttTransport().apply { throwOnConnect = true }
         val controller = PttController(transport)
