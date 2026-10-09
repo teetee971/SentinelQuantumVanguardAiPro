@@ -48,6 +48,8 @@ test('SMS provider mutation is journaled before transport and only proven pre-tr
   assert.match(recovery, /Phase\.PROVIDER_READY/);
   assert.match(recovery, /Phase\.TRANSPORT_STARTED/);
   assert.match(recovery, /SmsPreSubmitProvider\.markOutgoingFailed/);
+  assert.match(recovery, /val repairable = records\.filter/);
+  assert.match(recovery, /if \(repairable\.isEmpty\(\)\) return Result\.success\(\)/);
   assert.match(application, /SmsPreSubmitRecoveryWorker\.scheduleStartupRecovery\(this\)/);
 
   const begin = sender.indexOf('preSubmitJournal.begin(');
