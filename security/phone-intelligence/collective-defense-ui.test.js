@@ -20,3 +20,8 @@ test('collective-defense status is presentation-only and never a dead action', (
   );
 });
 
+test('collective-defense customer heading is localized in French', () => {
+  assert.match(screen, /Réseau de défense collective/);
+  assert.doesNotMatch(screen, /Collective Defense Network/);
+});
+

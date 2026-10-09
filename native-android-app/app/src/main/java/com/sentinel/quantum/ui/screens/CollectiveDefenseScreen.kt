@@ -114,7 +114,7 @@ fun CollectiveDefenseScreen(navController: NavController) {
                         Icon(Icons.Default.Groups, contentDescription = null, tint = SentinelD1.Cyan)
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            "Collective Defense Network",
+                            "Réseau de défense collective",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold
                         )
