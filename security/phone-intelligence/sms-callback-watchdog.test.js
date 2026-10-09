@@ -109,6 +109,14 @@ test('corrupt SMS callback progress cannot be treated as an empty provider queue
   );
 });
 
+test('a corrupt callback record cannot be overwritten as a fresh callback', () => {
+  assert.match(
+    progressStore,
+    /val rawExists = preferences\.contains\(key\)[\s\S]*val existing = decode\(raw, nowMs\)[\s\S]*if \(rawExists && existing == null\) \{[\s\S]*onPersistenceFailure\(\)[\s\S]*return@synchronized null/,
+    'an existing malformed callback record must fail closed before any replacement write'
+  );
+});
+
 test('terminal callback progress validates its opaque key before being ignored', () => {
   const keyValidationIndex = progressStore.indexOf('val ids = key.split(":", limit = 2)');
   const providerAppliedIndex = progressStore.indexOf('if (record.providerApplied) return@mapNotNull null');

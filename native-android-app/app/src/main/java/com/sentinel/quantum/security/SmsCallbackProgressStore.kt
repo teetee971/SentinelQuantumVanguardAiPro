@@ -29,8 +29,19 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         }
 
         val key = key(sendToken, providerMessageId)
-        val raw = preferences.getString(key, null)
+        val rawExists = preferences.contains(key)
+        val raw = runCatching { preferences.getString(key, null) }.getOrElse {
+            onPersistenceFailure()
+            return@synchronized null
+        }
         val existing = decode(raw, nowMs)
+        if (rawExists && existing == null) {
+            // A present but malformed/expired record is not an empty ledger entry. Replacing it
+            // would erase the only durable indication that a callback was already observed and
+            // could let the watchdog later manufacture a timeout. Leave repair to recovery.
+            onPersistenceFailure()
+            return@synchronized null
+        }
         if (existing?.terminal == true && existing.providerApplied) return@synchronized null
         if (existing != null && existing.state.partCount != partCount) return@synchronized null
 
