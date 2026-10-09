@@ -87,6 +87,8 @@ test('ROLE_SMS loss preserves MMS READY across process death and repairs only af
   assert.match(fixture, /MmsPreTransportRecovery\.repairReadyRecords\(context\)/);
   assert.match(fixture, /MmsSendPduStager\.stage/);
   assert.match(fixture, /Telephony\.Mms\.MESSAGE_BOX_OUTBOX/);
+  assert.match(fixture, /prepareReadyAndAwaitRoleLoss/,
+    'MMS fixture must stay alive until the host removes ROLE_SMS');
   assert.doesNotMatch(fixture, /sendMultimediaMessage\(/,
     'MMS process-death fixture must never invoke transport');
   assert.doesNotMatch(fixture, /SentinelMmsSender\([^)]*\)\.send/,
@@ -97,7 +99,9 @@ test('ROLE_SMS loss preserves MMS READY across process death and repairs only af
   assert.match(flow, /add-role-holder --user 0 "\$ROLE" "\$PACKAGE"/);
   assert.match(flow, /pidof "\$PACKAGE"/);
   assert.match(flow, /MmsRoleLossRecoveryInstrumentationTest/);
-  assert.match(flow, /prepareReadyFixture/);
+  assert.match(flow, /prepareReadyAndAwaitRoleLoss/);
+  assert.match(flow, /&\s*$/m,
+    'MMS prepare/await instrumentation must run in the background while host removes ROLE_SMS');
   assert.match(flow, /roleLossPreservesReadyFixture/);
   assert.match(flow, /recoverAfterRoleRestoration/);
   assert.match(flow, /transport_invoked=false/);
