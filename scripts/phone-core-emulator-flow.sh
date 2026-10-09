@@ -463,10 +463,16 @@ run_stability_qualification() {
 
   # Offline is an exercised runtime state, not a label. Both transport controls must accept the
   # transition and their resulting platform settings are archived before the app is relaunched.
-  adb shell svc wifi disable
+  if ! adb shell svc wifi disable; then
+    echo "Failed to disable Wi-Fi for offline qualification." >&2
+    return 1
+  fi
   wifi_state="$(adb shell settings get global wifi_on | tr -d '\r')"
   if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
-    adb shell svc data disable
+    if ! adb shell svc data disable; then
+      echo "Failed to disable mobile data for offline qualification." >&2
+      return 1
+    fi
     mobile_data_reading="$(read_mobile_data_state)" || {
       echo "Mobile-data state became unreadable after the controlled disable; refusing an incomplete offline proof." >&2
       return 1
