@@ -93,15 +93,22 @@ test('ROLE_SMS loss is qualified as an external process-death and durable recove
   assert.match(fixture, /SmsPreSubmitRecoveryWorker\.scheduleStartupRecovery\(context\)/);
   assert.match(fixture, /Telephony\.Sms\.MESSAGE_TYPE_FAILED/);
   assert.match(fixture, /Telephony\.Sms\.STATUS_FAILED/);
+  assert.match(fixture, /prepareProviderReadyAndAwaitRoleLoss/,
+    'fixture must stay alive until the host removes ROLE_SMS');
   assert.doesNotMatch(fixture, /SmsManager/,
     'ROLE_SMS process-death fixture must never enter the telephony transport API');
   assert.doesNotMatch(fixture, /SentinelSmsSender\(context\)\.send\s*\(/,
     'ROLE_SMS process-death fixture must never invoke the production transport sender');
+
   assert.match(flow, /cmd role remove-role-holder --user 0 "\$ROLE" "\$PACKAGE"/);
   assert.match(flow, /cmd role add-role-holder --user 0 "\$ROLE" "\$PACKAGE"/);
   assert.match(flow, /pidof "\$PACKAGE"/);
-  assert.match(flow, /SmsRoleLossRecoveryInstrumentationTest/);
-  assert.match(flow, /prepareProviderReadyFixture/);
+  assert.match(flow, /prepareProviderReadyAndAwaitRoleLoss/);
+  assert.match(flow, /&\s*$/m,
+    'prepare/await instrumentation must run in the background while host removes ROLE_SMS');
+  assert.doesNotMatch(flow, /am start -W -n "\$PACKAGE\/\.MainActivity"/,
+    'gate must not relaunch the app with ROLE_SMS held because startup recovery could erase the fixture');
+  assert.match(flow, /roleLossPreservesProviderReadyFixture/);
   assert.match(flow, /recoverAfterRoleRestoration/);
   assert.match(workflow, /phone-core-role-sms-process-death-flow\.sh/);
   assert.match(workflow, /api_level:\s*29/);
