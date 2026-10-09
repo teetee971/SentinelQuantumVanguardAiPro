@@ -22,6 +22,11 @@ import org.junit.runner.RunWith
  * PhoneCoreActivationActivity is intentionally exported=false. ActivityScenario launches it from
  * the instrumentation boundary, so CI never needs to expose this internal activation surface to
  * the adb shell or to another application.
+ *
+ * This in-process test proves persistence across an interrupted activity session. Real process
+ * death/reboot persistence is qualified separately by PhoneCoreSetupRebootPreparationInstrumentationTest
+ * and the host-driven reboot step, after AndroidJUnitRunner has exited. A test must never force-stop
+ * its own target package because instrumentation executes in that target process.
  */
 @RunWith(AndroidJUnit4::class)
 class PhoneCoreSetupResumeInstrumentationTest {
@@ -76,11 +81,11 @@ class PhoneCoreSetupResumeInstrumentationTest {
             firstScenario.close()
         }
 
-        // ActivityScenario.close() destroys only the activity. Force-stop the target package as
-        // Android would after process death, then launch through the instrumentation boundary.
-        forceStopTargetProcess()
+        // Closing the activity supplies an in-process interruption. The dedicated reboot
+        // qualification owns real process death after AndroidJUnitRunner exits; force-stopping
+        // the target package here would kill the runner and manufacture a false CI failure.
         assertEquals(
-            "process death must preserve an interrupted setup lifecycle",
+            "activity interruption must preserve an interrupted setup lifecycle",
             PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS,
             PhoneCoreSetupWizardStore(context).lifecycleState()
         )
@@ -89,7 +94,7 @@ class PhoneCoreSetupResumeInstrumentationTest {
             assertNotNull("interrupted setup must retain its attempted target for resume", persistedAttempt)
         } else {
             assertEquals(
-                "an unavailable prerequisite must remain blocked after process death",
+                "an unavailable prerequisite must remain blocked after interruption",
                 null,
                 persistedAttempt
             )
@@ -98,9 +103,8 @@ class PhoneCoreSetupResumeInstrumentationTest {
 
         val resumedScenario = ActivityScenario.launch<PhoneCoreActivationActivity>(intent)
         try {
-            // A resumed process can immediately reopen the Android-owned role/permission
-            // surface. Dismiss that external window before asking ActivityScenario for RESUMED;
-            // otherwise API 24 can terminate the instrumentation process behind PAUSED state.
+            // A resumed activity can immediately reopen the Android-owned role/permission
+            // surface. Dismiss that external window before asking ActivityScenario for RESUMED.
             dismissSystemSetupDialog()
             resumedScenario.moveToState(Lifecycle.State.RESUMED)
             instrumentation.waitForIdleSync()
@@ -157,11 +161,6 @@ class PhoneCoreSetupResumeInstrumentationTest {
             instrumentation.waitForIdleSync()
             SystemClock.sleep(100)
         }
-    }
-
-    private fun forceStopTargetProcess() {
-        instrumentation.uiAutomation.executeShellCommand("am force-stop ${context.packageName}").use { }
-        SystemClock.sleep(300)
     }
 
     private companion object {
