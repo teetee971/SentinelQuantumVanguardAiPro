@@ -411,11 +411,19 @@ fun CollectiveDefenseScreen(navController: NavController) {
                                     client.lookupFingerprint(item.indicatorType, item.fingerprint)
                                 }
                             }.onSuccess { refreshed ->
-                                if (refreshed.communityIntelligence == "available") {
+                                val saved = if (refreshed.communityIntelligence == "available") {
                                     store.upsert(refreshed)
-                                    refreshWatch()
+                                } else {
+                                    true
                                 }
-                                status = networkStatusText(refreshed.communityIntelligence)
+                                if (saved) {
+                                    if (refreshed.communityIntelligence == "available") {
+                                        refreshWatch()
+                                    }
+                                    status = networkStatusText(refreshed.communityIntelligence)
+                                } else {
+                                    status = "Impossible d’enregistrer le nouveau résultat."
+                                }
                             }.onFailure {
                                 status = friendlyError(it)
                             }
@@ -424,8 +432,12 @@ fun CollectiveDefenseScreen(navController: NavController) {
                     },
                     onRemove = {
                         if (!busy) {
-                            store.remove(item.indicatorType, item.fingerprint)
-                            refreshWatch()
+                            if (store.remove(item.indicatorType, item.fingerprint)) {
+                                refreshWatch()
+                                status = "Indicateur retiré de la veille locale."
+                            } else {
+                                status = "Impossible de supprimer l’indicateur."
+                            }
                         }
                     }
                 )

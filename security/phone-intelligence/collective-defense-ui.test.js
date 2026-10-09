@@ -25,3 +25,21 @@ test('collective-defense customer heading is localized in French', () => {
   assert.doesNotMatch(screen, /Collective Defense Network/);
 });
 
+test('collective-defense watch mutations only refresh after durable persistence', () => {
+  assert.match(
+    screen,
+    /val saved = if \(refreshed\.communityIntelligence == "available"\) \{[\s\S]*store\.upsert\(refreshed\)[\s\S]*\} else \{[\s\S]*true[\s\S]*\}/,
+    'recheck must observe whether the refreshed reputation was persisted'
+  );
+  assert.match(
+    screen,
+    /if \(saved\) \{[\s\S]*refreshWatch\(\)[\s\S]*networkStatusText\(refreshed\.communityIntelligence\)[\s\S]*\} else \{[\s\S]*Impossible d’enregistrer le nouveau résultat/s,
+    'a failed recheck must remain visible instead of being overwritten by a success status'
+  );
+  assert.match(
+    screen,
+    /if \(store\.remove\(item\.indicatorType, item\.fingerprint\)\) \{[\s\S]*refreshWatch\(\)[\s\S]*\} else \{[\s\S]*Impossible de supprimer l’indicateur/s,
+    'removal must expose a failed durable mutation'
+  );
+});
+
