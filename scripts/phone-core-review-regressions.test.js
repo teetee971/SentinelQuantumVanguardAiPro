@@ -75,7 +75,10 @@ test('SMS sender revalidates authorization after callback preparation and immedi
   assert.ok(revalidation > callbackBoundary, 'authorization must be revalidated after callbacks are prepared');
   assert.ok(textSend > revalidation, 'single-part SmsManager submission must occur after revalidation');
   assert.ok(multipartSend > revalidation, 'multipart SmsManager submission must occur after revalidation');
-  assert.match(smsSender.slice(revalidation, textSend), /markOutgoingFailed\(persistedMessageId\)/);
+  assert.match(
+    smsSender.slice(revalidation, textSend),
+    /SmsPreSubmitProvider\.markOutgoingFailed\(context, persistedMessageId\)/
+  );
 });
 
 test('MMS sender revalidates authorization and selected SIM at the final pre-transport boundary', () => {
