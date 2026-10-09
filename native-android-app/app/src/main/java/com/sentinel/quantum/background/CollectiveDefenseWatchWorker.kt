@@ -24,23 +24,32 @@ class CollectiveDefenseWatchWorker(
         var failures = 0
         val escalated = mutableListOf<CollectiveDefenseClient.ReputationResult>()
 
+        fun markAttemptedOrCountFailure(previous: CollectiveDefenseWatchStore.WatchItem) {
+            if (!store.markAttempted(previous.indicatorType, previous.fingerprint)) {
+                failures++
+            }
+        }
+
         watches.forEach { previous ->
             val refreshed = runCatching {
                 client.lookupFingerprint(previous.indicatorType, previous.fingerprint)
             }.getOrElse {
                 failures++
-                store.markAttempted(previous.indicatorType, previous.fingerprint)
+                markAttemptedOrCountFailure(previous)
                 return@forEach
             }
             if (refreshed.communityIntelligence != "available") {
                 failures++
-                store.markAttempted(previous.indicatorType, previous.fingerprint)
+                markAttemptedOrCountFailure(previous)
+                return@forEach
+            }
+            if (!store.upsert(refreshed)) {
+                failures++
                 return@forEach
             }
             if (riskRank(refreshed.riskState) > riskRank(previous.activeRiskState())) {
                 escalated += refreshed
             }
-            store.upsert(refreshed)
         }
 
         if (
@@ -54,7 +63,7 @@ class CollectiveDefenseWatchWorker(
             )
         }
 
-        if (failures == watches.size && runAttemptCount < MAX_RETRY_ATTEMPTS) {
+        if (failures > 0 && runAttemptCount < MAX_RETRY_ATTEMPTS) {
             Result.retry()
         } else {
             Result.success()
