@@ -517,25 +517,30 @@ class SentinelInCallService : InCallService() {
         return direction
     }
 
-    private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean {
-        val call = currentCall ?: return false
-        if (callIds[call] != callId) return false
-        if (!call.details.can(Call.Details.CAPABILITY_MUTE)) {
-            audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
-            publishCurrentCall()
-            return false
-        }
-        return runCatching {
-            audioStatus = if (muted) "Coupure du microphone demandée…" else "Réactivation du microphone demandée…"
-            publishCurrentCall()
-            setMuted(muted)
-            true
-        }.getOrElse {
-            audioStatus = "Android a refusé le changement d’état du microphone."
-            publishCurrentCall()
-            false
-        }
-    }
+    private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean =
+        performCallAction(
+            id = callId,
+            actionName = "setMuted",
+            allowed = { call ->
+                val canMute = runCatching {
+                    call.details.can(Call.Details.CAPABILITY_MUTE)
+                }.getOrDefault(false)
+                if (!canMute) {
+                    audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
+                    publishCurrentCall()
+                }
+                canMute
+            },
+            action = {
+                audioStatus = if (muted) "Coupure du microphone demandée…" else "Réactivation du microphone demandée…"
+                publishCurrentCall()
+                setMuted(muted)
+            },
+            onFailure = {
+                audioStatus = "Android a refusé le changement d’état du microphone."
+                publishCurrentCall()
+            }
+        )
 
     private fun requestAudioRoute(callId: String, routeId: String): Boolean {
         val call = currentCall ?: return false
@@ -556,7 +561,8 @@ class SentinelInCallService : InCallService() {
         id: String,
         actionName: String,
         allowed: (Call) -> Boolean = { true },
-        action: (Call) -> Unit
+        action: (Call) -> Unit,
+        onFailure: () -> Unit = {}
     ): Boolean {
         val call = runCatching {
             callIds.entries.firstOrNull { it.value == id }?.key
@@ -571,6 +577,7 @@ class SentinelInCallService : InCallService() {
                 "InCall",
                 "Commande Telecom refusée ou devenue obsolète: $actionName"
             )
+            onFailure()
         }.getOrDefault(false)
     }
 

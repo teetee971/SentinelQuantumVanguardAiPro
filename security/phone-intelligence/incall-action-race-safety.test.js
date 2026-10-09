@@ -36,3 +36,11 @@ test('Telecom UI actions share a fail-closed race boundary', () => {
     );
   }
 });
+
+test('microphone capability reads stay inside the same race boundary', () => {
+  assert.match(
+    service,
+    /private fun requestMicrophoneMuted\([\s\S]*?performCallAction\([\s\S]*?allowed = \{[\s\S]*?call\.details\.can\(Call\.Details\.CAPABILITY_MUTE\)/,
+    'mute capability reads must be contained before setMuted reaches Telecom'
+  );
+});
