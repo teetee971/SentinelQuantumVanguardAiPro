@@ -68,7 +68,7 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         }
         // The radio transition remains usable even when cleanup/storage fails.
         // The receiver must report that failure and suppress certification proofs.
-        val trimmed = trimToBound(nowMs)
+        val trimmed = trimToBound(nowMs, protectedKey = key)
         if (!trimmed) {
             onPersistenceFailure()
             // If corruption has already pushed the store beyond its physical bound, there may be
@@ -142,7 +142,7 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         return storageHealthy
     }
 
-    private fun trimToBound(nowMs: Long): Boolean {
+    private fun trimToBound(nowMs: Long, protectedKey: String): Boolean {
         val allEntries = preferences.all
         val overflow = allEntries.size - MAX_TRACKED
         if (overflow <= 0) return true
@@ -152,6 +152,7 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         // valid records. If there are not enough valid records to restore the bound, fail closed
         // and leave the corruption visible to recovery rather than pretending the store is healthy.
         val removable = allEntries.mapNotNull { (key, value) ->
+            if (key == protectedKey) return@mapNotNull null
             val persisted = decode(value as? String, nowMs, enforceTtl = false)
                 ?: return@mapNotNull null
             key to persisted.createdAtMs
