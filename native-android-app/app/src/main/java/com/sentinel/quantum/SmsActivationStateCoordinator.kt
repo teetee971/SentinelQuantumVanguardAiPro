@@ -6,7 +6,9 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SmsActivationDiagnostics
+import com.sentinel.quantum.security.SmsPreSubmitRecoveryWorker
 import java.lang.ref.WeakReference
 
 internal object SmsActivationAppOpsPolicy {
@@ -52,7 +54,8 @@ internal object SmsActivationWatchRegistrationPolicy {
  * the visible composer to refresh its activation epoch in place so attachments, SIM selection and
  * in-flight send/callback state are not discarded by Activity recreation.
  *
- * The coordinator is deliberately read-only: it never grants a role, permission or AppOp.
+ * Recovery work is only nudged when ROLE_SMS becomes HELD again. The coordinator itself never
+ * mutates provider state, permissions or AppOps.
  */
 internal class SmsActivationStateCoordinator(
     private val application: Application
@@ -93,9 +96,6 @@ internal class SmsActivationStateCoordinator(
             if (activity !is SmsComposeActivity) return
             visibleComposer = WeakReference(activity)
             revalidateVisibleComposer(activity)
-            // A permission-role transition can settle just after onResume. Re-read once after the
-            // framework has had a chance to finish reconciliation; a changed fingerprint refreshes
-            // the existing composer exactly once because lastFingerprint is updated first.
             mainHandler.postDelayed(
                 {
                     if (visibleComposer.get() === activity) {
@@ -138,6 +138,13 @@ internal class SmsActivationStateCoordinator(
         val current = readFingerprint() ?: return
         val previous = lastFingerprint
         lastFingerprint = current
+        if (
+            previous?.roleState != SmsActivationDiagnostics.SmsRoleState.HELD &&
+            current.roleState == SmsActivationDiagnostics.SmsRoleState.HELD
+        ) {
+            runCatching { SmsPreSubmitRecoveryWorker.scheduleStartupRecovery(application) }
+            runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(application) }
+        }
         if (previous != null && previous != current) {
             activity.refreshActivationAuthorization()
         }
