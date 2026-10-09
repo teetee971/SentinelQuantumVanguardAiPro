@@ -49,4 +49,19 @@ class PttSessionControllerTest {
         assertFalse(transport.microphoneEnabled)
         assertEquals(3, transport.microphoneChanges)
     }
+
+    @Test fun cancelStopsTransmissionButKeepsSessionReady() = runBlocking {
+        val transport = FakeTransport()
+        val controller = PttSessionController(transport)
+
+        assertTrue(controller.connect().isSuccess)
+        assertTrue(controller.press().isSuccess)
+        assertTrue(transport.microphoneEnabled)
+
+        controller.cancel()
+
+        assertEquals(PttSessionController.State.READY, controller.state())
+        assertTrue(transport.connected)
+        assertFalse(transport.microphoneEnabled)
+    }
 }
