@@ -126,6 +126,24 @@ class SmsCallbackProgressStoreTest {
         assertFalse(preferences.values.containsKey("42:101"))
     }
 
+    @Test fun trimmingNeverEvictsTheCurrentCallbackProgress() {
+        val preferences = Preferences(emptySet())
+        preferences.values["42:101"] = "1000|0|1||||"
+        repeat(128) { index ->
+            preferences.values["other:$index"] = "${2000 + index}|0|1||||"
+        }
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L
+        )!!
+
+        assertTrue(outcome.allSent)
+        assertEquals(128, preferences.values.size)
+        assertTrue(preferences.values.containsKey("42:101"))
+    }
+
     private fun verifyTransitionSurvives(preferences: Preferences) {
         val store = SmsCallbackProgressStore(preferences.preferences)
         var storageFailure = false
