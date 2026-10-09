@@ -1,14 +1,23 @@
 package com.sentinel.quantum
 
 import android.app.Application
+import com.sentinel.quantum.ptt.PttProcessRuntime
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.IncomingSmsRecoveryWorker
 import com.sentinel.quantum.security.IncomingMmsWapIngressRecoveryWorker
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.MmsSubmissionWatchdogWorker
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 import com.sentinel.quantum.security.SmsSubmissionWatchdogWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
 /**
  * Process-level initialization for exact-number call blocking and durable telecom repair.
@@ -24,8 +33,12 @@ import com.sentinel.quantum.security.SmsSubmissionWatchdogWorker
  * false block; prefix and signed-prefix rules remain available.
  */
 class SentinelApplication : Application() {
+    private val processScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
     override fun onCreate() {
         super.onCreate()
+        observeTelecomPriorityForPtt()
+
         scheduleRecovery("réparation provider SMS") {
             SentinelSmsStatusReceiver.queueProviderRepair(this@SentinelApplication)
         }
@@ -50,6 +63,24 @@ class SentinelApplication : Application() {
             val screeningSnapshot = store.prepareScreeningSnapshot()
             if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
                 store.prepareFingerprintKeys()
+            }
+        }
+    }
+
+    private fun observeTelecomPriorityForPtt() {
+        runCatching {
+            SentinelInCallService.sessions
+                .map { session -> session.calls.isNotEmpty() }
+                .distinctUntilChanged()
+                .onEach { present -> PttProcessRuntime.onTelecomCallPresenceChanged(present) }
+                .launchIn(processScope)
+        }.onFailure {
+            runCatching {
+                LocalLogger(this).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "PTT",
+                    "Priorité des appels Telecom indisponible; aucun runtime PTT ne doit être déclaré prêt"
+                )
             }
         }
     }
