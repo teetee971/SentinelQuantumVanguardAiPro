@@ -22,12 +22,13 @@ class SmsOutgoingSubmissionStore internal constructor(
 
     /**
      * Fail-closed admission signal used immediately before a new radio submission.
-     * Corrupt/unprunable state is treated as pending rather than allowing an ambiguous duplicate.
+     * Corrupt state is treated as pending rather than allowing an ambiguous duplicate. Entries are
+     * removed only after callback/provider reconciliation; aging out an unresolved submission here
+     * could allow a second radio request while the first one is still in Android's telephony stack.
      */
     fun hasPendingSubmission(nowMs: Long = System.currentTimeMillis()): Boolean = synchronized(LOCK) {
         if (nowMs <= 0L) return@synchronized true
         if (!validateEntries()) return@synchronized true
-        if (!prune(nowMs)) return@synchronized true
         trackedCount() > 0
     }
 
@@ -45,7 +46,6 @@ class SmsOutgoingSubmissionStore internal constructor(
         ) return@synchronized false
 
         if (!validateEntries()) return@synchronized false
-        if (!prune(nowMs)) return@synchronized false
         val storageKey = key(sendToken, providerMessageId)
         if (!preferences.contains(storageKey) && trackedCount() >= MAX_TRACKED) return@synchronized false
         preferences.edit()
@@ -67,19 +67,6 @@ class SmsOutgoingSubmissionStore internal constructor(
         val storageKey = key(sendToken, providerMessageId)
         if (!preferences.contains(storageKey)) return@synchronized true
         preferences.edit().remove(storageKey).commit()
-    }
-
-    private fun prune(nowMs: Long): Boolean {
-        val entries = preferences.all.entries
-        if (entries.any { (key, value) -> decode(key, value as? String) == null }) return false
-        val expired = entries.filter { (key, value) ->
-            val submission = decode(key, value as String) ?: return@filter false
-            nowMs - submission.createdAtMs > RETENTION_MS
-        }
-        if (expired.isEmpty()) return true
-        val editor = preferences.edit()
-        expired.forEach { editor.remove(it.key) }
-        return editor.commit()
     }
 
     private fun validateEntries(): Boolean =
@@ -108,7 +95,6 @@ class SmsOutgoingSubmissionStore internal constructor(
 
     companion object {
         const val CALLBACK_TIMEOUT_MS = 15L * 60L * 1000L
-        private const val RETENTION_MS = 24L * 60L * 60L * 1000L
         private const val MAX_TRACKED = 128
         private const val PREFERENCES = "sentinel_sms_outgoing_submissions_v1"
         private val LOCK = Any()
