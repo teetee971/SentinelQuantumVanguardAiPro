@@ -14,6 +14,7 @@ class PttSessionControllerTest {
 
         override suspend fun connect(): Result<Unit> {
             connected = true
+            microphoneEnabled = false
             return Result.success(Unit)
         }
 
@@ -34,11 +35,11 @@ class PttSessionControllerTest {
         val transport = FakeTransport()
         val controller = PttSessionController(transport)
 
-        // PTT is fail-closed: connection alone must never publish microphone audio.
         assertTrue(controller.connect().isSuccess)
         assertEquals(PttSessionController.State.READY, controller.state())
         assertTrue(transport.connected)
         assertFalse(transport.microphoneEnabled)
+        assertEquals(0, transport.microphoneChanges)
 
         assertTrue(controller.press().isSuccess)
         assertEquals(PttSessionController.State.TRANSMITTING, controller.state())
@@ -47,7 +48,7 @@ class PttSessionControllerTest {
         controller.release()
         assertEquals(PttSessionController.State.READY, controller.state())
         assertFalse(transport.microphoneEnabled)
-        assertEquals(3, transport.microphoneChanges)
+        assertEquals(2, transport.microphoneChanges)
     }
 
     @Test fun cancelStopsTransmissionButKeepsSessionReady() = runBlocking {
