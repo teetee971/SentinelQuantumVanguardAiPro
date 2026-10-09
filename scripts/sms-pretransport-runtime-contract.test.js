@@ -76,11 +76,11 @@ test('ROLE_SMS revocation at final SMS boundary is recovered only after role res
   const instrumentation = readFileSync(instrumentationPath, 'utf8');
   assert.match(instrumentation, /remove-role-holder --user 0 android\.app\.role\.SMS/);
   assert.match(instrumentation, /waitForSmsRoleAbsent\(/);
-  assert.match(instrumentation, /SMS_PRE_SUBMIT_REVALIDATION_FAILED_PROVIDER_REPAIR_FAILED/);
+  assert.match(instrumentation, /SentinelSmsSender\.PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED/);
   assert.match(instrumentation, /SmsPreSubmitJournal\.Phase\.PROVIDER_READY/);
   assert.match(instrumentation, /add-role-holder --user 0 android\.app\.role\.SMS/);
   assert.match(instrumentation, /SmsPreSubmitRecoveryWorker\.scheduleStartupRecovery\(context\)/);
   assert.match(instrumentation, /waitForProviderFailedAndJournalCleared\(/);
-  assert.match(instrumentation, /No SENT callback may exist for a role-revoked pre-transport rejection/);
-  assert.match(instrumentation, /No DELIVERED callback may exist for a role-revoked pre-transport rejection/);
+  assert.match(instrumentation, /No SENT callback may exist for a \$label/);
+  assert.match(instrumentation, /No DELIVERED callback may exist for a \$label/);
 });
