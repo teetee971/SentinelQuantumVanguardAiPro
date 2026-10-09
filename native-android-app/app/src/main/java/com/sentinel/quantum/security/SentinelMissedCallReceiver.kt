@@ -24,6 +24,20 @@ import com.sentinel.quantum.SentinelDialerActivity
  */
 class SentinelMissedCallReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        runCatching {
+            handleReceive(context, intent)
+        }.onFailure {
+            runCatching {
+                LocalLogger(context).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "MissedCall",
+                    "Notification d’appel manqué indisponible; le service Telecom continue"
+                )
+            }
+        }
+    }
+
+    private fun handleReceive(context: Context, intent: Intent) {
         if (intent.action != TelecomManager.ACTION_SHOW_MISSED_CALLS_NOTIFICATION) return
         if (!holdsDialerRole(context)) return
 

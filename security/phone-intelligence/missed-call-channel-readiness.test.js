@@ -28,3 +28,16 @@ test('missed-call notification channel participates in Phone Core readiness trut
   assert.match(diagnostics, /missedCallNotificationChannelEnabled/);
   assert.match(diagnostics, /SentinelMissedCallReceiver\.isChannelEnabled\(context\)/);
 });
+
+test('missed-call broadcast failures cannot escape the Telecom receiver', () => {
+  assert.match(
+    receiver,
+    /override fun onReceive\(context: Context, intent: Intent\) \{\s*runCatching \{\s*handleReceive\(context, intent\)/,
+    'OEM notification failures must be contained before they escape BroadcastReceiver.onReceive'
+  );
+  assert.match(
+    receiver,
+    /private fun handleReceive\(context: Context, intent: Intent\)/,
+    'missed-call processing must remain isolated behind the guarded receiver entrypoint'
+  );
+});
