@@ -1,15 +1,5 @@
 package com.sentinel.quantum.talkiewalkie
 
-enum class TalkieWalkieState {
-    DISCONNECTED,
-    CONNECTING,
-    LISTENING,
-    REQUESTING_FLOOR,
-    TRANSMITTING,
-    RECONNECTING,
-    FAILED
-}
-
 sealed interface TalkieWalkieEvent {
     data object ConnectRequested : TalkieWalkieEvent
     data object Connected : TalkieWalkieEvent
