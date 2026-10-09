@@ -54,6 +54,22 @@ internal class SmsPreSubmitJournal(context: Context) {
         write(current.copy(phase = Phase.TRANSPORT_STARTED))
     }
 
+    /**
+     * Retires transport ambiguity only after another durable subsystem has recorded a conclusive
+     * telephony callback for this provider row. No record is a successful no-op because the normal
+     * synchronous success path removes its marker before callbacks arrive. Multiple matches are a
+     * correlation invariant violation and therefore fail closed without deleting anything.
+     */
+    fun removeTransportStartedForProvider(providerMessageId: Long): Boolean = synchronized(LOCK) {
+        if (providerMessageId <= 0L) return@synchronized false
+        val matches = all().filter {
+            it.phase == Phase.TRANSPORT_STARTED && it.providerMessageId == providerMessageId
+        }
+        if (matches.isEmpty()) return@synchronized true
+        if (matches.size != 1) return@synchronized false
+        preferences.edit().remove(key(matches.single().token)).commit()
+    }
+
     fun remove(token: String): Boolean = synchronized(LOCK) {
         validToken(token) && preferences.edit().remove(key(token)).commit()
     }
