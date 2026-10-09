@@ -57,7 +57,9 @@ internal class IncomingMmsWapIngressJournal(context: Context) {
 
     @Synchronized
     fun all(): List<Record> {
-        sanitizeInvalidEntries()
+        if (!sanitizeInvalidEntries()) {
+            throw IllegalStateException("MMS WAP ingress journal cleanup failed")
+        }
         return preferences.all.asSequence()
             .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
             .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value) }

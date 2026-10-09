@@ -18,6 +18,10 @@ const downloadRecoveryWorker = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadRecoveryWorker.kt',
   'utf8'
 );
+const downloadRecoveryJournal = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadRecoveryJournal.kt',
+  'utf8'
+);
 const downloadCoordinator = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadCoordinator.kt',
   'utf8'
@@ -296,6 +300,29 @@ test('WAP recovery removes unreadable staging before retiring its journal record
   assert.ok(journalRemoveIndex > stagedDeleteIndex, 'journal metadata must outlive staged cleanup');
   assert.match(branch, /val journalRemoved = stagedRemoved && journal\.remove/);
   assert.match(branch, /if \(!journalRemoved\) retry = true/);
+});
+
+test('journal sanitization failures remain retryable instead of masquerading as empty recovery', () => {
+  for (const [name, source] of [
+    ['download recovery journal', downloadRecoveryJournal],
+    ['WAP ingress journal', wapJournal]
+  ]) {
+    assert.match(
+      source,
+      /fun all\(\): List<Record> \{[\s\S]*if \(!sanitizeInvalidEntries\(\)\)[\s\S]*throw/,
+      `${name} must fail closed when invalid-entry cleanup cannot commit`
+    );
+  }
+  assert.match(
+    wapRecoveryWorker,
+    /val records = runCatching \{[\s\S]*journal\.all\(\)[\s\S]*\}\.getOrElse \{ return Result\.retry\(\) \}/,
+    'WAP recovery must retry when journal sanitation is unavailable'
+  );
+  assert.match(
+    sendWorker,
+    /val recovered = runCatching \{[\s\S]*MmsDownloadRecoveryWorker\.schedulePendingNow\(applicationContext\)[\s\S]*\}\.getOrDefault\(false\)/,
+    'download startup recovery must convert journal failure into worker retry'
+  );
 });
 
 test('unexpected WAP worker failures preserve the PDU for durable recovery', () => {

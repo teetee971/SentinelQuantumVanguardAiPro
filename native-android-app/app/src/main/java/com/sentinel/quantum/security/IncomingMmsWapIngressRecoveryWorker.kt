@@ -18,7 +18,8 @@ class IncomingMmsWapIngressRecoveryWorker(
         val journal = IncomingMmsWapIngressJournal(applicationContext)
         var retry = false
         val nowMs = System.currentTimeMillis()
-        journal.all().forEach { record ->
+        val records = runCatching { journal.all() }.getOrElse { return Result.retry() }
+        records.forEach { record ->
             if (nowMs >= record.receivedAtMs &&
                 nowMs - record.receivedAtMs >= MAX_RETRY_AGE_MS
             ) {

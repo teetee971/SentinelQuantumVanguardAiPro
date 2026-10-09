@@ -61,7 +61,9 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
 
     @Synchronized
     fun all(): List<Record> {
-        sanitizeInvalidEntries()
+        if (!sanitizeInvalidEntries()) {
+            throw IllegalStateException("MMS download recovery journal cleanup failed")
+        }
         return preferences.all.asSequence()
             .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
             .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value) }
