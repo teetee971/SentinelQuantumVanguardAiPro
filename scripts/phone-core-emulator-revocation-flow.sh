@@ -250,46 +250,50 @@ assert_sms_role_held() {
   role_holders android.app.role.SMS | grep -Fxq "$PACKAGE"
 }
 
+permission_state_from_snapshot() {
+  local permission="$1" snapshot="$2"
+  local escaped_permission="${permission//./\\.}"
+  local granted_count denied_count
+  granted_count="$(grep -Ec "^[[:space:]]*${escaped_permission}: granted=true([,[:space:]]|$)" <<< "$snapshot" || true)"
+  denied_count="$(grep -Ec "^[[:space:]]*${escaped_permission}: granted=false([,[:space:]]|$)" <<< "$snapshot" || true)"
+  if [[ "$granted_count" -eq 1 && "$denied_count" -eq 0 ]]; then return 0; fi
+  if [[ "$granted_count" -eq 0 && "$denied_count" -eq 1 ]]; then return 1; fi
+  return 2  # UNKNOWN: absent, duplicated or contradictory evidence.
+}
+
 permission_granted() {
-  local permission="$1"
-  local snapshot escaped_permission
+  local permission="$1" snapshot
   if ! snapshot="$(adb shell dumpsys package "$PACKAGE" 2>&1)"; then
     return 2  # UNKNOWN: ADB failure is not evidence of denial.
   fi
-  escaped_permission="${permission//./\\.}"
-  local granted=false denied=false
-  if grep -Eq "^[[:space:]]*${escaped_permission}: granted=true([,[:space:]]|$)" <<< "$snapshot"; then
-    granted=true
-  fi
-  if grep -Eq "^[[:space:]]*${escaped_permission}: granted=false([,[:space:]]|$)" <<< "$snapshot"; then
-    denied=true
-  fi
-  if [[ "$granted" == true && "$denied" == false ]]; then return 0; fi
-  if [[ "$granted" == false && "$denied" == true ]]; then return 1; fi
-  return 2  # UNKNOWN: missing or contradictory permission state.
+  permission_state_from_snapshot "$permission" "$snapshot"
 }
 
 assert_send_sms_runtime_permission_granted() {
-  local evidence="$1"
-  if ! adb shell dumpsys package "$PACKAGE" > "$OUT_DIR/$evidence" 2>&1; then
+  local evidence="$1" snapshot status=0
+  if ! snapshot="$(adb shell dumpsys package "$PACKAGE" 2>&1)"; then
     echo "SEND_SMS runtime grant baseline is unreadable."
     return 1
   fi
-  if ! grep -Eq 'android\.permission\.SEND_SMS: granted=true' "$OUT_DIR/$evidence"; then
-    echo "SEND_SMS runtime grant baseline is not proven."
+  printf '%s\n' "$snapshot" > "$OUT_DIR/$evidence"
+  permission_state_from_snapshot android.permission.SEND_SMS "$snapshot" || status=$?
+  if [[ "$status" -ne 0 ]]; then
+    echo "SEND_SMS runtime grant baseline is not uniquely proven."
     grep -E 'android\.permission\.SEND_SMS:' "$OUT_DIR/$evidence" || true
     return 1
   fi
 }
 
 archive_send_sms_runtime_permission_state() {
-  local evidence="$1"
-  if ! adb shell dumpsys package "$PACKAGE" > "$OUT_DIR/$evidence" 2>&1; then
+  local evidence="$1" snapshot status=0
+  if ! snapshot="$(adb shell dumpsys package "$PACKAGE" 2>&1)"; then
     echo "SEND_SMS runtime permission state is unreadable."
     return 1
   fi
-  if ! grep -Eq 'android\.permission\.SEND_SMS: granted=(true|false)' "$OUT_DIR/$evidence"; then
-    echo "SEND_SMS runtime permission state is ambiguous."
+  printf '%s\n' "$snapshot" > "$OUT_DIR/$evidence"
+  permission_state_from_snapshot android.permission.SEND_SMS "$snapshot" || status=$?
+  if [[ "$status" -eq 2 ]]; then
+    echo "SEND_SMS runtime permission state is absent or contradictory."
     grep -E 'android\.permission\.SEND_SMS:' "$OUT_DIR/$evidence" || true
     return 1
   fi
@@ -349,25 +353,34 @@ probe_pm_revoke_send_sms() {
 }
 
 assert_send_sms_runtime_permission_denied() {
-  local evidence="$1"
-  adb shell dumpsys package "$PACKAGE" > "$OUT_DIR/$evidence" 2>&1
-  if permission_granted android.permission.SEND_SMS; then
-    echo "SEND_SMS runtime permission was not observably revoked."
-    grep -E 'android\.permission\.SEND_SMS:' "$OUT_DIR/$evidence" || true
+  local evidence="$1" snapshot status=0
+  if ! snapshot="$(adb shell dumpsys package "$PACKAGE" 2>&1)"; then
+    echo "SEND_SMS runtime permission state is unreadable."
     return 1
   fi
-  if ! grep -Eq 'android\.permission\.SEND_SMS: granted=false' "$OUT_DIR/$evidence"; then
-    echo "SEND_SMS runtime permission denial could not be proven from package state."
+  printf '%s\n' "$snapshot" > "$OUT_DIR/$evidence"
+  permission_state_from_snapshot android.permission.SEND_SMS "$snapshot" || status=$?
+  if [[ "$status" -ne 1 ]]; then
+    echo "SEND_SMS runtime permission denial is not uniquely proven."
+    grep -E 'android\.permission\.SEND_SMS:' "$OUT_DIR/$evidence" || true
     return 1
   fi
 }
 
 wait_send_sms_runtime_permission_denied() {
-  local evidence="$1"
+  local evidence="$1" snapshot status
   for _ in $(seq 1 20); do
-    adb shell dumpsys package "$PACKAGE" > "$OUT_DIR/$evidence" 2>&1 || true
-    if grep -Eq 'android\.permission\.SEND_SMS: granted=false' "$OUT_DIR/$evidence"; then
-      return 0
+    if ! snapshot="$(adb shell dumpsys package "$PACKAGE" 2>&1)"; then
+      echo "SEND_SMS runtime permission state became unreadable."
+      return 1
+    fi
+    printf '%s\n' "$snapshot" > "$OUT_DIR/$evidence"
+    status=0
+    permission_state_from_snapshot android.permission.SEND_SMS "$snapshot" || status=$?
+    if [[ "$status" -eq 1 ]]; then return 0; fi
+    if [[ "$status" -eq 2 ]]; then
+      echo "SEND_SMS runtime permission state became ambiguous."
+      return 1
     fi
     sleep 0.5
   done
