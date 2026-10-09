@@ -5,6 +5,9 @@ import test from 'node:test';
 const senderPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt';
 const interlockPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreTransportTestInterlock.kt';
 const instrumentationPath = 'native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/SmsPreTransportRevocationInstrumentationTest.kt';
+const roleFixturePath = 'native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/SmsRoleLossRecoveryInstrumentationTest.kt';
+const roleFlowPath = 'scripts/phone-core-role-sms-process-death-flow.sh';
+const emulationWorkflowPath = '.github/workflows/android-emulation-qualification.yml';
 const journalPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitJournal.kt';
 const recoveryPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitRecoveryWorker.kt';
 const providerPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitProvider.kt';
@@ -26,6 +29,11 @@ test('runtime SMS revocation race has a debug-only final-boundary interlock and 
   assert.match(instrumentation, /SEND_SMS ignore/);
   assert.match(instrumentation, /SEND_SMS_PERMISSION_NOT_GRANTED/);
   assert.match(instrumentation, /Telephony\.Sms\.MESSAGE_TYPE_FAILED/);
+  assert.doesNotMatch(
+    instrumentation,
+    /remove-role-holder --user 0 android\.app\.role\.SMS/,
+    'ROLE_SMS removal kills the target process and must not be attempted inside one instrumentation method'
+  );
 });
 
 test('SMS provider mutation is journaled before transport and only proven pre-transport state is auto-repaired', () => {
@@ -72,15 +80,22 @@ test('SMS provider mutation is journaled before transport and only proven pre-tr
     'TRANSPORT_STARTED must remain a no-op in the recovery dispatch');
 });
 
-test('ROLE_SMS revocation at final SMS boundary is recovered only after role restoration', () => {
-  const instrumentation = readFileSync(instrumentationPath, 'utf8');
-  assert.match(instrumentation, /remove-role-holder --user 0 android\.app\.role\.SMS/);
-  assert.match(instrumentation, /waitForSmsRoleAbsent\(/);
-  assert.match(instrumentation, /SentinelSmsSender\.PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED/);
-  assert.match(instrumentation, /SmsPreSubmitJournal\.Phase\.PROVIDER_READY/);
-  assert.match(instrumentation, /add-role-holder --user 0 android\.app\.role\.SMS/);
-  assert.match(instrumentation, /SmsPreSubmitRecoveryWorker\.scheduleStartupRecovery\(context\)/);
-  assert.match(instrumentation, /waitForProviderFailedAndJournalCleared\(/);
-  assert.match(instrumentation, /No SENT callback may exist for a \$label/);
-  assert.match(instrumentation, /No DELIVERED callback may exist for a \$label/);
+test('ROLE_SMS loss is qualified as an external process-death and durable recovery flow', () => {
+  assert.equal(existsSync(roleFixturePath), true, 'ROLE_SMS process-death fixture instrumentation must exist');
+  assert.equal(existsSync(roleFlowPath), true, 'external ROLE_SMS process-death flow must exist');
+  const fixture = readFileSync(roleFixturePath, 'utf8');
+  const flow = readFileSync(roleFlowPath, 'utf8');
+  const workflow = readFileSync(emulationWorkflowPath, 'utf8');
+
+  assert.match(fixture, /SmsPreSubmitJournal\.Phase\.PROVIDER_READY/);
+  assert.match(fixture, /SmsPreSubmitProvider\.insertOutgoingOutbox/);
+  assert.match(fixture, /SmsPreSubmitRecoveryWorker\.scheduleStartupRecovery\(context\)/);
+  assert.match(fixture, /Telephony\.Sms\.MESSAGE_TYPE_FAILED/);
+  assert.match(fixture, /Telephony\.Sms\.STATUS_FAILED/);
+  assert.match(flow, /remove-role-holder --user 0 android\.app\.role\.SMS/);
+  assert.match(flow, /add-role-holder --user 0 android\.app\.role\.SMS/);
+  assert.match(flow, /pidof com\.sentinel\.quantum/);
+  assert.match(flow, /SmsRoleLossRecoveryInstrumentationTest#prepareProviderReadyFixture/);
+  assert.match(flow, /SmsRoleLossRecoveryInstrumentationTest#recoverAfterRoleRestoration/);
+  assert.match(workflow, /phone-core-role-sms-process-death-flow\.sh/);
 });
