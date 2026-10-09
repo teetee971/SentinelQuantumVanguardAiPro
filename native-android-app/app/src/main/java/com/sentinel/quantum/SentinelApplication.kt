@@ -45,10 +45,12 @@ class SentinelApplication : Application() {
             MmsSubmissionWatchdogWorker.schedule(this@SentinelApplication)
         }
 
-        val store = CallBlocklistStore(this)
-        val screeningSnapshot = store.prepareScreeningSnapshot()
-        if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
-            runCatching { store.prepareFingerprintKeys() }
+        scheduleRecovery("préchargement des règles de filtrage") {
+            val store = CallBlocklistStore(this@SentinelApplication)
+            val screeningSnapshot = store.prepareScreeningSnapshot()
+            if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
+                store.prepareFingerprintKeys()
+            }
         }
     }
 

@@ -18,6 +18,11 @@ test('startup recovery scheduling failures remain observable without crashing Ap
     /scheduleRecovery\("réparation provider SMS"\)\s*\{[\s\S]*?SentinelSmsStatusReceiver\.queueProviderRepair\(this@SentinelApplication\)/,
     'provider repair must share the startup failure boundary'
   );
+  assert.match(
+    application,
+    /scheduleRecovery\("préchargement des règles de filtrage"\)[\s\S]*?CallBlocklistStore\(this@SentinelApplication\)[\s\S]*?prepareScreeningSnapshot\(\)/,
+    'screening preload failures must fail open without crashing Application'
+  );
   for (const label of [
     'watchdog soumission SMS',
     'récupération SMS entrant',
