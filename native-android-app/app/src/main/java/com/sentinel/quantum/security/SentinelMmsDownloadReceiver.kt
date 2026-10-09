@@ -50,6 +50,15 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                         deliveredResultCode = deliveredResultCode
                     )
                 } catch (_: Exception) {
+                    runCatching {
+                        MmsDownloadRecoveryWorker.schedule(appContext, fileName)
+                    }.onFailure {
+                        LocalLogger(appContext).log(
+                            LocalLogger.LogLevel.SECURITY,
+                            "MmsDownload",
+                            "Reprise du callback MMS impossible après une exception de traitement"
+                        )
+                    }
                     LocalLogger(appContext).log(
                         LocalLogger.LogLevel.WARNING,
                         "MmsDownload",

@@ -268,6 +268,14 @@ test('unexpected WAP worker failures preserve the PDU for durable recovery', () 
   assert.match(workerFailure[1], /captureAndScheduleRecovery/);
 });
 
+test('unexpected download worker failures requeue the callback journal', () => {
+  const workerFailure = downloadReceiver.match(
+    /catch \(_: Exception\) \{([\s\S]*?)finally \{/
+  );
+  assert.ok(workerFailure, 'download callback worker must have an explicit exception boundary');
+  assert.match(workerFailure[1], /MmsDownloadRecoveryWorker\.schedule\(appContext, fileName\)/);
+});
+
 test('MMS provider repair scheduling is coalesced across callback bursts', () => {
   assert.match(sendStatusReceiver, /repairQueued = AtomicBoolean\(false\)/);
   assert.match(sendStatusReceiver, /repairQueued\.compareAndSet\(false, true\)/);
