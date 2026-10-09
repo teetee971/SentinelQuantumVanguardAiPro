@@ -547,6 +547,33 @@ class SentinelInCallService : InCallService() {
         }
     }
 
+    /**
+     * Telecom can invalidate a Call between a UI state read and the command itself. Keep every
+     * command fail-closed at this boundary so an OEM race becomes a rejected action, not a
+     * crashed InCallService.
+     */
+    private fun performCallAction(
+        id: String,
+        actionName: String,
+        allowed: (Call) -> Boolean = { true },
+        action: (Call) -> Unit
+    ): Boolean {
+        val call = runCatching {
+            callIds.entries.firstOrNull { it.value == id }?.key
+        }.getOrNull() ?: return false
+        if (!runCatching { allowed(call) }.getOrDefault(false)) return false
+        return runCatching {
+            action(call)
+            true
+        }.onFailure {
+            LocalLogger(this).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "InCall",
+                "Commande Telecom refusée ou devenue obsolète: $actionName"
+            )
+        }.getOrDefault(false)
+    }
+
     @RequiresApi(34)
     private fun requestModernAudioRoute(routeId: String): Boolean {
         val endpoint = modernEndpoints.firstOrNull { modernEndpointId(it) == routeId } ?: run {
@@ -644,46 +671,62 @@ class SentinelInCallService : InCallService() {
         }
         fun hasActiveCall(): Boolean = currentCall != null
 
-        private fun callById(id: String): Call? = activeService?.let { service ->
-            service.callIds.entries.firstOrNull { it.value == id }?.key
-        }
+        fun disconnect(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "disconnect",
+            allowed = { it.state != Call.STATE_DISCONNECTED && it.state != Call.STATE_DISCONNECTING },
+            action = { it.disconnect() }
+        ) ?: false
 
-        fun disconnect(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
-            call.disconnect(); true
-        } ?: false
+        fun hold(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "hold",
+            allowed = {
+                it.state == Call.STATE_ACTIVE &&
+                    !it.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) &&
+                    it.details.can(Call.Details.CAPABILITY_HOLD)
+            },
+            action = { it.hold() }
+        ) ?: false
 
-        fun hold(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_ACTIVE || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.hold(); true
-        } ?: false
+        fun unhold(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "unhold",
+            allowed = {
+                it.state == Call.STATE_HOLDING &&
+                    !it.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) &&
+                    it.details.can(Call.Details.CAPABILITY_HOLD)
+            },
+            action = { it.unhold() }
+        ) ?: false
 
-        fun unhold(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_HOLDING || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.unhold(); true
-        } ?: false
+        fun answer(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "answer",
+            allowed = { it.state == Call.STATE_RINGING },
+            action = { it.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY) }
+        ) ?: false
 
-        fun answer(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_RINGING) return@let false
-            call.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY)
-            true
-        } ?: false
+        fun reject(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "reject",
+            allowed = { it.state == Call.STATE_RINGING },
+            action = { it.reject(false, null) }
+        ) ?: false
 
-        fun reject(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_RINGING) return@let false
-            call.reject(false, null)
-            true
-        } ?: false
+        fun mergeConference(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "mergeConference",
+            allowed = { it.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) },
+            action = { it.mergeConference() }
+        ) ?: false
 
-        fun mergeConference(id: String): Boolean = callById(id)?.let { call ->
-            if (!call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE)) return@let false
-            return@let runCatching { call.mergeConference(); true }.getOrDefault(false)
-        } ?: false
-
-        fun swapConference(id: String): Boolean = callById(id)?.let { call ->
-            if (!call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)) return@let false
-            return@let runCatching { call.swapConference(); true }.getOrDefault(false)
-        } ?: false
+        fun swapConference(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "swapConference",
+            allowed = { it.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE) },
+            action = { it.swapConference() }
+        ) ?: false
 
         fun setMicrophoneMuted(id: String, muted: Boolean): Boolean =
             activeService?.requestMicrophoneMuted(id, muted) ?: false
@@ -693,16 +736,18 @@ class SentinelInCallService : InCallService() {
 
         fun startDtmf(id: String, digit: Char): Boolean {
             if (digit !in "0123456789*#") return false
-            return callById(id)?.let { call ->
-                if (call.state != Call.STATE_ACTIVE) return@let false
-                call.playDtmfTone(digit)
-                true
-            } ?: false
+            return activeService?.performCallAction(
+                id = id,
+                actionName = "startDtmf",
+                allowed = { it.state == Call.STATE_ACTIVE },
+                action = { it.playDtmfTone(digit) }
+            ) ?: false
         }
 
-        fun stopDtmf(id: String): Boolean = callById(id)?.let { call ->
-            call.stopDtmfTone()
-            true
-        } ?: false
+        fun stopDtmf(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "stopDtmf",
+            action = { it.stopDtmfTone() }
+        ) ?: false
     }
 }
