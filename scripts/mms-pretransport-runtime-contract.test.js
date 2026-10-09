@@ -8,6 +8,7 @@ const instrumentationPath = 'native-android-app/app/src/androidTest/java/com/sen
 const journalPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsProviderJournal.kt';
 const recoveryPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsPreTransportRecovery.kt';
 const workerPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendCleanupWorker.kt';
+const conversationStorePath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsConversationStore.kt';
 
 const sender = readFileSync(senderPath, 'utf8');
 
@@ -52,4 +53,20 @@ test('MMS journal distinguishes proven READY from ambiguous TRANSPORT_STARTED ac
   const reconcile = journal.slice(journal.indexOf('fun reconcileReadyAfterProcessDeath'));
   assert.doesNotMatch(reconcile, /markSubmissionUnknown\(/,
     'READY must remain a proven pre-transport state after process death');
+});
+
+test('MMS generic journal repair explicitly preserves TRANSPORT_STARTED ambiguity', () => {
+  const store = readFileSync(conversationStorePath, 'utf8');
+  const start = store.indexOf('fun repairJournal(): Int');
+  const end = store.indexOf('\n    private fun transitionMessageBox', start);
+  assert.ok(start >= 0 && end > start, 'MMS repairJournal must have a bounded implementation');
+  const repair = store.slice(start, end);
+
+  assert.match(
+    repair,
+    /MmsProviderJournal\.Phase\.READY,\s*MmsProviderJournal\.Phase\.TRANSPORT_STARTED,\s*MmsProviderJournal\.Phase\.SUBMITTED,\s*MmsProviderJournal\.Phase\.SUBMISSION_UNKNOWN\s*->\s*Unit/s,
+    'generic provider recovery must explicitly preserve transport-start ambiguity'
+  );
+  assert.doesNotMatch(repair, /\belse\s*->/,
+    'MMS recovery phases must remain exhaustively enumerated so new phases cannot compile silently');
 });
