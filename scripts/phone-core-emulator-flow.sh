@@ -11,6 +11,11 @@ FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
 ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
 FLOW_DEVICE_STATE_MUTATED=false
+ORIGINAL_USER_ROTATION=""
+ORIGINAL_ACCELEROMETER_ROTATION=""
+ORIGINAL_WIFI_ON=""
+ORIGINAL_MOBILE_DATA=""
+RESTORE_FAILED=false
 if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
   [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
   echo "ADB command watchdog values must be positive integer seconds." >&2
@@ -25,16 +30,51 @@ adb() {
 }
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
+capture_original_device_state() {
+  ORIGINAL_USER_ROTATION="$(adb shell settings get system user_rotation | tr -d '\r')"
+  ORIGINAL_ACCELEROMETER_ROTATION="$(adb shell settings get system accelerometer_rotation | tr -d '\r')"
+  ORIGINAL_WIFI_ON="$(adb shell settings get global wifi_on | tr -d '\r')"
+  ORIGINAL_MOBILE_DATA="$(adb shell settings get global mobile_data | tr -d '\r')"
+  [[ "$ORIGINAL_USER_ROTATION" =~ ^[0-9]+$ ]]
+  [[ "$ORIGINAL_ACCELEROMETER_ROTATION" =~ ^[01]$ ]]
+  [[ "$ORIGINAL_WIFI_ON" =~ ^[01]$ ]]
+  [[ "$ORIGINAL_MOBILE_DATA" =~ ^[01]$ ]]
+}
+
 restore_device_state() {
   if [[ "$FLOW_DEVICE_STATE_MUTATED" != true ]]; then
     return 0
   fi
-  adb shell settings put system user_rotation 0 >/dev/null 2>&1 || true
-  adb shell settings put system accelerometer_rotation 1 >/dev/null 2>&1 || true
-  adb shell svc wifi enable >/dev/null 2>&1 || true
-  adb shell svc data enable >/dev/null 2>&1 || true
+  RESTORE_FAILED=false
+  if ! adb shell settings put system user_rotation "$ORIGINAL_USER_ROTATION" >/dev/null 2>&1; then
+    RESTORE_FAILED=true
+  fi
+  if ! adb shell settings put system accelerometer_rotation "$ORIGINAL_ACCELEROMETER_ROTATION" >/dev/null 2>&1; then
+    RESTORE_FAILED=true
+  fi
+  if [[ "$ORIGINAL_WIFI_ON" == 1 ]]; then
+    if ! adb shell svc wifi enable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+  else
+    if ! adb shell svc wifi disable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+  fi
+  if [[ "$ORIGINAL_MOBILE_DATA" == 1 ]]; then
+    if ! adb shell svc data enable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+  else
+    if ! adb shell svc data disable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+  fi
+  if [[ "$RESTORE_FAILED" == true ]]; then
+    echo "Failed to restore one or more emulator settings." >&2
+    return 1
+  fi
 }
-trap restore_device_state EXIT
+on_exit() {
+  local status=$?
+  if ! restore_device_state; then
+    status=1
+  fi
+  exit "$status"
+}
+trap on_exit EXIT
 
 role_holders() {
   local full_role="$1"
@@ -357,6 +397,7 @@ run_stability_qualification() {
   local wifi_state=""
   local mobile_state=""
 
+  capture_original_device_state
   FLOW_DEVICE_STATE_MUTATED=true
 
   # Offline is an exercised runtime state, not a label. Both transport controls must accept the

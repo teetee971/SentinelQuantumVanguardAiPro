@@ -95,6 +95,21 @@ test('runtime qualification exercises offline, rotation, kill/restart, and crash
   assert.match(runtimeFlow, /stability-kill-restart/);
 });
 
+test('runtime qualification restores the observed device state and fails closed on cleanup errors', () => {
+  const restore = runtimeFlow.slice(
+    runtimeFlow.indexOf('capture_original_device_state() {'),
+    runtimeFlow.indexOf('\nrole_holders() {')
+  );
+  assert.match(restore, /ORIGINAL_USER_ROTATION/);
+  assert.match(restore, /ORIGINAL_ACCELEROMETER_ROTATION/);
+  assert.match(restore, /ORIGINAL_WIFI_ON/);
+  assert.match(restore, /ORIGINAL_MOBILE_DATA/);
+  assert.doesNotMatch(restore, /\|\| true/);
+  assert.match(restore, /RESTORE_FAILED=true/);
+  assert.match(restore, /status=\$\?/);
+  assert.match(restore, /exit "\$status"/);
+});
+
 test('reboot preparation leaves process termination to the external workflow', () => {
   const source = readFileSync(new URL('../native-android-app/app/src/androidTest/java/com/sentinel/quantum/PhoneCoreSetupRebootPreparationInstrumentationTest.kt', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /executeShellCommand\("am force-stop/);
