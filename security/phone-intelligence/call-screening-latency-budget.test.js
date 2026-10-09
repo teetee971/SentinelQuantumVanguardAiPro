@@ -56,3 +56,12 @@ test('screening latency evidence must distinguish a submitted response from an e
     'latency evidence must record whether Telecom accepted the response call'
   );
 });
+
+test('screening side effects require a confirmed Telecom response submission', () => {
+  const responseIndex = service.indexOf('if (!respondAndLog(callDetails, response.build(), startedAtElapsedMs)) return');
+  const callerIdIndex = service.indexOf('// Caller-ID rendering happens only after the mandatory platform response.');
+  const postResponseWorkerIndex = service.indexOf('POST_RESPONSE_WORKER.execute');
+  assert.ok(responseIndex >= 0, 'failed Telecom response must stop the post-response path');
+  assert.ok(callerIdIndex > responseIndex, 'caller-ID UI must follow confirmed response submission');
+  assert.ok(postResponseWorkerIndex > responseIndex, 'screening evidence must follow confirmed response submission');
+});
