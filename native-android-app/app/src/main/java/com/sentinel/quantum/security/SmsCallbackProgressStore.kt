@@ -68,8 +68,16 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         }
         // The radio transition remains usable even when cleanup/storage fails.
         // The receiver must report that failure and suppress certification proofs.
-        if (!trimToBound(nowMs)) {
+        val trimmed = trimToBound(nowMs)
+        if (!trimmed) {
             onPersistenceFailure()
+            // If corruption has already pushed the store beyond its physical bound, there may be
+            // too few valid rows to evict. A brand-new callback must never make that degraded store
+            // grow further. Roll back only the new ledger row; never erase an existing callback
+            // history entry. The radio outcome is still returned, but persistence stays degraded.
+            if (!rawExists && !rollbackNewEntryIfStillOverCapacity(key)) {
+                onPersistenceFailure()
+            }
         }
         outcome
     }
@@ -153,6 +161,12 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         val editor = preferences.edit()
         removable.take(overflow).forEach { editor.remove(it.first) }
         return editor.commit()
+    }
+
+    private fun rollbackNewEntryIfStillOverCapacity(key: String): Boolean {
+        val size = runCatching { preferences.all.size }.getOrElse { return false }
+        if (size <= MAX_TRACKED) return true
+        return runCatching { preferences.edit().remove(key).commit() }.getOrDefault(false)
     }
 
     private data class Persisted(
