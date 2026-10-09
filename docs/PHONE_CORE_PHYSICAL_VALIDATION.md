@@ -41,6 +41,10 @@ Le `source_sha` signé doit correspondre à l’input `expected_source_sha` du w
 Un manifeste déclaré `PASS` doit avoir `residuals: []` : une divergence restante, même signée,
 reste un verdict fermé `FAIL` jusqu’à sa résolution ou à la production d’une session explicitement
 non-PASS.
+Le champ `metadata.device_model` doit identifier un Galaxy S24+ (`SM-S926*`), avec un niveau API
+Android 34 à 37 ; les fingerprints `generic`, `emulator`, `sdk_gphone`, `goldfish` et `ranchu`
+sont refusés. Une signature valide ne transforme donc pas une preuve Pixel ou émulateur en preuve
+physique Samsung.
 La vérification locale équivalente est :
 
 ```bash

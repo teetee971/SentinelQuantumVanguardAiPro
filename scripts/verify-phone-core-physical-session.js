@@ -14,6 +14,8 @@ const SOURCE_SHA = /^[a-f0-9]{40}$/;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 const STATUSES = new Set(['PASS', 'FAIL', 'INCOMPLETE']);
 const EVIDENCE_REF = /^(.*)#sha256=([a-f0-9]{64})$/;
+const SAMSUNG_S24_PLUS_MODEL = /^SM-S926[A-Z0-9]+$/i;
+const EMULATOR_FINGERPRINT = /(?:^|[/:_-])(generic|emulator|sdk_gphone|goldfish|ranchu)(?:[/:_-]|$)/i;
 export const PHONE_CORE_REQUIRED_SCENARIOS = Object.freeze(
   Array.from({ length: 26 }, (_, index) => `S${String(index + 1).padStart(2, '0')}`)
 );
@@ -237,11 +239,13 @@ function validateManifestShape(session, errors) {
       typeof session.signature !== 'string' || !BASE64.test(session.signature)) add(errors, 'manifest metadata invalid');
   if (isPlainObject(session.metadata) &&
       (typeof session.metadata.device_model !== 'string' || session.metadata.device_model.length < 2 || session.metadata.device_model.length > 128 ||
-       !Number.isInteger(session.metadata.android_sdk) || session.metadata.android_sdk < 24 || session.metadata.android_sdk > 37 ||
+       !SAMSUNG_S24_PLUS_MODEL.test(session.metadata.device_model) ||
+       !Number.isInteger(session.metadata.android_sdk) || session.metadata.android_sdk < 34 || session.metadata.android_sdk > 37 ||
        typeof session.metadata.build_fingerprint !== 'string' || session.metadata.build_fingerprint.length < 2 || session.metadata.build_fingerprint.length > 256 ||
+       EMULATOR_FINGERPRINT.test(session.metadata.build_fingerprint) ||
        !Number.isInteger(session.metadata.sim_slots) || session.metadata.sim_slots < 1 || session.metadata.sim_slots > 2 ||
        typeof session.metadata.operator_profile !== 'string' || session.metadata.operator_profile.length < 1 || session.metadata.operator_profile.length > 128)) {
-    add(errors, 'device metadata invalid');
+    add(errors, 'physical device metadata invalid');
   }
   if (session.status === 'PASS' && Array.isArray(session.residuals) && session.residuals.length > 0) {
     add(errors, 'residuals invalid for PASS');

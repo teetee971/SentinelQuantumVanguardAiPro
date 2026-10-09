@@ -108,6 +108,22 @@ test('rejects an unknown status before accepting the verdict', async t => {
   assert.match(result.errors.join('\n'), /status invalid/);
 });
 
+test('rejects signed evidence that is not a physical Samsung Galaxy S24+', async t => {
+  const fixture = await makeFixture(t, session => {
+    session.metadata.device_model = 'Pixel 8';
+    session.metadata.build_fingerprint = 'google/husky/husky:15/AP4A/generic-keys';
+  });
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /physical device metadata invalid/);
+});
+
 test('rejects traversal, symlink and empty evidence references', async t => {
   const fixture = await makeFixture(t, session => {
     session.evidence.S01.evidence_refs = ['../outside.log'];
