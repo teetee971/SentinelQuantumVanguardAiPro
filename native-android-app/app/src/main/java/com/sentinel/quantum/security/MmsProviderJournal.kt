@@ -164,6 +164,8 @@ internal class MmsProviderJournal(context: Context) {
             val providerId = if (json.isNull("provider_id")) null else json.getLong("provider_id")
             if (providerId != null && providerId <= 0L) return@runCatching null
             val phase = Phase.valueOf(json.getString("phase"))
+            if (phase == Phase.BUILDING && providerId != null) return@runCatching null
+            if (phase != Phase.BUILDING && providerId == null) return@runCatching null
             val updatedAt = json.getLong("updated_at_ms")
             if (updatedAt < 0L) return@runCatching null
             Record(token, transactionId, providerId, phase, updatedAt)

@@ -105,6 +105,14 @@ test('corrupt outgoing MMS transport journal entries fail closed instead of vani
   );
 });
 
+test('MMS transport journal rejects phases whose provider identity is missing', () => {
+  assert.match(
+    journal,
+    /val phase = Phase\.valueOf\(json\.getString\("phase"\)\)[\s\S]*phase != Phase\.BUILDING[\s\S]*providerId == null[\s\S]*return@runCatching null/,
+    'READY/SUBMITTED/terminal states must not be silently skipped without a provider row id'
+  );
+});
+
 test('MMS callback saturation journals transport truth without provider work', () => {
   const fallback = statusReceiver.match(
     /if \(!scheduled\) \{([\s\S]*?)pendingResult\.finish\(\)/
