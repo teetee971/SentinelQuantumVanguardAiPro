@@ -129,6 +129,9 @@ test('runtime stability reports invalid original device state instead of exiting
   assert.match(runtimeFlow, /Invalid original accelerometer rotation state/);
   assert.match(runtimeFlow, /Invalid original Wi-Fi state/);
   assert.match(runtimeFlow, /Invalid original mobile-data state/);
+  assert.match(runtimeFlow, /Failed to read original user rotation state/);
+  assert.match(runtimeFlow, /Failed to read original accelerometer rotation state/);
+  assert.match(runtimeFlow, /Failed to read original Wi-Fi state/);
 });
 
 test('reboot preparation leaves process termination to the external workflow', () => {

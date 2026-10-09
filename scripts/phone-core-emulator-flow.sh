@@ -61,9 +61,18 @@ read_mobile_data_state() {
 
 capture_original_device_state() {
   local mobile_data_reading=""
-  ORIGINAL_USER_ROTATION="$(adb shell settings get system user_rotation | tr -d '\r')"
-  ORIGINAL_ACCELEROMETER_ROTATION="$(adb shell settings get system accelerometer_rotation | tr -d '\r')"
-  ORIGINAL_WIFI_ON="$(adb shell settings get global wifi_on | tr -d '\r')"
+  if ! ORIGINAL_USER_ROTATION="$(adb shell settings get system user_rotation | tr -d '\r')"; then
+    echo "Failed to read original user rotation state." >&2
+    return 1
+  fi
+  if ! ORIGINAL_ACCELEROMETER_ROTATION="$(adb shell settings get system accelerometer_rotation | tr -d '\r')"; then
+    echo "Failed to read original accelerometer rotation state." >&2
+    return 1
+  fi
+  if ! ORIGINAL_WIFI_ON="$(adb shell settings get global wifi_on | tr -d '\r')"; then
+    echo "Failed to read original Wi-Fi state." >&2
+    return 1
+  fi
   if mobile_data_reading="$(read_mobile_data_state)"; then
     :
   elif [[ "$mobile_data_reading" != "UNAVAILABLE unavailable" ]]; then
