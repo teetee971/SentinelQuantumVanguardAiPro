@@ -199,10 +199,10 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         val providerApplied = providerUpdated && runCatching {
             progressStore.markProviderApplied(sendToken, providerMessageId, progress.state)
         }.getOrDefault(false)
-        if (providerUpdated && !providerApplied) {
-            progressPersistenceFailed = true
-        }
-        if (providerApplied && progress.terminal) {
+        // The outgoing-submission ledger protects the radio submission boundary only. Once every
+        // SENT callback has a verdict, delivery reports may continue in the progress store without
+        // occupying admission capacity or blocking a later user-initiated message.
+        if (providerApplied && progress.submissionResolved) {
             SmsOutgoingSubmissionStore(context).remove(sendToken, providerMessageId)
         }
         if (!providerUpdated) {
@@ -286,7 +286,7 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                     if (!applied || !runCatching {
                             store.markProviderApplied(write.sendToken, id, write.outcome.state)
                         }.getOrDefault(false)) retry = true
-                    else if (write.outcome.terminal) {
+                    else if (write.outcome.submissionResolved) {
                         SmsOutgoingSubmissionStore(appContext).remove(write.sendToken, id)
                     }
                 }
@@ -311,4 +311,3 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         }
     }
 }
-
