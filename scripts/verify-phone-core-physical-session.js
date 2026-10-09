@@ -2,6 +2,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { rejectDuplicateJsonKeys } from './strict-json-duplicate-keys.js';
 
 const REQUIRED_CANONICAL_CRITERIA = [
   'incoming_call_connected',
@@ -90,7 +91,9 @@ function parseArgs(argv) {
 
 function readJson(path, label) {
   try {
-    return JSON.parse(fs.readFileSync(path, 'utf8'));
+    const raw = fs.readFileSync(path, 'utf8');
+    rejectDuplicateJsonKeys(raw);
+    return JSON.parse(raw);
   } catch (error) {
     fail(`cannot read ${label}: ${error.message}`);
   }
