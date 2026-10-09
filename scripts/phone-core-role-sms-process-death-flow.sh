@@ -93,27 +93,51 @@ run_phase() {
   fi
 }
 
-# Establish an isolated authorized state. The fixture stops at PROVIDER_READY and never enters
-# SmsManager, so this qualification cannot emit a carrier SMS.
 adb shell cmd role add-role-holder --user 0 "$ROLE" "$PACKAGE"
 wait_role_state held role-sms-initial-held.txt
 adb shell pm grant "$PACKAGE" android.permission.SEND_SMS
 adb shell pm grant "$PACKAGE" android.permission.READ_PHONE_STATE
 adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS allow
 adb shell appops set --user 0 "$PACKAGE" SEND_SMS allow
+adb logcat -c
 
-run_phase prepareProviderReadyFixture prepare
+PREPARE_EVIDENCE="$OUTPUT_DIR/role-sms-prepare-instrumentation.txt"
+PREPARE_STATUS_FILE="$OUTPUT_DIR/role-sms-prepare-command-status.txt"
+(
+  set +e
+  set -o pipefail
+  adb shell am instrument -w -r \
+    -e class "$CLASS#prepareProviderReadyAndAwaitRoleLoss" \
+    -e sentinel_role_phase prepare \
+    "$RUNNER" | tr -d '\r' | tee "$PREPARE_EVIDENCE"
+  status=${PIPESTATUS[0]}
+  printf '%s\n' "$status" > "$PREPARE_STATUS_FILE"
+  exit "$status"
+) &
+PREPARE_HOST_PID=$!
 
-# Keep a real target process alive so role loss semantics are observable independently of JUnit.
-adb shell am force-stop "$PACKAGE" || true
-adb shell am start -W -n "$PACKAGE/.MainActivity" > "$OUTPUT_DIR/role-sms-process-before-removal-start.txt"
-for _ in $(seq 1 30); do
-  BEFORE_PID="$(adb shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r' | xargs || true)"
-  [[ -n "$BEFORE_PID" ]] && break
-  sleep 0.2
+FIXTURE_READY=0
+for _ in $(seq 1 100); do
+  if adb logcat -d -v brief -s SentinelRoleLoss:I '*:S' 2>/dev/null | grep -Fq 'SMS_FIXTURE_READY'; then
+    FIXTURE_READY=1
+    break
+  fi
+  if ! kill -0 "$PREPARE_HOST_PID" 2>/dev/null; then
+    echo "ROLE_SMS prepare instrumentation exited before publishing its durable fixture."
+    cat "$PREPARE_EVIDENCE" 2>/dev/null || true
+    exit 1
+  fi
+  sleep 0.1
 done
-if [[ -z "${BEFORE_PID:-}" ]]; then
-  echo "Sentinel process was not alive before ROLE_SMS removal."
+if [[ "$FIXTURE_READY" != "1" ]]; then
+  echo "ROLE_SMS prepare fixture never became ready."
+  exit 1
+fi
+printf 'fixture_ready=1\n' > "$OUTPUT_DIR/role-sms-fixture-ready.txt"
+
+BEFORE_PID="$(adb shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r' | xargs || true)"
+if [[ -z "$BEFORE_PID" ]]; then
+  echo "Sentinel fixture process was not alive before ROLE_SMS removal."
   exit 1
 fi
 printf '%s\n' "$BEFORE_PID" > "$OUTPUT_DIR/role-sms-pid-before-removal.txt"
@@ -132,13 +156,28 @@ for _ in $(seq 1 40); do
 done
 printf '%s\n' "${AFTER_PID:-}" > "$OUTPUT_DIR/role-sms-pid-after-removal.txt"
 if [[ "$PROCESS_INVALIDATED" != "1" ]]; then
-  echo "ROLE_SMS removal did not invalidate the pre-removal Sentinel process."
+  echo "ROLE_SMS removal did not invalidate the prepared Sentinel process."
   exit 1
 fi
 printf 'process_invalidated=1\n' > "$OUTPUT_DIR/role-sms-process-death-proof.txt"
 
-# Fresh instrumentation while the role is absent proves that the pre-transport journal survived
-# the killed process and was not falsely advanced to TRANSPORT_STARTED.
+# The process running the prepare fixture is expected to terminate because Android invalidated it.
+for _ in $(seq 1 50); do
+  if ! kill -0 "$PREPARE_HOST_PID" 2>/dev/null; then break; fi
+  sleep 0.1
+done
+if kill -0 "$PREPARE_HOST_PID" 2>/dev/null; then
+  echo "Host instrumentation pipeline stayed alive after target process invalidation."
+  kill "$PREPARE_HOST_PID" >/dev/null 2>&1 || true
+  exit 1
+fi
+set +e
+wait "$PREPARE_HOST_PID"
+PREPARE_WAIT_STATUS=$?
+set -e
+printf '%s\n' "$PREPARE_WAIT_STATUS" > "$OUTPUT_DIR/role-sms-prepare-wait-status.txt"
+
+# Fresh instrumentation while the role is absent proves the durable pre-transport state survived.
 run_phase roleLossPreservesProviderReadyFixture role_absent
 wait_role_state absent role-sms-still-absent-after-proof.txt
 
@@ -149,8 +188,6 @@ adb shell pm grant "$PACKAGE" android.permission.READ_PHONE_STATE
 adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS allow
 adb shell appops set --user 0 "$PACKAGE" SEND_SMS allow
 
-# A third process observes startup recovery after role restoration. The product worker must turn the
-# pending provider row into FAILED and clear only the proven pre-transport journal record.
 run_phase recoverAfterRoleRestoration recover
 
 cat > "$OUTPUT_DIR/role-sms-process-death-summary.txt" <<EOF
