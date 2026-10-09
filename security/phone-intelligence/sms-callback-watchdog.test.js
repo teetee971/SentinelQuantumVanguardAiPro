@@ -74,3 +74,12 @@ test('SMS callback processing uses a bounded queue while repair remains schedule
   assert.match(statusReceiver, /ThreadPoolExecutor\.AbortPolicy\(\)/);
   assert.match(statusReceiver, /REPAIR_SCHEDULER\.schedule/);
 });
+
+test('unexpected SMS callback worker failures trigger provider repair before finishing', () => {
+  const worker = statusReceiver.match(
+    /CALLBACK_EXECUTOR\.execute \{([\s\S]*?)pendingResult\.finish\(\)/
+  );
+  assert.ok(worker, 'SMS callback worker must finish PendingResult in one bounded block');
+  assert.match(worker[1], /catch \(_: Exception\)/);
+  assert.match(worker[1], /queueProviderRepair\(appContext\)/);
+});

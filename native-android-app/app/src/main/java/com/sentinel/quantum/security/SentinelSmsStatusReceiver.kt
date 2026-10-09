@@ -74,6 +74,13 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                         successful = successful,
                         androidResultCode = androidResultCode
                     )
+                } catch (_: Exception) {
+                    queueProviderRepair(appContext)
+                    LocalLogger(appContext).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "SmsStatus",
+                        "Échec inattendu du callback SMS; réparation provider planifiée"
+                    )
                 } finally {
                     pendingResult.finish()
                 }
