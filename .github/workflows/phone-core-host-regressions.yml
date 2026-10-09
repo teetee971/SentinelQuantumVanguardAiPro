@@ -56,5 +56,8 @@ jobs:
         with:
           node-version-file: .node-version
 
+      - name: Prove SEND_SMS package snapshot oracles fail closed
+        run: node --test scripts/phone-core-permission-snapshot.test.js
+
       - name: Run Phone Core product-truth regressions
         run: npm run test:android-product-truth
