@@ -11,7 +11,6 @@ import android.telephony.SubscriptionManager
 import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import java.io.FileInputStream
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -118,10 +117,8 @@ class SmsPreTransportRevocationInstrumentationTest {
 
     private fun shell(command: String): String {
         val descriptor: ParcelFileDescriptor = instrumentation.uiAutomation.executeShellCommand(command)
-        return FileInputStream(descriptor.fileDescriptor).bufferedReader().use { reader ->
-            val output = reader.readText()
-            descriptor.close()
-            output
-        }
+        return ParcelFileDescriptor.AutoCloseInputStream(descriptor)
+            .bufferedReader()
+            .use { it.readText() }
     }
 }
