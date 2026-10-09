@@ -10,6 +10,7 @@ FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
 ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+FLOW_DEVICE_STATE_MUTATED=false
 if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
   [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
   echo "ADB command watchdog values must be positive integer seconds." >&2
@@ -23,6 +24,17 @@ adb() {
     adb "$@"
 }
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+
+restore_device_state() {
+  if [[ "$FLOW_DEVICE_STATE_MUTATED" != true ]]; then
+    return 0
+  fi
+  adb shell settings put system user_rotation 0 >/dev/null 2>&1 || true
+  adb shell settings put system accelerometer_rotation 1 >/dev/null 2>&1 || true
+  adb shell svc wifi enable >/dev/null 2>&1 || true
+  adb shell svc data enable >/dev/null 2>&1 || true
+}
+trap restore_device_state EXIT
 
 role_holders() {
   local full_role="$1"
@@ -330,6 +342,68 @@ PYPREFIX
 }
 capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
+assert_no_crash_or_anr() {
+  local evidence="$1"
+  adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence"
+  if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$FLOW_OUTPUT_DIR/$evidence"; then
+    echo "Crash/ANR detected during emulator stability qualification; see $evidence." >&2
+    return 1
+  fi
+}
+
+run_stability_qualification() {
+  local pid_before=""
+  local pid_after=""
+  local wifi_state=""
+  local mobile_state=""
+
+  FLOW_DEVICE_STATE_MUTATED=true
+
+  # Offline is an exercised runtime state, not a label. Both transport controls must accept the
+  # transition and their resulting platform settings are archived before the app is relaunched.
+  adb shell svc wifi disable
+  adb shell svc data disable
+  wifi_state="$(adb shell settings get global wifi_on | tr -d '\r')"
+  mobile_state="$(adb shell settings get global mobile_data | tr -d '\r')"
+  printf 'wifi_on=%s\nmobile_data=%s\n' "$wifi_state" "$mobile_state" > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
+  [[ "$wifi_state" == "0" ]]
+  [[ "$mobile_state" == "0" ]]
+  adb shell am force-stop "$FLOW_PACKAGE"
+  adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-offline-launch.txt"
+  wait_text "phone_core_tab_0"
+  capture stability-offline
+  assert_no_crash_or_anr stability-offline-logcat.txt
+
+  # Lock a real display rotation, observe the platform state, and re-read the app UI after the
+  # configuration change. The original orientation is restored by the EXIT trap.
+  adb shell settings put system accelerometer_rotation 0
+  adb shell settings put system user_rotation 1
+  local rotation_state="$(adb shell settings get system user_rotation | tr -d '\r')"
+  printf 'user_rotation=%s\n' "$rotation_state" > "$FLOW_OUTPUT_DIR/stability-rotation-state.txt"
+  [[ "$rotation_state" == "1" ]]
+  wait_text "phone_core_tab_0"
+  capture stability-rotation
+  assert_no_crash_or_anr stability-rotation-logcat.txt
+
+  # Force process death outside the app and require a fresh process to render the same surface.
+  pid_before="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+  [[ "$pid_before" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]
+  adb shell kill -9 $pid_before
+  for _ in $(seq 1 15); do
+    pid_after="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+    [[ -z "$pid_after" ]] && break
+    sleep 0.5
+  done
+  [[ -z "$pid_after" ]]
+  adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-kill-restart-launch.txt"
+  wait_text "phone_core_tab_0"
+  pid_after="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+  [[ "$pid_after" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]
+  printf 'pid_before=%s\npid_after=%s\n' "$pid_before" "$pid_after" > "$FLOW_OUTPUT_DIR/stability-kill-restart.txt"
+  capture stability-kill-restart
+  assert_no_crash_or_anr stability-kill-restart-logcat.txt
+}
+
 # This is the first application launch after the workflow's fresh APK install. Exercise a second
 # process launch as well so cold_install_and_relaunch is a real per-lane proof, not report metadata.
 adb shell am force-stop "$FLOW_PACKAGE"
@@ -342,6 +416,7 @@ adb shell am force-stop "$FLOW_PACKAGE"
 adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "phone_core_tab_0"
 capture 01b-dialer-relaunch
+run_stability_qualification
 
 adb shell input keyevent KEYCODE_SLEEP
 adb emu gsm call "$FLOW_NUMBER"

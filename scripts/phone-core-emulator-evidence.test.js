@@ -84,6 +84,17 @@ test('every synthetic runtime script bounds each ADB operation independently', (
   }
 });
 
+test('runtime qualification exercises offline, rotation, kill/restart, and crash/ANR evidence', () => {
+  assert.match(runtimeFlow, /run_stability_qualification\(\)/);
+  assert.match(runtimeFlow, /svc wifi disable/);
+  assert.match(runtimeFlow, /user_rotation/);
+  assert.match(runtimeFlow, /kill -9/);
+  assert.match(runtimeFlow, /FATAL EXCEPTION:|ANR in com\\\.sentinel\\\.quantum/);
+  assert.match(runtimeFlow, /stability-offline/);
+  assert.match(runtimeFlow, /stability-rotation/);
+  assert.match(runtimeFlow, /stability-kill-restart/);
+});
+
 test('reboot preparation leaves process termination to the external workflow', () => {
   const source = readFileSync(new URL('../native-android-app/app/src/androidTest/java/com/sentinel/quantum/PhoneCoreSetupRebootPreparationInstrumentationTest.kt', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /executeShellCommand\("am force-stop/);

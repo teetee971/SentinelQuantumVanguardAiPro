@@ -400,6 +400,15 @@ for (const marker of [
   'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
   'wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"',
   'adb emu sms send',
+  'run_stability_qualification()',
+  'svc wifi disable',
+  'settings put system user_rotation 1',
+  'kill -9',
+  'stability-offline',
+  'stability-rotation',
+  'stability-kill-restart',
+  'FATAL EXCEPTION:',
+  'ANR in com\\.sentinel\\.quantum',
   'Synthetic Telecom callback/calls, cold relaunch, and inline SMS reply verified'
 ]) requireText(runtimeFlow, marker, 'Phone Core emulator runtime flow');
 
