@@ -301,6 +301,15 @@ class SmsComposeActivity : ComponentActivity() {
                         }
                     }
                 }
+                fun launchMmsAttachmentPicker() {
+                    try {
+                        mmsAttachmentLauncher.launch("image/*")
+                    } catch (_: ActivityNotFoundException) {
+                        status = "Android n’a pas pu ouvrir le sélecteur d’images MMS. Vérifiez les applications système, puis réessayez."
+                    } catch (_: RuntimeException) {
+                        status = "Android a refusé l’ouverture du sélecteur d’images MMS. Vérifiez les applications système, puis réessayez."
+                    }
+                }
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
                 var mmsItems by remember { mutableStateOf(emptyList<MmsLocalInbox.Item>()) }
                 LaunchedEffect(mmsDirectory) {
@@ -764,7 +773,7 @@ class SmsComposeActivity : ComponentActivity() {
                             )
                             if (mmsComposeMode) {
                                 OutlinedButton(
-                                    onClick = { mmsAttachmentLauncher.launch("image/*") },
+                                    onClick = { launchMmsAttachmentPicker() },
                                     modifier = Modifier.fillMaxWidth(),
                                     enabled = selectedMmsAttachments.size < MmsSendEligibilityPolicy.MAX_ATTACHMENTS
                                 ) {
@@ -1013,8 +1022,14 @@ class SmsComposeActivity : ComponentActivity() {
                                                                     putExtra(Intent.EXTRA_STREAM, exported.uri)
                                                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                                                 }
-                                                                startActivity(Intent.createChooser(share, "Exporter les messages"))
-                                                                status = "Export préparé : ${exported.messageCount} messages"
+                                                                try {
+                                                                    startActivity(Intent.createChooser(share, "Exporter les messages"))
+                                                                    status = "Export préparé : ${exported.messageCount} messages"
+                                                                } catch (_: ActivityNotFoundException) {
+                                                                    status = "Impossible d’ouvrir le partage des messages sur cet appareil."
+                                                                } catch (_: RuntimeException) {
+                                                                    status = "Android a refusé l’ouverture du partage des messages."
+                                                                }
                                                             }
                                                         }
                                                     },
