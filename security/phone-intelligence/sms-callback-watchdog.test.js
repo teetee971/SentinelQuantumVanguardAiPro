@@ -72,7 +72,7 @@ test('SMS watchdog retries when ledger enumeration fails', () => {
   assert.match(worker, /staleSubmissions\.forEach/);
 });
 
-test('corrupt or unprunable SMS submission ledger state cannot be reported as accepted', () => {
+test('corrupt SMS submission ledger state cannot be reported as accepted', () => {
   const ledger = fs.readFileSync(ledgerPath, 'utf8');
   let depth = 0;
   for (const character of ledger) {
@@ -91,12 +91,16 @@ test('corrupt or unprunable SMS submission ledger state cannot be reported as ac
     /if \(!validateEntries\(\)\) return@synchronized false/,
     'new transport must fail closed when the existing ledger is corrupt'
   );
+  assert.doesNotMatch(
+    ledger,
+    /prune\(nowMs\)|RETENTION_MS/,
+    'unresolved submissions must not age out before watchdog reconciliation'
+  );
   assert.match(
     ledger,
-    /if \(!prune\(nowMs\)\) return@synchronized false/,
-    'a failed retention cleanup must block a new registration'
+    /removed only after callback\/provider reconciliation/,
+    'the ledger must document why unresolved entries remain fail-closed'
   );
-  assert.match(ledger, /private fun prune\(nowMs: Long\): Boolean/);
 });
 
 test('corrupt SMS callback progress cannot be treated as an empty provider queue', () => {
