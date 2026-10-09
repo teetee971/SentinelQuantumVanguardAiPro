@@ -5,12 +5,14 @@ import android.content.Context
 import android.os.Build
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
+import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,7 +31,7 @@ class SmsRoleLossRecoveryInstrumentationTest {
     private val fixture = context.getSharedPreferences(FIXTURE_PREFS, Context.MODE_PRIVATE)
 
     @Test
-    fun prepareProviderReadyFixture() {
+    fun prepareProviderReadyAndAwaitRoleLoss() {
         requireExternalPhase(PHASE_PREPARE)
         assumeTrue("ROLE_SMS process-death qualification starts on Android 10", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
         assertTrue("Sentinel must hold ROLE_SMS while preparing the fixture", SentinelSmsSender(context).holdsSmsRole())
@@ -64,6 +66,15 @@ class SmsRoleLossRecoveryInstrumentationTest {
                 .putLong(KEY_PROVIDER_ID, providerMessageId)
                 .commit()
         )
+
+        Log.i(READY_LOG_TAG, READY_LOG_MARKER)
+        repeat(600) {
+            if (!SentinelSmsSender(context).holdsSmsRole()) {
+                fail("Instrumentation survived ROLE_SMS loss; host process-death proof is invalid")
+            }
+            Thread.sleep(100)
+        }
+        fail("Host did not remove ROLE_SMS while the prepared fixture process was alive")
     }
 
     @Test
@@ -152,5 +163,7 @@ class SmsRoleLossRecoveryInstrumentationTest {
         private const val FIXTURE_PREFS = "sentinel_sms_role_loss_fixture_v1"
         private const val KEY_TOKEN = "token"
         private const val KEY_PROVIDER_ID = "provider_id"
+        private const val READY_LOG_TAG = "SentinelRoleLoss"
+        private const val READY_LOG_MARKER = "SMS_FIXTURE_READY"
     }
 }
