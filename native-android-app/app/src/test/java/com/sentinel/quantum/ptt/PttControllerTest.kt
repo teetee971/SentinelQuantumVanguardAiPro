@@ -154,6 +154,26 @@ class PttControllerTest {
         assertFalse(controller.pressToTalk())
     }
 
+    @Test fun telecomCallInterruptsTransmissionAndNeverAutoResumes() {
+        val transport = FakePttTransport()
+        val controller = PttController(transport)
+        controller.connect()
+        transport.emit(PttTransport.Event.Connected)
+        assertTrue(controller.pressToTalk())
+
+        controller.onTelecomCallPresenceChanged(true)
+
+        assertEquals(PttState.DISCONNECTED, controller.state)
+        assertFalse(transport.transmitting)
+        assertEquals("telecom_call_active", controller.lastFailure)
+        assertFalse(controller.pressToTalk())
+
+        controller.onTelecomCallPresenceChanged(false)
+
+        assertEquals(PttState.DISCONNECTED, controller.state)
+        assertFalse(controller.pressToTalk())
+    }
+
     private class FakePttTransport : PttTransport {
         private var listener: ((PttTransport.Event) -> Unit)? = null
         private val registrations = mutableListOf<(PttTransport.Event) -> Unit>()
