@@ -13,10 +13,20 @@ class IncomingSmsRecoveryWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
-        IncomingSmsDeliveryStore.pendingIds(applicationContext.filesDir).forEach { id ->
-            runCatching { IncomingSmsDeliveryWorker.schedule(applicationContext, id) }
+        val pendingIds = runCatching {
+            IncomingSmsDeliveryStore.pendingIds(applicationContext.filesDir)
+        }.getOrElse {
+            return Result.retry()
         }
-        return Result.success()
+        var schedulingFailed = false
+        pendingIds.forEach { id ->
+            if (runCatching {
+                    IncomingSmsDeliveryWorker.schedule(applicationContext, id)
+                }.isFailure) {
+                schedulingFailed = true
+            }
+        }
+        return if (schedulingFailed) Result.retry() else Result.success()
     }
 
     companion object {

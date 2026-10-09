@@ -100,3 +100,13 @@ test('startup recovery itself runs off the Application main thread', () => {
   assert.match(recovery, /IncomingSmsDeliveryStore\.pendingIds\(applicationContext\.filesDir\)/);
   assert.match(recovery, /OneTimeWorkRequestBuilder<IncomingSmsRecoveryWorker>/);
 });
+
+test('startup recovery retries when a durable projection cannot be scheduled', () => {
+  const doWork = recovery.match(/override fun doWork\(\): Result \{([\s\S]*?)\n    \}/);
+  assert.ok(doWork, 'SMS startup recovery must expose an explicit doWork boundary');
+  assert.match(doWork[1], /val pendingIds = runCatching \{/);
+  assert.match(doWork[1], /getOrElse \{[\s\S]*return Result\.retry\(\)[\s\S]*\}/);
+  assert.match(doWork[1], /var schedulingFailed = false/);
+  assert.match(doWork[1], /if \(runCatching \{[\s\S]*IncomingSmsDeliveryWorker\.schedule\([\s\S]*\}\.isFailure\)\s*\{[\s\S]*schedulingFailed = true/);
+  assert.match(doWork[1], /return if \(schedulingFailed\) Result\.retry\(\) else Result\.success\(\)/);
+});
