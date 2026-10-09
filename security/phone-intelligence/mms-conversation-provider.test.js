@@ -6,6 +6,10 @@ const store = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt',
   'utf8'
 );
+const journal = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsProviderJournal.kt',
+  'utf8'
+);
 
 test('conversation store merges canonical SMS and MMS provider state by thread', () => {
   assert.match(store, /Telephony\.Sms\.CONTENT_URI/);
@@ -33,4 +37,12 @@ test('MMS sent state is never projected as delivered and export remains explicit
   assert.match(store, /MESSAGE_BOX_SENT[\s\S]*MESSAGE_TYPE_SENT[\s\S]*STATUS_NONE/);
   assert.match(store, /fun exportRecentMessages[\s\S]*recentSmsMessages\(bounded\)/);
   assert.match(store, /\.put\("transport", "sms"\)/);
+});
+
+test('incoming MMS provider journal serializes transitions across store instances', () => {
+  assert.match(journal, /private inline fun <T> withJournalLock/);
+  assert.match(journal, /private val LOCK = Any\(\)/);
+  assert.match(journal, /fun begin\([\s\S]*\): Boolean = withJournalLock/);
+  assert.match(journal, /fun markReady\([\s\S]*\): Boolean = withJournalLock/);
+  assert.match(journal, /fun all\(\): List<Record> = withJournalLock/);
 });

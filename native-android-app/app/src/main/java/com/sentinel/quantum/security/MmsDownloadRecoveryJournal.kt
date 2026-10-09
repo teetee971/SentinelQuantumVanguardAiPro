@@ -21,50 +21,47 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    @Synchronized
     fun record(
         fileName: String,
         subscriptionId: Int,
         requestedAtMs: Long = System.currentTimeMillis()
-    ): Boolean {
-        if (!validRecordFields(fileName, subscriptionId, requestedAtMs)) return false
+    ): Boolean = withJournalLock {
+        if (!validRecordFields(fileName, subscriptionId, requestedAtMs)) return@withJournalLock false
 
         // Malformed/stale metadata must not consume the bounded recovery budget forever. Sanitize
         // first; if SharedPreferences cannot commit the cleanup, fail closed rather than pretending
         // capacity became available.
-        if (!sanitizeInvalidEntries()) return false
+        if (!sanitizeInvalidEntries()) return@withJournalLock false
 
         val recordKey = key(fileName)
         val existing = preferences.contains(recordKey)
         val activeRecordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
         if (!canAcceptRecord(existing = existing, activeRecordCount = activeRecordCount)) {
-            return false
+            return@withJournalLock false
         }
         val encoded = JSONObject()
             .put("schema", SCHEMA_VERSION)
             .put("subscription_id", subscriptionId)
             .put("requested_at_ms", requestedAtMs)
             .toString()
-        return preferences.edit().putString(recordKey, encoded).commit()
+        preferences.edit().putString(recordKey, encoded).commit()
     }
 
-    @Synchronized
-    fun read(fileName: String): Record? {
-        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null
-        return decode(fileName, preferences.all[key(fileName)])
+    fun read(fileName: String): Record? = withJournalLock {
+        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return@withJournalLock null
+        decode(fileName, preferences.all[key(fileName)])
     }
 
-    @Synchronized
-    fun remove(fileName: String): Boolean =
+    fun remove(fileName: String): Boolean = withJournalLock {
         MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
             preferences.edit().remove(key(fileName)).commit()
+    }
 
-    @Synchronized
-    fun all(): List<Record> {
+    fun all(): List<Record> = withJournalLock {
         if (!sanitizeInvalidEntries()) {
             throw IllegalStateException("MMS download recovery journal cleanup failed")
         }
-        return preferences.all.asSequence()
+        preferences.all.asSequence()
             .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
             .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value) }
             .sortedBy { it.requestedAtMs }
@@ -111,12 +108,15 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
 
     private fun key(fileName: String) = KEY_PREFIX + fileName
 
+    private inline fun <T> withJournalLock(block: () -> T): T = synchronized(LOCK) { block() }
+
     companion object {
         internal const val PREFS_NAME = "sentinel_mms_download_recovery_v1"
         internal const val KEY_PREFIX = "record."
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 512
         internal const val MAX_RECORDS = 64
+        private val LOCK = Any()
 
         internal fun canAcceptRecord(existing: Boolean, activeRecordCount: Int): Boolean =
             activeRecordCount >= 0 && (existing || activeRecordCount < MAX_RECORDS)

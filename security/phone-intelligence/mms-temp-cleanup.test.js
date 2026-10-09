@@ -309,7 +309,7 @@ test('journal sanitization failures remain retryable instead of masquerading as 
   ]) {
     assert.match(
       source,
-      /fun all\(\): List<Record> \{[\s\S]*if \(!sanitizeInvalidEntries\(\)\)[\s\S]*throw/,
+      /fun all\(\): List<Record> (?:\{|= withJournalLock)[\s\S]*if \(!sanitizeInvalidEntries\(\)\)[\s\S]*throw/,
       `${name} must fail closed when invalid-entry cleanup cannot commit`
     );
   }
@@ -323,6 +323,18 @@ test('journal sanitization failures remain retryable instead of masquerading as 
     /val recovered = runCatching \{[\s\S]*MmsDownloadRecoveryWorker\.schedulePendingNow\(applicationContext\)[\s\S]*\}\.getOrDefault\(false\)/,
     'download startup recovery must convert journal failure into worker retry'
   );
+});
+
+test('MMS recovery journals serialize records across receiver and worker instances', () => {
+  for (const [name, source] of [
+    ['download', downloadRecoveryJournal],
+    ['WAP', wapJournal]
+  ]) {
+    assert.match(source, /private inline fun <T> withJournalLock/, `${name} journal needs a shared lock`);
+    assert.match(source, /private val LOCK = Any\(\)/, `${name} journal needs a process lock`);
+    assert.match(source, /fun record\([\s\S]*\): Boolean = withJournalLock/, `${name} record must be locked`);
+    assert.match(source, /fun all\(\): List<Record> = withJournalLock/, `${name} reads must be locked`);
+  }
 });
 
 test('WAP recovery bounds orphan staging without deleting journaled payloads', () => {

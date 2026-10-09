@@ -21,23 +21,22 @@ internal class IncomingMmsWapIngressJournal(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    @Synchronized
     fun record(
         digestHex: String,
         subscriptionId: Int,
         slotIndex: Int?,
         receivedAtMs: Long = System.currentTimeMillis()
-    ): Boolean {
+    ): Boolean = withJournalLock {
         val normalizedDigest = digestHex.lowercase()
         if (!validRecordFields(normalizedDigest, subscriptionId, slotIndex, receivedAtMs)) {
-            return false
+            return@withJournalLock false
         }
-        if (!sanitizeInvalidEntries()) return false
+        if (!sanitizeInvalidEntries()) return@withJournalLock false
 
         val recordKey = key(normalizedDigest)
         val existing = preferences.contains(recordKey)
         val activeRecordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
-        if (!canAcceptRecord(existing, activeRecordCount)) return false
+        if (!canAcceptRecord(existing, activeRecordCount)) return@withJournalLock false
 
         val encoded = JSONObject()
             .put("schema", SCHEMA_VERSION)
@@ -45,22 +44,20 @@ internal class IncomingMmsWapIngressJournal(context: Context) {
             .put("slot_index", slotIndex ?: INVALID_SLOT_INDEX)
             .put("received_at_ms", receivedAtMs)
             .toString()
-        return preferences.edit().putString(recordKey, encoded).commit()
+        preferences.edit().putString(recordKey, encoded).commit()
     }
 
-    @Synchronized
-    fun remove(digestHex: String): Boolean {
+    fun remove(digestHex: String): Boolean = withJournalLock {
         val normalizedDigest = digestHex.lowercase()
-        return IncomingMmsIdentity.persistedFileName(normalizedDigest) != null &&
+        IncomingMmsIdentity.persistedFileName(normalizedDigest) != null &&
             preferences.edit().remove(key(normalizedDigest)).commit()
     }
 
-    @Synchronized
-    fun all(): List<Record> {
+    fun all(): List<Record> = withJournalLock {
         if (!sanitizeInvalidEntries()) {
             throw IllegalStateException("MMS WAP ingress journal cleanup failed")
         }
-        return preferences.all.asSequence()
+        preferences.all.asSequence()
             .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
             .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value) }
             .sortedBy { it.receivedAtMs }
@@ -110,6 +107,8 @@ internal class IncomingMmsWapIngressJournal(context: Context) {
 
     private fun key(digestHex: String) = KEY_PREFIX + digestHex
 
+    private inline fun <T> withJournalLock(block: () -> T): T = synchronized(LOCK) { block() }
+
     companion object {
         internal const val PREFS_NAME = "sentinel_mms_wap_ingress_v1"
         internal const val KEY_PREFIX = "record."
@@ -117,6 +116,7 @@ internal class IncomingMmsWapIngressJournal(context: Context) {
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 512
         private const val INVALID_SLOT_INDEX = -1
+        private val LOCK = Any()
 
         internal fun canAcceptRecord(existing: Boolean, activeRecordCount: Int): Boolean =
             activeRecordCount >= 0 && (existing || activeRecordCount < MAX_RECORDS)
