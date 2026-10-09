@@ -34,6 +34,7 @@ class PttSessionControllerTest {
         val transport = FakeTransport()
         val controller = PttSessionController(transport)
 
+        // PTT is fail-closed: connection alone must never publish microphone audio.
         assertTrue(controller.connect().isSuccess)
         assertEquals(PttSessionController.State.READY, controller.state())
         assertTrue(transport.connected)
