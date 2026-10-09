@@ -18,6 +18,7 @@ class PttController(
 
     // A callback from an earlier connection must not control a later session.
     private var listenerGeneration = 0L
+    private var telecomCallPresent = false
 
     init {
         runCatching { registerListener() }
@@ -35,6 +36,10 @@ class PttController(
     }
 
     fun connect() {
+        if (telecomCallPresent) {
+            lastFailure = "telecom_call_active"
+            return
+        }
         if (state != PttState.DISCONNECTED && state != PttState.ERROR) return
         lastFailure = null
         state = PttState.CONNECTING
@@ -71,8 +76,32 @@ class PttController(
         }
     }
 
+    /**
+     * Telecom always has priority over PTT. A live call tears down any PTT session and
+     * blocks reconnect until Telecom reports no calls. Clearing the call never reconnects
+     * automatically; a new user action is required.
+     */
+    fun onTelecomCallPresenceChanged(present: Boolean) {
+        telecomCallPresent = present
+        if (!present) return
+
+        if (state in setOf(
+                PttState.CONNECTING,
+                PttState.READY,
+                PttState.TRANSMITTING,
+                PttState.RECEIVING
+            )
+        ) {
+            disconnect()
+        }
+
+        if (state == PttState.DISCONNECTED) {
+            lastFailure = "telecom_call_active"
+        }
+    }
+
     fun pressToTalk(): Boolean {
-        if (state != PttState.READY) return false
+        if (telecomCallPresent || state != PttState.READY) return false
 
         val started = runCatching { transport.startTransmitting() }.getOrDefault(false)
         if (!started) {
@@ -104,7 +133,7 @@ class PttController(
             PttTransport.Event.Connected -> {
                 // A late success from an already cancelled connection attempt must never
                 // resurrect a READY session. READY is valid only while CONNECTING.
-                if (state != PttState.CONNECTING) return
+                if (state != PttState.CONNECTING || telecomCallPresent) return
                 lastFailure = null
                 state = PttState.READY
             }
