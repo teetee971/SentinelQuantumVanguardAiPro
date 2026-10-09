@@ -4,6 +4,8 @@ import test from 'node:test';
 
 const codeqlWorkflow = readFileSync('.github/workflows/codeql-analysis.yml', 'utf8');
 const instrumentationWorkflow = readFileSync('.github/workflows/android-instrumentation.yml', 'utf8');
+const emulationWorkflow = readFileSync('.github/workflows/android-emulation-qualification.yml', 'utf8');
+const nativeBuildWorkflow = readFileSync('.github/workflows/build-native-android.yml', 'utf8');
 
 function requiredWorkflowBlock(workflow) {
   const start = workflow.indexOf('REQUIRED_WORKFLOWS=(');
@@ -17,6 +19,24 @@ test('required CodeQL Android status waits for emulator and comprehensive merge 
   const block = requiredWorkflowBlock(codeqlWorkflow);
   assert.match(block, /"android-instrumentation\.yml"/);
   assert.match(block, /"production-merge-gate\.yml"/);
+});
+
+test('every emulator APK install has an independent bounded ADB watchdog', () => {
+  for (const [name, workflow] of [
+    ['legacy instrumentation', instrumentationWorkflow],
+    ['Phone Core emulation qualification', emulationWorkflow],
+    ['native Android build smoke', nativeBuildWorkflow]
+  ]) {
+    const installLines = workflow.split('\n').filter((line) => line.includes('adb install -r'));
+    assert.ok(installLines.length > 0, `${name} must install an APK`);
+    for (const line of installLines) {
+      assert.match(
+        line,
+        /timeout --signal=INT --kill-after=30s 180s adb install -r/,
+        `${name} contains an unbounded APK install: ${line.trim()}`
+      );
+    }
+  }
 });
 
 test('Android emulator qualification covers minimum, current and newest runtime lanes', () => {

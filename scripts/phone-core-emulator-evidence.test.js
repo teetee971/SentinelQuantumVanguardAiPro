@@ -20,10 +20,13 @@ const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.
 
 test('runtime setup installs after UTP cleanup, then rejects failed or unconfirmed data/log resets', () => {
   const runtime = workflow.split('- name: Run emulator application/runtime qualification\n')[1];
-  const start = runtime.indexOf('          adb install -r');
+  const start = runtime.indexOf('          timeout --signal=INT --kill-after=30s 180s adb install -r');
   const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
   assert.ok(start >= 0 && end > start);
-  const reset = runtime.slice(start, end);
+  const reset = runtime
+    .slice(start, end)
+    // The fixture stubs adb directly; the watchdog itself is covered by the workflow policy test.
+    .replace('timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"', 'adb install -r "$APK_PATH"');
   for (const [installStatus, dataStatus, dataOutput, logStatus, expected] of [
     [0, 0, 'Success', 0, 0], [1, 0, 'Success', 0, 1], [0, 1, 'Success', 0, 1], [0, 0, 'Failed', 0, 1], [0, 0, 'Success', 1, 1]
   ]) {

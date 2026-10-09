@@ -273,8 +273,8 @@ jobs:
             test -s "$APP_APK"
             test -s "$TEST_APK"
 
-            adb install -r "$APP_APK"
-            adb install -r "$TEST_APK"
+            timeout --signal=INT --kill-after=30s 180s adb install -r "$APP_APK"
+            timeout --signal=INT --kill-after=30s 180s adb install -r "$TEST_APK"
 
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
