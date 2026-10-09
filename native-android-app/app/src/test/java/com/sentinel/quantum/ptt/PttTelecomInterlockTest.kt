@@ -44,6 +44,12 @@ class PttTelecomInterlockTest {
 
         assertTrue(interlock.detach(first))
         assertTrue(interlock.attach(second))
+        assertEquals(1, secondTransport.disconnectCount)
+        assertEquals(PttState.DISCONNECTING, second.state)
+        assertEquals("telecom_call_active", second.lastFailure)
+
+        secondTransport.emit(PttTransport.Event.Disconnected())
+
         assertEquals(PttState.DISCONNECTED, second.state)
         assertEquals("telecom_call_active", second.lastFailure)
     }
