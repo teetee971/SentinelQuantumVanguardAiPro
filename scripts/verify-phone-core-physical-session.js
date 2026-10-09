@@ -226,13 +226,11 @@ function validateEvidenceMap(map, ids, label) {
   for (const [entryId, entry] of Object.entries(map)) {
     const entryLabel = `${label}.${entryId}`;
     validateEvidenceEntryShape(entry, entryLabel);
-    if (entry.status === 'PASS') {
-      for (const ref of entry.evidence_refs) {
-        if (/(^|[\/_.-])(emulator|synthetic|mock)([\/_.-]|$)/i.test(ref)) {
-          fail(entryLabel + ' references non-physical evidence');
-        }
-        verifyEvidenceRef(ref, entryLabel);
+    for (const ref of entry.evidence_refs) {
+      if (entry.status === 'PASS' && /(^|[\/_.-])(emulator|synthetic|mock)([\/_.-]|$)/i.test(ref)) {
+        fail(entryLabel + ' references non-physical evidence');
       }
+      verifyEvidenceRef(ref, entryLabel);
     }
   }
 
