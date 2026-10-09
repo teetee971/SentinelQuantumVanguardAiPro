@@ -202,7 +202,7 @@ jobs:
               if [[ "$INSTALL_STATUS" -ne 0 ]] || ! grep -q '^Success$' <<<"$(printf '%s\n' "$INSTALL_OUTPUT" | tr -d '\r')"; then
                 echo "Android API 24 ${label} APK install failed or timed out (status ${INSTALL_STATUS})."
                 adb shell dumpsys package com.sentinel.quantum 2>/dev/null | head -n 160 || true
-                exit "${INSTALL_STATUS:-1}"
+                exit 1
               fi
             }
 
