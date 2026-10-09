@@ -28,14 +28,19 @@ class PhonePrivateTimelineStore(context: Context) {
             event.copy(provenance = provenance),
             nowMs
         ) ?: return@synchronized false
-        val next = PhonePrivateTimeline.summarize(readInternal() + clean, nowMs).events
+        val stored = readInternal() ?: return@synchronized false
+        val next = PhonePrivateTimeline.summarize(stored + clean, nowMs).events
         write(next)
     }
 
     fun read(nowMs: Long = System.currentTimeMillis()): PhonePrivateTimeline.Summary =
         synchronized(LOCK) {
+            val stored = readInternal() ?: return@synchronized PhonePrivateTimeline.Summary(
+                events = emptyList(),
+                coordinatedCallSms = false
+            )
             PhonePrivateTimeline.summarize(
-                readInternal().mapNotNull { PhonePrivateTimeline.sanitize(it, nowMs) },
+                stored.mapNotNull { PhonePrivateTimeline.sanitize(it, nowMs) },
                 nowMs
             )
         }
@@ -44,27 +49,14 @@ class PhonePrivateTimelineStore(context: Context) {
         prefs.edit().remove(KEY).commit()
     }
 
-    private fun readInternal(): List<PhonePrivateTimeline.Event> = runCatching {
-        val raw = prefs.getString(KEY, null) ?: return emptyList()
-        val array = JSONArray(raw)
-        buildList {
-            for (i in 0 until array.length()) {
-                val o = array.optJSONObject(i) ?: continue
-                val kind = runCatching {
-                    PhonePrivateTimeline.Kind.valueOf(o.optString("kind"))
-                }.getOrNull() ?: continue
-                add(
-                    PhonePrivateTimeline.Event(
-                        kind = kind,
-                        timestampMs = o.optLong("timestampMs", -1L),
-                        direction = o.optString("direction"),
-                        signal = if (o.isNull("signal")) null else o.optString("signal"),
-                        provenance = readProvenance(o.optJSONObject("provenance"))
-                    )
-                )
-            }
-        }
-    }.getOrDefault(emptyList())
+    private fun readInternal(): List<PhonePrivateTimeline.Event>? {
+        val raw = try {
+            prefs.getString(KEY, null)
+        } catch (_: Exception) {
+            return null
+        } ?: return emptyList()
+        return decodeStoredEvents(raw)
+    }
 
     private fun write(events: List<PhonePrivateTimeline.Event>): Boolean {
         val array = JSONArray()
@@ -81,21 +73,43 @@ class PhonePrivateTimelineStore(context: Context) {
         return prefs.edit().putString(KEY, array.toString()).commit()
     }
 
-    private fun readProvenance(o: JSONObject?): PhoneCoreCertificationProvenance.Scope? {
-        if (o == null) return null
-        return PhoneCoreCertificationProvenance.normalize(PhoneCoreCertificationProvenance.Scope(
-            installationId = o.optString("installationId"), versionCode = o.optLong("versionCode", -1L),
-            versionName = o.optString("versionName"), lastUpdateTimeMs = o.optLong("lastUpdateTimeMs", -1L),
-            sessionId = o.optString("sessionId")
-        ))
-    }
-
     private fun writeProvenance(s: PhoneCoreCertificationProvenance.Scope): JSONObject = JSONObject()
         .put("installationId", s.installationId).put("versionCode", s.versionCode)
         .put("versionName", s.versionName).put("lastUpdateTimeMs", s.lastUpdateTimeMs)
         .put("sessionId", s.sessionId)
 
     companion object {
+        /** Returns null for a present but unreadable timeline so append cannot erase its history. */
+        internal fun decodeStoredEvents(raw: String): List<PhonePrivateTimeline.Event>? = runCatching {
+            val array = JSONArray(raw)
+            buildList {
+                for (i in 0 until array.length()) {
+                    val o = array.optJSONObject(i) ?: continue
+                    val kind = runCatching {
+                        PhonePrivateTimeline.Kind.valueOf(o.optString("kind"))
+                    }.getOrNull() ?: continue
+                    add(
+                        PhonePrivateTimeline.Event(
+                            kind = kind,
+                            timestampMs = o.optLong("timestampMs", -1L),
+                            direction = o.optString("direction"),
+                            signal = if (o.isNull("signal")) null else o.optString("signal"),
+                            provenance = readProvenance(o.optJSONObject("provenance"))
+                        )
+                    )
+                }
+            }
+        }.getOrNull()
+
+        private fun readProvenance(o: JSONObject?): PhoneCoreCertificationProvenance.Scope? {
+            if (o == null) return null
+            return PhoneCoreCertificationProvenance.normalize(PhoneCoreCertificationProvenance.Scope(
+                installationId = o.optString("installationId"), versionCode = o.optLong("versionCode", -1L),
+                versionName = o.optString("versionName"), lastUpdateTimeMs = o.optLong("lastUpdateTimeMs", -1L),
+                sessionId = o.optString("sessionId")
+            ))
+        }
+
         private val LOCK = Any()
         private const val PREFS = "phone_private_timeline"
         private const val KEY = "events"
