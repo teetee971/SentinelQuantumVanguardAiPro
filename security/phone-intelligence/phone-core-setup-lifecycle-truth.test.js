@@ -96,3 +96,16 @@ test('setup retry action launches the guarded step instead of ignoring a failed 
     'retry must not silently ignore a failed preference clear'
   );
 });
+
+test('setup completion persistence failures stay visible instead of looping silently', () => {
+  assert.match(
+    activation,
+    /PhoneCoreSetupWizardStore\.Step\.COMPLETE ->[\s\S]*if \(!setupWizard\.markCompleted\(\)\)[\s\S]*setupPersistenceError = true/,
+    'the explicit completion retry must surface a failed durable completion write'
+  );
+  assert.match(
+    activation,
+    /if \(setupStep == PhoneCoreSetupWizardStore\.Step\.COMPLETE\) \{[\s\S]*if \(!setupWizard\.markCompleted\(\)\)[\s\S]*setupPersistenceError = true/,
+    'automatic completion reconciliation must not swallow a failed commit'
+  );
+});

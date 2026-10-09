@@ -369,14 +369,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        PhoneCoreSetupWizardStore.Step.COMPLETE -> setupWizard.markCompleted()
+                        PhoneCoreSetupWizardStore.Step.COMPLETE -> {
+                            if (!setupWizard.markCompleted()) setupPersistenceError = true
+                        }
                     }
                 }
 
                 LaunchedEffect(firstRunSetup, setupTargetKey, attemptedSetupTargetKey) {
                     if (!firstRunSetup) return@LaunchedEffect
                     if (setupStep == PhoneCoreSetupWizardStore.Step.COMPLETE) {
-                        setupWizard.markCompleted()
+                        if (!setupWizard.markCompleted()) setupPersistenceError = true
                     } else if (
                         PhoneCoreSetupWizardStore.shouldAutoLaunch(
                             setupTargetKey,
