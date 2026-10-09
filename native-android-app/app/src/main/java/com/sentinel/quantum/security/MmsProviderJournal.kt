@@ -122,6 +122,7 @@ internal class MmsProviderJournal(context: Context) {
         if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return false
         val current = read(token) ?: return false
         if (current.providerMessageId != null && current.providerMessageId != providerMessageId) return false
+        if (current.phase == Phase.RESULT_SENT || current.phase == Phase.RESULT_FAILED) return false
         return write(current.copy(providerMessageId = providerMessageId, phase = phase, updatedAtMs = nowMs))
     }
 

@@ -62,6 +62,18 @@ test('late MMS callbacks cannot overwrite a timed-out or terminal journal outcom
   assert.match(store, /MESSAGE_BOX_FAILED/);
 });
 
+test('submission bookkeeping cannot overwrite a callback result that won the race', () => {
+  const transitionStart = journal.indexOf('private fun transition(');
+  const transitionEnd = journal.indexOf('\n    private fun write', transitionStart);
+  assert.ok(transitionStart >= 0 && transitionEnd > transitionStart);
+  const transition = journal.slice(transitionStart, transitionEnd);
+  assert.match(
+    transition,
+    /if \(current\.phase == Phase\.RESULT_SENT \|\| current\.phase == Phase\.RESULT_FAILED\) return false/
+  );
+  assert.match(sender, /providerStore\.markSubmitted\(staged\.token, providerMessageId\)/);
+});
+
 test('MMS callback saturation journals transport truth without provider work', () => {
   const fallback = statusReceiver.match(
     /if \(!scheduled\) \{([\s\S]*?)pendingResult\.finish\(\)/
