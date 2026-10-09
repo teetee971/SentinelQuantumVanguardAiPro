@@ -109,6 +109,23 @@ class SmsCallbackProgressStoreTest {
         assertFalse(preferences.values.containsKey("42:101"))
     }
 
+    @Test fun alreadyOverCapacityCorruptionCannotGrowOnNewCallback() {
+        val preferences = Preferences(emptySet())
+        repeat(140) { index -> preferences.values["corrupt:$index"] = "corrupt" }
+        val store = SmsCallbackProgressStore(preferences.preferences)
+        var storageFailure = false
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L, onPersistenceFailure = { storageFailure = true }
+        )!!
+
+        assertTrue(outcome.allSent)
+        assertTrue(storageFailure)
+        assertEquals(140, preferences.values.size)
+        assertFalse(preferences.values.containsKey("42:101"))
+    }
+
     private fun verifyTransitionSurvives(preferences: Preferences) {
         val store = SmsCallbackProgressStore(preferences.preferences)
         var storageFailure = false
