@@ -66,7 +66,10 @@ const hasBoundedCallbackExecutor = (source) =>
 const hasBoundedIngressExecutor = (source) =>
   source.includes('ThreadPoolExecutor(') &&
   source.includes('ArrayBlockingQueue<Runnable>') &&
-  source.includes('ThreadPoolExecutor.CallerRunsPolicy()');
+  source.includes('ThreadPoolExecutor.AbortPolicy()') &&
+  source.includes('captureAndScheduleAfterSaturation') &&
+  source.includes('IncomingMmsWapIngressJournal') &&
+  source.includes('IncomingMmsWapIngressRecoveryWorker');
 
 if (declaredSmsRolePermissions.length > 0) {
   const smsPolicy = fs.readFileSync(
@@ -176,7 +179,7 @@ if (declaredSmsRolePermissions.length > 0) {
        !manifest.includes('android.permission.BROADCAST_WAP_PUSH') ||
        !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
        !manifest.includes('application/vnd.wap.mms-message'))) {
-    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path with bounded normal off-main processing and caller backpressure.');
+    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path with bounded normal off-main processing and durable saturation capture.');
   }
   const privateMmsDownloadReceiver = /<receiver\b(?=[^>]*android:name="\.security\.SentinelMmsDownloadReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
   const capturesMmsResultBeforeAsync =

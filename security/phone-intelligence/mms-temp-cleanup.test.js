@@ -30,6 +30,22 @@ const deliverReceiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt',
   'utf8'
 );
+const wapJournal = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsWapIngressJournal.kt',
+  'utf8'
+);
+const wapStore = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsWapIngressStore.kt',
+  'utf8'
+);
+const wapRecoveryWorker = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsWapIngressRecoveryWorker.kt',
+  'utf8'
+);
+const application = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelApplication.kt',
+  'utf8'
+);
 const privateStore = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsPrivateStore.kt',
   'utf8'
@@ -189,11 +205,32 @@ test('secondary prune uses the same final recovery lifecycle instead of raw-unli
   assert.match(downloadCoordinator, /!isValidStagedFileName\(it\.name\)/);
 });
 
-test('MMS ingress applies caller-runs backpressure while callbacks reject optional overload', () => {
+test('MMS WAP saturation durably stages the PDU and defers provider work', () => {
   assert.match(deliverReceiver, /ThreadPoolExecutor\(/, 'WAP_PUSH_DELIVER must use a bounded executor');
   assert.match(deliverReceiver, /ArrayBlockingQueue< Runnable >|ArrayBlockingQueue<Runnable>/);
-  assert.match(deliverReceiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
-  assert.doesNotMatch(deliverReceiver, /ThreadPoolExecutor\.AbortPolicy\(\)/);
+  assert.match(deliverReceiver, /ThreadPoolExecutor\.AbortPolicy\(\)/);
+  assert.doesNotMatch(deliverReceiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
+  assert.match(deliverReceiver, /captureAndScheduleAfterSaturation/);
+  assert.match(deliverReceiver, /IncomingMmsWapIngressStore\.persist/);
+  assert.match(deliverReceiver, /IncomingMmsWapIngressJournal\(context\)\.record/);
+  assert.match(deliverReceiver, /IncomingMmsWapIngressRecoveryWorker\.schedule/);
+  const fallback = deliverReceiver.match(/captureAndScheduleAfterSaturation[\s\S]*?\n    \}/);
+  assert.ok(fallback, 'WAP saturation must have a bounded durable fallback');
+  assert.doesNotMatch(fallback[0], /MmsDownloadCoordinator\.request/);
+  assert.doesNotMatch(fallback[0], /IncomingMmsConversationStore/);
+  assert.match(wapStore, /MAX_STORED_WAP = 64/);
+  assert.match(wapStore, /stream\.fd\.sync\(\)/);
+  assert.match(wapStore, /IncomingMmsIdentity\.sha256Hex/);
+  assert.match(wapJournal, /MAX_RECORDS = 64/);
+  assert.match(wapJournal, /commit\(\)/);
+  assert.match(wapRecoveryWorker, /val journal = IncomingMmsWapIngressJournal\(applicationContext\)[\s\S]*journal\.all\(\)/);
+  assert.match(wapRecoveryWorker, /IncomingMmsWapIngressStore\.read/);
+  assert.match(wapRecoveryWorker, /IncomingMmsWapIngressStore\.delete/);
+  assert.match(wapRecoveryWorker, /MAX_RETRY_AGE_MS = 24L \* 60L \* 60L \* 1000L/);
+  assert.match(wapRecoveryWorker, /nowMs - record\.receivedAtMs/);
+  assert.match(wapRecoveryWorker, /journal\.remove\(record\.digestHex\)/);
+  assert.match(wapRecoveryWorker, /Result\.retry\(\)/);
+  assert.match(application, /IncomingMmsWapIngressRecoveryWorker\.schedule\(this\)/);
 
   for (const [name, source] of [
     ['download callback', downloadReceiver],

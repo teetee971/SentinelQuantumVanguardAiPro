@@ -3,6 +3,7 @@ package com.sentinel.quantum
 import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.IncomingSmsRecoveryWorker
+import com.sentinel.quantum.security.IncomingMmsWapIngressRecoveryWorker
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.MmsSubmissionWatchdogWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
@@ -27,6 +28,7 @@ class SentinelApplication : Application() {
         SentinelSmsStatusReceiver.queueProviderRepair(this)
         runCatching { SmsSubmissionWatchdogWorker.schedule(this) }
         runCatching { IncomingSmsRecoveryWorker.schedule(this) }
+        runCatching { IncomingMmsWapIngressRecoveryWorker.schedule(this) }
         runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(this) }
         runCatching { MmsSubmissionWatchdogWorker.schedule(this) }
 
