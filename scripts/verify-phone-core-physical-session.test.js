@@ -267,3 +267,12 @@ test('certificate content is read through the same bounded verifier boundary', (
   assert.match(source, /function readUtf8Bounded\(filePath, maxBytes\)/);
   assert.doesNotMatch(source, /fs\.readFileSync\(file, 'utf8'\)/);
 });
+
+test('CLI manifest and trust-root reads stay inside bounded verifier limits', () => {
+  const source = readFileSync(new URL('./verify-phone-core-physical-session.js', import.meta.url), 'utf8');
+  assert.match(source, /const MAX_TRUST_BYTES =/);
+  assert.match(source, /JSON\.parse\(readUtf8Bounded\(manifestPath, MAX_MANIFEST_BYTES\)\)/);
+  assert.match(source, /JSON\.parse\(readUtf8Bounded\(trustPath, MAX_TRUST_BYTES\)\)/);
+  assert.doesNotMatch(source, /JSON\.parse\(fs\.readFileSync\(manifestPath/);
+  assert.doesNotMatch(source, /JSON\.parse\(fs\.readFileSync\(trustPath/);
+});

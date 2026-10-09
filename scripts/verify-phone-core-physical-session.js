@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const MAX_MANIFEST_BYTES = 256 * 1024;
+const MAX_TRUST_BYTES = 256 * 1024;
 const MAX_EVIDENCE_BYTES = 16 * 1024 * 1024;
 const MAX_APK_BYTES = 512 * 1024 * 1024;
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -301,8 +302,8 @@ function main() {
   }
   try {
     if (fs.statSync(manifestPath).size > MAX_MANIFEST_BYTES) throw new Error('manifest too large');
-    const session = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    const trust = JSON.parse(fs.readFileSync(trustPath, 'utf8'));
+    const session = JSON.parse(readUtf8Bounded(manifestPath, MAX_MANIFEST_BYTES));
+    const trust = JSON.parse(readUtf8Bounded(trustPath, MAX_TRUST_BYTES));
     const result = verifyPhoneCorePhysicalSession({
       session,
       baseDir: path.dirname(path.resolve(manifestPath)),
