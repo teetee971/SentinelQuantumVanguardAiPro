@@ -154,7 +154,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
                 var allowWizardAutoAdvance by remember { mutableStateOf(false) }
-                var setupPersistenceError by remember { mutableStateOf(false) }
+                var setupPersistenceError by remember {
+                    mutableStateOf(intent?.getBooleanExtra(EXTRA_SETUP_PERSISTENCE_ERROR, false) == true)
+                }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
                     setupPermissionInFlight = null
@@ -859,6 +861,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_FIRST_RUN_SETUP = "com.sentinel.quantum.extra.FIRST_RUN_PHONE_CORE_SETUP"
+        const val EXTRA_SETUP_PERSISTENCE_ERROR = "com.sentinel.quantum.extra.PHONE_CORE_SETUP_PERSISTENCE_ERROR"
     }
 
     private fun readState(smsDiagnostics: SmsActivationDiagnostics): RuntimeState {

@@ -96,13 +96,21 @@ class MainActivity : ComponentActivity() {
     ) {
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
         val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
-        if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)) {
+        val persisted = if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)) {
             wizard.markCompleted()
         } else {
             // Returning from the user-visible setup without satisfying every Android fact is a
             // deliberate defer, never success. A process death while setup is open produces no
             // callback, leaving IN_PROGRESS so the next cold launch can resume automatically.
             wizard.markDeferred()
+        }
+        if (!persisted) {
+            // Do not leave the customer with a silent lifecycle write failure after the Android
+            // surface closes. Reopen the same setup surface with an explicit retryable error.
+            startActivity(Intent(this, PhoneCoreActivationActivity::class.java).apply {
+                putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+                putExtra(PhoneCoreActivationActivity.EXTRA_SETUP_PERSISTENCE_ERROR, true)
+            })
         }
     }
 

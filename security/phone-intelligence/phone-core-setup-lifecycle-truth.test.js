@@ -69,7 +69,7 @@ test('lifecycle transitions are durable and invalidate legacy completion before 
 test('setup target persistence failures remain visible and retryable', () => {
   assert.match(
     activation,
-    /var setupPersistenceError by remember \{ mutableStateOf\(false\) \}/,
+    /var setupPersistenceError by remember \{[\s\S]*EXTRA_SETUP_PERSISTENCE_ERROR/,
     'the activation surface must retain a user-visible persistence failure state'
   );
   assert.match(
@@ -107,5 +107,22 @@ test('setup completion persistence failures stay visible instead of looping sile
     activation,
     /if \(setupStep == PhoneCoreSetupWizardStore\.Step\.COMPLETE\) \{[\s\S]*if \(!setupWizard\.markCompleted\(\)\)[\s\S]*setupPersistenceError = true/,
     'automatic completion reconciliation must not swallow a failed commit'
+  );
+});
+
+test('returning from setup does not swallow lifecycle persistence failures', () => {
+  const callbackStart = main.indexOf('private val phoneCoreSetupLauncher');
+  const callbackEnd = main.indexOf('\n\n    override fun onCreate', callbackStart);
+  assert.ok(callbackStart >= 0 && callbackEnd > callbackStart, 'setup result callback must remain inspectable');
+  const callback = main.slice(callbackStart, callbackEnd);
+  assert.match(
+    callback,
+    /val persisted = if \(PhoneCoreSetupWizardStore\.softwarePrerequisitesReady\(runtimeFacts\)\) \{[\s\S]*?wizard\.markCompleted\(\)[\s\S]*?\} else \{[\s\S]*?wizard\.markDeferred\(\)/,
+    'the callback must retain the durable lifecycle result'
+  );
+  assert.match(
+    callback,
+    /if \(!persisted\)[\s\S]*PhoneCoreActivationActivity\.EXTRA_SETUP_PERSISTENCE_ERROR/,
+    'a failed callback write must return to a visible retry surface'
   );
 });
