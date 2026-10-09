@@ -86,7 +86,8 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         sourceIntent: Intent
     ) {
         if (!holdsSmsRole(context)) return
-        val persistence = IncomingMmsWapIngressStore.persist(context.filesDir, data)
+        val journal = IncomingMmsWapIngressJournal(context)
+        val persistence = IncomingMmsWapIngressStore.persist(context.filesDir, data, journal)
         val digest = persistence.digestHex
         if (persistence.state == IncomingMmsWapIngressStore.State.FAILED || digest == null) {
             LocalLogger(context).logAsync(
@@ -97,7 +98,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             return
         }
 
-        val journaled = IncomingMmsWapIngressJournal(context).record(
+        val journaled = journal.record(
             digestHex = digest,
             subscriptionId = MmsSubscriptionResolver.explicitSubscriptionIdForRecovery(sourceIntent)
                 ?: SubscriptionManager.INVALID_SUBSCRIPTION_ID,

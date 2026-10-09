@@ -18,6 +18,10 @@ class IncomingMmsWapIngressRecoveryWorker(
         val journal = IncomingMmsWapIngressJournal(applicationContext)
         var retry = false
         val nowMs = System.currentTimeMillis()
+        val orphanCleanupSucceeded = runCatching {
+            IncomingMmsWapIngressStore.pruneOrphans(applicationContext.filesDir, journal, nowMs)
+        }.getOrDefault(false)
+        if (!orphanCleanupSucceeded) return Result.retry()
         val records = runCatching { journal.all() }.getOrElse { return Result.retry() }
         records.forEach { record ->
             if (nowMs >= record.receivedAtMs &&

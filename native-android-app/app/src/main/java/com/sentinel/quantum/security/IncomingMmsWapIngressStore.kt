@@ -24,7 +24,11 @@ internal object IncomingMmsWapIngressStore {
     )
 
     @Synchronized
-    fun persist(filesDir: File, data: ByteArray): Result {
+    fun persist(
+        filesDir: File,
+        data: ByteArray,
+        journal: IncomingMmsWapIngressJournal? = null
+    ): Result {
         if (data.isEmpty() || data.size > MAX_PDU_BYTES) return failed()
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return failed()
         val targetName = "$digest.$PDU_EXTENSION"
@@ -49,7 +53,16 @@ internal object IncomingMmsWapIngressStore {
             ?.filter { it.isFile && it.extension == PDU_EXTENSION }
             ?.sortedWith(compareByDescending<File> { it.lastModified() }.thenBy { it.name })
             .orEmpty()
-        for (old in completed.drop(MAX_STORED_WAP - 1)) {
+        val requiredEvictions = (completed.size - (MAX_STORED_WAP - 1)).coerceAtLeast(0)
+        val evictable = completed.filter { file ->
+            val digest = file.name.removeSuffix(".$PDU_EXTENSION")
+            IncomingMmsIdentity.persistedFileName(digest) == null ||
+                (journal?.let { ingressJournal ->
+                    runCatching { ingressJournal.read(digest) == null }.getOrDefault(false)
+                } ?: true)
+        }
+        if (evictable.size < requiredEvictions) return failed()
+        for (old in evictable.takeLast(requiredEvictions)) {
             if (!runCatching { old.delete() }.getOrDefault(false)) return failed()
         }
         if (partial.exists() && !runCatching { partial.delete() }.getOrDefault(false)) {
@@ -99,6 +112,34 @@ internal object IncomingMmsWapIngressStore {
         val partial = safeChild(directory, "$normalizedDigest.$PART_EXTENSION") ?: return false
         return (!target.exists() || runCatching { target.delete() }.getOrDefault(false)) &&
             (!partial.exists() || runCatching { partial.delete() }.getOrDefault(false))
+    }
+
+    @Synchronized
+    internal fun pruneOrphans(
+        filesDir: File,
+        journal: IncomingMmsWapIngressJournal,
+        nowMs: Long = System.currentTimeMillis()
+    ): Boolean {
+        if (nowMs < 0L) return false
+        val directory = directory(filesDir, create = false) ?: return true
+        val cutoffMs = if (nowMs > MAX_ORPHAN_AGE_MS) nowMs - MAX_ORPHAN_AGE_MS else 0L
+        var success = true
+        directory.listFiles().orEmpty()
+            .filter { file ->
+                file.isFile &&
+                    (file.name.endsWith(".$PDU_EXTENSION") || file.name.endsWith(".$PART_EXTENSION")) &&
+                    file.lastModified() in 1L..cutoffMs
+            }
+            .forEach { file ->
+                val digest = file.name.substringBeforeLast('.')
+                val journaled = IncomingMmsIdentity.persistedFileName(digest)?.let {
+                    runCatching { journal.read(digest) != null }.getOrDefault(true)
+                } ?: false
+                if (journaled) return@forEach
+                val removed = runCatching { file.delete() }.getOrDefault(false)
+                if (!removed && file.exists()) success = false
+            }
+        return success
     }
 
     private fun directory(filesDir: File, create: Boolean = true): File? {
@@ -152,4 +193,5 @@ internal object IncomingMmsWapIngressStore {
     private const val PART_EXTENSION = "part"
     private const val MAX_PDU_BYTES = 512 * 1024
     internal const val MAX_STORED_WAP = 64
+    internal const val MAX_ORPHAN_AGE_MS = 24L * 60L * 60L * 1000L
 }

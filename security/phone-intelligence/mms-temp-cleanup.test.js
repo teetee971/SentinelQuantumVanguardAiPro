@@ -250,7 +250,7 @@ test('MMS WAP saturation durably stages the PDU and defers provider work', () =>
   assert.doesNotMatch(deliverReceiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
   assert.match(deliverReceiver, /captureAndScheduleRecovery/);
   assert.match(deliverReceiver, /IncomingMmsWapIngressStore\.persist/);
-  assert.match(deliverReceiver, /IncomingMmsWapIngressJournal\(context\)\.record/);
+  assert.match(deliverReceiver, /journal\.record/);
   assert.match(deliverReceiver, /IncomingMmsWapIngressRecoveryWorker\.schedule/);
   const fallback = deliverReceiver.match(/captureAndScheduleRecovery[\s\S]*?\n    \}/);
   assert.ok(fallback, 'WAP saturation must have a bounded durable fallback');
@@ -323,6 +323,19 @@ test('journal sanitization failures remain retryable instead of masquerading as 
     /val recovered = runCatching \{[\s\S]*MmsDownloadRecoveryWorker\.schedulePendingNow\(applicationContext\)[\s\S]*\}\.getOrDefault\(false\)/,
     'download startup recovery must convert journal failure into worker retry'
   );
+});
+
+test('WAP recovery bounds orphan staging without deleting journaled payloads', () => {
+  assert.match(wapStore, /internal fun pruneOrphans\(/);
+  assert.match(wapStore, /MAX_ORPHAN_AGE_MS = 24L \* 60L \* 60L \* 1000L/);
+  assert.match(wapStore, /journal\.read\(digest\) != null/);
+  assert.match(wapStore, /journal: IncomingMmsWapIngressJournal\? = null/);
+  assert.match(wapStore, /val evictable = completed\.filter/);
+  assert.match(wapStore, /if \(evictable\.size < requiredEvictions\) return failed\(\)/);
+  assert.match(deliverReceiver, /val journal = IncomingMmsWapIngressJournal\(context\)/);
+  assert.match(deliverReceiver, /IncomingMmsWapIngressStore\.persist\(context\.filesDir, data, journal\)/);
+  assert.match(wapRecoveryWorker, /IncomingMmsWapIngressStore\.pruneOrphans\([\s\S]*applicationContext\.filesDir/);
+  assert.match(wapRecoveryWorker, /if \(!orphanCleanupSucceeded\) return Result\.retry\(\)/);
 });
 
 test('unexpected WAP worker failures preserve the PDU for durable recovery', () => {
