@@ -7,6 +7,7 @@ import test from 'node:test';
 
 const coordinator = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/SmsActivationStateCoordinator.kt', 'utf8');
 const composer = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt', 'utf8');
+const smsSender = readFileSync('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt', 'utf8');
 const flow = readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
 const revocationFlow = readFileSync('scripts/phone-core-emulator-revocation-flow.sh', 'utf8');
 const answerBridge = readFileSync('scripts/phone-core-emulator-api37-answer-bridge.py', 'utf8');
@@ -61,6 +62,19 @@ test('SMS and MMS composer submissions share an idempotent in-flight gate', () =
   assert.match(composer, /var submissionInFlight by remember \{ mutableStateOf\(false\) \}/);
   assert.match(composer, /&& !submissionInFlight/);
   assert.match(composer, /permit\.release\(\)/);
+});
+
+test('SMS sender revalidates authorization after callback preparation and immediately before telephony submission', () => {
+  const callbackBoundary = smsSender.indexOf('PreparedCallbacks(sendToken, sent, delivered)');
+  const revalidation = smsSender.indexOf('revalidateBeforeSubmission(prepared.subscriptionId)', callbackBoundary);
+  const textSend = smsSender.indexOf('prepared.manager.sendTextMessage(', callbackBoundary);
+  const multipartSend = smsSender.indexOf('prepared.manager.sendMultipartTextMessage(', callbackBoundary);
+
+  assert.ok(callbackBoundary >= 0, 'callback preparation boundary must exist');
+  assert.ok(revalidation > callbackBoundary, 'authorization must be revalidated after callbacks are prepared');
+  assert.ok(textSend > revalidation, 'single-part SmsManager submission must occur after revalidation');
+  assert.ok(multipartSend > revalidation, 'multipart SmsManager submission must occur after revalidation');
+  assert.match(smsSender.slice(revalidation, textSend), /markOutgoingFailed\(persistedMessageId\)/);
 });
 
 test('incoming answer bridge must prove its log stream is armed before the answer tap is allowed', () => {
