@@ -3,6 +3,7 @@ package com.sentinel.quantum.security
 import android.content.SharedPreferences
 import java.lang.reflect.Proxy
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -89,6 +90,23 @@ class SmsCallbackProgressStoreTest {
         assertNull(outcome)
         assertTrue(storageFailure)
         assertEquals("corrupt", preferences.values["42:101"])
+    }
+
+    @Test fun corruptEntriesCannotMakeBoundedStoreGrowPastCapacity() {
+        val preferences = Preferences(emptySet())
+        repeat(128) { index -> preferences.values["corrupt:$index"] = "corrupt" }
+        val store = SmsCallbackProgressStore(preferences.preferences)
+        var storageFailure = false
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L, onPersistenceFailure = { storageFailure = true }
+        )!!
+
+        assertTrue(outcome.allSent)
+        assertTrue(storageFailure)
+        assertEquals(128, preferences.values.size)
+        assertFalse(preferences.values.containsKey("42:101"))
     }
 
     private fun verifyTransitionSurvives(preferences: Preferences) {
