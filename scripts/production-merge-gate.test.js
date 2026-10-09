@@ -30,12 +30,14 @@ test('docs-only changes require universal gates without unrelated Android or web
   expectExcludes(required, SECURITY_FUZZ_WORKFLOWS);
 });
 
-test('Android-only changes require Phone Core emulation, APK, AAB and legacy instrumentation', () => {
+test('Android-only changes require emulator, build, instrumentation and SMS/MMS role-loss gates', () => {
   const required = requiredWorkflowsForPaths([
     'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt'
   ]);
   expectIncludes(required, [...UNIVERSAL_WORKFLOWS, ...ANDROID_WORKFLOWS]);
   assert.ok(required.includes('android-emulation-qualification.yml'));
+  assert.ok(required.includes('phone-core-role-sms-process-death.yml'));
+  assert.ok(required.includes('phone-core-role-mms-process-death.yml'));
   expectExcludes(required, WEB_WORKFLOWS);
 });
 
@@ -69,6 +71,14 @@ test('workflow changes for Android or web require the affected gate family', () 
   );
   expectIncludes(
     requiredWorkflowsForPaths(['.github/workflows/android-emulation-qualification.yml']),
+    ANDROID_WORKFLOWS
+  );
+  expectIncludes(
+    requiredWorkflowsForPaths(['.github/workflows/phone-core-role-sms-process-death.yml']),
+    ANDROID_WORKFLOWS
+  );
+  expectIncludes(
+    requiredWorkflowsForPaths(['.github/workflows/phone-core-role-mms-process-death.yml']),
     ANDROID_WORKFLOWS
   );
   expectIncludes(

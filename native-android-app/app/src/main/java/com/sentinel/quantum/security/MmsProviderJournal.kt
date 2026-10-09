@@ -84,9 +84,9 @@ internal class MmsProviderJournal(context: Context) {
     )
 
     /**
-     * READY is now a durable proof that the transport boundary has not been entered. Process death
-     * must preserve that fact so recovery can safely compensate it once ROLE_SMS is held again.
-     * TRANSPORT_STARTED remains ambiguous and is intentionally left untouched.
+     * READY in schema v2 is durable proof that the transport boundary has not been entered.
+     * Legacy schema-v1 READY is normalized to SUBMISSION_UNKNOWN while decoding because v1 had no
+     * TRANSPORT_STARTED phase and explicitly treated READY as transport-ambiguous after process death.
      */
     fun reconcileReadyAfterProcessDeath(nowMs: Long = System.currentTimeMillis()): Int {
         if (nowMs < 0L) return 0
@@ -120,7 +120,7 @@ internal class MmsProviderJournal(context: Context) {
 
     private fun write(record: Record): Boolean {
         val encoded = JSONObject()
-            .put("schema", SCHEMA_VERSION)
+            .put("schema", CURRENT_SCHEMA_VERSION)
             .put("transaction", record.transactionId)
             .put("provider_id", record.providerMessageId ?: JSONObject.NULL)
             .put("phase", record.phase.name)
@@ -133,12 +133,13 @@ internal class MmsProviderJournal(context: Context) {
         if (!validToken(token) || encoded.isNullOrBlank() || encoded.length > MAX_ENCODED_CHARS) return null
         return runCatching {
             val json = JSONObject(encoded)
-            if (json.optInt("schema", -1) != SCHEMA_VERSION) return@runCatching null
+            val schema = json.optInt("schema", -1)
             val transactionId = json.getString("transaction")
             if (!validTransactionId(transactionId)) return@runCatching null
             val providerId = if (json.isNull("provider_id")) null else json.getLong("provider_id")
             if (providerId != null && providerId <= 0L) return@runCatching null
-            val phase = Phase.valueOf(json.getString("phase"))
+            val encodedPhase = Phase.valueOf(json.getString("phase"))
+            val phase = normalizePhaseForSchema(schema, encodedPhase) ?: return@runCatching null
             val updatedAt = json.getLong("updated_at_ms")
             if (updatedAt < 0L) return@runCatching null
             Record(token, transactionId, providerId, phase, updatedAt)
@@ -150,12 +151,19 @@ internal class MmsProviderJournal(context: Context) {
     companion object {
         private const val PREFS_NAME = "sentinel_mms_provider_journal_v1"
         private const val KEY_PREFIX = "record."
-        private const val SCHEMA_VERSION = 1
+        internal const val LEGACY_SCHEMA_VERSION = 1
+        internal const val CURRENT_SCHEMA_VERSION = 2
         private const val MAX_ENCODED_CHARS = 1024
         private const val MAX_RECORDS = 256
         private val TOKEN = Regex(
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
         )
+
+        internal fun normalizePhaseForSchema(schema: Int, phase: Phase): Phase? = when (schema) {
+            CURRENT_SCHEMA_VERSION -> phase
+            LEGACY_SCHEMA_VERSION -> if (phase == Phase.READY) Phase.SUBMISSION_UNKNOWN else phase
+            else -> null
+        }
 
         internal fun validToken(value: String): Boolean = TOKEN.matches(value)
         internal fun validTransactionId(value: String): Boolean =

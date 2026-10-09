@@ -14,7 +14,9 @@ export const ANDROID_WORKFLOWS = Object.freeze([
   'android-emulation-qualification.yml',
   'build-native-android.yml',
   'build-aab-playconsole.yml',
-  'android-instrumentation.yml'
+  'android-instrumentation.yml',
+  'phone-core-role-sms-process-death.yml',
+  'phone-core-role-mms-process-death.yml'
 ]);
 
 export const WEB_WORKFLOWS = Object.freeze([
@@ -25,8 +27,8 @@ export const WEB_WORKFLOWS = Object.freeze([
 export const SECURITY_FUZZ_WORKFLOWS = Object.freeze(['security-fuzz.yml']);
 
 // The Android emulation workflow has a 45-minute host job followed by a
-// dependent 60-minute emulator matrix. The merge gate must never have a
-// shorter legitimate wait window than that 105-minute critical path.
+// dependent 60-minute emulator matrix. The role-loss gates run in parallel and
+// have shorter critical paths, so emulation remains the longest Android dependency.
 export const EMULATION_MAX_CRITICAL_PATH_MS = (45 + 60) * 60 * 1000;
 export const DEFAULT_GATE_TIMEOUT_MS = 170 * 60 * 1000;
 
@@ -36,7 +38,9 @@ const ANDROID_WORKFLOW_FILES = new Set([
   '.github/workflows/build-aab-playconsole.yml',
   '.github/workflows/android-instrumentation.yml',
   '.github/workflows/android-release.yml',
-  '.github/workflows/codeql-analysis.yml'
+  '.github/workflows/codeql-analysis.yml',
+  '.github/workflows/phone-core-role-sms-process-death.yml',
+  '.github/workflows/phone-core-role-mms-process-death.yml'
 ]);
 
 const WEB_WORKFLOW_FILES = new Set([
