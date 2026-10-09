@@ -91,6 +91,28 @@ export function fileSha256(filePath, maxBytes = Number.MAX_SAFE_INTEGER) {
   }
 }
 
+export function readUtf8Bounded(filePath, maxBytes) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new Error('invalid maximum size');
+  const descriptor = fs.openSync(filePath, 'r');
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
+  const chunks = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const remainingBytes = maxBytes - totalBytes;
+      const readLength = Math.min(buffer.length, remainingBytes + 1);
+      const bytesRead = fs.readSync(descriptor, buffer, 0, readLength, null);
+      if (bytesRead === 0) break;
+      if (bytesRead > remainingBytes) throw new Error('file exceeds maximum size');
+      chunks.push(Buffer.from(buffer.subarray(0, bytesRead)));
+      totalBytes += bytesRead;
+    }
+    return Buffer.concat(chunks, totalBytes).toString('utf8');
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
 function validIso(value) {
   if (typeof value !== 'string' || !ISO_UTC.test(value)) return false;
   const parsed = Date.parse(value);
@@ -144,7 +166,7 @@ function validateArtifact(artifact, name, baseDir, maxBytes, errors, certificate
   }
   if (fileSha256(file, maxBytes) !== artifact.sha256) add(errors, `${name} artifact sha256 mismatch`);
   if (certificate) {
-    const text = fs.readFileSync(file, 'utf8');
+    const text = readUtf8Bounded(file, maxBytes);
     const digests = [...text.matchAll(/Signer #1 certificate SHA-256 digest:\s*([a-f0-9]{64})/g)]
       .map(match => match[1]);
     if (digests.length !== 1 || digests[0] !== artifact.certificate_sha256) {

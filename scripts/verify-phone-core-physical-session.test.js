@@ -8,6 +8,7 @@ import test from 'node:test';
 import {
   PHONE_CORE_REQUIRED_SCENARIOS,
   fileSha256,
+  readUtf8Bounded,
   physicalSessionSigningPayload,
   verifyPhoneCorePhysicalSession
 } from './verify-phone-core-physical-session.js';
@@ -258,4 +259,11 @@ test('hashing fails closed when a file exceeds its read-time bound', async t => 
   const file = join(root, 'evidence.log');
   await writeFile(file, '0123456789');
   assert.throws(() => fileSha256(file, 4), /file exceeds maximum size/);
+  assert.throws(() => readUtf8Bounded(file, 4), /file exceeds maximum size/);
+});
+
+test('certificate content is read through the same bounded verifier boundary', () => {
+  const source = readFileSync(new URL('./verify-phone-core-physical-session.js', import.meta.url), 'utf8');
+  assert.match(source, /function readUtf8Bounded\(filePath, maxBytes\)/);
+  assert.doesNotMatch(source, /fs\.readFileSync\(file, 'utf8'\)/);
 });
