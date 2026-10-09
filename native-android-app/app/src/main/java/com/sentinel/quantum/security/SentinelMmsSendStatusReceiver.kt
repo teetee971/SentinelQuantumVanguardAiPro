@@ -61,6 +61,26 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                         androidResultCode,
                         httpStatus
                     )
+                } catch (_: Exception) {
+                    val captured = runCatching {
+                        captureAndScheduleRecovery(
+                            context = appContext,
+                            token = token,
+                            providerMessageId = providerMessageId,
+                            successful = MmsSendResultClassifier.classify(
+                                androidResultCode,
+                                httpStatus
+                            ).success
+                        )
+                    }.getOrDefault(false)
+                    runCatching { queueProviderRepair(appContext) }
+                    if (!captured) {
+                        LocalLogger(appContext).logAsync(
+                            LocalLogger.LogLevel.WARNING,
+                            "MmsSend",
+                            "Callback MMS interrompu; résultat durable non confirmé"
+                        )
+                    }
                 } finally {
                     pendingResult.finish()
                 }
@@ -68,7 +88,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         }.isSuccess
         if (!scheduled) {
             val captured = runCatching {
-                captureAndScheduleAfterSaturation(
+                captureAndScheduleRecovery(
                     context = appContext,
                     token = token,
                     providerMessageId = providerMessageId,
@@ -89,8 +109,8 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         }
     }
 
-    /** Queue-full fallback: persist only provider correlation/result, then repair off-broadcast. */
-    private fun captureAndScheduleAfterSaturation(
+    /** Bounded fallback: persist only provider correlation/result, then repair off-broadcast. */
+    private fun captureAndScheduleRecovery(
         context: Context,
         token: String,
         providerMessageId: Long?,

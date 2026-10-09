@@ -67,9 +67,9 @@ test('MMS callback saturation journals transport truth without provider work', (
     /if \(!scheduled\) \{([\s\S]*?)pendingResult\.finish\(\)/
   );
   assert.ok(fallback, 'MMS callback saturation must have an explicit bounded fallback');
-  assert.match(fallback[1], /captureAndScheduleAfterSaturation/);
+  assert.match(fallback[1], /captureAndScheduleRecovery/);
   assert.doesNotMatch(fallback[1], /MmsConversationStore|ContentResolver/);
-  assert.match(statusReceiver, /private fun captureAndScheduleAfterSaturation/);
+  assert.match(statusReceiver, /private fun captureAndScheduleRecovery/);
   assert.match(statusReceiver, /MmsProviderJournal\(context\)\.markResult/);
   assert.match(statusReceiver, /queueProviderRepair\(context\)/);
 });
@@ -95,4 +95,17 @@ test('MMS rejects every negative subscription sentinel at each transport boundar
     /if \(!MmsSubscriptionResolver\.isValidSubscriptionId\(subscriptionId\)\) return/,
     'MMS callback identity must fail closed before asynchronous processing'
   );
+});
+
+test('unexpected MMS callback worker failures preserve journaled transport truth', () => {
+  const executeStart = statusReceiver.indexOf('WORKER.execute {');
+  const methodEnd = statusReceiver.indexOf(
+    '\n    private fun captureAndScheduleRecovery',
+    executeStart
+  );
+  assert.ok(executeStart >= 0 && methodEnd > executeStart, 'MMS callback worker boundary must exist');
+  const worker = statusReceiver.slice(executeStart, methodEnd);
+  assert.match(worker, /catch \(_: Exception\)/);
+  assert.match(worker, /captureAndScheduleRecovery/);
+  assert.match(worker, /queueProviderRepair\(appContext\)/);
 });
