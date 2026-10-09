@@ -36,13 +36,11 @@ read_mobile_data_state() {
   if mobile_data_oracle="$(adb shell cmd phone get-data-enabled 2>/dev/null | tr -d '\r')"; then
     case "$mobile_data_oracle" in
       true|1)
-        MOBILE_DATA_ORACLE_SOURCE="cmd_phone"
-        printf '1\n'
+        printf '1 cmd_phone\n'
         return 0
         ;;
       false|0)
-        MOBILE_DATA_ORACLE_SOURCE="cmd_phone"
-        printf '0\n'
+        printf '0 cmd_phone\n'
         return 0
         ;;
     esac
@@ -50,25 +48,33 @@ read_mobile_data_state() {
   if mobile_data_oracle="$(adb shell settings get global mobile_data 2>/dev/null | tr -d '\r')"; then
     case "$mobile_data_oracle" in
       0|1)
-        MOBILE_DATA_ORACLE_SOURCE="settings_global"
-        printf '%s\n' "$mobile_data_oracle"
+        printf '%s settings_global\n' "$mobile_data_oracle"
         return 0
         ;;
     esac
   fi
-  echo "Unable to read Android mobile-data state from supported fail-closed oracles." >&2
-  return 1
+  # Some API 36/37 emulator images have no subscription-backed data state. This is not
+  # permission to guess: report the capability as LIMITED and leave mobile data untouched.
+  printf 'UNAVAILABLE unavailable\n'
+  return 2
 }
 
 capture_original_device_state() {
+  local mobile_data_reading=""
   ORIGINAL_USER_ROTATION="$(adb shell settings get system user_rotation | tr -d '\r')"
   ORIGINAL_ACCELEROMETER_ROTATION="$(adb shell settings get system accelerometer_rotation | tr -d '\r')"
   ORIGINAL_WIFI_ON="$(adb shell settings get global wifi_on | tr -d '\r')"
-  ORIGINAL_MOBILE_DATA="$(read_mobile_data_state)"
+  if mobile_data_reading="$(read_mobile_data_state)"; then
+    :
+  elif [[ "$mobile_data_reading" != "UNAVAILABLE unavailable" ]]; then
+    echo "Unable to read Android mobile-data state from supported fail-closed oracles." >&2
+    return 1
+  fi
+  read -r ORIGINAL_MOBILE_DATA MOBILE_DATA_ORACLE_SOURCE <<< "$mobile_data_reading"
   [[ "$ORIGINAL_USER_ROTATION" =~ ^[0-9]+$ ]]
   [[ "$ORIGINAL_ACCELEROMETER_ROTATION" =~ ^[01]$ ]]
   [[ "$ORIGINAL_WIFI_ON" =~ ^[01]$ ]]
-  [[ "$ORIGINAL_MOBILE_DATA" =~ ^[01]$ ]]
+  [[ "$ORIGINAL_MOBILE_DATA" == UNAVAILABLE || "$ORIGINAL_MOBILE_DATA" =~ ^[01]$ ]]
 }
 
 restore_device_state() {
@@ -87,10 +93,12 @@ restore_device_state() {
   else
     if ! adb shell svc wifi disable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
   fi
-  if [[ "$ORIGINAL_MOBILE_DATA" == 1 ]]; then
-    if ! adb shell svc data enable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
-  else
-    if ! adb shell svc data disable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+  if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
+    if [[ "$ORIGINAL_MOBILE_DATA" == 1 ]]; then
+      if ! adb shell svc data enable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+    else
+      if ! adb shell svc data disable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+    fi
   fi
   if [[ "$RESTORE_FAILED" == true ]]; then
     echo "Failed to restore one or more emulator settings." >&2
@@ -426,6 +434,8 @@ run_stability_qualification() {
   local pid_after=""
   local wifi_state=""
   local mobile_state=""
+  local mobile_data_reading=""
+  local stability_verdict="AUTOMATED"
 
   capture_original_device_state
   FLOW_DEVICE_STATE_MUTATED=true
@@ -433,13 +443,26 @@ run_stability_qualification() {
   # Offline is an exercised runtime state, not a label. Both transport controls must accept the
   # transition and their resulting platform settings are archived before the app is relaunched.
   adb shell svc wifi disable
-  adb shell svc data disable
   wifi_state="$(adb shell settings get global wifi_on | tr -d '\r')"
-  mobile_state="$(read_mobile_data_state)"
-  printf 'wifi_on=%s\nmobile_data=%s\nmobile_data_oracle=%s\n' \
-    "$wifi_state" "$mobile_state" "$MOBILE_DATA_ORACLE_SOURCE" > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
+  if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
+    adb shell svc data disable
+    mobile_data_reading="$(read_mobile_data_state)" || {
+      echo "Mobile-data state became unreadable after the controlled disable; refusing an incomplete offline proof." >&2
+      return 1
+    }
+    read -r mobile_state MOBILE_DATA_ORACLE_SOURCE <<< "$mobile_data_reading"
+  else
+    mobile_state="UNAVAILABLE"
+    MOBILE_DATA_ORACLE_SOURCE="unavailable"
+    stability_verdict="LIMITED"
+  fi
+  printf 'wifi_on=%s\nmobile_data=%s\nmobile_data_oracle=%s\nverdict=%s\n' \
+    "$wifi_state" "$mobile_state" "$MOBILE_DATA_ORACLE_SOURCE" "$stability_verdict" \
+    > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
   [[ "$wifi_state" == "0" ]]
-  [[ "$mobile_state" == "0" ]]
+  if [[ "$mobile_state" != UNAVAILABLE ]]; then
+    [[ "$mobile_state" == "0" ]]
+  fi
   adb shell am force-stop "$FLOW_PACKAGE"
   adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-offline-launch.txt"
   wait_text "phone_core_tab_0"

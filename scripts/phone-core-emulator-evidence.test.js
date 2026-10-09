@@ -117,6 +117,13 @@ test('runtime qualification uses a version-tolerant mobile-data state oracle', (
   assert.match(runtimeFlow, /mobile_data_oracle/);
 });
 
+test('runtime qualification treats an unavailable mobile-data oracle as an explicit limitation', () => {
+  assert.match(runtimeFlow, /UNAVAILABLE/);
+  assert.match(runtimeFlow, /stability_verdict="LIMITED"/);
+  assert.match(runtimeFlow, /ORIGINAL_MOBILE_DATA.*UNAVAILABLE/);
+  assert.match(runtimeFlow, /if \[\[ "\$ORIGINAL_MOBILE_DATA" != UNAVAILABLE \]\]/);
+});
+
 test('reboot preparation leaves process termination to the external workflow', () => {
   const source = readFileSync(new URL('../native-android-app/app/src/androidTest/java/com/sentinel/quantum/PhoneCoreSetupRebootPreparationInstrumentationTest.kt', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /executeShellCommand\("am force-stop/);
