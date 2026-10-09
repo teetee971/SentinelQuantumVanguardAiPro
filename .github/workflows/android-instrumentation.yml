@@ -91,6 +91,7 @@ jobs:
           AVD_NAME="sentinel_instrumentation_api${API_LEVEL}"
           EMULATOR_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-emulator.log"
           INSTRUMENTATION_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-tests.log"
+          INSTRUMENTATION_SDK_EVIDENCE="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-sdk.txt"
 
           echo "Qualifying runtime API ${API_LEVEL} with SDK package level ${SDK_PACKAGE_LEVEL}."
 
@@ -263,6 +264,8 @@ jobs:
             echo "Expected emulator API ${API_LEVEL}, got API ${ACTUAL_API}."
             exit 1
           fi
+          printf '%s\n' "$ACTUAL_API" > "$INSTRUMENTATION_SDK_EVIDENCE"
+          test "$(cat "$INSTRUMENTATION_SDK_EVIDENCE")" = "$API_LEVEL"
 
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
@@ -386,6 +389,7 @@ jobs:
             native-android-app/app/build/outputs/androidTest-results/connected/
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-emulator.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-tests.log
+            ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-sdk.txt
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-diagnostics/
           if-no-files-found: warn
           retention-days: 14

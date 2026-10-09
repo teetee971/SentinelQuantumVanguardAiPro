@@ -84,6 +84,21 @@ test('Android emulator qualification covers minimum, current and newest runtime 
   assert.match(instrumentationWorkflow, /ACTUAL_API=.*ro\.build\.version\.sdk/);
 });
 
+test('instrumentation evidence persists the exact runtime SDK API', () => {
+  assert.match(
+    instrumentationWorkflow,
+    /INSTRUMENTATION_SDK_EVIDENCE=.*sentinel-instrumentation-api\$\{API_LEVEL\}-sdk\.txt/
+  );
+  assert.match(
+    instrumentationWorkflow,
+    /printf '%s\\n' "\$ACTUAL_API" > "\$INSTRUMENTATION_SDK_EVIDENCE"[\s\S]*test "\$\(cat "\$INSTRUMENTATION_SDK_EVIDENCE"\)" = "\$API_LEVEL"/
+  );
+  assert.match(
+    instrumentationWorkflow,
+    /sentinel-instrumentation-api\$\{\{ matrix\.api-level \}\}-sdk\.txt/
+  );
+});
+
 test('instrumentation failures preserve runtime diagnostics before the emulator is stopped', () => {
   assert.match(instrumentationWorkflow, /collect_instrumentation_diagnostics\(\)/);
   assert.match(instrumentationWorkflow, /trap cleanup_instrumentation EXIT/);
