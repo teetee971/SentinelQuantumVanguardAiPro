@@ -25,16 +25,23 @@ const application = fs.readFileSync(
 
 test('SMS_DELIVER captures durable state and schedules idempotent projection', () => {
   assert.match(receiver, /IncomingSmsDeliveryStore\.persist\(context\.filesDir, record\)/);
-  assert.match(receiver, /IncomingSmsDeliveryWorker\.schedule\(context, id\)/);
+  assert.match(receiver, /IncomingSmsDeliveryWorker\.schedule\(context, (?:id|record\.id|captured\.record\.id)\)/);
   assert.match(receiver, /IncomingSmsDeliveryWorker\.projectImmediately/);
   assert.doesNotMatch(receiver, /Executors\.newSingleThreadExecutor/);
 });
 
-test('SMS capture stays off-main normally and applies caller-runs backpressure on saturation', () => {
+test('SMS saturation keeps provider projection off the broadcast callback thread', () => {
   assert.match(receiver, /val pendingResult = goAsync\(\)/);
   assert.match(receiver, /RECEIVER_EXECUTOR\.execute/);
   assert.match(receiver, /ArrayBlockingQueue/);
-  assert.match(receiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
+  assert.match(receiver, /ThreadPoolExecutor\.AbortPolicy\(\)/);
+  assert.doesNotMatch(receiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
+  assert.match(receiver, /private fun captureIncomingSms/);
+  assert.match(receiver, /captureAndScheduleAfterSaturation/);
+  const fallback = receiver.match(/if \(!submitted\) \{([\s\S]*?)pendingResult\.finish\(\)/);
+  assert.ok(fallback, 'saturation fallback must finish PendingResult');
+  assert.match(fallback[1], /captureAndScheduleAfterSaturation/);
+  assert.doesNotMatch(fallback[1], /projectImmediately/);
   assert.match(receiver, /private fun processIncomingSms/);
   assert.match(receiver, /pendingResult\.finish\(\)/);
   assert.match(receiver, /LocalLogger\(appContext\)\.logAsync/);
@@ -58,7 +65,7 @@ test('corrupt SMS spool records cannot masquerade as replay or poison bounded ca
 
 test('existing replay fallback reuses durable receive identity when WorkManager submission fails', () => {
   assert.match(receiver, /persistState == IncomingSmsDeliveryStore\.PersistState\.EXISTING/);
-  assert.match(receiver, /IncomingSmsDeliveryStore\.read\(context\.filesDir, id\) \?: record/);
+  assert.match(receiver, /IncomingSmsDeliveryStore\.read\(context\.filesDir, (?:id|record\.id)\) \?: record/);
   assert.match(receiver, /record = projectionRecord/);
 });
 

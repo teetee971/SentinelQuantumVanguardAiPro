@@ -16,10 +16,15 @@ import java.util.concurrent.TimeUnit
  * app-private storage first, then a unique WorkManager job projects it to Android's SMS provider and
  * performs secondary analysis/notification. A process death therefore leaves replayable state instead
  * of an orphaned PendingResult. Raw message content is never written to logs. When the bounded queue
- * is saturated, CallerRunsPolicy applies backpressure in the broadcast caller instead of silently
- * acknowledging and losing a user message.
+ * is saturated, the callback thread performs only the bounded durable capture and WorkManager
+ * handoff; provider projection and secondary analysis remain off the broadcast callback thread.
  */
 class SentinelSmsDeliverReceiver : BroadcastReceiver() {
+    private data class CapturedSms(
+        val record: IncomingSmsDeliveryStore.Record,
+        val persistState: IncomingSmsDeliveryStore.PersistState
+    )
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.SMS_DELIVER_ACTION) return
         if (!holdsSmsRole(context)) return
@@ -44,26 +49,59 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             true
         }.getOrDefault(false)
         if (!submitted) {
-            LocalLogger(appContext).logAsync(
-                LocalLogger.LogLevel.WARNING,
-                "DefaultSms",
-                "SMS entrant non planifié : file de traitement saturée"
-            )
+            runCatching {
+                captureAndScheduleAfterSaturation(appContext, deliveredIntent)
+            }.onFailure {
+                LocalLogger(appContext).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "DefaultSms",
+                    "SMS entrant non planifié : capture durable indisponible après saturation"
+                )
+            }
             pendingResult.finish()
         }
     }
 
     private fun processIncomingSms(context: Context, intent: Intent) {
-        if (!holdsSmsRole(context)) return
+        val captured = captureIncomingSms(context, intent) ?: return
+        finishCapturedSms(context, captured, allowSynchronousProjection = true)
+    }
+
+    /**
+     * Saturation fallback used by BroadcastReceiver.onReceive. It deliberately stops after the
+     * fsync'd record and WorkManager handoff; it must never perform ContentResolver projection or
+     * notification work on Android's broadcast callback thread.
+     */
+    private fun captureAndScheduleAfterSaturation(context: Context, intent: Intent) {
+        val captured = captureIncomingSms(context, intent) ?: return
+        when (captured.persistState) {
+            IncomingSmsDeliveryStore.PersistState.CREATED,
+            IncomingSmsDeliveryStore.PersistState.EXISTING -> {
+                val scheduled = runCatching {
+                    IncomingSmsDeliveryWorker.schedule(context, captured.record.id)
+                    true
+                }.getOrDefault(false)
+                if (!scheduled) logCaptureFailureAsync(context)
+            }
+            IncomingSmsDeliveryStore.PersistState.CAPACITY_EXCEEDED,
+            IncomingSmsDeliveryStore.PersistState.FAILED -> logCaptureFailureAsync(context)
+        }
+    }
+
+    private fun captureIncomingSms(
+        context: Context,
+        intent: Intent
+    ): CapturedSms? {
+        if (!holdsSmsRole(context)) return null
 
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty() || messages.size > MAX_SMS_PARTS) {
-            LocalLogger(context).log(
+            LocalLogger(context).logAsync(
                 LocalLogger.LogLevel.WARNING,
                 "DefaultSms",
                 "SMS entrant rejeté : nombre de parties invalide"
             )
-            return
+            return null
         }
 
         val address = messages.firstNotNullOfOrNull { it.originatingAddress }
@@ -77,7 +115,7 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 append(message.messageBody.orEmpty().take(remaining))
             }
         }
-        if (address.isBlank() || body.isBlank()) return
+        if (address.isBlank() || body.isBlank()) return null
 
         val receivedAt = System.currentTimeMillis()
         val sentAt = messages
@@ -95,7 +133,7 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             body = body,
             sentAtMs = sentAt,
             subscriptionId = subscriptionId
-        ) ?: return
+        ) ?: return null
         val record = IncomingSmsDeliveryStore.Record(
             id = id,
             address = address,
@@ -106,19 +144,29 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
         )
 
         val persistState = IncomingSmsDeliveryStore.persist(context.filesDir, record)
+        return CapturedSms(record, persistState)
+    }
+
+    private fun finishCapturedSms(
+        context: Context,
+        captured: CapturedSms,
+        allowSynchronousProjection: Boolean
+    ) {
+        val record = captured.record
+        val persistState = captured.persistState
         when (persistState) {
             IncomingSmsDeliveryStore.PersistState.CREATED,
             IncomingSmsDeliveryStore.PersistState.EXISTING -> {
                 val scheduled = runCatching {
-                    IncomingSmsDeliveryWorker.schedule(context, id)
+                    IncomingSmsDeliveryWorker.schedule(context, record.id)
                     true
                 }.getOrDefault(false)
-                if (!scheduled) {
+                if (!scheduled && allowSynchronousProjection) {
                     // For an EXISTING replay, retain the original durable receive timestamp. Using
                     // this broadcast's new wall-clock timestamp would defeat exact provider replay
                     // lookup and could duplicate a message after a previous insert/cleanup crash.
                     val projectionRecord = if (persistState == IncomingSmsDeliveryStore.PersistState.EXISTING) {
-                        IncomingSmsDeliveryStore.read(context.filesDir, id) ?: record
+                        IncomingSmsDeliveryStore.read(context.filesDir, record.id) ?: record
                     } else {
                         record
                     }
@@ -128,18 +176,25 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                         deleteStageOnSuccess = true
                     )
                     if (!projected) logCaptureFailure(context)
+                } else if (!scheduled) {
+                    logCaptureFailureAsync(context)
                 }
             }
             IncomingSmsDeliveryStore.PersistState.CAPACITY_EXCEEDED,
             IncomingSmsDeliveryStore.PersistState.FAILED -> {
-                // Do not reject a user message merely because the durable spool is unavailable.
-                // Apply bounded backpressure at the system provider instead of accumulating memory.
-                val projected = IncomingSmsDeliveryWorker.projectImmediately(
-                    context = context,
-                    record = record,
-                    deleteStageOnSuccess = false
-                )
-                if (!projected) logCaptureFailure(context)
+                if (allowSynchronousProjection) {
+                    // Do not reject a user message merely because the durable spool is unavailable.
+                    // This branch is reachable only from the private executor, never from the
+                    // saturation fallback that runs inside BroadcastReceiver.onReceive.
+                    val projected = IncomingSmsDeliveryWorker.projectImmediately(
+                        context = context,
+                        record = record,
+                        deleteStageOnSuccess = false
+                    )
+                    if (!projected) logCaptureFailure(context)
+                } else {
+                    logCaptureFailureAsync(context)
+                }
             }
         }
     }
@@ -152,6 +207,14 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
 
     private fun logCaptureFailure(context: Context) {
         LocalLogger(context).log(
+            LocalLogger.LogLevel.WARNING,
+            "DefaultSms",
+            "SMS entrant non projeté immédiatement; reprise durable indisponible"
+        )
+    }
+
+    private fun logCaptureFailureAsync(context: Context) {
+        LocalLogger(context).logAsync(
             LocalLogger.LogLevel.WARNING,
             "DefaultSms",
             "SMS entrant non projeté immédiatement; reprise durable indisponible"
@@ -175,7 +238,7 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             { runnable ->
                 Thread(runnable, "sentinel-sms-deliver").apply { isDaemon = true }
             },
-            ThreadPoolExecutor.CallerRunsPolicy()
+            ThreadPoolExecutor.AbortPolicy()
         )
     }
 }
