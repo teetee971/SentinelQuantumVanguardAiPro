@@ -20,6 +20,17 @@ class SmsOutgoingSubmissionStore internal constructor(
         val createdAtMs: Long
     )
 
+    /**
+     * Fail-closed admission signal used immediately before a new radio submission.
+     * Corrupt/unprunable state is treated as pending rather than allowing an ambiguous duplicate.
+     */
+    fun hasPendingSubmission(nowMs: Long = System.currentTimeMillis()): Boolean = synchronized(LOCK) {
+        if (nowMs <= 0L) return@synchronized true
+        if (!validateEntries()) return@synchronized true
+        if (!prune(nowMs)) return@synchronized true
+        trackedCount() > 0
+    }
+
     fun register(
         sendToken: Int,
         providerMessageId: Long,
