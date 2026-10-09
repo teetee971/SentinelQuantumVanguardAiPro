@@ -74,6 +74,14 @@ test('submission bookkeeping cannot overwrite a callback result that won the rac
   assert.match(sender, /providerStore\.markSubmitted\(staged\.token, providerMessageId\)/);
 });
 
+test('MMS journal serializes sender and callback transitions across instances', () => {
+  assert.match(journal, /private inline fun <T> withJournalLock/);
+  assert.match(journal, /private val LOCK = Any\(\)/);
+  assert.match(journal, /fun markSubmitted\([\s\S]*\): Boolean = withJournalLock/);
+  assert.match(journal, /fun markResult\([\s\S]*\): Boolean = withJournalLock/);
+  assert.match(journal, /fun all\(\): List<Record> = withJournalLock/);
+});
+
 test('MMS callback saturation journals transport truth without provider work', () => {
   const fallback = statusReceiver.match(
     /if \(!scheduled\) \{([\s\S]*?)pendingResult\.finish\(\)/
