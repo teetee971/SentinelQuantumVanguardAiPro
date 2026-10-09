@@ -4,6 +4,7 @@ import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
+import com.sentinel.quantum.security.SmsPreSubmitRecoveryWorker
 
 /**
  * Process-level initialization for exact-number call blocking and durable telecom repair.
@@ -12,8 +13,8 @@ import com.sentinel.quantum.security.SentinelSmsStatusReceiver
  * creates the Application before CallScreeningService, so the service can remain strictly
  * cache-only without the previous asynchronous cold-start race.
  *
- * MMS provider recovery and stale private PDU cleanup are delegated to WorkManager so ContentResolver
- * and file I/O never run on the Application main thread.
+ * SMS/MMS provider recovery and stale private PDU cleanup are delegated to WorkManager so
+ * ContentResolver and file I/O never run on the Application main thread.
  *
  * SMS authorization changes are observed read-only so a framework permission/AppOp transition
  * cannot leave the visible compose surface on a stale actionable snapshot.
@@ -28,6 +29,7 @@ class SentinelApplication : Application() {
         super.onCreate()
         smsActivationStateCoordinator = SmsActivationStateCoordinator(this).also { it.start() }
         SentinelSmsStatusReceiver.queueProviderRepair(this)
+        runCatching { SmsPreSubmitRecoveryWorker.scheduleStartupRecovery(this) }
         runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(this) }
 
         val store = CallBlocklistStore(this)
