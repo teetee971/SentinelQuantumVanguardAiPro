@@ -52,6 +52,11 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         decode(fileName, preferences.all[key(fileName)])
     }
 
+    /** Distinguishes absent metadata from a malformed entry that still needs durable recovery. */
+    fun hasRecord(fileName: String): Boolean = withJournalLock {
+        MmsDownloadCoordinator.isValidStagedFileName(fileName) && preferences.contains(key(fileName))
+    }
+
     fun remove(fileName: String): Boolean = withJournalLock {
         MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
             preferences.edit().remove(key(fileName)).commit()

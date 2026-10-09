@@ -118,7 +118,15 @@ internal object MmsDownloadRecovery {
     ): Outcome {
         val appContext = context.applicationContext
         val journal = MmsDownloadRecoveryJournal(appContext)
-        val record = journal.read(fileName) ?: return Outcome.TERMINAL
+        val record = journal.read(fileName)
+        if (record == null) {
+            val staged = stagedFile(appContext, fileName)
+            return if (staged != null || journal.hasRecord(fileName)) {
+                Outcome.RETRY
+            } else {
+                Outcome.TERMINAL
+            }
+        }
         if (nowMs < 0L || record.requestedAtMs > nowMs) return Outcome.RETRY
 
         if (

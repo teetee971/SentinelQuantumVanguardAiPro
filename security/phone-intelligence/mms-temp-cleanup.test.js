@@ -359,6 +359,21 @@ test('lost-callback MMS recovery retries unexpected engine failures', () => {
   assert.match(doWork[1], /getOrElse \{[\s\S]*return Result\.retry\(\)/);
 });
 
+test('MMS recovery cannot report success while a staged PDU or unreadable journal entry remains', () => {
+  assert.match(
+    downloadRecoveryJournal,
+    /fun hasRecord\(fileName: String\): Boolean[\s\S]*preferences\.contains\(/
+  );
+  const missingJournalBranch = downloadRecoveryWorker.match(
+    /val record = journal\.read\(fileName\)[\s\S]*?if \(record == null\) \{([\s\S]*?)\n        \}/
+  );
+  assert.ok(missingJournalBranch, 'recovery must distinguish absent metadata from retained state');
+  assert.match(missingJournalBranch[1], /stagedFile\(/);
+  assert.match(missingJournalBranch[1], /journal\.hasRecord\(/);
+  assert.match(missingJournalBranch[1], /Outcome\.RETRY/);
+  assert.match(missingJournalBranch[1], /Outcome\.TERMINAL/);
+});
+
 test('MMS recovery retries when staged bytes or journal retirement is not confirmed', () => {
   assert.match(
     downloadRecoveryWorker,
