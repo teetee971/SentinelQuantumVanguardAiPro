@@ -117,6 +117,19 @@ import kotlinx.coroutines.flow.collectLatest
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SmsComposeActivity : ComponentActivity() {
+    private data class ComposeIntentPayload(
+        val destination: String,
+        val body: String,
+        val mmsIntent: Boolean,
+        val openConversations: Boolean
+    )
+
+    private var externalDestination by mutableStateOf("")
+    private var externalBody by mutableStateOf("")
+    private var externalMmsIntent by mutableStateOf(false)
+    private var externalOpenConversations by mutableStateOf(false)
+    private var externalComposeRequestEpoch by mutableStateOf(0)
+
     private fun sanitizeSmsDestination(raw: String): String? {
         val value = raw.trim()
         if (value.isEmpty() || value.length > 32) return null
@@ -125,27 +138,43 @@ class SmsComposeActivity : ComponentActivity() {
         return value
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val initialScheme = intent?.data?.scheme.orEmpty()
-        val initialMmsIntent = initialScheme.equals("mms", ignoreCase = true) ||
-            initialScheme.equals("mmsto", ignoreCase = true)
-        val initialDestination = sanitizeSmsDestination(
-            intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
+    private fun composeIntentPayload(source: Intent?): ComposeIntentPayload {
+        val scheme = source?.data?.scheme.orEmpty()
+        val mmsIntent = scheme.equals("mms", ignoreCase = true) ||
+            scheme.equals("mmsto", ignoreCase = true)
+        val destination = sanitizeSmsDestination(
+            source?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
         ).orEmpty()
-        val initialBody = intent?.getStringExtra("sms_body")
+        val body = source?.getStringExtra("sms_body")
             .orEmpty()
             .take(
-                if (initialMmsIntent) MmsSendEligibilityPolicy.MAX_TEXT_CHARS
+                if (mmsIntent) MmsSendEligibilityPolicy.MAX_TEXT_CHARS
                 else SentinelSmsSender.MAX_BODY_CHARS
             )
-        val openConversationsOnLaunch =
-            intent?.getBooleanExtra(EXTRA_OPEN_CONVERSATIONS, false) == true ||
-                (
-                    intent?.action == Intent.ACTION_MAIN &&
-                        initialDestination.isBlank() &&
-                        initialBody.isBlank()
-                )
+        val openConversations = source?.getBooleanExtra(EXTRA_OPEN_CONVERSATIONS, false) == true ||
+            (destination.isBlank() && body.isBlank() && !mmsIntent)
+        return ComposeIntentPayload(destination, body, mmsIntent, openConversations)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action != Intent.ACTION_SENDTO && intent.action != Intent.ACTION_MAIN) return
+        setIntent(intent)
+        val payload = composeIntentPayload(intent)
+        externalDestination = payload.destination
+        externalBody = payload.body
+        externalMmsIntent = payload.mmsIntent
+        externalOpenConversations = payload.openConversations
+        externalComposeRequestEpoch++
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val initialPayload = composeIntentPayload(intent)
+        val initialMmsIntent = initialPayload.mmsIntent
+        val initialDestination = initialPayload.destination
+        val initialBody = initialPayload.body
+        val openConversationsOnLaunch = initialPayload.openConversations
 
         setContent {
             SentinelQuantumTheme {
@@ -157,6 +186,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var destination by rememberSaveable { mutableStateOf(initialDestination) }
                 var body by rememberSaveable { mutableStateOf(initialBody) }
                 var mmsComposeMode by rememberSaveable { mutableStateOf(initialMmsIntent) }
+                var mmsComposeModeLocked by rememberSaveable { mutableStateOf(initialMmsIntent) }
                 var selectedMmsAttachments by remember {
                     mutableStateOf(emptyList<MmsAttachmentLoader.LoadedAttachment>())
                 }
@@ -172,9 +202,9 @@ class SmsComposeActivity : ComponentActivity() {
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
                 var mmsSectionExpanded by remember { mutableStateOf(false) }
-                var conversationsSectionExpanded by rememberSaveable { mutableStateOf(initialDestination.isBlank() && initialBody.isBlank() && !initialMmsIntent) }
+                var conversationsSectionExpanded by rememberSaveable { mutableStateOf(openConversationsOnLaunch) }
                 var showComposer by rememberSaveable {
-                    mutableStateOf(initialDestination.isNotBlank() || initialBody.isNotBlank() || initialMmsIntent)
+                    mutableStateOf(!openConversationsOnLaunch)
                 }
                 var threadCategoryFilter by remember { mutableStateOf(SmsThreadOrganizer.Category.ALL) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
@@ -331,17 +361,42 @@ class SmsComposeActivity : ComponentActivity() {
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
+                LaunchedEffect(externalComposeRequestEpoch) {
+                    if (externalComposeRequestEpoch == 0) return@LaunchedEffect
+                    destination = externalDestination
+                    body = externalBody
+                    mmsComposeMode = externalMmsIntent
+                    mmsComposeModeLocked = externalMmsIntent
+                    selectedMmsAttachments = emptyList()
+                    status = null
+                    submissionInFlight = false
+                    activeSendToken = null
+                    activeProviderMessageId = null
+                    activeMmsToken = null
+                    activeMmsProviderMessageId = null
+                    callbackProgress = null
+                    providerPersistenceFailed = false
+                    selectedThreadId = null
+                    pendingDeleteThread = null
+                    pendingDeleteMessage = null
+                    threadMessages = emptyList()
+                    mmsSectionExpanded = externalMmsIntent
+                    conversationsSectionExpanded = externalOpenConversations
+                    showComposer = !externalOpenConversations
+                }
                 val visibleThreads = remember(threads, threadCategoryFilter) {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
                 fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
                     if (submissionInFlight) return
+                    val requestEpoch = externalComposeRequestEpoch
                     submissionInFlight = true
                     ioScope.launch {
                         try {
                             val result = withContext(Dispatchers.IO) {
                                 sender.send(recipient, message, selectedSubscriptionId)
                             }
+                            if (requestEpoch != externalComposeRequestEpoch) return@launch
                             status = when (result.reason) {
                             "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
                             "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
@@ -382,14 +437,18 @@ class SmsComposeActivity : ComponentActivity() {
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {
-                            localLogger.logAsync(
-                                LocalLogger.LogLevel.ERROR,
-                                "SmsCompose",
-                                "Exception inattendue durant l’envoi SMS : ${error::class.java.simpleName}"
-                            )
-                            status = "Impossible de terminer l’envoi SMS. Vérifiez le statut du message avant de réessayer."
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                localLogger.logAsync(
+                                    LocalLogger.LogLevel.ERROR,
+                                    "SmsCompose",
+                                    "Exception inattendue durant l’envoi SMS : ${error::class.java.simpleName}"
+                                )
+                                status = "Impossible de terminer l’envoi SMS. Vérifiez le statut du message avant de réessayer."
+                            }
                         } finally {
-                            submissionInFlight = false
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                submissionInFlight = false
+                            }
                         }
                     }
                 }
@@ -400,6 +459,7 @@ class SmsComposeActivity : ComponentActivity() {
                     onAccepted: () -> Unit
                 ) {
                     if (submissionInFlight) return
+                    val requestEpoch = externalComposeRequestEpoch
                     submissionInFlight = true
                     ioScope.launch {
                         try {
@@ -413,6 +473,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                 )
                             }
+                            if (requestEpoch != externalComposeRequestEpoch) return@launch
                             status = when (result.reason) {
                             "MMS_SUBMITTED_TO_ANDROID" ->
                                 "MMS confié à Android ; le résultat opérateur arrivera par callback."
@@ -456,14 +517,18 @@ class SmsComposeActivity : ComponentActivity() {
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {
-                            localLogger.logAsync(
-                                LocalLogger.LogLevel.ERROR,
-                                "MmsCompose",
-                                "Exception inattendue durant l’envoi MMS : ${error::class.java.simpleName}"
-                            )
-                            status = "Impossible de terminer l’envoi MMS. Vérifiez le statut du message avant de réessayer."
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                localLogger.logAsync(
+                                    LocalLogger.LogLevel.ERROR,
+                                    "MmsCompose",
+                                    "Exception inattendue durant l’envoi MMS : ${error::class.java.simpleName}"
+                                )
+                                status = "Impossible de terminer l’envoi MMS. Vérifiez le statut du message avant de réessayer."
+                            }
                         } finally {
-                            submissionInFlight = false
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                submissionInFlight = false
+                            }
                         }
                     }
                 }
@@ -643,12 +708,12 @@ class SmsComposeActivity : ComponentActivity() {
                                 FilterChip(
                                     selected = !mmsComposeMode,
                                     onClick = {
-                                        if (!initialMmsIntent) {
+                                        if (!mmsComposeModeLocked) {
                                             mmsComposeMode = false
                                             selectedMmsAttachments = emptyList()
                                         }
                                     },
-                                    enabled = !initialMmsIntent,
+                                    enabled = !mmsComposeModeLocked,
                                     label = { Text("SMS") }
                                 )
                                 FilterChip(
