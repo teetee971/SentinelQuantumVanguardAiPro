@@ -73,8 +73,6 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
             // convert an observed callback into a fabricated timeout.
             val record = decode(value as? String, nowMs, enforceTtl = false)
                 ?: throw IllegalStateException("SMS callback progress contains corrupt state")
-            if (nowMs - record.createdAtMs > TTL_MS) return@mapNotNull null
-            if (record.providerApplied) return@mapNotNull null
             val ids = key.split(":", limit = 2)
             if (ids.size != 2) {
                 throw IllegalStateException("SMS callback progress key is corrupt")
@@ -83,6 +81,8 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
                 ?: throw IllegalStateException("SMS callback progress token is corrupt")
             val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L }
                 ?: throw IllegalStateException("SMS callback progress provider id is corrupt")
+            if (nowMs - record.createdAtMs > TTL_MS) return@mapNotNull null
+            if (record.providerApplied) return@mapNotNull null
             PendingProviderWrite(sendToken, providerId, SmsCallbackProgress.pendingProviderOutcome(record.state))
         }.take(MAX_TRACKED)
     }

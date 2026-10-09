@@ -102,6 +102,13 @@ test('corrupt SMS callback progress cannot be treated as an empty provider queue
   );
 });
 
+test('terminal callback progress validates its opaque key before being ignored', () => {
+  const keyValidationIndex = progressStore.indexOf('val ids = key.split(":", limit = 2)');
+  const providerAppliedIndex = progressStore.indexOf('if (record.providerApplied) return@mapNotNull null');
+  assert.ok(keyValidationIndex >= 0, 'callback progress must parse the storage key');
+  assert.ok(providerAppliedIndex > keyValidationIndex, 'provider-applied tombstones must not bypass key validation');
+});
+
 test('terminal SMS callbacks retire the watchdog only after provider acknowledgement', () => {
   assert.match(statusReceiver, /val providerApplied = providerUpdated/);
   assert.match(

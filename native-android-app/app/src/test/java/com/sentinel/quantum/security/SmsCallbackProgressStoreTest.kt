@@ -118,5 +118,17 @@ class SmsCallbackProgressStoreTest {
             store.pendingProviderWrites(nowMs = 1001L)
         }
     }
+
+    @Test fun malformedKeyIsRejectedEvenWhenProviderWriteWasAlreadyApplied() {
+        val preferences = Preferences(emptySet())
+        // Valid terminal tombstone, but its storage key cannot identify the callback pair.
+        preferences.values["corrupt-key"] = "1000|1|1|0||||1"
+
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        assertThrows(IllegalStateException::class.java) {
+            store.pendingProviderWrites(nowMs = 1001L)
+        }
+    }
 }
 
