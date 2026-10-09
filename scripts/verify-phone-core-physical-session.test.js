@@ -278,6 +278,17 @@ test('hashing fails closed when a file exceeds its read-time bound', async t => 
   assert.throws(() => readUtf8Bounded(file, 4), /file exceeds maximum size/);
 });
 
+test('bounded verifier readers reject a symlink at the final open boundary', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'sentinel-phone-core-no-follow-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const target = join(root, 'target.log');
+  const link = join(root, 'link.log');
+  await writeFile(target, 'evidence');
+  await symlink(target, link);
+  assert.throws(() => fileSha256(link, 1024));
+  assert.throws(() => readUtf8Bounded(link, 1024));
+});
+
 test('certificate content is read through the same bounded verifier boundary', () => {
   const source = readFileSync(new URL('./verify-phone-core-physical-session.js', import.meta.url), 'utf8');
   assert.match(source, /function readUtf8Bounded\(filePath, maxBytes\)/);

@@ -72,10 +72,30 @@ function safeRelativeFile(baseDir, relativePath, maxBytes) {
   return resolved;
 }
 
-export function fileSha256(filePath, maxBytes = Number.MAX_SAFE_INTEGER) {
+function openBoundedFile(filePath, maxBytes) {
   if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new Error('invalid maximum size');
+  if (!Number.isInteger(fs.constants.O_NOFOLLOW)) {
+    throw new Error('symlink-safe file open unavailable');
+  }
+  let descriptor = null;
+  try {
+    descriptor = fs.openSync(
+      filePath,
+      fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW
+    );
+    const stat = fs.fstatSync(descriptor);
+    if (!stat.isFile()) throw new Error('file is not regular');
+    if (stat.size > maxBytes) throw new Error('file exceeds maximum size');
+    return descriptor;
+  } catch (error) {
+    if (descriptor !== null) fs.closeSync(descriptor);
+    throw error;
+  }
+}
+
+export function fileSha256(filePath, maxBytes = Number.MAX_SAFE_INTEGER) {
   const hash = createHash('sha256');
-  const descriptor = fs.openSync(filePath, 'r');
+  const descriptor = openBoundedFile(filePath, maxBytes);
   const buffer = Buffer.allocUnsafe(1024 * 1024);
   try {
     let bytesRead;
@@ -95,8 +115,7 @@ export function fileSha256(filePath, maxBytes = Number.MAX_SAFE_INTEGER) {
 }
 
 export function readUtf8Bounded(filePath, maxBytes) {
-  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new Error('invalid maximum size');
-  const descriptor = fs.openSync(filePath, 'r');
+  const descriptor = openBoundedFile(filePath, maxBytes);
   const buffer = Buffer.allocUnsafe(1024 * 1024);
   const chunks = [];
   let totalBytes = 0;
