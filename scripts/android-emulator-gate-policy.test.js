@@ -39,6 +39,24 @@ test('every emulator APK install has an independent bounded ADB watchdog', () =>
   }
 });
 
+test('every emulator workflow step that talks to a device bounds ordinary ADB calls', () => {
+  const stepNames = [
+    'Boot Android emulator',
+    'Run connected instrumentation suite',
+    'Reboot emulator and verify interrupted setup resumes',
+    'Run emulator application/runtime qualification',
+    'Collect qualification evidence even after failure',
+    'Stop emulator'
+  ];
+  for (const name of stepNames) {
+    const block = emulationWorkflow.split(`- name: ${name}\n`)[1]?.split('\n      - name: ')[0] || '';
+    assert.match(block, /ADB_COMMAND_TIMEOUT_SECONDS="\$\{ADB_COMMAND_TIMEOUT_SECONDS:-30\}"/,
+      `${name} must configure an ADB timeout`);
+    assert.match(block, /adb\(\)\s*\{[\s\S]*command timeout[\s\S]*ADB_BIN[\s\S]*"\$@"/,
+      `${name} must route ordinary ADB calls through its watchdog`);
+  }
+});
+
 test('Android emulator qualification covers minimum, current and newest runtime lanes', () => {
   assert.match(instrumentationWorkflow, /api-level:\s*24\b/);
   assert.match(instrumentationWorkflow, /api-level:\s*36\b/);

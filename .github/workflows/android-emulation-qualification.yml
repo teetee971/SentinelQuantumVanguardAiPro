@@ -206,6 +206,19 @@ jobs:
           SDK_PACKAGE_LEVEL: ${{ matrix.sdk_package_level }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           chmod +x ./gradlew
           IMAGE="system-images;android-${SDK_PACKAGE_LEVEL};google_apis;x86_64"
           PLATFORM="platforms;android-${SDK_PACKAGE_LEVEL}"
@@ -300,6 +313,19 @@ jobs:
           API_LEVEL: ${{ matrix.api_level }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           if [[ "$API_LEVEL" == "24" ]]; then
             ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
             APP_APK="app/build/outputs/apk/debug/app-debug.apk"
@@ -355,6 +381,19 @@ jobs:
           API_LEVEL: ${{ matrix.api_level }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           APP_APK="app/build/outputs/apk/debug/app-debug.apk"
@@ -467,6 +506,19 @@ jobs:
           SETUP_REBOOT_OUTCOME: ${{ steps.setup_reboot.outcome }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
           APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' -type f -print -quit)
           test -n "$APK_PATH"
@@ -522,6 +574,19 @@ jobs:
           RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           LOGCAT_STATUS=0
@@ -814,6 +879,20 @@ jobs:
         if: always()
         shell: bash
         run: |
+          set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           adb emu kill >/dev/null 2>&1 || true
           if [[ -f "$RUNNER_TEMP/sentinel-emulator.pid" ]]; then
             kill "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1 || true
