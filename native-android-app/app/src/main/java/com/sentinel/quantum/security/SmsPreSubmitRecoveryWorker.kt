@@ -18,6 +18,11 @@ class SmsPreSubmitRecoveryWorker(
         val journal = SmsPreSubmitJournal(applicationContext)
         val records = journal.all()
         if (records.isEmpty()) return Result.success()
+
+        val repairable = records.filter {
+            it.phase != SmsPreSubmitJournal.Phase.TRANSPORT_STARTED
+        }
+        if (repairable.isEmpty()) return Result.success()
         if (
             applicationContext.readSmsRoleStateFailClosed() !=
                 SmsActivationDiagnostics.SmsRoleState.HELD
@@ -26,7 +31,7 @@ class SmsPreSubmitRecoveryWorker(
         }
 
         var retry = false
-        records.forEach { record ->
+        repairable.forEach { record ->
             when (record.phase) {
                 SmsPreSubmitJournal.Phase.PREPARING -> {
                     when (
@@ -55,9 +60,7 @@ class SmsPreSubmitRecoveryWorker(
                         retry = true
                     }
                 }
-                SmsPreSubmitJournal.Phase.TRANSPORT_STARTED -> {
-                    // Never infer a transport failure from an ambiguous process-death boundary.
-                }
+                SmsPreSubmitJournal.Phase.TRANSPORT_STARTED -> Unit
             }
         }
         return if (retry) Result.retry() else Result.success()
