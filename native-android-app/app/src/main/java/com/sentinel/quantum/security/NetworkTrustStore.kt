@@ -46,7 +46,7 @@ class NetworkTrustStore(context: Context) {
 
     private fun move(identifier: String, addTo: String, removeFrom: String): Boolean {
         val fingerprint = fingerprint(identifier) ?: return false
-        prefs.edit()
+        return prefs.edit()
             .putStringSet(addTo, read(addTo) + fingerprint)
             .putStringSet(removeFrom, read(removeFrom) - fingerprint)
             .commit()
