@@ -17,7 +17,7 @@ import android.telecom.TelecomManager
 object EmergencyCallHandoff {
     fun openSystemDialer(context: Context, number: String): Boolean {
         if (number.isBlank()) return false
-        val telecom = context.getSystemService(TelecomManager::class.java)
+        val telecom = context.getSystemService(TelecomManager::class.java) ?: return false
         val intent = Intent(
             Intent.ACTION_DIAL,
             Uri.parse("tel:" + Uri.encode(number))

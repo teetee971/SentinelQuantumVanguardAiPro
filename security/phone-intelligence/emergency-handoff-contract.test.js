@@ -8,6 +8,11 @@ const handoff = fs.readFileSync(
 );
 
 test('emergency handoff targets an external Android phone surface without choosing a SIM', () => {
+  assert.match(
+    handoff,
+    /val telecom = context\.getSystemService\(TelecomManager::class\.java\) \?: return false/,
+    'an unavailable TelecomManager must fail closed instead of crashing the emergency handoff'
+  );
   assert.match(handoff, /Intent\.ACTION_DIAL/);
   assert.match(handoff, /telecom\.systemDialerPackage/);
   assert.match(handoff, /telecom\.defaultDialerPackage/);
