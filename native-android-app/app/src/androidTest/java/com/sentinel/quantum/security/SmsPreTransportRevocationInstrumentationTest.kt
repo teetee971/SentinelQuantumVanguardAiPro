@@ -29,6 +29,9 @@ class SmsPreTransportRevocationInstrumentationTest {
     @After
     fun cleanupAuthorizationAndHook() {
         runCatching { SmsPreTransportTestInterlock.installForInstrumentation(null) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            runCatching { shell("cmd role add-role-holder --user 0 android.app.role.SMS $packageName") }
+        }
         runCatching { shell("appops set --user 0 --uid $packageName SEND_SMS allow") }
         runCatching { shell("appops set --user 0 $packageName SEND_SMS allow") }
     }
@@ -36,29 +39,8 @@ class SmsPreTransportRevocationInstrumentationTest {
     @Test
     fun sendSms_revokedAtFinalBoundary_neverCrossesTelephonyAndRepairsProvider() {
         assumeTrue("ROLE_SMS shell contract starts on Android 10", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-
-        shell("cmd role add-role-holder --user 0 android.app.role.SMS $packageName")
-        shell("pm grant $packageName ${Manifest.permission.SEND_SMS}")
-        shell("pm grant $packageName ${Manifest.permission.READ_PHONE_STATE}")
-        shell("appops set --user 0 --uid $packageName SEND_SMS allow")
-        shell("appops set --user 0 $packageName SEND_SMS allow")
-
-        waitForSmsRole()
-        assertEquals(
-            PackageManager.PERMISSION_GRANTED,
-            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS)
-        )
-        assertEquals(
-            PackageManager.PERMISSION_GRANTED,
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
-        )
-
-        val subscriptions = context.getSystemService(SubscriptionManager::class.java)
-            .activeSubscriptionInfoList
-            .orEmpty()
-            .filter { it.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
-        assertTrue("Emulator must expose at least one active SMS subscription", subscriptions.isNotEmpty())
-        val subscriptionId = subscriptions.first().subscriptionId
+        prepareAuthorizedSmsState()
+        val subscriptionId = activeSubscriptionId()
 
         SmsPreTransportTestInterlock.installForInstrumentation {
             shell("appops set --user 0 --uid $packageName SEND_SMS ignore")
@@ -80,40 +62,144 @@ class SmsPreTransportRevocationInstrumentationTest {
 
         assertFalse(result.accepted)
         assertEquals("SEND_SMS_PERMISSION_NOT_GRANTED", result.reason)
-        assertNotNull(result.providerMessageId)
         val providerMessageId = requireNotNull(result.providerMessageId)
+        assertProviderFailed(providerMessageId)
+        assertNoTransportCallbacks(providerMessageId, "pre-transport rejection")
+        runCatching { context.contentResolver.delete(messageUri(providerMessageId), null, null) }
+    }
 
-        val messageUri = ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, providerMessageId)
-        context.contentResolver.query(
-            messageUri,
-            arrayOf(Telephony.Sms.TYPE, Telephony.Sms.STATUS),
-            null,
-            null,
-            null
-        )!!.use { cursor ->
-            assertTrue("Compensated provider row must still be readable", cursor.moveToFirst())
-            assertEquals(Telephony.Sms.MESSAGE_TYPE_FAILED, cursor.getInt(0))
-            assertEquals(Telephony.Sms.STATUS_FAILED, cursor.getInt(1))
+    @Test
+    fun sendSms_roleRevokedAtFinalBoundary_recoversOnlyAfterRoleRestoration() {
+        assumeTrue("ROLE_SMS shell contract starts on Android 10", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        prepareAuthorizedSmsState()
+        val subscriptionId = activeSubscriptionId()
+
+        SmsPreTransportTestInterlock.installForInstrumentation {
+            shell("cmd role remove-role-holder --user 0 android.app.role.SMS $packageName")
+            waitForSmsRoleAbsent()
         }
 
-        Thread.sleep(750)
-        val callbacksForMessage = SmsDeliveryStatusBus.events.replayCache
-            .filter { it.providerMessageId == providerMessageId }
-        val sentCallbackCount = callbacksForMessage.count { it.stage == SmsDeliveryStatusBus.Stage.SENT }
-        val deliveredCallbackCount = callbacksForMessage.count { it.stage == SmsDeliveryStatusBus.Stage.DELIVERED }
-        assertEquals("No SENT callback may exist for a pre-transport rejection", 0, sentCallbackCount)
-        assertEquals("No DELIVERED callback may exist for a pre-transport rejection", 0, deliveredCallbackCount)
+        val result = SentinelSmsSender(context).send(
+            destination = "+15550124",
+            body = "SentinelRoleRevocationRecoveryProbe",
+            requestedSubscriptionId = subscriptionId
+        )
 
-        runCatching { context.contentResolver.delete(messageUri, null, null) }
+        assertFalse(result.accepted)
+        assertEquals(
+            SentinelSmsSender.PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED,
+            result.reason
+        )
+        val providerMessageId = requireNotNull(result.providerMessageId)
+        val journal = SmsPreSubmitJournal(context)
+        val pending = journal.all().singleOrNull { it.providerMessageId == providerMessageId }
+        assertNotNull("Role-revoked pre-transport row must remain durably recoverable", pending)
+        assertEquals(SmsPreSubmitJournal.Phase.PROVIDER_READY, pending!!.phase)
+
+        SmsPreTransportTestInterlock.installForInstrumentation(null)
+        shell("cmd role add-role-holder --user 0 android.app.role.SMS $packageName")
+        waitForSmsRole()
+        SmsPreSubmitRecoveryWorker.scheduleStartupRecovery(context)
+        waitForProviderFailedAndJournalCleared(providerMessageId)
+
+        assertNoTransportCallbacks(
+            providerMessageId,
+            "role-revoked pre-transport rejection"
+        )
+        runCatching { context.contentResolver.delete(messageUri(providerMessageId), null, null) }
+    }
+
+    private fun prepareAuthorizedSmsState() {
+        shell("cmd role add-role-holder --user 0 android.app.role.SMS $packageName")
+        shell("pm grant $packageName ${Manifest.permission.SEND_SMS}")
+        shell("pm grant $packageName ${Manifest.permission.READ_PHONE_STATE}")
+        shell("appops set --user 0 --uid $packageName SEND_SMS allow")
+        shell("appops set --user 0 $packageName SEND_SMS allow")
+        waitForSmsRole()
+        assertEquals(
+            PackageManager.PERMISSION_GRANTED,
+            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS)
+        )
+        assertEquals(
+            PackageManager.PERMISSION_GRANTED,
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE)
+        )
+    }
+
+    private fun activeSubscriptionId(): Int {
+        val subscriptions = context.getSystemService(SubscriptionManager::class.java)
+            .activeSubscriptionInfoList
+            .orEmpty()
+            .filter { it.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+        assertTrue("Emulator must expose at least one active SMS subscription", subscriptions.isNotEmpty())
+        return subscriptions.first().subscriptionId
     }
 
     private fun waitForSmsRole() {
-        repeat(30) {
+        repeat(40) {
             if (SentinelSmsSender(context).holdsSmsRole()) return
             Thread.sleep(100)
         }
         assertTrue("Sentinel must hold ROLE_SMS before the race probe", SentinelSmsSender(context).holdsSmsRole())
     }
+
+    private fun waitForSmsRoleAbsent() {
+        repeat(40) {
+            if (!SentinelSmsSender(context).holdsSmsRole()) return
+            Thread.sleep(100)
+        }
+        assertFalse("ROLE_SMS removal must be observable at the final boundary", SentinelSmsSender(context).holdsSmsRole())
+    }
+
+    private fun waitForProviderFailedAndJournalCleared(providerMessageId: Long) {
+        repeat(80) {
+            val failed = providerState(providerMessageId)?.let { state ->
+                state.first == Telephony.Sms.MESSAGE_TYPE_FAILED &&
+                    state.second == Telephony.Sms.STATUS_FAILED
+            } == true
+            val journalCleared = SmsPreSubmitJournal(context).all().none {
+                it.providerMessageId == providerMessageId
+            }
+            if (failed && journalCleared) return
+            Thread.sleep(100)
+        }
+        assertProviderFailed(providerMessageId)
+        assertTrue(
+            "Recovered provider row must no longer have a pre-submit journal record",
+            SmsPreSubmitJournal(context).all().none { it.providerMessageId == providerMessageId }
+        )
+    }
+
+    private fun assertProviderFailed(providerMessageId: Long) {
+        val state = providerState(providerMessageId)
+        assertNotNull("Compensated provider row must still be readable", state)
+        assertEquals(Telephony.Sms.MESSAGE_TYPE_FAILED, state!!.first)
+        assertEquals(Telephony.Sms.STATUS_FAILED, state.second)
+    }
+
+    private fun providerState(providerMessageId: Long): Pair<Int, Int>? =
+        context.contentResolver.query(
+            messageUri(providerMessageId),
+            arrayOf(Telephony.Sms.TYPE, Telephony.Sms.STATUS),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) null else cursor.getInt(0) to cursor.getInt(1)
+        }
+
+    private fun assertNoTransportCallbacks(providerMessageId: Long, label: String) {
+        Thread.sleep(750)
+        val callbacksForMessage = SmsDeliveryStatusBus.events.replayCache
+            .filter { it.providerMessageId == providerMessageId }
+        val sentCallbackCount = callbacksForMessage.count { it.stage == SmsDeliveryStatusBus.Stage.SENT }
+        val deliveredCallbackCount = callbacksForMessage.count { it.stage == SmsDeliveryStatusBus.Stage.DELIVERED }
+        assertEquals("No SENT callback may exist for a $label", 0, sentCallbackCount)
+        assertEquals("No DELIVERED callback may exist for a $label", 0, deliveredCallbackCount)
+    }
+
+    private fun messageUri(providerMessageId: Long) =
+        ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, providerMessageId)
 
     private fun shell(command: String): String {
         val descriptor: ParcelFileDescriptor = instrumentation.uiAutomation.executeShellCommand(command)
