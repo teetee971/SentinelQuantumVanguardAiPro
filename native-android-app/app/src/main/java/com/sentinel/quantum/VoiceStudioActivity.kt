@@ -399,7 +399,12 @@ class VoiceStudioActivity : ComponentActivity() {
     override fun onDestroy() {
         stopRecording()
         stopPlayback()
-        runCatching { previewFile.delete() }
+        // A configuration recreation must not destroy a local preview that the user can still
+        // listen to after rotation. The cache file is disposable only when the activity is
+        // actually finishing.
+        if (!isChangingConfigurations) {
+            runCatching { previewFile.delete() }
+        }
         super.onDestroy()
     }
 }

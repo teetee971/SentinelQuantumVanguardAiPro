@@ -3,6 +3,8 @@ package com.sentinel.quantum.ui.design
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -124,6 +126,7 @@ fun SentinelPanel(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SentinelHero(
     eyebrow: String,
@@ -160,7 +163,10 @@ fun SentinelHero(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (badges.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     badges.forEach { (label, color) ->
                         Surface(
                             shape = RoundedCornerShape(999.dp),
