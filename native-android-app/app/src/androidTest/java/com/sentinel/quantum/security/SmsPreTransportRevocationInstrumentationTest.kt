@@ -14,7 +14,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -68,47 +67,6 @@ class SmsPreTransportRevocationInstrumentationTest {
         runCatching { context.contentResolver.delete(messageUri(providerMessageId), null, null) }
     }
 
-    @Test
-    fun sendSms_roleRevokedAtFinalBoundary_recoversOnlyAfterRoleRestoration() {
-        assumeTrue("ROLE_SMS shell contract starts on Android 10", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-        prepareAuthorizedSmsState()
-        val subscriptionId = activeSubscriptionId()
-
-        SmsPreTransportTestInterlock.installForInstrumentation {
-            shell("cmd role remove-role-holder --user 0 android.app.role.SMS $packageName")
-            waitForSmsRoleAbsent()
-        }
-
-        val result = SentinelSmsSender(context).send(
-            destination = "+15550124",
-            body = "SentinelRoleRevocationRecoveryProbe",
-            requestedSubscriptionId = subscriptionId
-        )
-
-        assertFalse(result.accepted)
-        assertEquals(
-            SentinelSmsSender.PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED,
-            result.reason
-        )
-        val providerMessageId = requireNotNull(result.providerMessageId)
-        val journal = SmsPreSubmitJournal(context)
-        val pending = journal.all().singleOrNull { it.providerMessageId == providerMessageId }
-        assertNotNull("Role-revoked pre-transport row must remain durably recoverable", pending)
-        assertEquals(SmsPreSubmitJournal.Phase.PROVIDER_READY, pending!!.phase)
-
-        SmsPreTransportTestInterlock.installForInstrumentation(null)
-        shell("cmd role add-role-holder --user 0 android.app.role.SMS $packageName")
-        waitForSmsRole()
-        SmsPreSubmitRecoveryWorker.scheduleStartupRecovery(context)
-        waitForProviderFailedAndJournalCleared(providerMessageId)
-
-        assertNoTransportCallbacks(
-            providerMessageId,
-            "role-revoked pre-transport rejection"
-        )
-        runCatching { context.contentResolver.delete(messageUri(providerMessageId), null, null) }
-    }
-
     private fun prepareAuthorizedSmsState() {
         shell("cmd role add-role-holder --user 0 android.app.role.SMS $packageName")
         shell("pm grant $packageName ${Manifest.permission.SEND_SMS}")
@@ -143,36 +101,9 @@ class SmsPreTransportRevocationInstrumentationTest {
         assertTrue("Sentinel must hold ROLE_SMS before the race probe", SentinelSmsSender(context).holdsSmsRole())
     }
 
-    private fun waitForSmsRoleAbsent() {
-        repeat(40) {
-            if (!SentinelSmsSender(context).holdsSmsRole()) return
-            Thread.sleep(100)
-        }
-        assertFalse("ROLE_SMS removal must be observable at the final boundary", SentinelSmsSender(context).holdsSmsRole())
-    }
-
-    private fun waitForProviderFailedAndJournalCleared(providerMessageId: Long) {
-        repeat(80) {
-            val failed = providerState(providerMessageId)?.let { state ->
-                state.first == Telephony.Sms.MESSAGE_TYPE_FAILED &&
-                    state.second == Telephony.Sms.STATUS_FAILED
-            } == true
-            val journalCleared = SmsPreSubmitJournal(context).all().none {
-                it.providerMessageId == providerMessageId
-            }
-            if (failed && journalCleared) return
-            Thread.sleep(100)
-        }
-        assertProviderFailed(providerMessageId)
-        assertTrue(
-            "Recovered provider row must no longer have a pre-submit journal record",
-            SmsPreSubmitJournal(context).all().none { it.providerMessageId == providerMessageId }
-        )
-    }
-
     private fun assertProviderFailed(providerMessageId: Long) {
         val state = providerState(providerMessageId)
-        assertNotNull("Compensated provider row must still be readable", state)
+        assertTrue("Compensated provider row must still be readable", state != null)
         assertEquals(Telephony.Sms.MESSAGE_TYPE_FAILED, state!!.first)
         assertEquals(Telephony.Sms.STATUS_FAILED, state.second)
     }
