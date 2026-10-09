@@ -93,6 +93,20 @@ test('unexpected SMS provider projection failures remain retryable', () => {
   assert.match(worker, /return when \(projection\)/);
 });
 
+test('an unreadable SMS spool file cannot be reported as a successful worker completion', () => {
+  assert.match(
+    store,
+    /fun hasPending\(filesDir: File, id: String\): Boolean[\s\S]*target\.isFile/
+  );
+  const missingRecordBranch = worker.match(
+    /val record = IncomingSmsDeliveryStore\.read\([\s\S]*?\n        if \(record == null\) \{([\s\S]*?)\n        \}/
+  );
+  assert.ok(missingRecordBranch, 'worker must distinguish an absent record from unreadable retained state');
+  assert.match(missingRecordBranch[1], /IncomingSmsDeliveryStore\.hasPending\(/);
+  assert.match(missingRecordBranch[1], /Result\.retry\(\)/);
+  assert.match(missingRecordBranch[1], /Result\.success\(\)/);
+});
+
 test('SMS provider replay does not hide private spool cleanup failure', () => {
   const foundBranch = worker.match(
     /ProviderLookup\.FOUND -> \{([\s\S]*?)return Projection\.SUCCESS/

@@ -20,7 +20,17 @@ class IncomingSmsDeliveryWorker(
     override fun doWork(): Result {
         val id = inputData.getString(KEY_ID) ?: return Result.success()
         val record = IncomingSmsDeliveryStore.read(applicationContext.filesDir, id)
-            ?: return Result.success()
+        if (record == null) {
+            val retained = IncomingSmsDeliveryStore.hasPending(applicationContext.filesDir, id)
+            if (retained) {
+                LocalLogger(applicationContext).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "DefaultSms",
+                    "Spool SMS entrant illisible encore présent; nouvelle tentative durable planifiée"
+                )
+            }
+            return if (retained) Result.retry() else Result.success()
+        }
 
         val projection = runCatching {
             project(applicationContext, record, deleteStageOnSuccess = true)

@@ -100,6 +100,15 @@ internal object IncomingSmsDeliveryStore {
         return decoded
     }
 
+    /** True when a staged file still owns this identity, including an unreadable file. */
+    @Synchronized
+    fun hasPending(filesDir: File, id: String): Boolean {
+        if (!ID.matches(id)) return false
+        val directory = directory(filesDir, create = false) ?: return false
+        val target = recordFile(directory, id) ?: return false
+        return target.isFile
+    }
+
     @Synchronized
     fun delete(filesDir: File, id: String): Boolean {
         if (!ID.matches(id)) return false
