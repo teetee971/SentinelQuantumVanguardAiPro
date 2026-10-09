@@ -33,7 +33,8 @@ class SmsOutgoingSubmissionStore internal constructor(
             nowMs <= 0L
         ) return@synchronized false
 
-        prune(nowMs)
+        if (!validateEntries()) return@synchronized false
+        if (!prune(nowMs)) return@synchronized false
         val storageKey = key(sendToken, providerMessageId)
         if (!preferences.contains(storageKey) && trackedCount() >= MAX_TRACKED) return@synchronized false
         preferences.edit()
@@ -42,6 +43,9 @@ class SmsOutgoingSubmissionStore internal constructor(
     }
 
     fun stale(nowMs: Long = System.currentTimeMillis()): List<Submission> = synchronized(LOCK) {
+        if (!validateEntries()) {
+            throw IllegalStateException("SMS submission ledger contains corrupt recovery state")
+        }
         preferences.all.entries.mapNotNull { (key, value) ->
             val submission = decode(key, value as? String) ?: return@mapNotNull null
             if (nowMs - submission.createdAtMs < CALLBACK_TIMEOUT_MS) null else submission
@@ -54,17 +58,23 @@ class SmsOutgoingSubmissionStore internal constructor(
         preferences.edit().remove(storageKey).commit()
     }
 
-    private fun prune(nowMs: Long) {
-        val editor = preferences.edit()
-        var changed = false
-        preferences.all.forEach { (key, value) ->
-            val submission = decode(key, value as? String)
-            if (submission == null || nowMs - submission.createdAtMs > RETENTION_MS) {
-                editor.remove(key)
-                changed = true
-            }
+    private fun prune(nowMs: Long): Boolean {
+        val entries = preferences.all.entries
+        if (entries.any { (key, value) -> decode(key, value as? String) == null }) return false
+        val expired = entries.filter { (key, value) ->
+            val submission = decode(key, value as String) ?: return@filter false
+            nowMs - submission.createdAtMs > RETENTION_MS
         }
-        if (changed) editor.commit()
+        if (expired.isEmpty()) return true
+        val editor = preferences.edit()
+        expired.forEach { editor.remove(it.key) }
+        return editor.commit()
+    }
+
+    private fun validateEntries(): Boolean =
+        preferences.all.entries.all { (key, value) ->
+            decode(key, value as? String) != null
+        }
     }
 
     private fun trackedCount(): Int = preferences.all.count { (key, value) ->
