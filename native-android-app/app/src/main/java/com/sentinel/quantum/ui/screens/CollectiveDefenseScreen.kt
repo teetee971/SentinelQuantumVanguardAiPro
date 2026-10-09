@@ -208,10 +208,16 @@ fun CollectiveDefenseScreen(navController: NavController) {
             }
 
             status?.let {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(it) },
-                    leadingIcon = {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    tonalElevation = 1.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Icon(
                             if (result?.communityIntelligence == "available") {
                                 Icons.Default.CloudDone
@@ -220,8 +226,9 @@ fun CollectiveDefenseScreen(navController: NavController) {
                             },
                             contentDescription = null
                         )
+                        Text(it)
                     }
-                )
+                }
             }
 
             result?.let { reputation ->
