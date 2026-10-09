@@ -1,5 +1,6 @@
 package com.sentinel.quantum.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -181,6 +182,20 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         }
     }
 
+    fun requestScanPermissions(permissions: Array<String>) {
+        try {
+            permissionLauncher.launch(permissions)
+        } catch (_: ActivityNotFoundException) {
+            isScanning = false
+            permissionDenied = true
+            statusMessage = "Android n’a pas pu ouvrir la demande de permissions du scan local. Vérifiez les réglages, puis réessayez."
+        } catch (_: RuntimeException) {
+            isScanning = false
+            permissionDenied = true
+            statusMessage = "Android a refusé la demande de permissions du scan local. Vérifiez les réglages, puis réessayez."
+        }
+    }
+
     fun startScan() {
         statusMessage = null
         when (selectedTab) {
@@ -188,13 +203,13 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 if (wifiScanner.hasPermissions()) {
                     runWifiScan()
                 } else {
-                    permissionLauncher.launch(wifiScanner.requiredPermissions)
+                    requestScanPermissions(wifiScanner.requiredPermissions)
                 }
             SurveillanceTab.BLUETOOTH ->
                 if (bluetoothScanner.hasPermissions()) {
                     runBluetoothScan()
                 } else {
-                    permissionLauncher.launch(bluetoothScanner.requiredPermissions)
+                    requestScanPermissions(bluetoothScanner.requiredPermissions)
                 }
         }
     }
