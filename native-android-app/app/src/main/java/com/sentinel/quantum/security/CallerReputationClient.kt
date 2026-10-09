@@ -64,7 +64,7 @@ class CallerReputationClient(
         requireDynamicEgressAllowed(egressGate)
         client.newCall(request).execute().use { httpResponse ->
             if (!httpResponse.isSuccessful) throw IllegalStateException("HTTP_" + httpResponse.code)
-            return parseResponse(httpResponse.body.string())
+            return parseResponse(BoundedResponseBody.readText(httpResponse.body, MAX_RESPONSE_BYTES))
         }
     }
 
@@ -94,6 +94,7 @@ class CallerReputationClient(
             ).toString()
 
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+        private const val MAX_RESPONSE_BYTES = 512 * 1024
 
         internal fun parseResponse(raw: String): Result {
             val payload = JSONObject(raw)

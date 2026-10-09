@@ -30,10 +30,8 @@ class RtrDirectoryClient(
         val req = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(req).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("RTR_HTTP_${response.code}")
-            val body = response.body
-            if (body.contentLength() == 0L || body.contentLength() > MAX_BYTES) throw IllegalStateException("RTR_SIZE")
-            val bytes = body.bytes()
-            if (bytes.size > MAX_BYTES) throw IllegalStateException("RTR_SIZE")
+            val bytes = BoundedResponseBody.read(response.body, MAX_BYTES)
+            if (bytes.isEmpty()) throw IllegalStateException("RTR_SIZE")
             val parsed = JSONObject(String(bytes, Charsets.UTF_8))
             // Validate before caching; incompatible data must fail closed and remain uncached.
             if (parsed.optInt("schemaVersion") != 1 || parsed.optString("country") != "AT" ||

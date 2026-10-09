@@ -35,10 +35,8 @@ class ArcepDirectoryClient(
         val request = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("ARCEP_HTTP_${response.code}")
-            val body = response.body
-            if ((body.contentLength() > MAX_BYTES) || body.contentLength() == 0L) throw IllegalStateException("ARCEP_SIZE")
-            val bytes = body.bytes()
-            if (bytes.size > MAX_BYTES) throw IllegalStateException("ARCEP_SIZE")
+            val bytes = BoundedResponseBody.read(response.body, MAX_BYTES)
+            if (bytes.isEmpty()) throw IllegalStateException("ARCEP_SIZE")
             val parsed = JSONObject(String(bytes, Charsets.UTF_8))
             // Validate before caching so malformed/stale-incompatible data never becomes trusted state.
             if (parsed.optInt("schemaVersion") != 2 || parsed.optJSONArray("entries") == null) {
