@@ -648,6 +648,15 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactListStatus by remember { mutableStateOf<String?>(null) }
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
                 val context = this@SentinelDialerActivity
+                fun launchInternalActivityOrReport(request: Intent, failureMessage: String) {
+                    try {
+                        context.startActivity(request)
+                    } catch (_: ActivityNotFoundException) {
+                        callActionStatus = failureMessage
+                    } catch (_: RuntimeException) {
+                        callActionStatus = failureMessage
+                    }
+                }
                 val blocklist = remember { CallBlocklistStore(context) }
                 val favorites = remember { PhoneFavoriteStore(context) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
@@ -1002,8 +1011,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                 SentinelStateChip(
                                     state = protectionState,
                                     onClick = {
-                                        context.startActivity(
-                                            Intent(context, PhoneCoreActivationActivity::class.java)
+                                        launchInternalActivityOrReport(
+                                            Intent(context, PhoneCoreActivationActivity::class.java),
+                                            "Android n’a pas pu ouvrir la configuration Phone Core. Vérifiez l’installation, puis réessayez."
                                         )
                                     }
                                 )
@@ -1031,9 +1041,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                     FilledTonalIconButton(
                                         onClick = {
                                             val safe = sanitizeDialNumber(number) ?: return@FilledTonalIconButton
-                                            startActivity(
+                                            launchInternalActivityOrReport(
                                                 Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe)))
-                                                    .setClass(context, SmsComposeActivity::class.java)
+                                                    .setClass(context, SmsComposeActivity::class.java),
+                                                "Android n’a pas pu ouvrir la messagerie Sentinel. Vérifiez l’installation, puis réessayez."
                                             )
                                         },
                                         enabled = sanitizeDialNumber(number) != null,
@@ -1156,11 +1167,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         )
                                         OutlinedButton(
                                             onClick = {
-                                                startActivity(
+                                                launchInternalActivityOrReport(
                                                     Intent(
                                                         this@SentinelDialerActivity,
                                                         PhoneCoreDiagnosticActivity::class.java
-                                                    )
+                                                    ),
+                                                    "Android n’a pas pu ouvrir le diagnostic technique. Vérifiez l’installation, puis réessayez."
                                                 )
                                             },
                                             modifier = Modifier.fillMaxWidth()
@@ -1170,11 +1182,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         if (!protectionReady) {
                                             Button(
                                                 onClick = {
-                                                    startActivity(
+                                                    launchInternalActivityOrReport(
                                                         Intent(
                                                             this@SentinelDialerActivity,
                                                             PhoneCoreActivationActivity::class.java
-                                                        )
+                                                        ),
+                                                        "Android n’a pas pu ouvrir la configuration Phone Core. Vérifiez l’installation, puis réessayez."
                                                     )
                                                 },
                                                 modifier = Modifier.fillMaxWidth()
@@ -1799,14 +1812,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         FilledTonalIconButton(
                                                             onClick = {
                                                                 if (dialable != null) {
-                                                                    startActivity(
+                                                                    launchInternalActivityOrReport(
                                                                         Intent(
                                                                             Intent.ACTION_SENDTO,
                                                                             Uri.parse("smsto:" + Uri.encode(dialable))
                                                                         ).setClass(
                                                                             context,
                                                                             SmsComposeActivity::class.java
-                                                                        )
+                                                                        ),
+                                                                        "Android n’a pas pu ouvrir la messagerie Sentinel. Vérifiez l’installation, puis réessayez."
                                                                     )
                                                                 }
                                                             },
