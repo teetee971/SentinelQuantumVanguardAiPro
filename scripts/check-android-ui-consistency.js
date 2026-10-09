@@ -759,6 +759,10 @@ if (smsComposeSource) {
     'LaunchedEffect(activeSendToken, activeProviderMessageId)',
     'event.providerMessageId != activeProviderMessageId',
     'activeProviderMessageId = result.providerMessageId',
+    'var submissionInFlight by remember',
+    'if (submissionInFlight) return',
+    'submissionInFlight = false',
+    'submissionInFlight = submissionInFlight',
   ]) {
     if (!smsComposeSource.includes(marker)) {
       errors.push(`conversation-first SMS marker missing (${marker}): ${smsComposePath}`);
