@@ -65,6 +65,21 @@ test('feature flags have a non-test runtime consumer', () => {
   );
 });
 
+test('system status renders a bounded feature-flag snapshot with an unavailable fallback', () => {
+  const page = read('public/system-status.html');
+  const runtime = read('public/system-status.js');
+  const generator = read('scripts/generate-feature-flag-status.js');
+  const build = read('scripts/build-for-cloudflare.js');
+
+  assert.match(page, /system-status\.js/);
+  assert.match(page, /data-feature-flag-status/);
+  assert.match(runtime, /feature-flags-status\.json/);
+  assert.match(runtime, /informational_only/);
+  assert.match(runtime, /état non affirmé/);
+  assert.match(generator, /from ['"]\.\.\/config\/feature-flags\.js['"]/);
+  assert.match(build, /writeFeatureFlagStatus\(join\(outputDir, 'public', 'feature-flags-status\.json'\)\)/);
+});
+
 test('generated Android capability state is read by application code', () => {
   const generatedPath = join(
     rootDir,

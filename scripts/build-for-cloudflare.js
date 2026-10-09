@@ -12,6 +12,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { writePublicProductTruth } from './generate-public-product-truth.js';
 import { renderCapabilityConsumers } from './render-product-capabilities.js';
+import { writeFeatureFlagStatus } from './generate-feature-flag-status.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -114,6 +115,11 @@ for (const { src, dest, required } of filesToCopy) {
     process.exit(1);
   }
 }
+
+// The feature flag module is a governance/configuration source, never an
+// authorization boundary. Publish only its bounded informational snapshot so
+// the system-status page cannot claim that an unconnected configuration is live.
+writeFeatureFlagStatus(join(outputDir, 'public', 'feature-flags-status.json'));
 
 const TRUTH_RUNTIME_MARKER = 'data-sentinel-product-truth="build"';
 const TRUTH_STYLE_MARKER = 'id="sentinel-product-truth-styles"';

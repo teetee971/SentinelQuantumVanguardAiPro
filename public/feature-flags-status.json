@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "generated_at": null,
+  "informational_only": true,
+  "system": {
+    "status": "DEFENSIVE_PLATFORM",
+    "mode": "CONTROLLED",
+    "version": "2.0.0-pro",
+    "emergencyShutdown": false,
+    "killSwitchActive": false,
+    "backend": { "enabled": false, "readOnly": true, "writeEnabled": false },
+    "logs": { "liveEnabled": false, "readOnly": true, "exportEnabled": false },
+    "mobile": { "releaseMode": false, "autoUpdate": false },
+    "security": {
+      "quantumDefense": false,
+      "threatScanner": false,
+      "ddosProtection": false,
+      "adminConsole": false,
+      "auditLog": true
+    }
+  },
+  "governance": {
+    "compliant": true,
+    "risk_level": "CONTROLLED",
+    "checks": {
+      "backendReadOnlyMode": true,
+      "noWriteOperations": true,
+      "killSwitchReady": true,
+      "auditLogActive": true,
+      "logsReadOnly": true,
+      "androidAutoUpdateDisabled": true,
+      "optionalThreatFeaturesOff": true
+    }
+  }
+}
