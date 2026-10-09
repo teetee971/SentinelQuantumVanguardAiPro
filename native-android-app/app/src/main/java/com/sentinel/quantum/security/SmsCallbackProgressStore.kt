@@ -135,15 +135,23 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
     }
 
     private fun trimToBound(nowMs: Long): Boolean {
-        val entries = preferences.all.mapNotNull { (key, value) ->
+        val allEntries = preferences.all
+        val overflow = allEntries.size - MAX_TRACKED
+        if (overflow <= 0) return true
+
+        // Corrupt records still consume real SharedPreferences capacity even though they cannot be
+        // decoded. Never erase them as ordinary retention garbage; instead evict only the oldest
+        // valid records. If there are not enough valid records to restore the bound, fail closed
+        // and leave the corruption visible to recovery rather than pretending the store is healthy.
+        val removable = allEntries.mapNotNull { (key, value) ->
             val persisted = decode(value as? String, nowMs, enforceTtl = false)
                 ?: return@mapNotNull null
             key to persisted.createdAtMs
         }.sortedBy { it.second }
-        val overflow = entries.size - MAX_TRACKED
-        if (overflow <= 0) return true
+        if (removable.size < overflow) return false
+
         val editor = preferences.edit()
-        entries.take(overflow).forEach { editor.remove(it.first) }
+        removable.take(overflow).forEach { editor.remove(it.first) }
         return editor.commit()
     }
 
