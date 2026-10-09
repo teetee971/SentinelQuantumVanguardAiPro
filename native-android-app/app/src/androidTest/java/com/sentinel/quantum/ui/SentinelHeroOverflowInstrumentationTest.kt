@@ -7,7 +7,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.fetchSemanticsNode
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
