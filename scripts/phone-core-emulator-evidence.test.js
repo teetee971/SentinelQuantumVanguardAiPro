@@ -298,6 +298,14 @@ test('package lookup failure cannot masquerade as an installed application', () 
   assert.match(report.evidence_failures.join('\n'), /package_state/);
 });
 
+test('dumpsys package metadata suffix still proves the exact installed package', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('package.txt', 'Package [com.sentinel.quantum] (8f3a1b2):\n');
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(report.evidence_failures.includes('package_state'), false);
+});
+
 test('runtime package path lookup failure cannot qualify the installed APK', () => {
   const { result, report } = fixture({}, ({ put }) => {
     put('runtime-package-path.txt', 'Error: package not found\n');

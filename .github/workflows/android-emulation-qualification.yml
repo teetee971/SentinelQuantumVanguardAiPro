@@ -619,7 +619,7 @@ jobs:
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => read(name).split(/\r?\n/)
             .some((line) => line.trim() === 'com.sentinel.quantum');
-          const packageStateConfirmed = /^Package \[com\.sentinel\.quantum\]$/m.test(read('package.txt'));
+          const packageStateConfirmed = /^Package \[com\.sentinel\.quantum\](?:\s.*)?$/m.test(read('package.txt'));
           const runtimePackagePathConfirmed = /^package:[^\r\n\s]+\.apk$/m.test(read('runtime-package-path.txt'));
           const sdkApiExact = read('setup-reboot-sdk.txt').trim() === String(api);
           const walk = (dir) => {
