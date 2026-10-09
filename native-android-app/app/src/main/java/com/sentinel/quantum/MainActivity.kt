@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -91,6 +92,8 @@ private fun androidx.navigation.NavHostController.navigateBottomDestination(scre
 }
 
 class MainActivity : ComponentActivity() {
+    private var phoneCoreLaunchError by mutableStateOf<String?>(null)
+
     private val phoneCoreSetupLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -107,20 +110,50 @@ class MainActivity : ComponentActivity() {
         if (!persisted) {
             // Do not leave the customer with a silent lifecycle write failure after the Android
             // surface closes. Reopen the same setup surface with an explicit retryable error.
+            openPhoneCoreSetupRecoverySurface()
+        }
+    }
+
+    private fun reportPhoneCoreSetupLaunchFailure(message: String) {
+        phoneCoreLaunchError = message
+    }
+
+    private fun launchPhoneCoreSetup(persistenceError: Boolean = false) {
+        phoneCoreLaunchError = null
+        try {
+            phoneCoreSetupLauncher.launch(Intent(this, PhoneCoreActivationActivity::class.java).apply {
+                putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+                if (persistenceError) {
+                    putExtra(PhoneCoreActivationActivity.EXTRA_SETUP_PERSISTENCE_ERROR, true)
+                }
+            })
+        } catch (_: ActivityNotFoundException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android n’a pas pu ouvrir la configuration Phone Core. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
+        } catch (_: RuntimeException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android a refusé l’ouverture de la configuration Phone Core. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
+        }
+    }
+
+    private fun openPhoneCoreSetupRecoverySurface() {
+        phoneCoreLaunchError = null
+        try {
             startActivity(Intent(this, PhoneCoreActivationActivity::class.java).apply {
                 putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
                 putExtra(PhoneCoreActivationActivity.EXTRA_SETUP_PERSISTENCE_ERROR, true)
             })
+        } catch (_: ActivityNotFoundException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android n’a pas pu rouvrir la configuration Phone Core après l’échec de persistance. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
+        } catch (_: RuntimeException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android a refusé la réouverture de la configuration Phone Core après l’échec de persistance. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
         }
-    }
-
-    private fun launchPhoneCoreSetup(persistenceError: Boolean = false) {
-        phoneCoreSetupLauncher.launch(Intent(this, PhoneCoreActivationActivity::class.java).apply {
-            putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
-            if (persistenceError) {
-                putExtra(PhoneCoreActivationActivity.EXTRA_SETUP_PERSISTENCE_ERROR, true)
-            }
-        })
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -230,6 +263,34 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     if (showBrandLoading) SentinelBrandLoading()
+                    phoneCoreLaunchError?.let { message ->
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .safeDrawingPadding(),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            tonalElevation = 6.dp
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    "Configuration Phone Core non ouverte",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    message,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                androidx.compose.material3.OutlinedButton(
+                                    onClick = { launchPhoneCoreSetup(persistenceError = true) }
+                                ) {
+                                    Text("Réessayer la configuration Phone Core")
+                                }
+                            }
+                        }
+                    }
                     }
                 }
             }
