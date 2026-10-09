@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 // These fixtures are never Android, modem, or physical qualification evidence.
 const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qualification.yml', import.meta.url), 'utf8');
 const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
+const runtimeFlow = readFileSync(new URL('./phone-core-emulator-flow.sh', import.meta.url), 'utf8');
 function nodeCodeForStep(name) {
   const step = workflow.split(`- name: ${name}\n`)[1];
   assert.ok(step, `Workflow step exists: ${name}`);
@@ -63,6 +64,13 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(reportCode, /screeningLatencyValues\.every\(\(elapsedMs\) =>/);
   assert.match(reportCode, /CallScreeningService:response_sent=true/);
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
+});
+
+test('every runtime ADB operation is independently watchdog-bounded', () => {
+  assert.match(runtimeFlow, /ADB_COMMAND_TIMEOUT_SECONDS="\$\{ADB_COMMAND_TIMEOUT_SECONDS:-30\}"/);
+  assert.match(runtimeFlow, /ADB_COMMAND_KILL_GRACE_SECONDS="\$\{ADB_COMMAND_KILL_GRACE_SECONDS:-5\}"/);
+  assert.match(runtimeFlow, /command timeout[\s\S]*adb "\$@"/);
+  assert.match(runtimeFlow, /positive integer seconds/);
 });
 
 test('reboot preparation leaves process termination to the external workflow', () => {

@@ -8,6 +8,20 @@ FLOW_PACKAGE="com.sentinel.quantum"
 FLOW_NUMBER="5550100"
 FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
+ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+  [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ADB command watchdog values must be positive integer seconds." >&2
+  exit 2
+fi
+adb() {
+  command timeout \
+    --signal=INT \
+    --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+    "${ADB_COMMAND_TIMEOUT_SECONDS}s" \
+    adb "$@"
+}
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
 role_holders() {

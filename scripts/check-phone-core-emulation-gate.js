@@ -367,6 +367,10 @@ for (const marker of [
 
 for (const marker of [
   'wait_role_held android.app.role.CALL_SCREENING',
+  'ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"',
+  'ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"',
+  'command timeout',
+  'adb "$@"',
   'dumpsys role',
   'adb emu gsm call',
   'wait_logcat_marker "CallScreeningService:onScreenCall"',
