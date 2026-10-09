@@ -250,6 +250,7 @@ for (const marker of [
   'INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}',
   'id: setup_reboot',
   'adb shell reboot',
+  'adb shell am force-stop com.sentinel.quantum',
   'timeout --signal=INT --kill-after=5s 30s',
   'SETUP_REBOOT_OUTCOME: ${{ steps.setup_reboot.outcome }}',
   'setupRebootObserved',
@@ -323,9 +324,11 @@ for (const marker of [
   'attempted_target',
   'completed',
   'interruptedFirstRunResumesWithoutFalseCompletion',
-  'executeShellCommand("am force-stop',
   'LifecycleState.IN_PROGRESS'
 ]) requireText(setupResumeTest, marker, 'setup resume instrumentation');
+if (/executeShellCommand\("am force-stop/.test(setupResumeTest)) {
+  errors.push('setup-resume instrumentation must not force-stop its own target process; host-driven reboot qualification owns process death');
+}
 if (setupResumeTest.includes('sendKeyDownUpSync')) {
   errors.push('setup-resume instrumentation must not require privileged key injection');
 }
