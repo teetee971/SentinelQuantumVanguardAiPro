@@ -24,6 +24,12 @@ internal class PttTelecomInterlock {
     @Synchronized
     fun detach(candidate: PttController): Boolean {
         if (controller !== candidate) return false
+
+        if (candidate.state != PttState.DISCONNECTED) {
+            candidate.disconnect()
+        }
+        if (candidate.state != PttState.DISCONNECTED) return false
+
         controller = null
         return true
     }
