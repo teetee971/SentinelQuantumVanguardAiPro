@@ -618,6 +618,7 @@ jobs:
             .some((line) => line.trim() === 'com.sentinel.quantum');
           const packageStateConfirmed = /^Package \[com\.sentinel\.quantum\]$/m.test(read('package.txt'));
           const runtimePackagePathConfirmed = /^package:[^\r\n\s]+\.apk$/m.test(read('runtime-package-path.txt'));
+          const sdkApiExact = read('setup-reboot-sdk.txt').trim() === String(api);
           const walk = (dir) => {
             if (!fs.existsSync(dir)) return [];
             return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -771,6 +772,7 @@ jobs:
             sms_all_parts_delivered_callback: api >= 36 ? smsDeliveredCallbackObserved : null,
             role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
             effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
+            sdk_api_exact: sdkApiExact,
             runtime_package_path: runtimePackagePathConfirmed,
             no_crash_or_anr: crashOrAnrAbsent
           };
@@ -786,6 +788,7 @@ jobs:
             'all_static_navigation_surfaces_render',
             'standalone_activity_surfaces_render',
             'cold_install_and_relaunch',
+            'sdk_api_exact',
             'runtime_package_path',
             'no_crash_or_anr'
           ];

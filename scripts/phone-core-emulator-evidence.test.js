@@ -65,6 +65,8 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(workflow, /Configuration initiale/);
   assert.match(reportCode, /SETUP_REBOOT_OUTCOME/);
   assert.match(reportCode, /setupRebootObserved/);
+  assert.match(reportCode, /sdkApiExact/);
+  assert.match(reportCode, /sdk_api_exact/);
   assert.match(reportCode, /screeningLatencyObserved/);
   assert.match(reportCode, /screening_latency_observed/);
   assert.match(reportCode, /SCREENING_RESPONSE_BUDGET_MS = 450/);
@@ -222,6 +224,7 @@ function fixture(overrides = {}, alter = () => {}) {
   for (const direction of ['incoming', 'outgoing']) put(`phone-private-timeline-${direction}-incall_active.xml`, 'INCALL_ACTIVE');
   put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
   put('setup-reboot-state-after-reboot.xml', '<string name="lifecycle_state_v1">IN_PROGRESS</string>\n<string name="attempted_target">DIALER_ROLE</string>\n<boolean name="completed" value="false" />\n');
+  put('setup-reboot-sdk.txt', `${String(overrides.API_LEVEL ?? '36')}\n`);
   put('setup-reboot-ui.xml', '<node text="Configuration initiale" />\n');
   put('revocation-summary.json', JSON.stringify({ schema_version: 2, effective_permission_denial_fail_closed: true, role_revocation_fail_closed: true, effective_permission_probe: 'SEND_SMS_APP_OP_DENIED' }));
   const results = join(dir, 'app/build/outputs/androidTest-results');
@@ -292,6 +295,16 @@ test('runtime package path lookup failure cannot qualify the installed APK', () 
   assert.equal(report.result, 'FAIL');
   assert.equal(report.checks.runtime_package_path, false);
   assert.ok(report.evidence_failures.includes('runtime_package_path'));
+});
+
+test('qualification cannot pass when the persisted emulator SDK differs from the requested API', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('setup-reboot-sdk.txt', '35\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.sdk_api_exact, false);
+  assert.ok(report.evidence_failures.includes('sdk_api_exact'));
 });
 
 for (const role of ['sms', 'dialer', 'call-screening']) {
