@@ -477,6 +477,9 @@ jobs:
           # UTP removes the app after connected tests on modern API lanes. Install
           # the exact runtime APK before requiring a successful app-data reset.
           timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"
+          timeout --signal=INT --kill-after=5s 30s adb shell pm path com.sentinel.quantum |
+            tr -d '\r' > "$OUTPUT/runtime-package-path.txt"
+          grep -Eq '^package:[^[:space:]]+\.apk$' "$OUTPUT/runtime-package-path.txt"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
@@ -549,6 +552,7 @@ jobs:
           const packageHeld = (name) => read(name).split(/\r?\n/)
             .some((line) => line.trim() === 'com.sentinel.quantum');
           const packageStateConfirmed = /^Package \[com\.sentinel\.quantum\]$/m.test(read('package.txt'));
+          const runtimePackagePathConfirmed = /^package:[^\r\n\s]+\.apk$/m.test(read('runtime-package-path.txt'));
           const walk = (dir) => {
             if (!fs.existsSync(dir)) return [];
             return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -702,6 +706,7 @@ jobs:
             sms_all_parts_delivered_callback: api >= 36 ? smsDeliveredCallbackObserved : null,
             role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
             effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
+            runtime_package_path: runtimePackagePathConfirmed,
             no_crash_or_anr: crashOrAnrAbsent
           };
 
@@ -716,6 +721,7 @@ jobs:
             'all_static_navigation_surfaces_render',
             'standalone_activity_surfaces_render',
             'cold_install_and_relaunch',
+            'runtime_package_path',
             'no_crash_or_anr'
           ];
           const required = api === 24
@@ -746,6 +752,9 @@ jobs:
           if (!apkSha256) evidenceFailures.push('apk_provenance');
           if (!nonEmpty('package.txt') || !packageStateConfirmed) {
             evidenceFailures.push('package_state');
+          }
+          if (!runtimePackagePathConfirmed) {
+            evidenceFailures.push('runtime_package_path');
           }
 
           const report = {

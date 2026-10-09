@@ -27,14 +27,15 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
   const reset = runtime
     .slice(start, end)
     // The fixture stubs adb directly; the watchdog itself is covered by the workflow policy test.
-    .replace('timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"', 'adb install -r "$APK_PATH"');
+    .replace('timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"', 'adb install -r "$APK_PATH"')
+    .replace('timeout --signal=INT --kill-after=5s 30s adb shell pm path com.sentinel.quantum', 'adb shell pm path com.sentinel.quantum');
   for (const [installStatus, dataStatus, dataOutput, logStatus, expected] of [
     [0, 0, 'Success', 0, 0], [1, 0, 'Success', 0, 1], [0, 1, 'Success', 0, 1], [0, 0, 'Failed', 0, 1], [0, 0, 'Success', 1, 1]
   ]) {
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-runtime-reset-'));
     try {
       const fixture = join(dir, 'reset.sh');
-      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
+      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm path com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then return 1; fi; echo package:/data/app/com.sentinel.quantum/base.apk; return 0;;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
       const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
       assert.equal(result.status, expected, result.stderr);
       assert.equal(result.stdout.includes('FRESH_RUNTIME_SCOPE'), expected === 0);
@@ -44,6 +45,12 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
     } finally { rmSync(dir, { recursive: true, force: true }); }
   }
   assert.doesNotMatch(runtime, /adb shell am start[^\n]*min-sdk-(?:first|second)-launch[^\n]*\|\| true/);
+});
+
+test('runtime qualification proves the exact package is installed through package manager state', () => {
+  assert.match(workflow, /pm path com\.sentinel\.quantum/);
+  assert.match(reportCode, /runtimePackagePathConfirmed/);
+  assert.match(reportCode, /runtime_package_path/);
 });
 
 test('emulator qualification proves setup state across a real reboot before runtime reset', () => {
@@ -199,6 +206,7 @@ function fixture(overrides = {}, alter = () => {}) {
   put('logcat.txt', 'SentinelLifecycle: fixture only\n');
   put('logcat-status.txt', '0\n');
   put('package.txt', 'Package [com.sentinel.quantum]\n');
+  put('runtime-package-path.txt', 'package:/data/app/com.sentinel.quantum/base.apk\n');
   put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
   put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
   put(
@@ -272,6 +280,16 @@ test('package lookup failure cannot masquerade as an installed application', () 
   assert.notEqual(result.status, 0);
   assert.equal(report.result, 'FAIL');
   assert.match(report.evidence_failures.join('\n'), /package_state/);
+});
+
+test('runtime package path lookup failure cannot qualify the installed APK', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('runtime-package-path.txt', 'Error: package not found\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.runtime_package_path, false);
+  assert.ok(report.evidence_failures.includes('runtime_package_path'));
 });
 
 for (const role of ['sms', 'dialer', 'call-screening']) {
