@@ -90,8 +90,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
             CallRuleEngine.Action.ALLOW -> Unit
         }
-        respondToCall(callDetails, response.build())
-        logResponseLatency(startedAtElapsedMs)
+        respondAndLog(callDetails, response.build(), startedAtElapsedMs)
 
         // Caller-ID rendering happens only after the mandatory platform response. The profile is
         // computed offline and contains no invented person or company identity.
@@ -185,7 +184,19 @@ class SentinelCallScreeningService : CallScreeningService() {
     }
 
     private fun respondOpen(callDetails: Call.Details, startedAtElapsedMs: Long) {
-        respondToCall(callDetails, CallResponse.Builder().build())
+        respondAndLog(callDetails, CallResponse.Builder().build(), startedAtElapsedMs)
+    }
+
+    private fun respondAndLog(
+        callDetails: Call.Details,
+        response: CallResponse,
+        startedAtElapsedMs: Long
+    ) {
+        runCatching {
+            respondToCall(callDetails, response)
+        }.onFailure {
+            Log.w(LIFECYCLE_TAG, "Réponse Telecom de filtrage refusée", it)
+        }
         logResponseLatency(startedAtElapsedMs)
     }
 

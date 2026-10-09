@@ -191,7 +191,8 @@ for (const marker of [
   'if (emergency != false)',
   'CallBlocklistStore.cachedSnapshotForScreening()',
   'SCREENING_FINGERPRINTER::cachedCandidates',
-  'respondToCall(callDetails, CallResponse.Builder().build())'
+  'private fun respondAndLog(',
+  'respondAndLog(callDetails, CallResponse.Builder().build(), startedAtElapsedMs)'
 ]) requireText(callScreeningService, marker, 'CallScreeningService truth');
 const screeningBudgetMs = Number(
   callScreeningService.match(/const val MAX_PRE_RESPONSE_MS = (\d+)L/)?.[1] ?? 0

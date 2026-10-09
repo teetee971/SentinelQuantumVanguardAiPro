@@ -87,7 +87,7 @@ export function auditProductTruth(sources) {
   }
 
   const screeningPostResponseOffMain =
-    callScreening.includes('respondToCall(callDetails, response.build())') &&
+    callScreening.includes('respondAndLog(callDetails, response.build(), startedAtElapsedMs)') &&
     callScreening.includes('POST_RESPONSE_WORKER.execute') &&
     callScreening.includes('CallFilterLogStore.get(appContext).recordAsync(decision)') &&
     callScreening.includes('PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))') &&
@@ -100,7 +100,7 @@ export function auditProductTruth(sources) {
   }
 
   const lastScreeningResponse = callScreening.indexOf(
-    '        respondToCall(callDetails, response.build())'
+    '        respondAndLog(callDetails, response.build(), startedAtElapsedMs)'
   );
   const callerIdEnrichment = callScreening.indexOf(
     'val profile = CallerIdentityResolver.resolve('

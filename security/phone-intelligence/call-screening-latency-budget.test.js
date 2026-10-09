@@ -24,3 +24,17 @@ test('slow local screening fails open before the Telecom response boundary', () 
     'the budget must use elapsed monotonic time and fail at the configured boundary'
   );
 });
+
+test('Telecom screening responses are contained at one fail-open boundary', () => {
+  const responseCalls = [...service.matchAll(/\brespondToCall\(/g)];
+  assert.equal(
+    responseCalls.length,
+    1,
+    'all screening response paths must use one guarded responder'
+  );
+  assert.match(
+    service,
+    /private fun respondAndLog\([\s\S]*?runCatching \{\s*respondToCall\(/,
+    'a Telecom response exception must not crash the screening service'
+  );
+});
