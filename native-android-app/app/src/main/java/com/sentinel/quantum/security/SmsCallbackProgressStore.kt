@@ -68,12 +68,21 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
 
     fun pendingProviderWrites(nowMs: Long = System.currentTimeMillis()): List<PendingProviderWrite> = synchronized(LOCK) {
         preferences.all.entries.mapNotNull { (key, value) ->
-            val record = decode(value as? String, nowMs) ?: return@mapNotNull null
+            // A valid but expired record is ordinary retention cleanup. Any other malformed
+            // record is different: silently dropping it would let the submission watchdog
+            // convert an observed callback into a fabricated timeout.
+            val record = decode(value as? String, nowMs, enforceTtl = false)
+                ?: throw IllegalStateException("SMS callback progress contains corrupt state")
+            if (nowMs - record.createdAtMs > TTL_MS) return@mapNotNull null
             if (record.providerApplied) return@mapNotNull null
             val ids = key.split(":", limit = 2)
-            if (ids.size != 2) return@mapNotNull null
-            val sendToken = ids[0].toIntOrNull()?.takeIf { it > 0 } ?: return@mapNotNull null
-            val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L } ?: return@mapNotNull null
+            if (ids.size != 2) {
+                throw IllegalStateException("SMS callback progress key is corrupt")
+            }
+            val sendToken = ids[0].toIntOrNull()?.takeIf { it > 0 }
+                ?: throw IllegalStateException("SMS callback progress token is corrupt")
+            val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L }
+                ?: throw IllegalStateException("SMS callback progress provider id is corrupt")
             PendingProviderWrite(sendToken, providerId, SmsCallbackProgress.pendingProviderOutcome(record.state))
         }.take(MAX_TRACKED)
     }

@@ -22,6 +22,10 @@ const statusReceiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsStatusReceiver.kt',
   'utf8'
 );
+const progressStore = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsCallbackProgressStore.kt',
+  'utf8'
+);
 
 test('SMS submission registers a durable callback watchdog before entering telephony', () => {
   assert.ok(fs.existsSync(ledgerPath));
@@ -83,6 +87,19 @@ test('corrupt or unprunable SMS submission ledger state cannot be reported as ac
     'a failed retention cleanup must block a new registration'
   );
   assert.match(ledger, /private fun prune\(nowMs: Long\): Boolean/);
+});
+
+test('corrupt SMS callback progress cannot be treated as an empty provider queue', () => {
+  assert.match(
+    progressStore,
+    /pendingProviderWrites\([\s\S]*decode\([\s\S]*enforceTtl = false[\s\S]*IllegalStateException/,
+    'a malformed callback record must stop watchdog timeout decisions and trigger retry'
+  );
+  assert.match(
+    fs.readFileSync(workerPath, 'utf8'),
+    /val pendingProviderWrites = runCatching \{[\s\S]*progressStore\.pendingProviderWrites\(\)[\s\S]*\}\.getOrElse \{[\s\S]*return Result\.retry\(\)/,
+    'the watchdog must retry when callback progress cannot be read truthfully'
+  );
 });
 
 test('terminal SMS callbacks retire the watchdog only after provider acknowledgement', () => {

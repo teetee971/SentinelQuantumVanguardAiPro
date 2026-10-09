@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import java.lang.reflect.Proxy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -113,7 +114,9 @@ class SmsCallbackProgressStoreTest {
 
         val store = SmsCallbackProgressStore(preferences.preferences)
 
-        assertTrue(store.pendingProviderWrites(nowMs = 1001L).isEmpty())
+        assertThrows(IllegalStateException::class.java) {
+            store.pendingProviderWrites(nowMs = 1001L)
+        }
     }
 }
 
