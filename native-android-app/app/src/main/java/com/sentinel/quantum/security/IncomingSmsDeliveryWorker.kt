@@ -22,7 +22,18 @@ class IncomingSmsDeliveryWorker(
         val record = IncomingSmsDeliveryStore.read(applicationContext.filesDir, id)
             ?: return Result.success()
 
-        return when (project(applicationContext, record, deleteStageOnSuccess = true)) {
+        val projection = runCatching {
+            project(applicationContext, record, deleteStageOnSuccess = true)
+        }.getOrElse {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "DefaultSms",
+                "Échec inattendu de la projection SMS; nouvelle tentative durable planifiée"
+            )
+            Projection.RETRY
+        }
+
+        return when (projection) {
             Projection.SUCCESS -> Result.success()
             Projection.RETRY -> Result.retry()
             Projection.ROLE_UNAVAILABLE -> {
