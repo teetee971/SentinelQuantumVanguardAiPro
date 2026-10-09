@@ -53,9 +53,24 @@ internal class IncomingMmsWapIngressJournal(context: Context) {
             preferences.edit().remove(key(normalizedDigest)).commit()
     }
 
+    /**
+     * Null means the journal key is genuinely absent. A present but invalid entry is
+     * indeterminate and must never authorize eviction of its staged WAP PDU.
+     */
+    fun read(digestHex: String): Record? = withJournalLock {
+        val normalizedDigest = digestHex.lowercase()
+        require(IncomingMmsIdentity.persistedFileName(normalizedDigest) != null) {
+            "Invalid MMS WAP ingress digest"
+        }
+        val recordKey = key(normalizedDigest)
+        if (!preferences.contains(recordKey)) return@withJournalLock null
+        decode(normalizedDigest, preferences.all[recordKey])
+            ?: throw IllegalStateException("Corrupt MMS WAP ingress journal entry")
+    }
+
     fun all(): List<Record> = withJournalLock {
         if (!sanitizeInvalidEntries()) {
-            throw IllegalStateException("MMS WAP ingress journal cleanup failed")
+            throw IllegalStateException("MMS WAP ingress journal contains invalid entries")
         }
         preferences.all.asSequence()
             .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
@@ -65,19 +80,10 @@ internal class IncomingMmsWapIngressJournal(context: Context) {
             .toList()
     }
 
-    private fun sanitizeInvalidEntries(): Boolean {
-        val invalidKeys = preferences.all.asSequence()
-            .filter { (name, value) ->
-                name.startsWith(KEY_PREFIX) &&
-                    decode(name.removePrefix(KEY_PREFIX), value) == null
-            }
-            .map { it.key }
-            .toList()
-        if (invalidKeys.isEmpty()) return true
-
-        val editor = preferences.edit()
-        invalidKeys.forEach(editor::remove)
-        return editor.commit()
+    // Never delete malformed metadata: absence could be misread as permission to
+    // evict an otherwise valid PDU. Preserve evidence and fail closed instead.
+    private fun sanitizeInvalidEntries(): Boolean = preferences.all.none { (name, value) ->
+        name.startsWith(KEY_PREFIX) && decode(name.removePrefix(KEY_PREFIX), value) == null
     }
 
     private fun decode(digestHex: String, rawValue: Any?): Record? {
