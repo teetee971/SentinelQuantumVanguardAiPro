@@ -15,6 +15,7 @@ ORIGINAL_USER_ROTATION=""
 ORIGINAL_ACCELEROMETER_ROTATION=""
 ORIGINAL_WIFI_ON=""
 ORIGINAL_MOBILE_DATA=""
+MOBILE_DATA_ORACLE_SOURCE=""
 RESTORE_FAILED=false
 if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
   [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
@@ -30,11 +31,40 @@ adb() {
 }
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
+read_mobile_data_state() {
+  local mobile_data_oracle=""
+  if mobile_data_oracle="$(adb shell cmd phone get-data-enabled 2>/dev/null | tr -d '\r')"; then
+    case "$mobile_data_oracle" in
+      true|1)
+        MOBILE_DATA_ORACLE_SOURCE="cmd_phone"
+        printf '1\n'
+        return 0
+        ;;
+      false|0)
+        MOBILE_DATA_ORACLE_SOURCE="cmd_phone"
+        printf '0\n'
+        return 0
+        ;;
+    esac
+  fi
+  if mobile_data_oracle="$(adb shell settings get global mobile_data 2>/dev/null | tr -d '\r')"; then
+    case "$mobile_data_oracle" in
+      0|1)
+        MOBILE_DATA_ORACLE_SOURCE="settings_global"
+        printf '%s\n' "$mobile_data_oracle"
+        return 0
+        ;;
+    esac
+  fi
+  echo "Unable to read Android mobile-data state from supported fail-closed oracles." >&2
+  return 1
+}
+
 capture_original_device_state() {
   ORIGINAL_USER_ROTATION="$(adb shell settings get system user_rotation | tr -d '\r')"
   ORIGINAL_ACCELEROMETER_ROTATION="$(adb shell settings get system accelerometer_rotation | tr -d '\r')"
   ORIGINAL_WIFI_ON="$(adb shell settings get global wifi_on | tr -d '\r')"
-  ORIGINAL_MOBILE_DATA="$(adb shell settings get global mobile_data | tr -d '\r')"
+  ORIGINAL_MOBILE_DATA="$(read_mobile_data_state)"
   [[ "$ORIGINAL_USER_ROTATION" =~ ^[0-9]+$ ]]
   [[ "$ORIGINAL_ACCELEROMETER_ROTATION" =~ ^[01]$ ]]
   [[ "$ORIGINAL_WIFI_ON" =~ ^[01]$ ]]
@@ -405,8 +435,9 @@ run_stability_qualification() {
   adb shell svc wifi disable
   adb shell svc data disable
   wifi_state="$(adb shell settings get global wifi_on | tr -d '\r')"
-  mobile_state="$(adb shell settings get global mobile_data | tr -d '\r')"
-  printf 'wifi_on=%s\nmobile_data=%s\n' "$wifi_state" "$mobile_state" > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
+  mobile_state="$(read_mobile_data_state)"
+  printf 'wifi_on=%s\nmobile_data=%s\nmobile_data_oracle=%s\n' \
+    "$wifi_state" "$mobile_state" "$MOBILE_DATA_ORACLE_SOURCE" > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
   [[ "$wifi_state" == "0" ]]
   [[ "$mobile_state" == "0" ]]
   adb shell am force-stop "$FLOW_PACKAGE"
