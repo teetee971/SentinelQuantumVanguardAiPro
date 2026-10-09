@@ -1206,12 +1206,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                 ProtectionItem(
                                     "Filtrage d’appels",
                                     "Rôle Filtrage d’appels observé sur cet appareil",
-                                    if (runtimeSetupFacts.callScreeningRoleHeld) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (runtimeSetupFacts.callScreeningRoleHeld) SentinelState.READY else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Identification d’appel",
                                     "Accès Contacts observé sur cet appareil",
-                                    if (contactsPermissionGranted) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (contactsPermissionGranted) SentinelState.READY else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Protection SMS/MMS",
@@ -1219,7 +1219,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         "Rôle SMS et autorisations SMS/MMS observés"
                                     else
                                         "Rôle ou autorisations SMS/MMS à finaliser",
-                                    if (smsMmsPrerequisitesReady) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (smsMmsPrerequisitesReady) SentinelState.READY else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Enrichissement distant",
@@ -1227,7 +1227,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         "Activé par l’utilisateur ; disponibilité réseau non mesurée ici"
                                     else
                                         "Désactivé par l’utilisateur",
-                                    if (settings.callerReputationEnrichmentEnabled) SentinelState.UNKNOWN else SentinelState.TO_CONFIGURE
+                                    if (settings.callerReputationEnrichmentEnabled) SentinelState.LIMITED else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Notifications téléphonie",
@@ -1235,7 +1235,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         "Canaux appels/SMS observés comme disponibles"
                                     else
                                         "Canaux appels/SMS à vérifier",
-                                    if (runtimeSetupFacts.notificationChannelsReady) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (runtimeSetupFacts.notificationChannelsReady) SentinelState.READY else SentinelState.LOCKED
                                 )
                             )
                             protectionItems.forEach { item ->

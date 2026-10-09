@@ -333,10 +333,10 @@ private fun CallerCard(
         else -> "Décision : " + PhoneCoreFrenchLabels.action(action)
     }
     val decisionState = when (action) {
-        "BLOCK" -> SentinelState.BLOCKED
-        "SILENCE" -> SentinelState.DEGRADED
+        "BLOCK" -> SentinelState.LOCKED
+        "SILENCE" -> SentinelState.LIMITED
         "ALLOW" -> SentinelState.READY
-        else -> SentinelState.UNKNOWN
+        else -> SentinelState.LOCKED
     }
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(PhoneCoreFrenchLabels.reason(reason))

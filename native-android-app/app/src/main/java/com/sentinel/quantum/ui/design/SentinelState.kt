@@ -1,21 +1,17 @@
 package com.sentinel.quantum.ui.design
 
 /**
- * D.1 truthful UI state vocabulary.
+ * D.1 truthful Phone Core status vocabulary.
  *
  * IMPORTANT: READY means software prerequisites are currently satisfied.
- * It never means that a physical Phone Core scenario has been validated.
+ * For the Phone Core summary it additionally requires complete physical evidence and an
+ * operational carrier environment. LIMITED is used for configured-but-unproven or degraded
+ * states; LOCKED is used when a prerequisite is unavailable or explicitly blocked.
  */
 enum class SentinelState {
-    TO_CONFIGURE,
     READY,
-    TO_TEST,
-    VALIDATED,
-    PARTIAL,
-    DEGRADED,
-    BLOCKED,
-    UNKNOWN,
-    UNAVAILABLE
+    LIMITED,
+    LOCKED
 }
 
 object PhoneCoreUiState {
@@ -28,41 +24,27 @@ object PhoneCoreUiState {
         available: Boolean = true,
         operationalEnvironmentReady: Boolean = true
     ): SentinelState {
-        if (!available) return SentinelState.UNAVAILABLE
-        if (explicitlyBlocked) return SentinelState.BLOCKED
-        if (!softwarePrerequisitesReady) return SentinelState.TO_CONFIGURE
+        if (!available || explicitlyBlocked || !softwarePrerequisitesReady) {
+            return SentinelState.LOCKED
+        }
         val required = physicalRequired.coerceAtLeast(1)
         val completed = physicalCompleted.coerceIn(0, required)
-        return when {
-            completed == required && physicalDeviceValidated && !operationalEnvironmentReady -> SentinelState.DEGRADED
-            completed == required && physicalDeviceValidated -> SentinelState.VALIDATED
-            completed == required -> SentinelState.TO_TEST
-            completed > 0 -> SentinelState.TO_TEST
-            else -> SentinelState.READY
-        }
+        return if (
+            completed == required &&
+            physicalDeviceValidated &&
+            operationalEnvironmentReady
+        ) SentinelState.READY else SentinelState.LIMITED
     }
 
     fun phoneCoreHeadline(state: SentinelState): String = when (state) {
-        SentinelState.TO_CONFIGURE -> "Configuration Phone Core incomplète"
-        SentinelState.READY -> "Configuration prête · tests terrain à effectuer"
-        SentinelState.TO_TEST -> "Tests terrain Phone Core en cours"
-        SentinelState.VALIDATED -> "Phone Core validé sur cet appareil"
-        SentinelState.PARTIAL -> "Phone Core partiellement disponible"
-        SentinelState.DEGRADED -> "Phone Core en mode dégradé"
-        SentinelState.BLOCKED -> "Phone Core bloqué"
-        SentinelState.UNKNOWN -> "État Phone Core non mesuré"
-        SentinelState.UNAVAILABLE -> "Phone Core non disponible"
+        SentinelState.READY -> "Phone Core prêt"
+        SentinelState.LIMITED -> "Phone Core limité"
+        SentinelState.LOCKED -> "Phone Core bloqué"
     }
 
     fun label(state: SentinelState): String = when (state) {
-        SentinelState.TO_CONFIGURE -> "À configurer"
         SentinelState.READY -> "Prêt"
-        SentinelState.TO_TEST -> "À tester"
-        SentinelState.VALIDATED -> "Validé"
-        SentinelState.PARTIAL -> "Partiel"
-        SentinelState.DEGRADED -> "Dégradé"
-        SentinelState.BLOCKED -> "Bloqué"
-        SentinelState.UNKNOWN -> "Non mesuré"
-        SentinelState.UNAVAILABLE -> "Non disponible"
+        SentinelState.LIMITED -> "Limité"
+        SentinelState.LOCKED -> "Bloqué"
     }
 }
