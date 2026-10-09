@@ -122,14 +122,28 @@ test('first-run completion includes the same secure MMS prerequisite as Phone Co
   );
 });
 
-test('first-run assistant never launches an Android surface before durable state commits', () => {
+test('first-run assistant never requests an Android capability before durable state commits', () => {
   const main = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt'), 'utf8');
   const activation = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'), 'utf8');
   const setupStore = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt'), 'utf8');
 
   assert.match(setupStore, /fun markInProgress\(\): Boolean/);
   assert.match(setupStore, /private fun setLifecycleState\(state: LifecycleState\): Boolean/);
-  assert.match(main, /if \(!wizard\.markInProgress\(\)\) return/);
+  assert.match(
+    main,
+    /if \(!wizard\.markOffered\(\)\) \{[\s\S]*launchPhoneCoreSetup\(persistenceError = true\)/,
+    'a failed OFFERED write must open only the retryable error surface'
+  );
+  assert.match(
+    main,
+    /if \(!wizard\.markInProgress\(\)\) \{[\s\S]*launchPhoneCoreSetup\(persistenceError = true\)/,
+    'a failed IN_PROGRESS write must open only the retryable error surface'
+  );
+  assert.match(
+    main,
+    /private fun launchPhoneCoreSetup\(persistenceError: Boolean = false\)[\s\S]*EXTRA_SETUP_PERSISTENCE_ERROR/,
+    'the error surface must carry an explicit persistence-failure marker'
+  );
   assert.match(
     activation,
     /if \(!setupWizard\.markAttemptedTarget\(setupTargetKey\)\) \{[\s\S]*setupPersistenceError = true[\s\S]*return\s*\}/,
