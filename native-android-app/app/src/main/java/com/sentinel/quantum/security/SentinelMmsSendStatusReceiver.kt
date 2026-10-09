@@ -66,7 +66,40 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                 }
             }
         }.isSuccess
-        if (!scheduled) pendingResult.finish()
+        if (!scheduled) {
+            val captured = runCatching {
+                captureAndScheduleAfterSaturation(
+                    context = appContext,
+                    token = token,
+                    providerMessageId = providerMessageId,
+                    successful = MmsSendResultClassifier.classify(
+                        androidResultCode,
+                        httpStatus
+                    ).success
+                )
+            }.getOrDefault(false)
+            if (!captured) {
+                LocalLogger(appContext).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsSend",
+                    "Callback MMS non journalisé après saturation de la file"
+                )
+            }
+            pendingResult.finish()
+        }
+    }
+
+    /** Queue-full fallback: persist only provider correlation/result, then repair off-broadcast. */
+    private fun captureAndScheduleAfterSaturation(
+        context: Context,
+        token: String,
+        providerMessageId: Long?,
+        successful: Boolean
+    ): Boolean {
+        val providerId = providerMessageId ?: return false
+        if (!MmsProviderJournal(context).markResult(token, providerId, successful)) return false
+        queueProviderRepair(context)
+        return true
     }
 
     private fun process(

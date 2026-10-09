@@ -62,6 +62,18 @@ test('late MMS callbacks cannot overwrite a timed-out or terminal journal outcom
   assert.match(store, /MESSAGE_BOX_FAILED/);
 });
 
+test('MMS callback saturation journals transport truth without provider work', () => {
+  const fallback = statusReceiver.match(
+    /if \(!scheduled\) \{([\s\S]*?)pendingResult\.finish\(\)/
+  );
+  assert.ok(fallback, 'MMS callback saturation must have an explicit bounded fallback');
+  assert.match(fallback[1], /captureAndScheduleAfterSaturation/);
+  assert.doesNotMatch(fallback[1], /MmsConversationStore|ContentResolver/);
+  assert.match(statusReceiver, /private fun captureAndScheduleAfterSaturation/);
+  assert.match(statusReceiver, /MmsProviderJournal\(context\)\.markResult/);
+  assert.match(statusReceiver, /queueProviderRepair\(context\)/);
+});
+
 test('MMS rejects every negative subscription sentinel at each transport boundary', () => {
   assert.match(
     eligibility,
