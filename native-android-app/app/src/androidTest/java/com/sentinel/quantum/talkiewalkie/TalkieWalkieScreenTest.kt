@@ -1,12 +1,13 @@
 package com.sentinel.quantum.talkiewalkie
 
-import androidx.compose.ui.test.assertDoesNotExist
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.down
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.down
 import androidx.compose.ui.test.up
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,7 +28,7 @@ class TalkieWalkieScreenTest {
         }
 
         composeRule.onNodeWithText("Maintenir pour parler").assertIsDisplayed()
-        composeRule.onNodeWithText("Vous parlez").assertDoesNotExist()
+        composeRule.onAllNodesWithText("Vous parlez").assertCountEquals(0)
     }
 
     @Test
@@ -40,7 +41,7 @@ class TalkieWalkieScreenTest {
         }
 
         composeRule.onNodeWithText("Demande du canal…").assertIsDisplayed()
-        composeRule.onNodeWithText("Vous parlez").assertDoesNotExist()
+        composeRule.onAllNodesWithText("Vous parlez").assertCountEquals(0)
     }
 
     @Test
