@@ -114,6 +114,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun launchPhoneCoreSetup(persistenceError: Boolean = false) {
+        phoneCoreSetupLauncher.launch(Intent(this, PhoneCoreActivationActivity::class.java).apply {
+            putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+            if (persistenceError) {
+                putExtra(PhoneCoreActivationActivity.EXTRA_SETUP_PERSISTENCE_ERROR, true)
+            }
+        })
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleShareIntent(intent)
@@ -254,14 +263,16 @@ class MainActivity : ComponentActivity() {
         // process dies while the activation screen is open, IN_PROGRESS remains persisted and the
         // next cold launch resumes the assistant from the first fact Android still reports missing.
         if (lifecycleState == PhoneCoreSetupWizardStore.LifecycleState.NOT_STARTED) {
-            if (!wizard.markOffered()) return
-        }
-        if (!wizard.markInProgress()) return
-        phoneCoreSetupLauncher.launch(
-            Intent(this, PhoneCoreActivationActivity::class.java).apply {
-                putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+            if (!wizard.markOffered()) {
+                launchPhoneCoreSetup(persistenceError = true)
+                return
             }
-        )
+        }
+        if (!wizard.markInProgress()) {
+            launchPhoneCoreSetup(persistenceError = true)
+            return
+        }
+        launchPhoneCoreSetup()
     }
 
     /**

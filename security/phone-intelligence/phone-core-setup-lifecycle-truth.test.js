@@ -127,6 +127,31 @@ test('returning from setup does not swallow lifecycle persistence failures', () 
   );
 });
 
+test('initial setup lifecycle persistence failures reopen a visible retry surface', () => {
+  assert.match(
+    main,
+    /if \(!wizard\.markOffered\(\)\) \{[\s\S]*launchPhoneCoreSetup\(persistenceError = true\)/,
+    'a failed OFFERED write must route to the visible setup error surface'
+  );
+  assert.match(
+    main,
+    /if \(!wizard\.markInProgress\(\)\) \{[\s\S]*launchPhoneCoreSetup\(persistenceError = true\)/,
+    'a failed IN_PROGRESS write must route to the visible setup error surface'
+  );
+});
+
+test('setup persistence error blocks automatic Android handoff until explicit retry', () => {
+  const effectStart = activation.indexOf('LaunchedEffect(firstRunSetup, setupTargetKey, attemptedSetupTargetKey)');
+  const effectEnd = activation.indexOf('\n\n                Scaffold', effectStart);
+  assert.ok(effectStart >= 0 && effectEnd > effectStart, 'setup auto-launch effect must remain inspectable');
+  const effect = activation.slice(effectStart, effectEnd);
+  assert.match(
+    effect,
+    /else if \([\s\S]*!setupPersistenceError[\s\S]*PhoneCoreSetupWizardStore\.shouldAutoLaunch/,
+    'a persistence error must suppress automatic permission or role launch'
+  );
+});
+
 test('contacts card does not expose a dead permission action before the dialer role exists', () => {
   const cardStart = activation.indexOf('Icons.Default.Contacts');
   const cardEnd = activation.indexOf('\n                        if (deniedPermissions.isNotEmpty())', cardStart);

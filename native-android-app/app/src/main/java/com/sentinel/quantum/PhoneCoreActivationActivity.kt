@@ -382,6 +382,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     if (setupStep == PhoneCoreSetupWizardStore.Step.COMPLETE) {
                         if (!setupWizard.markCompleted()) setupPersistenceError = true
                     } else if (
+                        !setupPersistenceError &&
                         PhoneCoreSetupWizardStore.shouldAutoLaunch(
                             setupTargetKey,
                             attemptedSetupTargetKey,
