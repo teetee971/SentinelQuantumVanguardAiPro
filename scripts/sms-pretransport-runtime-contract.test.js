@@ -7,7 +7,7 @@ const interlockPath = 'native-android-app/app/src/main/java/com/sentinel/quantum
 const instrumentationPath = 'native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/SmsPreTransportRevocationInstrumentationTest.kt';
 const roleFixturePath = 'native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/SmsRoleLossRecoveryInstrumentationTest.kt';
 const roleFlowPath = 'scripts/phone-core-role-sms-process-death-flow.sh';
-const emulationWorkflowPath = '.github/workflows/android-emulation-qualification.yml';
+const roleWorkflowPath = '.github/workflows/phone-core-role-sms-process-death.yml';
 const journalPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitJournal.kt';
 const recoveryPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitRecoveryWorker.kt';
 const providerPath = 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsPreSubmitProvider.kt';
@@ -83,9 +83,10 @@ test('SMS provider mutation is journaled before transport and only proven pre-tr
 test('ROLE_SMS loss is qualified as an external process-death and durable recovery flow', () => {
   assert.equal(existsSync(roleFixturePath), true, 'ROLE_SMS process-death fixture instrumentation must exist');
   assert.equal(existsSync(roleFlowPath), true, 'external ROLE_SMS process-death flow must exist');
+  assert.equal(existsSync(roleWorkflowPath), true, 'dedicated ROLE_SMS process-death gate must exist');
   const fixture = readFileSync(roleFixturePath, 'utf8');
   const flow = readFileSync(roleFlowPath, 'utf8');
-  const workflow = readFileSync(emulationWorkflowPath, 'utf8');
+  const workflow = readFileSync(roleWorkflowPath, 'utf8');
 
   assert.match(fixture, /SmsPreSubmitJournal\.Phase\.PROVIDER_READY/);
   assert.match(fixture, /SmsPreSubmitProvider\.insertOutgoingOutbox/);
@@ -94,8 +95,12 @@ test('ROLE_SMS loss is qualified as an external process-death and durable recove
   assert.match(fixture, /Telephony\.Sms\.STATUS_FAILED/);
   assert.match(flow, /remove-role-holder --user 0 android\.app\.role\.SMS/);
   assert.match(flow, /add-role-holder --user 0 android\.app\.role\.SMS/);
-  assert.match(flow, /pidof com\.sentinel\.quantum/);
-  assert.match(flow, /SmsRoleLossRecoveryInstrumentationTest#prepareProviderReadyFixture/);
-  assert.match(flow, /SmsRoleLossRecoveryInstrumentationTest#recoverAfterRoleRestoration/);
+  assert.match(flow, /pidof \"\$PACKAGE\"/);
+  assert.match(flow, /SmsRoleLossRecoveryInstrumentationTest/);
+  assert.match(flow, /prepareProviderReadyFixture/);
+  assert.match(flow, /recoverAfterRoleRestoration/);
   assert.match(workflow, /phone-core-role-sms-process-death-flow\.sh/);
+  assert.match(workflow, /api_level:\s*29/);
+  assert.match(workflow, /api_level:\s*36/);
+  assert.match(workflow, /api_level:\s*37/);
 });
