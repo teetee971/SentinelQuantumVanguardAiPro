@@ -83,3 +83,16 @@ test('setup target persistence failures remain visible and retryable', () => {
     'the user must be told why the action did not start and be offered a retry'
   );
 });
+
+test('setup retry action launches the guarded step instead of ignoring a failed clear', () => {
+  assert.match(
+    activation,
+    /onClick = \{ launchSetupStep\(setupStep\) \}/,
+    'retry must use the same durable-target guard and launch path as the initial action'
+  );
+  assert.doesNotMatch(
+    activation,
+    /onClick = \{ setupWizard\.clearAttempted\(\); epoch\+\+ \}/,
+    'retry must not silently ignore a failed preference clear'
+  );
+});

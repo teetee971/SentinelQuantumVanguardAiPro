@@ -561,7 +561,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             PhoneCoreSetupWizardStore.isStepActionable(setupStep, setupFacts)
                                         ) {
                                             Button(
-                                                onClick = { setupWizard.clearAttempted(); epoch++ },
+                                                onClick = { launchSetupStep(setupStep) },
                                                 modifier = Modifier.fillMaxWidth()
                                             ) { Text("Réessayer cette étape") }
                                         }
