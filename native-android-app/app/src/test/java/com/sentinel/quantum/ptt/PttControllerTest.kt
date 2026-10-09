@@ -73,6 +73,17 @@ class PttControllerTest {
         assertFalse(controller.pressToTalk())
     }
 
+    @Test fun eachConnectionAttemptGetsANewListenerGeneration() {
+        val transport = FakePttTransport()
+        val controller = PttController(transport)
+
+        controller.connect()
+        controller.disconnect()
+        controller.connect()
+
+        assertEquals(3, transport.listenerRegistrationCount)
+    }
+
     @Test fun remoteAudioEventOutsideLiveSessionCannotManufactureReceivingState() {
         val transport = FakePttTransport()
         val controller = PttController(transport)
@@ -91,9 +102,12 @@ class PttControllerTest {
         private var listener: ((PttTransport.Event) -> Unit)? = null
         var transmitting = false
             private set
+        var listenerRegistrationCount = 0
+            private set
 
         override fun setEventListener(listener: (PttTransport.Event) -> Unit) {
             this.listener = listener
+            listenerRegistrationCount += 1
         }
 
         override fun connect() = Unit
