@@ -64,6 +64,18 @@ test('legacy instrumentation diagnostics and qualification also bound ordinary A
   assert.match(block, /adb\(\)\s*\{[\s\S]*command timeout[\s\S]*ADB_BIN[\s\S]*"\$@"/);
 });
 
+test('native Android build emulator lanes bound ordinary ADB calls', () => {
+  for (const name of ['Install and launch APK on Android 10 emulator', 'Verify Telecom and inline reply on Android 16']) {
+    const block = nativeBuildWorkflow.split(`- name: ${name}\n`)[1]?.split('\n      - name: ')[0] || '';
+    assert.match(block, /ADB_COMMAND_TIMEOUT_SECONDS="\$\{ADB_COMMAND_TIMEOUT_SECONDS:-30\}"/,
+      `${name} must configure an ADB timeout`);
+    assert.match(block, /ADB_COMMAND_KILL_GRACE_SECONDS="\$\{ADB_COMMAND_KILL_GRACE_SECONDS:-5\}"/,
+      `${name} must configure an ADB kill grace period`);
+    assert.match(block, /adb\(\)\s*\{[\s\S]*command timeout[\s\S]*ADB_BIN[\s\S]*"\$@"/,
+      `${name} must route ordinary ADB calls through its watchdog`);
+  }
+});
+
 test('Android emulator qualification covers minimum, current and newest runtime lanes', () => {
   assert.match(instrumentationWorkflow, /api-level:\s*24\b/);
   assert.match(instrumentationWorkflow, /api-level:\s*36\b/);
