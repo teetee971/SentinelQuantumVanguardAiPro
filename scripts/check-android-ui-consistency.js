@@ -720,7 +720,7 @@ if (incomingCallNotificationSource) {
     'CallTrustIndicator.assess(',
     'PhoneNumberRiskRules::isKnownPremiumRatePrefix',
     'setName("$label · ${quickTrust.title}")',
-    'if (!isChannelEnabled(context)) return false',
+    'if (!isChannelEnabled(context)) return@runCatching false',
   ]) {
     if (!incomingCallNotificationSource.includes(marker)) {
       errors.push(`incoming-call trust indicator marker missing (${marker}): ${incomingCallNotificationPath}`);

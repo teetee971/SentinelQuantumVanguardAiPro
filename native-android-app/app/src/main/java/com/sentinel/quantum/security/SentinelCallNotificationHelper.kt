@@ -35,21 +35,21 @@ object SentinelCallNotificationHelper {
     fun showIncoming(
         context: Context,
         snapshot: SentinelInCallService.CallSnapshot
-    ): Boolean {
+    ): Boolean = runCatching {
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
-        ) return false
-        if (!isFullScreenIntentAllowed(context)) return false
+        ) return@runCatching false
+        if (!isFullScreenIntentAllowed(context)) return@runCatching false
 
         val manager = NotificationManagerCompat.from(context)
-        if (!manager.areNotificationsEnabled()) return false
+        if (!manager.areNotificationsEnabled()) return@runCatching false
         ensureChannel(context)
         // NotificationManager.notify() does not guarantee a visible post when the user has
         // disabled this channel. Physical certification must therefore fail closed on channel
         // importance, exactly like the SMS notification path.
-        if (!isChannelEnabled(context)) return false
+        if (!isChannelEnabled(context)) return@runCatching false
 
         val label = snapshot.displayName?.takeIf { it.isNotBlank() }
             ?: snapshot.handle?.takeIf { it.isNotBlank() }
@@ -109,14 +109,14 @@ object SentinelCallNotificationHelper {
             .setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, reject, answer))
             .build()
 
-        return runCatching {
-            manager.notify(NOTIFICATION_ID, notification)
-            true
-        }.getOrDefault(false)
-    }
+        manager.notify(NOTIFICATION_ID, notification)
+        true
+    }.getOrDefault(false)
 
     fun cancel(context: Context) {
-        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        runCatching {
+            NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        }
     }
 
     fun ensureChannel(context: Context) {

@@ -47,8 +47,21 @@ test('incoming notification fails closed when Android denies full-screen intent 
   );
   assert.match(
     helper,
-    /if \(!isFullScreenIntentAllowed\(context\)\) return false/,
+    /if \(!isFullScreenIntentAllowed\(context\)\) return@runCatching false/,
     'notification submission must not be reported when full-screen use is denied'
+  );
+});
+
+test('incoming notification construction and cancellation contain OEM failures', () => {
+  assert.match(
+    helper,
+    /fun showIncoming\([\s\S]*?\): Boolean = runCatching \{/,
+    'channel, PendingIntent and notify failures must fail closed without escaping the helper'
+  );
+  assert.match(
+    helper,
+    /fun cancel\(context: Context\) \{\s*runCatching \{/,
+    'notification cancellation failures must not crash Telecom callbacks'
   );
 });
 
