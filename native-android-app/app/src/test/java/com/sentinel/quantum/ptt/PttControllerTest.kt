@@ -114,16 +114,35 @@ class PttControllerTest {
         assertEquals("network_lost", controller.lastFailure)
     }
 
+    @Test fun disconnectDoesNotClaimTeardownBeforeTransportConfirmation() {
+        val transport = FakePttTransport()
+        val controller = readyController(transport)
+
+        controller.disconnect()
+
+        assertEquals(1, transport.disconnectCount)
+        assertEquals(PttState.DISCONNECTING, controller.state)
+        assertFalse(controller.pressToTalk())
+
+        transport.emit(PttTransport.Event.Disconnected())
+
+        assertEquals(PttState.DISCONNECTED, controller.state)
+    }
+
     @Test fun lateConnectedEventAfterExplicitDisconnectCannotResurrectReady() {
         val transport = FakePttTransport()
         val controller = PttController(transport)
         controller.connect()
         controller.disconnect()
 
+        assertEquals(PttState.DISCONNECTING, controller.state)
         transport.emit(PttTransport.Event.Connected)
 
-        assertEquals(PttState.DISCONNECTED, controller.state)
+        assertEquals(PttState.DISCONNECTING, controller.state)
         assertFalse(controller.pressToTalk())
+
+        transport.emit(PttTransport.Event.Disconnected())
+        assertEquals(PttState.DISCONNECTED, controller.state)
     }
 
     @Test fun eachConnectionAttemptGetsANewListenerGeneration() {
@@ -132,6 +151,7 @@ class PttControllerTest {
 
         controller.connect()
         controller.disconnect()
+        transport.emit(PttTransport.Event.Disconnected())
         controller.connect()
 
         assertEquals(3, transport.listenerRegistrationCount)
@@ -143,6 +163,7 @@ class PttControllerTest {
 
         controller.connect()
         controller.disconnect()
+        transport.emit(PttTransport.Event.Disconnected())
         controller.connect()
 
         transport.emitFromRegistration(1, PttTransport.Event.Connected)
@@ -224,10 +245,14 @@ class PttControllerTest {
 
         controller.onTelecomCallPresenceChanged(true)
 
+        assertEquals(PttState.DISCONNECTING, controller.state)
+        assertEquals("telecom_call_active", controller.lastFailure)
+        assertFalse(controller.pressToTalk())
+
+        transport.emit(PttTransport.Event.Disconnected())
         assertEquals(PttState.DISCONNECTED, controller.state)
         assertFalse(transport.transmitting)
         assertEquals("telecom_call_active", controller.lastFailure)
-        assertFalse(controller.pressToTalk())
 
         controller.onTelecomCallPresenceChanged(false)
 
@@ -262,6 +287,7 @@ class PttControllerTest {
         var throwOnStopRequest = false
         var synchronousStartAck = false
         var synchronousStopAck = false
+        var synchronousDisconnectAck = false
 
         override fun setEventListener(listener: (PttTransport.Event) -> Unit) {
             this.listener = listener
@@ -276,7 +302,7 @@ class PttControllerTest {
 
         override fun disconnect() {
             disconnectCount += 1
-            transmitting = false
+            if (synchronousDisconnectAck) emit(PttTransport.Event.Disconnected())
         }
 
         override fun requestStartTransmitting() {
