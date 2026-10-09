@@ -92,6 +92,19 @@ test('MMS journal serializes sender and callback transitions across instances', 
   assert.match(journal, /fun all\(\): List<Record> = withJournalLock/);
 });
 
+test('corrupt outgoing MMS transport journal entries fail closed instead of vanishing from the watchdog', () => {
+  assert.match(
+    journal,
+    /fun all\(\): List<Record> = withJournalLock\s*\{[\s\S]*validateEntries\(\)[\s\S]*throw IllegalStateException/s,
+    'watchdog enumeration must not silently drop malformed transport state'
+  );
+  assert.match(
+    journal,
+    /preferences\.all\[key\(token\)\] as\? String/,
+    'point reads must tolerate a corrupted SharedPreferences value and fail closed'
+  );
+});
+
 test('MMS callback saturation journals transport truth without provider work', () => {
   const fallback = statusReceiver.match(
     /if \(!scheduled\) \{([\s\S]*?)pendingResult\.finish\(\)/

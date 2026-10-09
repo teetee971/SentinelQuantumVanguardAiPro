@@ -37,6 +37,7 @@ internal class MmsProviderJournal(context: Context) {
         withJournalLock {
             if (!validToken(token) || !validTransactionId(transactionId) || nowMs < 0L) return@withJournalLock false
             val recordKey = key(token)
+            if (preferences.contains(recordKey) && read(token) == null) return@withJournalLock false
             if (!preferences.contains(recordKey)) {
                 val persistedCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
                 if (persistedCount >= MAX_RECORDS) return@withJournalLock false
@@ -108,11 +109,14 @@ internal class MmsProviderJournal(context: Context) {
     fun read(token: String): Record? = withJournalLock {
         if (validToken(token)) decode(
             token,
-            preferences.getString(key(token), null)
+            preferences.all[key(token)] as? String
         ) else null
     }
 
     fun all(): List<Record> = withJournalLock {
+        if (!validateEntries()) {
+            throw IllegalStateException("MMS transport journal contains corrupt recovery state")
+        }
         preferences.all.asSequence()
             .filter { (name, value) -> name.startsWith(KEY_PREFIX) && value is String }
             .mapNotNull { (name, value) ->
@@ -123,6 +127,13 @@ internal class MmsProviderJournal(context: Context) {
             .take(MAX_RECORDS)
             .toList()
     }
+
+    private fun validateEntries(): Boolean =
+        preferences.all.asSequence()
+            .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
+            .all { (name, value) ->
+                decode(name.removePrefix(KEY_PREFIX), value as? String) != null
+            }
 
     private fun transition(token: String, providerMessageId: Long, phase: Phase, nowMs: Long): Boolean {
         if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return false
