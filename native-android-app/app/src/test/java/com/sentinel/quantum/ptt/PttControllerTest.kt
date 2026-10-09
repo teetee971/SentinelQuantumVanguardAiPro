@@ -61,6 +61,32 @@ class PttControllerTest {
         assertEquals("network_lost", controller.lastFailure)
     }
 
+    @Test fun lateConnectedEventAfterExplicitDisconnectCannotResurrectReady() {
+        val transport = FakePttTransport()
+        val controller = PttController(transport)
+        controller.connect()
+        controller.disconnect()
+
+        transport.emit(PttTransport.Event.Connected)
+
+        assertEquals(PttState.DISCONNECTED, controller.state)
+        assertFalse(controller.pressToTalk())
+    }
+
+    @Test fun remoteAudioEventOutsideLiveSessionCannotManufactureReceivingState() {
+        val transport = FakePttTransport()
+        val controller = PttController(transport)
+
+        transport.emit(PttTransport.Event.RemoteAudioStarted)
+        assertEquals(PttState.DISCONNECTED, controller.state)
+
+        controller.connect()
+        transport.emit(PttTransport.Event.Failure("auth_failed"))
+        transport.emit(PttTransport.Event.RemoteAudioStarted)
+        assertEquals(PttState.ERROR, controller.state)
+        assertEquals("auth_failed", controller.lastFailure)
+    }
+
     private class FakePttTransport : PttTransport {
         private var listener: ((PttTransport.Event) -> Unit)? = null
         var transmitting = false
