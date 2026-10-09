@@ -115,7 +115,19 @@ class SmsActivationDiagnostics(private val context: Context) {
             PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
 
     private fun smsRoleState(): SmsRoleState = context.readSmsRoleStateFailClosed()
+}
 
+/** Resolves the pre-Android-10 default-SMS capability without inventing an available role on tablets. */
+internal object LegacySmsRolePolicy {
+    fun resolve(
+        telephonyMessagingAvailable: Boolean,
+        defaultSmsPackage: String?,
+        packageName: String
+    ): SmsActivationDiagnostics.SmsRoleState = when {
+        !telephonyMessagingAvailable -> SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+        defaultSmsPackage == packageName -> SmsActivationDiagnostics.SmsRoleState.HELD
+        else -> SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+    }
 }
 
 /**
@@ -154,9 +166,13 @@ internal fun Context.readSmsRoleStateFailClosed(): SmsActivationDiagnostics.SmsR
                         SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
                 }
             }
-        } else if (Telephony.Sms.getDefaultSmsPackage(this) == packageName) {
-            SmsActivationDiagnostics.SmsRoleState.HELD
         } else {
-            SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+            LegacySmsRolePolicy.resolve(
+                telephonyMessagingAvailable = packageManager.hasSystemFeature(
+                    PackageManager.FEATURE_TELEPHONY_MESSAGING
+                ),
+                defaultSmsPackage = Telephony.Sms.getDefaultSmsPackage(this),
+                packageName = packageName
+            )
         }
     }
