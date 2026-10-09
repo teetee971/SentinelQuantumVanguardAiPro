@@ -13,7 +13,8 @@ import java.util.concurrent.TimeUnit
  *
  * Notification.ind messages are handed to Android's public MMS download transport. A direct
  * M-Retrieve.conf takes the same private-persistence + fail-closed provider-projection path as the
- * later download callback, so the two ingress routes cannot diverge in product state.
+ * later download callback, so the two ingress routes cannot diverge in product state. Saturation
+ * applies caller-runs backpressure instead of acknowledging an unprocessed WAP broadcast.
  */
 class SentinelMmsDeliverReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -215,7 +216,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             TimeUnit.MILLISECONDS,
             ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
             { task -> Thread(task, "sentinel-mms-deliver").apply { isDaemon = true } },
-            ThreadPoolExecutor.AbortPolicy()
+            ThreadPoolExecutor.CallerRunsPolicy()
         )
         private const val MMS_MIME_TYPE = "application/vnd.wap.mms-message"
         private const val MAX_PDU_BYTES = 512 * 1024

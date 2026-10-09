@@ -178,9 +178,13 @@ test('secondary prune uses the same final recovery lifecycle instead of raw-unli
   assert.match(downloadCoordinator, /!isValidStagedFileName\(it\.name\)/);
 });
 
-test('MMS callback executors are bounded and reject saturation explicitly', () => {
+test('MMS ingress applies caller-runs backpressure while callbacks reject optional overload', () => {
+  assert.match(deliverReceiver, /ThreadPoolExecutor\(/, 'WAP_PUSH_DELIVER must use a bounded executor');
+  assert.match(deliverReceiver, /ArrayBlockingQueue< Runnable >|ArrayBlockingQueue<Runnable>/);
+  assert.match(deliverReceiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
+  assert.doesNotMatch(deliverReceiver, /ThreadPoolExecutor\.AbortPolicy\(\)/);
+
   for (const [name, source] of [
-    ['WAP_PUSH_DELIVER', deliverReceiver],
     ['download callback', downloadReceiver],
     ['send callback', sendStatusReceiver]
   ]) {

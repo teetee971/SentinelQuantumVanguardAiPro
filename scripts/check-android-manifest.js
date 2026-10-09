@@ -63,6 +63,10 @@ const hasBoundedCallbackExecutor = (source) =>
   source.includes('ThreadPoolExecutor(') &&
   source.includes('ArrayBlockingQueue<Runnable>') &&
   source.includes('ThreadPoolExecutor.AbortPolicy()');
+const hasBoundedIngressExecutor = (source) =>
+  source.includes('ThreadPoolExecutor(') &&
+  source.includes('ArrayBlockingQueue<Runnable>') &&
+  source.includes('ThreadPoolExecutor.CallerRunsPolicy()');
 
 if (declaredSmsRolePermissions.length > 0) {
   const smsPolicy = fs.readFileSync(
@@ -164,7 +168,7 @@ if (declaredSmsRolePermissions.length > 0) {
       (!guardedSmsRoleBoundary ||
        !mmsReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsReceiver.includes('val pendingResult = goAsync()') ||
-       !hasBoundedCallbackExecutor(mmsReceiver) ||
+       !hasBoundedIngressExecutor(mmsReceiver) ||
        !mmsReceiver.includes('private fun processDelivery(') ||
        !mmsReceiver.includes('pendingResult.finish()') ||
        !mmsReceiver.includes('Intent(intent).putExtra("data", data.copyOf())') ||
@@ -172,7 +176,7 @@ if (declaredSmsRolePermissions.length > 0) {
        !manifest.includes('android.permission.BROADCAST_WAP_PUSH') ||
        !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
        !manifest.includes('application/vnd.wap.mms-message'))) {
-    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path with bounded off-main processing.');
+    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path with bounded normal off-main processing and caller backpressure.');
   }
   const privateMmsDownloadReceiver = /<receiver\b(?=[^>]*android:name="\.security\.SentinelMmsDownloadReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
   const capturesMmsResultBeforeAsync =
