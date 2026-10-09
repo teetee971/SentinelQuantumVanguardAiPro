@@ -20,32 +20,36 @@ class NetworkTrustStore(context: Context) {
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun isAllowed(identifier: String): Boolean = contains(KEY_ALLOWLIST, identifier)
+    fun isAllowed(identifier: String): Boolean = withStoreLock {
+        contains(KEY_ALLOWLIST, identifier)
+    }
 
-    fun isBlocked(identifier: String): Boolean = contains(KEY_BLOCKLIST, identifier)
+    fun isBlocked(identifier: String): Boolean = withStoreLock {
+        contains(KEY_BLOCKLIST, identifier)
+    }
 
-    fun allow(identifier: String) {
+    fun allow(identifier: String): Boolean = withStoreLock {
         move(identifier, addTo = KEY_ALLOWLIST, removeFrom = KEY_BLOCKLIST)
     }
 
-    fun block(identifier: String) {
+    fun block(identifier: String): Boolean = withStoreLock {
         move(identifier, addTo = KEY_BLOCKLIST, removeFrom = KEY_ALLOWLIST)
     }
 
-    fun clear(identifier: String) {
-        val fingerprint = fingerprint(identifier) ?: return
+    fun clear(identifier: String): Boolean = withStoreLock {
+        val fingerprint = fingerprint(identifier) ?: return@withStoreLock false
         prefs.edit()
             .putStringSet(KEY_ALLOWLIST, read(KEY_ALLOWLIST) - fingerprint)
             .putStringSet(KEY_BLOCKLIST, read(KEY_BLOCKLIST) - fingerprint)
-            .apply()
+            .commit()
     }
 
-    private fun move(identifier: String, addTo: String, removeFrom: String) {
-        val fingerprint = fingerprint(identifier) ?: return
+    private fun move(identifier: String, addTo: String, removeFrom: String): Boolean {
+        val fingerprint = fingerprint(identifier) ?: return false
         prefs.edit()
             .putStringSet(addTo, read(addTo) + fingerprint)
             .putStringSet(removeFrom, read(removeFrom) - fingerprint)
-            .apply()
+            .commit()
     }
 
     private fun contains(key: String, identifier: String): Boolean {
@@ -80,9 +84,14 @@ class NetworkTrustStore(context: Context) {
         generator.generateKey()
     }
 
+    private inline fun <T> withStoreLock(block: () -> T): T = synchronized(STORE_LOCK) {
+        block()
+    }
+
     private companion object {
         // Scanner and UI stores share this alias; first-use creation must be process-wide.
         val KEY_LOCK = Any()
+        private val STORE_LOCK = Any()
         const val PREFS_NAME = "sentinel_network_trust"
         const val KEY_ALLOWLIST = "allowlist_fingerprints"
         const val KEY_BLOCKLIST = "blocklist_fingerprints"

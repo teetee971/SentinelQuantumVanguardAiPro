@@ -291,12 +291,18 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 WifiNetworkCard(
                                     network = network,
                                     onAllow = {
-                                        trustStore.allow(network.bssid)
-                                        runWifiScan()
+                                        if (trustStore.allow(network.bssid)) {
+                                            runWifiScan()
+                                        } else {
+                                            statusMessage = "Réseau de confiance non enregistré : réessayez."
+                                        }
                                     },
                                     onBlock = {
-                                        trustStore.block(network.bssid)
-                                        runWifiScan()
+                                        if (trustStore.block(network.bssid)) {
+                                            runWifiScan()
+                                        } else {
+                                            statusMessage = "Marquage suspect non enregistré : réessayez."
+                                        }
                                     }
                                 )
                             }
