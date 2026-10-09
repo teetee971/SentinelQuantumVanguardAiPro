@@ -85,7 +85,6 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         data: ByteArray,
         sourceIntent: Intent
     ) {
-        if (!holdsSmsRole(context)) return
         val journal = IncomingMmsWapIngressJournal(context)
         val persistence = IncomingMmsWapIngressStore.persist(context.filesDir, data, journal)
         val digest = persistence.digestHex
@@ -142,7 +141,11 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
     private fun processDelivery(context: Context, intent: Intent): DeliveryOutcome {
         if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return DeliveryOutcome.COMPLETE
         if (intent.type.orEmpty() != MMS_MIME_TYPE) return DeliveryOutcome.COMPLETE
-        if (!holdsSmsRole(context)) return DeliveryOutcome.COMPLETE
+        // The broadcast was admitted while Sentinel held ROLE_SMS, but Android may revoke the
+        // role before the bounded worker or a process-death recovery runs. Keep the durable WAP
+        // journal in that case; dropping it would turn a temporary role transition into message
+        // loss. The age bound in IncomingMmsWapIngressRecoveryWorker remains the final cleanup.
+        if (!holdsSmsRole(context)) return DeliveryOutcome.RETRY
 
         val data = intent.getByteArrayExtra("data") ?: return DeliveryOutcome.COMPLETE
         if (data.isEmpty() || data.size > MAX_PDU_BYTES) return DeliveryOutcome.COMPLETE
