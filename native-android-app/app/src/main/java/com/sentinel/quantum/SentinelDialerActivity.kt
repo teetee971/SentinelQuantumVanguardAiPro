@@ -824,6 +824,7 @@ class SentinelDialerActivity : ComponentActivity() {
                     softwarePrerequisitesReady = protectionReady,
                     physicalCompleted = physicalEvidence.completedCount,
                     physicalRequired = physicalEvidence.requiredCount,
+                    physicalDeviceValidated = physicalEvidence.physicalDeviceValidated,
                     operationalEnvironmentReady = remember(resumeEpoch) {
                         PhoneCoreRuntimeFacts.hasOperationalCarrierEnvironment(applicationContext)
                     }

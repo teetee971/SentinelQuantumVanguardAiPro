@@ -42,7 +42,14 @@ class PhoneCoreUiStateTest {
     @Test fun onlyFourteenOfFourteenIsValidated() {
         assertEquals(
             SentinelState.VALIDATED,
-            PhoneCoreUiState.derive(true, 14, 14)
+            PhoneCoreUiState.derive(true, 14, 14, physicalDeviceValidated = true)
+        )
+    }
+
+    @Test fun completeLocalCertificateWithoutPhysicalProofRemainsToTest() {
+        assertEquals(
+            SentinelState.TO_TEST,
+            PhoneCoreUiState.derive(true, 14, 14, physicalDeviceValidated = false)
         )
     }
     @Test fun thirteenOfFourteenCannotClaimValidated() {
@@ -67,7 +74,13 @@ class PhoneCoreUiStateTest {
     @Test fun completedProofWithUnavailableCarrierEnvironmentIsDegraded() {
         assertEquals(
             SentinelState.DEGRADED,
-            PhoneCoreUiState.derive(true, 14, 14, operationalEnvironmentReady = false)
+            PhoneCoreUiState.derive(
+                true,
+                14,
+                14,
+                physicalDeviceValidated = true,
+                operationalEnvironmentReady = false
+            )
         )
     }
 

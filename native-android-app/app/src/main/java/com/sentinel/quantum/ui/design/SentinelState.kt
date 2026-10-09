@@ -23,6 +23,7 @@ object PhoneCoreUiState {
         softwarePrerequisitesReady: Boolean,
         physicalCompleted: Int,
         physicalRequired: Int,
+        physicalDeviceValidated: Boolean = false,
         explicitlyBlocked: Boolean = false,
         available: Boolean = true,
         operationalEnvironmentReady: Boolean = true
@@ -33,8 +34,9 @@ object PhoneCoreUiState {
         val required = physicalRequired.coerceAtLeast(1)
         val completed = physicalCompleted.coerceIn(0, required)
         return when {
-            completed == required && !operationalEnvironmentReady -> SentinelState.DEGRADED
-            completed == required -> SentinelState.VALIDATED
+            completed == required && physicalDeviceValidated && !operationalEnvironmentReady -> SentinelState.DEGRADED
+            completed == required && physicalDeviceValidated -> SentinelState.VALIDATED
+            completed == required -> SentinelState.TO_TEST
             completed > 0 -> SentinelState.TO_TEST
             else -> SentinelState.READY
         }

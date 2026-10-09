@@ -86,6 +86,11 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
 
   assert.match(uiStateTest, /onlyFourteenOfFourteenIsValidated/);
   assert.match(uiStateTest, /thirteenOfFourteenCannotClaimValidated/);
+  assert.match(
+    dialer,
+    /physicalDeviceValidated\s*=\s*physicalEvidence\.physicalDeviceValidated/,
+    'customer Phone Core state must receive physical validation separately from local technical evidence'
+  );
 
   assert.doesNotMatch(source, /wifiScanFresh|SIGNAL_WIFI_SCAN_FRESH|WIFI_SCAN_FRESH|Kind\.WIFI/);
 });
