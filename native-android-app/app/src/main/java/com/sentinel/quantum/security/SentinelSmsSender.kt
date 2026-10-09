@@ -167,6 +167,23 @@ class SentinelSmsSender(private val context: Context) {
             )
         }
 
+        // Authorization and SIM state can change after the initial checks while provider/callback
+        // preparation is running. Re-read the complete send-critical state at the last safe point,
+        // before crossing the SmsManager submission boundary. A failure here is conclusively
+        // "not submitted", so repair the OUTBOX row instead of returning an unknown outcome.
+        val preSubmitFailure = revalidateBeforeSubmission(prepared.subscriptionId)
+        if (preSubmitFailure != null) {
+            val repaired = conversations.markOutgoingFailed(persistedMessageId)
+            return SendResult(
+                accepted = false,
+                reason = if (repaired) preSubmitFailure else PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED,
+                subscriptionId = prepared.subscriptionId,
+                sendToken = callbacks.sendToken,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+        }
+
         // Only this call boundary can have an indeterminate synchronous outcome: SmsManager may
         // throw after Android has accepted one or more segments. Keep OUTBOX/PENDING in that case;
         // validated SENT callbacks remain the only conclusive durable transition.
@@ -206,6 +223,39 @@ class SentinelSmsSender(private val context: Context) {
                 partCount = parts.size
             )
         }
+    }
+
+    private fun revalidateBeforeSubmission(subscriptionId: Int): String? {
+        if (!holdsSmsRole()) return "SMS_ROLE_NOT_HELD"
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) !=
+                PackageManager.PERMISSION_GRANTED ||
+            !hasEffectivePermission(Manifest.permission.SEND_SMS)
+        ) {
+            return "SEND_SMS_PERMISSION_NOT_GRANTED"
+        }
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
+                PackageManager.PERMISSION_GRANTED ||
+            !hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)
+        ) {
+            return "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
+        }
+
+        val activeIds = try {
+            context.getSystemService(SubscriptionManager::class.java)
+                .activeSubscriptionInfoList
+                .orEmpty()
+                .map { it.subscriptionId }
+                .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                .toSet()
+        } catch (_: SecurityException) {
+            return "SMS_SUBSCRIPTION_LOOKUP_FAILED"
+        } catch (_: RuntimeException) {
+            return "SMS_SUBSCRIPTION_LOOKUP_FAILED"
+        }
+        if (subscriptionId !in activeIds) return "REQUESTED_SUBSCRIPTION_NOT_ACTIVE"
+        return null
     }
 
     private fun hasEffectivePermission(permission: String): Boolean =
@@ -248,6 +298,8 @@ class SentinelSmsSender(private val context: Context) {
         const val EXTRA_PART_INDEX = "sms.part_index"
         const val EXTRA_PART_COUNT = "sms.part_count"
         const val EXTRA_PROVIDER_MESSAGE_ID = "sms.provider_message_id"
+        const val PRE_SUBMIT_REVALIDATION_PROVIDER_REPAIR_FAILED =
+            "SMS_PRE_SUBMIT_REVALIDATION_FAILED_PROVIDER_REPAIR_FAILED"
         private val requestTokenRandom = SecureRandom()
 
         /**
