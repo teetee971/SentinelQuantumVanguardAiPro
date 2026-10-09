@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { generateKeyPairSync, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -30,8 +30,11 @@ async function makeFixture(t, mutate = () => {}) {
   const certificate = Buffer.from(`Signer #1 certificate SHA-256 digest: ${certificateDigest}\n`);
   await writeFile(join(root, 'artifacts/app.apk'), apk);
   await writeFile(join(root, 'artifacts/app.apk.certificates.txt'), certificate);
+  const evidenceDigests = new Map();
   for (const scenario of PHONE_CORE_REQUIRED_SCENARIOS) {
-    await writeFile(join(root, `evidence/${scenario}.log`), `${scenario}: observed\n`);
+    const evidence = Buffer.from(`${scenario}: observed\n`);
+    await writeFile(join(root, `evidence/${scenario}.log`), evidence);
+    evidenceDigests.set(scenario, createHash('sha256').update(evidence).digest('hex'));
   }
   const keys = makeKeys();
   const session = {
@@ -62,12 +65,11 @@ async function makeFixture(t, mutate = () => {}) {
     required_scenarios: [...PHONE_CORE_REQUIRED_SCENARIOS],
     evidence: Object.fromEntries(PHONE_CORE_REQUIRED_SCENARIOS.map(scenario => [scenario, {
       status: 'PASS',
-      evidence_refs: [`evidence/${scenario}.log`]
+      evidence_refs: [`evidence/${scenario}.log#sha256=${evidenceDigests.get(scenario)}`]
     }])),
     residuals: [],
     signature: ''
   };
-  const { createHash } = await import('node:crypto');
   session.artifact.apk.sha256 = createHash('sha256').update(apk).digest('hex');
   session.artifact.certificate.sha256 = createHash('sha256').update(certificate).digest('hex');
   await mutate(session, root);
@@ -165,6 +167,20 @@ test('rejects an empty evidence file and a post-signature manifest mutation', as
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /signature invalid/);
   assert.match(result.errors.join('\n'), /evidence reference invalid/);
+});
+
+test('rejects a nonempty evidence substitution after signing', async t => {
+  const fixture = await makeFixture(t);
+  await writeFile(join(fixture.root, 'evidence/S01.log'), 'different observed content\n');
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /evidence sha256 mismatch/);
 });
 
 test('rejects a signed session bound to a different source head', async t => {

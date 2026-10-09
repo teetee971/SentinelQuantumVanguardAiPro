@@ -12,6 +12,7 @@ const SHA256 = /^[a-f0-9]{64}$/;
 const SOURCE_SHA = /^[a-f0-9]{40}$/;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 const STATUSES = new Set(['PASS', 'FAIL', 'INCOMPLETE']);
+const EVIDENCE_REF = /^(.*)#sha256=([a-f0-9]{64})$/;
 export const PHONE_CORE_REQUIRED_SCENARIOS = Object.freeze(
   Array.from({ length: 26 }, (_, index) => `S${String(index + 1).padStart(2, '0')}`)
 );
@@ -154,8 +155,17 @@ function validateEvidence(session, baseDir, errors) {
       continue;
     }
     for (const reference of record.evidence_refs) {
-      const file = safeRelativeFile(baseDir, reference, MAX_EVIDENCE_BYTES);
-      if (!file) add(errors, `evidence reference invalid: ${scenario}`);
+      const match = typeof reference === 'string' ? EVIDENCE_REF.exec(reference) : null;
+      if (!match) {
+        add(errors, `evidence reference invalid: ${scenario}`);
+        continue;
+      }
+      const file = safeRelativeFile(baseDir, match[1], MAX_EVIDENCE_BYTES);
+      if (!file) {
+        add(errors, `evidence reference invalid: ${scenario}`);
+        continue;
+      }
+      if (fileSha256(file) !== match[2]) add(errors, `evidence sha256 mismatch: ${scenario}`);
     }
   }
 }
