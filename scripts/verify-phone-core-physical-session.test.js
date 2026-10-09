@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import {
   PHONE_CORE_REQUIRED_SCENARIOS,
+  fileSha256,
   physicalSessionSigningPayload,
   verifyPhoneCorePhysicalSession
 } from './verify-phone-core-physical-session.js';
@@ -229,4 +230,12 @@ test('hashes bounded artifacts incrementally instead of buffering the complete f
   const source = readFileSync(new URL('./verify-phone-core-physical-session.js', import.meta.url), 'utf8');
   assert.match(source, /fs\.readSync/);
   assert.doesNotMatch(source, /createHash\('sha256'\)\.update\(fs\.readFileSync\(filePath\)\)/);
+});
+
+test('hashing fails closed when a file exceeds its read-time bound', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'sentinel-phone-core-hash-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const file = join(root, 'evidence.log');
+  await writeFile(file, '0123456789');
+  assert.throws(() => fileSha256(file, 4), /file exceeds maximum size/);
 });

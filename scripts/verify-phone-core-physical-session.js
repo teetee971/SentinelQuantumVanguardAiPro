@@ -69,15 +69,21 @@ function safeRelativeFile(baseDir, relativePath, maxBytes) {
   return resolved;
 }
 
-function fileSha256(filePath) {
+export function fileSha256(filePath, maxBytes = Number.MAX_SAFE_INTEGER) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new Error('invalid maximum size');
   const hash = createHash('sha256');
   const descriptor = fs.openSync(filePath, 'r');
   const buffer = Buffer.allocUnsafe(1024 * 1024);
   try {
     let bytesRead;
+    let totalBytes = 0;
     do {
       bytesRead = fs.readSync(descriptor, buffer, 0, buffer.length, null);
-      if (bytesRead > 0) hash.update(buffer.subarray(0, bytesRead));
+      if (bytesRead > 0) {
+        if (bytesRead > maxBytes - totalBytes) throw new Error('file exceeds maximum size');
+        totalBytes += bytesRead;
+        hash.update(buffer.subarray(0, bytesRead));
+      }
     } while (bytesRead > 0);
     return hash.digest('hex');
   } finally {
@@ -136,7 +142,7 @@ function validateArtifact(artifact, name, baseDir, maxBytes, errors, certificate
     add(errors, `${name} artifact path invalid`);
     return;
   }
-  if (fileSha256(file) !== artifact.sha256) add(errors, `${name} artifact sha256 mismatch`);
+  if (fileSha256(file, maxBytes) !== artifact.sha256) add(errors, `${name} artifact sha256 mismatch`);
   if (certificate) {
     const text = fs.readFileSync(file, 'utf8');
     const digests = [...text.matchAll(/Signer #1 certificate SHA-256 digest:\s*([a-f0-9]{64})/g)]
@@ -177,7 +183,7 @@ function validateEvidence(session, baseDir, errors) {
         add(errors, `evidence reference invalid: ${scenario}`);
         continue;
       }
-      if (fileSha256(file) !== match[2]) add(errors, `evidence sha256 mismatch: ${scenario}`);
+      if (fileSha256(file, MAX_EVIDENCE_BYTES) !== match[2]) add(errors, `evidence sha256 mismatch: ${scenario}`);
     }
   }
 }
