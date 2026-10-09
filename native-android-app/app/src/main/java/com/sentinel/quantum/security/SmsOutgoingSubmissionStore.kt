@@ -75,7 +75,6 @@ class SmsOutgoingSubmissionStore internal constructor(
         preferences.all.entries.all { (key, value) ->
             decode(key, value as? String) != null
         }
-    }
 
     private fun trackedCount(): Int = preferences.all.count { (key, value) ->
         decode(key, value as? String) != null

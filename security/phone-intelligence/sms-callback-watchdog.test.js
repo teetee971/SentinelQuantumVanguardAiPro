@@ -71,6 +71,13 @@ test('SMS watchdog retries when ledger enumeration fails', () => {
 
 test('corrupt or unprunable SMS submission ledger state cannot be reported as accepted', () => {
   const ledger = fs.readFileSync(ledgerPath, 'utf8');
+  let depth = 0;
+  for (const character of ledger) {
+    if (character === '{') depth += 1;
+    if (character === '}') depth -= 1;
+    assert.ok(depth >= 0, 'SMS ledger Kotlin delimiters must not close before opening');
+  }
+  assert.equal(depth, 0, 'SMS ledger Kotlin delimiters must be balanced');
   assert.match(
     ledger,
     /fun stale\([\s\S]*if \(!validateEntries\(\)\)[\s\S]*throw IllegalStateException/s,
