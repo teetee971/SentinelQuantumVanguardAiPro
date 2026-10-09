@@ -71,6 +71,7 @@ fun SettingsScreen(
         )
     }
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
+    var notificationStatus by remember { mutableStateOf<String?>(null) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
     var externalLinkStatus by remember { mutableStateOf<String?>(null) }
     var voiceStudioStatus by remember { mutableStateOf<String?>(null) }
@@ -201,6 +202,39 @@ fun SettingsScreen(
                 }
                 backupStatus = message
             }
+        }
+    }
+
+    fun requestOsintNotificationPermission() {
+        notificationStatus = null
+        try {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } catch (_: ActivityNotFoundException) {
+            notificationStatus = "Android n’a pas pu ouvrir la demande de notifications. Vérifiez les réglages, puis réessayez."
+        } catch (_: RuntimeException) {
+            notificationStatus = "Android a refusé la demande de notifications. Vérifiez les réglages, puis réessayez."
+        }
+    }
+
+    fun launchBackupExport() {
+        backupStatus = null
+        try {
+            createBackupLauncher.launch("Sentinel-backup.json")
+        } catch (_: ActivityNotFoundException) {
+            backupStatus = "Android n’a pas pu ouvrir le sélecteur d’export. Vérifiez les applications système, puis réessayez."
+        } catch (_: RuntimeException) {
+            backupStatus = "Android a refusé l’export de la sauvegarde. Vérifiez les applications système, puis réessayez."
+        }
+    }
+
+    fun launchBackupRestore() {
+        backupStatus = null
+        try {
+            restoreBackupLauncher.launch(arrayOf("application/json", "text/plain"))
+        } catch (_: ActivityNotFoundException) {
+            backupStatus = "Android n’a pas pu ouvrir le sélecteur de restauration. Vérifiez les applications système, puis réessayez."
+        } catch (_: RuntimeException) {
+            backupStatus = "Android a refusé la restauration de la sauvegarde. Vérifiez les applications système, puis réessayez."
         }
     }
 
@@ -377,7 +411,7 @@ fun SettingsScreen(
                                 Manifest.permission.POST_NOTIFICATIONS
                             ) != PackageManager.PERMISSION_GRANTED
                         ) {
-                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            requestOsintNotificationPermission()
                         } else {
                             notificationsEnabled = true
                             settingsStore.osintNotificationsEnabled = true
@@ -404,13 +438,16 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(
-                onClick = { createBackupLauncher.launch("Sentinel-backup.json") },
+                onClick = { launchBackupExport() },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Exporter une sauvegarde") }
             OutlinedButton(
-                onClick = { restoreBackupLauncher.launch(arrayOf("application/json", "text/plain")) },
+                onClick = { launchBackupRestore() },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Restaurer une sauvegarde") }
+            notificationStatus?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
             backupStatus?.let {
                 Text(
                     it,
