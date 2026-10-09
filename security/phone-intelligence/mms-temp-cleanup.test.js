@@ -30,6 +30,10 @@ const deliverReceiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsDeliverReceiver.kt',
   'utf8'
 );
+const privateStore = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsPrivateStore.kt',
+  'utf8'
+);
 const sendStatusReceiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSendStatusReceiver.kt',
   'utf8'
@@ -79,6 +83,13 @@ test('incoming MMS journals identity before staging and binds both safety nets b
   assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(downloadWorker, /ExistingWorkPolicy\.REPLACE/);
   assert.match(downloadRecoveryWorker, /allowQuarantine = false/);
+});
+
+test('private MMS persistence keeps its own non-empty transport size boundary', () => {
+  assert.match(
+    privateStore,
+    /if \(data\.isEmpty\(\) \|\| data\.size\.toLong\(\) > MmsDownloadCoordinator\.MAX_DOWNLOADED_PDU_BYTES\) \{\s*return failed\(\)\s*\}/
+  );
 });
 
 test('transport request exceptions retain staged MMS until durable recovery decides its fate', () => {
