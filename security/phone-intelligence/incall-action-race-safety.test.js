@@ -57,3 +57,11 @@ test('foreground activity launch cannot crash the Telecom service', () => {
     'a failed UI launch must remain observable without crashing Telecom'
   );
 });
+
+test('Telecom action failure reporting cannot rethrow through the service boundary', () => {
+  assert.match(
+    service,
+    /private fun performCallAction\([\s\S]*?\.onFailure \{[\s\S]*?runCatching \{[\s\S]*?onFailure\(\)\s*\}/,
+    'failure-state publication must be contained after an OEM rejects a Telecom action'
+  );
+});

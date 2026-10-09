@@ -580,12 +580,14 @@ class SentinelInCallService : InCallService() {
             action(call)
             true
         }.onFailure {
-            LocalLogger(this).logAsync(
-                LocalLogger.LogLevel.WARNING,
-                "InCall",
-                "Commande Telecom refusée ou devenue obsolète: $actionName"
-            )
-            onFailure()
+            runCatching {
+                LocalLogger(this).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "InCall",
+                    "Commande Telecom refusée ou devenue obsolète: $actionName"
+                )
+                onFailure()
+            }
         }.getOrDefault(false)
     }
 
