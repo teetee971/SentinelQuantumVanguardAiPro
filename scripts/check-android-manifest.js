@@ -401,7 +401,7 @@ const protectedInCallService =
 const protectedCallScreeningService =
   /<service\b(?=[^>]*android:name="\.security\.SentinelCallScreeningService")(?=[^>]*android:exported="true")(?=[^>]*android:permission="android\.permission\.BIND_SCREENING_SERVICE")[^>]*>[\s\S]*?<intent-filter>[\s\S]*?<action android:name="android\.telecom\.CallScreeningService"\s*\/>[\s\S]*?<\/intent-filter>[\s\S]*?<\/service>/s.test(manifest);
 const defaultDialerActivityContract =
-  /<activity\b(?=[^>]*android:name="\.SentinelDialerActivity")(?=[^>]*android:exported="true")(?=[^>]*tools:node="replace")(?=[^>]*tools:replace="android\.exported")[^>]*>[\s\S]*?<action android:name="android\.intent\.action\.DIAL"\s*\/>[\s\S]*?<data android:scheme="tel"\s*\/>[\s\S]*?<\/activity>/s.test(manifest);
+  /<activity\b(?=[^>]*android:name="\.SentinelDialerActivity")(?=[^>]*android:exported="true")(?=[^>]*tools:node="replace")(?=[^>]*tools:replace="android:exported")[^>]*>[\s\S]*?<action android:name="android\.intent\.action\.DIAL"\s*\/>[\s\S]*?<data android:scheme="tel"\s*\/>[\s\S]*?<\/activity>/s.test(manifest);
 const inCallUiMetadataContract =
   /<service\b(?=[^>]*android:name="\.security\.SentinelInCallService")[^>]*>[\s\S]*?<meta-data\b(?=[^>]*android:name="android\.telecom\.IN_CALL_SERVICE_UI")(?=[^>]*android:value="true")[^>]*\/>[\s\S]*?<\/service>/s.test(manifest);
 if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
