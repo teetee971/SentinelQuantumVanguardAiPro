@@ -310,6 +310,13 @@ for (const marker of [
 if (setupResumeTest.includes('sendKeyDownUpSync')) {
   errors.push('setup-resume instrumentation must not require privileged key injection');
 }
+const resumedScenarioIndex = setupResumeTest.indexOf('val resumedScenario = ActivityScenario.launch');
+if (resumedScenarioIndex >= 0) {
+  const resumedBlock = setupResumeTest.slice(resumedScenarioIndex);
+  if (resumedBlock.indexOf('dismissSystemSetupDialog()') > resumedBlock.indexOf('resumedScenario.moveToState')) {
+    errors.push('setup resume must dismiss Android-owned dialogs before forcing the resumed lifecycle');
+  }
+}
 
 for (const marker of [
   'PhoneCoreSetupRebootPreparationInstrumentationTest',

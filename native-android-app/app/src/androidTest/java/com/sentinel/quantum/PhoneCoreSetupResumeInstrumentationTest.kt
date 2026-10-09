@@ -98,6 +98,10 @@ class PhoneCoreSetupResumeInstrumentationTest {
 
         val resumedScenario = ActivityScenario.launch<PhoneCoreActivationActivity>(intent)
         try {
+            // A resumed process can immediately reopen the Android-owned role/permission
+            // surface. Dismiss that external window before asking ActivityScenario for RESUMED;
+            // otherwise API 24 can terminate the instrumentation process behind PAUSED state.
+            dismissSystemSetupDialog()
             resumedScenario.moveToState(Lifecycle.State.RESUMED)
             instrumentation.waitForIdleSync()
             SystemClock.sleep(300)
