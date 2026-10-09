@@ -114,6 +114,46 @@ class PttControllerTest {
         assertEquals("auth_failed", controller.lastFailure)
     }
 
+    @Test fun synchronousConnectExceptionFailsClosedInsteadOfStickingConnecting() {
+        val transport = FakePttTransport().apply { throwOnConnect = true }
+        val controller = PttController(transport)
+
+        controller.connect()
+
+        assertEquals(PttState.ERROR, controller.state)
+        assertEquals("connect_failed", controller.lastFailure)
+        assertFalse(controller.pressToTalk())
+    }
+
+    @Test fun synchronousTransmitStartExceptionKeepsMicrophoneGateClosed() {
+        val transport = FakePttTransport().apply { throwOnStart = true }
+        val controller = PttController(transport)
+        controller.connect()
+        transport.emit(PttTransport.Event.Connected)
+
+        assertFalse(controller.pressToTalk())
+
+        assertEquals(PttState.READY, controller.state)
+        assertEquals("transmit_start_failed", controller.lastFailure)
+        assertFalse(transport.transmitting)
+    }
+
+    @Test fun synchronousTransmitStopExceptionTearsDownSessionAndFailsClosed() {
+        val transport = FakePttTransport()
+        val controller = PttController(transport)
+        controller.connect()
+        transport.emit(PttTransport.Event.Connected)
+        assertTrue(controller.pressToTalk())
+        transport.throwOnStop = true
+
+        controller.releaseToTalk()
+
+        assertEquals(PttState.ERROR, controller.state)
+        assertEquals("transmit_stop_failed", controller.lastFailure)
+        assertTrue(transport.disconnectCount > 0)
+        assertFalse(controller.pressToTalk())
+    }
+
     private class FakePttTransport : PttTransport {
         private var listener: ((PttTransport.Event) -> Unit)? = null
         private val registrations = mutableListOf<(PttTransport.Event) -> Unit>()
@@ -121,6 +161,11 @@ class PttControllerTest {
             private set
         var listenerRegistrationCount = 0
             private set
+        var disconnectCount = 0
+            private set
+        var throwOnConnect = false
+        var throwOnStart = false
+        var throwOnStop = false
 
         override fun setEventListener(listener: (PttTransport.Event) -> Unit) {
             this.listener = listener
@@ -128,18 +173,23 @@ class PttControllerTest {
             listenerRegistrationCount += 1
         }
 
-        override fun connect() = Unit
+        override fun connect() {
+            if (throwOnConnect) error("connect boom")
+        }
 
         override fun disconnect() {
+            disconnectCount += 1
             transmitting = false
         }
 
         override fun startTransmitting(): Boolean {
+            if (throwOnStart) error("start boom")
             transmitting = true
             return true
         }
 
         override fun stopTransmitting() {
+            if (throwOnStop) error("stop boom")
             transmitting = false
         }
 
