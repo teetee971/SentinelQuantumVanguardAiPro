@@ -60,6 +60,9 @@ internal class IncomingMmsConversationStore(context: Context) {
         }
 
         val durable = journal.read(plan.digestHex)
+        if (durable == null && journal.hasRecord(plan.digestHex)) {
+            return ProjectResult.Rejected("MMS_PROVIDER_JOURNAL_CORRUPT", false)
+        }
         if (durable != null) {
             if (!sameIdentity(durable, plan)) {
                 return ProjectResult.Rejected("MMS_PROVIDER_DIGEST_IDENTITY_CONFLICT", true)

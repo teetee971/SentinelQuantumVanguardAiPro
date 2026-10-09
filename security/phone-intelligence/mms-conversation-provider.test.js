@@ -10,6 +10,10 @@ const journal = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsProviderJournal.kt',
   'utf8'
 );
+const incomingStore = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsConversationStore.kt',
+  'utf8'
+);
 
 test('conversation store merges canonical SMS and MMS provider state by thread', () => {
   assert.match(store, /Telephony\.Sms\.CONTENT_URI/);
@@ -45,4 +49,22 @@ test('incoming MMS provider journal serializes transitions across store instance
   assert.match(journal, /fun begin\([\s\S]*\): Boolean = withJournalLock/);
   assert.match(journal, /fun markReady\([\s\S]*\): Boolean = withJournalLock/);
   assert.match(journal, /fun all\(\): List<Record> = withJournalLock/);
+});
+
+test('corrupt incoming MMS provider journal entries fail closed instead of becoming absent', () => {
+  assert.match(
+    journal,
+    /fun all\(\): List<Record> = withJournalLock\s*\{[\s\S]*validateEntries\(\)[\s\S]*throw IllegalStateException/s,
+    'journal enumeration must not silently discard malformed recovery state'
+  );
+  assert.match(
+    journal,
+    /fun hasRecord\(digestHex: String\): Boolean = withJournalLock/,
+    'projection must distinguish an absent digest from a corrupt retained record'
+  );
+  assert.match(
+    incomingStore,
+    /journal\.hasRecord\(plan\.digestHex\)[\s\S]*MMS_PROVIDER_JOURNAL_CORRUPT/s,
+    'a corrupt digest entry must block reprojection before provider lookup'
+  );
 });

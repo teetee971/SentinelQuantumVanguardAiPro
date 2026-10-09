@@ -93,13 +93,26 @@ internal class IncomingMmsProviderJournal(context: Context) {
 
     fun read(digestHex: String): Record? = withJournalLock {
         if (validDigest(digestHex)) {
-            decode(digestHex, preferences.getString(key(digestHex), null))
+            decode(digestHex, preferences.all[key(digestHex)] as? String)
         } else {
             null
         }
     }
 
+    /**
+     * A retained provider row can outlive the process that created it. Treat a present but
+     * undecodable journal value as corruption, never as an absent replay marker: reprojection
+     * could otherwise create a duplicate MMS. The caller must retry/fail closed and preserve the
+     * evidence for a separate repair path.
+     */
+    fun hasRecord(digestHex: String): Boolean = withJournalLock {
+        validDigest(digestHex) && preferences.contains(key(digestHex))
+    }
+
     fun all(): List<Record> = withJournalLock {
+        if (!validateEntries()) {
+            throw IllegalStateException("MMS provider journal contains corrupt recovery state")
+        }
         preferences.all.asSequence()
             .filter { (name, value) -> name.startsWith(KEY_PREFIX) && value is String }
             .mapNotNull { (name, value) ->
@@ -109,6 +122,13 @@ internal class IncomingMmsProviderJournal(context: Context) {
             .take(MAX_RECORDS)
             .toList()
     }
+
+    private fun validateEntries(): Boolean =
+        preferences.all.asSequence()
+            .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
+            .all { (name, value) ->
+                decode(name.removePrefix(KEY_PREFIX), value as? String) != null
+            }
 
     private fun transition(
         digestHex: String,
