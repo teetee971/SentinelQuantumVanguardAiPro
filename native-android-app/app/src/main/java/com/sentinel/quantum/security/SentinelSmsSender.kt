@@ -167,6 +167,9 @@ class SentinelSmsSender(private val context: Context) {
             )
         }
 
+        // Instrumentation can flip AppOps at this exact boundary. Release builds execute a no-op.
+        SmsPreTransportTestInterlock.beforeFinalAuthorizationRecheck()
+
         // Authorization and SIM state can change after the initial checks while provider/callback
         // preparation is running. Re-read the complete send-critical state at the last safe point,
         // before crossing the SmsManager submission boundary. A failure here is conclusively
