@@ -398,3 +398,23 @@ test('MMS provider repair scheduling is coalesced across callback bursts', () =>
   assert.match(sendStatusReceiver, /queueProviderRepair\(context\)/);
   assert.match(sendStatusReceiver, /REPAIR_WORKER\.schedule/);
 });
+
+test('outgoing MMS staging arms cleanup before URI creation and keeps the safety net on failed deletion', () => {
+  const scheduleIndex = sendStager.indexOf(
+    'MmsSendCleanupWorker.schedule(context.applicationContext, finalFile.name)'
+  );
+  const uriIndex = sendStager.indexOf('FileProvider.getUriForFile(');
+  assert.ok(scheduleIndex >= 0, 'staging must schedule a durable cleanup worker');
+  assert.ok(uriIndex > scheduleIndex, 'cleanup must be armed before FileProvider can fail');
+
+  const uriFailure = sendStager.match(
+    /FileProvider\.getUriForFile\([\s\S]*?\}\.getOrElse \{([\s\S]*?)return Result\.Rejected\("MMS_SEND_URI_FAILED"\)/
+  );
+  assert.ok(uriFailure, 'URI failure must remain an explicit rejected staging outcome');
+  assert.match(uriFailure[1], /val removed = MmsSendPduStager\.delete\(context, finalFile\.name\)/);
+  assert.match(
+    uriFailure[1],
+    /if \(!removed\)[\s\S]*cleanup worker remains armed/i,
+    'an unconfirmed delete must preserve the already scheduled safety net'
+  );
+});

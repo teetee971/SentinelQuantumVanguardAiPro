@@ -57,6 +57,22 @@ object MmsSendPduStager {
             return Result.Rejected("MMS_PDU_STAGE_FAILED")
         }
 
+        val cleanupScheduled = runCatching {
+            MmsSendCleanupWorker.schedule(context.applicationContext, finalFile.name)
+            true
+        }.getOrDefault(false)
+        if (!cleanupScheduled) {
+            val removed = MmsSendPduStager.delete(context, finalFile.name)
+            if (!removed) {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsSend",
+                    "PDU MMS sortant conservé : nettoyage durable non planifié et suppression non confirmée"
+                )
+            }
+            return Result.Rejected("MMS_PDU_CLEANUP_SCHEDULE_FAILED")
+        }
+
         val uri = runCatching {
             FileProvider.getUriForFile(
                 context,
@@ -64,17 +80,16 @@ object MmsSendPduStager {
                 finalFile
             )
         }.getOrElse {
-            finalFile.delete()
+            val removed = MmsSendPduStager.delete(context, finalFile.name)
+            if (!removed) {
+                // The cleanup worker remains armed when immediate deletion is not confirmed.
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsSend",
+                    "PDU MMS sortant conservé : URI indisponible et suppression immédiate non confirmée"
+                )
+            }
             return Result.Rejected("MMS_SEND_URI_FAILED")
-        }
-
-        val cleanupScheduled = runCatching {
-            MmsSendCleanupWorker.schedule(context.applicationContext, finalFile.name)
-            true
-        }.getOrDefault(false)
-        if (!cleanupScheduled) {
-            finalFile.delete()
-            return Result.Rejected("MMS_PDU_CLEANUP_SCHEDULE_FAILED")
         }
 
         return Result.Staged(token, finalFile.name, uri)
