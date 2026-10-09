@@ -338,6 +338,15 @@ test('WAP recovery bounds orphan staging without deleting journaled payloads', (
   assert.match(wapRecoveryWorker, /if \(!orphanCleanupSucceeded\) return Result\.retry\(\)/);
 });
 
+test('lost-callback MMS recovery retries unexpected engine failures', () => {
+  const doWork = downloadRecoveryWorker.match(
+    /override fun doWork\(\): Result \{([\s\S]*?)\n    \}/
+  );
+  assert.ok(doWork, 'MMS recovery worker must expose a bounded doWork boundary');
+  assert.match(doWork[1], /runCatching/);
+  assert.match(doWork[1], /getOrElse \{[\s\S]*return Result\.retry\(\)/);
+});
+
 test('unexpected WAP worker failures preserve the PDU for durable recovery', () => {
   const workerFailure = deliverReceiver.match(
     /catch \(_: Exception\) \{([\s\S]*?)finally \{/

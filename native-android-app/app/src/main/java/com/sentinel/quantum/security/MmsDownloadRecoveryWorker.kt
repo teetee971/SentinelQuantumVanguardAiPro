@@ -22,13 +22,21 @@ class MmsDownloadRecoveryWorker(
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
         val fileName = inputData.getString(KEY_FILE_NAME) ?: return Result.success()
-        return when (
+        val outcome = runCatching {
             MmsDownloadRecovery.recover(
                 context = applicationContext,
                 fileName = fileName,
                 allowQuarantine = false
             )
-        ) {
+        }.getOrElse {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échec inattendu de la reprise MMS; nouvelle tentative durable planifiée"
+            )
+            return Result.retry()
+        }
+        return when (outcome) {
             MmsDownloadRecovery.Outcome.RETRY -> Result.retry()
             MmsDownloadRecovery.Outcome.RECOVERED,
             MmsDownloadRecovery.Outcome.TERMINAL -> Result.success()
