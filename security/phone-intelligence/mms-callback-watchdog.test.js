@@ -26,6 +26,10 @@ const cleanup = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendCleanupWorker.kt',
   'utf8'
 );
+const watchdogWorker = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSubmissionWatchdogWorker.kt',
+  'utf8'
+);
 
 test('MMS provider journal exposes stale submitted transport attempts', () => {
   assert.match(journal, /READY/);
@@ -46,6 +50,12 @@ test('MMS watchdog resolves only still-outbox provider rows and survives restart
   assert.match(cleanup, /MmsSubmissionWatchdogWorker\.schedule/);
   assert.match(store, /markTransportTimedOut/);
   assert.match(store, /MESSAGE_BOX_OUTBOX/);
+});
+
+test('MMS watchdog retries when journal enumeration fails', () => {
+  assert.match(watchdogWorker, /val staleSubmissions = runCatching \{[\s\S]*staleTransportSubmissions\(\)/);
+  assert.match(watchdogWorker, /getOrElse \{[\s\S]*return Result\.retry\(\)/);
+  assert.match(watchdogWorker, /staleSubmissions\.forEach/);
 });
 
 test('MMS transport cannot start without a durable watchdog', () => {

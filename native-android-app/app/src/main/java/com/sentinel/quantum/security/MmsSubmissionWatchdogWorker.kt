@@ -18,8 +18,18 @@ class MmsSubmissionWatchdogWorker(
         val journal = MmsProviderJournal(appContext)
         val store = MmsConversationStore(appContext)
         var retry = false
+        val staleSubmissions = runCatching {
+            journal.staleTransportSubmissions()
+        }.getOrElse {
+            LocalLogger(appContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsSend",
+                "Lecture du journal MMS impossible; nouvelle tentative durable planifiée"
+            )
+            return Result.retry()
+        }
 
-        journal.staleTransportSubmissions().forEach { record ->
+        staleSubmissions.forEach { record ->
             val providerMessageId = record.providerMessageId ?: return@forEach
             val resolved = runCatching {
                 store.markTransportTimedOut(providerMessageId) && journal.remove(record.token)
