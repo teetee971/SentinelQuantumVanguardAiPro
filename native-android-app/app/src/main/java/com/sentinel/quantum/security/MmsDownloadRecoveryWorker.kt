@@ -40,6 +40,11 @@ class MmsDownloadRecoveryWorker(
             enqueue(context, fileName, RECOVERY_DELAY_MS, ExistingWorkPolicy.KEEP)
         }
 
+        /** Wakes an already journaled callback immediately after the receiver pool saturates. */
+        fun scheduleNow(context: Context, fileName: String) {
+            enqueue(context, fileName, 0L, ExistingWorkPolicy.REPLACE)
+        }
+
         fun schedulePendingNow(context: Context) {
             MmsDownloadRecoveryJournal(context).all().forEach { record ->
                 MmsDownloadCleanupWorker.scheduleAtDeadline(

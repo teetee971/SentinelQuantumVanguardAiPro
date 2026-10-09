@@ -99,6 +99,10 @@ test('incoming MMS journals identity before staging and binds both safety nets b
   assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(downloadWorker, /ExistingWorkPolicy\.REPLACE/);
   assert.match(downloadRecoveryWorker, /allowQuarantine = false/);
+  assert.match(
+    downloadRecoveryWorker,
+    /fun scheduleNow\(context: Context, fileName: String\)[\s\S]*enqueue\(context, fileName, 0L, ExistingWorkPolicy\.REPLACE\)/
+  );
 });
 
 test('private MMS persistence keeps its own non-empty transport size boundary', () => {
@@ -146,6 +150,21 @@ test('MMS broadcast saturation never performs synchronous file logging on the ca
     assert.match(fallback[1], /LocalLogger\(appContext\)\.logAsync/);
     assert.doesNotMatch(fallback[1], /LocalLogger\(appContext\)\.log\(/);
   }
+});
+
+test('download callback saturation wakes its durable recovery without provider work', () => {
+  const fallback = downloadReceiver.match(
+    /if \(!submitted\) \{([\s\S]*?)pendingResult\.finish\(\)/
+  );
+  assert.ok(fallback, 'download callback saturation fallback must finish PendingResult');
+  assert.match(
+    fallback[1],
+    /MmsDownloadRecoveryWorker\.scheduleNow\(appContext, fileName\)/,
+    'saturation must wake the already journaled recovery immediately'
+  );
+  assert.doesNotMatch(fallback[1], /MmsDownloadCoordinator\.request/);
+  assert.doesNotMatch(fallback[1], /IncomingMmsConversationStore/);
+  assert.doesNotMatch(fallback[1], /readBounded|readBytes|IncomingMmsPrivateStore/);
 });
 
 test('process-death recovery reconstructs the original incoming MMS cleanup deadline', () => {

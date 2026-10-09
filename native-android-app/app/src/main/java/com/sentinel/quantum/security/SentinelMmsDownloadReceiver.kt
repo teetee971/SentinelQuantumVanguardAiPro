@@ -71,10 +71,17 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }.isSuccess
 
         if (!submitted) {
+            val recoveryScheduled = runCatching {
+                MmsDownloadRecoveryWorker.scheduleNow(appContext, fileName)
+            }.isSuccess
             LocalLogger(appContext).logAsync(
-                LocalLogger.LogLevel.WARNING,
+                if (recoveryScheduled) LocalLogger.LogLevel.WARNING else LocalLogger.LogLevel.SECURITY,
                 "MmsDownload",
-                "Callback MMS non planifié : worker indisponible"
+                if (recoveryScheduled) {
+                    "Callback MMS saturé : reprise durable réveillée immédiatement"
+                } else {
+                    "Callback MMS non planifié : worker indisponible et reprise durable non réveillée"
+                }
             )
             pendingResult.finish()
         }
