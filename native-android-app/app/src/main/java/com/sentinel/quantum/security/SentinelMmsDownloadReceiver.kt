@@ -258,6 +258,15 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 "MmsDownload",
                 "Échec de suppression du PDU MMS temporaire après traitement; le nettoyage durable reste planifié"
             )
+            runCatching {
+                MmsDownloadRecoveryWorker.schedule(context, fileName)
+            }.onFailure {
+                LocalLogger(context).logAsync(
+                    LocalLogger.LogLevel.SECURITY,
+                    "MmsDownload",
+                    "Reprise MMS non replanifiée après échec de suppression du staging"
+                )
+            }
         }
 
         SmsNotificationHelper.notifyMessage(

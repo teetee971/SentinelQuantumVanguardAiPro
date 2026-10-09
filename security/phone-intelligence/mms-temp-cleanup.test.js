@@ -359,6 +359,21 @@ test('lost-callback MMS recovery retries unexpected engine failures', () => {
   assert.match(doWork[1], /getOrElse \{[\s\S]*return Result\.retry\(\)/);
 });
 
+test('MMS recovery retries when staged bytes or journal retirement is not confirmed', () => {
+  assert.match(
+    downloadRecoveryWorker,
+    /if \(!finish\(appContext, fileName, allowQuarantine\)\) return Outcome\.RETRY/
+  );
+  assert.match(
+    downloadRecoveryWorker,
+    /if \(!journal\.remove\(fileName\)\) return Outcome\.RETRY/
+  );
+  assert.match(
+    downloadReceiver,
+    /if \(!temporaryDeleted\)[\s\S]*MmsDownloadRecoveryWorker\.schedule\(context, fileName\)/
+  );
+});
+
 test('unexpected WAP worker failures preserve the PDU for durable recovery', () => {
   const workerFailure = deliverReceiver.match(
     /catch \(_: Exception\) \{([\s\S]*?)finally \{/

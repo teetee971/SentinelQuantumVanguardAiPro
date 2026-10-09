@@ -125,22 +125,22 @@ internal object MmsDownloadRecovery {
             appContext.readSmsRoleStateFailClosed() !=
                 SmsActivationDiagnostics.SmsRoleState.HELD
         ) {
-            finish(appContext, fileName, allowQuarantine)
+            if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
         if (!MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)) {
-            finish(appContext, fileName, allowQuarantine)
+            if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
 
         val target = stagedFile(appContext, fileName) ?: run {
-            journal.remove(fileName)
+            if (!journal.remove(fileName)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
         val sizeBefore = target.length()
         if (sizeBefore <= 0L) return Outcome.RETRY
         if (sizeBefore > MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            finish(appContext, fileName, allowQuarantine)
+            if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
 
@@ -249,7 +249,7 @@ internal object MmsDownloadRecovery {
             )
         }
 
-        finish(appContext, fileName, allowQuarantine)
+        if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
         return Outcome.RECOVERED
     }
 
@@ -273,7 +273,7 @@ internal object MmsDownloadRecovery {
     ): Boolean =
         providerResult is IncomingMmsConversationStore.ProjectResult.Rejected && !allowQuarantine
 
-    private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean) {
+    private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean): Boolean =
         MmsDownloadCoordinator.finishRecovery(
             context = context,
             fileName = fileName,
