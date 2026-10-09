@@ -88,7 +88,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         if (!holdsSmsRole(context)) return
         val persistence = IncomingMmsWapIngressStore.persist(context.filesDir, data)
         val digest = persistence.digestHex
-        if (persistence.state == IncomingMmsPrivateStore.State.FAILED || digest == null) {
+        if (persistence.state == IncomingMmsWapIngressStore.State.FAILED || digest == null) {
             LocalLogger(context).logAsync(
                 LocalLogger.LogLevel.SECURITY,
                 "MmsDeliver",
