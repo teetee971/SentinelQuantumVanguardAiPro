@@ -200,6 +200,26 @@ test('rejects a PASS session with unresolved residuals', async t => {
   assert.match(result.errors.join('\n'), /residuals invalid for PASS/);
 });
 
+test('returns a structured failure for a malformed residuals field', async t => {
+  const fixture = await makeFixture(t, session => { session.residuals = null; });
+  assert.doesNotThrow(() => verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  }));
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /manifest metadata invalid/);
+});
+
 test('rejects a signed session bound to a different source head', async t => {
   const fixture = await makeFixture(t);
   const result = verifyPhoneCorePhysicalSession({
