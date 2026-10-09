@@ -15,6 +15,20 @@ function requiredWorkflowBlock(workflow) {
   return workflow.slice(start, end);
 }
 
+function apkInstallLines(workflow) {
+  return workflow
+    .split('\n')
+    .filter((line) => /\badb\s+install(?:\s|$)/.test(line));
+}
+
+function assertBoundedApkInstall(line, name) {
+  assert.match(
+    line,
+    /\btimeout\s+--signal=INT\s+--kill-after=(?:\d+)s\s+(?:\d+)s\s+adb\s+install(?:\s|$)/,
+    `${name} contains an unbounded APK install: ${line.trim()}`
+  );
+}
+
 test('required CodeQL Android status waits for emulator and comprehensive merge gates', () => {
   const block = requiredWorkflowBlock(codeqlWorkflow);
   assert.match(block, /"android-instrumentation\.yml"/);
@@ -27,16 +41,32 @@ test('every emulator APK install has an independent bounded ADB watchdog', () =>
     ['Phone Core emulation qualification', emulationWorkflow],
     ['native Android build smoke', nativeBuildWorkflow]
   ]) {
-    const installLines = workflow.split('\n').filter((line) => line.includes('adb install -r'));
+    const installLines = apkInstallLines(workflow);
     assert.ok(installLines.length > 0, `${name} must install an APK`);
     for (const line of installLines) {
-      assert.match(
-        line,
-        /timeout --signal=INT --kill-after=30s 180s adb install -r/,
-        `${name} contains an unbounded APK install: ${line.trim()}`
-      );
+      assertBoundedApkInstall(line, name);
     }
   }
+});
+
+test('legacy API 24 instrumentation uses bounded non-streaming installs for app and test APKs', () => {
+  const legacyBlock = instrumentationWorkflow.split('if [[ "$API_LEVEL" == "24" ]]; then')[1]?.split('\n          else')[0] || '';
+  const installLines = apkInstallLines(legacyBlock);
+
+  assert.equal(installLines.length, 2, 'API 24 must install exactly the app APK and instrumentation APK');
+  for (const line of installLines) {
+    assertBoundedApkInstall(line, 'legacy instrumentation');
+    assert.match(line, /adb\s+install\s+--no-streaming\b/, 'API 24 installs must disable ADB streaming');
+    assert.match(line, /\s-r(?:\s|$)/, 'API 24 installs must replace an existing package deterministically');
+  }
+  assert.ok(
+    installLines.some((line) => /\s-t(?:\s|$)/.test(line) && line.includes('$TEST_APK')),
+    'API 24 instrumentation APK must be installed with -t'
+  );
+  assert.ok(
+    installLines.some((line) => line.includes('$APP_APK') && !/\s-t(?:\s|$)/.test(line)),
+    'API 24 application APK must be installed separately from the testOnly APK'
+  );
 });
 
 test('every emulator workflow step that talks to a device bounds ordinary ADB calls', () => {
