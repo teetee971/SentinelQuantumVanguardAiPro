@@ -38,6 +38,9 @@ hash du rapport et `certificate_sha256`, qui doit correspondre à l’empreinte
 `Signer #1 certificate SHA-256 digest` du rapport.
 
 Le `source_sha` signé doit correspondre à l’input `expected_source_sha` du workflow.
+Un manifeste déclaré `PASS` doit avoir `residuals: []` : une divergence restante, même signée,
+reste un verdict fermé `FAIL` jusqu’à sa résolution ou à la production d’une session explicitement
+non-PASS.
 La vérification locale équivalente est :
 
 ```bash

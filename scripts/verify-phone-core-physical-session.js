@@ -202,6 +202,9 @@ function validateManifestShape(session, errors) {
        typeof session.metadata.operator_profile !== 'string' || session.metadata.operator_profile.length < 1 || session.metadata.operator_profile.length > 128)) {
     add(errors, 'device metadata invalid');
   }
+  if (session.status === 'PASS' && session.residuals.length > 0) {
+    add(errors, 'residuals invalid for PASS');
+  }
   if (session.status !== 'PASS' || session.verdict !== 'PASS') add(errors, 'verdict is not PASS');
   return true;
 }

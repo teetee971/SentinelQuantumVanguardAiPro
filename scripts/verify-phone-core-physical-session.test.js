@@ -183,6 +183,21 @@ test('rejects a nonempty evidence substitution after signing', async t => {
   assert.match(result.errors.join('\n'), /evidence sha256 mismatch/);
 });
 
+test('rejects a PASS session with unresolved residuals', async t => {
+  const fixture = await makeFixture(t, session => {
+    session.residuals = ['S24 latency measurement pending'];
+  });
+  const result = verifyPhoneCorePhysicalSession({
+    session: fixture.session,
+    baseDir: fixture.root,
+    trust: fixture.trust,
+    expectedSourceSha: 'a'.repeat(40),
+    now: NOW
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /residuals invalid for PASS/);
+});
+
 test('rejects a signed session bound to a different source head', async t => {
   const fixture = await makeFixture(t);
   const result = verifyPhoneCorePhysicalSession({
