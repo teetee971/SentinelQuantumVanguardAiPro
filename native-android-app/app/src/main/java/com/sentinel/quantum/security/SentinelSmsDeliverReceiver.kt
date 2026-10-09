@@ -15,7 +15,9 @@ import java.util.concurrent.TimeUnit
  * The broadcast hands work to a bounded goAsync executor. The minimum message record is fsync'd to
  * app-private storage first, then a unique WorkManager job projects it to Android's SMS provider and
  * performs secondary analysis/notification. A process death therefore leaves replayable state instead
- * of an orphaned PendingResult. Raw message content is never written to logs.
+ * of an orphaned PendingResult. Raw message content is never written to logs. When the bounded queue
+ * is saturated, CallerRunsPolicy applies backpressure in the broadcast caller instead of silently
+ * acknowledging and losing a user message.
  */
 class SentinelSmsDeliverReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -173,7 +175,7 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             { runnable ->
                 Thread(runnable, "sentinel-sms-deliver").apply { isDaemon = true }
             },
-            ThreadPoolExecutor.AbortPolicy()
+            ThreadPoolExecutor.CallerRunsPolicy()
         )
     }
 }

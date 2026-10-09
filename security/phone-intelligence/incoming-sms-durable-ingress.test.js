@@ -30,10 +30,11 @@ test('SMS_DELIVER captures durable state and schedules idempotent projection', (
   assert.doesNotMatch(receiver, /Executors\.newSingleThreadExecutor/);
 });
 
-test('SMS capture and provider fallback never run on the broadcast main thread', () => {
+test('SMS capture stays off-main normally and applies caller-runs backpressure on saturation', () => {
   assert.match(receiver, /val pendingResult = goAsync\(\)/);
   assert.match(receiver, /RECEIVER_EXECUTOR\.execute/);
   assert.match(receiver, /ArrayBlockingQueue/);
+  assert.match(receiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
   assert.match(receiver, /private fun processIncomingSms/);
   assert.match(receiver, /pendingResult\.finish\(\)/);
   assert.match(receiver, /LocalLogger\(appContext\)\.logAsync/);
