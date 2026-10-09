@@ -25,28 +25,31 @@ class SmsPreSubmitRecoveryWorker(
             return Result.retry()
         }
 
-        val store = SmsConversationStore(applicationContext)
         var retry = false
         records.forEach { record ->
             when (record.phase) {
                 SmsPreSubmitJournal.Phase.PREPARING -> {
                     when (
-                        store.repairPreparedOutbox(
+                        SmsPreSubmitProvider.repairPreparedOutbox(
+                            context = applicationContext,
                             timestampMs = record.createdAtMs,
                             subscriptionId = record.subscriptionId
                         )
                     ) {
-                        SmsConversationStore.PreparedOutboxRepair.ABSENT,
-                        SmsConversationStore.PreparedOutboxRepair.REPAIRED -> {
+                        SmsPreSubmitProvider.PreparedOutboxRepair.ABSENT,
+                        SmsPreSubmitProvider.PreparedOutboxRepair.REPAIRED -> {
                             if (!journal.remove(record.token)) retry = true
                         }
-                        SmsConversationStore.PreparedOutboxRepair.AMBIGUOUS,
-                        SmsConversationStore.PreparedOutboxRepair.FAILED -> retry = true
+                        SmsPreSubmitProvider.PreparedOutboxRepair.AMBIGUOUS,
+                        SmsPreSubmitProvider.PreparedOutboxRepair.FAILED -> retry = true
                     }
                 }
                 SmsPreSubmitJournal.Phase.PROVIDER_READY -> {
                     val providerId = record.providerMessageId
-                    if (providerId == null || !store.markOutgoingFailed(providerId)) {
+                    if (
+                        providerId == null ||
+                        !SmsPreSubmitProvider.markOutgoingFailed(applicationContext, providerId)
+                    ) {
                         retry = true
                     } else if (!journal.remove(record.token)) {
                         retry = true
