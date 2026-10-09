@@ -323,11 +323,14 @@ for (const marker of [
   'PhoneCoreSetupRebootPreparationInstrumentationTest',
   'preserve_state',
   'waitForAttemptedTarget',
-  'executeShellCommand("am force-stop',
+  'cleanUpUnlessWorkflowWillReboot()',
   'LifecycleState.IN_PROGRESS'
 ]) requireText(setupRebootTest, marker, 'setup reboot preparation instrumentation');
 if (setupRebootTest.includes('markAttemptedTarget(')) {
   errors.push('setup reboot preparation must observe the UI target, not seed an artificial target');
+}
+if (/executeShellCommand\("am force-stop/.test(setupRebootTest)) {
+  errors.push('setup reboot preparation must leave process termination to the external reboot workflow');
 }
 if (!/fun dismissSystemSetupDialog\(\)/.test(setupRebootTest) ||
     !/cleanUpUnlessWorkflowWillReboot\(\)[\s\S]*dismissSystemSetupDialog\(\)/.test(setupRebootTest)) {

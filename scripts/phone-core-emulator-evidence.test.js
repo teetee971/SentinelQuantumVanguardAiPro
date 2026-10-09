@@ -59,6 +59,17 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
 });
 
+test('reboot preparation leaves process termination to the external workflow', () => {
+  const source = readFileSync(new URL('../native-android-app/app/src/androidTest/java/com/sentinel/quantum/PhoneCoreSetupRebootPreparationInstrumentationTest.kt', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /executeShellCommand\("am force-stop/);
+  const gate = spawnSync(
+    process.execPath,
+    [new URL('./check-phone-core-emulation-gate.js', import.meta.url).pathname],
+    { cwd: new URL('..', import.meta.url).pathname, encoding: 'utf8' }
+  );
+  assert.equal(gate.status, 0, `${gate.stdout}\n${gate.stderr}`);
+});
+
 for (const [name, dump, status, holders] of [
   ['complete empty API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n}\n{\nname=android.app.role.SMS\nholders=com.sentinel.quantum\n} ] }', 0, ''],
   ['complete held API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=com.sentinel.quantum\n} ] }', 0, 'com.sentinel.quantum'],
