@@ -37,6 +37,15 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 try {
                     processIncomingSms(appContext, deliveredIntent)
                 } catch (_: Exception) {
+                    runCatching {
+                        IncomingSmsRecoveryWorker.schedule(appContext)
+                    }.onFailure {
+                        LocalLogger(appContext).log(
+                            LocalLogger.LogLevel.SECURITY,
+                            "DefaultSms",
+                            "Reprise du spool SMS impossible après une exception de traitement"
+                        )
+                    }
                     LocalLogger(appContext).log(
                         LocalLogger.LogLevel.WARNING,
                         "DefaultSms",

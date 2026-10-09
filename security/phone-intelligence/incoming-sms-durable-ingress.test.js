@@ -47,6 +47,14 @@ test('SMS saturation keeps provider projection off the broadcast callback thread
   assert.match(receiver, /LocalLogger\(appContext\)\.logAsync/);
 });
 
+test('unexpected SMS worker failures requeue the durable spool', () => {
+  const workerFailure = receiver.match(
+    /catch \(_: Exception\) \{([\s\S]*?)finally \{/
+  );
+  assert.ok(workerFailure, 'SMS worker must have an explicit exception boundary');
+  assert.match(workerFailure[1], /IncomingSmsRecoveryWorker\.schedule\(appContext\)/);
+});
+
 test('SMS durable spool is bounded, fsynced and idempotency-keyed', () => {
   assert.match(store, /MAX_PENDING_RECORDS = 512/);
   assert.match(store, /MAX_RECORD_BYTES = 64L \* 1024L/);
