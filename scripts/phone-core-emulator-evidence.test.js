@@ -124,6 +124,13 @@ test('runtime qualification treats an unavailable mobile-data oracle as an expli
   assert.match(runtimeFlow, /if \[\[ "\$ORIGINAL_MOBILE_DATA" != UNAVAILABLE \]\]/);
 });
 
+test('runtime stability reports invalid original device state instead of exiting silently', () => {
+  assert.match(runtimeFlow, /Invalid original user rotation state/);
+  assert.match(runtimeFlow, /Invalid original accelerometer rotation state/);
+  assert.match(runtimeFlow, /Invalid original Wi-Fi state/);
+  assert.match(runtimeFlow, /Invalid original mobile-data state/);
+});
+
 test('reboot preparation leaves process termination to the external workflow', () => {
   const source = readFileSync(new URL('../native-android-app/app/src/androidTest/java/com/sentinel/quantum/PhoneCoreSetupRebootPreparationInstrumentationTest.kt', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /executeShellCommand\("am force-stop/);

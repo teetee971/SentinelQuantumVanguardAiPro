@@ -71,10 +71,22 @@ capture_original_device_state() {
     return 1
   fi
   read -r ORIGINAL_MOBILE_DATA MOBILE_DATA_ORACLE_SOURCE <<< "$mobile_data_reading"
-  [[ "$ORIGINAL_USER_ROTATION" =~ ^[0-9]+$ ]]
-  [[ "$ORIGINAL_ACCELEROMETER_ROTATION" =~ ^[01]$ ]]
-  [[ "$ORIGINAL_WIFI_ON" =~ ^[01]$ ]]
-  [[ "$ORIGINAL_MOBILE_DATA" == UNAVAILABLE || "$ORIGINAL_MOBILE_DATA" =~ ^[01]$ ]]
+  if ! [[ "$ORIGINAL_USER_ROTATION" =~ ^[0-9]+$ ]]; then
+    echo "Invalid original user rotation state: $ORIGINAL_USER_ROTATION" >&2
+    return 1
+  fi
+  if ! [[ "$ORIGINAL_ACCELEROMETER_ROTATION" =~ ^[01]$ ]]; then
+    echo "Invalid original accelerometer rotation state: $ORIGINAL_ACCELEROMETER_ROTATION" >&2
+    return 1
+  fi
+  if ! [[ "$ORIGINAL_WIFI_ON" =~ ^[01]$ ]]; then
+    echo "Invalid original Wi-Fi state: $ORIGINAL_WIFI_ON" >&2
+    return 1
+  fi
+  if ! [[ "$ORIGINAL_MOBILE_DATA" == UNAVAILABLE || "$ORIGINAL_MOBILE_DATA" =~ ^[01]$ ]]; then
+    echo "Invalid original mobile-data state: $ORIGINAL_MOBILE_DATA" >&2
+    return 1
+  fi
 }
 
 restore_device_state() {
