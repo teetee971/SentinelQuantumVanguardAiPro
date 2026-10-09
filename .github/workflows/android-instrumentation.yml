@@ -288,9 +288,17 @@ jobs:
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
+            echo "API 24 app APK bytes: $(stat -c '%s' "$APP_APK")"
+            echo "API 24 test APK bytes: $(stat -c '%s' "$TEST_APK")"
 
-            timeout --signal=INT --kill-after=30s 180s adb install -r "$APP_APK"
-            timeout --signal=INT --kill-after=30s 180s adb install -r "$TEST_APK"
+            # Android 7.0 package installation can wedge in adb's streaming install path for
+            # large APKs. Force push-then-package-manager installation so the legacy lane stays
+            # deterministic and blocking. The instrumentation APK is testOnly and therefore
+            # must be installed with -t.
+            echo "Installing API 24 app APK with non-streaming adb install."
+            timeout --signal=INT --kill-after=30s 300s adb install --no-streaming -r "$APP_APK"
+            echo "Installing API 24 instrumentation APK with non-streaming adb install."
+            timeout --signal=INT --kill-after=30s 300s adb install --no-streaming -r -t "$TEST_APK"
 
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
