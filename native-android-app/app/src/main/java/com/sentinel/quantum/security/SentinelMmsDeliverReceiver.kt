@@ -40,10 +40,21 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                     val outcome = processDelivery(appContext, deliveredIntent)
                     if (outcome == DeliveryOutcome.RETRY) {
                         deliveredIntent.getByteArrayExtra("data")?.let { retryData ->
-                            captureAndScheduleAfterSaturation(appContext, retryData, deliveredIntent)
+                            captureAndScheduleRecovery(appContext, retryData, deliveredIntent)
                         }
                     }
                 } catch (_: Exception) {
+                    deliveredIntent.getByteArrayExtra("data")?.let { retryData ->
+                        runCatching {
+                            captureAndScheduleRecovery(appContext, retryData, deliveredIntent)
+                        }.onFailure {
+                            LocalLogger(appContext).log(
+                                LocalLogger.LogLevel.SECURITY,
+                                "MmsDeliver",
+                                "Échec inattendu du MMS entrant et capture de reprise indisponible"
+                            )
+                        }
+                    }
                     LocalLogger(appContext).log(
                         LocalLogger.LogLevel.WARNING,
                         "MmsDeliver",
@@ -57,7 +68,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
 
         if (!submitted) {
             runCatching {
-                captureAndScheduleAfterSaturation(appContext, data.copyOf(), deliveredIntent)
+                captureAndScheduleRecovery(appContext, data.copyOf(), deliveredIntent)
             }.onFailure {
                 LocalLogger(appContext).logAsync(
                     LocalLogger.LogLevel.WARNING,
@@ -69,7 +80,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun captureAndScheduleAfterSaturation(
+    private fun captureAndScheduleRecovery(
         context: Context,
         data: ByteArray,
         sourceIntent: Intent

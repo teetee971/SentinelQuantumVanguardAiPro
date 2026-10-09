@@ -210,11 +210,11 @@ test('MMS WAP saturation durably stages the PDU and defers provider work', () =>
   assert.match(deliverReceiver, /ArrayBlockingQueue< Runnable >|ArrayBlockingQueue<Runnable>/);
   assert.match(deliverReceiver, /ThreadPoolExecutor\.AbortPolicy\(\)/);
   assert.doesNotMatch(deliverReceiver, /ThreadPoolExecutor\.CallerRunsPolicy\(\)/);
-  assert.match(deliverReceiver, /captureAndScheduleAfterSaturation/);
+  assert.match(deliverReceiver, /captureAndScheduleRecovery/);
   assert.match(deliverReceiver, /IncomingMmsWapIngressStore\.persist/);
   assert.match(deliverReceiver, /IncomingMmsWapIngressJournal\(context\)\.record/);
   assert.match(deliverReceiver, /IncomingMmsWapIngressRecoveryWorker\.schedule/);
-  const fallback = deliverReceiver.match(/captureAndScheduleAfterSaturation[\s\S]*?\n    \}/);
+  const fallback = deliverReceiver.match(/captureAndScheduleRecovery[\s\S]*?\n    \}/);
   assert.ok(fallback, 'WAP saturation must have a bounded durable fallback');
   assert.doesNotMatch(fallback[0], /MmsDownloadCoordinator\.request/);
   assert.doesNotMatch(fallback[0], /IncomingMmsConversationStore/);
@@ -257,6 +257,15 @@ test('WAP recovery removes unreadable staging before retiring its journal record
   assert.ok(journalRemoveIndex > stagedDeleteIndex, 'journal metadata must outlive staged cleanup');
   assert.match(branch, /val journalRemoved = stagedRemoved && journal\.remove/);
   assert.match(branch, /if \(!journalRemoved\) retry = true/);
+});
+
+test('unexpected WAP worker failures preserve the PDU for durable recovery', () => {
+  const workerFailure = deliverReceiver.match(
+    /catch \(_: Exception\) \{([\s\S]*?)finally \{/
+  );
+  assert.ok(workerFailure, 'WAP worker must have an explicit exception boundary');
+  assert.match(workerFailure[1], /getByteArrayExtra\("data"\)/);
+  assert.match(workerFailure[1], /captureAndScheduleRecovery/);
 });
 
 test('MMS provider repair scheduling is coalesced across callback bursts', () => {
