@@ -277,7 +277,7 @@ test('rejects call-screening post-response persistence on the callback thread', 
 test('rejects caller-id enrichment moved before the final screening response', () => {
   const s = source();
   const finalResponse = s.callScreening.indexOf(
-    '        respondAndLog(callDetails, response.build(), startedAtElapsedMs)'
+    'respondAndLog(callDetails, response.build(), startedAtElapsedMs)'
   );
   assert.ok(finalResponse >= 0, 'fixture must contain the final response boundary');
   const moved = {
@@ -288,6 +288,15 @@ test('rejects caller-id enrichment moved before the final screening response', (
       s.callScreening.slice(finalResponse)
   };
   assert.ok(auditProductTruth(moved).some((e) => e.includes('final respondToCall')));
+});
+
+test('rejects screening side effects when Telecom response failure is not guarded', () => {
+  const s = source();
+  s.callScreening = s.callScreening.replace(
+    'if (!respondAndLog(callDetails, response.build(), startedAtElapsedMs)) return',
+    'respondAndLog(callDetails, response.build(), startedAtElapsedMs)'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('final respondToCall')));
 });
 
 test('rejects a dialer READY state that ignores the MMS safe-preview self-test', () => {
