@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -222,4 +223,10 @@ test('rejects a validly signed session when the trust root has no authorized key
   });
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /no authorized keys/);
+});
+
+test('hashes bounded artifacts incrementally instead of buffering the complete file', () => {
+  const source = readFileSync(new URL('./verify-phone-core-physical-session.js', import.meta.url), 'utf8');
+  assert.match(source, /fs\.readSync/);
+  assert.doesNotMatch(source, /createHash\('sha256'\)\.update\(fs\.readFileSync\(filePath\)\)/);
 });
