@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -203,6 +204,51 @@ class SmsComposeActivity : ComponentActivity() {
                 }
                 val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
                     activationEpoch++
+                }
+
+                fun reportActivationFailure(message: String) {
+                    status = message
+                    activationEpoch++
+                }
+
+                fun launchSmsRoleActivation() {
+                    val request = try {
+                        activationActions.roleRequestIntent()
+                            ?: activationActions.legacyDefaultAppsIntent()
+                    } catch (_: RuntimeException) {
+                        null
+                    }
+                    if (request == null) {
+                        reportActivationFailure(
+                            "Le sélecteur SMS Android n’est pas disponible sur cet appareil. Vérifiez le rôle SMS, puis réessayez."
+                        )
+                        return
+                    }
+                    try {
+                        roleLauncher.launch(request)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationFailure(
+                            "Android n’a pas pu ouvrir le sélecteur SMS. Vérifiez les applications par défaut, puis réessayez."
+                        )
+                    } catch (_: RuntimeException) {
+                        reportActivationFailure(
+                            "Android a refusé l’ouverture du sélecteur SMS. Vérifiez les applications par défaut, puis réessayez."
+                        )
+                    }
+                }
+
+                fun launchSmsPermissions(permissions: Array<String>, failureMessage: String) {
+                    if (permissions.isEmpty()) {
+                        reportActivationFailure("L’état des permissions SMS a changé. Actualisation en cours.")
+                        return
+                    }
+                    try {
+                        permissionLauncher.launch(permissions)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationFailure(failureMessage)
+                    } catch (_: RuntimeException) {
+                        reportActivationFailure(failureMessage)
+                    }
                 }
                 val subscriptionState = remember { SmsSubscriptionState(applicationContext) }
                 val subscriptionResult = remember(activationEpoch) { subscriptionState.load() }
@@ -645,12 +691,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     Text(activationModel.detail, style = MaterialTheme.typography.bodySmall)
                                     if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in activationModel.actions) {
                                         Button(
-                                            onClick = {
-                                                val request = activationActions.roleRequestIntent()
-                                                    ?: activationActions.legacyDefaultAppsIntent()
-                                                if (request != null) roleLauncher.launch(request)
-                                                else status = "Le sélecteur SMS Android n’est pas disponible sur cet appareil."
-                                            },
+                                            onClick = { launchSmsRoleActivation() },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Activer Sentinel pour les SMS") }
                                     }
@@ -658,8 +699,10 @@ class SmsComposeActivity : ComponentActivity() {
                                         OutlinedButton(
                                             onClick = {
                                                 val permissions = activationActions.sendPermissionsFor(activationSnapshot)
-                                                if (permissions.isNotEmpty()) permissionLauncher.launch(permissions)
-                                                else activationEpoch++
+                                                launchSmsPermissions(
+                                                    permissions,
+                                                    "Android n’a pas pu ouvrir la demande de permissions SMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                                )
                                             },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser les permissions nécessaires à l’envoi") }
@@ -667,7 +710,12 @@ class SmsComposeActivity : ComponentActivity() {
                                     val inboxPermissions = activationActions.inboxPermissionsFor(activationSnapshot)
                                     if (inboxPermissions.isNotEmpty()) {
                                         OutlinedButton(
-                                            onClick = { permissionLauncher.launch(inboxPermissions) },
+                                            onClick = {
+                                                launchSmsPermissions(
+                                                    inboxPermissions,
+                                                    "Android n’a pas pu ouvrir la demande d’accès aux conversations SMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                                )
+                                            },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser l’accès aux conversations SMS") }
                                     }
