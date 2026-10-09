@@ -179,6 +179,13 @@ class PttController(
                     state = PttState.ERROR
                     return
                 }
+
+                // A transport failure does not prove that sockets/media were actually torn down.
+                // Invalidate this listener generation first, then close the transport best-effort
+                // before exposing ERROR to the owner. Late callbacks from the failed session are
+                // therefore fenced even if the adapter reports them after teardown begins.
+                listenerGeneration += 1
+                disconnectTransportBestEffort()
                 lastFailure = event.reason
                 state = PttState.ERROR
             }

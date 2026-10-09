@@ -114,6 +114,21 @@ class PttControllerTest {
         assertEquals("auth_failed", controller.lastFailure)
     }
 
+    @Test fun transportFailureTearsDownLiveSessionBeforeLeavingError() {
+        val transport = FakePttTransport()
+        val controller = PttController(transport)
+        controller.connect()
+        transport.emit(PttTransport.Event.Connected)
+        assertEquals(PttState.READY, controller.state)
+
+        transport.emit(PttTransport.Event.Failure("socket_lost"))
+
+        assertEquals(PttState.ERROR, controller.state)
+        assertEquals("socket_lost", controller.lastFailure)
+        assertEquals(1, transport.disconnectCount)
+        assertFalse(controller.pressToTalk())
+    }
+
     @Test fun synchronousConnectExceptionFailsClosedInsteadOfStickingConnecting() {
         val transport = FakePttTransport().apply { throwOnConnect = true }
         val controller = PttController(transport)
