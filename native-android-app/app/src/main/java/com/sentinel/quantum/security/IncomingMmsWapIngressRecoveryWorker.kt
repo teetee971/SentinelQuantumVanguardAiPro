@@ -34,7 +34,12 @@ class IncomingMmsWapIngressRecoveryWorker(
             if (data == null) {
                 // The private bytes are no longer recoverable; do not retain metadata that can
                 // never produce a message. The store's digest check prevents a substitute PDU.
-                if (!journal.remove(record.digestHex)) retry = true
+                val stagedRemoved = IncomingMmsWapIngressStore.delete(
+                    applicationContext.filesDir,
+                    record.digestHex
+                )
+                val journalRemoved = stagedRemoved && journal.remove(record.digestHex)
+                if (!journalRemoved) retry = true
                 return@forEach
             }
 

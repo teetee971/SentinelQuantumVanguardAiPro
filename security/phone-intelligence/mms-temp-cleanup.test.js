@@ -245,6 +245,20 @@ test('MMS WAP saturation durably stages the PDU and defers provider work', () =>
   }
 });
 
+test('WAP recovery removes unreadable staging before retiring its journal record', () => {
+  const unreadableBranch = wapRecoveryWorker.match(
+    /if \(data == null\) \{([\s\S]*?)return@forEach/
+  );
+  assert.ok(unreadableBranch, 'unreadable WAP data must have an explicit cleanup branch');
+  const branch = unreadableBranch[1];
+  const stagedDeleteIndex = branch.indexOf('IncomingMmsWapIngressStore.delete');
+  const journalRemoveIndex = branch.indexOf('journal.remove');
+  assert.ok(stagedDeleteIndex >= 0, 'unreadable WAP bytes must be retired');
+  assert.ok(journalRemoveIndex > stagedDeleteIndex, 'journal metadata must outlive staged cleanup');
+  assert.match(branch, /val journalRemoved = stagedRemoved && journal\.remove/);
+  assert.match(branch, /if \(!journalRemoved\) retry = true/);
+});
+
 test('MMS provider repair scheduling is coalesced across callback bursts', () => {
   assert.match(sendStatusReceiver, /repairQueued = AtomicBoolean\(false\)/);
   assert.match(sendStatusReceiver, /repairQueued\.compareAndSet\(false, true\)/);
