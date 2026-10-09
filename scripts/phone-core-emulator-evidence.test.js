@@ -59,6 +59,7 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(reportCode, /setupRebootObserved/);
   assert.match(reportCode, /screeningLatencyObserved/);
   assert.match(reportCode, /screening_latency_observed/);
+  assert.match(reportCode, /CallScreeningService:response_sent=true/);
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
 });
 
@@ -190,7 +191,11 @@ function fixture(overrides = {}, alter = () => {}) {
   put('package.txt', 'Package [com.sentinel.quantum]\n');
   put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
   put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
-  put('call-screening-latency-logcat.txt', 'CallScreeningService:response_elapsed_ms=12');
+  put(
+    'call-screening-latency-logcat.txt',
+    'CallScreeningService:response_elapsed_ms=12\nCallScreeningService:response_sent=true'
+  );
+  put('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=true');
   put('phone-private-timeline-prefix.xml', 'CALL_SCREENED:ALLOW');
   put('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
   put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
@@ -227,6 +232,15 @@ test('successful host fixture preserves exact build/source, base, and branch pro
   assert.equal(report.evidence_scope, 'developer_qualification');
   assert.equal(report.physical_modem_claim, false);
   assert.equal(report.commercial_release_claim, false);
+});
+
+test('screening latency without a successful Telecom response cannot qualify', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=false');
+  });
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.screening_latency_observed, false);
+  assert.ok(report.evidence_failures.includes('screening_latency_observed'));
 });
 
 test('package lookup failure cannot masquerade as an installed application', () => {

@@ -38,3 +38,21 @@ test('Telecom screening responses are contained at one fail-open boundary', () =
     'a Telecom response exception must not crash the screening service'
   );
 });
+
+test('screening latency evidence must distinguish a submitted response from an exception', () => {
+  assert.match(
+    service,
+    /const val RESPONSE_SENT_MARKER = "CallScreeningService:response_sent="/,
+    'the lifecycle evidence needs an explicit response-submission marker'
+  );
+  assert.match(
+    service,
+    /responseSent = runCatching\s*\{[\s\S]*?respondToCall\(/,
+    'response submission must be captured as a success boolean'
+  );
+  assert.match(
+    service,
+    /Log\.i\(LIFECYCLE_TAG, RESPONSE_SENT_MARKER \+ responseSent\)/,
+    'latency evidence must record whether Telecom accepted the response call'
+  );
+});

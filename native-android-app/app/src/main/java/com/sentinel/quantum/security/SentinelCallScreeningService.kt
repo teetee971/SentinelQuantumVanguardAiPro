@@ -192,17 +192,19 @@ class SentinelCallScreeningService : CallScreeningService() {
         response: CallResponse,
         startedAtElapsedMs: Long
     ) {
-        runCatching {
+        val responseSent = runCatching {
             respondToCall(callDetails, response)
+            true
         }.onFailure {
             Log.w(LIFECYCLE_TAG, "Réponse Telecom de filtrage refusée", it)
-        }
-        logResponseLatency(startedAtElapsedMs)
+        }.getOrDefault(false)
+        logResponseLatency(startedAtElapsedMs, responseSent)
     }
 
-    private fun logResponseLatency(startedAtElapsedMs: Long) {
+    private fun logResponseLatency(startedAtElapsedMs: Long, responseSent: Boolean) {
         val elapsedMs = (SystemClock.elapsedRealtime() - startedAtElapsedMs).coerceAtLeast(0L)
         Log.i(LIFECYCLE_TAG, RESPONSE_LATENCY_MARKER + elapsedMs)
+        Log.i(LIFECYCLE_TAG, RESPONSE_SENT_MARKER + responseSent)
     }
 
     private fun responseBudgetExceeded(startedAtElapsedMs: Long): Boolean =
@@ -212,6 +214,7 @@ class SentinelCallScreeningService : CallScreeningService() {
         const val LIFECYCLE_TAG = "SentinelLifecycle"
         const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
         const val RESPONSE_LATENCY_MARKER = "CallScreeningService:response_elapsed_ms="
+        const val RESPONSE_SENT_MARKER = "CallScreeningService:response_sent="
         const val MAX_PRE_RESPONSE_MS = 450L
         val SCREENING_FINGERPRINTER = CallNumberFingerprinter()
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(

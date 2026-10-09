@@ -610,7 +610,10 @@ jobs:
 
           const callbackObserved = modernPhoneCore &&
             contains('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+          const screeningResponseSentObserved = modernPhoneCore &&
+            contains('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=true');
           const screeningLatencyObserved = modernPhoneCore &&
+            screeningResponseSentObserved &&
             /CallScreeningService:response_elapsed_ms=\d+/.test(read('call-screening-latency-logcat.txt'));
           const decisionObserved = api >= 36
             ? contains('phone-private-timeline-prefix.xml', 'CALL_SCREENED:')

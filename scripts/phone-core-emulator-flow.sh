@@ -336,6 +336,7 @@ adb emu gsm call "$FLOW_NUMBER"
 # invocation, so CALL_SCREENED:* remains a stricter, separate rule-engine-decision proof.
 wait_logcat_marker "CallScreeningService:onScreenCall" "call-screening-callback-logcat.txt"
 wait_logcat_marker "CallScreeningService:response_elapsed_ms=" "call-screening-latency-logcat.txt"
+wait_logcat_marker "CallScreeningService:response_sent=true" "call-screening-response-sent-logcat.txt"
 wait_incoming_sentinel_surface
 if [[ "$FLOW_API" -ge 36 ]]; then
   wait_private_timeline_signal_prefix "CALL_SCREENED:"
