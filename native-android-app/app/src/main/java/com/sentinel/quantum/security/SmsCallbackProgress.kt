@@ -27,6 +27,14 @@ object SmsCallbackProgress {
         val sentCompletedNow: Boolean,
         val deliveryCompletedNow: Boolean
     ) {
+        /**
+         * Android radio submission is resolved once every SENT callback has a verdict, regardless
+         * of whether optional carrier delivery reports have completed. This is deliberately
+         * narrower than [terminal], which still tracks the full SENT + DELIVERED lifecycle.
+         */
+        val submissionResolved: Boolean
+            get() = state.sentOk.size + state.sentFailed.size == state.partCount
+
         /** Aggregate truth is independent of SENT/DELIVERED callback arrival order. */
         val certificationSignals: List<String>
             get() = buildList {
@@ -125,4 +133,3 @@ object SmsCallbackProgress {
 
     const val MAX_PARTS = 256
 }
-
