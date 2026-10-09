@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
 import android.os.Bundle
 import android.os.SystemClock
 import com.sentinel.quantum.security.readTelecomInCall
@@ -172,7 +173,14 @@ class SentinelInCallActivity : ComponentActivity() {
                         requestAndroidInCallScreen()
                     },
                     onConfigure = {
-                        startActivity(android.content.Intent(this, PhoneCoreDiagnosticActivity::class.java))
+                        try {
+                            startActivity(android.content.Intent(this, PhoneCoreDiagnosticActivity::class.java))
+                            null
+                        } catch (_: ActivityNotFoundException) {
+                            "Android n’a pas pu ouvrir le diagnostic technique. Vérifiez l’installation de Sentinel, puis réessayez."
+                        } catch (_: RuntimeException) {
+                            "Android a refusé l’ouverture du diagnostic technique. Vérifiez l’installation de Sentinel, puis réessayez."
+                        }
                     },
                     onClose = ::finish
                 )
@@ -187,7 +195,7 @@ private fun InCallScreen(
     calls: List<SentinelInCallService.CallSnapshot>,
     missingSession: InCallPresencePolicy.MissingSession,
     onRecover: () -> String,
-    onConfigure: () -> Unit,
+    onConfigure: () -> String?,
     onClose: () -> Unit
 ) {
     var showDialpad by rememberSaveable { mutableStateOf(false) }
@@ -383,7 +391,7 @@ private fun InCallScreen(
 private fun MissingCallSession(
     state: InCallPresencePolicy.MissingSession,
     onRecover: () -> String,
-    onConfigure: () -> Unit,
+    onConfigure: () -> String?,
     onClose: () -> Unit
 ) {
     var actionStatus by remember { mutableStateOf<String?>(null) }
@@ -409,7 +417,10 @@ private fun MissingCallSession(
             if (state == InCallPresencePolicy.MissingSession.CALL_UNAVAILABLE ||
                 state == InCallPresencePolicy.MissingSession.UNKNOWN) {
                 Button(onClick = { actionStatus = onRecover() }, modifier = Modifier.fillMaxWidth()) { Text("Revenir à l’appel Android") }
-                OutlinedButton(onClick = onConfigure, modifier = Modifier.fillMaxWidth()) { Text("Vérifier la configuration") }
+                OutlinedButton(
+                    onClick = { onConfigure()?.let { actionStatus = it } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Vérifier la configuration") }
             }
             actionStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             TextButton(onClick = onClose) { Text(if (state == InCallPresencePolicy.MissingSession.ENDED || state == InCallPresencePolicy.MissingSession.IDLE) "Terminer" else "Fermer") }
