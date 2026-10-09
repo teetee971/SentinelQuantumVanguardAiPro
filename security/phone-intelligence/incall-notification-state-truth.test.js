@@ -63,6 +63,16 @@ test('incoming notification construction and cancellation contain OEM failures',
     /fun cancel\(context: Context\) \{\s*runCatching \{/,
     'notification cancellation failures must not crash Telecom callbacks'
   );
+  assert.match(
+    helper,
+    /fun ensureChannel\(context: Context\): Boolean = runCatching \{/,
+    'channel creation must remain a fail-closed capability probe for the activation assistant'
+  );
+  assert.match(
+    helper,
+    /if \(!ensureChannel\(context\)\) return false/,
+    'channel availability must reject when channel creation is refused'
+  );
 });
 
 test('in-call UI evidence waits for a rendered frame before recording visibility', () => {
