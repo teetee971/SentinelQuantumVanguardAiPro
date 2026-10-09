@@ -74,6 +74,14 @@ class PttSessionController(
     }
 
     suspend fun release() = mutex.withLock {
+        stopTransmissionLocked()
+    }
+
+    suspend fun cancel() = mutex.withLock {
+        stopTransmissionLocked()
+    }
+
+    private suspend fun stopTransmissionLocked() {
         if (state != State.TRANSMITTING) return
 
         val disabled = transport.setMicrophoneEnabled(false)
