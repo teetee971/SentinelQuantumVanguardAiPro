@@ -20,6 +20,7 @@ class SmsCallbackProgressStoreTest {
             when (method.name) {
                 "getAll" -> values.toMap()
                 "getString" -> values[args!![0] as String] ?: args[1]
+                "contains" -> values.containsKey(args!![0] as String)
                 "edit" -> editor()
                 else -> error("Unexpected preferences call: ${method.name}")
             }

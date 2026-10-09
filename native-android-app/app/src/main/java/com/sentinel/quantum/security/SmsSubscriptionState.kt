@@ -49,6 +49,7 @@ class SmsSubscriptionState(private val context: Context) {
                 .filter(MmsSubscriptionResolver::isValidSubscriptionId)
                 .distinct()
             return when {
+                selectedId != null && !MmsSubscriptionResolver.isValidSubscriptionId(selectedId) -> null
                 selectedId != null && selectedId in validActiveIds -> selectedId
                 validActiveIds.size == 1 -> validActiveIds.single()
                 else -> null
