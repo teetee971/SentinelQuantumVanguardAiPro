@@ -86,8 +86,60 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                 }
             }
         } catch (_: RuntimeException) {
+            val captured = runCatching {
+                captureAndScheduleAfterSaturation(
+                    context = appContext,
+                    stage = stage,
+                    sendToken = sendToken,
+                    providerMessageId = providerMessageId,
+                    partIndex = partIndex,
+                    partCount = partCount,
+                    successful = successful
+                )
+            }.getOrDefault(false)
+            if (!captured) {
+                LocalLogger(appContext).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "SmsStatus",
+                    "Callback SMS non persisté après saturation de la file"
+                )
+            }
             pendingResult.finish()
         }
+    }
+
+    /**
+     * Queue-full fallback. Only the bounded opaque progress record is committed here; provider
+     * projection and timeline work remain on the repair scheduler.
+     */
+    private fun captureAndScheduleAfterSaturation(
+        context: Context,
+        stage: SmsDeliveryStatusBus.Stage,
+        sendToken: Int,
+        providerMessageId: Long,
+        partIndex: Int,
+        partCount: Int,
+        successful: Boolean
+    ): Boolean {
+        var persistenceFailed = false
+        val outcome = SmsCallbackProgressStore(context).record(
+            sendToken = sendToken,
+            providerMessageId = providerMessageId,
+            partIndex = partIndex,
+            partCount = partCount,
+            stage = stage,
+            successful = successful,
+            onPersistenceFailure = { persistenceFailed = true }
+        ) ?: return false
+        if (persistenceFailed) {
+            LocalLogger(context).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "SmsStatus",
+                "Progression SMS capturée mais persistance non confirmée; réparation planifiée"
+            )
+        }
+        queueProviderRepair(context)
+        return true
     }
 
     private fun processValidatedCallback(

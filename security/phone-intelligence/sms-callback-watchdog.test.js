@@ -83,3 +83,19 @@ test('unexpected SMS callback worker failures trigger provider repair before fin
   assert.match(worker[1], /catch \(_: Exception\)/);
   assert.match(worker[1], /queueProviderRepair\(appContext\)/);
 });
+
+test('SMS callback saturation durably captures opaque progress without provider work', () => {
+  const catchStart = statusReceiver.indexOf('} catch (_: RuntimeException) {');
+  const methodEnd = statusReceiver.indexOf(
+    '\n    private fun processValidatedCallback',
+    catchStart
+  );
+  assert.ok(catchStart >= 0 && methodEnd > catchStart, 'queue saturation must have an explicit bounded fallback');
+  const fallback = statusReceiver.slice(catchStart, methodEnd);
+  assert.match(fallback, /captureAndScheduleAfterSaturation/);
+  assert.match(fallback, /logAsync/);
+  assert.doesNotMatch(fallback, /SmsProviderPersistence|SmsConversationStore|ContentResolver/);
+  assert.match(statusReceiver, /private fun captureAndScheduleAfterSaturation/);
+  assert.match(statusReceiver, /SmsCallbackProgressStore\(context\)\.record/);
+  assert.match(statusReceiver, /queueProviderRepair\(context\)/);
+});
