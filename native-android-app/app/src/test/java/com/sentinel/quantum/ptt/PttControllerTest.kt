@@ -84,6 +84,22 @@ class PttControllerTest {
         assertEquals(3, transport.listenerRegistrationCount)
     }
 
+    @Test fun staleConnectionCallbacksCannotControlReconnectedSession() {
+        val transport = FakePttTransport()
+        val controller = PttController(transport)
+
+        controller.connect()
+        controller.disconnect()
+        controller.connect()
+
+        transport.emitFromRegistration(1, PttTransport.Event.Connected)
+        assertEquals(PttState.CONNECTING, controller.state)
+        transport.emit(PttTransport.Event.Connected)
+        assertEquals(PttState.READY, controller.state)
+        transport.emitFromRegistration(1, PttTransport.Event.RemoteAudioStarted)
+        assertEquals(PttState.READY, controller.state)
+    }
+
     @Test fun remoteAudioEventOutsideLiveSessionCannotManufactureReceivingState() {
         val transport = FakePttTransport()
         val controller = PttController(transport)
@@ -100,6 +116,7 @@ class PttControllerTest {
 
     private class FakePttTransport : PttTransport {
         private var listener: ((PttTransport.Event) -> Unit)? = null
+        private val registrations = mutableListOf<(PttTransport.Event) -> Unit>()
         var transmitting = false
             private set
         var listenerRegistrationCount = 0
@@ -107,6 +124,7 @@ class PttControllerTest {
 
         override fun setEventListener(listener: (PttTransport.Event) -> Unit) {
             this.listener = listener
+            registrations += listener
             listenerRegistrationCount += 1
         }
 
@@ -127,6 +145,10 @@ class PttControllerTest {
 
         fun emit(event: PttTransport.Event) {
             listener?.invoke(event)
+        }
+
+        fun emitFromRegistration(index: Int, event: PttTransport.Event) {
+            registrations[index](event)
         }
     }
 }

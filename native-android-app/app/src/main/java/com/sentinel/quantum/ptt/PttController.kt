@@ -16,18 +16,31 @@ class PttController(
     var lastFailure: String? = null
         private set
 
+    // A callback from an earlier connection must not control a later session.
+    private var listenerGeneration = 0L
+
     init {
-        transport.setEventListener(::onTransportEvent)
+        registerListener()
+    }
+
+    private fun registerListener() {
+        val generation = listenerGeneration
+        transport.setEventListener { event ->
+            if (generation == listenerGeneration) onTransportEvent(event)
+        }
     }
 
     fun connect() {
         if (state != PttState.DISCONNECTED && state != PttState.ERROR) return
         lastFailure = null
         state = PttState.CONNECTING
+        listenerGeneration += 1
+        registerListener()
         transport.connect()
     }
 
     fun disconnect() {
+        listenerGeneration += 1
         stopTransmissionIfNeeded()
         transport.disconnect()
         state = PttState.DISCONNECTED
