@@ -335,8 +335,8 @@ jobs:
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
-            timeout --signal=INT --kill-after=30s 180s adb install -r "$APP_APK"
-            timeout --signal=INT --kill-after=30s 180s adb install -r "$TEST_APK"
+            timeout --signal=INT --kill-after=30s 180s adb install --no-streaming -r "$APP_APK"
+            timeout --signal=INT --kill-after=30s 180s adb install --no-streaming -r -t "$TEST_APK"
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
                 awk '/^instrumentation:com\.sentinel\.quantum\.test\// {
@@ -403,8 +403,8 @@ jobs:
           TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
           test -s "$APP_APK"
           test -s "$TEST_APK"
-          timeout --signal=INT --kill-after=30s 180s adb install -r "$APP_APK"
-          timeout --signal=INT --kill-after=30s 180s adb install -r "$TEST_APK"
+          timeout --signal=INT --kill-after=30s 180s adb install --no-streaming -r "$APP_APK"
+          timeout --signal=INT --kill-after=30s 180s adb install --no-streaming -r -t "$TEST_APK"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/setup-reboot-clear.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/setup-reboot-clear.txt"
           INSTRUMENTATION_RUNNER="$(

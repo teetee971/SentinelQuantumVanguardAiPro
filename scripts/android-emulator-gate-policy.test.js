@@ -69,6 +69,16 @@ test('legacy API 24 instrumentation uses bounded non-streaming installs for app 
   );
 });
 
+test('Phone Core emulation API 24 installs both test-only APKs with the legacy-safe flags', () => {
+  const testApkInstalls = emulationWorkflow
+    .split('\n')
+    .filter((line) => line.includes('adb install') && line.includes('$TEST_APK'));
+  assert.equal(testApkInstalls.length, 2, 'setup and reboot qualification must each install the test APK');
+  for (const line of testApkInstalls) {
+    assert.match(line, /--no-streaming\s+-r\s+-t\s+"\$TEST_APK"/);
+  }
+});
+
 test('every emulator workflow step that talks to a device bounds ordinary ADB calls', () => {
   const stepNames = [
     'Boot Android emulator',
