@@ -143,6 +143,7 @@ test('runtime stability reports invalid original device state instead of exiting
   assert.match(runtimeFlow, /Unable to identify running process before restart/);
   assert.match(runtimeFlow, /Process remained alive after host force-stop/);
   assert.match(runtimeFlow, /Process did not restart after host force-stop/);
+  assert.match(runtimeFlow, /read_process_ids\(\)/);
   assert.match(runtimeFlow, /Failed to restore user rotation state/);
   assert.match(runtimeFlow, /Failed to restore accelerometer rotation state/);
   assert.match(runtimeFlow, /Failed to restore Wi-Fi state/);

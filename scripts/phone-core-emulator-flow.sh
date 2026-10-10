@@ -464,6 +464,32 @@ assert_no_crash_or_anr() {
   fi
 }
 
+read_process_ids() {
+  local process_ids=""
+  local pid_status=0
+  local device_state=""
+  local device_status=0
+  set +e
+  process_ids="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+  pid_status=$?
+  set -e
+  if [[ "$pid_status" -eq 0 ]]; then
+    printf '%s\n' "$process_ids"
+    return 0
+  fi
+  if [[ "$pid_status" -eq 1 && -z "$process_ids" ]]; then
+    set +e
+    device_state="$(adb get-state 2>/dev/null | tr -d '\r')"
+    device_status=$?
+    set -e
+    if [[ "$device_status" -eq 0 && "$device_state" == device ]]; then
+      return 0
+    fi
+  fi
+  echo "Unable to read process state (pidof status: $pid_status, device status: $device_status)." >&2
+  return 1
+}
+
 run_stability_qualification() {
   local pid_before=""
   local pid_after=""
@@ -535,7 +561,7 @@ run_stability_qualification() {
   assert_no_crash_or_anr stability-rotation-logcat.txt
 
   # Force process death outside the app and require a fresh process to render the same surface.
-  pid_before="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+  pid_before="$(read_process_ids)"
   if ! [[ "$pid_before" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then
     echo "Unable to identify running process before restart: $pid_before" >&2
     return 1
@@ -544,7 +570,7 @@ run_stability_qualification() {
   # by newer Android images even for this app's own UID.
   adb shell am force-stop "$FLOW_PACKAGE"
   for _ in $(seq 1 15); do
-    pid_after="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+    pid_after="$(read_process_ids)"
     [[ -z "$pid_after" ]] && break
     sleep 0.5
   done
@@ -554,7 +580,7 @@ run_stability_qualification() {
   fi
   adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-kill-restart-launch.txt"
   wait_text "phone_core_tab_0"
-  pid_after="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+  pid_after="$(read_process_ids)"
   if ! [[ "$pid_after" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then
     echo "Process did not restart after host force-stop: $pid_after" >&2
     return 1
