@@ -137,11 +137,12 @@ test('runtime qualification opens the real incoming-call notification before req
 });
 
 test('incoming-call probe verifies ADB recovery after sleeping the emulator', () => {
-  const sleep = runtimeFlow.indexOf('KEYCODE_SLEEP');
-  const call = runtimeFlow.indexOf('adb emu gsm call', sleep);
+  const call = runtimeFlow.indexOf('adb emu gsm call');
+  const sleep = runtimeFlow.indexOf('KEYCODE_SLEEP', call);
   assert.ok(sleep >= 0);
-  assert.ok(call > sleep);
-  assert.match(runtimeFlow.slice(sleep, call), /wait_for_online_adb/);
+  assert.ok(call < sleep);
+  assert.match(runtimeFlow.slice(call, sleep), /CALL_NOTIFICATION_POSTED/);
+  assert.match(runtimeFlow.slice(sleep), /wait_for_online_adb/);
   assert.match(runtimeFlow, /ADB device did not return online/);
   assert.match(runtimeFlow, /adb devices -l/);
 });

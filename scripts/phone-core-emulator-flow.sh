@@ -673,12 +673,12 @@ wait_text "phone_core_tab_0"
 capture 01b-dialer-relaunch
 run_stability_qualification
 
-if ! adb shell input keyevent KEYCODE_SLEEP; then
-  echo "Failed to put the emulator to sleep before the incoming-call probe." >&2
+if ! adb emu gsm call "$FLOW_NUMBER"; then
+  echo "The emulator rejected the synthetic incoming-call command." >&2
+  adb get-state >&2 || true
+  adb devices -l >&2 || true
   exit 1
 fi
-wait_for_online_adb "the sleep transition before the incoming-call probe"
-adb emu gsm call "$FLOW_NUMBER"
 # First prove Telecom actually bound Sentinel's screening service. This marker contains no number or
 # identity. Android 10 can fail emergency-number classification on an emulator even after callback
 # invocation, so CALL_SCREENED:* remains a stricter, separate rule-engine-decision proof.
@@ -697,6 +697,13 @@ capture 02-incoming-call
 # This event is recorded by InCallService only after it receives the ringing call and posts
 # its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
+# Exercise the notification path while the device display is asleep. The emulator accepts the GSM
+# command reliably while awake, but the app-owned notification must still survive the sleep boundary.
+if ! adb shell input keyevent KEYCODE_SLEEP; then
+  echo "Failed to put the emulator to sleep before opening the incoming-call notification." >&2
+  exit 1
+fi
+wait_for_online_adb "the sleep transition before opening the incoming-call notification"
 # Exercise Sentinel's answer path, not a modem-side answer on behalf of the application.
 # An app-owned stable control plus the independent ACTIVE timeline event proves the effect.
 open_incoming_call_notification
