@@ -128,6 +128,25 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         if (progressPersistenceFailed) {
             LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Persistance du statut SMS indisponible")
         }
+
+        // A validated callback only resolves a prior TRANSPORT_STARTED ambiguity once its progress
+        // is durably persisted. If callback persistence failed, preserve the marker so recovery
+        // never invents a conclusive transport outcome. No marker is a normal no-op for the common
+        // synchronous-success path, where Sentinel removed the marker immediately after SmsManager.
+        if (!progressPersistenceFailed) {
+            val retired = runCatching {
+                SmsPreSubmitJournal(context)
+                    .removeTransportStartedForProvider(providerMessageId)
+            }.getOrDefault(false)
+            if (!retired) {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "SmsStatus",
+                    "Ambiguïté de transport SMS non retirée; corrélation conservée en échec fermé"
+                )
+            }
+        }
+
         val conversationStore = SmsConversationStore(context)
         val providerUpdated = SmsProviderPersistence.persist(
             progress = progress,
@@ -233,4 +252,3 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         }
     }
 }
-

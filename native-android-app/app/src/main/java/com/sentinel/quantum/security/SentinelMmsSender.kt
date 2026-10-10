@@ -35,84 +35,49 @@ class SentinelMmsSender(private val context: Context) {
         requestedSubscriptionId: Int? = null,
         attachments: List<Attachment> = emptyList()
     ): SendResult {
-        if (
-            !context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_MESSAGING)
-        ) {
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_MESSAGING)) {
             return SendResult(false, "TELEPHONY_MESSAGING_UNAVAILABLE")
         }
-        if (
-            context.readSmsRoleStateFailClosed() !=
-                SmsActivationDiagnostics.SmsRoleState.HELD
-        ) {
+        if (context.readSmsRoleStateFailClosed() != SmsActivationDiagnostics.SmsRoleState.HELD) {
             return SendResult(false, "SMS_ROLE_NOT_HELD")
         }
         if (
             ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
-        }
-        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) {
-            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
-        }
+                PackageManager.PERMISSION_GRANTED || !hasEffectivePermission(Manifest.permission.SEND_SMS)
+        ) return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
         if (
             ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
-        }
-        if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
-            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
-        }
+                PackageManager.PERMISSION_GRANTED || !hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)
+        ) return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
 
         val normalizedDestination = CallRuleEngine.normalizeNumber(destination)
             ?: return SendResult(false, "INVALID_DESTINATION")
-
         val activeIds = runCatching {
             context.getSystemService(SubscriptionManager::class.java)
-                .activeSubscriptionInfoList
-                .orEmpty()
-                .map { it.subscriptionId }
-                .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
-                .toSet()
-        }.getOrElse {
-            return SendResult(false, "MMS_SUBSCRIPTION_LOOKUP_FAILED")
-        }
+                .activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }
+                .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }.toSet()
+        }.getOrElse { return SendResult(false, "MMS_SUBSCRIPTION_LOOKUP_FAILED") }
         val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
             .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
-        val selection = SmsSubscriptionSelectionPolicy.select(
-            activeSubscriptionIds = activeIds,
-            requestedSubscriptionId = requestedSubscriptionId,
-            defaultSubscriptionId = defaultId
-        )
-        if (!selection.accepted || selection.subscriptionId == null) {
-            return SendResult(false, selection.reason)
-        }
+        val selection = SmsSubscriptionSelectionPolicy.select(activeIds, requestedSubscriptionId, defaultId)
+        if (!selection.accepted || selection.subscriptionId == null) return SendResult(false, selection.reason)
         val subscriptionId = selection.subscriptionId
 
         val policyAttachments = attachments.map {
             MmsSendEligibilityPolicy.Attachment(it.mimeType, it.payload.size.toLong())
         }
-        when (
-            val eligibility = MmsSendEligibilityPolicy.evaluate(
-                roleState = SmsActivationDiagnostics.SmsRoleState.HELD,
-                subscriptionId = subscriptionId,
-                destination = normalizedDestination,
-                text = text,
-                attachments = policyAttachments
-            )
-        ) {
+        when (val eligibility = MmsSendEligibilityPolicy.evaluate(
+            roleState = SmsActivationDiagnostics.SmsRoleState.HELD,
+            subscriptionId = subscriptionId,
+            destination = normalizedDestination,
+            text = text,
+            attachments = policyAttachments
+        )) {
             MmsSendEligibilityPolicy.Result.Eligible -> Unit
-            is MmsSendEligibilityPolicy.Result.Rejected ->
-                return SendResult(false, eligibility.reason)
+            is MmsSendEligibilityPolicy.Result.Rejected -> return SendResult(false, eligibility.reason)
         }
 
-        val parts = attachments.map {
-            SentinelMmsSendPduComposer.Part(it.mimeType.lowercase(), it.payload)
-        }
-        // The composer contract accepts at most 40 printable ASCII characters. A UUID is 36;
-        // the old "sentinel-" prefix made every generated transaction id 45 chars and therefore
-        // rejected the real sender path before SmsManager was reached.
+        val parts = attachments.map { SentinelMmsSendPduComposer.Part(it.mimeType.lowercase(), it.payload) }
         val transactionId = MmsTransactionIdFactory.create()
         val composed = SentinelMmsSendPduComposer.compose(
             destination = normalizedDestination,
@@ -121,24 +86,15 @@ class SentinelMmsSender(private val context: Context) {
             attachments = parts
         )
         val pdu = (composed as? SentinelMmsSendPduComposer.Result.Composed)?.pdu
-            ?: return SendResult(
-                false,
-                (composed as SentinelMmsSendPduComposer.Result.Rejected).reason
-            )
-
+            ?: return SendResult(false, (composed as SentinelMmsSendPduComposer.Result.Rejected).reason)
         val staged = MmsSendPduStager.stage(context, pdu)
         if (staged !is MmsSendPduStager.Result.Staged) {
             return SendResult(false, (staged as MmsSendPduStager.Result.Rejected).reason)
         }
 
         val providerStore = MmsConversationStore(context)
-        runCatching { providerStore.repairJournal() }.onFailure {
-            LocalLogger(context).log(
-                LocalLogger.LogLevel.WARNING,
-                "MmsProvider",
-                "Réparation provider MMS différée; le nouvel envoi reste soumis à sa propre transaction"
-            )
-        }
+        val providerJournal = MmsProviderJournal(context)
+        runCatching { providerStore.repairJournal() }
         val providerAttachments = attachments.map {
             MmsConversationStore.Attachment(it.mimeType.lowercase(), it.payload)
         }
@@ -154,13 +110,6 @@ class SentinelMmsSender(private val context: Context) {
             is MmsConversationStore.PersistResult.Ready -> providerResult.providerMessageId
             is MmsConversationStore.PersistResult.Rejected -> {
                 MmsSendPduStager.delete(context, staged.fileName)
-                if (!providerResult.cleanupConfirmed) {
-                    LocalLogger(context).log(
-                        LocalLogger.LogLevel.WARNING,
-                        "MmsProvider",
-                        "Projection MMS incomplète; journal conservé pour récupération"
-                    )
-                }
                 return SendResult(false, providerResult.reason, subscriptionId, staged.token)
             }
         }
@@ -179,25 +128,41 @@ class SentinelMmsSender(private val context: Context) {
                 callbackIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-
             @Suppress("DEPRECATION")
             val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                context.getSystemService(SmsManager::class.java)
-                    .createForSubscriptionId(subscriptionId)
-            } else {
-                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+                context.getSystemService(SmsManager::class.java).createForSubscriptionId(subscriptionId)
+            } else SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+
+            MmsPreTransportTestInterlock.beforeFinalAuthorizationRecheck()
+            val preTransportFailure = revalidateBeforeTransport(subscriptionId)
+            if (preTransportFailure != null) {
+                MmsSendPduStager.delete(context, staged.fileName)
+                val cleanupConfirmed = providerStore.abandonBeforeTransport(staged.token, providerMessageId)
+                return SendResult(
+                    false,
+                    if (cleanupConfirmed) preTransportFailure else PRE_TRANSPORT_REVALIDATION_PROVIDER_REPAIR_FAILED,
+                    subscriptionId,
+                    staged.token,
+                    providerMessageId
+                )
             }
 
-            // From this instruction onward, a synchronous exception cannot prove that the platform
-            // accepted no MMS bytes. Only callbacks may resolve that uncertainty.
+            if (!providerJournal.markTransportStarted(staged.token, providerMessageId)) {
+                MmsSendPduStager.delete(context, staged.fileName)
+                val cleanupConfirmed = providerStore.abandonBeforeTransport(staged.token, providerMessageId)
+                return SendResult(
+                    false,
+                    if (cleanupConfirmed) MMS_TRANSPORT_JOURNAL_TRANSITION_FAILED
+                    else PRE_TRANSPORT_REVALIDATION_PROVIDER_REPAIR_FAILED,
+                    subscriptionId,
+                    staged.token,
+                    providerMessageId
+                )
+            }
+
+            // From this instruction onward a crash/exception is ambiguous by construction.
             transportInvocationStarted = true
-            manager.sendMultimediaMessage(
-                context,
-                staged.contentUri,
-                null,
-                null,
-                callback
-            )
+            manager.sendMultimediaMessage(context, staged.contentUri, null, null, callback)
             if (!providerStore.markSubmitted(staged.token, providerMessageId)) {
                 LocalLogger(context).log(
                     LocalLogger.LogLevel.WARNING,
@@ -205,18 +170,9 @@ class SentinelMmsSender(private val context: Context) {
                     "Transport MMS soumis mais transition journal SUBMITTED non confirmée"
                 )
             }
-            SendResult(
-                accepted = true,
-                reason = "MMS_SUBMITTED_TO_ANDROID",
-                subscriptionId = subscriptionId,
-                token = staged.token,
-                providerMessageId = providerMessageId
-            )
+            SendResult(true, "MMS_SUBMITTED_TO_ANDROID", subscriptionId, staged.token, providerMessageId)
         } catch (_: Exception) {
             if (transportInvocationStarted) {
-                // The Android telephony call was entered. Keep both OUTBOX and staged PDU because
-                // a synchronous exception does not prove Android stopped consuming the content URI.
-                // The callback or the bounded cache-prune path owns PDU cleanup from this point.
                 if (!providerStore.markSubmissionUnknown(staged.token, providerMessageId)) {
                     LocalLogger(context).log(
                         LocalLogger.LogLevel.WARNING,
@@ -224,37 +180,45 @@ class SentinelMmsSender(private val context: Context) {
                         "Issue de soumission MMS inconnue et journal SUBMISSION_UNKNOWN non confirmé"
                     )
                 }
-                SendResult(
-                    accepted = false,
-                    reason = "MMS_SUBMISSION_OUTCOME_UNKNOWN",
-                    subscriptionId = subscriptionId,
-                    token = staged.token,
-                    providerMessageId = providerMessageId
-                )
+                SendResult(false, "MMS_SUBMISSION_OUTCOME_UNKNOWN", subscriptionId, staged.token, providerMessageId)
             } else {
                 MmsSendPduStager.delete(context, staged.fileName)
-                // No transport invocation happened. Compensate the provider row instead of leaving
-                // a fake pending message. If cleanup cannot be proven the recovery journal remains.
-                val cleanupConfirmed = providerStore.abandonBeforeTransport(
+                val cleanupConfirmed = providerStore.abandonBeforeTransport(staged.token, providerMessageId)
+                SendResult(
+                    false,
+                    if (cleanupConfirmed) "MMS_SUBMISSION_PREPARATION_FAILED"
+                    else PRE_TRANSPORT_REVALIDATION_PROVIDER_REPAIR_FAILED,
+                    subscriptionId,
                     staged.token,
                     providerMessageId
                 )
-                if (!cleanupConfirmed) {
-                    LocalLogger(context).log(
-                        LocalLogger.LogLevel.WARNING,
-                        "MmsProvider",
-                        "Préparation transport MMS échouée; nettoyage provider à reprendre"
-                    )
-                }
-                SendResult(
-                    accepted = false,
-                    reason = "MMS_SUBMISSION_PREPARATION_FAILED",
-                    subscriptionId = subscriptionId,
-                    token = staged.token,
-                    providerMessageId = providerMessageId
-                )
             }
         }
+    }
+
+    private fun revalidateBeforeTransport(subscriptionId: Int): String? {
+        if (context.readSmsRoleStateFailClosed() != SmsActivationDiagnostics.SmsRoleState.HELD) {
+            return "SMS_ROLE_NOT_HELD"
+        }
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED ||
+            !hasEffectivePermission(Manifest.permission.SEND_SMS)
+        ) return "SEND_SMS_PERMISSION_NOT_GRANTED"
+        if (
+            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ||
+            !hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)
+        ) return "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
+        val activeIds = try {
+            context.getSystemService(SubscriptionManager::class.java)
+                .activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }
+                .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }.toSet()
+        } catch (_: SecurityException) {
+            return "MMS_SUBSCRIPTION_LOOKUP_FAILED"
+        } catch (_: RuntimeException) {
+            return "MMS_SUBSCRIPTION_LOOKUP_FAILED"
+        }
+        if (subscriptionId !in activeIds) return "REQUESTED_SUBSCRIPTION_NOT_ACTIVE"
+        return null
     }
 
     private fun hasEffectivePermission(permission: String): Boolean =
@@ -265,5 +229,8 @@ class SentinelMmsSender(private val context: Context) {
         const val EXTRA_FILE_NAME = "mms.send.file"
         const val EXTRA_SUBSCRIPTION_ID = "mms.send.subscription"
         const val EXTRA_PROVIDER_MESSAGE_ID = "mms.send.provider_message_id"
+        const val PRE_TRANSPORT_REVALIDATION_PROVIDER_REPAIR_FAILED =
+            "MMS_PRE_TRANSPORT_REVALIDATION_FAILED_PROVIDER_REPAIR_FAILED"
+        const val MMS_TRANSPORT_JOURNAL_TRANSITION_FAILED = "MMS_TRANSPORT_JOURNAL_TRANSITION_FAILED"
     }
 }

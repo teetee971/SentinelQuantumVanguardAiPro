@@ -1,0 +1,60 @@
+name: Phone Core Host Truth Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/phone-core-*.js'
+      - 'scripts/phone-core-*.py'
+      - 'scripts/phone-core-*.sh'
+      - 'scripts/verify-phone-core-physical-session.*'
+      - 'scripts/check-android-product-truth.*'
+      - 'config/phone-core-physical-session.schema.json'
+      - 'native-android-app/app/src/main/**'
+      - 'native-android-app/app/src/test/**'
+      - 'native-android-app/app/src/androidTest/**'
+      - 'security/phone-intelligence/phone-core-*.test.js'
+      - 'package.json'
+      - '.node-version'
+      - '.github/workflows/phone-core-host-regressions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/phone-core-*.js'
+      - 'scripts/phone-core-*.py'
+      - 'scripts/phone-core-*.sh'
+      - 'scripts/verify-phone-core-physical-session.*'
+      - 'scripts/check-android-product-truth.*'
+      - 'config/phone-core-physical-session.schema.json'
+      - 'native-android-app/app/src/main/**'
+      - 'native-android-app/app/src/test/**'
+      - 'native-android-app/app/src/androidTest/**'
+      - 'security/phone-intelligence/phone-core-*.test.js'
+      - 'package.json'
+      - '.node-version'
+      - '.github/workflows/phone-core-host-regressions.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phone-core-host-truth-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-truth:
+    name: Phone Core host anti-false-green tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup pinned Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Run Phone Core product-truth regressions
+        run: npm run test:android-product-truth

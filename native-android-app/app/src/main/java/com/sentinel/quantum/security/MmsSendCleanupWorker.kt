@@ -30,13 +30,13 @@ class MmsSendCleanupWorker(
         if (inputData.getBoolean(KEY_PROCESS_RESTART, false)) {
             val recovered = runCatching {
                 MmsProviderJournal(applicationContext).reconcileReadyAfterProcessDeath()
+                check(MmsPreTransportRecovery.repairReadyRecords(applicationContext)) {
+                    "MMS pre-transport recovery incomplete"
+                }
                 MmsSendPduStager.pruneExpired(applicationContext)
                 MmsDownloadCoordinator.pruneExpired(applicationContext)
                 MmsConversationStore(applicationContext).repairJournal()
                 IncomingMmsConversationStore(applicationContext).repairJournal()
-                // WorkManager survives process death, but an explicit startup nudge removes the
-                // delay for a downloaded PDU whose Android callback was lost with the dead process.
-                // schedulePendingNow also reconstructs the original bounded cleanup deadline.
                 MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext)
                 true
             }.getOrDefault(false)
@@ -53,13 +53,6 @@ class MmsSendCleanupWorker(
     }
 
     companion object {
-        /**
-         * Schedule one durable deadline per staged PDU.
-         *
-         * A single REPLACE-able cleanup deadline is incorrect here: a newer MMS could postpone an
-         * older PDU's cleanup. Per-file unique work keeps each payload tied to its own staging TTL
-         * while callback-driven cleanup cancels the pending work when Android finishes earlier.
-         */
         fun schedule(context: Context, fileName: String) {
             require(MmsSendPduStager.isValidStagedFileName(fileName)) { "invalid MMS staged file" }
             val request = OneTimeWorkRequestBuilder<MmsSendCleanupWorker>()

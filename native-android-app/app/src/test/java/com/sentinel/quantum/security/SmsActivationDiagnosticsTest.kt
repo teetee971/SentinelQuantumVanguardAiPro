@@ -120,4 +120,33 @@ class SmsActivationDiagnosticsTest {
             }
         )
     }
+
+    @Test
+    fun `legacy role availability distinguishes missing telephony from unselected default app`() {
+        val packageName = "com.sentinel.quantum"
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+            LegacySmsRolePolicy.resolve(
+                telephonyMessagingAvailable = false,
+                defaultSmsPackage = null,
+                packageName = packageName
+            )
+        )
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
+            LegacySmsRolePolicy.resolve(
+                telephonyMessagingAvailable = true,
+                defaultSmsPackage = null,
+                packageName = packageName
+            )
+        )
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.HELD,
+            LegacySmsRolePolicy.resolve(
+                telephonyMessagingAvailable = true,
+                defaultSmsPackage = packageName,
+                packageName = packageName
+            )
+        )
+    }
 }

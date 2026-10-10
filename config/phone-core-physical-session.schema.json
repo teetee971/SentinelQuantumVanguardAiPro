@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinelquantumvanguardaipro.invalid/schemas/phone-core-physical-session-v1.json",
+  "title": "Sentinel Phone Core Physical Session Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_head_sha",
+    "apk",
+    "device",
+    "session",
+    "canonical_criteria",
+    "scenarios",
+    "residual_external_validation",
+    "attestation"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "source_head_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" },
+    "apk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package_name", "version_name", "version_code", "sha256", "certificate_sha256"],
+      "properties": {
+        "package_name": { "type": "string", "minLength": 1 },
+        "version_name": { "type": "string", "minLength": 1 },
+        "version_code": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "certificate_sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manufacturer", "model", "android_version", "api_level", "build_fingerprint"],
+      "properties": {
+        "manufacturer": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "android_version": { "type": "string", "minLength": 1 },
+        "api_level": { "type": "integer", "minimum": 1 },
+        "build_fingerprint": { "type": "string", "minLength": 1 }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["started_at", "completed_at", "sim_mode", "operator_context"],
+      "properties": {
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "sim_mode": { "enum": ["SINGLE_SIM", "DUAL_SIM", "MULTI_SIM"] },
+        "operator_context": { "type": "string", "minLength": 1, "description": "Non-identifying operator/lab context only; never a phone number, IMSI, ICCID or subscription identifier." }
+      }
+    },
+    "canonical_criteria": { "$ref": "#/$defs/evidenceMap" },
+    "scenarios": { "$ref": "#/$defs/evidenceMap" },
+    "residual_external_validation": { "$ref": "#/$defs/evidenceMap" },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "algorithm", "signer_id", "signature_base64"],
+      "properties": {
+        "kind": { "const": "PHYSICAL_DEVICE" },
+        "algorithm": { "const": "ed25519" },
+        "signer_id": { "type": "string", "minLength": 1 },
+        "signature_base64": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_refs"],
+      "properties": {
+        "status": { "enum": ["PASS", "FAIL", "NOT_EXECUTED", "UNKNOWN", "NOT_REPORTED"] },
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^evidence/[A-Za-z0-9_./-]+#sha256=[0-9a-fA-F]{64}$" }
+        }
+      }
+    },
+    "evidenceMap": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/evidenceEntry" }
+    }
+  }
+}

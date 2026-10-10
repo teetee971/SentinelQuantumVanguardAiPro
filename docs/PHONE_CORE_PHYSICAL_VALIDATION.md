@@ -1,6 +1,6 @@
 # Protocole de validation physique — Phone Core v5
 
-**Révision :** 5 octobre 2026  
+**Révision :** 7 octobre 2026  
 **Statut :** protocole prêt à exécuter ; aucun résultat terrain renseigné  
 **Référence logicielle :** utiliser le SHA exact et l’artefact exact qui auront passé les gates avant l’essai terrain.
 
@@ -121,3 +121,61 @@ Collecte minimale (sur l'appareil déclaré) : `adb shell getprop ro.build.finge
 Les dumps Telecom/logcat/bugreports peuvent contenir des données personnelles :
 conserver l'original dans le laboratoire et expurger avant partage. L'émulateur et
 les marqueurs synthétiques n'attestent aucune ligne de cette campagne.
+
+## Manifeste machine-readable et décision fail-closed
+
+Le relevé terrain humain reste la source de l'observation. Pour qu'une session puisse
+être vérifiée de façon reproductible par le gate de release, produire en plus un
+manifeste JSON conforme à `config/phone-core-physical-session.schema.json`.
+
+Le manifeste doit être lié sans ambiguïté au `source_head_sha`, au SHA-256 de l'APK,
+à l'empreinte SHA-256 du certificat de signature, au modèle physique et au fingerprint
+OEM. Il contient les 14 critères canoniques, S01 à S26 et les quatre validations
+externes bloquantes de la release commerciale. Les références de preuves doivent
+pointer vers des fichiers locaux expurgés placés sous le répertoire `evidence/`
+à côté du manifeste ; les originaux restent dans le laboratoire lorsqu'ils
+contiennent des données personnelles. Chaque référence `evidence_refs` doit être
+au format `evidence/nom-de-preuve.ext#sha256=<64 caractères hexadécimaux>`.
+Le SHA-256 est couvert par la signature Ed25519 du manifeste. Le vérificateur
+ouvre chaque fichier de preuve déclaré `PASS`, rejette les chemins traversants,
+les liens symboliques, les fichiers absents ou vides, et recalcule son empreinte.
+Le laboratoire doit fournir le répertoire `evidence/` lors de la vérification ;
+une URL ou un nom de fichier sans preuve présente ne suffit pas. La signature
+authentifie la déclaration du laboratoire, mais ne prouve pas à elle seule qu'un
+essai a réellement eu lieu : la confiance dans le signataire et l'audit des
+observations physiques demeurent indispensables.
+
+L'attestation doit être `PHYSICAL_DEVICE` et signée en **Ed25519** par une clé de
+laboratoire ou de release QA de confiance. La clé privée ne doit jamais être stockée
+dans ce dépôt. Le vérificateur reçoit uniquement une clé publique de confiance au
+moment de l'exécution. Un manifeste altéré après signature, une signature invalide,
+un SHA source/APK/certificat différent, ou une preuve d'émulateur/synthétique entraîne
+un refus fail-closed.
+
+Exemple d'exécution :
+
+```bash
+node scripts/verify-phone-core-physical-session.js physical-session.json \
+  --trusted-public-key release-qa-public-key.pem \
+  --expected-source-sha <40-hex> \
+  --expected-apk-sha256 <64-hex> \
+  --expected-certificate-sha256 <64-hex>
+```
+
+Le vérificateur expose trois verdicts strictement distincts :
+
+- `PHYSICAL_SESSION_INCOMPLETE` : au moins un des 14 critères canoniques ou un scénario S01–S26 n'est pas `PASS` ;
+- `PHYSICAL_PHONE_CORE_PASS` : les 14 critères et S01–S26 sont `PASS`, mais au moins une validation externe commerciale reste non satisfaite ;
+- `COMMERCIAL_RELEASE_ELIGIBLE` : les 14 critères, S01–S26 et les quatre validations externes commerciales sont tous `PASS` avec attestation et provenance valides.
+
+`FAIL`, `NOT_EXECUTED`, `UNKNOWN` et `NOT_REPORTED` ne sont jamais convertis en
+`PASS`. Le code de sortie est 1 pour une preuve invalide/non fiable, 2 pour une session
+valide mais incomplète ou limitée à `PHYSICAL_PHONE_CORE_PASS`, et 0 uniquement pour
+`COMMERCIAL_RELEASE_ELIGIBLE`.
+
+`COMMERCIAL_RELEASE_ELIGIBLE` signifie que ce gate Phone Core n'a plus de preuve
+physique manquante. Cela ne remplace pas les autres exigences de publication
+(signature de release, conformité Play, juridique, sécurité globale et checklist de
+release). Ce mécanisme ne réalise aucun essai physique lui-même et ne modifie aucun
+résultat de campagne : tant qu'un opérateur/laboratoire n'a pas réellement exécuté
+les scénarios ci-dessus, ils restent **NON EXÉCUTÉS**.

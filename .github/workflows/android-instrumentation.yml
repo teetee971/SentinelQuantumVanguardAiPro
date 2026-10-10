@@ -161,11 +161,9 @@ jobs:
           adb shell settings put global animator_duration_scale 0
 
           if [[ "$API_LEVEL" == "24" ]]; then
-            # AGP/UTP may leave connectedDebugAndroidTest waiting indefinitely after
-            # the API 24 runner exits. Build the exact same app/test APKs, install
-            # them explicitly, then run the AndroidJUnitRunner through adb with a
-            # hard watchdog. This keeps API 24 blocking without accepting a 45 min
-            # hung Gradle session as a qualification result.
+            # API 24 can report sys.boot_completed before PackageManager is ready.
+            # connectedDebugAndroidTest can also hang after the legacy runner exits,
+            # so keep a direct, bounded adb path with explicit install diagnostics.
             ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon
 
             APP_APK="app/build/outputs/apk/debug/app-debug.apk"
@@ -173,8 +171,43 @@ jobs:
             test -s "$APP_APK"
             test -s "$TEST_APK"
 
-            adb install -r "$APP_APK"
-            adb install -r "$TEST_APK"
+            PACKAGE_MANAGER_READY=0
+            for _ in $(seq 1 90); do
+              if timeout 5s adb shell pm path android 2>/dev/null | tr -d '\r' | grep -q '^package:'; then
+                PACKAGE_MANAGER_READY=1
+                break
+              fi
+              sleep 2
+            done
+            if [[ "$PACKAGE_MANAGER_READY" != "1" ]]; then
+              echo "Android API 24 PackageManager did not become ready before APK installation."
+              adb shell getprop || true
+              adb shell dumpsys package 2>/dev/null | head -n 120 || true
+              exit 1
+            fi
+
+            install_api24_apk() {
+              local apk_path="$1"
+              local remote_path="$2"
+              local label="$3"
+              echo "API 24: pushing ${label} APK."
+              timeout --signal=INT --kill-after=15s 120s adb push "$apk_path" "$remote_path"
+              echo "API 24: installing ${label} APK via PackageManager."
+              set +e
+              INSTALL_OUTPUT="$(timeout --signal=INT --kill-after=30s 300s adb shell pm install -r "$remote_path" 2>&1)"
+              INSTALL_STATUS=$?
+              set -e
+              printf '%s\n' "$INSTALL_OUTPUT"
+              adb shell rm -f "$remote_path" || true
+              if [[ "$INSTALL_STATUS" -ne 0 ]] || ! grep -q '^Success$' <<<"$(printf '%s\n' "$INSTALL_OUTPUT" | tr -d '\r')"; then
+                echo "Android API 24 ${label} APK install failed or timed out (status ${INSTALL_STATUS})."
+                adb shell dumpsys package com.sentinel.quantum 2>/dev/null | head -n 160 || true
+                exit 1
+              fi
+            }
+
+            install_api24_apk "$APP_APK" "/data/local/tmp/sentinel-app.apk" "app"
+            install_api24_apk "$TEST_APK" "/data/local/tmp/sentinel-test.apk" "test"
 
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |

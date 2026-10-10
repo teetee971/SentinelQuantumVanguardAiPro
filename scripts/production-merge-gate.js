@@ -14,7 +14,9 @@ export const ANDROID_WORKFLOWS = Object.freeze([
   'android-emulation-qualification.yml',
   'build-native-android.yml',
   'build-aab-playconsole.yml',
-  'android-instrumentation.yml'
+  'android-instrumentation.yml',
+  'phone-core-role-sms-process-death.yml',
+  'phone-core-role-mms-process-death.yml'
 ]);
 
 export const WEB_WORKFLOWS = Object.freeze([
@@ -25,8 +27,8 @@ export const WEB_WORKFLOWS = Object.freeze([
 export const SECURITY_FUZZ_WORKFLOWS = Object.freeze(['security-fuzz.yml']);
 
 // The Android emulation workflow has a 45-minute host job followed by a
-// dependent 60-minute emulator matrix. The merge gate must never have a
-// shorter legitimate wait window than that 105-minute critical path.
+// dependent 60-minute emulator matrix. The role-loss gates run in parallel and
+// have shorter critical paths, so emulation remains the longest Android dependency.
 export const EMULATION_MAX_CRITICAL_PATH_MS = (45 + 60) * 60 * 1000;
 export const DEFAULT_GATE_TIMEOUT_MS = 170 * 60 * 1000;
 
@@ -36,7 +38,9 @@ const ANDROID_WORKFLOW_FILES = new Set([
   '.github/workflows/build-aab-playconsole.yml',
   '.github/workflows/android-instrumentation.yml',
   '.github/workflows/android-release.yml',
-  '.github/workflows/codeql-analysis.yml'
+  '.github/workflows/codeql-analysis.yml',
+  '.github/workflows/phone-core-role-sms-process-death.yml',
+  '.github/workflows/phone-core-role-mms-process-death.yml'
 ]);
 
 const WEB_WORKFLOW_FILES = new Set([
@@ -101,11 +105,18 @@ export function requiredWorkflowsForPaths(files) {
   return [...required];
 }
 
-export function selectLatestExactHeadRun(runs, expectedSha) {
+export function selectLatestExactHeadRun(runs, expectedSha, expectedPullNumber = null) {
   const matching = (runs || []).filter((run) =>
     run &&
     run.head_sha === expectedSha &&
-    run.event === 'pull_request'
+    run.event === 'pull_request' &&
+    (
+      expectedPullNumber === null ||
+      (
+        Array.isArray(run.pull_requests) &&
+        run.pull_requests.some((pullRequest) => pullRequest?.number === expectedPullNumber)
+      )
+    )
   );
   matching.sort((a, b) =>
     Number(a.run_number || 0) - Number(b.run_number || 0) ||
@@ -152,16 +163,22 @@ async function fetchChangedFiles(repository, pullNumber, token) {
   throw new Error('Pull request changed-file list exceeds supported bound');
 }
 
-async function fetchWorkflowRuns(repository, workflow, sha, token) {
-  const params = new URLSearchParams({
-    head_sha: sha,
-    event: 'pull_request',
-    per_page: '20'
-  });
-  const url = `https://api.github.com/repos/${repository}/actions/workflows/${encodeURIComponent(workflow)}/runs?${params}`;
-  const payload = await githubJson(url, token);
-  if (!Array.isArray(payload.workflow_runs)) throw new Error(`Unexpected workflow response for ${workflow}`);
-  return payload.workflow_runs;
+export async function fetchWorkflowRuns(repository, workflow, sha, token) {
+  const runs = [];
+  for (let page = 1; page <= 30; page += 1) {
+    const params = new URLSearchParams({
+      head_sha: sha,
+      event: 'pull_request',
+      per_page: '100',
+      page: String(page)
+    });
+    const url = `https://api.github.com/repos/${repository}/actions/workflows/${encodeURIComponent(workflow)}/runs?${params}`;
+    const payload = await githubJson(url, token);
+    if (!Array.isArray(payload.workflow_runs)) throw new Error(`Unexpected workflow response for ${workflow}`);
+    runs.push(...payload.workflow_runs);
+    if (payload.workflow_runs.length < 100) return runs;
+  }
+  throw new Error(`Workflow run list for ${workflow} exceeds supported bound`);
 }
 
 export async function runProductionMergeGate({
@@ -193,7 +210,7 @@ export async function runProductionMergeGate({
     let pending = false;
     for (const workflow of required) {
       const runs = await fetchWorkflowRuns(repository, workflow, expectedSha, token);
-      const latest = selectLatestExactHeadRun(runs, expectedSha);
+      const latest = selectLatestExactHeadRun(runs, expectedSha, pullNumber);
       const evaluation = evaluateWorkflowRun(latest);
       const runLabel = latest ? `run ${latest.id}` : 'no exact-head run';
 

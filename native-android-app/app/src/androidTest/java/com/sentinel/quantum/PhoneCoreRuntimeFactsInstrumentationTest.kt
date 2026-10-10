@@ -107,12 +107,20 @@ class PhoneCoreRuntimeFactsInstrumentationTest {
         val facts = PhoneCoreRuntimeFacts.read(context)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             assertTrue(facts.dialerRoleAvailable)
-            assertTrue(facts.smsRoleAvailable)
+            val smsMessagingAvailable = context.packageManager.hasSystemFeature(
+                PackageManager.FEATURE_TELEPHONY_MESSAGING
+            )
+            assertEquals(smsMessagingAvailable, facts.smsRoleAvailable)
             assertEquals(
                 context.getSystemService(TelecomManager::class.java)?.defaultDialerPackage == context.packageName,
                 facts.dialerRoleHeld
             )
-            assertEquals(Telephony.Sms.getDefaultSmsPackage(context) == context.packageName, facts.smsRoleHeld)
+            assertEquals(
+                smsMessagingAvailable &&
+                    runCatching { Telephony.Sms.getDefaultSmsPackage(context) == context.packageName }
+                        .getOrDefault(false),
+                facts.smsRoleHeld
+            )
             assertEquals(facts.dialerRoleHeld, facts.callScreeningRoleHeld)
             assertTrue(facts.callScreeningRoleAvailable)
         } else {

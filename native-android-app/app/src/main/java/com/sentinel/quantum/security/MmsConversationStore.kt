@@ -231,6 +231,7 @@ internal class MmsConversationStore(private val context: Context) {
                     if (transitionMessageBox(id, successful, record.updatedAtMs) && journal.remove(record.token)) repaired++
                 }
                 MmsProviderJournal.Phase.READY,
+                MmsProviderJournal.Phase.TRANSPORT_STARTED,
                 MmsProviderJournal.Phase.SUBMITTED,
                 MmsProviderJournal.Phase.SUBMISSION_UNKNOWN -> Unit
             }

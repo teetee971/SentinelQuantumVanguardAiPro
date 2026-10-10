@@ -9,6 +9,7 @@ import {
   UNIVERSAL_WORKFLOWS,
   WEB_WORKFLOWS,
   evaluateWorkflowRun,
+  fetchWorkflowRuns,
   requiredWorkflowsForPaths,
   selectLatestExactHeadRun
 } from './production-merge-gate.js';
@@ -29,12 +30,14 @@ test('docs-only changes require universal gates without unrelated Android or web
   expectExcludes(required, SECURITY_FUZZ_WORKFLOWS);
 });
 
-test('Android-only changes require Phone Core emulation, APK, AAB and legacy instrumentation', () => {
+test('Android-only changes require emulator, build, instrumentation and SMS/MMS role-loss gates', () => {
   const required = requiredWorkflowsForPaths([
     'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt'
   ]);
   expectIncludes(required, [...UNIVERSAL_WORKFLOWS, ...ANDROID_WORKFLOWS]);
   assert.ok(required.includes('android-emulation-qualification.yml'));
+  assert.ok(required.includes('phone-core-role-sms-process-death.yml'));
+  assert.ok(required.includes('phone-core-role-mms-process-death.yml'));
   expectExcludes(required, WEB_WORKFLOWS);
 });
 
@@ -68,6 +71,14 @@ test('workflow changes for Android or web require the affected gate family', () 
   );
   expectIncludes(
     requiredWorkflowsForPaths(['.github/workflows/android-emulation-qualification.yml']),
+    ANDROID_WORKFLOWS
+  );
+  expectIncludes(
+    requiredWorkflowsForPaths(['.github/workflows/phone-core-role-sms-process-death.yml']),
+    ANDROID_WORKFLOWS
+  );
+  expectIncludes(
+    requiredWorkflowsForPaths(['.github/workflows/phone-core-role-mms-process-death.yml']),
     ANDROID_WORKFLOWS
   );
   expectIncludes(
@@ -119,6 +130,52 @@ test('exact-head selection rejects unrelated SHA and selects newest retry', () =
     { id: 4, head_sha: sha, event: 'pull_request', run_number: 11, run_attempt: 2 }
   ], sha);
   assert.equal(selected.id, 4);
+});
+
+test('exact-head selection rejects a workflow run belonging to another pull request', () => {
+  const sha = 'a'.repeat(40);
+  const selected = selectLatestExactHeadRun([
+    {
+      id: 9,
+      head_sha: sha,
+      event: 'pull_request',
+      run_number: 12,
+      run_attempt: 1,
+      pull_requests: [{ number: 1608 }]
+    },
+    {
+      id: 10,
+      head_sha: sha,
+      event: 'pull_request',
+      run_number: 11,
+      run_attempt: 1,
+      pull_requests: [{ number: 1609 }]
+    }
+  ], sha, 1609);
+
+  assert.equal(selected.id, 10);
+});
+
+test('workflow run lookup paginates beyond the first hundred runs', async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedUrls = [];
+  globalThis.fetch = async (url) => {
+    requestedUrls.push(String(url));
+    const page = Number(new URL(url).searchParams.get('page'));
+    const workflowRuns = page === 1
+      ? Array.from({ length: 100 }, (_, index) => ({ id: index + 1 }))
+      : [{ id: 101 }];
+    return { ok: true, json: async () => ({ workflow_runs: workflowRuns }) };
+  };
+  try {
+    const runs = await fetchWorkflowRuns('owner/repo', 'android.yml', 'a'.repeat(40), 'token');
+    assert.equal(runs.length, 101);
+    assert.equal(requestedUrls.length, 2);
+    assert.equal(new URL(requestedUrls[0]).searchParams.get('per_page'), '100');
+    assert.equal(new URL(requestedUrls[1]).searchParams.get('page'), '2');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('missing and in-progress evidence waits while non-success completion fails closed', () => {
