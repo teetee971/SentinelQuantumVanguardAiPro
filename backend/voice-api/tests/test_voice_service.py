@@ -5,6 +5,7 @@ from pathlib import Path
 
 import jwt
 from fastapi.testclient import TestClient
+from redis.exceptions import RedisError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -38,6 +39,11 @@ class FakeRedis:
     async def delete(self, key):
         self.values.pop(key, None)
         return 1
+
+
+class BrokenRedis(FakeRedis):
+    async def get(self, key):
+        raise RedisError("redis unavailable")
 
 
 class FakeIdentityVerifier:
@@ -111,6 +117,24 @@ def test_disabled_service_never_issues_a_session():
 
     assert response.status_code == 503
     assert response.json()["detail"] == "Voice service unavailable"
+
+
+def test_redis_failure_returns_unavailable_instead_of_server_error():
+    app = create_app(
+        settings=configured_settings(),
+        redis_client=BrokenRedis(),
+        identity_verifier=FakeIdentityVerifier(entitled_principal()),
+        token_issuer=FakeTokenIssuer(),
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/voice/sessions",
+            headers={"Authorization": "Bearer valid", "Idempotency-Key": "key-723456789012"},
+            json=valid_payload(),
+        )
+
+    assert response.status_code == 503
 
 
 def test_session_requires_authenticated_entitled_matching_device():

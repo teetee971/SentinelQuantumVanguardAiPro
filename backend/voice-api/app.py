@@ -233,10 +233,6 @@ def _principal_device_ids(principal: dict[str, Any]) -> list[str]:
     return [item for item in device_ids if isinstance(item, str)]
 
 
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
 def _expires_at_iso(ttl_seconds: int) -> str:
     return (
         datetime.fromtimestamp(time.time() + ttl_seconds, tz=timezone.utc)
@@ -325,18 +321,29 @@ def create_app(
         if not principal:
             raise HTTPException(status_code=401, detail="Authentication required")
         subject = principal.get("subject")
+        try:
+            revoked = await _is_revoked(client, subject, device_id)
+        except (RedisError, TimeoutError, OSError) as exc:
+            raise HTTPException(
+                status_code=503, detail="Voice service unavailable"
+            ) from exc
         if (
             not isinstance(subject, str)
             or not subject
             or principal.get("revoked")
             or not principal.get("entitled")
             or device_id not in _principal_device_ids(principal)
-            or await _is_revoked(client, subject, device_id)
+            or revoked
         ):
             raise HTTPException(status_code=403, detail="Voice access denied")
-        await _check_rate_limit(
-            client, subject, resolved_settings.rate_limit_per_minute
-        )
+        try:
+            await _check_rate_limit(
+                client, subject, resolved_settings.rate_limit_per_minute
+            )
+        except (RedisError, TimeoutError, OSError) as exc:
+            raise HTTPException(
+                status_code=503, detail="Voice service unavailable"
+            ) from exc
         return client, principal
 
     @app.get("/health/live", include_in_schema=False)
@@ -375,7 +382,10 @@ def create_app(
         request_fingerprint = _hash(
             json.dumps(body.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
         )
-        existing = await client.get(idempotency_record_key)
+        try:
+            existing = await client.get(idempotency_record_key)
+        except (RedisError, TimeoutError, OSError) as exc:
+            raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
         if existing:
             record = json.loads(existing)
             if record["request_fingerprint"] != request_fingerprint:
