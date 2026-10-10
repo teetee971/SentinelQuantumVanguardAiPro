@@ -347,12 +347,22 @@ for node in root.iter('node'):
     elif not any(t == sys.argv[2] or t.startswith(sys.argv[2] + ' · ') for t in titles):
         continue
     match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+    row_match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', row.get('bounds', ''))
     if match:
         x1, y1, x2, y2 = map(int, match.groups())
         if x2 > x1 and y2 > y1:
-            # Prefer the body to the header, keeping one candidate per notification.
+            # Prefer the body text when CallStyle exposes it. API 36 may expose only
+            # app_name_text; tapping that header can expand the notification without
+            # invoking its content PendingIntent, so use the clickable row center as
+            # the fallback target for that compact layout.
+            if row_match:
+                rx1, ry1, rx2, ry2 = map(int, row_match.groups())
+                row_center = ((rx1+rx2)//2, (ry1+ry2)//2)
+            else:
+                row_center = ((x1+x2)//2, (y1+y2)//2)
+            candidate = ((x1+x2)//2, (y1+y2)//2) if node.get('resource-id') == 'android:id/text' else row_center
             if row not in rows or node.get('resource-id') == 'android:id/text':
-                rows[row] = ((x1+x2)//2, (y1+y2)//2)
+                rows[row] = candidate
 if len(rows) == 1:
     print(*next(iter(rows.values())))
     sys.exit(0)

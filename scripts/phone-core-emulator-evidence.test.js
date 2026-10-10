@@ -133,6 +133,16 @@ test('runtime qualification opens the real incoming-call notification before req
   assert.ok(incomingSurface > notificationOpen);
 });
 
+test('incoming notification oracle uses the clickable row when compact CallStyle exposes only the app header', () => {
+  const openStart = runtimeFlow.indexOf('open_incoming_call_notification() {');
+  const openEnd = runtimeFlow.indexOf('\n}\n\nwait_reply_focus()', openStart);
+  const notificationOpen = runtimeFlow.slice(openStart, openEnd);
+  assert.match(notificationOpen, /row\.get\('bounds', ''\)/);
+  assert.match(notificationOpen, /compact layout/);
+  assert.match(notificationOpen, /row_center/);
+  assert.match(notificationOpen, /node\.get\('resource-id'\) == 'android:id\/text'/);
+});
+
 test('runtime stability reports invalid original device state instead of exiting silently', () => {
   assert.match(runtimeFlow, /Invalid original user rotation state/);
   assert.match(runtimeFlow, /Invalid original accelerometer rotation state/);
