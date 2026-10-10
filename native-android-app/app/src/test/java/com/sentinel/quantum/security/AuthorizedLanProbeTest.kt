@@ -35,7 +35,7 @@ class AuthorizedLanProbeTest {
             "localhost", "example.com", "127.0.0.1.example.com", "127.1", "192.168.01.2",
             "999.999.999.999", "fe80::1%wlan0", "[::1]", "1::2::3",
             "::ffff:192.168.1.1", "::ffff:7f00:1",
-            "127.0.0.1\\n", "127.0.0.1\\t", "1".repeat(1024)
+            "127.0.0.1\n", "127.0.0.1\t", "1".repeat(1024)
         )
         rejected.forEach { host ->
             assertNull(host, AuthorizedLanProbePolicy.validate(
