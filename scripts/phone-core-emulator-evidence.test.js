@@ -149,6 +149,7 @@ test('runtime qualification exercises offline, rotation, kill/restart, and crash
   assert.match(runtimeFlow, /stability-rotation-state\.txt[\s\S]*wait_for_online_adb "the rotation transition"/);
   assert.match(runtimeFlow, /am force-stop "\$FLOW_PACKAGE"[\s\S]*wait_for_online_adb "the process-death transition"/);
   assert.match(runtimeFlow, /stability-kill-restart-launch\.txt[\s\S]*wait_for_online_adb "the process restart"/);
+  assert.match(runtimeFlow, /assert_no_crash_or_anr\(\) \{[\s\S]*wait_for_online_adb "the crash and ANR logcat capture"/);
 });
 
 test('runtime qualification restores the observed device state and fails closed on cleanup errors', () => {

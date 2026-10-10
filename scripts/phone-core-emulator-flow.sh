@@ -585,6 +585,7 @@ capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
 assert_no_crash_or_anr() {
   local evidence="$1"
+  wait_for_online_adb "the crash and ANR logcat capture"
   adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence"
   if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$FLOW_OUTPUT_DIR/$evidence"; then
     echo "Crash/ANR detected during emulator stability qualification; see $evidence." >&2
