@@ -88,8 +88,20 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(reportCode, /screeningLatencyValues\.every\(\(elapsedMs\) =>/);
   assert.match(reportCode, /CallScreeningService:response_sent=true/);
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
-  assert.match(setupReboot, /android\.intent\.action\.MAIN/);
-  assert.match(setupReboot, /android\.intent\.category\.LAUNCHER/);
+  assert.match(setupReboot, /adb shell am start -W -n com\.sentinel\.quantum\/\.MainActivity/);
+  assert.match(setupReboot, /setup-reboot-main-launch\.txt/);
+});
+
+test('setup reboot relaunches the known exported launcher component after package readiness', () => {
+  const setupReboot = workflow.split('- name: Reboot emulator and verify interrupted setup resumes\n')[1]
+    .split('- name: Run emulator application/runtime qualification\n')[0];
+  const packageReady = setupReboot.indexOf('wait_for_package_manager');
+  const forceStop = setupReboot.indexOf('adb shell am force-stop com.sentinel.quantum', packageReady);
+  const relaunch = setupReboot.indexOf('adb shell am start -W -n com.sentinel.quantum/.MainActivity', forceStop);
+  assert.ok(packageReady >= 0);
+  assert.ok(forceStop > packageReady);
+  assert.ok(relaunch > forceStop);
+  assert.match(setupReboot, /for _ in \$\(seq 1 [3-9][0-9]\); do/);
   assert.match(setupReboot, /setup-reboot-main-launch\.txt/);
 });
 

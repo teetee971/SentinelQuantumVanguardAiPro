@@ -516,16 +516,14 @@ jobs:
           adb shell am force-stop com.sentinel.quantum
           : > "$OUTPUT/setup-reboot-main-launch.txt"
           UI_READY=0
-          for _ in $(seq 1 30); do
-            # Resolve the package's real launcher entry after reboot. A direct component start
-            # can transiently return ActivityNotFound (am error type 3) on API 29 while the
-            # resolver table is being rebuilt; only the app-owned UI below can qualify recovery.
+          for _ in $(seq 1 60); do
+            # Older Android emulators do not consistently resolve a package-scoped
+            # MAIN/LAUNCHER intent immediately after reboot, even after the package service
+            # is available. The manifest launcher is known and exported; retry its explicit
+            # component within a bounded window. Only the app-owned UI below can qualify recovery.
             if [[ "$_" -eq 1 || $(( _ % 5 )) -eq 0 ]]; then
               set +e
-              adb shell am start -W \
-                -a android.intent.action.MAIN \
-                -c android.intent.category.LAUNCHER \
-                -p com.sentinel.quantum \
+              adb shell am start -W -n com.sentinel.quantum/.MainActivity \
                 >> "$OUTPUT/setup-reboot-main-launch.txt" 2>&1
               set -e
             fi
