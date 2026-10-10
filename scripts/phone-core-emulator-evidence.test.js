@@ -88,7 +88,8 @@ test('runtime qualification exercises offline, rotation, kill/restart, and crash
   assert.match(runtimeFlow, /run_stability_qualification\(\)/);
   assert.match(runtimeFlow, /svc wifi disable/);
   assert.match(runtimeFlow, /user_rotation/);
-  assert.match(runtimeFlow, /kill -9/);
+  assert.match(runtimeFlow, /pid_before=.*\n[\s\S]*adb shell am force-stop "\$FLOW_PACKAGE"/);
+  assert.doesNotMatch(runtimeFlow, /kill -9/);
   assert.match(runtimeFlow, /FATAL EXCEPTION:|ANR in com\\\.sentinel\\\.quantum/);
   assert.match(runtimeFlow, /stability-offline/);
   assert.match(runtimeFlow, /stability-rotation/);

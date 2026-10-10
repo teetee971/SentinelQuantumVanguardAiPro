@@ -523,7 +523,9 @@ run_stability_qualification() {
   # Force process death outside the app and require a fresh process to render the same surface.
   pid_before="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
   [[ "$pid_before" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]
-  adb shell kill -9 $pid_before
+  # The host drives process death through ActivityManager. Direct shell signals are rejected
+  # by newer Android images even for this app's own UID.
+  adb shell am force-stop "$FLOW_PACKAGE"
   for _ in $(seq 1 15); do
     pid_after="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
     [[ -z "$pid_after" ]] && break

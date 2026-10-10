@@ -403,7 +403,7 @@ for (const marker of [
   'run_stability_qualification()',
   'svc wifi disable',
   'settings put system user_rotation 1',
-  'kill -9',
+  'adb shell am force-stop "$FLOW_PACKAGE"',
   'stability-offline',
   'stability-rotation',
   'stability-kill-restart',
