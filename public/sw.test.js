@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 class FakeCache {
   constructor() {
@@ -41,6 +42,7 @@ globalThis.caches = new FakeCacheStorage();
 
 await import('./sw.js');
 const { cacheDynamicResponse, isImmutableAsset, MAX_DYNAMIC_CACHE_ENTRIES, DYNAMIC_CACHE } = globalThis.__SENTINEL_SW_TEST__;
+const registrationSource = readFileSync(new URL('./sw-register.js', import.meta.url), 'utf8');
 
 function makeResponse(body) {
   return new Response(body, { status: 200 });
@@ -51,6 +53,12 @@ test('unversioned JavaScript and CSS are refreshed from the network', () => {
   assert.equal(isImmutableAsset('/public/shared-styles.css'), false);
   assert.equal(isImmutableAsset('/assets/images/sentinel.webp'), true);
   assert.equal(isImmutableAsset('/public/icon.svg'), true);
+});
+
+test('service-worker registration is scheduled outside the critical load path', () => {
+  assert.match(registrationSource, /window\.addEventListener\('load', scheduleRegistration/);
+  assert.match(registrationSource, /window\.requestIdleCallback\(register, \{ timeout: 5000 \}\)/);
+  assert.match(registrationSource, /window\.setTimeout\(register, 0\)/);
 });
 
 test('dynamic cache stays within the configured max entries after overflow', async () => {
