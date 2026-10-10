@@ -501,7 +501,10 @@ PYNOTIFICATION
       fi
       return 0
     fi
-    if [[ "$FLOW_API" -ge 37 ]] && fresh_ui && incoming_surface_visible; then
+    # Android 16+ may keep the app-owned full-screen CallStyle surface visible while the
+    # notification shade is inaccessible to uiautomator. The timeline marker, owned surface,
+    # and later ACTIVE event remain independent proofs of the user-visible entry path.
+    if [[ "$FLOW_API" -ge 36 ]] && fresh_ui && incoming_surface_visible; then
       if [[ -n "${FLOW_OUTPUT_DIR:-}" ]]; then
         {
           printf 'mode=FULL_SCREEN_CALLSTYLE\n'

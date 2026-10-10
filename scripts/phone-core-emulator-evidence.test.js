@@ -264,19 +264,19 @@ test('incoming-call probe verifies ADB recovery after sleeping the emulator', ()
   assert.match(runtimeFlow, /adb devices -l/);
 });
 
-test('Android 17 full-screen CallStyle remains an explicit incoming-call entrypoint', () => {
+test('Android 16+ full-screen CallStyle remains an explicit incoming-call entrypoint', () => {
   const openStart = runtimeFlow.indexOf('open_incoming_call_notification() {');
   const openEnd = runtimeFlow.indexOf('\n}\n\nwait_reply_focus()', openStart);
   assert.ok(openStart >= 0 && openEnd > openStart);
   const notificationOpen = runtimeFlow.slice(openStart, openEnd);
-  assert.match(notificationOpen, /FLOW_API.*-ge 37/);
+  assert.match(notificationOpen, /FLOW_API.*-ge 36/);
   assert.match(notificationOpen, /incoming_surface_visible/);
   assert.match(notificationOpen, /uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible/);
   assert.match(workflow, /incomingCallEntrypointObserved/);
   assert.match(workflow, /mode=FULL_SCREEN_CALLSTYLE/);
 });
 
-test('Android 17 fallback records the observed full-screen entrypoint', () => {
+test('Android 16 fallback records the observed full-screen entrypoint', () => {
   const incomingSurface = flowFunction('incoming_surface_visible', 'wait_incoming_sentinel_surface');
   const notificationOpen = flowFunction('open_incoming_call_notification', 'wait_reply_focus');
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-full-screen-entrypoint-'));
@@ -284,7 +284,7 @@ test('Android 17 fallback records the observed full-screen entrypoint', () => {
     const fixture = join(dir, 'fallback.sh');
     writeFileSync(fixture, `#!/usr/bin/env bash
 set -Eeuo pipefail
-FLOW_API=37
+FLOW_API=36
 FLOW_NUMBER=5550100
 FLOW_PACKAGE=com.sentinel.quantum
 FLOW_OUTPUT_DIR="$1"
