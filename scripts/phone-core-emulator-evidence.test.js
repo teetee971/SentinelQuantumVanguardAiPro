@@ -134,6 +134,7 @@ test('runtime stability reports invalid original device state instead of exiting
   assert.match(runtimeFlow, /Failed to read original Wi-Fi state/);
   assert.match(runtimeFlow, /Failed to disable Wi-Fi for offline qualification/);
   assert.match(runtimeFlow, /Failed to disable mobile data for offline qualification/);
+  assert.match(runtimeFlow, /Failed to read Wi-Fi state after offline transition/);
 });
 
 test('reboot preparation leaves process termination to the external workflow', () => {

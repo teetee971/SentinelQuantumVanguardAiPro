@@ -467,7 +467,10 @@ run_stability_qualification() {
     echo "Failed to disable Wi-Fi for offline qualification." >&2
     return 1
   fi
-  wifi_state="$(adb shell settings get global wifi_on | tr -d '\r')"
+  if ! wifi_state="$(adb shell settings get global wifi_on | tr -d '\r')"; then
+    echo "Failed to read Wi-Fi state after offline transition." >&2
+    return 1
+  fi
   if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
     if ! adb shell svc data disable; then
       echo "Failed to disable mobile data for offline qualification." >&2
