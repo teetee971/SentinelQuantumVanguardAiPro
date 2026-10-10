@@ -137,3 +137,13 @@ test('rejects nonexistent metadata update dates and invalid local times', () => 
     /CTU_SOURCE_UPDATED_AT_INVALID/
   );
 });
+test('parses official hyphen-delimited CTU ranges', () => {
+  const csv = [
+    HEADER,
+    '7-15;9;7 – Služby;O2 Czech Republic a.s.;60193336;2003-01-23;2027-12-31;ČTÚ-7/15'
+  ].join('\n');
+  const rows = parseCtuCsv(csv);
+  assert.equal(rows[0].start, '7');
+  assert.equal(rows[0].end, '15');
+  assert.equal(rows[0].count, 9);
+});
