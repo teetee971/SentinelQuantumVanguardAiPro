@@ -6,6 +6,10 @@ const receiver = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt',
   'utf8'
 );
+const deliveryWorker = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingSmsDeliveryWorker.kt',
+  'utf8'
+);
 
 test('incoming SMS persists the modern subscription extra before the legacy fallback', () => {
   assert.match(receiver, /EXTRA_SUBSCRIPTION_INDEX\s*=\s*"android\.telephony\.extra\.SUBSCRIPTION_INDEX"/);
@@ -21,8 +25,8 @@ test('incoming SMS persists the modern subscription extra before the legacy fall
     'invalid or sentinel subscription ids must not be persisted'
   );
   assert.match(
-    receiver,
-    /subscriptionId\?\.let\s*\{\s*put\(Telephony\.Sms\.SUBSCRIPTION_ID, it\)\s*\}/,
-    'the validated incoming subscription must be written into the canonical SMS provider row'
+    deliveryWorker,
+    /record\.subscriptionId\?\.let\s*\{\s*put\(Telephony\.Sms\.SUBSCRIPTION_ID, it\)\s*\}/,
+    'the validated durable incoming subscription must be written into the canonical SMS provider row'
   );
 });
