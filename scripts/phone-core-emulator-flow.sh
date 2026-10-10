@@ -52,6 +52,8 @@ flow_failure_diagnostics() {
     printf '\ntelecom_status='; adb shell dumpsys telecom
     printf '\nrole_status='; adb shell dumpsys role
   } > "$FLOW_OUTPUT_DIR/flow-failure.txt" 2>&1
+  printf 'Phone Core flow unexpected shell failure: status=%s line=%s command=%s; full diagnostics=%s\n' \
+    "$status" "$failed_line" "$failed_command" "$FLOW_OUTPUT_DIR/flow-failure.txt" >&2
   set -e
   trap 'flow_err_trap "$?" "$BASH_COMMAND" "${BASH_LINENO[0]:-unknown}"' ERR
   return 0
