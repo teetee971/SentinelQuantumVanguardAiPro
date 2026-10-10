@@ -37,6 +37,7 @@ flow_failure_diagnostics() {
   local status="$1"
   local failed_command="$2"
   local failed_line="$3"
+  local failed_adb_args="$4"
   if [[ "$FLOW_FAILURE_REPORTED" == true ]]; then
     return 0
   fi
@@ -46,7 +47,7 @@ flow_failure_diagnostics() {
   set +e
   {
     printf 'status=%s\nfailed_line=%s\nfailed_command=%s\nadb_args=%s\n' \
-      "$status" "$failed_line" "$failed_command" "$FLOW_LAST_ADB_ARGS"
+      "$status" "$failed_line" "$failed_command" "$failed_adb_args"
     printf '\nadb_get_state_status='; adb get-state
     printf '\nadb_devices_status='; adb devices -l
     printf '\nlogcat_brief_status='; adb logcat -d -v brief
@@ -55,7 +56,7 @@ flow_failure_diagnostics() {
     printf '\nrole_status='; adb shell dumpsys role
   } > "$FLOW_OUTPUT_DIR/flow-failure.txt" 2>&1
   printf 'Phone Core flow unexpected shell failure: status=%s line=%s command=%s adb_args=%s; full diagnostics=%s\n' \
-    "$status" "$failed_line" "$failed_command" "$FLOW_LAST_ADB_ARGS" \
+    "$status" "$failed_line" "$failed_command" "$failed_adb_args" \
     "$FLOW_OUTPUT_DIR/flow-failure.txt" >&2
   set -e
   trap 'flow_err_trap "$?" "$BASH_COMMAND" "${BASH_LINENO[0]:-unknown}"' ERR
@@ -65,8 +66,9 @@ flow_err_trap() {
   local status="$1"
   local failed_command="$2"
   local failed_line="$3"
+  local failed_adb_args="$FLOW_LAST_ADB_ARGS"
   if [[ "$FLOW_FAILURE_TRAP_ACTIVE" == true ]]; then
-    flow_failure_diagnostics "$status" "$failed_command" "$failed_line"
+    flow_failure_diagnostics "$status" "$failed_command" "$failed_line" "$failed_adb_args"
   fi
   return "$status"
 }

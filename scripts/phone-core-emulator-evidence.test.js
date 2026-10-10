@@ -121,6 +121,8 @@ test('runtime flow preserves the first unexpected shell failure as bounded evide
     'Phone Core runtime flow must record the failing shell command');
   assert.match(runtimeFlow, /FLOW_LAST_ADB_ARGS/,
     'Phone Core runtime flow must record the failing ADB arguments');
+  assert.match(runtimeFlow, /failed_adb_args/,
+    'Phone Core runtime flow must freeze ADB arguments before diagnostics run');
   assert.match(runtimeFlow, /flow-failure\.txt/,
     'Phone Core runtime flow must persist failure diagnostics');
   assert.match(runtimeFlow, /Phone Core flow unexpected shell failure/,
