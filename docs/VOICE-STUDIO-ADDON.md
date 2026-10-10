@@ -41,6 +41,17 @@ Pour appeler un numéro téléphonique classique avec une voix transformée, le 
 
 La transformation se produit avant l’encodage du média sortant. Le pont natif WebRTC expose au processeur Java un `ByteBuffer` direct adossé à des échantillons **Float32 dans le domaine d’amplitude FloatS16 de WebRTC** (pleine échelle proche de ±32768), et non à des valeurs normalisées ±1 ; `numFrames` représente la trame complète de 10 ms et `numBands` le découpage interne WebRTC. `LiveKitVoiceAudioProcessor` lit donc des Float32 — jamais du PCM16 — puis délègue explicitement la trame au `SentinelVoipVoicePipeline` avant que LiveKit ne l’encode et la transmette. Si la forme du callback média est invalide, sous-dimensionnée ou multi-canal alors que le bridge n’expose qu’un canal transformable, le chemin échoue en fermeture : la trame accessible est silencée ou l’initialisation est refusée, afin de ne jamais transmettre la voix brute à la place de la voix transformée. `SentinelLiveKitCallTransport` établit une room `wss://` sans credentials dans l’URL, avec jeton éphémère fourni séparément, puis publie le microphone uniquement après le préflight de permission et la connexion. Restent à provisionner le serveur LiveKit/token issuer et la passerelle PSTN, puis à valider le trajet de bout en bout.
 
+## Contrôle push-to-talk côté client
+
+Le client Android expose maintenant un chemin PTT fail-closed :
+- `connectForPushToTalk` rejoint une room avec le microphone désactivé ;
+- `PushToTalkSession.press()` ouvre le microphone pour la prise de parole ;
+- `release()` le coupe immédiatement ;
+- `close()` le coupe avant de fermer la session ;
+- une room absente, une erreur LiveKit ou un refus du microphone bloque la transmission.
+
+Ce contrôle ne constitue pas encore un service PTT public : il ne remplace ni le signaling de production, ni l’émetteur de jetons, ni les entitlements/serveurs Sentinel.
+
 ## État de réalisation
 
 - [x] moteur DSP Float32/FloatS16 temps réel intégré ;
