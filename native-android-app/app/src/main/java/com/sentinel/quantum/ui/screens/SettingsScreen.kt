@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -25,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.R
+import com.sentinel.quantum.auth.Auth0SessionController
+import com.sentinel.quantum.auth.Auth0UserSummary
 import com.sentinel.quantum.VoiceStudioActivity
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
@@ -49,6 +52,8 @@ fun SettingsScreen(
     onThemeModeChange: (ThemeMode) -> Unit
 ) {
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    val authController = remember(context) { Auth0SessionController(context) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val logger = remember(context) { LocalLogger(context) }
     val blocklistStore = remember(context) { CallBlocklistStore(context) }
@@ -72,6 +77,9 @@ fun SettingsScreen(
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
     var externalLinkStatus by remember { mutableStateOf<String?>(null) }
+    var authUser by remember { mutableStateOf<Auth0UserSummary?>(null) }
+    var authLoading by remember { mutableStateOf(true) }
+    var authError by remember { mutableStateOf(false) }
     val ioScope = rememberCoroutineScope()
 
     fun openExternalPage(url: String) {
@@ -198,6 +206,19 @@ fun SettingsScreen(
         }
     }
 
+    LaunchedEffect(authController) {
+        authController.restore(
+            onSuccess = {
+                authUser = it
+                authLoading = false
+            },
+            onFailure = {
+                authUser = null
+                authLoading = false
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -215,6 +236,67 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_auth_title),
+                subtitle = stringResource(R.string.settings_auth_description)
+            )
+            when {
+                authLoading -> Text(stringResource(R.string.settings_auth_loading))
+                authUser == null -> {
+                    Button(
+                        onClick = {
+                            val currentActivity = activity ?: return@Button
+                            authError = false
+                            authController.login(
+                                currentActivity,
+                                onSuccess = { authUser = it },
+                                onFailure = {
+                                    authUser = null
+                                    authError = true
+                                }
+                            )
+                        },
+                        enabled = activity != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_auth_login))
+                    }
+                }
+                else -> {
+                    Text(
+                        text = stringResource(
+                            R.string.settings_auth_logged_in_as,
+                            authUser?.email ?: stringResource(R.string.settings_auth_no_email)
+                        ),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            val currentActivity = activity ?: return@OutlinedButton
+                            authError = false
+                            authController.logout(
+                                currentActivity,
+                                onSuccess = { authUser = null },
+                                onFailure = { authError = true }
+                            )
+                        },
+                        enabled = activity != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_auth_logout))
+                    }
+                }
+            }
+            if (authError) {
+                Text(
+                    text = stringResource(R.string.settings_auth_error),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            HorizontalDivider()
+
             SentinelSectionHeader(
                 title = stringResource(R.string.settings_theme_title),
                 subtitle = "Choisissez l’apparence de Sentinel sans modifier les fonctions de sécurité."
