@@ -151,6 +151,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
+      # Every API lane owns fresh emulator state; runtime evidence must remain lane-specific.
       matrix:
         include:
           - api_level: 24
@@ -302,13 +303,25 @@ jobs:
               adb shell pm list instrumentation || true
               exit 1
             fi
+            INSTRUMENTATION_LOG_RAW="$RUNNER_TEMP/sentinel-instrumentation-api24-tests.raw.log"
             INSTRUMENTATION_LOG="$RUNNER_TEMP/sentinel-instrumentation-api24-tests.log"
             set +e
-            timeout --signal=INT --kill-after=30s 900s \
-              adb shell am instrument -w -r "$INSTRUMENTATION_RUNNER" |
-              tr -d '\r' |
-              tee "$INSTRUMENTATION_LOG"
-            INSTRUMENTATION_STATUS=${PIPESTATUS[0]}
+            setsid adb shell am instrument -w -r "$INSTRUMENTATION_RUNNER" > "$INSTRUMENTATION_LOG_RAW" 2>&1 &
+            INSTRUMENTATION_PID=$!
+            (
+              sleep 900
+              if kill -0 "$INSTRUMENTATION_PID" 2>/dev/null; then
+                kill -TERM -- "-$INSTRUMENTATION_PID" 2>/dev/null || kill -TERM "$INSTRUMENTATION_PID" 2>/dev/null || true
+                sleep 30
+                kill -KILL -- "-$INSTRUMENTATION_PID" 2>/dev/null || kill -KILL "$INSTRUMENTATION_PID" 2>/dev/null || true
+              fi
+            ) &
+            INSTRUMENTATION_WATCHDOG_PID=$!
+            wait "$INSTRUMENTATION_PID"
+            INSTRUMENTATION_STATUS=$?
+            kill "$INSTRUMENTATION_WATCHDOG_PID" >/dev/null 2>&1 || true
+            wait "$INSTRUMENTATION_WATCHDOG_PID" >/dev/null 2>&1 || true
+            tr -d '\r' < "$INSTRUMENTATION_LOG_RAW" | tee "$INSTRUMENTATION_LOG"
             set -e
             if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then
               echo "Android API 24 instrumentation failed or exceeded its 15 minute watchdog (status ${INSTRUMENTATION_STATUS})."

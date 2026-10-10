@@ -277,11 +277,9 @@ launch_sms_surface() {
 
 timeline_signal_prefix_count() {
   local prefix="$1"
-  if ! adb shell run-as "$PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$TIMELINE_XML" 2>/dev/null; then
-    echo "Phone Core private timeline is unreadable; screening revocation evidence cannot be qualified." >&2
-    return 2
-  fi
-  python3 - "$TIMELINE_XML" "$prefix" <<'PY'
+  for _ in $(seq 1 10); do
+    if adb shell run-as "$PACKAGE" cat shared_prefs/phone_private_timeline.xml > "$TIMELINE_XML" 2>/dev/null &&
+      python3 - "$TIMELINE_XML" "$prefix" <<'PY'
 import json, sys, xml.etree.ElementTree as ET
 path, prefix = sys.argv[1:]
 try:
@@ -289,30 +287,37 @@ try:
     node = next((n for n in root.findall('string') if n.get('name') == 'events'), None)
     if node is None:
         raise ValueError('events node missing')
-    events = json.loads((node.text or '[]'))
+    events = json.loads((node.text or '[]') or '[]')
     if not isinstance(events, list):
         raise ValueError('events payload is not a list')
-except Exception as exc:
-    print(f'Invalid Phone Core private timeline evidence: {exc}', file=sys.stderr)
+except Exception:
     sys.exit(2)
 print(sum(1 for event in events if str(event.get('signal') or '').startswith(prefix)))
 PY
+    then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Phone Core private timeline is unreadable after bounded retries; screening revocation evidence cannot be qualified." >&2
+  return 2
 }
 
 screening_callback_count() {
   local evidence="$OUT_DIR/screening-callback-count-logcat.txt"
   local count
-  if ! adb logcat -d -v brief > "$evidence"; then
-    echo "Screening callback oracle is unreadable; absence cannot be qualified." >&2
-    return 2
-  fi
-  if count="$(grep -F -c 'CallScreeningService:onScreenCall' "$evidence")"; then
-    printf '%s\n' "$count"
-  elif [[ "$count" == "0" ]]; then
-    printf '0\n'
-  else
-    return 2
-  fi
+  for _ in $(seq 1 10); do
+    if adb logcat -d -v brief > "$evidence" 2>/dev/null; then
+      count="$(grep -F -c 'CallScreeningService:onScreenCall' "$evidence" || true)"
+      if [[ "$count" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$count"
+        return 0
+      fi
+    fi
+    sleep 1
+  done
+  echo "Screening callback oracle is unreadable after bounded retries; absence cannot be qualified." >&2
+  return 2
 }
 
 assert_modem_call_absent() {
