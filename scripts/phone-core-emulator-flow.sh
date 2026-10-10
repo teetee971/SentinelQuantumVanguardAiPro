@@ -105,20 +105,34 @@ restore_device_state() {
   RESTORE_FAILED=false
   if ! adb shell settings put system user_rotation "$ORIGINAL_USER_ROTATION" >/dev/null 2>&1; then
     RESTORE_FAILED=true
+    echo "Failed to restore user rotation state." >&2
   fi
   if ! adb shell settings put system accelerometer_rotation "$ORIGINAL_ACCELEROMETER_ROTATION" >/dev/null 2>&1; then
     RESTORE_FAILED=true
+    echo "Failed to restore accelerometer rotation state." >&2
   fi
   if [[ "$ORIGINAL_WIFI_ON" == 1 ]]; then
-    if ! adb shell svc wifi enable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+    if ! adb shell svc wifi enable >/dev/null 2>&1; then
+      RESTORE_FAILED=true
+      echo "Failed to restore Wi-Fi state." >&2
+    fi
   else
-    if ! adb shell svc wifi disable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+    if ! adb shell svc wifi disable >/dev/null 2>&1; then
+      RESTORE_FAILED=true
+      echo "Failed to restore Wi-Fi state." >&2
+    fi
   fi
   if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
     if [[ "$ORIGINAL_MOBILE_DATA" == 1 ]]; then
-      if ! adb shell svc data enable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+      if ! adb shell svc data enable >/dev/null 2>&1; then
+        RESTORE_FAILED=true
+        echo "Failed to restore mobile-data state." >&2
+      fi
     else
-      if ! adb shell svc data disable >/dev/null 2>&1; then RESTORE_FAILED=true; fi
+      if ! adb shell svc data disable >/dev/null 2>&1; then
+        RESTORE_FAILED=true
+        echo "Failed to restore mobile-data state." >&2
+      fi
     fi
   fi
   if [[ "$RESTORE_FAILED" == true ]]; then
