@@ -135,7 +135,7 @@ function normalizeResource(value) {
 
 function parseResourceRange(raw) {
   const value = String(raw ?? '').trim().replace(/\u00A0/g, ' ');
-  const parts = value.split(/\s+až\s+/i);
+  const parts = value.split(/(?:\s+až\s+|\s*-\s*)/i);
   if (parts.length === 1) {
     const single = normalizeResource(parts[0]);
     return [single, single];
