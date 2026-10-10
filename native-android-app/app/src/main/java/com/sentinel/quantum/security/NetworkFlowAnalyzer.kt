@@ -63,8 +63,8 @@ object NetworkFlowAnalyzer {
                     protocol = protocol,
                     remotePort = port,
                     flowCount = flows.size,
-                    totalBytesSent = flows.sumOf { it.bytesSent },
-                    totalBytesReceived = flows.sumOf { it.bytesReceived },
+                    totalBytesSent = flows.fold(0L) { total, flow -> saturatingAdd(total, flow.bytesSent) },
+                    totalBytesReceived = flows.fold(0L) { total, flow -> saturatingAdd(total, flow.bytesReceived) },
                     firstSeenAtMs = flows.minOf { it.startedAtMs },
                     lastSeenAtMs = flows.maxOf { it.endedAtMs },
                     appUids = flows.mapNotNull { it.appUid }.toSet()
@@ -87,7 +87,7 @@ object NetworkFlowAnalyzer {
 
     private fun isValid(item: NetworkFlowObservation): Boolean {
         val endpoint = normalizeEndpoint(item.remoteEndpoint)
-        if (endpoint.isEmpty()) return false
+        if (endpoint.isEmpty() || endpoint.length > MAX_ENDPOINT_LENGTH) return false
         if (item.remotePort != null && item.remotePort !in 1..65535) return false
         if (item.appUid != null && item.appUid < 0) return false
         if (item.bytesSent < 0L || item.bytesReceived < 0L) return false
@@ -96,7 +96,7 @@ object NetworkFlowAnalyzer {
     }
 
     private fun normalizeEndpoint(value: String): String =
-        value.trim().lowercase().take(MAX_ENDPOINT_LENGTH)
+        value.trim().lowercase()
 
     private fun saturatingAdd(left: Long, right: Long): Long =
         if (Long.MAX_VALUE - left < right) Long.MAX_VALUE else left + right

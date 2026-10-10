@@ -56,4 +56,40 @@ class NetworkFlowAnalyzerTest {
 
         assertEquals(2, result.destinations.size)
     }
+
+    @Test
+    fun saturatesPerDestinationCountersInsteadOfOverflowing() {
+        val result = NetworkFlowAnalyzer.summarize(
+            listOf(
+                NetworkFlowObservation(1001, "example.com", 443, FlowProtocol.TCP, Long.MAX_VALUE - 3, Long.MAX_VALUE - 5, 0, 1),
+                NetworkFlowObservation(1002, " EXAMPLE.COM ", 443, FlowProtocol.TCP, 10, 10, 2, 3)
+            )
+        )
+
+        assertEquals(2, result.acceptedObservations)
+        assertEquals(0, result.rejectedObservations)
+        assertEquals(Long.MAX_VALUE, result.totalBytesSent)
+        assertEquals(Long.MAX_VALUE, result.totalBytesReceived)
+        assertEquals(1, result.destinations.size)
+        assertEquals(Long.MAX_VALUE, result.destinations.single().totalBytesSent)
+        assertEquals(Long.MAX_VALUE, result.destinations.single().totalBytesReceived)
+    }
+
+    @Test
+    fun rejectsOverlongNormalizedEndpointsWithoutSilentTruncation() {
+        val validEndpoint = "a".repeat(253)
+        val result = NetworkFlowAnalyzer.summarize(
+            listOf(
+                NetworkFlowObservation(null, validEndpoint, 443, FlowProtocol.TCP, 1, 2, 0, 1),
+                NetworkFlowObservation(null, validEndpoint + "x", 443, FlowProtocol.TCP, 3, 4, 0, 1),
+                NetworkFlowObservation(null, " " + validEndpoint + "y ", 443, FlowProtocol.TCP, 5, 6, 0, 1)
+            )
+        )
+
+        assertEquals(1, result.acceptedObservations)
+        assertEquals(2, result.rejectedObservations)
+        assertEquals(1, result.destinations.size)
+        assertEquals(validEndpoint, result.destinations.single().remoteEndpoint)
+        assertEquals(1L, result.destinations.single().totalBytesSent)
+    }
 }
