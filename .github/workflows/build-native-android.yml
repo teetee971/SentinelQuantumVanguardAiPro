@@ -247,9 +247,15 @@ jobs:
 
           adb shell pidof com.sentinel.quantum
 
-          # An unfinished setup is intentionally resumable. Force-stop simulates the user
-          # leaving the app during Android's permission/default-role flow. The next cold launch
-          # must reopen PhoneCoreActivationActivity rather than losing progress.
+          # An unfinished setup is intentionally resumable. Close any Android-owned
+          # permission/role surface before force-stopping Sentinel: otherwise RequestRoleActivity
+          # remains on top and the next am start is delivered to the controller instead of
+          # testing Sentinel's cold-launch recovery. The back event is the user interruption;
+          # it is not a readiness assertion.
+          adb shell input keyevent KEYCODE_BACK
+          sleep 1
+          adb shell dumpsys activity activities > "$RUNNER_TEMP/sentinel-interruption-dismiss.txt" 2>/dev/null || true
+          # The next cold launch must reopen PhoneCoreActivationActivity rather than losing progress.
           adb shell am force-stop com.sentinel.quantum
           adb logcat -c >/dev/null 2>&1 || true
           # am start -W can return non-zero when Android immediately hands foreground
