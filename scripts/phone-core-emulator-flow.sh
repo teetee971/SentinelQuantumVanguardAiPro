@@ -489,9 +489,15 @@ run_stability_qualification() {
   printf 'wifi_on=%s\nmobile_data=%s\nmobile_data_oracle=%s\nverdict=%s\n' \
     "$wifi_state" "$mobile_state" "$MOBILE_DATA_ORACLE_SOURCE" "$stability_verdict" \
     > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
-  [[ "$wifi_state" == "0" ]]
+  if [[ "$wifi_state" != "0" ]]; then
+    echo "Wi-Fi did not reach the disabled state: $wifi_state" >&2
+    return 1
+  fi
   if [[ "$mobile_state" != UNAVAILABLE ]]; then
-    [[ "$mobile_state" == "0" ]]
+    if [[ "$mobile_state" != "0" ]]; then
+      echo "Mobile data did not reach the disabled state: $mobile_state" >&2
+      return 1
+    fi
   fi
   adb shell am force-stop "$FLOW_PACKAGE"
   adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-offline-launch.txt"
