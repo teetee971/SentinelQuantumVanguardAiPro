@@ -1,0 +1,46 @@
+name: Voice API Validation
+
+on:
+  pull_request:
+    paths:
+      - "backend/voice-api/**"
+      - "render.yaml"
+      - ".github/workflows/voice-api.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/voice-api/**"
+      - "render.yaml"
+      - ".github/workflows/voice-api.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend/voice-api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/voice-api/requirements.txt
+            backend/voice-api/requirements-dev.txt
+      - run: python -m pip install --requirement requirements-dev.txt
+      - run: python -m pytest -q
+      - run: python -m compileall -q app.py
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build --tag sentinel-voice-api:test backend/voice-api
+      - name: Verify container imports production app
+        run: docker run --rm --entrypoint python sentinel-voice-api:test -c "import app; assert app.app is not None; assert '/v1/voice/sessions' in {r.path for r in app.app.routes}"

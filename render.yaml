@@ -59,3 +59,36 @@ services:
         value: "30"
       - key: INTEL_MODERATION_RATE_LIMIT_PER_MINUTE
         value: "30"
+
+  - type: web
+    name: sentinel-voice-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/voice-api/Dockerfile
+    dockerContext: ./backend/voice-api
+    healthCheckPath: /health/live
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: VOICE_SERVICE_ENABLED
+        value: "false"
+      - key: VOICE_REDIS_URL
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: VOICE_AUTH_JWKS_URL
+        sync: false
+      - key: VOICE_AUTH_ISSUER
+        sync: false
+      - key: VOICE_AUTH_AUDIENCE
+        sync: false
+      - key: VOICE_ENTITLEMENT_CLAIM
+        value: sentinel_voice_entitled
+      - key: VOICE_TOKEN_TTL_SECONDS
+        value: "120"
+      - key: VOICE_RATE_LIMIT_PER_MINUTE
+        value: "30"
