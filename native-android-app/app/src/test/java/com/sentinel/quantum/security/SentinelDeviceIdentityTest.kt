@@ -12,7 +12,7 @@ class SentinelDeviceIdentityTest {
         val second = SentinelDeviceIdentity.stableIdFor("android-id-123")
 
         assertEquals(first, second)
-        assertTrue(first.startsWith("android-"))
+        assertTrue(first?.startsWith("android-") == true)
         assertNotEquals("android-id-123", first)
     }
 
