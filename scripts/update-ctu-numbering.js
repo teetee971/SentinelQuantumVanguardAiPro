@@ -135,7 +135,7 @@ function normalizeResource(value) {
 
 function parseResourceRange(raw) {
   const value = String(raw ?? '').trim().replace(/\u00A0/g, ' ');
-  const parts = value.split(/\s+až\s+/i);
+  const parts = value.split(/(?:\s+až\s+|\s*-\s*)/i);
   if (parts.length === 1) {
     const single = normalizeResource(parts[0]);
     return [single, single];
@@ -143,7 +143,7 @@ function parseResourceRange(raw) {
   if (parts.length !== 2) fail('CTU_RANGE_INVALID', value);
   const start = normalizeResource(parts[0]);
   const end = normalizeResource(parts[1]);
-  if (start.length !== end.length || start > end) fail('CTU_RANGE_INVALID', value);
+  if (BigInt(start) > BigInt(end)) fail('CTU_RANGE_INVALID', value);
   return [start, end];
 }
 
