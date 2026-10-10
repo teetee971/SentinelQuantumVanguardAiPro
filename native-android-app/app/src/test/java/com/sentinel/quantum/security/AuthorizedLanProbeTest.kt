@@ -30,6 +30,50 @@ class AuthorizedLanProbeTest {
         assertNotNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, listOf(AuthorizedProbeTarget("::1", listOf(443)))))
     }
 
+    @Test fun hostnameResolutionAndAmbiguousNumericTargetsFailClosed() {
+        val rejected = listOf(
+            "localhost", "example.com", "127.0.0.1.example.com", "127.1", "192.168.01.2",
+            "999.999.999.999", "fe80::1%wlan0", "[::1]", "1::2::3",
+            "::ffff:192.168.1.1", "::ffff:7f00:1",
+            "127.0.0.1\\n", "127.0.0.1\\t", "1".repeat(1024)
+        )
+        rejected.forEach { host ->
+            assertNull(host, AuthorizedLanProbePolicy.validate(
+                NetworkOperationMode.AUTHORIZED_LAB, allowed, listOf(AuthorizedProbeTarget(host, listOf(443)))
+            ))
+        }
+    }
+
+    @Test fun executionRejectsHostnamesBeforeOpeningSockets() {
+        assertNull(AuthorizedLanSocketProbe.run(NetworkOperationMode.AUTHORIZED_LAB, allowed,
+            listOf(AuthorizedProbeTarget("localhost", listOf(443)))))
+    }
+
+    @Test fun connectionBudgetIsGlobalAndCountsDistinctPorts() {
+        val atLimit = listOf(
+            AuthorizedProbeTarget("127.0.0.1", (1..16).toList()),
+            AuthorizedProbeTarget("127.0.0.2", (1..16).toList())
+        )
+        assertNotNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, atLimit))
+        assertNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed,
+            atLimit + AuthorizedProbeTarget("127.0.0.3", listOf(80))))
+        val duplicates = listOf(AuthorizedProbeTarget("127.0.0.1", listOf(80, 80, 80)))
+        assertTrue(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed, duplicates)!![0].ports == listOf(80))
+    }
+
+    @Test fun ipv6UniqueLocalLiteralIsAllowedWithoutNameLookup() {
+        assertNotNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed,
+            listOf(AuthorizedProbeTarget("fd00::1234", listOf(443)))))
+        assertNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, allowed,
+            listOf(AuthorizedProbeTarget("2001:4860:4860::8888", listOf(443)))))
+    }
+
+    @Test fun paidLabEntitlementRemainsMandatory() {
+        val standard = NetworkAuthorizationContext(true, true, true, NetworkFeatureEntitlement.STANDARD)
+        assertNull(AuthorizedLanProbePolicy.validate(NetworkOperationMode.AUTHORIZED_LAB, standard,
+            listOf(AuthorizedProbeTarget("127.0.0.1", listOf(443)))))
+    }
+
     @Test fun packetCaptureIsBoundedAndNeverAllowsDecryption() {
         assertTrue(AuthorizedPacketCapturePolicy.permits(NetworkOperationMode.AUTHORIZED_LAB, allowed, AuthorizedPacketCaptureSession(AuthorizedTrafficSource.THIS_DEVICE, 60, 1_000_000)))
         assertFalse(AuthorizedPacketCapturePolicy.permits(NetworkOperationMode.AUTHORIZED_LAB, allowed, AuthorizedPacketCaptureSession(AuthorizedTrafficSource.THIS_DEVICE, 60, 1_000_000, decryptEncryptedPayloads = true)))
