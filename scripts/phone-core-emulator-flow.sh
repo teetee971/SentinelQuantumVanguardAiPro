@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Synthetic communications on the isolated CI emulator only. No physical certification.
-set -euo pipefail
+set -Eeuo pipefail
 FLOW_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FLOW_OUTPUT_DIR="${1:?Screenshot output directory required}"
 mkdir -p "$FLOW_OUTPUT_DIR"
@@ -17,6 +17,8 @@ ORIGINAL_WIFI_ON=""
 ORIGINAL_MOBILE_DATA=""
 MOBILE_DATA_ORACLE_SOURCE=""
 RESTORE_FAILED=false
+FLOW_FAILURE_TRAP_ACTIVE=false
+FLOW_FAILURE_REPORTED=false
 if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
   [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
   echo "ADB command watchdog values must be positive integer seconds." >&2
@@ -29,6 +31,41 @@ adb() {
     "${ADB_COMMAND_TIMEOUT_SECONDS}s" \
     adb "$@"
 }
+flow_failure_diagnostics() {
+  local status="$1"
+  local failed_command="$2"
+  local failed_line="$3"
+  if [[ "$FLOW_FAILURE_REPORTED" == true ]]; then
+    return 0
+  fi
+  FLOW_FAILURE_REPORTED=true
+  # Diagnostics must never replace the original failure or recurse through ERR.
+  trap - ERR
+  set +e
+  {
+    printf 'status=%s\nfailed_line=%s\nfailed_command=%s\n' \
+      "$status" "$failed_line" "$failed_command"
+    printf '\nadb_get_state_status='; adb get-state
+    printf '\nadb_devices_status='; adb devices -l
+    printf '\nlogcat_brief_status='; adb logcat -d -v brief
+    printf '\nactivity_status='; adb shell dumpsys activity activities
+    printf '\ntelecom_status='; adb shell dumpsys telecom
+    printf '\nrole_status='; adb shell dumpsys role
+  } > "$FLOW_OUTPUT_DIR/flow-failure.txt" 2>&1
+  set -e
+  trap 'flow_err_trap "$?" "$BASH_COMMAND" "${BASH_LINENO[0]:-unknown}"' ERR
+  return 0
+}
+flow_err_trap() {
+  local status="$1"
+  local failed_command="$2"
+  local failed_line="$3"
+  if [[ "$FLOW_FAILURE_TRAP_ACTIVE" == true ]]; then
+    flow_failure_diagnostics "$status" "$failed_command" "$failed_line"
+  fi
+  return "$status"
+}
+trap 'flow_err_trap "$?" "$BASH_COMMAND" "${BASH_LINENO[0]:-unknown}"' ERR
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
 wait_for_online_adb() {
@@ -672,6 +709,7 @@ run_stability_qualification() {
 
 # This is the first application launch after the workflow's fresh APK install. Exercise a second
 # process launch as well so cold_install_and_relaunch is a real per-lane proof, not report metadata.
+FLOW_FAILURE_TRAP_ACTIVE=true
 adb shell am force-stop "$FLOW_PACKAGE"
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard

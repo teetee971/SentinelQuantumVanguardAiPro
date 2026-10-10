@@ -114,6 +114,19 @@ test('every synthetic runtime script bounds each ADB operation independently', (
   }
 });
 
+test('runtime flow preserves the first unexpected shell failure as bounded evidence', () => {
+  assert.match(runtimeFlow, /trap .*ERR/,
+    'Phone Core runtime flow must trap unexpected shell failures');
+  assert.match(runtimeFlow, /BASH_COMMAND/,
+    'Phone Core runtime flow must record the failing shell command');
+  assert.match(runtimeFlow, /flow-failure\.txt/,
+    'Phone Core runtime flow must persist failure diagnostics');
+  assert.match(runtimeFlow, /adb devices -l/,
+    'Phone Core runtime flow must preserve ADB device diagnostics');
+  assert.match(runtimeFlow, /adb logcat -d -v brief/,
+    'Phone Core runtime flow must preserve logcat diagnostics');
+});
+
 test('runtime qualification exercises offline, rotation, kill/restart, and crash/ANR evidence', () => {
   assert.match(runtimeFlow, /run_stability_qualification\(\)/);
   assert.match(runtimeFlow, /svc wifi disable/);
