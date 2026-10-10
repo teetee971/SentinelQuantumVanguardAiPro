@@ -236,6 +236,40 @@ def test_close_requires_the_device_that_created_the_session():
     assert closed.status_code == 403
 
 
+def test_repeated_close_keeps_account_and_device_authorization():
+    redis_client = FakeRedis()
+    verifier = FakeIdentityVerifier(entitled_principal())
+    app = create_app(
+        settings=configured_settings(),
+        redis_client=redis_client,
+        identity_verifier=verifier,
+        token_issuer=FakeTokenIssuer(),
+    )
+    with TestClient(app) as client:
+        created = client.post(
+            "/v1/voice/sessions",
+            headers={"Authorization": "Bearer valid", "Idempotency-Key": "key-823456789012"},
+            json=valid_payload(),
+        )
+        session_id = created.json()["session_id"]
+        first = client.post(
+            f"/v1/voice/sessions/{session_id}/close",
+            headers={"Authorization": "Bearer valid", "Idempotency-Key": "close-423456789012"},
+        )
+        verifier.principal = {
+            "subject": "other-user",
+            "device_id": "other-device",
+            "entitled": True,
+        }
+        repeated = client.post(
+            f"/v1/voice/sessions/{session_id}/close",
+            headers={"Authorization": "Bearer valid", "Idempotency-Key": "close-523456789012"},
+        )
+
+    assert first.status_code == 200
+    assert repeated.status_code == 403
+
+
 def test_livekit_token_is_room_scoped_and_capped_at_120_seconds():
     settings = Settings(
         enabled=True,

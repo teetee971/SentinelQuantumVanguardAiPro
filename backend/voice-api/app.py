@@ -464,7 +464,15 @@ def create_app(
         try:
             record = await client.get(session_key)
             if not record:
-                if await client.get(closed_key):
+                closed_record = await client.get(closed_key)
+                if closed_record:
+                    closed_session = json.loads(closed_record)
+                    if (
+                        closed_session["subject"] != principal["subject"]
+                        or closed_session["device_id"]
+                        not in _principal_device_ids(principal)
+                    ):
+                        raise HTTPException(status_code=403, detail="Voice access denied")
                     return {"session_id": session_id, "status": "closed"}
                 raise HTTPException(status_code=404, detail="Voice session not found")
             session = json.loads(record)
@@ -473,7 +481,17 @@ def create_app(
                 or session["device_id"] not in _principal_device_ids(principal)
             ):
                 raise HTTPException(status_code=403, detail="Voice access denied")
-            await client.set(closed_key, "1", ex=3600)
+            await client.set(
+                closed_key,
+                json.dumps(
+                    {
+                        "subject": session["subject"],
+                        "device_id": session["device_id"],
+                    },
+                    separators=(",", ":"),
+                ),
+                ex=3600,
+            )
             await client.delete(session_key)
         except HTTPException:
             raise
