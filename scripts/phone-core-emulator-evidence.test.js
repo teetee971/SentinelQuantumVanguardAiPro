@@ -154,6 +154,62 @@ test('runtime qualification exercises offline, rotation, kill/restart, and crash
   assert.match(runtimeFlow, /ADB logcat could not be read after bounded online-device retries/);
 });
 
+test('crash evidence retries transient logcat disconnects and remains bounded', () => {
+  const start = runtimeFlow.indexOf('assert_no_crash_or_anr() {');
+  const end = runtimeFlow.indexOf('\nread_process_ids() {', start);
+  assert.ok(start >= 0 && end > start);
+  const crashOracle = runtimeFlow.slice(start, end);
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-logcat-retry-'));
+  try {
+    const fixture = join(dir, 'retry.sh');
+    writeFileSync(fixture, `#!/usr/bin/env bash
+set -Eeuo pipefail
+FLOW_OUTPUT_DIR="$1"
+FLOW_FAILURE_TRAP_SUSPENDED=false
+attempt=0
+wait_for_online_adb() { return 0; }
+sleep() { :; }
+adb() {
+  attempt=$((attempt + 1))
+  if [[ "$attempt" -lt 3 ]]; then
+    printf 'partial disconnect\\n'
+    return 255
+  fi
+  printf 'stable logcat\\n'
+  return 0
+}
+${crashOracle}
+assert_no_crash_or_anr logcat.txt
+printf 'attempts=%s\\n' "$attempt"
+`, { mode: 0o700 });
+    const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /attempts=3/);
+    assert.equal(readFileSync(join(dir, 'logcat.txt'), 'utf8'), 'stable logcat\n');
+
+    writeFileSync(fixture, `#!/usr/bin/env bash
+set -Eeuo pipefail
+FLOW_OUTPUT_DIR="$1"
+FLOW_FAILURE_TRAP_SUSPENDED=false
+attempt=0
+wait_for_online_adb() { return 0; }
+sleep() { :; }
+adb() {
+  attempt=$((attempt + 1))
+  return 255
+}
+${crashOracle}
+assert_no_crash_or_anr logcat.txt
+`, { mode: 0o700 });
+    const bounded = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
+    assert.equal(bounded.status, 255);
+    assert.match(bounded.stderr, /bounded online-device retries/);
+    assert.equal(bounded.stdout, '');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('runtime qualification restores the observed device state and fails closed on cleanup errors', () => {
   const restore = runtimeFlow.slice(
     runtimeFlow.indexOf('capture_original_device_state() {'),
