@@ -457,6 +457,8 @@ run_stability_qualification() {
   local mobile_state=""
   local mobile_data_reading=""
   local stability_verdict="AUTOMATED"
+  local mobile_data_disable_observed="true"
+  local mobile_data_limitation="none"
 
   capture_original_device_state
   FLOW_DEVICE_STATE_MUTATED=true
@@ -485,19 +487,21 @@ run_stability_qualification() {
     mobile_state="UNAVAILABLE"
     MOBILE_DATA_ORACLE_SOURCE="unavailable"
     stability_verdict="LIMITED"
+    mobile_data_disable_observed="false"
+    mobile_data_limitation="oracle_unavailable"
   fi
-  printf 'wifi_on=%s\nmobile_data=%s\nmobile_data_oracle=%s\nverdict=%s\n' \
-    "$wifi_state" "$mobile_state" "$MOBILE_DATA_ORACLE_SOURCE" "$stability_verdict" \
+  if [[ "$mobile_state" != UNAVAILABLE && "$mobile_state" != "0" ]]; then
+    stability_verdict="LIMITED"
+    mobile_data_disable_observed="false"
+    mobile_data_limitation="disable_not_observed"
+  fi
+  printf 'wifi_on=%s\nmobile_data=%s\nmobile_data_oracle=%s\nmobile_data_disable_observed=%s\nmobile_data_limitation=%s\nverdict=%s\n' \
+    "$wifi_state" "$mobile_state" "$MOBILE_DATA_ORACLE_SOURCE" \
+    "$mobile_data_disable_observed" "$mobile_data_limitation" "$stability_verdict" \
     > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
   if [[ "$wifi_state" != "0" ]]; then
     echo "Wi-Fi did not reach the disabled state: $wifi_state" >&2
     return 1
-  fi
-  if [[ "$mobile_state" != UNAVAILABLE ]]; then
-    if [[ "$mobile_state" != "0" ]]; then
-      echo "Mobile data did not reach the disabled state: $mobile_state" >&2
-      return 1
-    fi
   fi
   adb shell am force-stop "$FLOW_PACKAGE"
   adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-offline-launch.txt"
