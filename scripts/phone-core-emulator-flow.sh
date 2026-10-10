@@ -81,20 +81,24 @@ wait_for_online_adb() {
   local state=""
   local status=0
   for _ in $(seq 1 20); do
+    FLOW_FAILURE_TRAP_SUSPENDED=true
     set +e
     state="$(adb get-state 2>&1)"
     status=$?
     set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
     if [[ "$status" -eq 0 && "$state" == device ]]; then
       return 0
     fi
     sleep 1
   done
   echo "ADB device did not return online after ${reason}." >&2
+  FLOW_FAILURE_TRAP_SUSPENDED=true
   set +e
   adb get-state >&2
   adb devices -l >&2
   set -e
+  FLOW_FAILURE_TRAP_SUSPENDED=false
   return 1
 }
 
@@ -174,10 +178,12 @@ restore_device_state() {
     local state=""
     local status=0
     for _ in $(seq 1 20); do
+      FLOW_FAILURE_TRAP_SUSPENDED=true
       set +e
       state="$(adb get-state 2>&1)"
       status=$?
       set -e
+      FLOW_FAILURE_TRAP_SUSPENDED=false
       if [[ "$status" -eq 0 && "$state" == device ]]; then
         return 0
       fi
@@ -190,12 +196,14 @@ restore_device_state() {
     local devices=""
     local device_state_status=0
     local devices_status=0
+    FLOW_FAILURE_TRAP_SUSPENDED=true
     set +e
     device_state="$(adb get-state 2>&1)"
     device_state_status=$?
     devices="$(adb devices -l 2>&1)"
     devices_status=$?
     set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
     printf 'restore_adb_get_state_status=%s\nrestore_adb_get_state=%s\nrestore_adb_devices_status=%s\nrestore_adb_devices=%s\n' \
       "$device_state_status" "$device_state" "$devices_status" "$devices" >&2
   }
@@ -257,10 +265,12 @@ role_holders() {
   local full_role="$1"
   local direct_output=""
   local direct_status=0
+  FLOW_FAILURE_TRAP_SUSPENDED=true
   set +e
   direct_output="$(adb shell cmd role get-role-holders --user 0 "$full_role" 2>&1 | tr -d '\r')"
   direct_status=$?
   set -e
+  FLOW_FAILURE_TRAP_SUSPENDED=false
   if [[ "$direct_status" -eq 0 && "$direct_output" != *"Unknown command"* ]]; then
     # Accept only a holder list, never shell diagnostics containing the package name.
     if ! grep -Evq '^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$|^$' <<< "$direct_output"; then
@@ -383,10 +393,12 @@ wait_emulator_call_absent() {
   local modem_status=0
   local telecom_evidence="$FLOW_OUTPUT_DIR/telecom-after-${number}.txt"
   for _ in $(seq 1 30); do
+    FLOW_FAILURE_TRAP_SUSPENDED=true
     set +e
     adb emu gsm list > "$evidence" 2>&1
     modem_status=$?
     set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
     if [[ "$modem_status" -eq 0 ]] && ! grep -Fq "$number" "$evidence" &&
       adb shell dumpsys telecom > "$telecom_evidence" 2>&1 &&
       python3 "$FLOW_SCRIPT_DIR/phone-core-emulator-telecom-calls.py" "$telecom_evidence"; then
@@ -665,6 +677,7 @@ run_stability_qualification() {
   fi
   adb shell am force-stop "$FLOW_PACKAGE"
   adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-offline-launch.txt"
+  wait_for_online_adb "the offline qualification relaunch"
   wait_text "phone_core_tab_0"
   capture stability-offline
   assert_no_crash_or_anr stability-offline-logcat.txt
@@ -676,6 +689,7 @@ run_stability_qualification() {
   local rotation_state="$(adb shell settings get system user_rotation | tr -d '\r')"
   printf 'user_rotation=%s\n' "$rotation_state" > "$FLOW_OUTPUT_DIR/stability-rotation-state.txt"
   [[ "$rotation_state" == "1" ]]
+  wait_for_online_adb "the rotation transition"
   wait_text "phone_core_tab_0"
   capture stability-rotation
   assert_no_crash_or_anr stability-rotation-logcat.txt
@@ -689,6 +703,7 @@ run_stability_qualification() {
   # The host drives process death through ActivityManager. Direct shell signals are rejected
   # by newer Android images even for this app's own UID.
   adb shell am force-stop "$FLOW_PACKAGE"
+  wait_for_online_adb "the process-death transition"
   for _ in $(seq 1 15); do
     pid_after="$(read_process_ids)"
     [[ -z "$pid_after" ]] && break
@@ -699,6 +714,7 @@ run_stability_qualification() {
     return 1
   fi
   adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-kill-restart-launch.txt"
+  wait_for_online_adb "the process restart"
   wait_text "phone_core_tab_0"
   pid_after="$(read_process_ids)"
   if ! [[ "$pid_after" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then

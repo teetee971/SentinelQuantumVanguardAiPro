@@ -145,6 +145,10 @@ test('runtime qualification exercises offline, rotation, kill/restart, and crash
   assert.match(runtimeFlow, /stability-offline/);
   assert.match(runtimeFlow, /stability-rotation/);
   assert.match(runtimeFlow, /stability-kill-restart/);
+  assert.match(runtimeFlow, /stability-offline-launch\.txt[\s\S]*wait_for_online_adb "the offline qualification relaunch"/);
+  assert.match(runtimeFlow, /stability-rotation-state\.txt[\s\S]*wait_for_online_adb "the rotation transition"/);
+  assert.match(runtimeFlow, /am force-stop "\$FLOW_PACKAGE"[\s\S]*wait_for_online_adb "the process-death transition"/);
+  assert.match(runtimeFlow, /stability-kill-restart-launch\.txt[\s\S]*wait_for_online_adb "the process restart"/);
 });
 
 test('runtime qualification restores the observed device state and fails closed on cleanup errors', () => {
