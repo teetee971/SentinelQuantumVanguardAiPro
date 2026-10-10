@@ -1,0 +1,34 @@
+name: Android Install Smoke Policy
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/build-native-android.yml"
+      - ".github/workflows/android-install-smoke-policy.yml"
+      - "scripts/android-install-smoke-policy.test.js"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/build-native-android.yml"
+      - ".github/workflows/android-install-smoke-policy.yml"
+      - "scripts/android-install-smoke-policy.test.js"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-install-smoke-policy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: APK install smoke contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate APK install smoke policy
+        run: node --test scripts/android-install-smoke-policy.test.js

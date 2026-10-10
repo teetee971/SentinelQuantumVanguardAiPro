@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const flow = fs.readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
+const answerBridgeHelper = fs.readFileSync('scripts/phone-core-emulator-api37-answer-bridge.py', 'utf8');
 
 function extractShellFunction(name, nextName) {
   const start = flow.indexOf(`${name}() {`);
@@ -171,10 +172,57 @@ assert_modem_call_absent 5550197 probe.txt`;
 });
 
 
-test('incoming answer is performed by Sentinel UI and proved by InCall ACTIVE, not modem acceptance', () => {
+test('incoming answer stays Sentinel-owned and API 36+ evidence is bound to one Telecom transaction and call id', () => {
+  const bridge = extractShellFunction(
+    'start_api37_incoming_answer_transport_bridge',
+    'wait_api37_incoming_answer_transport_bridge'
+  );
+  const modernGuard = bridge.indexOf('if [[ "$FLOW_API" -lt 36 ]]');
+  const helperInvocation = bridge.indexOf('phone-core-emulator-api37-answer-bridge.py', modernGuard);
+
+  assert.ok(modernGuard >= 0, 'the incoming modem bridge must remain restricted to API 36+');
+  assert.ok(helperInvocation > modernGuard, 'API 36+ synchronization must delegate to the preconnected helper');
+  assert.match(bridge, /--api "\$FLOW_API"/, 'bridge evidence must carry exact emulator API provenance');
+  assert.doesNotMatch(bridge, /adb emu gsm accept/, 'the shell must not race Telecom with a second adb modem command');
+
+  const answerRequest = answerBridgeHelper.indexOf('if answer_transaction is None and ANSWER_REQUEST_MARKER in line:');
+  const acceptMatch = answerBridgeHelper.indexOf('accept_match = REQUEST_ACCEPT_RE.search(line)', answerRequest);
+  const transactionBind = answerBridgeHelper.indexOf('transaction_token(line) == answer_transaction', acceptMatch);
+  const acceptState = answerBridgeHelper.indexOf('accept_requested = True', transactionBind);
+  const modemAccept = answerBridgeHelper.indexOf('send_console_accept(', acceptState);
+  const synchronizedState = answerBridgeHelper.indexOf('synchronized = True', modemAccept);
+  const answeredMatch = answerBridgeHelper.indexOf('answered_match = ANSWERED_RE.search(line)', synchronizedState);
+  const answeredCallBind = answerBridgeHelper.indexOf('answered_match.group(1) == call_id', answeredMatch);
+  const activeMatch = answerBridgeHelper.indexOf('active_match = ACTIVE_RE.search(line)', answeredCallBind);
+  const activeCallBind = answerBridgeHelper.indexOf('active_match.group(1) == call_id', activeMatch);
+  const successGate = answerBridgeHelper.indexOf(
+    'if answer_transaction and accept_requested and synchronized and answered and active:',
+    activeCallBind
+  );
+
+  assert.ok(answerRequest >= 0, 'the helper must first observe Sentinel-owned Telecom answer intent');
+  assert.ok(acceptMatch > answerRequest, 'REQUEST_ACCEPT must be observed only after the causal answer request');
+  assert.ok(transactionBind > acceptMatch, 'REQUEST_ACCEPT must belong to the same Telecom transaction');
+  assert.ok(acceptState > transactionBind, 'causal REQUEST_ACCEPT must be established before modem synchronization');
+  assert.ok(modemAccept > acceptState, 'emulator gsm accept must occur only after causal REQUEST_ACCEPT');
+  assert.ok(synchronizedState > modemAccept, 'transport sync must be credited only after console accept succeeds');
+  assert.ok(answeredMatch > synchronizedState, 'Telecom ANSWERED must remain required after transport synchronization');
+  assert.ok(answeredCallBind > answeredMatch, 'ANSWERED must belong to the same call id');
+  assert.ok(activeMatch > answeredCallBind, 'real CallsManager ACTIVE evidence must follow same-call ANSWERED');
+  assert.ok(activeCallBind > activeMatch, 'ACTIVE must belong to the same call id');
+  assert.ok(successGate > activeCallBind, 'bridge success must require the full same-call causal chain');
+
   const ready = flow.indexOf('wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"');
-  const answer = flow.indexOf('tap_text "phone_core_answer"', ready);
-  const active = flow.indexOf('wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"', answer);
-  assert.ok(ready >= 0 && answer > ready && active > answer);
-  assert.doesNotMatch(flow.slice(ready, active), /adb emu gsm accept/);
+  const openUi = flow.indexOf('open_incoming_call_notification', ready);
+  const armBridge = flow.indexOf('start_api37_incoming_answer_transport_bridge', openUi);
+  const answer = flow.indexOf('tap_text "phone_core_answer"', armBridge);
+  const waitBridge = flow.indexOf('wait_api37_incoming_answer_transport_bridge', answer);
+  const active = flow.indexOf('wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"', waitBridge);
+
+  assert.ok(ready >= 0, 'Sentinel must first prove its incoming-call notification path');
+  assert.ok(openUi > ready, 'the app-owned incoming-call surface must be opened before answering');
+  assert.ok(armBridge > openUi, 'the host watcher must be armed before the user answer action');
+  assert.ok(answer > armBridge, 'Sentinel UI must submit the answer action after the watcher is armed');
+  assert.ok(waitBridge > answer, 'the flow must fail closed if the post-answer transport bridge cannot synchronize');
+  assert.ok(active > waitBridge, 'Sentinel INCALL_ACTIVE remains the independent application-level success oracle');
 });

@@ -1,0 +1,44 @@
+name: Phone Core Gate Truth Integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/phone-core-gate-truth-integration.test.js'
+      - 'scripts/phone-core-workflow-oracle-integration.test.js'
+      - 'scripts/phone-core-emulation-contract-oracle.test.js'
+      - 'scripts/phone-core-emulator-revoke-fallback.test.js'
+      - 'scripts/phone-core-emulator-api36-answer-bridge-contract.test.js'
+      - 'scripts/phone-core-emulator-api37-answer-bridge.py'
+      - 'scripts/phone-core-emulator-flow.sh'
+      - 'scripts/check-phone-core-emulation-gate.js'
+      - 'scripts/phone-core-emulator-revocation-flow.sh'
+      - 'scripts/phone-core-logcat-crash-oracle.py'
+      - '.github/workflows/android-emulation-qualification.yml'
+      - '.github/workflows/build-native-android.yml'
+      - '.github/workflows/phone-core-gate-truth-integration.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phone-core-gate-truth-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-truth:
+    name: Advanced Phone Core anti-false-green regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run integration regressions
+        run: >-
+          node --test
+          scripts/phone-core-gate-truth-integration.test.js
+          scripts/phone-core-workflow-oracle-integration.test.js
+          scripts/phone-core-emulation-contract-oracle.test.js
+          scripts/phone-core-emulator-revoke-fallback.test.js
+          scripts/phone-core-emulator-api36-answer-bridge-contract.test.js

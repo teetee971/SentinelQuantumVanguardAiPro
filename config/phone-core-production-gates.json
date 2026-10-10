@@ -1,6 +1,6 @@
 {
-  "schema_version": 3,
-  "updated_at": "2026-10-06",
+  "schema_version": 4,
+  "updated_at": "2026-10-07",
   "certification_schema_version": 5,
   "rollout_mode": "shadow",
   "emulator_qualification": {
@@ -35,10 +35,10 @@
       "sms_all_parts_sent_callback",
       "sms_all_parts_delivered_callback",
       "role_revocation_fail_closed",
-      "effective_permission_denial_fail_closed",
+      "sms_authorization_denial_fail_closed",
       "no_crash_or_anr"
     ],
-    "scope_note": "Ce portail automatise uniquement les preuves reproductibles sur Android Emulator. Le fail-closed SMS conserve ROLE_SMS et prouve une autorisation effective réellement refusée : révocation runtime SEND_SMS lorsque le framework la rend observable, sinon AppOp SEND_SMS vérifié comme fallback. Dans les deux cas, l'action protégée doit rester non actionnable après retour au premier plan. Cette qualification ne constitue ni une preuve modem/opérateur physique ni une autorisation de revendiquer une production commerciale complète."
+    "scope_note": "Ce portail automatise uniquement les preuves reproductibles sur Android Emulator. Le fail-closed SMS suit trois chemins distincts : lorsque la révocation runtime SEND_SMS est réellement observable, ROLE_SMS reste détenu et la permission refusée doit être prouvée ; à partir d'API 36, si Android conserve ou restaure le grant brut SEND_SMS, le gate retire ROLE_SMS, prouve son absence avant et après relance, archive honnêtement l'état brut de la permission sans l'interpréter comme une capacité d'envoi, et exige que l'UI reste non actionnable ; sur les API antérieures, un AppOp SEND_SMS vérifié reste le fallback historique. La primitive d'envoi doit toujours vérifier ROLE_SMS avant les permissions, toute écriture OUTBOX et tout appel SmsManager. Cette qualification ne constitue ni une preuve modem/opérateur physique ni une autorisation de revendiquer une production commerciale complète."
   },
   "commercial_release": {
     "physical_validation_required": true,
@@ -48,6 +48,44 @@
     "required_for_physical_release_evidence": true,
     "required_count": 14,
     "note": "Le certificat technique local Phone Core v5 regroupe 14 observations Android. Il ne prouve ni validation physique ni disponibilité commerciale ; les validations externes restent obligatoires."
+  },
+  "physical_session_manifest": {
+    "schema_version": 1,
+    "schema_path": "config/phone-core-physical-session.schema.json",
+    "verifier_path": "scripts/verify-phone-core-physical-session.js",
+    "attestation_kind": "PHYSICAL_DEVICE",
+    "signature_algorithm": "ed25519",
+    "required_canonical_criteria": [
+      "incoming_call_connected",
+      "outgoing_call_connected",
+      "call_screening_observed",
+      "contacts_provider_ready",
+      "call_history_provider_ready",
+      "incoming_sms_received",
+      "outgoing_sms_submitted",
+      "outgoing_sms_delivered",
+      "incoming_mms_safe_preview",
+      "outgoing_mms_sent",
+      "incoming_call_notification",
+      "incoming_sms_notification",
+      "caller_id_ui_shown",
+      "in_call_ui_shown"
+    ],
+    "required_campaign_scenarios": [
+      "S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10",
+      "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19", "S20",
+      "S21", "S22", "S23", "S24", "S25", "S26"
+    ],
+    "required_commercial_residuals": [
+      "real_carrier_sms_mms_callbacks",
+      "samsung_s24_screening_latency",
+      "android10_call_screening_decision",
+      "physical_dual_sim_oem_compatibility"
+    ],
+    "phone_core_pass_verdict": "PHYSICAL_PHONE_CORE_PASS",
+    "commercial_release_verdict": "COMMERCIAL_RELEASE_ELIGIBLE",
+    "incomplete_verdict": "PHYSICAL_SESSION_INCOMPLETE",
+    "note": "Le manifeste doit être signé Ed25519 avec une clé de laboratoire/release QA de confiance et lié au SHA source, au SHA-256 APK et à l'empreinte du certificat exacts. Aucun statut local, émulateur ou synthétique ne peut être promu en preuve PHYSICAL_DEVICE."
   },
   "residual_external_validation": [
     {

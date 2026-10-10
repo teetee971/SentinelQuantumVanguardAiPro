@@ -345,6 +345,26 @@ jobs:
           test -n "$APK_PATH"
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
+
+          # Shared oracle owns FATAL EXCEPTION: attribution and ANR in com\.sentinel\.quantum attribution.
+          assert_clean_runtime_logcat() {
+            local context="$1"
+            local evidence="$OUTPUT/min-sdk-logcat-brief.txt"
+            local error="$OUTPUT/min-sdk-logcat-error.txt"
+            local status=0
+            adb logcat -d -v brief > "$evidence" 2> "$error" || status=$?
+            if [[ "$status" -ne 0 ]]; then
+              echo "Unable to read logcat while ${context}; crash absence is UNKNOWN."
+              cat "$error" || true
+              return 1
+            fi
+            if ! python3 ../scripts/phone-core-logcat-crash-oracle.py "$evidence"; then
+              echo "Crash/ANR detected while ${context}."
+              adb logcat -d -v time | tail -n 400 || true
+              return 1
+            fi
+          }
+
           # Runtime evidence must start from a fresh app scope and fresh log buffer.
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
@@ -365,11 +385,7 @@ jobs:
             sleep 3
             adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-              echo "Crash/ANR detected on minSdk first launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            assert_clean_runtime_logcat "qualifying the minSdk first launch"
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
             sleep 3
@@ -406,6 +422,7 @@ jobs:
           BUILT_COMMIT="$(git rev-parse HEAD)" API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
           const api = Number(process.env.API_LEVEL);
           const output = process.env.OUTPUT;
           const modernPhoneCore = api >= 29;
@@ -502,21 +519,54 @@ jobs:
             packageHeld('sms-role-restored.txt') &&
             packageHeld('dialer-role-restored.txt') &&
             packageHeld('call-screening-role-restored.txt');
+          const authorizationProbe = revocation?.sms_authorization_probe || revocation?.effective_permission_probe;
+          const authorizationClaim = revocation?.sms_authorization_denial_fail_closed === true ||
+            ([2, 3, 4].includes(revocation?.schema_version) && revocation?.effective_permission_denial_fail_closed === true);
           const appOpDeniedEvidence =
-            revocation?.effective_permission_probe === 'SEND_SMS_APP_OP_DENIED' &&
+            authorizationProbe === 'SEND_SMS_APP_OP_DENIED' &&
             /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt'));
           const runtimePermissionDeniedEvidence =
-            revocation?.effective_permission_probe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' &&
+            authorizationProbe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' &&
             /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-runtime-permission-denied-after-launch.txt'));
-          const revocationSchemaSupported = revocation?.schema_version === 2 || revocation?.schema_version === 3;
-          const effectivePermissionEvidenceValid = revocation?.schema_version === 2
+          const roleAbsentEvidence = (name) =>
+            /^role=android\.app\.role\.SMS$/m.test(read(name)) &&
+            /^package=com\.sentinel\.quantum$/m.test(read(name)) &&
+            /^absent=true$/m.test(read(name));
+          const rawSendSmsPermissionStateEvidence = (name) =>
+            /android\.permission\.SEND_SMS:\s+granted=(true|false)/i.test(read(name));
+          const roleManagedRoleAbsentAfterEvidence =
+            roleAbsentEvidence('send-sms-role-managed-role-absent-after-launch.txt');
+          const legacyRoleManagedPermissionDeniedEvidence =
+            api >= 36 &&
+            authorizationProbe === 'SEND_SMS_ROLE_MANAGED_PERMISSION_REVOKED' &&
+            roleManagedRoleAbsentAfterEvidence &&
+            /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-role-managed-permission-denied-after-launch.txt'));
+          const roleAuthorizationEvidence =
+            api >= 36 &&
+            revocation?.schema_version === 5 &&
+            authorizationProbe === 'SEND_SMS_ROLE_AUTHORIZATION_REVOKED' &&
+            roleAbsentEvidence('send-sms-role-managed-role-absent-state.txt') &&
+            rawSendSmsPermissionStateEvidence('send-sms-role-managed-permission-state.txt') &&
+            roleManagedRoleAbsentAfterEvidence &&
+            rawSendSmsPermissionStateEvidence('send-sms-role-managed-permission-state-after-launch.txt');
+          const revocationSchemaSupported = [2, 3, 4, 5].includes(revocation?.schema_version);
+          const smsAuthorizationEvidenceValid = revocation?.schema_version === 2
             ? appOpDeniedEvidence
-            : appOpDeniedEvidence || runtimePermissionDeniedEvidence;
-          const effectivePermissionDenied = modernPhoneCore &&
+            : revocation?.schema_version === 3
+              ? appOpDeniedEvidence || runtimePermissionDeniedEvidence
+              : revocation?.schema_version === 4
+                ? legacyRoleManagedPermissionDeniedEvidence
+                : revocation?.schema_version === 5
+                  ? roleAuthorizationEvidence
+                  : false;
+          const authorizationScreenshotObserved = revocation?.schema_version === 5
+            ? screenshot('08-sms-authorization-denied.png')
+            : screenshot('08-sms-effective-permission-denied.png');
+          const smsAuthorizationDenied = modernPhoneCore &&
             revocationSchemaSupported &&
-            revocation?.effective_permission_denial_fail_closed === true &&
-            screenshot('08-sms-effective-permission-denied.png') &&
-            effectivePermissionEvidenceValid;
+            authorizationClaim &&
+            authorizationScreenshotObserved &&
+            smsAuthorizationEvidenceValid;
           const roleRevocationFailClosed = modernPhoneCore &&
             revocationSchemaSupported &&
             revocation?.role_revocation_fail_closed === true &&
@@ -524,8 +574,13 @@ jobs:
             screenshot('10-sms-role-revoked.png') &&
             screenshot('11-dialer-role-revoked.png') &&
             screenshot('12-call-screening-role-revoked.png');
-          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') &&
-            !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+          const crashOraclePath = process.env.GITHUB_WORKSPACE
+            ? path.join(process.env.GITHUB_WORKSPACE, 'scripts', 'phone-core-logcat-crash-oracle.py')
+            : path.resolve(process.env.PWD || '.', 'scripts', 'phone-core-logcat-crash-oracle.py');
+          const crashOracle = exists('logcat.txt')
+            ? spawnSync('python3', [crashOraclePath, file('logcat.txt')], { encoding: 'utf8' })
+            : { status: 2 };
+          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') && crashOracle.status === 0;
           const instrumentationKey = `connected_instrumentation_api${api}`;
 
           const checks = {
@@ -553,7 +608,7 @@ jobs:
             sms_all_parts_sent_callback: modernPhoneCore ? smsSentCallbackObserved : null,
             sms_all_parts_delivered_callback: api >= 36 ? smsDeliveredCallbackObserved : null,
             role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
-            effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
+            sms_authorization_denial_fail_closed: modernPhoneCore ? smsAuthorizationDenied : null,
             no_crash_or_anr: crashOrAnrAbsent
           };
 
@@ -581,7 +636,7 @@ jobs:
                 'incoming_sms_and_inline_reply',
                 'sms_all_parts_sent_callback',
                 'role_revocation_fail_closed',
-                'effective_permission_denial_fail_closed',
+                'sms_authorization_denial_fail_closed',
                 ...(api >= 36 ? ['synthetic_call_screening_decision_observed', 'sms_all_parts_delivered_callback'] : [])
               ];
           const evidenceFailures = required.filter((name) => checks[name] !== true);
@@ -600,7 +655,7 @@ jobs:
           }
 
           const report = {
-            schema_version: 3,
+            schema_version: 4,
             qualification: 'ANDROID_APPLICATION_EMULATION',
             rollout_mode: 'shadow',
             evidence_scope: 'developer_qualification',
@@ -624,7 +679,7 @@ jobs:
               instrumentation: api === 24 ? 'raw adb instrumentation log' : 'Gradle connected test XML',
               instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
-              revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null
+              revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform authorization evidence' : null
             },
             required_checks_for_lane: required,
             evidence_failures: evidenceFailures,

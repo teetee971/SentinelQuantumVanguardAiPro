@@ -113,6 +113,12 @@ import kotlinx.coroutines.flow.collectLatest
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SmsComposeActivity : ComponentActivity() {
+    private val activationEpochState = mutableStateOf(0)
+
+    fun refreshActivationAuthorization() {
+        activationEpochState.value += 1
+    }
+
     private fun sanitizeSmsDestination(raw: String): String? {
         val value = raw.trim()
         if (value.isEmpty() || value.length > 32) return null
@@ -163,7 +169,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var providerPersistenceFailed by remember { mutableStateOf(false) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
-                var activationEpoch by remember { mutableStateOf(0) }
+                val activationEpoch by activationEpochState
                 var mmsSectionExpanded by remember { mutableStateOf(false) }
                 var conversationsSectionExpanded by rememberSaveable { mutableStateOf(initialDestination.isBlank() && initialBody.isBlank() && !initialMmsIntent) }
                 var showComposer by rememberSaveable {
@@ -186,17 +192,17 @@ class SmsComposeActivity : ComponentActivity() {
                                 SmsActivationRefreshPolicy.Event.ACTIVITY_RESUMED
                             )
                         ) {
-                            activationEpoch++
+                            refreshActivationAuthorization()
                         }
                     }
                     lifecycle.addObserver(observer)
                     onDispose { lifecycle.removeObserver(observer) }
                 }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                    activationEpoch++
+                    refreshActivationAuthorization()
                 }
                 val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-                    activationEpoch++
+                    refreshActivationAuthorization()
                 }
                 val subscriptionState = remember { SmsSubscriptionState(applicationContext) }
                 val subscriptionResult = remember(activationEpoch) { subscriptionState.load() }
@@ -587,7 +593,7 @@ class SmsComposeActivity : ComponentActivity() {
                                             onClick = {
                                                 val permissions = activationActions.sendPermissionsFor(activationSnapshot)
                                                 if (permissions.isNotEmpty()) permissionLauncher.launch(permissions)
-                                                else activationEpoch++
+                                                else refreshActivationAuthorization()
                                             },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser les permissions nécessaires à l’envoi") }
@@ -601,7 +607,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                     if (SmsActivationUiModel.Action.RETRY_SIM_LOOKUP in activationModel.actions) {
                                         OutlinedButton(
-                                            onClick = { activationEpoch++ },
+                                            onClick = { refreshActivationAuthorization() },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Réessayer la détection SIM") }
                                     }

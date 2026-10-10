@@ -10,6 +10,7 @@ const errors = [];
 
 const gate = JSON.parse(read('config', 'phone-core-production-gates.json'));
 const workflow = read('.github', 'workflows', 'android-emulation-qualification.yml');
+const crashOracle = read('scripts', 'phone-core-logcat-crash-oracle.py');
 const legacyWorkflowPath = ['.github', 'workflows', 'android-instrumentation.yml'];
 const manifest = read('native-android-app', 'app', 'src', 'main', 'AndroidManifest.xml');
 const physicalValidation = read(
@@ -57,7 +58,7 @@ const requireText = (haystack, needle, label) => {
 };
 const sameArray = (actual, expected) => JSON.stringify(actual) === JSON.stringify(expected);
 
-if (gate.schema_version !== 3) errors.push('phone-core gate schema_version must be 3');
+if (gate.schema_version !== 4) errors.push('phone-core gate schema_version must be 4');
 if (gate.certification_schema_version !== 5) errors.push('Phone Core certification schema must remain v5');
 if (gate.rollout_mode !== 'shadow') errors.push('new emulator gate must remain in shadow mode during phase 2');
 if ('manual_user_validation_required' in gate) {
@@ -104,14 +105,17 @@ const expectedRequiredChecks = [
   'sms_all_parts_sent_callback',
   'sms_all_parts_delivered_callback',
   'role_revocation_fail_closed',
-  'effective_permission_denial_fail_closed',
+  'sms_authorization_denial_fail_closed',
   'no_crash_or_anr'
 ];
 if (!sameArray(emulation?.required_checks, expectedRequiredChecks)) {
   errors.push('emulator required_checks must exactly match the evidence keys produced by qualification.json');
 }
 if (emulation?.required_checks?.includes('permission_revocation_fail_closed')) {
-  errors.push('ambiguous permission_revocation_fail_closed check is forbidden; role-managed grants must use effective authorization evidence');
+  errors.push('ambiguous permission_revocation_fail_closed check is forbidden; role-managed grants must use SMS authorization evidence');
+}
+if (emulation?.required_checks?.includes('effective_permission_denial_fail_closed')) {
+  errors.push('legacy effective_permission_denial_fail_closed is forbidden in the current gate; qualify SMS authorization instead');
 }
 if (emulation?.passed === true && !(typeof emulation.evidence_ref === 'string' && emulation.evidence_ref.trim())) {
   errors.push('emulator qualification cannot be marked passed without evidence_ref');
@@ -204,8 +208,26 @@ for (const permissionBoundary of [smsDiagnostics, smsSender, mmsSender]) {
   requireText(permissionBoundary, 'PermissionChecker', 'effective SMS/MMS permission boundary');
 }
 requireText(smsDiagnostics, 'PermissionChecker.checkSelfPermission', 'SMS activation AppOp-aware truth');
+requireText(smsDiagnostics, 'ContextCompat.checkSelfPermission', 'SMS activation runtime-permission truth');
+if (!/private fun hasEffectivePermission\(permission: String\): Boolean\s*=\s*ContextCompat\.checkSelfPermission\(context, permission\)\s*==\s*PackageManager\.PERMISSION_GRANTED\s*&&\s*PermissionChecker\.checkSelfPermission\(context, permission\)\s*==\s*PermissionChecker\.PERMISSION_GRANTED/s.test(smsDiagnostics)) {
+  errors.push('SMS activation truth must require both raw runtime permission and AppOp-aware PermissionChecker authorization');
+}
 requireText(smsSender, 'PermissionChecker.checkSelfPermission', 'SMS send AppOp-aware truth');
 requireText(mmsSender, 'PermissionChecker.checkSelfPermission', 'MMS send AppOp-aware truth');
+
+const smsRoleGuard = smsSender.indexOf('if (!holdsSmsRole()) return SendResult(false, "SMS_ROLE_NOT_HELD")');
+const smsRuntimePermissionGuard = smsSender.indexOf('ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS)');
+const smsOutboxWrite = smsSender.indexOf('insertOutgoingOutbox(');
+const smsSingleSubmit = smsSender.indexOf('.sendTextMessage(');
+const smsMultipartSubmit = smsSender.indexOf('.sendMultipartTextMessage(');
+if (
+  smsRoleGuard < 0 || smsRuntimePermissionGuard < 0 || smsOutboxWrite < 0 ||
+  smsSingleSubmit < 0 || smsMultipartSubmit < 0 ||
+  !(smsRoleGuard < smsRuntimePermissionGuard && smsRoleGuard < smsOutboxWrite &&
+    smsRoleGuard < smsSingleSubmit && smsRoleGuard < smsMultipartSubmit)
+) {
+  errors.push('SentinelSmsSender must reject missing ROLE_SMS before permissions, OUTBOX mutation and every SmsManager submit path');
+}
 
 for (const api of [24, 29, 36, 37]) {
   if (!new RegExp(`api_level:\\s*${api}\\b`).test(workflow)) {
@@ -244,15 +266,21 @@ for (const marker of [
   'android_lint',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
+  'phone-core-logcat-crash-oracle.py',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
-  'FATAL EXCEPTION:',
-  'ANR in com\\.sentinel\\.quantum',
-  'schema_version: 3',
+  'schema_version: 4',
   'physical_modem_claim: false',
   'commercial_release_claim: false',
-  'effective_permission_denial_fail_closed'
+  'sms_authorization_denial_fail_closed'
 ]) requireText(workflow, marker, 'shadow emulation workflow');
+
+for (const marker of [
+  'FATAL EXCEPTION:',
+  'ANR_RE = re.compile',
+  'com\\.sentinel\\.quantum',
+  'UNATTRIBUTED_FATAL_EXCEPTION'
+]) requireText(crashOracle, marker, 'shared logcat crash oracle');
 
 if (workflow.includes('set-bypassing-role-qualification')) {
   errors.push('emulator gate must never bypass Android role qualification');
@@ -324,8 +352,11 @@ for (const marker of [
   'adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode"',
   'assert_send_sms_appop_denied',
   'assert_sms_role_held',
+  'archive_send_sms_runtime_permission_state',
+  'SEND_SMS_ROLE_AUTHORIZATION_REVOKED',
+  'REVOCATION_SCHEMA_VERSION=5',
   'assert_action_disabled "phone_core_sms_send"',
-  'effective_permission_denial_fail_closed',
+  'sms_authorization_denial_fail_closed',
   'assert_modem_call_absent',
   'SCREENING_CALLBACK_BEFORE=',
   'SCREENING_DECISION_BEFORE=',

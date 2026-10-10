@@ -119,6 +119,26 @@ jobs:
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
 
+          # Shared oracle owns FATAL EXCEPTION: attribution and ANR in com\.sentinel\.quantum attribution.
+          assert_clean_logcat() {
+            local context="$1"
+            local slug="$2"
+            local evidence="$RUNNER_TEMP/${slug}-logcat-brief.txt"
+            local error="$RUNNER_TEMP/${slug}-logcat-error.txt"
+            local status=0
+            adb logcat -d -v brief > "$evidence" 2> "$error" || status=$?
+            if [[ "$status" -ne 0 ]]; then
+              echo "Unable to read logcat while ${context}; crash absence is UNKNOWN."
+              cat "$error" || true
+              return 1
+            fi
+            if ! python3 ../scripts/phone-core-logcat-crash-oracle.py "$evidence"; then
+              echo "Sentinel crashed or ANR'd while ${context}."
+              adb logcat -d -v time | tail -n 400 || true
+              return 1
+            fi
+          }
+
           SDK_PACKAGES=("emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64")
           SDK_READY=0
           for attempt in 1 2 3; do
@@ -190,7 +210,67 @@ jobs:
             exit 1
           fi
 
-          adb install -r "$APK_PATH"
+          # sys.boot_completed can become 1 before PackageManager's binder endpoint is usable.
+          # Prove the package service is actually responsive before attempting installation.
+          PACKAGE_MANAGER_READY=0
+          PACKAGE_MANAGER_LOG=""
+          PACKAGE_MANAGER_ERR=""
+          for PACKAGE_ATTEMPT in $(seq 1 30); do
+            PACKAGE_MANAGER_LOG="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.txt"
+            PACKAGE_MANAGER_ERR="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.err"
+            set +e
+            adb shell cmd package list packages > "$PACKAGE_MANAGER_LOG" 2> "$PACKAGE_MANAGER_ERR"
+            PACKAGE_MANAGER_STATUS=$?
+            set -e
+            if [[ "$PACKAGE_MANAGER_STATUS" -eq 0 ]] && grep -q '^package:' "$PACKAGE_MANAGER_LOG"; then
+              PACKAGE_MANAGER_READY=1
+              break
+            fi
+            timeout 30s adb wait-for-device >/dev/null 2>&1 || true
+            sleep 1
+          done
+          if [[ "$PACKAGE_MANAGER_READY" != "1" ]]; then
+            echo "Android PackageManager did not become responsive after boot." >&2
+            [[ -n "$PACKAGE_MANAGER_LOG" ]] && cat "$PACKAGE_MANAGER_LOG" >&2 || true
+            [[ -n "$PACKAGE_MANAGER_ERR" ]] && cat "$PACKAGE_MANAGER_ERR" >&2 || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log" >&2 || true
+            exit 1
+          fi
+
+          # Retry only transport/service-startup failures. APK/package/signature errors remain
+          # immediately fatal and can never be converted into a flaky-infrastructure PASS.
+          INSTALL_STATUS=0
+          INSTALL_LOG=""
+          for INSTALL_ATTEMPT in $(seq 1 5); do
+            INSTALL_LOG="$RUNNER_TEMP/apk-install-attempt-${INSTALL_ATTEMPT}.txt"
+            set +e
+            adb install -r "$APK_PATH" > "$INSTALL_LOG" 2>&1
+            INSTALL_RC=$?
+            set -e
+            if [[ "$INSTALL_RC" -eq 0 ]]; then
+              INSTALL_STATUS=0
+              cat "$INSTALL_LOG"
+              break
+            fi
+
+            INSTALL_STATUS=$INSTALL_RC
+            cat "$INSTALL_LOG" >&2
+            if ! grep -Eiq 'Broken pipe|device offline|device still authorizing|closed|transport|no devices/emulators found|cannot connect' "$INSTALL_LOG"; then
+              echo "APK installation failed with a non-transient package/install error." >&2
+              exit "$INSTALL_RC"
+            fi
+
+            if [[ "$INSTALL_ATTEMPT" -lt 5 ]]; then
+              timeout 30s adb wait-for-device || true
+              sleep 1
+            fi
+          done
+          if [[ "$INSTALL_STATUS" != "0" ]]; then
+            echo "APK installation failed after bounded transient transport retries." >&2
+            [[ -n "$INSTALL_LOG" ]] && cat "$INSTALL_LOG" >&2 || true
+            exit 1
+          fi
+
           adb shell pm path com.sentinel.quantum | grep -q '^package:'
           # Some hosted Android 10 emulator images deny clearing individual log buffers.
           # Log clearing is diagnostic hygiene, not an installability gate.
@@ -207,11 +287,7 @@ jobs:
               FIRST_RUN_READY=1
               break
             fi
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
-              echo "Sentinel crashed or ANR'd during launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            assert_clean_logcat "waiting for the first Phone Core setup launch" "sentinel-first-launch"
             sleep 1
           done
           if [[ "$FIRST_RUN_READY" != "1" ]]; then
@@ -268,11 +344,7 @@ jobs:
               break
             fi
 
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
-              echo "Sentinel crashed or ANR'd while resuming Phone Core setup."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            assert_clean_logcat "resuming Phone Core setup" "sentinel-setup-resume"
             sleep 1
           done
           if [[ "$SETUP_RESUMED" != "1" ]]; then
@@ -450,7 +522,64 @@ jobs:
             exit 1
           fi
 
-          adb install -r "$APK_PATH"
+          PACKAGE_MANAGER_READY=0
+          PACKAGE_MANAGER_LOG=""
+          PACKAGE_MANAGER_ERR=""
+          for PACKAGE_ATTEMPT in $(seq 1 30); do
+            PACKAGE_MANAGER_LOG="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.txt"
+            PACKAGE_MANAGER_ERR="$RUNNER_TEMP/package-manager-ready-${PACKAGE_ATTEMPT}.err"
+            set +e
+            adb shell cmd package list packages > "$PACKAGE_MANAGER_LOG" 2> "$PACKAGE_MANAGER_ERR"
+            PACKAGE_MANAGER_STATUS=$?
+            set -e
+            if [[ "$PACKAGE_MANAGER_STATUS" -eq 0 ]] && grep -q '^package:' "$PACKAGE_MANAGER_LOG"; then
+              PACKAGE_MANAGER_READY=1
+              break
+            fi
+            timeout 30s adb wait-for-device >/dev/null 2>&1 || true
+            sleep 1
+          done
+          if [[ "$PACKAGE_MANAGER_READY" != "1" ]]; then
+            echo "Android 16 PackageManager did not become responsive after boot." >&2
+            [[ -n "$PACKAGE_MANAGER_LOG" ]] && cat "$PACKAGE_MANAGER_LOG" >&2 || true
+            [[ -n "$PACKAGE_MANAGER_ERR" ]] && cat "$PACKAGE_MANAGER_ERR" >&2 || true
+            cat "$RUNNER_TEMP/sentinel-emulator.log" >&2 || true
+            exit 1
+          fi
+
+          INSTALL_STATUS=0
+          INSTALL_LOG=""
+          for INSTALL_ATTEMPT in $(seq 1 5); do
+            INSTALL_LOG="$RUNNER_TEMP/apk-install-attempt-${INSTALL_ATTEMPT}.txt"
+            set +e
+            adb install -r "$APK_PATH" > "$INSTALL_LOG" 2>&1
+            INSTALL_RC=$?
+            set -e
+            if [[ "$INSTALL_RC" -eq 0 ]]; then
+              INSTALL_STATUS=0
+              cat "$INSTALL_LOG"
+              break
+            fi
+
+            INSTALL_STATUS=$INSTALL_RC
+            cat "$INSTALL_LOG" >&2
+            if ! grep -Eiq 'Broken pipe|device offline|device still authorizing|closed|transport|no devices/emulators found|cannot connect' "$INSTALL_LOG"; then
+              echo "Android 16 APK installation failed with a non-transient package/install error." >&2
+              exit "$INSTALL_RC"
+            fi
+
+            if [[ "$INSTALL_ATTEMPT" -lt 5 ]]; then
+              timeout 30s adb wait-for-device || true
+              sleep 1
+            fi
+          done
+          if [[ "$INSTALL_STATUS" != "0" ]]; then
+            echo "Android 16 APK installation failed after bounded transient transport retries." >&2
+            [[ -n "$INSTALL_LOG" ]] && cat "$INSTALL_LOG" >&2 || true
+            exit 1
+          fi
+
+          adb shell pm path com.sentinel.quantum | grep -q '^package:'
           bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"
       - name: Upload Phone Core Android 16 screenshots
         if: always()
