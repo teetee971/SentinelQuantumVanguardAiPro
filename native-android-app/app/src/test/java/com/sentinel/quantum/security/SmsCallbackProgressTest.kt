@@ -11,12 +11,14 @@ class SmsCallbackProgressTest {
             null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
         assertFalse(first.allSent)
+        assertFalse(first.submissionResolved)
         assertFalse(first.terminal)
 
         val second = SmsCallbackProgress.record(
             first.state, 1, 2, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
         assertTrue(second.allSent)
+        assertTrue(second.submissionResolved)
         assertFalse(second.sendFailed)
         assertFalse(second.terminal)
     }
@@ -29,6 +31,7 @@ class SmsCallbackProgressTest {
             first.state, 1, 3, SmsDeliveryStatusBus.Stage.SENT, false
         )!!
         assertTrue(failed.sendFailed)
+        assertFalse(failed.submissionResolved)
         assertFalse(failed.deliveryFailed)
         assertFalse(failed.terminal)
         assertFalse(failed.allSent)
@@ -38,6 +41,7 @@ class SmsCallbackProgressTest {
             failed.state, 2, 3, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
         assertTrue(last.sendFailed)
+        assertTrue(last.submissionResolved)
         assertTrue(last.terminal)
         assertTrue(last.state.sentOk.containsAll(setOf(0, 2)))
         assertTrue(last.state.sentFailed == setOf(1))
@@ -47,16 +51,19 @@ class SmsCallbackProgressTest {
         val failedFirst = SmsCallbackProgress.record(
             null, 1, 3, SmsDeliveryStatusBus.Stage.SENT, false
         )!!
+        assertFalse(failedFirst.submissionResolved)
         assertFalse(failedFirst.terminal)
 
         val sent0 = SmsCallbackProgress.record(
             failedFirst.state, 0, 3, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
+        assertFalse(sent0.submissionResolved)
         assertFalse(sent0.terminal)
 
         val sent2 = SmsCallbackProgress.record(
             sent0.state, 2, 3, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
+        assertTrue(sent2.submissionResolved)
         assertTrue(sent2.terminal)
         assertTrue(sent2.sendFailed)
         assertTrue(sent2.state.sentOk == setOf(0, 2))
@@ -73,6 +80,7 @@ class SmsCallbackProgressTest {
         val deliveryFailed0 = SmsCallbackProgress.record(
             sent1.state, 0, 2, SmsDeliveryStatusBus.Stage.DELIVERED, false
         )!!
+        assertTrue(deliveryFailed0.submissionResolved)
         assertTrue(deliveryFailed0.allSent)
         assertFalse(deliveryFailed0.sendFailed)
         assertTrue(deliveryFailed0.deliveryFailed)
@@ -81,6 +89,7 @@ class SmsCallbackProgressTest {
         val delivered1 = SmsCallbackProgress.record(
             deliveryFailed0.state, 1, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true
         )!!
+        assertTrue(delivered1.submissionResolved)
         assertTrue(delivered1.allSent)
         assertFalse(delivered1.sendFailed)
         assertTrue(delivered1.deliveryFailed)
@@ -165,6 +174,7 @@ class SmsCallbackProgressTest {
         val sent1 = SmsCallbackProgress.record(
             sent0.state, 1, 2, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
+        assertTrue(sent1.submissionResolved)
         assertTrue(sent1.allDelivered)
         assertTrue(sent1.terminal)
         assertTrue(sent1.certificationSignals == listOf(
@@ -180,12 +190,12 @@ class SmsCallbackProgressTest {
         val failed = SmsCallbackProgress.record(
             sent.state, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, false
         )!!
+        assertTrue(sent.submissionResolved)
         assertTrue(sent.certificationSignals == listOf(
             PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT
         ))
         assertTrue(failed.certificationSignals.isEmpty())
     }
-
 
     @Test fun fiftyPartDeliveryEmitsOnlyOneSentAndOneDeliveredProof() {
         var state: SmsCallbackProgress.State? = null
@@ -214,6 +224,7 @@ class SmsCallbackProgressTest {
         val sent = SmsCallbackProgress.record(
             null, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true
         )!!
+        assertTrue(sent.submissionResolved)
         val duplicate = SmsCallbackProgress.record(
             sent.state, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true
         )
@@ -222,8 +233,10 @@ class SmsCallbackProgressTest {
 
     @Test fun lateSuccessCannotEraseMultipartSendFailure() {
         val failed = SmsCallbackProgress.record(null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, false)!!
+        assertFalse(failed.submissionResolved)
         assertNull(SmsCallbackProgress.record(failed.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true))
         val last = SmsCallbackProgress.record(failed.state, 1, 2, SmsDeliveryStatusBus.Stage.SENT, true)!!
+        assertTrue(last.submissionResolved)
         assertTrue(last.sendFailed)
         assertTrue(last.terminal)
         assertFalse(last.allSent)
@@ -236,6 +249,7 @@ class SmsCallbackProgressTest {
         val failed = SmsCallbackProgress.record(sent1.state, 0, 2, SmsDeliveryStatusBus.Stage.DELIVERED, false)!!
         assertNull(SmsCallbackProgress.record(failed.state, 0, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true))
         val last = SmsCallbackProgress.record(failed.state, 1, 2, SmsDeliveryStatusBus.Stage.DELIVERED, true)!!
+        assertTrue(last.submissionResolved)
         assertTrue(last.deliveryFailed)
         assertFalse(last.allDelivered)
         assertTrue(last.certificationSignals.isEmpty())
@@ -245,6 +259,7 @@ class SmsCallbackProgressTest {
         val sent = SmsCallbackProgress.record(null, 0, 2, SmsDeliveryStatusBus.Stage.SENT, true)!!
         val failed = SmsCallbackProgress.record(sent.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, false)!!
         assertTrue(failed.sendFailed)
+        assertFalse(failed.submissionResolved)
         assertNull(SmsCallbackProgress.record(failed.state, 0, 2, SmsDeliveryStatusBus.Stage.SENT, false))
     }
 
@@ -259,6 +274,11 @@ class SmsCallbackProgressTest {
                 state = outcome.state
                 if (outcome.sentCompletedNow) sentSignals++
                 if (outcome.deliveryCompletedNow) deliveredSignals++
+                if (stage == SmsDeliveryStatusBus.Stage.SENT) {
+                    assertTrue(outcome.submissionResolved == (index == partCount - 1))
+                } else {
+                    assertTrue(outcome.submissionResolved)
+                }
                 assertTrue(outcome.allDelivered == (stage == SmsDeliveryStatusBus.Stage.DELIVERED && index == partCount - 1))
             }
         }

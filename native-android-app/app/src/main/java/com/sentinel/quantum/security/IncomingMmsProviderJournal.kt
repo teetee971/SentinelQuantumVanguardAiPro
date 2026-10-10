@@ -39,73 +39,96 @@ internal class IncomingMmsProviderJournal(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    @Synchronized
-    fun begin(plan: IncomingMmsProjectionPlan.Plan, nowMs: Long = System.currentTimeMillis()): Boolean {
-        if (!validPlanIdentity(plan) || nowMs < 0L) return false
-        if (read(plan.digestHex) != null) {
-            // Never overwrite a durable READY replay marker or an unresolved build.
-            return false
+    fun begin(plan: IncomingMmsProjectionPlan.Plan, nowMs: Long = System.currentTimeMillis()): Boolean =
+        withJournalLock {
+            if (!validPlanIdentity(plan) || nowMs < 0L) return@withJournalLock false
+            if (read(plan.digestHex) != null) {
+                // Never overwrite a durable READY replay marker or an unresolved build.
+                return@withJournalLock false
+            }
+            if (!ensureCapacityForNewRecord()) return@withJournalLock false
+            write(recordFromPlan(plan, null, Phase.BUILDING, nowMs))
         }
-        if (!ensureCapacityForNewRecord()) return false
-        return write(recordFromPlan(plan, null, Phase.BUILDING, nowMs))
-    }
 
     /**
      * Records a provider row that already existed before this projection attempt. This is one
      * synchronous preferences commit, so an external/canonical row can never be left in the
      * journal as an app-owned incomplete build merely because the process died mid-transition.
      */
-    @Synchronized
     fun markExistingReady(
         plan: IncomingMmsProjectionPlan.Plan,
         providerMessageId: Long,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean {
-        if (!validPlanIdentity(plan) || providerMessageId <= 0L || nowMs < 0L) return false
+    ): Boolean = withJournalLock {
+        if (!validPlanIdentity(plan) || providerMessageId <= 0L || nowMs < 0L) return@withJournalLock false
         val existing = read(plan.digestHex)
         if (existing != null) {
-            return existing.phase == Phase.READY &&
+            return@withJournalLock existing.phase == Phase.READY &&
                 existing.providerMessageId == providerMessageId &&
                 sameIdentity(existing, plan)
         }
-        if (!ensureCapacityForNewRecord()) return false
-        return write(recordFromPlan(plan, providerMessageId, Phase.READY, nowMs))
+        if (!ensureCapacityForNewRecord()) return@withJournalLock false
+        write(recordFromPlan(plan, providerMessageId, Phase.READY, nowMs))
     }
 
-    @Synchronized
     fun recordRoot(
         digestHex: String,
         providerMessageId: Long,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean = transition(digestHex, providerMessageId, Phase.ROOT_INSERTED, nowMs)
+    ): Boolean = withJournalLock {
+        transition(digestHex, providerMessageId, Phase.ROOT_INSERTED, nowMs)
+    }
 
-    @Synchronized
     fun markReady(
         digestHex: String,
         providerMessageId: Long,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean = transition(digestHex, providerMessageId, Phase.READY, nowMs)
-
-    @Synchronized
-    fun remove(digestHex: String): Boolean =
-        validDigest(digestHex) && preferences.edit().remove(key(digestHex)).commit()
-
-    @Synchronized
-    fun read(digestHex: String): Record? = if (validDigest(digestHex)) {
-        decode(digestHex, preferences.getString(key(digestHex), null))
-    } else {
-        null
+    ): Boolean = withJournalLock {
+        transition(digestHex, providerMessageId, Phase.READY, nowMs)
     }
 
-    @Synchronized
-    fun all(): List<Record> = preferences.all.asSequence()
-        .filter { (name, value) -> name.startsWith(KEY_PREFIX) && value is String }
-        .mapNotNull { (name, value) ->
-            decode(name.removePrefix(KEY_PREFIX), value as String)
+    fun remove(digestHex: String): Boolean = withJournalLock {
+        validDigest(digestHex) && preferences.edit().remove(key(digestHex)).commit()
+    }
+
+    fun read(digestHex: String): Record? = withJournalLock {
+        if (validDigest(digestHex)) {
+            decode(digestHex, preferences.all[key(digestHex)] as? String)
+        } else {
+            null
         }
-        .sortedBy { it.updatedAtMs }
-        .take(MAX_RECORDS)
-        .toList()
+    }
+
+    /**
+     * A retained provider row can outlive the process that created it. Treat a present but
+     * undecodable journal value as corruption, never as an absent replay marker: reprojection
+     * could otherwise create a duplicate MMS. The caller must retry/fail closed and preserve the
+     * evidence for a separate repair path.
+     */
+    fun hasRecord(digestHex: String): Boolean = withJournalLock {
+        validDigest(digestHex) && preferences.contains(key(digestHex))
+    }
+
+    fun all(): List<Record> = withJournalLock {
+        if (!validateEntries()) {
+            throw IllegalStateException("MMS provider journal contains corrupt recovery state")
+        }
+        preferences.all.asSequence()
+            .filter { (name, value) -> name.startsWith(KEY_PREFIX) && value is String }
+            .mapNotNull { (name, value) ->
+                decode(name.removePrefix(KEY_PREFIX), value as String)
+            }
+            .sortedBy { it.updatedAtMs }
+            .take(MAX_RECORDS)
+            .toList()
+    }
+
+    private fun validateEntries(): Boolean =
+        preferences.all.asSequence()
+            .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
+            .all { (name, value) ->
+                decode(name.removePrefix(KEY_PREFIX), value as? String) != null
+            }
 
     private fun transition(
         digestHex: String,
@@ -237,6 +260,8 @@ internal class IncomingMmsProviderJournal(context: Context) {
 
     private fun key(digestHex: String) = KEY_PREFIX + digestHex
 
+    private inline fun <T> withJournalLock(block: () -> T): T = synchronized(LOCK) { block() }
+
     companion object {
         private const val PREFS_NAME = "sentinel_incoming_mms_provider_journal_v1"
         private const val KEY_PREFIX = "record."
@@ -244,6 +269,7 @@ internal class IncomingMmsProviderJournal(context: Context) {
         private const val MAX_ENCODED_CHARS = 3072
         private const val MAX_RECORDS = 512
         private const val TARGET_AFTER_PRUNE = 384
+        private val LOCK = Any()
         private val DIGEST = Regex("^[0-9a-f]{64}$")
 
         internal fun validDigest(value: String): Boolean = DIGEST.matches(value)

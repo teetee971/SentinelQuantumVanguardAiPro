@@ -59,6 +59,17 @@ const phoneStatePermission = 'READ_PHONE_STATE';
 const callLogPermission = 'READ_CALL_LOG';
 const recordAudioPermission = 'RECORD_AUDIO';
 const declaredSmsRolePermissions = permissions.filter((permission) => smsRolePermissions.has(permission));
+const hasBoundedCallbackExecutor = (source) =>
+  source.includes('ThreadPoolExecutor(') &&
+  source.includes('ArrayBlockingQueue<Runnable>') &&
+  source.includes('ThreadPoolExecutor.AbortPolicy()');
+const hasBoundedIngressExecutor = (source) =>
+  source.includes('ThreadPoolExecutor(') &&
+  source.includes('ArrayBlockingQueue<Runnable>') &&
+  source.includes('ThreadPoolExecutor.AbortPolicy()') &&
+  source.includes('captureAndScheduleRecovery') &&
+  source.includes('IncomingMmsWapIngressJournal') &&
+  source.includes('IncomingMmsWapIngressRecoveryWorker');
 
 if (declaredSmsRolePermissions.length > 0) {
   const smsPolicy = fs.readFileSync(
@@ -146,7 +157,7 @@ if (declaredSmsRolePermissions.length > 0) {
       !smsStatusReceiver.includes('partIndex != uriPartIndex') ||
       !smsStatusReceiver.includes('partCount != uriPartCount') ||
       !smsStatusReceiver.includes('val pendingResult = goAsync()') ||
-      !/Executors\.newSingleThread(?:Scheduled)?Executor\s*[({]/.test(smsStatusReceiver) ||
+      !hasBoundedCallbackExecutor(smsStatusReceiver) ||
       !smsDeliveryBus.includes('CALLBACK_REPLAY_CAPACITY = SmsCallbackProgress.MAX_PARTS * 4')) {
     errors.push('SMS status callbacks must be explicit, immutable, identity-bound, serial off-main, and replay-safe for fast multipart callbacks.');
   }
@@ -160,7 +171,7 @@ if (declaredSmsRolePermissions.length > 0) {
       (!guardedSmsRoleBoundary ||
        !mmsReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsReceiver.includes('val pendingResult = goAsync()') ||
-       !mmsReceiver.includes('Executors.newSingleThreadExecutor') ||
+       !hasBoundedIngressExecutor(mmsReceiver) ||
        !mmsReceiver.includes('private fun processDelivery(') ||
        !mmsReceiver.includes('pendingResult.finish()') ||
        !mmsReceiver.includes('Intent(intent).putExtra("data", data.copyOf())') ||
@@ -168,7 +179,7 @@ if (declaredSmsRolePermissions.length > 0) {
        !manifest.includes('android.permission.BROADCAST_WAP_PUSH') ||
        !manifest.includes('android.provider.Telephony.WAP_PUSH_DELIVER') ||
        !manifest.includes('application/vnd.wap.mms-message'))) {
-    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path with bounded off-main processing.');
+    errors.push('MMS/WAP permissions require the fail-closed role-gated WAP_PUSH_DELIVER path with bounded normal off-main processing and durable saturation capture.');
   }
   const privateMmsDownloadReceiver = /<receiver\b(?=[^>]*android:name="\.security\.SentinelMmsDownloadReceiver")(?=[^>]*android:exported="false")[^>]*\/?>/s.test(manifest);
   const capturesMmsResultBeforeAsync =
@@ -185,7 +196,7 @@ if (declaredSmsRolePermissions.length > 0) {
        !mmsDownloadReceiver.includes('MmsDownloadCoordinator.EXTRA_SUBSCRIPTION_ID') ||
        !mmsDownloadReceiver.includes('readSmsRoleStateFailClosed') ||
        !mmsDownloadReceiver.includes('MmsDecodePipeline.decodeAndValidate') ||
-       !mmsDownloadReceiver.includes('Executors.newSingleThreadExecutor') ||
+       !hasBoundedCallbackExecutor(mmsDownloadReceiver) ||
        !mmsDownloadReceiver.includes('private fun processDownload(') ||
        !mmsDownloadReceiver.includes('pendingResult.finish()') ||
        !capturesMmsResultBeforeAsync ||
@@ -209,7 +220,7 @@ if (declaredSmsRolePermissions.length > 0) {
       !mmsSendStatusReceiver.includes('callbackUri.scheme != "sentinel-mms-send"') ||
       !mmsSendStatusReceiver.includes('callbackUri.host != "result"') ||
       !mmsSendStatusReceiver.includes('it == "$token.pdu"') ||
-      !mmsSendStatusReceiver.includes('Executors.newSingleThreadExecutor') ||
+      !hasBoundedCallbackExecutor(mmsSendStatusReceiver) ||
       !mmsSendStatusReceiver.includes('MmsSendPduStager.delete(context, fileName)') ||
       !capturesMmsSendResultBeforeAsync ||
       !mmsSendStager.includes('sentinel_mms_send') ||
@@ -401,9 +412,18 @@ const protectedInCallService =
 const protectedCallScreeningService =
   /<service\b(?=[^>]*android:name="\.security\.SentinelCallScreeningService")(?=[^>]*android:exported="true")(?=[^>]*android:permission="android\.permission\.BIND_SCREENING_SERVICE")[^>]*>[\s\S]*?<intent-filter>[\s\S]*?<action android:name="android\.telecom\.CallScreeningService"\s*\/>[\s\S]*?<\/intent-filter>[\s\S]*?<\/service>/s.test(manifest);
 const defaultDialerActivityContract =
-  /<activity\b(?=[^>]*android:name="\.SentinelDialerActivity")(?=[^>]*android:exported="true")[^>]*>[\s\S]*?<action android:name="android\.intent\.action\.DIAL"\s*\/>[\s\S]*?<data android:scheme="tel"\s*\/>[\s\S]*?<\/activity>/s.test(manifest);
+  /<activity\b(?=[^>]*android:name="\.SentinelDialerActivity")(?=[^>]*android:exported="true")(?=[^>]*tools:node="replace")(?=[^>]*tools:replace="android:exported")[^>]*>[\s\S]*?<action android:name="android\.intent\.action\.DIAL"\s*\/>[\s\S]*?<data android:scheme="tel"\s*\/>[\s\S]*?<\/activity>/s.test(manifest);
 const inCallUiMetadataContract =
   /<service\b(?=[^>]*android:name="\.security\.SentinelInCallService")[^>]*>[\s\S]*?<meta-data\b(?=[^>]*android:name="android\.telecom\.IN_CALL_SERVICE_UI")(?=[^>]*android:value="true")[^>]*\/>[\s\S]*?<\/service>/s.test(manifest);
+const inCallIncomingUiContract =
+  /currentSnapshot\.state == Call\.STATE_RINGING -> IncomingActions\(/.test(inCallActivity);
+const inCallCustomerActionContracts = [
+  /SentinelInCallService\.answer\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.reject\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.disconnect\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.hold\((?:snapshot|currentSnapshot)\.id\)/,
+  /SentinelInCallService\.unhold\((?:snapshot|currentSnapshot)\.id\)/,
+].every((pattern) => pattern.test(inCallActivity));
 if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
     !protectedInCallService ||
     !protectedCallScreeningService ||
@@ -431,12 +451,8 @@ if (!manifest.includes('android.permission.USE_FULL_SCREEN_INTENT') ||
     !callActionReceiver.includes('EXTRA_CALL_ID) != callId') ||
     !callActionReceiver.includes('SentinelInCallService.answer(callId)') ||
     !callActionReceiver.includes('SentinelInCallService.reject(callId)') ||
-    !inCallActivity.includes('IncomingActions(snapshot)') ||
-    !inCallActivity.includes('SentinelInCallService.answer(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.reject(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.disconnect(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.hold(snapshot.id)') ||
-    !inCallActivity.includes('SentinelInCallService.unhold(snapshot.id)') ||
+    !inCallIncomingUiContract ||
+    !inCallCustomerActionContracts ||
     !inCallActivity.includes('SentinelInCallService.setMicrophoneMuted(snapshot.id, !it)') ||
     !inCallActivity.includes('SentinelInCallService.selectAudioRoute(snapshot.id, route.id)') ||
     !inCallActivity.includes('SentinelInCallService.startDtmf(callId, digit)') ||

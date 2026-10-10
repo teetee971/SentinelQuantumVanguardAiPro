@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "updated_at": "2026-10-06",
+  "updated_at": "2026-10-09",
   "certification_schema_version": 5,
   "rollout_mode": "shadow",
   "emulator_qualification": {
@@ -26,8 +26,11 @@
       "standalone_activity_surfaces_render",
       "min_sdk_cold_launch",
       "cold_install_and_relaunch",
+      "sdk_api_exact",
+      "runtime_package_path",
       "phone_core_setup_resume",
       "synthetic_call_screening_observed",
+      "screening_latency_observed",
       "synthetic_call_screening_decision_observed",
       "incoming_call_telecom_flow",
       "outgoing_call_telecom_flow",

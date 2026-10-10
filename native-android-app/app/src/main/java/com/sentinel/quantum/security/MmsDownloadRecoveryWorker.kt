@@ -21,14 +21,34 @@ class MmsDownloadRecoveryWorker(
     workerParams: WorkerParameters
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
-        val fileName = inputData.getString(KEY_FILE_NAME) ?: return Result.success()
-        return when (
+        val fileName = inputData.getString(KEY_FILE_NAME)?.takeIf { it.isNotBlank() }
+        if (fileName == null) {
+            val recoveryScheduled = runCatching {
+                MmsDownloadRecoveryWorker.schedulePendingNow(applicationContext)
+                true
+            }.getOrDefault(false)
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Identifiant de reprise MMS manquant; demande non acquittée"
+            )
+            return if (recoveryScheduled) Result.failure() else Result.retry()
+        }
+        val outcome = runCatching {
             MmsDownloadRecovery.recover(
                 context = applicationContext,
                 fileName = fileName,
                 allowQuarantine = false
             )
-        ) {
+        }.getOrElse {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échec inattendu de la reprise MMS; nouvelle tentative durable planifiée"
+            )
+            return Result.retry()
+        }
+        return when (outcome) {
             MmsDownloadRecovery.Outcome.RETRY -> Result.retry()
             MmsDownloadRecovery.Outcome.RECOVERED,
             MmsDownloadRecovery.Outcome.TERMINAL -> Result.success()
@@ -38,6 +58,11 @@ class MmsDownloadRecoveryWorker(
     companion object {
         fun schedule(context: Context, fileName: String) {
             enqueue(context, fileName, RECOVERY_DELAY_MS, ExistingWorkPolicy.KEEP)
+        }
+
+        /** Wakes an already journaled callback immediately after the receiver pool saturates. */
+        fun scheduleNow(context: Context, fileName: String) {
+            enqueue(context, fileName, 0L, ExistingWorkPolicy.REPLACE)
         }
 
         fun schedulePendingNow(context: Context) {
@@ -105,29 +130,37 @@ internal object MmsDownloadRecovery {
     ): Outcome {
         val appContext = context.applicationContext
         val journal = MmsDownloadRecoveryJournal(appContext)
-        val record = journal.read(fileName) ?: return Outcome.TERMINAL
+        val record = journal.read(fileName)
+        if (record == null) {
+            val staged = stagedFile(appContext, fileName)
+            return if (staged != null || journal.hasRecord(fileName)) {
+                Outcome.RETRY
+            } else {
+                Outcome.TERMINAL
+            }
+        }
         if (nowMs < 0L || record.requestedAtMs > nowMs) return Outcome.RETRY
 
         if (
             appContext.readSmsRoleStateFailClosed() !=
                 SmsActivationDiagnostics.SmsRoleState.HELD
         ) {
-            finish(appContext, fileName, allowQuarantine)
+            if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
         if (!MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)) {
-            finish(appContext, fileName, allowQuarantine)
+            if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
 
         val target = stagedFile(appContext, fileName) ?: run {
-            journal.remove(fileName)
+            if (!journal.remove(fileName)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
         val sizeBefore = target.length()
         if (sizeBefore <= 0L) return Outcome.RETRY
         if (sizeBefore > MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            finish(appContext, fileName, allowQuarantine)
+            if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
             return Outcome.TERMINAL
         }
 
@@ -135,7 +168,9 @@ internal object MmsDownloadRecovery {
         if (modifiedBefore <= 0L || nowMs - modifiedBefore < STABLE_FILE_GRACE_MS) {
             return Outcome.RETRY
         }
-        val data = runCatching { target.readBytes() }.getOrNull() ?: return Outcome.RETRY
+        val data = runCatching {
+            MmsDownloadCoordinator.readBounded(target, sizeBefore)
+        }.getOrNull() ?: return Outcome.RETRY
         if (
             data.isEmpty() ||
             data.size.toLong() != sizeBefore ||
@@ -234,7 +269,7 @@ internal object MmsDownloadRecovery {
             )
         }
 
-        finish(appContext, fileName, allowQuarantine)
+        if (!finish(appContext, fileName, allowQuarantine)) return Outcome.RETRY
         return Outcome.RECOVERED
     }
 
@@ -258,13 +293,12 @@ internal object MmsDownloadRecovery {
     ): Boolean =
         providerResult is IncomingMmsConversationStore.ProjectResult.Rejected && !allowQuarantine
 
-    private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean) {
+    private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean): Boolean =
         MmsDownloadCoordinator.finishRecovery(
             context = context,
             fileName = fileName,
             cancelCleanupWorker = !fromCleanupDeadline
         )
-    }
 
     private fun stagedFile(context: Context, fileName: String): File? {
         if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null

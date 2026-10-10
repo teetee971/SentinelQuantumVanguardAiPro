@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Handles the explicit callback from Android's MMS download transport.
@@ -48,6 +50,15 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                         deliveredResultCode = deliveredResultCode
                     )
                 } catch (_: Exception) {
+                    runCatching {
+                        MmsDownloadRecoveryWorker.schedule(appContext, fileName)
+                    }.onFailure {
+                        LocalLogger(appContext).log(
+                            LocalLogger.LogLevel.SECURITY,
+                            "MmsDownload",
+                            "Reprise du callback MMS impossible après une exception de traitement"
+                        )
+                    }
                     LocalLogger(appContext).log(
                         LocalLogger.LogLevel.WARNING,
                         "MmsDownload",
@@ -60,10 +71,17 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }.isSuccess
 
         if (!submitted) {
-            LocalLogger(appContext).log(
-                LocalLogger.LogLevel.WARNING,
+            val recoveryScheduled = runCatching {
+                MmsDownloadRecoveryWorker.scheduleNow(appContext, fileName)
+            }.isSuccess
+            LocalLogger(appContext).logAsync(
+                if (recoveryScheduled) LocalLogger.LogLevel.WARNING else LocalLogger.LogLevel.SECURITY,
                 "MmsDownload",
-                "Callback MMS non planifié : worker indisponible"
+                if (recoveryScheduled) {
+                    "Callback MMS saturé : reprise durable réveillée immédiatement"
+                } else {
+                    "Callback MMS non planifié : worker indisponible et reprise durable non réveillée"
+                }
             )
             pendingResult.finish()
         }
@@ -135,7 +153,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         // provider/quarantine decision complete. Otherwise a process death after private persist
         // but before provider projection would strand a durable PDU with no subscription metadata
         // available to the recovery worker.
-        val data = runCatching { target.readBytes() }.getOrNull()
+        val data = runCatching {
+            MmsDownloadCoordinator.readBounded(target, size)
+        }.getOrNull()
         if (data == null || data.isEmpty()) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
@@ -238,6 +258,15 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 "MmsDownload",
                 "Échec de suppression du PDU MMS temporaire après traitement; le nettoyage durable reste planifié"
             )
+            runCatching {
+                MmsDownloadRecoveryWorker.schedule(context, fileName)
+            }.onFailure {
+                LocalLogger(context).logAsync(
+                    LocalLogger.LogLevel.SECURITY,
+                    "MmsDownload",
+                    "Reprise MMS non replanifiée après échec de suppression du staging"
+                )
+            }
         }
 
         SmsNotificationHelper.notifyMessage(
@@ -255,9 +284,16 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
     }
 
     private companion object {
-        val WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-mms-download").apply { isDaemon = true }
-        }
+        const val MAX_PENDING_CALLBACKS = 32
+        val WORKER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { task -> Thread(task, "sentinel-mms-download").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
         val TOKEN = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
     }
 }

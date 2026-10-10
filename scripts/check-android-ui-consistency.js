@@ -126,7 +126,7 @@ if (homeSource) {
     'étapes prêtes',
     'étapes d’activation Android prêtes',
     'PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)',
-    'context.startActivity(Intent(context, SentinelDialerActivity::class.java))',
+    'fun launchPhoneSurface(request: Intent, surface: String)',
     'maxLines = 3',
   ]) {
     if (!homeSource.includes(marker)) {
@@ -351,9 +351,9 @@ assertImmersiveSurface(
     'CallerHero(',
     'OngoingPrimaryControls(',
     'CallActionCircle(',
-    'IncomingActions(snapshot)',
+    'currentSnapshot.state == Call.STATE_RINGING -> IncomingActions(',
     'DialpadPanel(snapshot)',
-    'DtmfPad(snapshot.id)',
+    'DtmfPad(snapshot.id, onActionFailure)',
   ]
 );
 
@@ -697,7 +697,9 @@ const respondViaMessagePath =
 const respondViaMessageSource = readRequired(respondViaMessagePath);
 if (respondViaMessageSource) {
   for (const marker of [
-    'Executors.newSingleThreadExecutor',
+    'ThreadPoolExecutor(',
+    'ArrayBlockingQueue<Runnable>',
+    'ThreadPoolExecutor.AbortPolicy()',
     'WORKER.execute',
     'SentinelSmsSender(appContext).send(destination, body)',
     'MAIN_HANDLER.post',
@@ -720,7 +722,7 @@ if (incomingCallNotificationSource) {
     'CallTrustIndicator.assess(',
     'PhoneNumberRiskRules::isKnownPremiumRatePrefix',
     'setName("$label · ${quickTrust.title}")',
-    'if (!isChannelEnabled(context)) return false',
+    'if (!isChannelEnabled(context)) return@runCatching false',
   ]) {
     if (!incomingCallNotificationSource.includes(marker)) {
       errors.push(`incoming-call trust indicator marker missing (${marker}): ${incomingCallNotificationPath}`);
@@ -734,7 +736,7 @@ const smsNotificationSource = readRequired(smsNotificationPath);
 if (smsNotificationSource) {
   for (const marker of [
     'NotificationManagerCompat.from(context).areNotificationsEnabled()',
-    'if (!isChannelEnabled(context)) return false',
+    'if (!isChannelEnabled(context)) return@runCatching false',
   ]) {
     if (!smsNotificationSource.includes(marker)) {
       errors.push(`SMS notification truth marker missing (${marker}): ${smsNotificationPath}`);
@@ -759,6 +761,10 @@ if (smsComposeSource) {
     'LaunchedEffect(activeSendToken, activeProviderMessageId)',
     'event.providerMessageId != activeProviderMessageId',
     'activeProviderMessageId = result.providerMessageId',
+    'var submissionInFlight by remember',
+    'if (submissionInFlight) return',
+    'submissionInFlight = false',
+    'submissionInFlight = submissionInFlight',
   ]) {
     if (!smsComposeSource.includes(marker)) {
       errors.push(`conversation-first SMS marker missing (${marker}): ${smsComposePath}`);

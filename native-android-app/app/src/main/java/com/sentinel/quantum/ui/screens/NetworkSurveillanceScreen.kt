@@ -1,5 +1,6 @@
 package com.sentinel.quantum.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -91,6 +92,15 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             .onFailure { statusMessage = "Impossible d’ouvrir les réglages Bluetooth sur cet appareil." }
     }
 
+    fun openPermissionSettings() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }
+            .onFailure { statusMessage = "Impossible d’ouvrir les paramètres d’autorisations sur cet appareil." }
+    }
+
     fun runWifiScan() {
         if (!wifiScanner.isWifiEnabled()) {
             isScanning = false
@@ -123,8 +133,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     fun runBluetoothScan() {
         isScanning = true
         covertDeviceAlerted = false
+        var observedBluetoothDevices: List<DiscoveredBluetoothDevice> = emptyList()
         bluetoothScanner.scan(
             onResults = { results ->
+                observedBluetoothDevices = results
                 bluetoothDevices = results
                 if (!covertDeviceAlerted && results.any { it.assessment.likelyTracker || it.assessment.likelyCameraOrRecorder || it.assessment.likelyBeacon }) {
                     covertDeviceAlerted = true
@@ -137,12 +149,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             },
             onScanFinished = {
                 isScanning = false
-                statusMessage = if (bluetoothDevices.isEmpty()) "Aucun appareil détecté pour l'instant." else null
+                statusMessage = if (observedBluetoothDevices.isEmpty()) "Aucun appareil détecté pour l'instant." else null
                 logger.log(
                     LocalLogger.LogLevel.INFO,
                     "NetworkSurveillance",
-                    "Scan Bluetooth local terminé : ${bluetoothDevices.size} appareil(s), " +
-                        "${bluetoothDevices.count { it.assessment.likelyTracker }} traceur(s) potentiel(s)."
+                    "Scan Bluetooth local terminé : ${observedBluetoothDevices.size} appareil(s), " +
+                        "${observedBluetoothDevices.count { it.assessment.likelyTracker }} traceur(s) potentiel(s)."
                 )
             }
         )
@@ -170,6 +182,20 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         }
     }
 
+    fun requestScanPermissions(permissions: Array<String>) {
+        try {
+            permissionLauncher.launch(permissions)
+        } catch (_: ActivityNotFoundException) {
+            isScanning = false
+            permissionDenied = true
+            statusMessage = "Android n’a pas pu ouvrir la demande de permissions du scan local. Vérifiez les réglages, puis réessayez."
+        } catch (_: RuntimeException) {
+            isScanning = false
+            permissionDenied = true
+            statusMessage = "Android a refusé la demande de permissions du scan local. Vérifiez les réglages, puis réessayez."
+        }
+    }
+
     fun startScan() {
         statusMessage = null
         when (selectedTab) {
@@ -177,13 +203,13 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 if (wifiScanner.hasPermissions()) {
                     runWifiScan()
                 } else {
-                    permissionLauncher.launch(wifiScanner.requiredPermissions)
+                    requestScanPermissions(wifiScanner.requiredPermissions)
                 }
             SurveillanceTab.BLUETOOTH ->
                 if (bluetoothScanner.hasPermissions()) {
                     runBluetoothScan()
                 } else {
-                    permissionLauncher.launch(bluetoothScanner.requiredPermissions)
+                    requestScanPermissions(bluetoothScanner.requiredPermissions)
                 }
         }
     }
@@ -264,13 +290,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 Text(message, style = MaterialTheme.typography.bodyMedium)
                                 if (permissionDenied) {
                                     OutlinedButton(
-                                        onClick = {
-                                            val intent = Intent(
-                                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                                Uri.fromParts("package", context.packageName, null)
-                                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            context.startActivity(intent)
-                                        }
+                                        onClick = { openPermissionSettings() }
                                     ) {
                                         Text("Ouvrir les paramètres d'autorisations")
                                     }
@@ -289,12 +309,18 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 WifiNetworkCard(
                                     network = network,
                                     onAllow = {
-                                        trustStore.allow(network.bssid)
-                                        runWifiScan()
+                                        if (trustStore.allow(network.bssid)) {
+                                            runWifiScan()
+                                        } else {
+                                            statusMessage = "Réseau de confiance non enregistré : réessayez."
+                                        }
                                     },
                                     onBlock = {
-                                        trustStore.block(network.bssid)
-                                        runWifiScan()
+                                        if (trustStore.block(network.bssid)) {
+                                            runWifiScan()
+                                        } else {
+                                            statusMessage = "Marquage suspect non enregistré : réessayez."
+                                        }
                                     }
                                 )
                             }

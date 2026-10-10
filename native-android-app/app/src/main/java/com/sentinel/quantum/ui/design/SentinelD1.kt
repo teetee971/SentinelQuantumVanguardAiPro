@@ -10,11 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.HourglassTop
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,16 +50,9 @@ private data class StateVisual(val color: Color, val icon: ImageVector)
 
 @Composable
 private fun stateVisual(state: SentinelState): StateVisual = when (state) {
-    SentinelState.TO_CONFIGURE -> StateVisual(SentinelD1.Unknown, Icons.Default.Settings)
-    SentinelState.READY -> StateVisual(SentinelD1.Success, Icons.Default.CheckCircle)
-    SentinelState.TO_TEST -> StateVisual(SentinelD1.Cyan, Icons.Default.HourglassTop)
-    // Validation is a semantic success, not a second brand accent.
-    SentinelState.VALIDATED -> StateVisual(SentinelD1.Success, Icons.Default.Verified)
-    SentinelState.PARTIAL -> StateVisual(SentinelD1.Warning, Icons.Default.ErrorOutline)
-    SentinelState.DEGRADED -> StateVisual(SentinelD1.Warning, Icons.Default.HourglassTop)
-    SentinelState.BLOCKED -> StateVisual(SentinelD1.Danger, Icons.Default.Block)
-    SentinelState.UNKNOWN -> StateVisual(SentinelD1.Unknown, Icons.Default.HelpOutline)
-    SentinelState.UNAVAILABLE -> StateVisual(SentinelD1.Unknown, Icons.Default.Block)
+    SentinelState.READY -> StateVisual(SentinelD1.Success, Icons.Default.Verified)
+    SentinelState.LIMITED -> StateVisual(SentinelD1.Warning, Icons.Default.HourglassTop)
+    SentinelState.LOCKED -> StateVisual(SentinelD1.Danger, Icons.Default.Block)
 }
 
 @Composable

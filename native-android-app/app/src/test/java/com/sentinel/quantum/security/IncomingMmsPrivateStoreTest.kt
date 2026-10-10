@@ -13,6 +13,14 @@ import org.junit.Test
 
 class IncomingMmsPrivateStoreTest {
     @Test
+    fun emptyAndOversizedPdusAreRejectedBeforePersistence() = withTempRoot { root ->
+        assertEquals(IncomingMmsPrivateStore.State.FAILED, IncomingMmsPrivateStore.persist(root, ByteArray(0)).state)
+        val oversized = ByteArray((MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES + 1L).toInt())
+        assertEquals(IncomingMmsPrivateStore.State.FAILED, IncomingMmsPrivateStore.persist(root, oversized).state)
+        assertTrue(pduFiles(root).isEmpty())
+    }
+
+    @Test
     fun replayUsesOneStableFile() = withTempRoot { root ->
         val pdu = "stable-pdu".toByteArray(Charsets.UTF_8)
 

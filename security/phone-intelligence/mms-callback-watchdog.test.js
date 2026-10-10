@@ -1,0 +1,162 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+
+const journal = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsProviderJournal.kt',
+  'utf8'
+);
+const store = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsConversationStore.kt',
+  'utf8'
+);
+const sender = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSender.kt',
+  'utf8'
+);
+const eligibility = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendEligibilityPolicy.kt',
+  'utf8'
+);
+const statusReceiver = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSendStatusReceiver.kt',
+  'utf8'
+);
+const cleanup = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendCleanupWorker.kt',
+  'utf8'
+);
+const watchdogWorker = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSubmissionWatchdogWorker.kt',
+  'utf8'
+);
+
+test('MMS provider journal exposes stale submitted transport attempts', () => {
+  assert.match(journal, /READY/);
+  assert.match(journal, /SUBMITTED/);
+  assert.match(journal, /SUBMISSION_UNKNOWN/);
+  assert.match(journal, /staleTransportSubmissions/);
+  assert.match(journal, /MMS_CALLBACK_TIMEOUT_MS/);
+});
+
+test('MMS watchdog resolves only still-outbox provider rows and survives restart', () => {
+  const workerPath =
+    'native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSubmissionWatchdogWorker.kt';
+  assert.ok(fs.existsSync(workerPath));
+  const worker = fs.readFileSync(workerPath, 'utf8');
+  assert.match(worker, /PeriodicWorkRequestBuilder/);
+  assert.match(worker, /staleTransportSubmissions/);
+  assert.match(worker, /markTransportTimedOut/);
+  assert.match(cleanup, /MmsSubmissionWatchdogWorker\.schedule/);
+  assert.match(store, /markTransportTimedOut/);
+  assert.match(store, /MESSAGE_BOX_OUTBOX/);
+});
+
+test('MMS watchdog retries when journal enumeration fails', () => {
+  assert.match(watchdogWorker, /val staleSubmissions = runCatching \{[\s\S]*staleTransportSubmissions\(\)/);
+  assert.match(watchdogWorker, /getOrElse \{[\s\S]*return Result\.retry\(\)/);
+  assert.match(watchdogWorker, /staleSubmissions\.forEach/);
+});
+
+test('MMS transport cannot start without a durable watchdog', () => {
+  assert.match(sender, /MmsSubmissionWatchdogWorker\.schedule\(context\)/);
+  const watchdogIndex = sender.indexOf('MmsSubmissionWatchdogWorker.schedule(context)');
+  const transportIndex = sender.indexOf('transportInvocationStarted = true');
+  assert.ok(watchdogIndex >= 0 && watchdogIndex < transportIndex);
+  assert.match(sender, /MMS_SUBMISSION_WATCHDOG_UNAVAILABLE/);
+});
+
+test('late MMS callbacks cannot overwrite a timed-out or terminal journal outcome', () => {
+  assert.match(journal, /fun markResult\([\s\S]*Phase\.RESULT_SENT[\s\S]*Phase\.RESULT_FAILED/);
+  assert.match(store, /if \(!outcomeJournaled\) return false/);
+  assert.match(store, /MESSAGE_BOX_FAILED/);
+});
+
+test('submission bookkeeping cannot overwrite a callback result that won the race', () => {
+  const transitionStart = journal.indexOf('private fun transition(');
+  const transitionEnd = journal.indexOf('\n    private fun write', transitionStart);
+  assert.ok(transitionStart >= 0 && transitionEnd > transitionStart);
+  const transition = journal.slice(transitionStart, transitionEnd);
+  assert.match(
+    transition,
+    /if \(current\.phase == Phase\.RESULT_SENT \|\| current\.phase == Phase\.RESULT_FAILED\) return false/
+  );
+  assert.match(sender, /providerStore\.markSubmitted\(staged\.token, providerMessageId\)/);
+});
+
+test('MMS journal serializes sender and callback transitions across instances', () => {
+  assert.match(journal, /private inline fun <T> withJournalLock/);
+  assert.match(journal, /private val LOCK = Any\(\)/);
+  assert.match(journal, /fun markSubmitted\([\s\S]*\): Boolean = withJournalLock/);
+  assert.match(journal, /fun markResult\([\s\S]*\): Boolean = withJournalLock/);
+  assert.match(journal, /fun all\(\): List<Record> = withJournalLock/);
+});
+
+test('corrupt outgoing MMS transport journal entries fail closed instead of vanishing from the watchdog', () => {
+  assert.match(
+    journal,
+    /fun all\(\): List<Record> = withJournalLock\s*\{[\s\S]*validateEntries\(\)[\s\S]*throw IllegalStateException/s,
+    'watchdog enumeration must not silently drop malformed transport state'
+  );
+  assert.match(
+    journal,
+    /preferences\.all\[key\(token\)\] as\? String/,
+    'point reads must tolerate a corrupted SharedPreferences value and fail closed'
+  );
+});
+
+test('MMS transport journal rejects phases whose provider identity is missing', () => {
+  assert.match(
+    journal,
+    /val phase = Phase\.valueOf\(json\.getString\("phase"\)\)[\s\S]*phase != Phase\.BUILDING[\s\S]*providerId == null[\s\S]*return@runCatching null/,
+    'READY/SUBMITTED/terminal states must not be silently skipped without a provider row id'
+  );
+});
+
+test('MMS callback saturation journals transport truth without provider work', () => {
+  const fallback = statusReceiver.match(
+    /if \(!scheduled\) \{([\s\S]*?)pendingResult\.finish\(\)/
+  );
+  assert.ok(fallback, 'MMS callback saturation must have an explicit bounded fallback');
+  assert.match(fallback[1], /captureAndScheduleRecovery/);
+  assert.doesNotMatch(fallback[1], /MmsConversationStore|ContentResolver/);
+  assert.match(statusReceiver, /private fun captureAndScheduleRecovery/);
+  assert.match(statusReceiver, /MmsProviderJournal\(context\)\.markResult/);
+  assert.match(statusReceiver, /queueProviderRepair\(context\)/);
+});
+
+test('MMS rejects every negative subscription sentinel at each transport boundary', () => {
+  assert.match(
+    eligibility,
+    /if \(!MmsSubscriptionResolver\.isValidSubscriptionId\(subscriptionId\)\)/,
+    'eligibility must reject every negative subscription id, not only -1'
+  );
+  assert.match(
+    sender,
+    /\.filter\(MmsSubscriptionResolver::isValidSubscriptionId\)/,
+    'active MMS subscriptions must be filtered through the shared validity contract'
+  );
+  assert.match(
+    sender,
+    /\.takeIf\(MmsSubscriptionResolver::isValidSubscriptionId\)/,
+    'default MMS subscription must be filtered through the shared validity contract'
+  );
+  assert.match(
+    statusReceiver,
+    /if \(!MmsSubscriptionResolver\.isValidSubscriptionId\(subscriptionId\)\) return/,
+    'MMS callback identity must fail closed before asynchronous processing'
+  );
+});
+
+test('unexpected MMS callback worker failures preserve journaled transport truth', () => {
+  const executeStart = statusReceiver.indexOf('WORKER.execute {');
+  const methodEnd = statusReceiver.indexOf(
+    '\n    private fun captureAndScheduleRecovery',
+    executeStart
+  );
+  assert.ok(executeStart >= 0 && methodEnd > executeStart, 'MMS callback worker boundary must exist');
+  const worker = statusReceiver.slice(executeStart, methodEnd);
+  assert.match(worker, /catch \(_: Exception\)/);
+  assert.match(worker, /captureAndScheduleRecovery/);
+  assert.match(worker, /queueProviderRepair\(appContext\)/);
+});

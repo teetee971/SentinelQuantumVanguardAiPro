@@ -24,6 +24,7 @@ const SOURCE_PATHS = Object.freeze({
   timelineStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt',
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
   phoneCoreActivation: 'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt',
+  dialerActivity: 'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt',
   localLogger: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalLogger.kt',
   phoneCoreFrenchLabels: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCoreFrenchLabels.kt'
 });
@@ -47,7 +48,7 @@ export function auditProductTruth(sources) {
   const {
     manifest, strings, listing, architecture, privacy,
     callLogReader, smsStore, remoteCaller, voicePolicy, liveVoiceEngine, liveKitVoiceProcessor, liveKitCallTransport, androidBuild, androidSettings, voipVoicePipeline, voiceStudio, timelineStore,
-    callScreening, localLogger, phoneCoreFrenchLabels, phoneCoreActivation
+    callScreening, localLogger, phoneCoreFrenchLabels, phoneCoreActivation, dialerActivity
   } = sources;
 
   const presented = { strings, listing, architecture };
@@ -58,6 +59,9 @@ export function auditProductTruth(sources) {
 
   if (!phoneCoreFrenchLabels.includes('\"MMS_ATTACHMENTS\" -> \"MMS entrants · aperçu sécurisé\"')) {
     errors.push('Phone Core MMS label must remain scoped to incoming safe preview until outgoing MMS is implemented and validated');
+  }
+  if (!dialerActivity.includes('MmsSafePreviewReadiness.softwareValidated')) {
+    errors.push('dialer Phone Core status must remain locked when the MMS safe-preview self-test fails');
   }
 
   const durablePhysicalEvidence =
@@ -76,14 +80,16 @@ export function auditProductTruth(sources) {
     localLogger.includes('val FILE_LOCK = Any()') &&
     localLogger.includes('synchronized(FILE_LOCK)') &&
     localLogger.includes('fun logAsync(') &&
-    localLogger.includes('ASYNC_WRITER = Executors.newSingleThreadExecutor') &&
+    localLogger.includes('ASYNC_WRITER = ThreadPoolExecutor') &&
+    localLogger.includes('ArrayBlockingQueue<Runnable>(MAX_PENDING_LOGS)') &&
+    localLogger.includes('ThreadPoolExecutor.AbortPolicy()') &&
     localLogger.includes('private val appContext = context.applicationContext');
   if (!serializedLocalLog) {
     errors.push('local logger: shared file access must remain serialized and system callbacks need an async logging path');
   }
 
   const screeningPostResponseOffMain =
-    callScreening.includes('respondToCall(callDetails, response.build())') &&
+    callScreening.includes('respondAndLog(callDetails, response.build(), startedAtElapsedMs)') &&
     callScreening.includes('POST_RESPONSE_WORKER.execute') &&
     callScreening.includes('CallFilterLogStore.get(appContext).recordAsync(decision)') &&
     callScreening.includes('PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))') &&
@@ -93,6 +99,26 @@ export function auditProductTruth(sources) {
     !callScreening.includes('LocalLogger(this).log(');
   if (!screeningPostResponseOffMain) {
     errors.push('call screening: post-response Room, timeline and file logging must remain off the system callback thread');
+  }
+
+  const screeningResponseCall = 'respondAndLog(callDetails, response.build(), startedAtElapsedMs)';
+  const lastScreeningResponse = callScreening.indexOf(screeningResponseCall);
+  const screeningResponseFailureGuard = callScreening.includes(
+    `if (!${screeningResponseCall}) return`
+  );
+  const callerIdEnrichment = callScreening.indexOf(
+    'val profile = CallerIdentityResolver.resolve('
+  );
+  const postResponseWorker = callScreening.indexOf('POST_RESPONSE_WORKER.execute');
+  if (
+    lastScreeningResponse < 0 ||
+    callerIdEnrichment < 0 ||
+    postResponseWorker < 0 ||
+    !screeningResponseFailureGuard ||
+    lastScreeningResponse > callerIdEnrichment ||
+    lastScreeningResponse > postResponseWorker
+  ) {
+    errors.push('call screening: Caller ID enrichment and optional telemetry must begin only after the final respondToCall boundary');
   }
 
   const obsoleteCallLogDenials = [

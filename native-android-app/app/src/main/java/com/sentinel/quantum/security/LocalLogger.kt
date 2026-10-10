@@ -6,7 +6,9 @@ import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.Executors
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Journal de sécurité local, borné en taille et sans émission réseau.
@@ -128,9 +130,16 @@ class LocalLogger(context: Context) {
 
     private companion object {
         val FILE_LOCK = Any()
-        val ASYNC_WRITER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-local-log").apply { isDaemon = true }
-        }
+        const val MAX_PENDING_LOGS = 256
+        val ASYNC_WRITER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_LOGS),
+            { task -> Thread(task, "sentinel-local-log").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
         const val MAX_LOG_BYTES = 1024L * 1024L
         const val MAX_LOG_LINES = 2000
         const val MAX_MESSAGE_LENGTH = 2000

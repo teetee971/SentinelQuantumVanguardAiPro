@@ -24,6 +24,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Validate emulator qualification contract
         run: node scripts/check-phone-core-emulation-gate.js
@@ -33,6 +43,9 @@ jobs:
 
       - name: Validate Android product truth
         run: npm run test:android-product-truth
+
+      - name: Test Phone Intelligence host contracts
+        run: npm run test:phone-intelligence
 
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -109,8 +122,8 @@ jobs:
           BUILT_COMMIT="$(git rev-parse HEAD)" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
-          if (process.env.BUILT_COMMIT !== process.env.GITHUB_SHA) {
-            throw new Error('Host checkout does not match the workflow commit');
+          if (process.env.BUILT_COMMIT !== process.env.SOURCE_HEAD_SHA) {
+            throw new Error('Host checkout does not match the exact source head');
           }
           const output = path.join(process.env.RUNNER_TEMP, 'phone-core-host-evidence');
           fs.mkdirSync(output, { recursive: true });
@@ -165,6 +178,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -186,6 +209,19 @@ jobs:
           SDK_PACKAGE_LEVEL: ${{ matrix.sdk_package_level }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           chmod +x ./gradlew
           IMAGE="system-images;android-${SDK_PACKAGE_LEVEL};google_apis;x86_64"
           PLATFORM="platforms;android-${SDK_PACKAGE_LEVEL}"
@@ -280,14 +316,27 @@ jobs:
           API_LEVEL: ${{ matrix.api_level }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           if [[ "$API_LEVEL" == "24" ]]; then
             ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
             APP_APK="app/build/outputs/apk/debug/app-debug.apk"
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
-            adb install -r "$APP_APK"
-            adb install -r "$TEST_APK"
+            timeout --signal=INT --kill-after=30s 180s adb install -r "$APP_APK"
+            timeout --signal=INT --kill-after=30s 180s adb install -r "$TEST_APK"
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
                 awk '/^instrumentation:com\.sentinel\.quantum\.test\// {
@@ -327,6 +376,125 @@ jobs:
               ./gradlew :app:connectedDebugAndroidTest --stacktrace --no-daemon
           fi
 
+      - name: Reboot emulator and verify interrupted setup resumes
+        id: setup_reboot
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          API_LEVEL: ${{ matrix.api_level }}
+        run: |
+          set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
+          OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
+          mkdir -p "$OUTPUT"
+          APP_APK="app/build/outputs/apk/debug/app-debug.apk"
+          TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+          test -s "$APP_APK"
+          test -s "$TEST_APK"
+          timeout --signal=INT --kill-after=30s 180s adb install -r "$APP_APK"
+          timeout --signal=INT --kill-after=30s 180s adb install -r "$TEST_APK"
+          adb shell pm clear com.sentinel.quantum > "$OUTPUT/setup-reboot-clear.txt" 2>&1
+          grep -Fxq 'Success' "$OUTPUT/setup-reboot-clear.txt"
+          INSTRUMENTATION_RUNNER="$(
+            adb shell pm list instrumentation | tr -d '\r' |
+              awk '/^instrumentation:com\.sentinel\.quantum\.test\// {
+                sub(/^instrumentation:/, "")
+                sub(/ .*/, "")
+                print
+                exit
+              }'
+          )"
+          if [[ -z "$INSTRUMENTATION_RUNNER" ]]; then
+            echo "Android setup-reboot instrumentation runner was not registered."
+            adb shell pm list instrumentation || true
+            exit 1
+          fi
+          set +e
+          timeout --signal=INT --kill-after=30s 300s \
+            adb shell am instrument -w -r \
+              -e class com.sentinel.quantum.PhoneCoreSetupRebootPreparationInstrumentationTest \
+              -e preserve_state true "$INSTRUMENTATION_RUNNER" |
+            tr -d '\r' |
+            tee "$OUTPUT/setup-reboot-instrumentation.log"
+          INSTRUMENTATION_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]] ||
+            ! grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$OUTPUT/setup-reboot-instrumentation.log"; then
+            echo "Setup-reboot preparation instrumentation failed or reported zero tests."
+            exit 1
+          fi
+
+          adb shell run-as com.sentinel.quantum cat shared_prefs/phone_core_setup_wizard_v2.xml \
+            > "$OUTPUT/setup-reboot-state-before-reboot.xml"
+          grep -Fq '<string name="lifecycle_state_v1">IN_PROGRESS</string>' \
+            "$OUTPUT/setup-reboot-state-before-reboot.xml"
+          grep -Fq 'name="attempted_target"' "$OUTPUT/setup-reboot-state-before-reboot.xml"
+          ! grep -Eq '<boolean name="completed" value="true"' "$OUTPUT/setup-reboot-state-before-reboot.xml"
+
+          adb logcat -c
+          set +e
+          timeout --signal=INT --kill-after=5s 30s \
+            adb shell reboot > "$OUTPUT/setup-reboot-command.txt" 2>&1
+          REBOOT_COMMAND_STATUS=$?
+          set -e
+          if [[ "$REBOOT_COMMAND_STATUS" -eq 124 || "$REBOOT_COMMAND_STATUS" -eq 137 ]]; then
+            echo "Android reboot command exceeded its 30 second watchdog."
+            exit 1
+          fi
+          timeout 180s adb wait-for-device
+          BOOTED=0
+          for _ in $(seq 1 120); do
+            if [[ "$(adb get-state 2>/dev/null | tr -d '\r')" == "device" ]] &&
+              [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+              BOOTED=1
+              break
+            fi
+            sleep 2
+          done
+          test "$BOOTED" = "1"
+          ACTUAL_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+          printf '%s\n' "$ACTUAL_API" > "$OUTPUT/setup-reboot-sdk.txt"
+          test "$ACTUAL_API" = "$API_LEVEL"
+
+          adb shell run-as com.sentinel.quantum cat shared_prefs/phone_core_setup_wizard_v2.xml \
+            > "$OUTPUT/setup-reboot-state-after-reboot.xml"
+          grep -Fq '<string name="lifecycle_state_v1">IN_PROGRESS</string>' \
+            "$OUTPUT/setup-reboot-state-after-reboot.xml"
+          grep -Fq 'name="attempted_target"' "$OUTPUT/setup-reboot-state-after-reboot.xml"
+          ! grep -Eq '<boolean name="completed" value="true"' "$OUTPUT/setup-reboot-state-after-reboot.xml"
+
+          adb shell am force-stop com.sentinel.quantum
+          adb shell am start -W -n com.sentinel.quantum/.MainActivity \
+            > "$OUTPUT/setup-reboot-main-launch.txt" 2>&1
+          UI_READY=0
+          for _ in $(seq 1 30); do
+            adb shell uiautomator dump /sdcard/sentinel-setup-reboot.xml >/dev/null 2>&1 || true
+            adb shell cat /sdcard/sentinel-setup-reboot.xml > "$OUTPUT/setup-reboot-ui.xml" 2>/dev/null || true
+            if grep -Fq 'Configuration initiale' "$OUTPUT/setup-reboot-ui.xml"; then
+              UI_READY=1
+              break
+            fi
+            sleep 1
+          done
+          test "$UI_READY" = "1"
+          adb logcat -d -v time > "$OUTPUT/setup-reboot-logcat.txt"
+          if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$OUTPUT/setup-reboot-logcat.txt"; then
+            echo "Crash/ANR detected during setup reboot resume."
+            exit 1
+          fi
+
       - name: Run emulator application/runtime qualification
         id: runtime
         working-directory: ./native-android-app
@@ -338,8 +506,22 @@ jobs:
           SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
           HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}
           INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
+          SETUP_REBOOT_OUTCOME: ${{ steps.setup_reboot.outcome }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
           APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' -type f -print -quit)
           test -n "$APK_PATH"
@@ -349,7 +531,10 @@ jobs:
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
           # the exact runtime APK before requiring a successful app-data reset.
-          adb install -r "$APK_PATH"
+          timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"
+          timeout --signal=INT --kill-after=5s 30s adb shell pm path com.sentinel.quantum |
+            tr -d '\r' > "$OUTPUT/runtime-package-path.txt"
+          grep -Eq '^package:[^[:space:]]+\.apk$' "$OUTPUT/runtime-package-path.txt"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
@@ -388,9 +573,23 @@ jobs:
           SOURCE_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
           HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}
           INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
+          SETUP_REBOOT_OUTCOME: ${{ steps.setup_reboot.outcome }}
           RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           LOGCAT_STATUS=0
@@ -411,6 +610,7 @@ jobs:
           const modernPhoneCore = api >= 29;
           const hostContractsPassed = process.env.HOST_CONTRACT_RESULT === 'success';
           const instrumentationPassed = process.env.INSTRUMENTATION_OUTCOME === 'success';
+          const setupRebootPassed = process.env.SETUP_REBOOT_OUTCOME === 'success';
           const file = (name) => path.join(output, name);
           const exists = (name) => fs.existsSync(file(name));
           const nonEmpty = (name, minBytes = 1) => exists(name) && fs.statSync(file(name)).size >= minBytes;
@@ -419,6 +619,9 @@ jobs:
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => read(name).split(/\r?\n/)
             .some((line) => line.trim() === 'com.sentinel.quantum');
+          const packageStateConfirmed = /^Package \[com\.sentinel\.quantum\]$/m.test(read('package.txt'));
+          const runtimePackagePathConfirmed = /^package:[^\r\n\s]+\.apk$/m.test(read('runtime-package-path.txt'));
+          const sdkApiExact = read('setup-reboot-sdk.txt').trim() === String(api);
           const walk = (dir) => {
             if (!fs.existsSync(dir)) return [];
             return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -480,6 +683,18 @@ jobs:
 
           const callbackObserved = modernPhoneCore &&
             contains('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+          const screeningResponseSentObserved = modernPhoneCore &&
+            contains('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=true');
+          const SCREENING_RESPONSE_BUDGET_MS = 450;
+          const screeningLatencyValues = [...read('call-screening-latency-logcat.txt').matchAll(
+            /CallScreeningService:response_elapsed_ms=(\d+)/g
+          )].map((match) => Number(match[1]));
+          const screeningLatencyObserved = modernPhoneCore &&
+            screeningResponseSentObserved &&
+            screeningLatencyValues.length > 0 &&
+            screeningLatencyValues.every((elapsedMs) =>
+              Number.isSafeInteger(elapsedMs) && elapsedMs < SCREENING_RESPONSE_BUDGET_MS
+            );
           const decisionObserved = api >= 36
             ? contains('phone-private-timeline-prefix.xml', 'CALL_SCREENED:')
             : null;
@@ -527,6 +742,11 @@ jobs:
           const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') &&
             !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
           const instrumentationKey = `connected_instrumentation_api${api}`;
+          const setupRebootObserved = setupRebootPassed &&
+            contains('setup-reboot-state-after-reboot.xml', '<string name="lifecycle_state_v1">IN_PROGRESS</string>') &&
+            contains('setup-reboot-state-after-reboot.xml', 'name="attempted_target"') &&
+            !contains('setup-reboot-state-after-reboot.xml', '<boolean name="completed" value="true"') &&
+            contains('setup-reboot-ui.xml', 'Configuration initiale');
 
           const checks = {
             android_app_unit_tests: hostContractsPassed,
@@ -543,9 +763,10 @@ jobs:
             min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
             cold_install_and_relaunch: coldRelaunchObserved,
             phone_core_setup_resume: modernPhoneCore
-              ? instrumentationEvidencePassed && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest') && completedInstrumentationClass('PhoneCoreSetupResumeInstrumentationTest')
+              ? instrumentationEvidencePassed && setupRebootObserved && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest') && completedInstrumentationClass('PhoneCoreSetupResumeInstrumentationTest')
               : null,
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
+            screening_latency_observed: modernPhoneCore ? screeningLatencyObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
@@ -554,6 +775,8 @@ jobs:
             sms_all_parts_delivered_callback: api >= 36 ? smsDeliveredCallbackObserved : null,
             role_revocation_fail_closed: modernPhoneCore ? roleRevocationFailClosed : null,
             effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
+            sdk_api_exact: sdkApiExact,
+            runtime_package_path: runtimePackagePathConfirmed,
             no_crash_or_anr: crashOrAnrAbsent
           };
 
@@ -568,6 +791,8 @@ jobs:
             'all_static_navigation_surfaces_render',
             'standalone_activity_surfaces_render',
             'cold_install_and_relaunch',
+            'sdk_api_exact',
+            'runtime_package_path',
             'no_crash_or_anr'
           ];
           const required = api === 24
@@ -576,6 +801,7 @@ jobs:
                 ...commonRequired,
                 'phone_core_setup_resume',
                 'synthetic_call_screening_observed',
+                'screening_latency_observed',
                 'incoming_call_telecom_flow',
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',
@@ -588,15 +814,18 @@ jobs:
           if (process.env.RUNTIME_OUTCOME !== 'success') evidenceFailures.push('runtime_execution');
           const validSha = (value) => /^[a-f0-9]{40}$/.test(value || '');
           const provenanceValid = validSha(process.env.BUILT_COMMIT) &&
-            process.env.BUILT_COMMIT === process.env.GITHUB_SHA &&
+            process.env.BUILT_COMMIT === process.env.SOURCE_HEAD_SHA &&
             validSha(process.env.SOURCE_HEAD_SHA) &&
             Boolean(process.env.SOURCE_HEAD_REF) &&
             (process.env.GITHUB_EVENT_NAME !== 'pull_request' || validSha(process.env.SOURCE_BASE_SHA));
           if (!provenanceValid) evidenceFailures.push('code_provenance');
           const apkSha256 = read('apk.sha256').match(/^([a-f0-9]{64})\s/);
           if (!apkSha256) evidenceFailures.push('apk_provenance');
-          if (!nonEmpty('package.txt') || !contains('package.txt', 'com.sentinel.quantum')) {
+          if (!nonEmpty('package.txt') || !packageStateConfirmed) {
             evidenceFailures.push('package_state');
+          }
+          if (!runtimePackagePathConfirmed) {
+            evidenceFailures.push('runtime_package_path');
           }
 
           const report = {
@@ -623,6 +852,7 @@ jobs:
               runtime_outcome: process.env.RUNTIME_OUTCOME,
               instrumentation: api === 24 ? 'raw adb instrumentation log' : 'Gradle connected test XML',
               instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
+              setup_reboot_outcome: process.env.SETUP_REBOOT_OUTCOME,
               runtime: 'files produced in this API lane',
               revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null
             },
@@ -655,6 +885,20 @@ jobs:
         if: always()
         shell: bash
         run: |
+          set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           adb emu kill >/dev/null 2>&1 || true
           if [[ -f "$RUNNER_TEMP/sentinel-emulator.pid" ]]; then
             kill "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1 || true

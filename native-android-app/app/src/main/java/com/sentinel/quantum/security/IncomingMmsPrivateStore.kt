@@ -26,6 +26,9 @@ internal object IncomingMmsPrivateStore {
 
     @Synchronized
     fun persist(filesDir: File, data: ByteArray): Result {
+        if (data.isEmpty() || data.size.toLong() > MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
+            return failed()
+        }
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return failed()
         val targetName = IncomingMmsIdentity.persistedFileName(digest) ?: return failed()
         val partialName = IncomingMmsIdentity.partialFileName(digest) ?: return failed()

@@ -8,6 +8,20 @@ FLOW_PACKAGE="com.sentinel.quantum"
 FLOW_NUMBER="5550100"
 FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
+ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+  [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ADB command watchdog values must be positive integer seconds." >&2
+  exit 2
+fi
+adb() {
+  command timeout \
+    --signal=INT \
+    --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+    "${ADB_COMMAND_TIMEOUT_SECONDS}s" \
+    adb "$@"
+}
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 
 role_holders() {
@@ -335,6 +349,8 @@ adb emu gsm call "$FLOW_NUMBER"
 # identity. Android 10 can fail emergency-number classification on an emulator even after callback
 # invocation, so CALL_SCREENED:* remains a stricter, separate rule-engine-decision proof.
 wait_logcat_marker "CallScreeningService:onScreenCall" "call-screening-callback-logcat.txt"
+wait_logcat_marker "CallScreeningService:response_elapsed_ms=" "call-screening-latency-logcat.txt"
+wait_logcat_marker "CallScreeningService:response_sent=true" "call-screening-response-sent-logcat.txt"
 wait_incoming_sentinel_surface
 if [[ "$FLOW_API" -ge 36 ]]; then
   wait_private_timeline_signal_prefix "CALL_SCREENED:"

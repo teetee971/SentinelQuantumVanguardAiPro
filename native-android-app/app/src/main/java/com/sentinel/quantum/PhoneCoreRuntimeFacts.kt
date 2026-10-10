@@ -1,7 +1,6 @@
 package com.sentinel.quantum
 
 import android.Manifest
-import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Context
 import android.os.Build
@@ -11,6 +10,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.PermissionChecker
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
+import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
 import com.sentinel.quantum.security.SentinelMissedCallReceiver
 import com.sentinel.quantum.security.SmsActivationDiagnostics
@@ -33,8 +33,7 @@ internal object PhoneCoreRuntimeFacts {
         val notificationsGloballyEnabled =
             NotificationManagerCompat.from(context).areNotificationsEnabled()
         val fullScreenIntentReady =
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
-                context.getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
+            SentinelCallNotificationHelper.isFullScreenIntentAllowed(context)
 
         return PhoneCoreSetupWizardStore.Facts(
             corePermissionsReady =
@@ -55,6 +54,7 @@ internal object PhoneCoreRuntimeFacts {
             mmsPermissionsReady =
                 hasEffectivePermission(context, Manifest.permission.RECEIVE_MMS) &&
                     hasEffectivePermission(context, Manifest.permission.RECEIVE_WAP_PUSH),
+            mmsSafePreviewValidated = MmsSafePreviewReadiness.softwareValidated,
             notificationChannelsReady =
                 notificationPermissionGranted &&
                     notificationsGloballyEnabled &&

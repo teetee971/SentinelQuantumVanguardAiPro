@@ -1,6 +1,7 @@
 package com.sentinel.quantum.ui.screens
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
@@ -60,6 +61,18 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     val store = remember(context) { CallBlocklistStore(context.applicationContext) }
     var postureEpoch by remember { mutableIntStateOf(0) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
+
+    fun launchPhoneCoreSetup() {
+        actionStatus = null
+        try {
+            context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
+        } catch (_: ActivityNotFoundException) {
+            actionStatus = "Android n’a pas pu ouvrir la configuration Phone Core. Vérifiez l’installation de Sentinel, puis réessayez."
+        } catch (_: RuntimeException) {
+            actionStatus = "Android a refusé l’ouverture de la configuration Phone Core. Vérifiez l’installation de Sentinel, puis réessayez."
+        }
+    }
+
 
     DisposableEffect(hostActivity) {
         val observer = LifecycleEventObserver { _, event ->
@@ -299,7 +312,7 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(
-                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                onClick = { launchPhoneCoreSetup() },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.phone_lists_configure_phone_core))

@@ -2,6 +2,7 @@ package com.sentinel.quantum.ui.screens
 
 import android.Manifest
 import android.app.role.RoleManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -77,9 +78,48 @@ fun CallBlockingScreen(navController: NavController) {
     val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         screeningState = CallScreeningActivationPolicy.read(context)
+        status = when (screeningState) {
+            CallScreeningActivationPolicy.State.HELD ->
+                "Filtrage d’appel activé par Android."
+            CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD ->
+                "Activation du filtrage d’appel non confirmée. Vous pouvez réessayer."
+            CallScreeningActivationPolicy.State.UNAVAILABLE ->
+                "Le filtrage d’appel reste indisponible dans cette configuration Android."
+        }
     }
     val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         contactsAllowed = granted
+        status = if (granted) {
+            "Accès aux contacts accordé."
+        } else {
+            "Accès aux contacts refusé. L’identification de l’appelant restera limitée aux données disponibles."
+        }
+    }
+
+    fun launchCallScreeningRole() {
+        val request = requestCallScreeningActivation(context)
+        if (request == null) {
+            screeningState = CallScreeningActivationPolicy.read(context)
+            status = "Le filtrage d’appel n’est plus disponible dans cette configuration Android."
+            return
+        }
+        try {
+            roleLauncher.launch(request)
+        } catch (_: ActivityNotFoundException) {
+            status = "Android n’a pas pu ouvrir l’activation du filtrage d’appel. Vérifiez les rôles disponibles, puis réessayez."
+        } catch (_: RuntimeException) {
+            status = "Android a refusé l’activation du filtrage d’appel. Vérifiez les rôles disponibles, puis réessayez."
+        }
+    }
+
+    fun requestContactsPermission() {
+        try {
+            contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
+        } catch (_: ActivityNotFoundException) {
+            status = "Android n’a pas pu ouvrir la demande d’accès aux contacts. Vérifiez les réglages, puis réessayez."
+        } catch (_: RuntimeException) {
+            status = "Android a refusé la demande d’accès aux contacts. Vérifiez les réglages, puis réessayez."
+        }
     }
 
     Scaffold(
@@ -111,10 +151,7 @@ fun CallBlockingScreen(navController: NavController) {
             )
             if (screeningState == CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD) {
                 Button(
-                    onClick = {
-                        requestCallScreeningActivation(context)?.let(roleLauncher::launch)
-                            ?: run { screeningState = CallScreeningActivationPolicy.read(context) }
-                    },
+                    onClick = { launchCallScreeningRole() },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.call_blocking_enable_role)) }
             } else if (screeningState == CallScreeningActivationPolicy.State.UNAVAILABLE) {
@@ -132,7 +169,7 @@ fun CallBlockingScreen(navController: NavController) {
             )
             if (!contactsAllowed) {
                 Button(
-                    onClick = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
+                    onClick = { requestContactsPermission() },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.caller_id_contacts_enable)) }
             }

@@ -84,10 +84,71 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
   assert.doesNotMatch(dialer, /"Configuration téléphone prête"/);
   assert.doesNotMatch(dialer, /"Configuration téléphone à terminer"/);
 
-  assert.match(uiStateTest, /onlyFourteenOfFourteenIsValidated/);
-  assert.match(uiStateTest, /thirteenOfFourteenCannotClaimValidated/);
+  assert.match(uiStateTest, /completePhysicalProofIsReady/);
+  assert.match(uiStateTest, /thirteenOfFourteenRemainsLimited/);
+  assert.match(
+    dialer,
+    /physicalDeviceValidated\s*=\s*physicalEvidence\.physicalDeviceValidated/,
+    'customer Phone Core state must receive physical validation separately from local technical evidence'
+  );
 
   assert.doesNotMatch(source, /wifiScanFresh|SIGNAL_WIFI_SCAN_FRESH|WIFI_SCAN_FRESH|Kind\.WIFI/);
+});
+
+test('first-run completion includes the same secure MMS prerequisite as Phone Core readiness', () => {
+  const activation = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'),
+    'utf8'
+  );
+  const setupStore = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt'),
+    'utf8'
+  );
+  const runtimeFacts = readFileSync(
+    resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt'),
+    'utf8'
+  );
+  assert.match(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*,/);
+  assert.doesNotMatch(setupStore, /mmsSafePreviewValidated:\s*Boolean\s*=\s*true/);
+  for (const field of ['dialerRoleAvailable', 'callScreeningRoleAvailable', 'smsRoleAvailable']) {
+    assert.match(setupStore, new RegExp(`${field}:\\s*Boolean\\s*,`));
+    assert.doesNotMatch(setupStore, new RegExp(`${field}:\\s*Boolean\\s*=\\s*true`));
+  }
+  assert.match(setupStore, /facts\.mmsSafePreviewValidated/);
+  assert.match(runtimeFacts, /MmsSafePreviewReadiness\.softwareValidated/);
+  assert.match(
+    activation,
+    /status = when \{[\s\S]*!mmsSafePreviewValidated[\s\S]*Phone Core bloqué · aperçu MMS sécurisé indisponible/
+  );
+});
+
+test('first-run assistant never requests an Android capability before durable state commits', () => {
+  const main = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt'), 'utf8');
+  const activation = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt'), 'utf8');
+  const setupStore = readFileSync(resolve('native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt'), 'utf8');
+
+  assert.match(setupStore, /fun markInProgress\(\): Boolean/);
+  assert.match(setupStore, /private fun setLifecycleState\(state: LifecycleState\): Boolean/);
+  assert.match(
+    main,
+    /if \(!wizard\.markOffered\(\)\) \{[\s\S]*launchPhoneCoreSetup\(persistenceError = true\)/,
+    'a failed OFFERED write must open only the retryable error surface'
+  );
+  assert.match(
+    main,
+    /if \(!wizard\.markInProgress\(\)\) \{[\s\S]*launchPhoneCoreSetup\(persistenceError = true\)/,
+    'a failed IN_PROGRESS write must open only the retryable error surface'
+  );
+  assert.match(
+    main,
+    /private fun launchPhoneCoreSetup\(persistenceError: Boolean = false\)[\s\S]*EXTRA_SETUP_PERSISTENCE_ERROR/,
+    'the error surface must carry an explicit persistence-failure marker'
+  );
+  assert.match(
+    activation,
+    /if \(!setupWizard\.markAttemptedTarget\(setupTargetKey\)\) \{[\s\S]*setupPersistenceError = true[\s\S]*return\s*\}/,
+    'the setup target must be durably recorded before launching Android and failures must stay visible'
+  );
 });
 
 

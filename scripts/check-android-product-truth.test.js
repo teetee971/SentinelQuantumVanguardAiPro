@@ -274,6 +274,40 @@ test('rejects call-screening post-response persistence on the callback thread', 
   assert.ok(auditProductTruth(s).some((e) => e.includes('post-response Room')));
 });
 
+test('rejects caller-id enrichment moved before the final screening response', () => {
+  const s = source();
+  const finalResponse = s.callScreening.indexOf(
+    'respondAndLog(callDetails, response.build(), startedAtElapsedMs)'
+  );
+  assert.ok(finalResponse >= 0, 'fixture must contain the final response boundary');
+  const moved = {
+    ...s,
+    callScreening:
+      s.callScreening.slice(0, finalResponse) +
+      'val profile = CallerIdentityResolver.resolve(\n' +
+      s.callScreening.slice(finalResponse)
+  };
+  assert.ok(auditProductTruth(moved).some((e) => e.includes('final respondToCall')));
+});
+
+test('rejects screening side effects when Telecom response failure is not guarded', () => {
+  const s = source();
+  s.callScreening = s.callScreening.replace(
+    'if (!respondAndLog(callDetails, response.build(), startedAtElapsedMs)) return',
+    'respondAndLog(callDetails, response.build(), startedAtElapsedMs)'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('final respondToCall')));
+});
+
+test('rejects a dialer READY state that ignores the MMS safe-preview self-test', () => {
+  const s = source();
+  s.dialerActivity = s.dialerActivity.replace(
+    '                        MmsSafePreviewReadiness.softwareValidated',
+    '                        /* regression fixture: MMS self-test ignored */ true'
+  );
+  assert.ok(auditProductTruth(s).some((e) => e.includes('MMS safe-preview self-test')));
+});
+
 test('requires serialized local-log file access and async callback logging', () => {
   const s = source();
   s.localLogger = s.localLogger.replaceAll('synchronized(FILE_LOCK)', 'run');

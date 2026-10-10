@@ -1,0 +1,87 @@
+name: Phone Core Physical Proof Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      evidence_run_id:
+        description: 'GitHub Actions run ID containing the lab evidence artifact'
+        required: true
+        type: string
+      evidence_artifact:
+        description: 'Artifact name containing session.json, artifacts and evidence files'
+        required: true
+        type: string
+      expected_source_sha:
+        description: 'Exact 40-character commit SHA exercised by the physical session'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify:
+    name: Verify signed physical Phone Core evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Validate workflow inputs
+        shell: bash
+        env:
+          EVIDENCE_RUN_ID: ${{ inputs.evidence_run_id }}
+          EVIDENCE_ARTIFACT: ${{ inputs.evidence_artifact }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$EVIDENCE_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$EVIDENCE_ARTIFACT" =~ ^[A-Za-z0-9._-]{1,128}$ ]]
+          [[ "$EXPECTED_SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+
+      - name: Checkout trusted verification source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: trusted-source
+
+      - name: Verify exercised source object without checking out untrusted code
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+        run: |
+          set -euo pipefail
+          git -C trusted-source fetch --no-tags --depth=1 origin "$EXPECTED_SOURCE_SHA"
+          test "$(git -C trusted-source rev-parse FETCH_HEAD)" = "$EXPECTED_SOURCE_SHA"
+
+      - name: Download physical lab evidence artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ inputs.evidence_artifact }}
+          path: physical-session-bundle
+          run-id: ${{ inputs.evidence_run_id }}
+          repository: ${{ github.repository }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify signed physical session
+        shell: bash
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+        run: |
+          set -euo pipefail
+          test -s physical-session-bundle/session.json
+          test -s trusted-source/config/phone-core-physical-proof-trust.json
+          mkdir -p "$RUNNER_TEMP/phone-core-physical-proof"
+          node trusted-source/scripts/verify-phone-core-physical-session.js \
+            physical-session-bundle/session.json \
+            trusted-source/config/phone-core-physical-proof-trust.json \
+            "$EXPECTED_SOURCE_SHA" \
+            | tee "$RUNNER_TEMP/phone-core-physical-proof/verdict.txt"
+
+      - name: Upload verification verdict
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: PhoneCore-Physical-Proof-Verdict-${{ inputs.expected_source_sha }}
+          path: ${{ runner.temp }}/phone-core-physical-proof/
+          if-no-files-found: warn
+          retention-days: 30

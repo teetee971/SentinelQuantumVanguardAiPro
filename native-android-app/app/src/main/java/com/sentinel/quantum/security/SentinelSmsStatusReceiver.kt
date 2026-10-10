@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -72,13 +74,72 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                         successful = successful,
                         androidResultCode = androidResultCode
                     )
+                } catch (_: Exception) {
+                    queueProviderRepair(appContext)
+                    LocalLogger(appContext).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "SmsStatus",
+                        "Échec inattendu du callback SMS; réparation provider planifiée"
+                    )
                 } finally {
                     pendingResult.finish()
                 }
             }
         } catch (_: RuntimeException) {
+            val captured = runCatching {
+                captureAndScheduleAfterSaturation(
+                    context = appContext,
+                    stage = stage,
+                    sendToken = sendToken,
+                    providerMessageId = providerMessageId,
+                    partIndex = partIndex,
+                    partCount = partCount,
+                    successful = successful
+                )
+            }.getOrDefault(false)
+            if (!captured) {
+                LocalLogger(appContext).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "SmsStatus",
+                    "Callback SMS non persisté après saturation de la file"
+                )
+            }
             pendingResult.finish()
         }
+    }
+
+    /**
+     * Queue-full fallback. Only the bounded opaque progress record is committed here; provider
+     * projection and timeline work remain on the repair scheduler.
+     */
+    private fun captureAndScheduleAfterSaturation(
+        context: Context,
+        stage: SmsDeliveryStatusBus.Stage,
+        sendToken: Int,
+        providerMessageId: Long,
+        partIndex: Int,
+        partCount: Int,
+        successful: Boolean
+    ): Boolean {
+        var persistenceFailed = false
+        val outcome = SmsCallbackProgressStore(context).record(
+            sendToken = sendToken,
+            providerMessageId = providerMessageId,
+            partIndex = partIndex,
+            partCount = partCount,
+            stage = stage,
+            successful = successful,
+            onPersistenceFailure = { persistenceFailed = true }
+        ) ?: return false
+        if (persistenceFailed) {
+            LocalLogger(context).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "SmsStatus",
+                "Progression SMS capturée mais persistance non confirmée; réparation planifiée"
+            )
+        }
+        queueProviderRepair(context)
+        return true
     }
 
     private fun processValidatedCallback(
@@ -135,10 +196,14 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             markSent = { conversationStore.markOutgoingSent(providerMessageId) },
             markDelivery = { conversationStore.markDeliveryResult(providerMessageId, it) }
         )
-        if (providerUpdated && !runCatching {
-                progressStore.markProviderApplied(sendToken, providerMessageId, progress.state)
-            }.getOrDefault(false)) {
-            progressPersistenceFailed = true
+        val providerApplied = providerUpdated && runCatching {
+            progressStore.markProviderApplied(sendToken, providerMessageId, progress.state)
+        }.getOrDefault(false)
+        // The outgoing-submission ledger protects the radio submission boundary only. Once every
+        // SENT callback has a verdict, delivery reports may continue in the progress store without
+        // occupying admission capacity or blocking a later user-initiated message.
+        if (providerApplied && progress.submissionResolved) {
+            SmsOutgoingSubmissionStore(context).remove(sendToken, providerMessageId)
         }
         if (!providerUpdated) {
             queueProviderRepair(context)
@@ -198,11 +263,12 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
 
     companion object {
         private val repairQueued = AtomicBoolean(false)
+        private const val MAX_PENDING_CALLBACKS = 64
 
         fun queueProviderRepair(context: Context) {
             if (!repairQueued.compareAndSet(false, true)) return
             val appContext = context.applicationContext
-            CALLBACK_EXECUTOR.schedule({
+            REPAIR_SCHEDULER.schedule({
                 repairQueued.set(false)
                 val store = SmsCallbackProgressStore(appContext)
                 var retry = false
@@ -220,6 +286,9 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
                     if (!applied || !runCatching {
                             store.markProviderApplied(write.sendToken, id, write.outcome.state)
                         }.getOrDefault(false)) retry = true
+                    else if (write.outcome.submissionResolved) {
+                        SmsOutgoingSubmissionStore(appContext).remove(write.sendToken, id)
+                    }
                 }
                 // Repair is a provider projection only; it must never manufacture physical proofs.
                 if (retry) queueProviderRepair(appContext)
@@ -228,9 +297,17 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
 
         const val CALLBACK_URI_SCHEME = "sentinel-sms-status"
         const val CALLBACK_URI_HOST = "callback"
-        private val CALLBACK_EXECUTOR = Executors.newSingleThreadScheduledExecutor { runnable ->
-            Thread(runnable, "SentinelSmsStatus").apply { isDaemon = true }
+        private val CALLBACK_EXECUTOR = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { runnable -> Thread(runnable, "SentinelSmsStatus").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
+        private val REPAIR_SCHEDULER = Executors.newSingleThreadScheduledExecutor { runnable ->
+            Thread(runnable, "SentinelSmsStatusRepair").apply { isDaemon = true }
         }
     }
 }
-

@@ -76,6 +76,34 @@ test('workflow changes for Android or web require the affected gate family', () 
   );
 });
 
+test('Phone Core workflows checkout and assert the pull request source head', () => {
+  for (const workflowPath of [
+    '.github/workflows/android-emulation-qualification.yml',
+    '.github/workflows/build-native-android.yml',
+    '.github/workflows/android-instrumentation.yml'
+  ]) {
+    const workflow = readFileSync(workflowPath, 'utf8');
+    assert.match(
+      workflow,
+      /uses:\s*actions\/checkout@[^\n]+\n\s+with:\n\s+ref:\s*\$\{\{\s*github\.event\.pull_request\.head\.sha\s*\|\|\s*github\.sha\s*\}\}/,
+      `${workflowPath} must checkout the exact source head`
+    );
+    assert.match(
+      workflow,
+      /test\s+"\$\(git rev-parse HEAD\)"\s*=\s*"\$TARGET_SHA"/,
+      `${workflowPath} must fail closed when the checked out SHA differs`
+    );
+  }
+});
+
+test('modern instrumentation lanes require non-empty, failure-free JUnit reports', () => {
+  const workflow = readFileSync('.github/workflows/android-instrumentation.yml', 'utf8');
+  assert.match(workflow, /if:\s*matrix\.api-level\s*!=\s*24/);
+  assert.match(workflow, /androidTest-results\/connected/);
+  assert.match(workflow, /test\s+"\$TEST_COUNT"\s+-gt\s+0/);
+  assert.match(workflow, /<\(\?:skipped\|failure\|error\)/);
+});
+
 test('production gate timeout exceeds the longest dependent emulator critical path', () => {
   assert.ok(
     DEFAULT_GATE_TIMEOUT_MS > EMULATION_MAX_CRITICAL_PATH_MS,
@@ -119,6 +147,29 @@ test('exact-head selection rejects unrelated SHA and selects newest retry', () =
     { id: 4, head_sha: sha, event: 'pull_request', run_number: 11, run_attempt: 2 }
   ], sha);
   assert.equal(selected.id, 4);
+});
+
+test('exact-head selection rejects a matching SHA from another pull request', () => {
+  const sha = 'a'.repeat(40);
+  const selected = selectLatestExactHeadRun([
+    {
+      id: 10,
+      head_sha: sha,
+      event: 'pull_request',
+      pull_requests: [{ number: 99 }],
+      run_number: 20,
+      run_attempt: 4
+    },
+    {
+      id: 11,
+      head_sha: sha,
+      event: 'pull_request',
+      pull_requests: [{ number: 12 }],
+      run_number: 19,
+      run_attempt: 1
+    }
+  ], sha, 12);
+  assert.equal(selected.id, 11);
 });
 
 test('missing and in-progress evidence waits while non-success completion fails closed', () => {

@@ -40,6 +40,9 @@ class SentinelInCallService : InCallService() {
     private var currentDirection = "UNKNOWN"
 
     private val trackedCalls = LinkedHashSet<Call>()
+    private val callbacksRegistered = java.util.Collections.synchronizedSet(
+        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
+    )
     private val callIds = java.util.IdentityHashMap<Call, String>()
     private val callDirections = java.util.IdentityHashMap<Call, String>()
     private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
@@ -81,10 +84,11 @@ class SentinelInCallService : InCallService() {
 
     override fun onUnbind(intent: Intent): Boolean {
         if (registry.detach(this)) {
-            trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+            trackedCalls.toList().forEach(::unregisterCallback)
             trackedCalls.clear()
+            callbacksRegistered.clear()
             callIds.clear()
-        callDirections.clear()
+            callDirections.clear()
             currentCall = null
             activeService = null
             currentDirection = "UNKNOWN"
@@ -97,22 +101,50 @@ class SentinelInCallService : InCallService() {
     /** Reconcile with the platform list when an activity resumes or Telecom brings us forward. */
     private fun synchronizePlatformCalls() {
         if (activeService !== this) return
-        calls.forEach { call ->
-            if (trackedCalls.add(call)) {
-                callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
+        calls.forEach(::trackCall)
+        refreshForegroundCall(updateNotification = false)
+    }
+
+    /**
+     * Telecom may race callback delivery with call teardown, especially on vendor dialers.
+     * Keep the call visible when registration is rejected, but never let that framework race
+     * crash the in-call service. Reconciliation can retry registration on a later foreground.
+     */
+    private fun trackCall(call: Call): Boolean {
+        val newlyTracked = trackedCalls.add(call)
+        if (!callIds.containsKey(call)) {
+            callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
+        }
+        if (!callbacksRegistered.contains(call)) {
+            runCatching {
                 call.registerCallback(callback, Handler(Looper.getMainLooper()))
+            }.onSuccess {
+                callbacksRegistered.add(call)
+            }.onFailure {
+                LocalLogger(this).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "InCall",
+                    "Callback Telecom indisponible; nouvelle tentative lors de la prochaine synchronisation"
+                )
             }
         }
-        refreshForegroundCall(updateNotification = false)
+        return newlyTracked
+    }
+
+    private fun unregisterCallback(call: Call) {
+        if (!callbacksRegistered.remove(call)) return
+        runCatching { call.unregisterCallback(callback) }.onFailure {
+            LocalLogger(this).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "InCall",
+                "Désinscription du callback Telecom refusée par le framework"
+            )
+        }
     }
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
-        trackedCalls.add(call)
-        if (!callIds.containsKey(call)) {
-            callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
-        }
-        call.registerCallback(callback, Handler(Looper.getMainLooper()))
+        trackCall(call)
         initializeAudioState()
         refreshForegroundCall()
         if (call.state != Call.STATE_RINGING) showInCallActivity()
@@ -125,8 +157,9 @@ class SentinelInCallService : InCallService() {
     }
 
     override fun onDestroy() {
-        trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+        trackedCalls.toList().forEach(::unregisterCallback)
         trackedCalls.clear()
+        callbacksRegistered.clear()
         callIds.clear()
         callDirections.clear()
         val ownedSession = registry.detach(this)
@@ -146,7 +179,7 @@ class SentinelInCallService : InCallService() {
     }
 
     override fun onCallRemoved(call: Call) {
-        call.unregisterCallback(callback)
+        unregisterCallback(call)
         trackedCalls.remove(call)
         callIds.remove(call)
         callDirections.remove(call)
@@ -270,10 +303,18 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun showInCallActivity() {
-        startActivity(
-            Intent(this, SentinelInCallActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        )
+        runCatching {
+            startActivity(
+                Intent(this, SentinelInCallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+        }.onFailure {
+            LocalLogger(this).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "InCall",
+                "Interface d’appel indisponible; l’état Telecom reste actif"
+            )
+        }
     }
 
     private fun initializeAudioState() {
@@ -484,25 +525,30 @@ class SentinelInCallService : InCallService() {
         return direction
     }
 
-    private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean {
-        val call = currentCall ?: return false
-        if (callIds[call] != callId) return false
-        if (!call.details.can(Call.Details.CAPABILITY_MUTE)) {
-            audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
-            publishCurrentCall()
-            return false
-        }
-        return runCatching {
-            audioStatus = if (muted) "Coupure du microphone demandée…" else "Réactivation du microphone demandée…"
-            publishCurrentCall()
-            setMuted(muted)
-            true
-        }.getOrElse {
-            audioStatus = "Android a refusé le changement d’état du microphone."
-            publishCurrentCall()
-            false
-        }
-    }
+    private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean =
+        performCallAction(
+            id = callId,
+            actionName = "setMuted",
+            allowed = { call ->
+                val canMute = runCatching {
+                    call.details.can(Call.Details.CAPABILITY_MUTE)
+                }.getOrDefault(false)
+                if (!canMute) {
+                    audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
+                    publishCurrentCall()
+                }
+                canMute
+            },
+            action = {
+                audioStatus = if (muted) "Coupure du microphone demandée…" else "Réactivation du microphone demandée…"
+                publishCurrentCall()
+                setMuted(muted)
+            },
+            onFailure = {
+                audioStatus = "Android a refusé le changement d’état du microphone."
+                publishCurrentCall()
+            }
+        )
 
     private fun requestAudioRoute(callId: String, routeId: String): Boolean {
         val call = currentCall ?: return false
@@ -512,6 +558,37 @@ class SentinelInCallService : InCallService() {
         } else {
             requestLegacyAudioRoute(routeId)
         }
+    }
+
+    /**
+     * Telecom can invalidate a Call between a UI state read and the command itself. Keep every
+     * command fail-closed at this boundary so an OEM race becomes a rejected action, not a
+     * crashed InCallService.
+     */
+    private fun performCallAction(
+        id: String,
+        actionName: String,
+        allowed: (Call) -> Boolean = { true },
+        action: (Call) -> Unit,
+        onFailure: () -> Unit = {}
+    ): Boolean {
+        val call = runCatching {
+            callIds.entries.firstOrNull { it.value == id }?.key
+        }.getOrNull() ?: return false
+        if (!runCatching { allowed(call) }.getOrDefault(false)) return false
+        return runCatching {
+            action(call)
+            true
+        }.onFailure {
+            runCatching {
+                LocalLogger(this).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "InCall",
+                    "Commande Telecom refusée ou devenue obsolète: $actionName"
+                )
+                onFailure()
+            }
+        }.getOrDefault(false)
     }
 
     @RequiresApi(34)
@@ -611,46 +688,62 @@ class SentinelInCallService : InCallService() {
         }
         fun hasActiveCall(): Boolean = currentCall != null
 
-        private fun callById(id: String): Call? = activeService?.let { service ->
-            service.callIds.entries.firstOrNull { it.value == id }?.key
-        }
+        fun disconnect(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "disconnect",
+            allowed = { it.state != Call.STATE_DISCONNECTED && it.state != Call.STATE_DISCONNECTING },
+            action = { it.disconnect() }
+        ) ?: false
 
-        fun disconnect(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
-            call.disconnect(); true
-        } ?: false
+        fun hold(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "hold",
+            allowed = {
+                it.state == Call.STATE_ACTIVE &&
+                    !it.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) &&
+                    it.details.can(Call.Details.CAPABILITY_HOLD)
+            },
+            action = { it.hold() }
+        ) ?: false
 
-        fun hold(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_ACTIVE || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.hold(); true
-        } ?: false
+        fun unhold(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "unhold",
+            allowed = {
+                it.state == Call.STATE_HOLDING &&
+                    !it.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) &&
+                    it.details.can(Call.Details.CAPABILITY_HOLD)
+            },
+            action = { it.unhold() }
+        ) ?: false
 
-        fun unhold(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_HOLDING || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
-            call.unhold(); true
-        } ?: false
+        fun answer(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "answer",
+            allowed = { it.state == Call.STATE_RINGING },
+            action = { it.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY) }
+        ) ?: false
 
-        fun answer(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_RINGING) return@let false
-            call.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY)
-            true
-        } ?: false
+        fun reject(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "reject",
+            allowed = { it.state == Call.STATE_RINGING },
+            action = { it.reject(false, null) }
+        ) ?: false
 
-        fun reject(id: String): Boolean = callById(id)?.let { call ->
-            if (call.state != Call.STATE_RINGING) return@let false
-            call.reject(false, null)
-            true
-        } ?: false
+        fun mergeConference(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "mergeConference",
+            allowed = { it.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) },
+            action = { it.mergeConference() }
+        ) ?: false
 
-        fun mergeConference(id: String): Boolean = callById(id)?.let { call ->
-            if (!call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE)) return@let false
-            return@let runCatching { call.mergeConference(); true }.getOrDefault(false)
-        } ?: false
-
-        fun swapConference(id: String): Boolean = callById(id)?.let { call ->
-            if (!call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)) return@let false
-            return@let runCatching { call.swapConference(); true }.getOrDefault(false)
-        } ?: false
+        fun swapConference(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "swapConference",
+            allowed = { it.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE) },
+            action = { it.swapConference() }
+        ) ?: false
 
         fun setMicrophoneMuted(id: String, muted: Boolean): Boolean =
             activeService?.requestMicrophoneMuted(id, muted) ?: false
@@ -660,16 +753,18 @@ class SentinelInCallService : InCallService() {
 
         fun startDtmf(id: String, digit: Char): Boolean {
             if (digit !in "0123456789*#") return false
-            return callById(id)?.let { call ->
-                if (call.state != Call.STATE_ACTIVE) return@let false
-                call.playDtmfTone(digit)
-                true
-            } ?: false
+            return activeService?.performCallAction(
+                id = id,
+                actionName = "startDtmf",
+                allowed = { it.state == Call.STATE_ACTIVE },
+                action = { it.playDtmfTone(digit) }
+            ) ?: false
         }
 
-        fun stopDtmf(id: String): Boolean = callById(id)?.let { call ->
-            call.stopDtmfTone()
-            true
-        } ?: false
+        fun stopDtmf(id: String): Boolean = activeService?.performCallAction(
+            id = id,
+            actionName = "stopDtmf",
+            action = { it.stopDtmfTone() }
+        ) ?: false
     }
 }

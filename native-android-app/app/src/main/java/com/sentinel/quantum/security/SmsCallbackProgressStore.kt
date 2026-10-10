@@ -29,8 +29,19 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         }
 
         val key = key(sendToken, providerMessageId)
-        val raw = preferences.getString(key, null)
+        val rawExists = preferences.contains(key)
+        val raw = runCatching { preferences.getString(key, null) }.getOrElse {
+            onPersistenceFailure()
+            return@synchronized null
+        }
         val existing = decode(raw, nowMs)
+        if (rawExists && existing == null) {
+            // A present but malformed/expired record is not an empty ledger entry. Replacing it
+            // would erase the only durable indication that a callback was already observed and
+            // could let the watchdog later manufacture a timeout. Leave repair to recovery.
+            onPersistenceFailure()
+            return@synchronized null
+        }
         if (existing?.terminal == true && existing.providerApplied) return@synchronized null
         if (existing != null && existing.state.partCount != partCount) return@synchronized null
 
@@ -68,12 +79,21 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
 
     fun pendingProviderWrites(nowMs: Long = System.currentTimeMillis()): List<PendingProviderWrite> = synchronized(LOCK) {
         preferences.all.entries.mapNotNull { (key, value) ->
-            val record = decode(value as? String, nowMs) ?: return@mapNotNull null
-            if (record.providerApplied) return@mapNotNull null
+            // A valid but expired record is ordinary retention cleanup. Any other malformed
+            // record is different: silently dropping it would let the submission watchdog
+            // convert an observed callback into a fabricated timeout.
+            val record = decode(value as? String, nowMs, enforceTtl = false)
+                ?: throw IllegalStateException("SMS callback progress contains corrupt state")
             val ids = key.split(":", limit = 2)
-            if (ids.size != 2) return@mapNotNull null
-            val sendToken = ids[0].toIntOrNull()?.takeIf { it > 0 } ?: return@mapNotNull null
-            val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L } ?: return@mapNotNull null
+            if (ids.size != 2) {
+                throw IllegalStateException("SMS callback progress key is corrupt")
+            }
+            val sendToken = ids[0].toIntOrNull()?.takeIf { it > 0 }
+                ?: throw IllegalStateException("SMS callback progress token is corrupt")
+            val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L }
+                ?: throw IllegalStateException("SMS callback progress provider id is corrupt")
+            if (nowMs - record.createdAtMs > TTL_MS) return@mapNotNull null
+            if (record.providerApplied) return@mapNotNull null
             PendingProviderWrite(sendToken, providerId, SmsCallbackProgress.pendingProviderOutcome(record.state))
         }.take(MAX_TRACKED)
     }
@@ -163,11 +183,16 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         val deliveryFailed = parseIndexes(parts[6]) ?: return null
         if (sentOk.intersect(sentFailed).isNotEmpty()) return null
         if (deliveredOk.intersect(deliveryFailed).isNotEmpty()) return null
+        val providerApplied = when (parts.getOrNull(7)) {
+            null, "0" -> false
+            "1" -> true
+            else -> return null
+        }
 
         return Persisted(
             createdAtMs = created,
             terminal = terminal,
-            providerApplied = parts.getOrNull(7) == "1",
+            providerApplied = providerApplied,
             state = SmsCallbackProgress.State(
                 partCount = partCount,
                 sentOk = sentOk,

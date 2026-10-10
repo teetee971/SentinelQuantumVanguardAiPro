@@ -7,7 +7,7 @@ class CallBlocklistStore(context: Context) {
     private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
     private val fingerprinter = CallNumberFingerprinter()
 
-    fun snapshot(now: Long = System.currentTimeMillis()): Snapshot {
+    fun snapshot(now: Long = System.currentTimeMillis()): Snapshot = withStoreLock {
         // Keep expired entries in the lookup so they cannot be mistaken for
         // legacy hashes without metadata. Legacy hashes remain permanent.
         val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
@@ -18,7 +18,7 @@ class CallBlocklistStore(context: Context) {
             .take(CallRuleEngine.MAX_EXACT_RULES)
             .toSet()
 
-        return Snapshot(
+        Snapshot(
             blockedNumberHashes = blockedHashes,
             blockedPrefixes = manualBlockedPrefixes(),
             signedSilencePrefixes = if (now < preferences.getLong(SIGNED_EXPIRES_AT, 0L)) {
@@ -33,31 +33,35 @@ class CallBlocklistStore(context: Context) {
         )
     }
 
-    fun manualBlockedPrefixes(): Set<String> =
+    fun manualBlockedPrefixes(): Set<String> = withStoreLock {
         preferences.getStringSet(PREFIXES, emptySet()).orEmpty()
             .mapNotNull { CallRuleEngine.normalizePrefix(it) }
             .take(CallRuleEngine.MAX_PREFIX_RULES)
             .toSet()
+    }
 
-    fun isArcepVerifiedBlockingEnabled(): Boolean =
+    fun isArcepVerifiedBlockingEnabled(): Boolean = withStoreLock {
         preferences.getBoolean(ARCEP_VERIFIED_BLOCKING_ENABLED, false)
+    }
 
-    fun setArcepVerifiedBlockingEnabled(enabled: Boolean): Boolean {
+    fun setArcepVerifiedBlockingEnabled(enabled: Boolean): Boolean = withStoreLock {
         if (
             enabled &&
             manualBlockedPrefixes().size + ArcepVerifiedPrefixCatalog.e164Prefixes.size >
-            CallRuleEngine.MAX_PREFIX_RULES
-        ) return false
+                CallRuleEngine.MAX_PREFIX_RULES
+        ) return@withStoreLock false
         val committed = preferences.edit()
             .putBoolean(ARCEP_VERIFIED_BLOCKING_ENABLED, enabled)
             .commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        committed
     }
 
     /** Loads persisted rules into the process cache before CallScreeningService can run. */
     fun prepareScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
-        snapshot(now).also { SCREENING_SNAPSHOT = it }
+        withStoreLock {
+            snapshot(now).also { SCREENING_SNAPSHOT = it }
+        }
 
     /** Screening-critical path: memory-only and fail-open until Application preload completes. */
     fun cachedScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
@@ -76,11 +80,13 @@ class CallBlocklistStore(context: Context) {
         duration: CallBlockMetadata.Duration,
         origin: CallBlockMetadata.Origin = CallBlockMetadata.Origin.MANUAL,
         now: Long = System.currentTimeMillis()
-    ): Boolean {
-        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
+    ): Boolean = withStoreLock {
+        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return@withStoreLock false
         val values = snapshot(now).blockedNumberHashes.toMutableSet()
-        val fingerprint = fingerprinter.fingerprint(normalized) ?: return false
-        if (fingerprint !in values && values.size >= CallRuleEngine.MAX_EXACT_RULES) return false
+        val fingerprint = fingerprinter.fingerprint(normalized) ?: return@withStoreLock false
+        if (fingerprint !in values && values.size >= CallRuleEngine.MAX_EXACT_RULES) {
+            return@withStoreLock false
+        }
         values += fingerprint
         val entry = CallBlockMetadata.Entry(
             fingerprint,
@@ -97,7 +103,7 @@ class CallBlocklistStore(context: Context) {
             .putStringSet(EXACT_METADATA, metadata)
             .commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        committed
     }
 
     /** General path; may access AndroidKeyStore and must never be called from onScreenCall(). */
@@ -110,10 +116,10 @@ class CallBlocklistStore(context: Context) {
     /** Best-effort warm-up outside the call-screening callback. */
     fun prepareFingerprintKeys() = fingerprinter.prepareExistingKeys()
 
-    fun clearBlockedNumbers(): Boolean {
+    fun clearBlockedNumbers(): Boolean = withStoreLock {
         val committed = preferences.edit().remove(EXACT_HASHES).remove(EXACT_METADATA).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        committed
     }
 
     /** UI/general path only; may access AndroidKeyStore. */
@@ -121,33 +127,37 @@ class CallBlocklistStore(context: Context) {
         val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
         val fingerprints = fingerprinter.candidates(normalized)
         if (fingerprints.isEmpty()) return false
-        val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
-        val changed = hashes.removeAll(fingerprints)
-        if (!changed) return false
-        val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
-            .filterNot { encoded -> fingerprints.any { encoded.startsWith("$it|") } }.toSet()
-        val committed = preferences.edit()
-            .putStringSet(EXACT_HASHES, hashes)
-            .putStringSet(EXACT_METADATA, metadata)
-            .commit()
-        if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        return withStoreLock {
+            val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
+            val changed = hashes.removeAll(fingerprints)
+            if (!changed) return@withStoreLock false
+            val metadata = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
+                .filterNot { encoded -> fingerprints.any { encoded.startsWith("$it|") } }.toSet()
+            val committed = preferences.edit()
+                .putStringSet(EXACT_HASHES, hashes)
+                .putStringSet(EXACT_METADATA, metadata)
+                .commit()
+            if (committed) refreshScreeningSnapshotAfterCommit()
+            committed
+        }
     }
 
     /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
-    fun purgeExpiredBlockedNumbers(now: Long = System.currentTimeMillis()): Int {
+    fun purgeExpiredBlockedNumbers(now: Long = System.currentTimeMillis()): Int = withStoreLock {
         val entries = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty().mapNotNull(::decodeMetadata)
         val expired = entries.filterNot { it.isActive(now) }.map { it.fingerprint }.toSet()
-        if (expired.isEmpty()) return 0
+        if (expired.isEmpty()) return@withStoreLock 0
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().filterNot(expired::contains).toSet()
         val metadata = entries.filter { it.isActive(now) }.map(::encodeMetadata).toSet()
-        if (!preferences.edit().putStringSet(EXACT_HASHES, hashes).putStringSet(EXACT_METADATA, metadata).commit()) return 0
+        if (!preferences.edit().putStringSet(EXACT_HASHES, hashes).putStringSet(EXACT_METADATA, metadata).commit()) {
+            return@withStoreLock 0
+        }
         refreshScreeningSnapshotAfterCommit()
-        return expired.size
+        expired.size
     }
 
-    fun addBlockedPrefix(rawPrefix: String): Boolean {
-        val normalized = CallRuleEngine.normalizePrefix(rawPrefix) ?: return false
+    fun addBlockedPrefix(rawPrefix: String): Boolean = withStoreLock {
+        val normalized = CallRuleEngine.normalizePrefix(rawPrefix) ?: return@withStoreLock false
         val values = manualBlockedPrefixes().toMutableSet()
         val arcepCount = if (isArcepVerifiedBlockingEnabled()) {
             ArcepVerifiedPrefixCatalog.e164Prefixes.size
@@ -157,50 +167,50 @@ class CallBlocklistStore(context: Context) {
         if (
             normalized !in values &&
             values.size + 1 + arcepCount > CallRuleEngine.MAX_PREFIX_RULES
-        ) return false
+        ) return@withStoreLock false
         values += normalized
         val committed = preferences.edit().putStringSet(PREFIXES, values).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        committed
     }
 
-    fun removeBlockedPrefix(prefix: String): Boolean {
-        val normalized = CallRuleEngine.normalizePrefix(prefix) ?: return false
+    fun removeBlockedPrefix(prefix: String): Boolean = withStoreLock {
+        val normalized = CallRuleEngine.normalizePrefix(prefix) ?: return@withStoreLock false
         val values = manualBlockedPrefixes().toMutableSet()
-        if (!values.remove(normalized)) return false
+        if (!values.remove(normalized)) return@withStoreLock false
         val committed = preferences.edit().putStringSet(PREFIXES, values).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        committed
     }
 
     /**
      * User-driven restore path. The full replacement is committed atomically only when every
      * supplied prefix is valid and the bounded rule capacity is respected.
      */
-    fun replaceBlockedPrefixes(rawPrefixes: Collection<String>): Boolean {
-        if (rawPrefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return false
-        val normalized = rawPrefixes.map { CallRuleEngine.normalizePrefix(it) ?: return false }
+    fun replaceBlockedPrefixes(rawPrefixes: Collection<String>): Boolean = withStoreLock {
+        if (rawPrefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return@withStoreLock false
+        val normalized = rawPrefixes.map { CallRuleEngine.normalizePrefix(it) ?: return@withStoreLock false }
             .distinct()
         val effectiveSize = normalized.size +
             if (isArcepVerifiedBlockingEnabled()) ArcepVerifiedPrefixCatalog.e164Prefixes.size else 0
-        if (effectiveSize > CallRuleEngine.MAX_PREFIX_RULES) return false
+        if (effectiveSize > CallRuleEngine.MAX_PREFIX_RULES) return@withStoreLock false
         val committed = preferences.edit().putStringSet(PREFIXES, normalized.toSet()).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        committed
     }
 
     /**
      * Read-only provenance for the protection-list UI. No raw phone number or prefix value is
      * returned: only non-sensitive package identifiers, timestamps, sequence and bounded counts.
      */
-    fun signedRuleMetadata(): SignedRuleMetadata {
+    fun signedRuleMetadata(): SignedRuleMetadata = withStoreLock {
         val sequence = preferences.getLong(SIGNED_SEQUENCE, 0L)
         val issuedAt = preferences.getLong(SIGNED_ISSUED_AT, 0L)
         val expiresAt = preferences.getLong(SIGNED_EXPIRES_AT, 0L)
         val count = preferences.getStringSet(SIGNED_PREFIXES, emptySet()).orEmpty()
             .take(CallRuleEngine.MAX_REPUTATION_RULES)
             .size
-        return SignedRuleMetadata(
+        SignedRuleMetadata(
             packageId = preferences.getString(SIGNED_PACKAGE_ID, null),
             issuerId = preferences.getString(SIGNED_ISSUER_ID, null),
             keyId = preferences.getString(SIGNED_KEY_ID, null),
@@ -216,10 +226,10 @@ class CallBlocklistStore(context: Context) {
         envelope: String,
         verifier: SignedCallRulePackageVerifier,
         now: Long = System.currentTimeMillis()
-    ): SignedCallRulePackageVerifier.Result = synchronized(INSTALL_LOCK) {
+    ): SignedCallRulePackageVerifier.Result = withStoreLock {
         val highestSequence = preferences.getLong(SIGNED_SEQUENCE, 0L)
         val result = verifier.verify(envelope, highestSequence, now)
-        if (!result.accepted || result.rulePackage == null) return@synchronized result
+        if (!result.accepted || result.rulePackage == null) return@withStoreLock result
         val rulePackage = result.rulePackage
         val committed = preferences.edit()
             .putString(SIGNED_PACKAGE_ID, rulePackage.packageId)
@@ -291,6 +301,8 @@ class CallBlocklistStore(context: Context) {
         return CallBlockMetadata.Entry(parts[0], parts[4], created, expires, origin)
     }
 
+    private inline fun <T> withStoreLock(block: () -> T): T = synchronized(STORE_LOCK) { block() }
+
     companion object {
         private const val PREFERENCES = "sentinel_call_rules"
         private const val EXACT_HASHES = "blocked_number_hashes"
@@ -304,7 +316,7 @@ class CallBlocklistStore(context: Context) {
         private const val SIGNED_ISSUED_AT = "signed_rule_issued_at"
         private const val SIGNED_EXPIRES_AT = "signed_rule_expires_at"
         private const val SIGNED_PREFIXES = "signed_silence_prefixes"
-        private val INSTALL_LOCK = Any()
+        private val STORE_LOCK = Any()
         @Volatile private var SCREENING_SNAPSHOT = Snapshot(emptySet(), emptySet(), emptySet())
 
         /**

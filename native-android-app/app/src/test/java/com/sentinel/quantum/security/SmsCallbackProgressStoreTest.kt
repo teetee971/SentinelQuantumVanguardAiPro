@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import java.lang.reflect.Proxy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -105,6 +106,29 @@ class SmsCallbackProgressStoreTest {
         assertTrue(store.markProviderApplied(7, 8L, retry.state, nowMs = 1002L))
         assertNull(store.record(7, 8L, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, true, nowMs = 1003L))
         assertTrue(store.pendingProviderWrites(nowMs = 1003L).isEmpty())
+    }
+
+    @Test fun malformedProviderAppliedFlagIsRejectedInsteadOfBecomingPendingState() {
+        val preferences = Preferences(emptySet())
+        preferences.values["7:8"] = "1000|1|1|0|||x"
+
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        assertThrows(IllegalStateException::class.java) {
+            store.pendingProviderWrites(nowMs = 1001L)
+        }
+    }
+
+    @Test fun malformedKeyIsRejectedEvenWhenProviderWriteWasAlreadyApplied() {
+        val preferences = Preferences(emptySet())
+        // Valid terminal tombstone, but its storage key cannot identify the callback pair.
+        preferences.values["corrupt-key"] = "1000|1|1|0||||1"
+
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        assertThrows(IllegalStateException::class.java) {
+            store.pendingProviderWrites(nowMs = 1001L)
+        }
     }
 }
 

@@ -32,6 +32,10 @@ class MmsSendEligibilityPolicyTest {
             "MMS_SUBSCRIPTION_REQUIRED",
             rejected(held, SubscriptionManager.INVALID_SUBSCRIPTION_ID, "+33612345678", "x", emptyList())
         )
+        assertEquals(
+            "MMS_SUBSCRIPTION_REQUIRED",
+            rejected(held, -2, "+33612345678", "x", emptyList())
+        )
     }
 
     @Test fun rejectsInvalidDestinationAndEmptyRequest() {

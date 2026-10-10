@@ -8,6 +8,16 @@ const handoff = fs.readFileSync(
 );
 
 test('emergency handoff targets an external Android phone surface without choosing a SIM', () => {
+  assert.match(
+    handoff,
+    /val telecom = context\.getSystemService\(TelecomManager::class\.java\) \?: return false/,
+    'an unavailable TelecomManager must fail closed instead of crashing the emergency handoff'
+  );
+  assert.match(
+    handoff,
+    /val preferredPackage = runCatching \{[\s\S]*?\}\.getOrNull\(\) \?: return false/,
+    'OEM failures while reading Telecom package state must fail closed'
+  );
   assert.match(handoff, /Intent\.ACTION_DIAL/);
   assert.match(handoff, /telecom\.systemDialerPackage/);
   assert.match(handoff, /telecom\.defaultDialerPackage/);
@@ -23,6 +33,6 @@ test('API 24-28 emergency handoff cannot resolve implicitly back to Sentinel', (
   assert.match(handoff, /PackageManager\.MATCH_SYSTEM_ONLY/);
   assert.match(handoff, /queryIntentActivities\(/);
   assert.match(handoff, /\.firstOrNull \{ it\.isNotBlank\(\) && it != context\.packageName \}/);
-  assert.match(handoff, /\} \?: return false\s*\n\s*\/\/ Keep emergency handoff explicit/);
+  assert.match(handoff, /\}\.getOrNull\(\) \?: return false\s*\n\s*\/\/ Keep emergency handoff explicit/);
   assert.match(handoff, /intent\.setPackage\(preferredPackage\)/);
 });
