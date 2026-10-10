@@ -151,6 +151,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
+      # Every API lane owns fresh emulator state; runtime evidence must remain lane-specific.
       matrix:
         include:
           - api_level: 24
