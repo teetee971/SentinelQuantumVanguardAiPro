@@ -585,8 +585,24 @@ capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
 assert_no_crash_or_anr() {
   local evidence="$1"
-  wait_for_online_adb "the crash and ANR logcat capture"
-  adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence"
+  local logcat_status=1
+  for _ in $(seq 1 5); do
+    wait_for_online_adb "the crash and ANR logcat capture"
+    FLOW_FAILURE_TRAP_SUSPENDED=true
+    set +e
+    adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence"
+    logcat_status=$?
+    set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
+    if [[ "$logcat_status" -eq 0 ]]; then
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$logcat_status" -ne 0 ]]; then
+    echo "ADB logcat could not be read after bounded online-device retries (status: $logcat_status)." >&2
+    return "$logcat_status"
+  fi
   if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$FLOW_OUTPUT_DIR/$evidence"; then
     echo "Crash/ANR detected during emulator stability qualification; see $evidence." >&2
     return 1
