@@ -88,6 +88,9 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(reportCode, /screeningLatencyValues\.every\(\(elapsedMs\) =>/);
   assert.match(reportCode, /CallScreeningService:response_sent=true/);
   assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
+  assert.match(setupReboot, /android\.intent\.action\.MAIN/);
+  assert.match(setupReboot, /android\.intent\.category\.LAUNCHER/);
+  assert.match(setupReboot, /setup-reboot-main-launch\.txt/);
 });
 
 test('every synthetic runtime script bounds each ADB operation independently', () => {
