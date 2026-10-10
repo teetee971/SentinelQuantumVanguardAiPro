@@ -51,7 +51,10 @@ flow_failure_diagnostics() {
       "$status" "$failed_line" "$failed_command" "$failed_adb_args"
     printf '\nadb_get_state_status='; adb get-state
     printf '\nadb_devices_status='; adb devices -l
-    printf '\nlogcat_brief_status='; adb logcat -d -v brief
+    # Keep crash diagnostics inside the ADB transport window. The unfiltered Android 16
+    # system buffer can exceed it during offline qualification and make a healthy device
+    # report status 255 even though a later targeted read succeeds.
+    printf '\nlogcat_brief_status='; adb logcat -d -v brief -s AndroidRuntime:E ActivityManager:E ActivityTaskManager:E
     printf '\nactivity_status='; adb shell dumpsys activity activities
     printf '\ntelecom_status='; adb shell dumpsys telecom
     printf '\nrole_status='; adb shell dumpsys role
@@ -606,7 +609,9 @@ assert_no_crash_or_anr() {
     wait_for_online_adb "the crash and ANR logcat capture"
     FLOW_FAILURE_TRAP_SUSPENDED=true
     set +e
-    adb logcat -d -v brief > "$FLOW_OUTPUT_DIR/$evidence"
+    # Read only crash/ANR owners: an unfiltered system dump can terminate the ADB stream
+    # while the emulator is recovering from an offline transition.
+    adb logcat -d -v brief -s AndroidRuntime:E ActivityManager:E ActivityTaskManager:E > "$FLOW_OUTPUT_DIR/$evidence"
     logcat_status=$?
     set -e
     FLOW_FAILURE_TRAP_SUSPENDED=false
