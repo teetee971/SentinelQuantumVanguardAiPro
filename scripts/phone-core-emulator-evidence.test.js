@@ -167,6 +167,8 @@ test('runtime stability reports invalid original device state instead of exiting
   assert.match(runtimeFlow, /Failed to restore Wi-Fi state/);
   assert.match(runtimeFlow, /Failed to restore mobile-data state/);
   assert.match(runtimeFlow, /restore_adb_diagnostics\(\)/);
+  assert.match(runtimeFlow, /wait_for_restore_device\(\)/);
+  assert.match(runtimeFlow, /state.*== device/);
   assert.match(runtimeFlow, /adb get-state/);
   assert.match(runtimeFlow, /restore_adb_devices=/);
 });

@@ -103,6 +103,21 @@ restore_device_state() {
     return 0
   fi
   RESTORE_FAILED=false
+  wait_for_restore_device() {
+    local state=""
+    local status=0
+    for _ in $(seq 1 20); do
+      set +e
+      state="$(adb get-state 2>&1)"
+      status=$?
+      set -e
+      if [[ "$status" -eq 0 && "$state" == device ]]; then
+        return 0
+      fi
+      sleep 1
+    done
+    return 1
+  }
   restore_adb_diagnostics() {
     local device_state=""
     local devices=""
@@ -125,6 +140,12 @@ restore_device_state() {
       restore_adb_diagnostics
     fi
   }
+  if ! wait_for_restore_device; then
+    RESTORE_DIAGNOSTICS_WRITTEN=true
+    restore_adb_diagnostics
+    echo "Emulator did not return to an online ADB device state before restoration." >&2
+    return 1
+  fi
   if ! adb shell settings put system user_rotation "$ORIGINAL_USER_ROTATION" >/dev/null 2>&1; then
     mark_restore_failure "Failed to restore user rotation state."
   fi
