@@ -78,10 +78,11 @@ jobs:
 
           # Workflows without path filters must have a successful push run for the
           # exact release SHA. Path-scoped workflows instead require their latest
-          # successful main run to be an ancestor of the release SHA. Requiring an
-          # exact run for a path-scoped workflow would deadlock valid Android-only
-          # releases because GitHub legitimately skips that workflow.
+          # successful main push run to be an ancestor of the release SHA. Requiring
+          # an exact run for a path-scoped workflow would deadlock valid releases
+          # because GitHub legitimately skips that workflow when its paths do not change.
           EXACT_WORKFLOWS=(
+            "android-emulation-qualification.yml"
             "build-native-android.yml"
             "build-aab-playconsole.yml"
             "android-instrumentation.yml"
@@ -91,11 +92,14 @@ jobs:
             "integrity-check.yml"
             "preproduction-final-gate.yml"
             "product-capability-truth.yml"
+            "proprietary-boundary-validation.yml"
             "codeql-analysis.yml"
           )
           PATH_SCOPED_WORKFLOWS=(
             "frontend-validation.yml"
             "lighthouse-preproduction.yml"
+            "security-fuzz.yml"
+            "sentinel-api-origin-contract.yml"
           )
 
           api_get() {

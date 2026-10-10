@@ -4,6 +4,18 @@ plugins {
     id 'com.google.devtools.ksp'
 }
 
+def sentinelVersionCodeRaw = System.getenv('SENTINEL_VERSION_CODE')?.trim()
+def sentinelVersionCode = 7
+if (sentinelVersionCodeRaw) {
+    if (!(sentinelVersionCodeRaw ==~ /^[0-9]+$/)) {
+        throw new GradleException('SENTINEL_VERSION_CODE must be a positive decimal integer.')
+    }
+    sentinelVersionCode = sentinelVersionCodeRaw.toInteger()
+    if (sentinelVersionCode < 1 || sentinelVersionCode > 2100000000) {
+        throw new GradleException('SENTINEL_VERSION_CODE must be between 1 and 2100000000.')
+    }
+}
+
 android {
     namespace = 'com.sentinel.quantum'
     compileSdk 37
@@ -12,7 +24,7 @@ android {
         applicationId "com.sentinel.quantum"
         minSdk 24
         targetSdk 36
-        versionCode 7
+        versionCode sentinelVersionCode
         versionName "1.0.6"
         buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'
 
@@ -271,4 +283,3 @@ tasks.register('exportReleaseDependencyInventory') {
         )
     }
 }
-
