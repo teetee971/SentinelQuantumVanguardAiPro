@@ -166,6 +166,9 @@ test('runtime stability reports invalid original device state instead of exiting
   assert.match(runtimeFlow, /Failed to restore accelerometer rotation state/);
   assert.match(runtimeFlow, /Failed to restore Wi-Fi state/);
   assert.match(runtimeFlow, /Failed to restore mobile-data state/);
+  assert.match(runtimeFlow, /restore_adb_diagnostics\(\)/);
+  assert.match(runtimeFlow, /adb get-state/);
+  assert.match(runtimeFlow, /restore_adb_devices=/);
 });
 
 test('reboot preparation leaves process termination to the external workflow', () => {

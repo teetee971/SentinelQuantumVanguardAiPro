@@ -103,35 +103,51 @@ restore_device_state() {
     return 0
   fi
   RESTORE_FAILED=false
-  if ! adb shell settings put system user_rotation "$ORIGINAL_USER_ROTATION" >/dev/null 2>&1; then
+  restore_adb_diagnostics() {
+    local device_state=""
+    local devices=""
+    local device_state_status=0
+    local devices_status=0
+    set +e
+    device_state="$(adb get-state 2>&1)"
+    device_state_status=$?
+    devices="$(adb devices -l 2>&1)"
+    devices_status=$?
+    set -e
+    printf 'restore_adb_get_state_status=%s\nrestore_adb_get_state=%s\nrestore_adb_devices_status=%s\nrestore_adb_devices=%s\n' \
+      "$device_state_status" "$device_state" "$devices_status" "$devices" >&2
+  }
+  mark_restore_failure() {
     RESTORE_FAILED=true
-    echo "Failed to restore user rotation state." >&2
+    echo "$1" >&2
+    if [[ "$RESTORE_FAILED" == true && "${RESTORE_DIAGNOSTICS_WRITTEN:-false}" != true ]]; then
+      RESTORE_DIAGNOSTICS_WRITTEN=true
+      restore_adb_diagnostics
+    fi
+  }
+  if ! adb shell settings put system user_rotation "$ORIGINAL_USER_ROTATION" >/dev/null 2>&1; then
+    mark_restore_failure "Failed to restore user rotation state."
   fi
   if ! adb shell settings put system accelerometer_rotation "$ORIGINAL_ACCELEROMETER_ROTATION" >/dev/null 2>&1; then
-    RESTORE_FAILED=true
-    echo "Failed to restore accelerometer rotation state." >&2
+    mark_restore_failure "Failed to restore accelerometer rotation state."
   fi
   if [[ "$ORIGINAL_WIFI_ON" == 1 ]]; then
     if ! adb shell svc wifi enable >/dev/null 2>&1; then
-      RESTORE_FAILED=true
-      echo "Failed to restore Wi-Fi state." >&2
+      mark_restore_failure "Failed to restore Wi-Fi state."
     fi
   else
     if ! adb shell svc wifi disable >/dev/null 2>&1; then
-      RESTORE_FAILED=true
-      echo "Failed to restore Wi-Fi state." >&2
+      mark_restore_failure "Failed to restore Wi-Fi state."
     fi
   fi
   if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
     if [[ "$ORIGINAL_MOBILE_DATA" == 1 ]]; then
       if ! adb shell svc data enable >/dev/null 2>&1; then
-        RESTORE_FAILED=true
-        echo "Failed to restore mobile-data state." >&2
+        mark_restore_failure "Failed to restore mobile-data state."
       fi
     else
       if ! adb shell svc data disable >/dev/null 2>&1; then
-        RESTORE_FAILED=true
-        echo "Failed to restore mobile-data state." >&2
+        mark_restore_failure "Failed to restore mobile-data state."
       fi
     fi
   fi
