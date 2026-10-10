@@ -23,6 +23,13 @@ MAX_TOKEN_TTL_SECONDS = 120
 ROOM_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
+def _int_env(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except ValueError:
+        return 0
+
+
 @dataclass(frozen=True)
 class Settings:
     enabled: bool = False
@@ -51,12 +58,10 @@ class Settings:
             entitlement_claim=os.getenv(
                 "VOICE_ENTITLEMENT_CLAIM", "sentinel_voice_entitled"
             ),
-            token_ttl_seconds=int(
-                os.getenv("VOICE_TOKEN_TTL_SECONDS", str(MAX_TOKEN_TTL_SECONDS))
+            token_ttl_seconds=_int_env(
+                "VOICE_TOKEN_TTL_SECONDS", MAX_TOKEN_TTL_SECONDS
             ),
-            rate_limit_per_minute=int(
-                os.getenv("VOICE_RATE_LIMIT_PER_MINUTE", "30")
-            ),
+            rate_limit_per_minute=_int_env("VOICE_RATE_LIMIT_PER_MINUTE", 30),
         )
 
     def missing_configuration(

@@ -119,6 +119,20 @@ def test_disabled_service_never_issues_a_session():
     assert response.json()["detail"] == "Voice service unavailable"
 
 
+def test_malformed_numeric_configuration_stays_fail_closed(monkeypatch):
+    monkeypatch.setenv("VOICE_SERVICE_ENABLED", "true")
+    monkeypatch.setenv("VOICE_TOKEN_TTL_SECONDS", "not-a-number")
+    monkeypatch.setenv("VOICE_RATE_LIMIT_PER_MINUTE", "not-a-number")
+
+    settings = Settings.from_env()
+
+    assert settings.token_ttl_seconds == 0
+    assert settings.rate_limit_per_minute == 0
+    assert settings.missing_configuration(
+        custom_identity_verifier=True, custom_token_issuer=True
+    )
+
+
 def test_redis_failure_returns_unavailable_instead_of_server_error():
     app = create_app(
         settings=configured_settings(),
