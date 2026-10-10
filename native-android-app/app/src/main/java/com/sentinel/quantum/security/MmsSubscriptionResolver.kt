@@ -97,6 +97,12 @@ internal object MmsSubscriptionResolver {
         return raw.toInt()
     }
 
+    internal fun explicitSlotIndexForRecovery(intent: Intent): Int? = explicitSlotIndex(intent)
+
+    internal fun explicitSubscriptionIdForRecovery(intent: Intent): Int? =
+        explicitSubscriptionId(intent, SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX)
+            ?: explicitSubscriptionId(intent, LEGACY_SUBSCRIPTION_KEY)
+
     private const val LEGACY_SUBSCRIPTION_KEY = "subscription"
     private const val LEGACY_SLOT_KEY = "slot"
 }

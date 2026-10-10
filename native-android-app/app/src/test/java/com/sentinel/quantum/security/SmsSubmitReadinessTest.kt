@@ -25,4 +25,17 @@ class SmsSubmitReadinessTest {
         assertFalse(SmsSubmitReadiness.canSubmit(true, listOf(1), 1, true, false))
         assertTrue(SmsSubmitReadiness.canSubmit(true, listOf(1), 1, true, true))
     }
+
+    @Test fun blocksConcurrentSubmissionUntilThePreviousRequestResolves() {
+        assertFalse(
+            SmsSubmitReadiness.canSubmit(
+                true,
+                listOf(1),
+                1,
+                true,
+                true,
+                submissionInFlight = true
+            )
+        )
+    }
 }

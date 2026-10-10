@@ -1,5 +1,6 @@
 package com.sentinel.quantum.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -71,6 +72,18 @@ fun PhoneSecurityScreen(navController: NavController) {
     var rtrResult by remember { mutableStateOf<RtrDirectoryClient.Result?>(null) }
     var pendingBlockConfirmation by remember { mutableStateOf(false) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
+
+    fun launchPhoneSurface(request: Intent, surface: String) {
+        actionStatus = null
+        try {
+            context.startActivity(request)
+        } catch (_: ActivityNotFoundException) {
+            actionStatus = "Android n’a pas pu ouvrir $surface. Vérifiez l’installation de Sentinel, puis réessayez."
+        } catch (_: RuntimeException) {
+            actionStatus = "Android a refusé l’ouverture de $surface. Vérifiez l’installation de Sentinel, puis réessayez."
+        }
+    }
+
     var postureEpoch by remember { mutableStateOf(0) }
     val hostActivity = context as? ComponentActivity
     DisposableEffect(hostActivity) {
@@ -173,7 +186,12 @@ fun PhoneSecurityScreen(navController: NavController) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Button(
-                        onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                        onClick = {
+                            launchPhoneSurface(
+                                Intent(context, PhoneCoreActivationActivity::class.java),
+                                "la configuration Phone Core"
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Vérifier tous les prérequis de téléphonie") }
                     OutlinedButton(
@@ -268,10 +286,11 @@ fun PhoneSecurityScreen(navController: NavController) {
                     onClick = {
                         val candidate = phoneNumber.trim()
                         if (candidate.isNotBlank()) {
-                            context.startActivity(
+                            launchPhoneSurface(
                                 Intent(context, SentinelDialerActivity::class.java)
                                     .setAction(Intent.ACTION_DIAL)
-                                    .setData(Uri.fromParts("tel", candidate, null))
+                                    .setData(Uri.fromParts("tel", candidate, null)),
+                                "le composeur Téléphone"
                             )
                         }
                     },
@@ -286,10 +305,11 @@ fun PhoneSecurityScreen(navController: NavController) {
                     onClick = {
                         val candidate = phoneNumber.trim()
                         if (candidate.isNotBlank()) {
-                            context.startActivity(
+                            launchPhoneSurface(
                                 Intent(context, SmsComposeActivity::class.java)
                                     .setAction(Intent.ACTION_SENDTO)
-                                    .setData(Uri.fromParts("smsto", candidate, null))
+                                    .setData(Uri.fromParts("smsto", candidate, null)),
+                                "la messagerie SMS/MMS"
                             )
                         }
                     },

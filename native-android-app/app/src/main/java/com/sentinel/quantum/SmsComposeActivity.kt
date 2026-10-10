@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -67,6 +68,8 @@ import com.sentinel.quantum.security.SentinelMmsSender
 import com.sentinel.quantum.security.MmsAttachmentLoader
 import com.sentinel.quantum.security.MmsSendEligibilityPolicy
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.MmsTransportStatusBus
+import com.sentinel.quantum.security.MmsTransportFeedback
 import com.sentinel.quantum.security.SmsCallbackProgress
 import com.sentinel.quantum.security.SmsCallbackFeedback
 import com.sentinel.quantum.security.SmsTimestampOrder
@@ -88,6 +91,7 @@ import com.sentinel.quantum.security.SmsThreadOrganizer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
+import java.util.concurrent.CancellationException
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
@@ -113,6 +117,19 @@ import kotlinx.coroutines.flow.collectLatest
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SmsComposeActivity : ComponentActivity() {
+    private data class ComposeIntentPayload(
+        val destination: String,
+        val body: String,
+        val mmsIntent: Boolean,
+        val openConversations: Boolean
+    )
+
+    private var externalDestination by mutableStateOf("")
+    private var externalBody by mutableStateOf("")
+    private var externalMmsIntent by mutableStateOf(false)
+    private var externalOpenConversations by mutableStateOf(false)
+    private var externalComposeRequestEpoch by mutableStateOf(0)
+
     private fun sanitizeSmsDestination(raw: String): String? {
         val value = raw.trim()
         if (value.isEmpty() || value.length > 32) return null
@@ -121,27 +138,43 @@ class SmsComposeActivity : ComponentActivity() {
         return value
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val initialScheme = intent?.data?.scheme.orEmpty()
-        val initialMmsIntent = initialScheme.equals("mms", ignoreCase = true) ||
-            initialScheme.equals("mmsto", ignoreCase = true)
-        val initialDestination = sanitizeSmsDestination(
-            intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
+    private fun composeIntentPayload(source: Intent?): ComposeIntentPayload {
+        val scheme = source?.data?.scheme.orEmpty()
+        val mmsIntent = scheme.equals("mms", ignoreCase = true) ||
+            scheme.equals("mmsto", ignoreCase = true)
+        val destination = sanitizeSmsDestination(
+            source?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
         ).orEmpty()
-        val initialBody = intent?.getStringExtra("sms_body")
+        val body = source?.getStringExtra("sms_body")
             .orEmpty()
             .take(
-                if (initialMmsIntent) MmsSendEligibilityPolicy.MAX_TEXT_CHARS
+                if (mmsIntent) MmsSendEligibilityPolicy.MAX_TEXT_CHARS
                 else SentinelSmsSender.MAX_BODY_CHARS
             )
-        val openConversationsOnLaunch =
-            intent?.getBooleanExtra(EXTRA_OPEN_CONVERSATIONS, false) == true ||
-                (
-                    intent?.action == Intent.ACTION_MAIN &&
-                        initialDestination.isBlank() &&
-                        initialBody.isBlank()
-                )
+        val openConversations = source?.getBooleanExtra(EXTRA_OPEN_CONVERSATIONS, false) == true ||
+            (destination.isBlank() && body.isBlank() && !mmsIntent)
+        return ComposeIntentPayload(destination, body, mmsIntent, openConversations)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action != Intent.ACTION_SENDTO && intent.action != Intent.ACTION_MAIN) return
+        setIntent(intent)
+        val payload = composeIntentPayload(intent)
+        externalDestination = payload.destination
+        externalBody = payload.body
+        externalMmsIntent = payload.mmsIntent
+        externalOpenConversations = payload.openConversations
+        externalComposeRequestEpoch++
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val initialPayload = composeIntentPayload(intent)
+        val initialMmsIntent = initialPayload.mmsIntent
+        val initialDestination = initialPayload.destination
+        val initialBody = initialPayload.body
+        val openConversationsOnLaunch = initialPayload.openConversations
 
         setContent {
             SentinelQuantumTheme {
@@ -153,21 +186,25 @@ class SmsComposeActivity : ComponentActivity() {
                 var destination by rememberSaveable { mutableStateOf(initialDestination) }
                 var body by rememberSaveable { mutableStateOf(initialBody) }
                 var mmsComposeMode by rememberSaveable { mutableStateOf(initialMmsIntent) }
+                var mmsComposeModeLocked by rememberSaveable { mutableStateOf(initialMmsIntent) }
                 var selectedMmsAttachments by remember {
                     mutableStateOf(emptyList<MmsAttachmentLoader.LoadedAttachment>())
                 }
                 var status by remember { mutableStateOf<String?>(null) }
+                var submissionInFlight by remember { mutableStateOf(false) }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
+                var activeMmsToken by remember { mutableStateOf<String?>(null) }
+                var activeMmsProviderMessageId by remember { mutableStateOf<Long?>(null) }
                 var callbackProgress by remember { mutableStateOf<SmsCallbackProgress.State?>(null) }
                 var providerPersistenceFailed by remember { mutableStateOf(false) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
                 var selectedSubscriptionId by remember { mutableStateOf<Int?>(null) }
                 var activationEpoch by remember { mutableStateOf(0) }
                 var mmsSectionExpanded by remember { mutableStateOf(false) }
-                var conversationsSectionExpanded by rememberSaveable { mutableStateOf(initialDestination.isBlank() && initialBody.isBlank() && !initialMmsIntent) }
+                var conversationsSectionExpanded by rememberSaveable { mutableStateOf(openConversationsOnLaunch) }
                 var showComposer by rememberSaveable {
-                    mutableStateOf(initialDestination.isNotBlank() || initialBody.isNotBlank() || initialMmsIntent)
+                    mutableStateOf(!openConversationsOnLaunch)
                 }
                 var threadCategoryFilter by remember { mutableStateOf(SmsThreadOrganizer.Category.ALL) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
@@ -198,6 +235,51 @@ class SmsComposeActivity : ComponentActivity() {
                 val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
                     activationEpoch++
                 }
+
+                fun reportActivationFailure(message: String) {
+                    status = message
+                    activationEpoch++
+                }
+
+                fun launchSmsRoleActivation() {
+                    val request = try {
+                        activationActions.roleRequestIntent()
+                            ?: activationActions.legacyDefaultAppsIntent()
+                    } catch (_: RuntimeException) {
+                        null
+                    }
+                    if (request == null) {
+                        reportActivationFailure(
+                            "Le sélecteur SMS Android n’est pas disponible sur cet appareil. Vérifiez le rôle SMS, puis réessayez."
+                        )
+                        return
+                    }
+                    try {
+                        roleLauncher.launch(request)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationFailure(
+                            "Android n’a pas pu ouvrir le sélecteur SMS. Vérifiez les applications par défaut, puis réessayez."
+                        )
+                    } catch (_: RuntimeException) {
+                        reportActivationFailure(
+                            "Android a refusé l’ouverture du sélecteur SMS. Vérifiez les applications par défaut, puis réessayez."
+                        )
+                    }
+                }
+
+                fun launchSmsPermissions(permissions: Array<String>, failureMessage: String) {
+                    if (permissions.isEmpty()) {
+                        reportActivationFailure("L’état des permissions SMS a changé. Actualisation en cours.")
+                        return
+                    }
+                    try {
+                        permissionLauncher.launch(permissions)
+                    } catch (_: ActivityNotFoundException) {
+                        reportActivationFailure(failureMessage)
+                    } catch (_: RuntimeException) {
+                        reportActivationFailure(failureMessage)
+                    }
+                }
                 val subscriptionState = remember { SmsSubscriptionState(applicationContext) }
                 val subscriptionResult = remember(activationEpoch) { subscriptionState.load() }
                 val activeSubscriptions = when (subscriptionResult) {
@@ -218,7 +300,8 @@ class SmsComposeActivity : ComponentActivity() {
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val mmsSender = remember { SentinelMmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
-                val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
+                val localLogger = remember { LocalLogger(applicationContext) }
+                val smsAnalyzer = remember { SmsLinkAnalyzer(localLogger) }
                 val ioScope = rememberCoroutineScope()
                 val attachmentLoader = remember { MmsAttachmentLoader(applicationContext) }
                 val mmsAttachmentLauncher = rememberLauncherForActivityResult(
@@ -248,6 +331,15 @@ class SmsComposeActivity : ComponentActivity() {
                         }
                     }
                 }
+                fun launchMmsAttachmentPicker() {
+                    try {
+                        mmsAttachmentLauncher.launch("image/*")
+                    } catch (_: ActivityNotFoundException) {
+                        status = "Android n’a pas pu ouvrir le sélecteur d’images MMS. Vérifiez les applications système, puis réessayez."
+                    } catch (_: RuntimeException) {
+                        status = "Android a refusé l’ouverture du sélecteur d’images MMS. Vérifiez les applications système, puis réessayez."
+                    }
+                }
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
                 var mmsItems by remember { mutableStateOf(emptyList<MmsLocalInbox.Item>()) }
                 LaunchedEffect(mmsDirectory) {
@@ -269,15 +361,43 @@ class SmsComposeActivity : ComponentActivity() {
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
+                LaunchedEffect(externalComposeRequestEpoch) {
+                    if (externalComposeRequestEpoch == 0) return@LaunchedEffect
+                    destination = externalDestination
+                    body = externalBody
+                    mmsComposeMode = externalMmsIntent
+                    mmsComposeModeLocked = externalMmsIntent
+                    selectedMmsAttachments = emptyList()
+                    status = null
+                    submissionInFlight = false
+                    activeSendToken = null
+                    activeProviderMessageId = null
+                    activeMmsToken = null
+                    activeMmsProviderMessageId = null
+                    callbackProgress = null
+                    providerPersistenceFailed = false
+                    selectedThreadId = null
+                    pendingDeleteThread = null
+                    pendingDeleteMessage = null
+                    threadMessages = emptyList()
+                    mmsSectionExpanded = externalMmsIntent
+                    conversationsSectionExpanded = externalOpenConversations
+                    showComposer = !externalOpenConversations
+                }
                 val visibleThreads = remember(threads, threadCategoryFilter) {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
                 fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
+                    if (submissionInFlight) return
+                    val requestEpoch = externalComposeRequestEpoch
+                    submissionInFlight = true
                     ioScope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            sender.send(recipient, message, selectedSubscriptionId)
-                        }
-                        status = when (result.reason) {
+                        try {
+                            val result = withContext(Dispatchers.IO) {
+                                sender.send(recipient, message, selectedSubscriptionId)
+                            }
+                            if (requestEpoch != externalComposeRequestEpoch) return@launch
+                            status = when (result.reason) {
                             "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
                             "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
                             "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
@@ -295,13 +415,40 @@ class SmsComposeActivity : ComponentActivity() {
                             "SMS_MULTIPART_LIMIT_EXCEEDED" -> "Ce message nécessite trop de parties SMS. Raccourcissez-le avant l’envoi."
                             else -> "Échec d’envoi."
                         }
-                        if (result.accepted) {
-                            callbackProgress = null
-                            providerPersistenceFailed = false
-                            activeSendToken = result.sendToken
-                            activeProviderMessageId = result.providerMessageId
-                            onAccepted()
-                            providerEpoch++
+                            // SmsManager may throw after Android has accepted one or more
+                            // segments. The sender deliberately returns that indeterminate
+                            // outcome with the durable callback identity so this screen can
+                            // observe the conclusive SENT/DELIVERED callback without treating
+                            // the send as accepted or clearing the user's draft.
+                            val outcomeCanBeObserved =
+                                result.reason == "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" &&
+                                    result.sendToken != null &&
+                                    result.providerMessageId != null
+                            if (result.accepted || outcomeCanBeObserved) {
+                                callbackProgress = null
+                                providerPersistenceFailed = false
+                                activeSendToken = result.sendToken
+                                activeProviderMessageId = result.providerMessageId
+                                activeMmsToken = null
+                                activeMmsProviderMessageId = null
+                                if (result.accepted) onAccepted()
+                                providerEpoch++
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                localLogger.logAsync(
+                                    LocalLogger.LogLevel.ERROR,
+                                    "SmsCompose",
+                                    "Exception inattendue durant l’envoi SMS : ${error::class.java.simpleName}"
+                                )
+                                status = "Impossible de terminer l’envoi SMS. Vérifiez le statut du message avant de réessayer."
+                            }
+                        } finally {
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                submissionInFlight = false
+                            }
                         }
                     }
                 }
@@ -311,18 +458,23 @@ class SmsComposeActivity : ComponentActivity() {
                     attachments: List<MmsAttachmentLoader.LoadedAttachment>,
                     onAccepted: () -> Unit
                 ) {
+                    if (submissionInFlight) return
+                    val requestEpoch = externalComposeRequestEpoch
+                    submissionInFlight = true
                     ioScope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            mmsSender.send(
-                                destination = recipient,
-                                text = message,
-                                requestedSubscriptionId = selectedSubscriptionId,
-                                attachments = attachments.map {
-                                    SentinelMmsSender.Attachment(it.mimeType, it.payload)
-                                }
-                            )
-                        }
-                        status = when (result.reason) {
+                        try {
+                            val result = withContext(Dispatchers.IO) {
+                                mmsSender.send(
+                                    destination = recipient,
+                                    text = message,
+                                    requestedSubscriptionId = selectedSubscriptionId,
+                                    attachments = attachments.map {
+                                        SentinelMmsSender.Attachment(it.mimeType, it.payload)
+                                    }
+                                )
+                            }
+                            if (requestEpoch != externalComposeRequestEpoch) return@launch
+                            status = when (result.reason) {
                             "MMS_SUBMITTED_TO_ANDROID" ->
                                 "MMS confié à Android ; le résultat opérateur arrivera par callback."
                             "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" ->
@@ -351,9 +503,32 @@ class SmsComposeActivity : ComponentActivity() {
                                 "Android n’a pas confirmé la prise en charge du MMS. Ne le renvoyez pas avant vérification."
                             else -> "Échec de préparation ou d’envoi du MMS."
                         }
-                        if (result.accepted) {
-                            onAccepted()
-                            providerEpoch++
+                            val outcomeCanBeObserved =
+                                result.token != null && result.providerMessageId != null &&
+                                    result.reason == "MMS_SUBMISSION_OUTCOME_UNKNOWN"
+                            if (result.accepted || outcomeCanBeObserved) {
+                                activeSendToken = null
+                                activeProviderMessageId = null
+                                activeMmsToken = result.token
+                                activeMmsProviderMessageId = result.providerMessageId
+                                if (result.accepted) onAccepted()
+                                providerEpoch++
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                localLogger.logAsync(
+                                    LocalLogger.LogLevel.ERROR,
+                                    "MmsCompose",
+                                    "Exception inattendue durant l’envoi MMS : ${error::class.java.simpleName}"
+                                )
+                                status = "Impossible de terminer l’envoi MMS. Vérifiez le statut du message avant de réessayer."
+                            }
+                        } finally {
+                            if (requestEpoch == externalComposeRequestEpoch) {
+                                submissionInFlight = false
+                            }
                         }
                     }
                 }
@@ -408,6 +583,22 @@ class SmsComposeActivity : ComponentActivity() {
                                 conversations.messagesForThread(threadId, 100)
                             }
                         }
+                    }
+                }
+                LaunchedEffect(activeMmsToken, activeMmsProviderMessageId) {
+                    if (activeMmsToken == null || activeMmsProviderMessageId == null) {
+                        return@LaunchedEffect
+                    }
+                    MmsTransportStatusBus.events.collectLatest { event ->
+                        if (
+                            event.token != activeMmsToken ||
+                                event.providerMessageId != activeMmsProviderMessageId
+                        ) return@collectLatest
+                        status = MmsTransportFeedback.message(
+                            successful = event.successful,
+                            providerWriteSucceeded = event.providerWriteSucceeded
+                        )
+                        providerEpoch++
                     }
                 }
 
@@ -470,7 +661,8 @@ class SmsComposeActivity : ComponentActivity() {
                                                     activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
                                                     selectedSubscriptionId = selectedSubscriptionId,
                                                     destinationPresent = sanitizeSmsDestination(replyAddress) != null,
-                                                    bodyPresent = draft.isNotBlank()
+                                                    bodyPresent = draft.isNotBlank(),
+                                                    submissionInFlight = submissionInFlight
                                                 )
                                             ) { Icon(Icons.Default.Send, null); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.phone_core_send)) }
                                         }
@@ -516,12 +708,12 @@ class SmsComposeActivity : ComponentActivity() {
                                 FilterChip(
                                     selected = !mmsComposeMode,
                                     onClick = {
-                                        if (!initialMmsIntent) {
+                                        if (!mmsComposeModeLocked) {
                                             mmsComposeMode = false
                                             selectedMmsAttachments = emptyList()
                                         }
                                     },
-                                    enabled = !initialMmsIntent,
+                                    enabled = !mmsComposeModeLocked,
                                     label = { Text("SMS") }
                                 )
                                 FilterChip(
@@ -573,12 +765,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     Text(activationModel.detail, style = MaterialTheme.typography.bodySmall)
                                     if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in activationModel.actions) {
                                         Button(
-                                            onClick = {
-                                                val request = activationActions.roleRequestIntent()
-                                                    ?: activationActions.legacyDefaultAppsIntent()
-                                                if (request != null) roleLauncher.launch(request)
-                                                else status = "Le sélecteur SMS Android n’est pas disponible sur cet appareil."
-                                            },
+                                            onClick = { launchSmsRoleActivation() },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Activer Sentinel pour les SMS") }
                                     }
@@ -586,8 +773,10 @@ class SmsComposeActivity : ComponentActivity() {
                                         OutlinedButton(
                                             onClick = {
                                                 val permissions = activationActions.sendPermissionsFor(activationSnapshot)
-                                                if (permissions.isNotEmpty()) permissionLauncher.launch(permissions)
-                                                else activationEpoch++
+                                                launchSmsPermissions(
+                                                    permissions,
+                                                    "Android n’a pas pu ouvrir la demande de permissions SMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                                )
                                             },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser les permissions nécessaires à l’envoi") }
@@ -595,7 +784,12 @@ class SmsComposeActivity : ComponentActivity() {
                                     val inboxPermissions = activationActions.inboxPermissionsFor(activationSnapshot)
                                     if (inboxPermissions.isNotEmpty()) {
                                         OutlinedButton(
-                                            onClick = { permissionLauncher.launch(inboxPermissions) },
+                                            onClick = {
+                                                launchSmsPermissions(
+                                                    inboxPermissions,
+                                                    "Android n’a pas pu ouvrir la demande d’accès aux conversations SMS. Vérifiez les paramètres de Sentinel, puis réessayez."
+                                                )
+                                            },
                                             modifier = Modifier.fillMaxWidth()
                                         ) { Text("Autoriser l’accès aux conversations SMS") }
                                     }
@@ -644,7 +838,7 @@ class SmsComposeActivity : ComponentActivity() {
                             )
                             if (mmsComposeMode) {
                                 OutlinedButton(
-                                    onClick = { mmsAttachmentLauncher.launch("image/*") },
+                                    onClick = { launchMmsAttachmentPicker() },
                                     modifier = Modifier.fillMaxWidth(),
                                     enabled = selectedMmsAttachments.size < MmsSendEligibilityPolicy.MAX_ATTACHMENTS
                                 ) {
@@ -731,7 +925,8 @@ class SmsComposeActivity : ComponentActivity() {
                                     activeSubscriptionIds = activeSubscriptions.map { it.subscriptionId },
                                     selectedSubscriptionId = selectedSubscriptionId,
                                     destinationPresent = destination.isNotBlank(),
-                                    bodyPresent = body.isNotBlank() || (mmsComposeMode && selectedMmsAttachments.isNotEmpty())
+                                    bodyPresent = body.isNotBlank() || (mmsComposeMode && selectedMmsAttachments.isNotEmpty()),
+                                    submissionInFlight = submissionInFlight
                                 )
                             ) {
                                 Icon(Icons.Default.Send, contentDescription = null)
@@ -892,8 +1087,14 @@ class SmsComposeActivity : ComponentActivity() {
                                                                     putExtra(Intent.EXTRA_STREAM, exported.uri)
                                                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                                                 }
-                                                                startActivity(Intent.createChooser(share, "Exporter les messages"))
-                                                                status = "Export préparé : ${exported.messageCount} messages"
+                                                                try {
+                                                                    startActivity(Intent.createChooser(share, "Exporter les messages"))
+                                                                    status = "Export préparé : ${exported.messageCount} messages"
+                                                                } catch (_: ActivityNotFoundException) {
+                                                                    status = "Impossible d’ouvrir le partage des messages sur cet appareil."
+                                                                } catch (_: RuntimeException) {
+                                                                    status = "Android a refusé l’ouverture du partage des messages."
+                                                                }
                                                             }
                                                         }
                                                     },

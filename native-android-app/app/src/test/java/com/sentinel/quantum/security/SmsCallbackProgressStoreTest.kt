@@ -3,7 +3,9 @@ package com.sentinel.quantum.security
 import android.content.SharedPreferences
 import java.lang.reflect.Proxy
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -19,6 +21,7 @@ class SmsCallbackProgressStoreTest {
             when (method.name) {
                 "getAll" -> values.toMap()
                 "getString" -> values[args!![0] as String] ?: args[1]
+                "contains" -> values.containsKey(args!![0] as String)
                 "edit" -> editor()
                 else -> error("Unexpected preferences call: ${method.name}")
             }
@@ -73,6 +76,74 @@ class SmsCallbackProgressStoreTest {
         verifyTransitionSurvives(preferences)
     }
 
+    @Test fun corruptCurrentRecordIsPreservedAndCannotBeRecreatedAsFreshProgress() {
+        val preferences = Preferences(emptySet())
+        preferences.values["42:101"] = "corrupt"
+        val store = SmsCallbackProgressStore(preferences.preferences)
+        var storageFailure = false
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L, onPersistenceFailure = { storageFailure = true }
+        )
+
+        assertNull(outcome)
+        assertTrue(storageFailure)
+        assertEquals("corrupt", preferences.values["42:101"])
+    }
+
+    @Test fun corruptEntriesCannotMakeBoundedStoreGrowPastCapacity() {
+        val preferences = Preferences(emptySet())
+        repeat(128) { index -> preferences.values["corrupt:$index"] = "corrupt" }
+        val store = SmsCallbackProgressStore(preferences.preferences)
+        var storageFailure = false
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L, onPersistenceFailure = { storageFailure = true }
+        )!!
+
+        assertTrue(outcome.allSent)
+        assertTrue(storageFailure)
+        assertEquals(128, preferences.values.size)
+        assertFalse(preferences.values.containsKey("42:101"))
+    }
+
+    @Test fun alreadyOverCapacityCorruptionCannotGrowOnNewCallback() {
+        val preferences = Preferences(emptySet())
+        repeat(140) { index -> preferences.values["corrupt:$index"] = "corrupt" }
+        val store = SmsCallbackProgressStore(preferences.preferences)
+        var storageFailure = false
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L, onPersistenceFailure = { storageFailure = true }
+        )!!
+
+        assertTrue(outcome.allSent)
+        assertTrue(storageFailure)
+        assertEquals(140, preferences.values.size)
+        assertFalse(preferences.values.containsKey("42:101"))
+    }
+
+    @Test fun trimmingNeverEvictsTheCurrentCallbackProgress() {
+        val preferences = Preferences(emptySet())
+        preferences.values["42:101"] = "1000|0|1||||"
+        repeat(128) { index ->
+            preferences.values["other:$index"] = "${2000 + index}|0|1||||"
+        }
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        val outcome = store.record(
+            42, 101L, 0, 1, SmsDeliveryStatusBus.Stage.SENT, true,
+            nowMs = 1_000_000L
+        )!!
+
+        assertTrue(outcome.allSent)
+        assertEquals(128, preferences.values.size)
+        assertTrue(preferences.values.containsKey("42:101"))
+    }
+
     private fun verifyTransitionSurvives(preferences: Preferences) {
         val store = SmsCallbackProgressStore(preferences.preferences)
         var storageFailure = false
@@ -106,5 +177,27 @@ class SmsCallbackProgressStoreTest {
         assertNull(store.record(7, 8L, 0, 1, SmsDeliveryStatusBus.Stage.DELIVERED, true, nowMs = 1003L))
         assertTrue(store.pendingProviderWrites(nowMs = 1003L).isEmpty())
     }
-}
 
+    @Test fun malformedProviderAppliedFlagIsRejectedInsteadOfBecomingPendingState() {
+        val preferences = Preferences(emptySet())
+        preferences.values["7:8"] = "1000|1|1|0|||x"
+
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        assertThrows(IllegalStateException::class.java) {
+            store.pendingProviderWrites(nowMs = 1001L)
+        }
+    }
+
+    @Test fun malformedKeyIsRejectedEvenWhenProviderWriteWasAlreadyApplied() {
+        val preferences = Preferences(emptySet())
+        // Valid terminal tombstone, but its storage key cannot identify the callback pair.
+        preferences.values["corrupt-key"] = "1000|1|1|0||||1"
+
+        val store = SmsCallbackProgressStore(preferences.preferences)
+
+        assertThrows(IllegalStateException::class.java) {
+            store.pendingProviderWrites(nowMs = 1001L)
+        }
+    }
+}

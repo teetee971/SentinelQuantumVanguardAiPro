@@ -12,15 +12,23 @@ class PhoneCoreSetupWizardStoreTest {
         smsRole: Boolean = false,
         smsPermissions: Boolean = false,
         mms: Boolean = false,
-        notifications: Boolean = false
+        notifications: Boolean = false,
+        mmsSafePreview: Boolean = true,
+        dialerAvailable: Boolean = true,
+        screeningAvailable: Boolean = true,
+        smsRoleAvailable: Boolean = true
     ) = PhoneCoreSetupWizardStore.Facts(
         corePermissionsReady = core,
         dialerRoleHeld = dialer,
+        dialerRoleAvailable = dialerAvailable,
         callScreeningRoleHeld = screening,
+        callScreeningRoleAvailable = screeningAvailable,
         callLogPermissionGranted = callLog,
         smsRoleHeld = smsRole,
+        smsRoleAvailable = smsRoleAvailable,
         smsRuntimePermissionsReady = smsPermissions,
         mmsPermissionsReady = mms,
+        mmsSafePreviewValidated = mmsSafePreview,
         notificationChannelsReady = notifications
     )
 
@@ -96,6 +104,66 @@ class PhoneCoreSetupWizardStoreTest {
         )
     }
 
+    @Test fun failedMmsSafePreviewSelfTestBlocksWizardCompletion() {
+        assertEquals(
+            PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW,
+            PhoneCoreSetupWizardStore.nextStep(
+                facts(
+                    core = true,
+                    dialer = true,
+                    screening = true,
+                    callLog = true,
+                    smsRole = true,
+                    smsPermissions = true,
+                    mms = true,
+                    notifications = false,
+                    mmsSafePreview = false
+                )
+            )
+        )
+        assertEquals(
+            false,
+            PhoneCoreSetupWizardStore.softwarePrerequisitesReady(
+                facts(
+                    core = true,
+                    dialer = true,
+                    screening = true,
+                    callLog = true,
+                    smsRole = true,
+                    smsPermissions = true,
+                    mms = true,
+                    notifications = true,
+                    mmsSafePreview = false
+                )
+            )
+        )
+    }
+
+    @Test fun failedMmsSafePreviewIsVisibleButNeverOffersAFalseAndroidAction() {
+        val target = PhoneCoreSetupWizardStore.targetKey(PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW)
+        val runtime = facts(
+            core = true,
+            dialer = true,
+            screening = true,
+            callLog = true,
+            smsRole = true,
+            smsPermissions = true,
+            mms = true,
+            notifications = true,
+            mmsSafePreview = false
+        )
+        assertEquals(PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW, PhoneCoreSetupWizardStore.nextConfigurableStep(runtime))
+        assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW, runtime))
+        assertEquals(
+            false,
+            PhoneCoreSetupWizardStore.shouldOfferManualContinue(
+                targetKey = target,
+                lastAttemptedTargetKey = null,
+                actionable = false
+            )
+        )
+    }
+
     @Test fun completedSetupStaysClosedOnlyWhileRuntimeFactsRemainReady() {
         val ready = facts(true, true, true, true, true, true, true, true)
         assertEquals(false, PhoneCoreSetupWizardStore.shouldOpenSetup(true, ready))
@@ -130,12 +198,13 @@ class PhoneCoreSetupWizardStoreTest {
     }
 
     @Test fun setupProgressMatchesRoleFirstFlowAndCompleteIsTerminal() {
-        assertEquals(1 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.DIALER_ROLE))
-        assertEquals(2 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE))
-        assertEquals(3 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS))
-        assertEquals(5 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.SMS_ROLE))
-        assertEquals(8 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS))
-        assertEquals(8 to 8, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.COMPLETE))
+        assertEquals(1 to 9, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.DIALER_ROLE))
+        assertEquals(2 to 9, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE))
+        assertEquals(3 to 9, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS))
+        assertEquals(5 to 9, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.SMS_ROLE))
+        assertEquals(8 to 9, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.MMS_SAFE_PREVIEW))
+        assertEquals(9 to 9, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS))
+        assertEquals(9 to 9, PhoneCoreSetupWizardStore.stepProgress(PhoneCoreSetupWizardStore.Step.COMPLETE))
     }
 
     @Test fun unavailableRoleRemainsBlockingButIsNotActionable() {

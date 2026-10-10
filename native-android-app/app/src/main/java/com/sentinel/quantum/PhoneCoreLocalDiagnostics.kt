@@ -1,7 +1,6 @@
 package com.sentinel.quantum
 
 import android.Manifest
-import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.pm.PackageManager
@@ -133,8 +132,7 @@ internal object PhoneCoreLocalDiagnostics {
             smsNotificationChannelEnabled =
                 SmsNotificationHelper.isChannelEnabled(context),
             fullScreenIntentAllowed =
-                Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
-                    context.getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
+                SentinelCallNotificationHelper.isFullScreenIntentAllowed(context)
         )
     }
 }

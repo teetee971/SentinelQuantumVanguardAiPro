@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 // These fixtures are never Android, modem, or physical qualification evidence.
 const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qualification.yml', import.meta.url), 'utf8');
 const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
+const runtimeFlow = readFileSync(new URL('./phone-core-emulator-flow.sh', import.meta.url), 'utf8');
 function nodeCodeForStep(name) {
   const step = workflow.split(`- name: ${name}\n`)[1];
   assert.ok(step, `Workflow step exists: ${name}`);
@@ -20,17 +21,21 @@ const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.
 
 test('runtime setup installs after UTP cleanup, then rejects failed or unconfirmed data/log resets', () => {
   const runtime = workflow.split('- name: Run emulator application/runtime qualification\n')[1];
-  const start = runtime.indexOf('          adb install -r');
+  const start = runtime.indexOf('          timeout --signal=INT --kill-after=30s 180s adb install -r');
   const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
   assert.ok(start >= 0 && end > start);
-  const reset = runtime.slice(start, end);
+  const reset = runtime
+    .slice(start, end)
+    // The fixture stubs adb directly; the watchdog itself is covered by the workflow policy test.
+    .replace('timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"', 'adb install -r "$APK_PATH"')
+    .replace('timeout --signal=INT --kill-after=5s 30s adb shell pm path com.sentinel.quantum', 'adb shell pm path com.sentinel.quantum');
   for (const [installStatus, dataStatus, dataOutput, logStatus, expected] of [
     [0, 0, 'Success', 0, 0], [1, 0, 'Success', 0, 1], [0, 1, 'Success', 0, 1], [0, 0, 'Failed', 0, 1], [0, 0, 'Success', 1, 1]
   ]) {
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-runtime-reset-'));
     try {
       const fixture = join(dir, 'reset.sh');
-      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
+      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm path com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then return 1; fi; echo package:/data/app/com.sentinel.quantum/base.apk; return 0;;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
       const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
       assert.equal(result.status, expected, result.stderr);
       assert.equal(result.stdout.includes('FRESH_RUNTIME_SCOPE'), expected === 0);
@@ -40,6 +45,327 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
     } finally { rmSync(dir, { recursive: true, force: true }); }
   }
   assert.doesNotMatch(runtime, /adb shell am start[^\n]*min-sdk-(?:first|second)-launch[^\n]*\|\| true/);
+});
+
+test('runtime qualification proves the exact package is installed through package manager state', () => {
+  assert.match(workflow, /pm path com\.sentinel\.quantum/);
+  assert.match(reportCode, /runtimePackagePathConfirmed/);
+  assert.match(reportCode, /runtime_package_path/);
+  assert.ok(reportCode.includes('^\\s*Package \\[com\\.sentinel\\.quantum\\]'));
+});
+
+test('incoming app surface does not require Android to expose the synthetic number in app UI', () => {
+  const start = runtimeFlow.indexOf('wait_incoming_sentinel_surface() {');
+  const end = runtimeFlow.indexOf('\n}\nwait_logcat_marker()', start);
+  assert.ok(start >= 0 && end > start);
+  const oracle = runtimeFlow.slice(start, end);
+  assert.match(oracle, /sentinel_surface/);
+  assert.doesNotMatch(oracle, /number_present/);
+  assert.match(runtimeFlow, /wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"/);
+  assert.match(runtimeFlow, /wait_text "phone_core_answer"/);
+});
+
+test('emulator qualification proves setup state across a real reboot before runtime reset', () => {
+  const setupReboot = workflow.split('- name: Reboot emulator and verify interrupted setup resumes\n')[1]
+    .split('- name: Run emulator application/runtime qualification\n')[0];
+  assert.match(workflow, /id:\s*setup_reboot/);
+  assert.match(workflow, /adb shell am instrument[\s\S]*PhoneCoreSetupRebootPreparationInstrumentationTest/);
+  assert.match(workflow, /adb shell reboot/);
+  assert.match(workflow, /timeout --signal=INT --kill-after=5s 30s \\\n\s+adb shell reboot/);
+  assert.match(workflow, /ro\.build\.version\.sdk/);
+  assert.equal((workflow.match(/^\s+wait_for_package_manager$/gm) || []).length, 2);
+  assert.match(workflow, /cmd package list packages/);
+  assert.match(workflow, /Can't find service: package/);
+  assert.match(workflow, /run-as com\.sentinel\.quantum cat shared_prefs\/phone_core_setup_wizard_v2\.xml/);
+  assert.match(workflow, /Configuration initiale/);
+  assert.match(reportCode, /SETUP_REBOOT_OUTCOME/);
+  assert.match(reportCode, /setupRebootObserved/);
+  assert.match(reportCode, /sdkApiExact/);
+  assert.match(reportCode, /sdk_api_exact/);
+  assert.match(reportCode, /screeningLatencyObserved/);
+  assert.match(reportCode, /screening_latency_observed/);
+  assert.match(reportCode, /SCREENING_RESPONSE_BUDGET_MS = 450/);
+  assert.match(reportCode, /screeningLatencyValues\.every\(\(elapsedMs\) =>/);
+  assert.match(reportCode, /CallScreeningService:response_sent=true/);
+  assert.doesNotMatch(setupReboot, /\.\/gradlew\s+:app:assembleDebug/);
+  assert.match(setupReboot, /adb shell am start -W -n com\.sentinel\.quantum\/\.MainActivity/);
+  assert.match(setupReboot, /setup-reboot-main-launch\.txt/);
+});
+
+test('setup reboot relaunches the known exported launcher component after package readiness', () => {
+  const setupReboot = workflow.split('- name: Reboot emulator and verify interrupted setup resumes\n')[1]
+    .split('- name: Run emulator application/runtime qualification\n')[0];
+  const packageReady = setupReboot.indexOf('wait_for_package_manager');
+  const forceStop = setupReboot.indexOf('adb shell am force-stop com.sentinel.quantum', packageReady);
+  const relaunch = setupReboot.indexOf('adb shell am start -W -n com.sentinel.quantum/.MainActivity', forceStop);
+  assert.ok(packageReady >= 0);
+  assert.ok(forceStop > packageReady);
+  assert.ok(relaunch > forceStop);
+  assert.match(setupReboot, /for _ in \$\(seq 1 [3-9][0-9]\); do/);
+  assert.match(setupReboot, /setup-reboot-main-launch\.txt/);
+});
+
+test('every synthetic runtime script bounds each ADB operation independently', () => {
+  for (const script of [runtimeFlow, revocation]) {
+    assert.match(script, /ADB_COMMAND_TIMEOUT_SECONDS="\$\{ADB_COMMAND_TIMEOUT_SECONDS:-30\}"/);
+    assert.match(script, /ADB_COMMAND_KILL_GRACE_SECONDS="\$\{ADB_COMMAND_KILL_GRACE_SECONDS:-5\}"/);
+    assert.match(script, /command timeout[\s\S]*adb "\$@"/);
+    assert.match(script, /positive integer seconds/);
+  }
+});
+
+test('runtime flow preserves the first unexpected shell failure as bounded evidence', () => {
+  assert.match(runtimeFlow, /trap .*ERR/,
+    'Phone Core runtime flow must trap unexpected shell failures');
+  assert.match(runtimeFlow, /BASH_COMMAND/,
+    'Phone Core runtime flow must record the failing shell command');
+  assert.match(runtimeFlow, /FLOW_LAST_ADB_ARGS/,
+    'Phone Core runtime flow must record the failing ADB arguments');
+  assert.match(runtimeFlow, /failed_adb_args/,
+    'Phone Core runtime flow must freeze ADB arguments before diagnostics run');
+  assert.match(runtimeFlow, /FLOW_FAILURE_TRAP_SUSPENDED/,
+    'Phone Core runtime flow must not treat intentionally handled ADB statuses as fatal');
+  assert.match(runtimeFlow, /flow-failure\.txt/,
+    'Phone Core runtime flow must persist failure diagnostics');
+  assert.match(runtimeFlow, /Phone Core flow unexpected shell failure/,
+    'Phone Core runtime flow must expose a non-sensitive failure summary');
+  assert.match(runtimeFlow, /adb devices -l/,
+    'Phone Core runtime flow must preserve ADB device diagnostics');
+  assert.match(runtimeFlow, /adb logcat -d -v brief/,
+    'Phone Core runtime flow must preserve logcat diagnostics');
+});
+
+test('runtime qualification exercises offline, rotation, kill/restart, and crash/ANR evidence', () => {
+  assert.match(runtimeFlow, /run_stability_qualification\(\)/);
+  assert.match(runtimeFlow, /svc wifi disable/);
+  assert.match(runtimeFlow, /user_rotation/);
+  assert.match(runtimeFlow, /pid_before=.*\n[\s\S]*adb shell am force-stop "\$FLOW_PACKAGE"/);
+  assert.doesNotMatch(runtimeFlow, /kill -9/);
+  assert.match(runtimeFlow, /FATAL EXCEPTION:|ANR in com\\\.sentinel\\\.quantum/);
+  assert.match(runtimeFlow, /stability-offline/);
+  assert.match(runtimeFlow, /stability-rotation/);
+  assert.match(runtimeFlow, /stability-kill-restart/);
+  assert.match(runtimeFlow, /stability-offline-launch\.txt[\s\S]*wait_for_online_adb "the offline qualification relaunch"/);
+  assert.match(runtimeFlow, /stability-rotation-state\.txt[\s\S]*wait_for_online_adb "the rotation transition"/);
+  assert.match(runtimeFlow, /am force-stop "\$FLOW_PACKAGE"[\s\S]*wait_for_online_adb "the process-death transition"/);
+  assert.match(runtimeFlow, /stability-kill-restart-launch\.txt[\s\S]*wait_for_online_adb "the process restart"/);
+  assert.match(runtimeFlow, /assert_no_crash_or_anr\(\) \{[\s\S]*wait_for_online_adb "the crash and ANR logcat capture"/);
+  assert.match(runtimeFlow, /logcat_status=1[\s\S]*for _ in \$\(seq 1 5\); do[\s\S]*adb logcat -d -v brief/);
+  assert.match(runtimeFlow, /adb logcat -d -v brief -s AndroidRuntime:E ActivityManager:E ActivityTaskManager:E/);
+  assert.match(runtimeFlow, /ADB logcat could not be read after bounded online-device retries/);
+});
+
+test('crash evidence retries transient logcat disconnects and remains bounded', () => {
+  const start = runtimeFlow.indexOf('assert_no_crash_or_anr() {');
+  const end = runtimeFlow.indexOf('\nread_process_ids() {', start);
+  assert.ok(start >= 0 && end > start);
+  const crashOracle = runtimeFlow.slice(start, end);
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-logcat-retry-'));
+  try {
+    const fixture = join(dir, 'retry.sh');
+    writeFileSync(fixture, `#!/usr/bin/env bash
+set -Eeuo pipefail
+FLOW_OUTPUT_DIR="$1"
+FLOW_FAILURE_TRAP_SUSPENDED=false
+attempt=0
+wait_for_online_adb() { return 0; }
+sleep() { :; }
+adb() {
+  attempt=$((attempt + 1))
+  if [[ "$attempt" -lt 3 ]]; then
+    printf 'partial disconnect\\n'
+    return 255
+  fi
+  printf 'stable logcat\\n'
+  return 0
+}
+${crashOracle}
+assert_no_crash_or_anr logcat.txt
+printf 'attempts=%s\\n' "$attempt"
+`, { mode: 0o700 });
+    const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /attempts=3/);
+    assert.equal(readFileSync(join(dir, 'logcat.txt'), 'utf8'), 'stable logcat\n');
+
+    writeFileSync(fixture, `#!/usr/bin/env bash
+set -Eeuo pipefail
+FLOW_OUTPUT_DIR="$1"
+FLOW_FAILURE_TRAP_SUSPENDED=false
+attempt=0
+wait_for_online_adb() { return 0; }
+sleep() { :; }
+adb() {
+  attempt=$((attempt + 1))
+  return 255
+}
+${crashOracle}
+assert_no_crash_or_anr logcat.txt
+`, { mode: 0o700 });
+    const bounded = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
+    assert.equal(bounded.status, 255);
+    assert.match(bounded.stderr, /bounded online-device retries/);
+    assert.equal(bounded.stdout, '');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('runtime qualification restores the observed device state and fails closed on cleanup errors', () => {
+  const restore = runtimeFlow.slice(
+    runtimeFlow.indexOf('capture_original_device_state() {'),
+    runtimeFlow.indexOf('\nrole_holders() {')
+  );
+  assert.match(restore, /ORIGINAL_USER_ROTATION/);
+  assert.match(restore, /ORIGINAL_ACCELEROMETER_ROTATION/);
+  assert.match(restore, /ORIGINAL_WIFI_ON/);
+  assert.match(restore, /ORIGINAL_MOBILE_DATA/);
+  assert.doesNotMatch(restore, /\|\| true/);
+  assert.match(restore, /RESTORE_FAILED=true/);
+  assert.match(restore, /status=\$\?/);
+  assert.match(restore, /exit "\$status"/);
+});
+
+test('runtime qualification uses a version-tolerant mobile-data state oracle', () => {
+  assert.match(runtimeFlow, /read_mobile_data_state\(\)/);
+  assert.match(runtimeFlow, /cmd phone get-data-enabled/);
+  assert.match(runtimeFlow, /settings get global mobile_data/);
+  assert.match(runtimeFlow, /mobile_data_oracle/);
+});
+
+test('runtime qualification treats an unavailable mobile-data oracle as an explicit limitation', () => {
+  assert.match(runtimeFlow, /UNAVAILABLE/);
+  assert.match(runtimeFlow, /stability_verdict="LIMITED"/);
+  assert.match(runtimeFlow, /ORIGINAL_MOBILE_DATA.*UNAVAILABLE/);
+  assert.match(runtimeFlow, /if \[\[ "\$ORIGINAL_MOBILE_DATA" != UNAVAILABLE \]\]/);
+});
+
+test('runtime qualification opens the real incoming-call notification before requiring the app surface', () => {
+  const screeningStart = runtimeFlow.indexOf('adb emu gsm call "$FLOW_NUMBER"');
+  const incomingSurface = runtimeFlow.indexOf('wait_incoming_sentinel_surface', screeningStart);
+  const notificationOpen = runtimeFlow.indexOf('open_incoming_call_notification', screeningStart);
+  assert.ok(screeningStart >= 0);
+  assert.ok(incomingSurface > notificationOpen);
+  assert.match(runtimeFlow, /incoming-call-entrypoint\.txt/);
+  assert.match(runtimeFlow, /mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT/);
+  assert.match(runtimeFlow, /mode=FULL_SCREEN_CALLSTYLE/);
+  assert.match(workflow, /incoming_call_entrypoint/);
+  assert.match(workflow, /incoming-call-entrypoint\.txt/);
+});
+
+test('incoming-call probe verifies ADB recovery after sleeping the emulator', () => {
+  const call = runtimeFlow.indexOf('adb emu gsm call');
+  const sleep = runtimeFlow.indexOf('KEYCODE_SLEEP', call);
+  assert.ok(sleep >= 0);
+  assert.ok(call < sleep);
+  assert.match(runtimeFlow.slice(call, sleep), /CALL_NOTIFICATION_POSTED/);
+  assert.match(runtimeFlow.slice(sleep), /wait_for_online_adb/);
+  assert.match(runtimeFlow, /ADB device did not return online/);
+  assert.match(runtimeFlow, /adb devices -l/);
+});
+
+test('Android 16+ full-screen CallStyle remains an explicit incoming-call entrypoint', () => {
+  const openStart = runtimeFlow.indexOf('open_incoming_call_notification() {');
+  const openEnd = runtimeFlow.indexOf('\n}\n\nwait_reply_focus()', openStart);
+  assert.ok(openStart >= 0 && openEnd > openStart);
+  const notificationOpen = runtimeFlow.slice(openStart, openEnd);
+  assert.match(notificationOpen, /FLOW_API.*-ge 36/);
+  assert.match(notificationOpen, /incoming_surface_visible/);
+  assert.match(notificationOpen, /uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible/);
+  assert.match(workflow, /incomingCallEntrypointObserved/);
+  assert.match(workflow, /mode=FULL_SCREEN_CALLSTYLE/);
+});
+
+test('Android 16 fallback records the observed full-screen entrypoint', () => {
+  const incomingSurface = flowFunction('incoming_surface_visible', 'wait_incoming_sentinel_surface');
+  const notificationOpen = flowFunction('open_incoming_call_notification', 'wait_reply_focus');
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-full-screen-entrypoint-'));
+  try {
+    const fixture = join(dir, 'fallback.sh');
+    writeFileSync(fixture, `#!/usr/bin/env bash
+set -Eeuo pipefail
+FLOW_API=36
+FLOW_NUMBER=5550100
+FLOW_PACKAGE=com.sentinel.quantum
+FLOW_OUTPUT_DIR="$1"
+FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
+fresh_ui() { return 0; }
+capture() { :; }
+sleep() { :; }
+adb() { return 0; }
+cat > "$FLOW_XML" <<'XML'
+<hierarchy><node package="com.sentinel.quantum" text="Appel entrant" content-desc="Sentinel Phone Core, Appel entrant, Sonnerie" /></hierarchy>
+XML
+${incomingSurface}
+${notificationOpen}
+open_incoming_call_notification
+cat "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+`, { mode: 0o700 });
+    const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /mode=FULL_SCREEN_CALLSTYLE/);
+    assert.match(result.stdout, /uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('incoming notification oracle uses the clickable row when compact CallStyle exposes only the app header', () => {
+  const openStart = runtimeFlow.indexOf('open_incoming_call_notification() {');
+  const openEnd = runtimeFlow.indexOf('\n}\n\nwait_reply_focus()', openStart);
+  const notificationOpen = runtimeFlow.slice(openStart, openEnd);
+  assert.match(notificationOpen, /row\.get\('bounds', ''\)/);
+  assert.match(notificationOpen, /compact layout/);
+  assert.match(notificationOpen, /row_center/);
+  assert.match(notificationOpen, /node\.get\('resource-id'\) == 'android:id\/text'/);
+});
+
+test('runtime stability reports invalid original device state instead of exiting silently', () => {
+  assert.match(runtimeFlow, /Invalid original user rotation state/);
+  assert.match(runtimeFlow, /Invalid original accelerometer rotation state/);
+  assert.match(runtimeFlow, /Invalid original Wi-Fi state/);
+  assert.match(runtimeFlow, /Invalid original mobile-data state/);
+  assert.match(runtimeFlow, /Failed to read original user rotation state/);
+  assert.match(runtimeFlow, /Failed to read original accelerometer rotation state/);
+  assert.match(runtimeFlow, /Failed to read original Wi-Fi state/);
+  assert.match(runtimeFlow, /Failed to disable Wi-Fi for offline qualification/);
+  assert.match(runtimeFlow, /Failed to disable mobile data for offline qualification/);
+  assert.match(runtimeFlow, /Failed to read Wi-Fi state after offline transition/);
+  assert.match(runtimeFlow, /Wi-Fi did not reach the disabled state/);
+  assert.match(runtimeFlow, /mobile_data_disable_observed/);
+  assert.match(runtimeFlow, /mobile_data_limitation/);
+  assert.match(runtimeFlow, /stability_verdict="LIMITED"/);
+  assert.match(runtimeFlow, /Unable to identify running process before restart/);
+  assert.match(runtimeFlow, /Process remained alive after host force-stop/);
+  assert.match(runtimeFlow, /Process did not restart after host force-stop/);
+  assert.match(runtimeFlow, /read_process_ids\(\)/);
+  assert.match(runtimeFlow, /Failed to restore user rotation state/);
+  assert.match(runtimeFlow, /Failed to restore accelerometer rotation state/);
+  assert.match(runtimeFlow, /Failed to restore Wi-Fi state/);
+  assert.match(runtimeFlow, /Failed to restore mobile-data state/);
+  assert.match(runtimeFlow, /restore_adb_diagnostics\(\)/);
+  assert.match(runtimeFlow, /wait_for_restore_device\(\)/);
+  assert.match(runtimeFlow, /state.*== device/);
+  assert.match(runtimeFlow, /adb get-state/);
+  assert.match(runtimeFlow, /restore_adb_devices=/);
+  const stabilityStart = runtimeFlow.indexOf('run_stability_qualification() {');
+  const stabilityEnd = runtimeFlow.indexOf('\n}\n\n# This is the first application launch', stabilityStart);
+  const telecomProbe = runtimeFlow.indexOf('adb emu gsm call', stabilityEnd);
+  assert.ok(stabilityStart >= 0 && stabilityEnd > stabilityStart && telecomProbe > stabilityEnd);
+  const stability = runtimeFlow.slice(stabilityStart, stabilityEnd);
+  assert.match(stability, /restore_device_state/);
+  assert.match(stability, /FLOW_DEVICE_STATE_MUTATED=false/);
+});
+
+test('reboot preparation leaves process termination to the external workflow', () => {
+  const source = readFileSync(new URL('../native-android-app/app/src/androidTest/java/com/sentinel/quantum/PhoneCoreSetupRebootPreparationInstrumentationTest.kt', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /executeShellCommand\("am force-stop/);
+  const gate = spawnSync(
+    process.execPath,
+    [new URL('./check-phone-core-emulation-gate.js', import.meta.url).pathname],
+    { cwd: new URL('..', import.meta.url).pathname, encoding: 'utf8' }
+  );
+  assert.equal(gate.status, 0, `${gate.stdout}\n${gate.stderr}`);
 });
 
 for (const [name, dump, status, holders] of [
@@ -68,16 +394,16 @@ for (const [name, dump, status, holders] of [
   });
 }
 
-test('archived host provenance preserves build, source, base and branch independently', () => {
+test('archived host provenance preserves exact build/source, base and branch provenance', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-host-provenance-'));
   try {
     const result = spawnSync(process.execPath, ['-e', hostProvenanceCode], { encoding: 'utf8', env: {
-      ...process.env, RUNNER_TEMP: dir, BUILT_COMMIT: 'a'.repeat(40), GITHUB_SHA: 'a'.repeat(40),
+      ...process.env, RUNNER_TEMP: dir, BUILT_COMMIT: 'b'.repeat(40), GITHUB_SHA: 'a'.repeat(40),
       SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch'
     } });
     assert.equal(result.status, 0, result.stderr);
     const report = JSON.parse(readFileSync(join(dir, 'phone-core-host-evidence/provenance.json'), 'utf8'));
-    assert.equal(report.built_commit, 'a'.repeat(40));
+    assert.equal(report.built_commit, 'b'.repeat(40));
     assert.equal(report.workflow_commit, 'a'.repeat(40));
     assert.equal(report.source_head_sha, 'b'.repeat(40));
     assert.equal(report.source_base_sha, 'c'.repeat(40));
@@ -104,6 +430,14 @@ function shellFunction(name) {
   const start = revocation.indexOf(`${name}() {`);
   assert.notEqual(start, -1);
   return revocation.slice(start, revocation.indexOf('\n}', start) + 2);
+}
+
+function flowFunction(name, nextName) {
+  const start = runtimeFlow.indexOf(`${name}() {`);
+  assert.notEqual(start, -1);
+  const end = runtimeFlow.indexOf(`\n}\n\n${nextName}`, start);
+  assert.ok(end > start, `Flow function boundary exists: ${name}`);
+  return runtimeFlow.slice(start, end + 2);
 }
 
 for (const [name, output, status, expected] of [
@@ -157,20 +491,30 @@ function fixture(overrides = {}, alter = () => {}) {
   put('logcat.txt', 'SentinelLifecycle: fixture only\n');
   put('logcat-status.txt', '0\n');
   put('package.txt', 'Package [com.sentinel.quantum]\n');
+  put('runtime-package-path.txt', 'package:/data/app/com.sentinel.quantum/base.apk\n');
   put('apk.sha256', 'd'.repeat(64) + '  app-debug.apk\n');
   put('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+  put(
+    'call-screening-latency-logcat.txt',
+    'CallScreeningService:response_elapsed_ms=12\nCallScreeningService:response_sent=true'
+  );
+  put('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=true');
+  put('incoming-call-entrypoint.txt', 'mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT\n');
   put('phone-private-timeline-prefix.xml', 'CALL_SCREENED:ALLOW');
   put('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
   put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
   for (const direction of ['incoming', 'outgoing']) put(`phone-private-timeline-${direction}-incall_active.xml`, 'INCALL_ACTIVE');
   put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
+  put('setup-reboot-state-after-reboot.xml', '<string name="lifecycle_state_v1">IN_PROGRESS</string>\n<string name="attempted_target">DIALER_ROLE</string>\n<boolean name="completed" value="false" />\n');
+  put('setup-reboot-sdk.txt', `${String(overrides.API_LEVEL ?? '36')}\n`);
+  put('setup-reboot-ui.xml', '<node text="Configuration initiale" />\n');
   put('revocation-summary.json', JSON.stringify({ schema_version: 2, effective_permission_denial_fail_closed: true, role_revocation_fail_closed: true, effective_permission_probe: 'SEND_SMS_APP_OP_DENIED' }));
   const results = join(dir, 'app/build/outputs/androidTest-results');
   mkdirSync(results, { recursive: true });
   const xml = ['AllStaticNavigationSurfacesInstrumentationTest', 'StandaloneActivitySmokeInstrumentationTest', 'PhoneCoreSetupResumeInstrumentationTest'].map((name) => `<testcase classname="com.sentinel.quantum.${name}" name="fixture"/>`).join('');
   writeFileSync(join(results, 'TEST-fixture.xml'), `<testsuite>${xml}</testsuite>`);
   const sha = 'a'.repeat(40);
-  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: 'b'.repeat(40), SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
+  const env = { ...process.env, RUNNER_TEMP: dir, API_LEVEL: '36', OUTPUT: output, HOST_CONTRACT_RESULT: 'success', INSTRUMENTATION_OUTCOME: 'success', RUNTIME_OUTCOME: 'success', SETUP_REBOOT_OUTCOME: 'success', BUILT_COMMIT: sha, GITHUB_SHA: sha, SOURCE_HEAD_SHA: sha, SOURCE_BASE_SHA: 'c'.repeat(40), SOURCE_HEAD_REF: 'fixture-branch', GITHUB_EVENT_NAME: 'pull_request', ...overrides };
   try {
     alter({ put, results, dir });
     const result = spawnSync(process.execPath, ['-e', reportCode], { cwd: dir, env, encoding: 'utf8' });
@@ -180,12 +524,12 @@ function fixture(overrides = {}, alter = () => {}) {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-test('successful host fixture preserves distinct build, PR source, base, and branch provenance', () => {
+test('successful host fixture preserves exact build/source, base, and branch provenance', () => {
   const { result, report } = fixture();
   assert.equal(result.status, 0, result.stderr);
   assert.equal(report.result, 'PASS');
   assert.equal(report.build_commit, 'a'.repeat(40));
-  assert.equal(report.source_head_commit, 'b'.repeat(40));
+  assert.equal(report.source_head_commit, 'a'.repeat(40));
   assert.equal(report.source_base_commit, 'c'.repeat(40));
   assert.equal(report.source_head_ref, 'fixture-branch');
   assert.equal(report.apk_sha256, 'd'.repeat(64));
@@ -193,6 +537,73 @@ test('successful host fixture preserves distinct build, PR source, base, and bra
   assert.equal(report.evidence_scope, 'developer_qualification');
   assert.equal(report.physical_modem_claim, false);
   assert.equal(report.commercial_release_claim, false);
+});
+
+test('unknown incoming-call entrypoint cannot qualify modern Phone Core', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('incoming-call-entrypoint.txt', 'mode=ASSUMED_NOTIFICATION\n');
+  });
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.incoming_call_entrypoint, false);
+  assert.ok(report.evidence_failures.includes('incoming_call_entrypoint'));
+});
+
+test('screening latency without a successful Telecom response cannot qualify', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=false');
+  });
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.screening_latency_observed, false);
+  assert.ok(report.evidence_failures.includes('screening_latency_observed'));
+});
+
+test('screening latency at the service budget cannot qualify', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put(
+      'call-screening-latency-logcat.txt',
+      'CallScreeningService:response_elapsed_ms=450\nCallScreeningService:response_sent=true'
+    );
+  });
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.screening_latency_observed, false);
+  assert.ok(report.evidence_failures.includes('screening_latency_observed'));
+});
+
+test('package lookup failure cannot masquerade as an installed application', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('package.txt', 'Unable to find package com.sentinel.quantum\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.match(report.evidence_failures.join('\n'), /package_state/);
+});
+
+test('dumpsys package metadata suffix still proves the exact installed package', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('package.txt', 'Package [com.sentinel.quantum] (8f3a1b2):\n');
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(report.evidence_failures.includes('package_state'), false);
+});
+
+test('runtime package path lookup failure cannot qualify the installed APK', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('runtime-package-path.txt', 'Error: package not found\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.runtime_package_path, false);
+  assert.ok(report.evidence_failures.includes('runtime_package_path'));
+});
+
+test('qualification cannot pass when the persisted emulator SDK differs from the requested API', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('setup-reboot-sdk.txt', '35\n');
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.sdk_api_exact, false);
+  assert.ok(report.evidence_failures.includes('sdk_api_exact'));
 });
 
 for (const role of ['sms', 'dialer', 'call-screening']) {

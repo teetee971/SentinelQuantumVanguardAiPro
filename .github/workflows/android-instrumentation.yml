@@ -40,6 +40,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -61,6 +71,19 @@ jobs:
           SDK_PACKAGE_LEVEL: ${{ matrix.sdk_package_level }}
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           chmod +x ./gradlew
 
           SYSTEM_IMAGE="system-images;android-${SDK_PACKAGE_LEVEL};google_apis;x86_64"
@@ -68,6 +91,7 @@ jobs:
           AVD_NAME="sentinel_instrumentation_api${API_LEVEL}"
           EMULATOR_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-emulator.log"
           INSTRUMENTATION_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-tests.log"
+          INSTRUMENTATION_SDK_EVIDENCE="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-sdk.txt"
 
           echo "Qualifying runtime API ${API_LEVEL} with SDK package level ${SDK_PACKAGE_LEVEL}."
 
@@ -98,6 +122,91 @@ jobs:
             EMULATOR_ACCEL_ARGS=(-accel on)
           fi
 
+          DIAGNOSTICS="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-diagnostics"
+          EMULATOR_PID=""
+          collect_instrumentation_diagnostics() {
+            mkdir -p "$DIAGNOSTICS"
+            adb devices -l > "$DIAGNOSTICS/adb-devices.txt" 2>&1 || true
+            adb shell getprop > "$DIAGNOSTICS/device-properties.txt" 2>&1 || true
+            adb shell dumpsys activity top > "$DIAGNOSTICS/activity-top.txt" 2>&1 || true
+            adb shell dumpsys activity processes > "$DIAGNOSTICS/activity-processes.txt" 2>&1 || true
+            adb shell dumpsys telecom > "$DIAGNOSTICS/telecom.txt" 2>&1 || true
+            adb shell dumpsys role > "$DIAGNOSTICS/roles.txt" 2>&1 || true
+            adb shell dumpsys package com.sentinel.quantum > "$DIAGNOSTICS/package.txt" 2>&1 || true
+            adb shell pm list instrumentation > "$DIAGNOSTICS/instrumentation-runners.txt" 2>&1 || true
+            adb logcat -d -v threadtime > "$DIAGNOSTICS/logcat.txt" 2>&1 || true
+          }
+          summarize_instrumentation_reports() {
+            REPORT_ROOT="app/build/outputs/androidTest-results/connected" API_LEVEL="$API_LEVEL" INSTRUMENTATION_LOG="$INSTRUMENTATION_LOG" node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = process.env.REPORT_ROOT;
+          const api = process.env.API_LEVEL;
+          const escapeCommand = value => String(value).replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+          const decodeXml = value => String(value)
+            .replaceAll('&quot;', '"')
+            .replaceAll('&apos;', "'")
+            .replaceAll('&lt;', '<')
+            .replaceAll('&gt;', '>')
+            .replaceAll('&amp;', '&');
+          const compact = value => decodeXml(String(value ?? ''))
+            .replace(/<!\[CDATA\[/g, '')
+            .replace(/\]\]>/g, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 1200);
+          const emit = message => console.log(`::error title=Android instrumentation failure::${escapeCommand(message)}`);
+          const files = [];
+          const walk = directory => {
+            if (!fs.existsSync(directory)) return;
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+              const full = path.join(directory, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.isFile() && full.endsWith('.xml')) files.push(full);
+            }
+          };
+          walk(root);
+          if (files.length === 0) {
+            emit(`API ${api}: instrumentation reports missing; no XML failure detail available`);
+            const log = process.env.INSTRUMENTATION_LOG;
+            if (log && fs.existsSync(log)) {
+              const tail = fs.readFileSync(log, 'utf8').split(/\r?\n/).filter(Boolean).slice(-40).join('\n');
+              if (tail) emit(`API ${api}: AndroidJUnitRunner tail:\n${tail}`);
+            }
+            process.exit(0);
+          }
+          const findings = [];
+          for (const file of files) {
+            const xml = fs.readFileSync(file, 'utf8');
+            for (const match of xml.matchAll(/<testcase\b[^>]*\bname="([^"]*)"[^>]*>([\s\S]*?)<\/testcase\s*>/g)) {
+              const failure = match[2].match(/<(failure|error)\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:failure|error)\s*>)/);
+              if (!failure) continue;
+              const attributeMessage = failure[2].match(/\bmessage="([^"]*)"/)?.[1];
+              const bodyMessage = compact(failure[3]);
+              const detail = compact(attributeMessage) || bodyMessage || 'failure body empty';
+              findings.push(`${file}: ${match[1]}: ${failure[1]}: ${detail}`);
+            }
+          }
+          if (findings.length === 0) {
+            emit(`API ${api}: instrumentation failed but reports contain no parsed testcase failure; reports contain zero testcases or only infrastructure errors`);
+          } else {
+            findings.slice(0, 12).forEach(emit);
+          }
+          NODE
+          }
+          cleanup_instrumentation() {
+            local status=$?
+            if [[ "$status" -ne 0 ]]; then
+              collect_instrumentation_diagnostics
+            fi
+            if [[ -n "$EMULATOR_PID" ]]; then
+              kill "$EMULATOR_PID" >/dev/null 2>&1 || true
+            fi
+            trap - EXIT
+            exit "$status"
+          }
+
           "$ANDROID_HOME/emulator/emulator" \
             -avd "$AVD_NAME" \
             -no-window -no-audio -no-boot-anim -no-metrics \
@@ -106,7 +215,7 @@ jobs:
             -gpu swiftshader_indirect \
             > "$EMULATOR_LOG" 2>&1 &
           EMULATOR_PID=$!
-          trap 'kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+          trap cleanup_instrumentation EXIT
 
           DEVICE_READY=0
           for _ in $(seq 1 90); do
@@ -155,10 +264,17 @@ jobs:
             echo "Expected emulator API ${API_LEVEL}, got API ${ACTUAL_API}."
             exit 1
           fi
+          printf '%s\n' "$ACTUAL_API" > "$INSTRUMENTATION_SDK_EVIDENCE"
+          test "$(cat "$INSTRUMENTATION_SDK_EVIDENCE")" = "$API_LEVEL"
 
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
+          # Compose instrumentation must start from an interactive emulator surface. A freshly
+          # booted AVD can be awake but still show the keyguard, which makes every UI matrix lane
+          # fail at the connected-test step without exercising the application.
+          adb shell input keyevent KEYCODE_WAKEUP || true
+          adb shell wm dismiss-keyguard || true
 
           if [[ "$API_LEVEL" == "24" ]]; then
             # AGP/UTP may leave connectedDebugAndroidTest waiting indefinitely after
@@ -172,9 +288,17 @@ jobs:
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
+            echo "API 24 app APK bytes: $(stat -c '%s' "$APP_APK")"
+            echo "API 24 test APK bytes: $(stat -c '%s' "$TEST_APK")"
 
-            adb install -r "$APP_APK"
-            adb install -r "$TEST_APK"
+            # Android 7.0 package installation can wedge in adb's streaming install path for
+            # large APKs. Force push-then-package-manager installation so the legacy lane stays
+            # deterministic and blocking. The instrumentation APK is testOnly and therefore
+            # must be installed with -t.
+            echo "Installing API 24 app APK with non-streaming adb install."
+            timeout --signal=INT --kill-after=30s 300s adb install --no-streaming -r "$APP_APK"
+            echo "Installing API 24 instrumentation APK with non-streaming adb install."
+            timeout --signal=INT --kill-after=30s 300s adb install --no-streaming -r -t "$TEST_APK"
 
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
@@ -201,10 +325,12 @@ jobs:
 
             if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then
               echo "Android API 24 instrumentation command failed or exceeded its 15 minute watchdog (status ${INSTRUMENTATION_STATUS})."
+              summarize_instrumentation_reports
               exit "$INSTRUMENTATION_STATUS"
             fi
             if grep -Eq '^FAILURES!!!|^INSTRUMENTATION_FAILED:|Process crashed' "$INSTRUMENTATION_LOG"; then
               echo "Android API 24 instrumentation reported a test failure or crash."
+              summarize_instrumentation_reports
               exit 1
             fi
             if ! grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$INSTRUMENTATION_LOG"; then
@@ -212,9 +338,54 @@ jobs:
               exit 1
             fi
           else
+            set +e
             timeout --signal=INT --kill-after=30s 900s \
               ./gradlew connectedDebugAndroidTest --stacktrace --no-daemon
+            INSTRUMENTATION_STATUS=$?
+            set -e
+            if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then
+              echo "Android API ${API_LEVEL} connected instrumentation failed or exceeded its 15 minute watchdog (status ${INSTRUMENTATION_STATUS})."
+              summarize_instrumentation_reports
+              exit "$INSTRUMENTATION_STATUS"
+            fi
           fi
+
+      - name: Validate modern instrumentation reports
+        if: matrix.api-level != 24
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESULTS_ROOT="app/build/outputs/androidTest-results/connected"
+          test -d "$RESULTS_ROOT"
+          TEST_COUNT="$(find "$RESULTS_ROOT" -type f -name '*.xml' -print | wc -l)"
+          test "$TEST_COUNT" -gt 0
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = 'app/build/outputs/androidTest-results/connected';
+          const files = [];
+          const walk = (directory) => {
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+              const full = path.join(directory, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.isFile() && full.endsWith('.xml')) files.push(full);
+            }
+          };
+          walk(root);
+          let testCases = 0;
+          for (const file of files) {
+            const xml = fs.readFileSync(file, 'utf8');
+            testCases += (xml.match(/<testcase\b/g) || []).length;
+            if (/<(?:skipped|failure|error)\b/.test(xml)) {
+              throw new Error(`Instrumentation report contains a skipped or failed testcase: ${file}`);
+            }
+          }
+          if (testCases === 0) {
+            throw new Error('Instrumentation reports contain zero testcases');
+          }
+          console.log(`Validated ${testCases} instrumentation testcases across ${files.length} XML reports.`);
+          NODE
 
       - name: Upload instrumentation reports
         if: always()
@@ -226,5 +397,7 @@ jobs:
             native-android-app/app/build/outputs/androidTest-results/connected/
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-emulator.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-tests.log
-          if-no-files-found: warn
+            ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-sdk.txt
+            ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-diagnostics/
+          if-no-files-found: error
           retention-days: 14

@@ -35,20 +35,21 @@ object SentinelCallNotificationHelper {
     fun showIncoming(
         context: Context,
         snapshot: SentinelInCallService.CallSnapshot
-    ): Boolean {
+    ): Boolean = runCatching {
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
-        ) return false
+        ) return@runCatching false
+        if (!isFullScreenIntentAllowed(context)) return@runCatching false
 
         val manager = NotificationManagerCompat.from(context)
-        if (!manager.areNotificationsEnabled()) return false
-        ensureChannel(context)
+        if (!manager.areNotificationsEnabled()) return@runCatching false
+        if (!ensureChannel(context)) return@runCatching false
         // NotificationManager.notify() does not guarantee a visible post when the user has
         // disabled this channel. Physical certification must therefore fail closed on channel
         // importance, exactly like the SMS notification path.
-        if (!isChannelEnabled(context)) return false
+        if (!isChannelEnabled(context)) return@runCatching false
 
         val label = snapshot.displayName?.takeIf { it.isNotBlank() }
             ?: snapshot.handle?.takeIf { it.isNotBlank() }
@@ -108,20 +109,21 @@ object SentinelCallNotificationHelper {
             .setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, reject, answer))
             .build()
 
-        return runCatching {
-            manager.notify(NOTIFICATION_ID, notification)
-            true
-        }.getOrDefault(false)
-    }
+        manager.notify(NOTIFICATION_ID, notification)
+        true
+    }.getOrDefault(false)
 
     fun cancel(context: Context) {
-        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        runCatching {
+            NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        }
     }
 
-    fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    fun ensureChannel(context: Context): Boolean = runCatching {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return@runCatching true
         val system = context.getSystemService(NotificationManager::class.java)
-        if (system.getNotificationChannel(CHANNEL_ID) != null) return
+            ?: return@runCatching false
+        if (system.getNotificationChannel(CHANNEL_ID) != null) return@runCatching true
         system.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
@@ -134,13 +136,24 @@ object SentinelCallNotificationHelper {
                 enableVibration(false)
             }
         )
-    }
+        true
+    }.getOrDefault(false)
 
     fun isChannelEnabled(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
-        ensureChannel(context)
+        if (!ensureChannel(context)) return false
         val channel = context.getSystemService(NotificationManager::class.java)
-            .getNotificationChannel(CHANNEL_ID)
+            ?.getNotificationChannel(CHANNEL_ID)
         return channel != null && channel.importance != NotificationManager.IMPORTANCE_NONE
     }
+
+    /**
+     * Android 14+ lets the user revoke USE_FULL_SCREEN_INTENT independently of notification
+     * permission. A successful notify() is not a truthful incoming-call surface when that
+     * capability is denied, so callers must fail closed and use their fallback UI.
+     */
+    fun isFullScreenIntentAllowed(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+            context.getSystemService(NotificationManager::class.java)
+                ?.canUseFullScreenIntent() == true
 }

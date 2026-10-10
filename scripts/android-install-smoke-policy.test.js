@@ -14,6 +14,22 @@ test('APK install smoke runs after structural verification and before artifact u
   assert.ok(upload > install);
 });
 
+test('APK smoke proves the foreground setup surface before simulating app interruption', () => {
+  const firstRun = workflow.indexOf('FIRST_RUN_READY=0');
+  const surfaceProbe = workflow.indexOf('INTERRUPTION_SURFACE=""', firstRun);
+  const interruption = workflow.indexOf('adb shell input keyevent KEYCODE_BACK', firstRun);
+  const forceStop = workflow.indexOf('adb shell am force-stop com.sentinel.quantum', interruption);
+  assert.ok(firstRun >= 0);
+  assert.ok(surfaceProbe > firstRun);
+  assert.ok(interruption > firstRun);
+  assert.ok(forceStop > interruption);
+  assert.ok(surfaceProbe < interruption);
+  assert.match(workflow, /sentinel-interruption-dismiss\.txt/);
+  assert.match(workflow, /resultTo=.*com\\\.sentinel\\\.quantum\/\\\.PhoneCoreActivationActivity/);
+  assert.match(workflow, /PhoneCoreActivationActivity already foreground; simulating process death without BACK/);
+  assert.match(workflow, /POST_BACK_READY=0/);
+});
+
 test('APK install smoke uses Android 10 and verifies install plus launch', () => {
   assert.match(workflow, /system-images;android-29;google_apis;x86_64/);
   assert.match(workflow, /adb install -r "\$APK_PATH"/);

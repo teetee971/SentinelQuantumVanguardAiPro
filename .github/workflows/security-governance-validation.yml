@@ -80,19 +80,6 @@ jobs:
     name: Execution binding and PostgreSQL anti-replay integration
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: sentinel_ci_test_password
-          POSTGRES_DB: sentinel_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d sentinel_test"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
     env:
       DATABASE_URL: postgresql://postgres@127.0.0.1:5432/sentinel_test
       PGPASSWORD: sentinel_ci_test_password
@@ -107,6 +94,18 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
+
+      - name: Start isolated local PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo systemctl start postgresql
+          sudo -u postgres psql --set=ON_ERROR_STOP=1 <<'SQL'
+          ALTER USER postgres PASSWORD 'sentinel_ci_test_password';
+          SELECT 'CREATE DATABASE sentinel_test'
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'sentinel_test')\gexec
+          SQL
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres -d sentinel_test
 
       - name: Install dependencies without lifecycle scripts
         run: npm ci --ignore-scripts

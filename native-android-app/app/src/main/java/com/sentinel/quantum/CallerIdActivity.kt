@@ -333,14 +333,15 @@ private fun CallerCard(
         else -> "Décision : " + PhoneCoreFrenchLabels.action(action)
     }
     val decisionState = when (action) {
-        "BLOCK" -> SentinelState.BLOCKED
-        "SILENCE" -> SentinelState.DEGRADED
+        "BLOCK" -> SentinelState.LOCKED
+        "SILENCE" -> SentinelState.LIMITED
         "ALLOW" -> SentinelState.READY
-        else -> SentinelState.UNKNOWN
+        else -> SentinelState.LOCKED
     }
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(PhoneCoreFrenchLabels.reason(reason))
     val context = androidx.compose.ui.platform.LocalContext.current
+    var whatsappStatus by remember(number) { mutableStateOf<String?>(null) }
     val timelineSummary by produceState(
         initialValue = PhonePrivateTimeline.Summary(emptyList(), coordinatedCallSms = false),
         key1 = context
@@ -589,17 +590,28 @@ private fun CallerCard(
         WhatsAppClickToChatPolicy.urlFor(number)?.let { whatsappUrl ->
             OutlinedButton(
                 onClick = {
+                    whatsappStatus = null
                     try {
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
                     } catch (_: ActivityNotFoundException) {
-                        // No HTTPS handler is available on this device.
+                        whatsappStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
                     } catch (_: SecurityException) {
-                        // Device policy blocked the external handoff.
+                        whatsappStatus = "Ouverture de WhatsApp bloquée par la politique de sécurité de l’appareil."
+                    } catch (_: RuntimeException) {
+                        whatsappStatus = "Impossible d’ouvrir WhatsApp sur cet appareil."
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Ouvrir dans WhatsApp")
+            }
+            whatsappStatus?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                )
             }
         }
         Spacer(Modifier.height(4.dp))

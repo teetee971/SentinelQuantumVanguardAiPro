@@ -43,7 +43,20 @@ class SentinelSmsSender(private val context: Context) {
         val delivered: ArrayList<PendingIntent>
     )
 
-    fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult {
+    /**
+     * Serialize admission across every sender instance in this process. The durable ledger then
+     * protects the interval after this method returns and until every SENT callback has a verdict.
+     */
+    fun send(destination: String, body: String, requestedSubscriptionId: Int? = null): SendResult =
+        synchronized(SUBMISSION_LOCK) {
+            sendSerialized(destination, body, requestedSubscriptionId)
+        }
+
+    private fun sendSerialized(
+        destination: String,
+        body: String,
+        requestedSubscriptionId: Int?
+    ): SendResult {
         val normalized = sanitizeDestination(destination) ?: return SendResult(false, "INVALID_DESTINATION")
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
             return SendResult(false, "INVALID_MESSAGE")
@@ -75,6 +88,11 @@ class SentinelSmsSender(private val context: Context) {
             EmergencyNumberState.NOT_EMERGENCY -> Unit
         }
 
+        val submissionStore = SmsOutgoingSubmissionStore(context)
+        if (submissionStore.hasPendingSubmission()) {
+            return SendResult(false, "SMS_SUBMISSION_ALREADY_PENDING")
+        }
+
         // Everything in this phase happens before Sentinel creates an OUTBOX row and before any
         // SmsManager send call. A failure here is conclusively a preparation failure, not an
         // unknown telephony submission outcome.
@@ -84,11 +102,11 @@ class SentinelSmsSender(private val context: Context) {
                 subscriptionManager.activeSubscriptionInfoList
                     .orEmpty()
                     .map { it.subscriptionId }
-                    .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                    .filter(MmsSubscriptionResolver::isValidSubscriptionId)
                     .toSet()
             }.getOrElse { return SendResult(false, "SMS_SUBSCRIPTION_LOOKUP_FAILED") }
             val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
-                .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                .takeIf(MmsSubscriptionResolver::isValidSubscriptionId)
             val selection = SmsSubscriptionSelectionPolicy.select(
                 activeSubscriptionIds = activeIds,
                 requestedSubscriptionId = requestedSubscriptionId,
@@ -161,6 +179,28 @@ class SentinelSmsSender(private val context: Context) {
             return SendResult(
                 accepted = false,
                 reason = SmsSubmissionOutcomePolicy.reasonForCallbackPreparationException(repaired),
+                subscriptionId = prepared.subscriptionId,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+        }
+
+        val watchdogReady = runCatching {
+            val registered = submissionStore.register(
+                sendToken = callbacks.sendToken,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+            check(registered) { "SMS submission ledger unavailable" }
+            SmsSubmissionWatchdogWorker.schedule(context)
+            true
+        }.getOrDefault(false)
+        if (!watchdogReady) {
+            submissionStore.remove(callbacks.sendToken, persistedMessageId)
+            conversations.markOutgoingFailed(persistedMessageId)
+            return SendResult(
+                accepted = false,
+                reason = "SMS_SUBMISSION_WATCHDOG_UNAVAILABLE",
                 subscriptionId = prepared.subscriptionId,
                 providerMessageId = persistedMessageId,
                 partCount = parts.size
@@ -249,6 +289,7 @@ class SentinelSmsSender(private val context: Context) {
         const val EXTRA_PART_COUNT = "sms.part_count"
         const val EXTRA_PROVIDER_MESSAGE_ID = "sms.provider_message_id"
         private val requestTokenRandom = SecureRandom()
+        private val SUBMISSION_LOCK = Any()
 
         /**
          * Process-local counters restart after process death and can therefore alias a still-pending

@@ -76,7 +76,7 @@ class CommunityReportClient(
             if (!response.isSuccessful) {
                 throw IllegalStateException("HTTP_" + response.code)
             }
-            val json = JSONObject(response.body.string())
+            val json = JSONObject(BoundedResponseBody.readText(response.body, MAX_RESPONSE_BYTES))
             return Result(
                 status = json.optString("status", "unknown").take(32),
                 effectOnReputation = json.optString(
@@ -107,5 +107,6 @@ class CommunityReportClient(
 
         private val JSON_MEDIA_TYPE =
             "application/json; charset=utf-8".toMediaType()
+        private const val MAX_RESPONSE_BYTES = 128 * 1024
     }
 }

@@ -27,15 +27,15 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
                 // Legacy macro-step keys intentionally do not equal new atomic target keys.
             }
 
-    fun markAttemptedTarget(targetKey: String) {
-        prefs.edit()
+    fun markAttemptedTarget(targetKey: String): Boolean {
+        return prefs.edit()
             .putString(KEY_ATTEMPTED_TARGET, targetKey)
             .remove(KEY_ATTEMPTED_STEP)
             .commit()
     }
 
-    fun clearAttempted() {
-        prefs.edit()
+    fun clearAttempted(): Boolean {
+        return prefs.edit()
             .remove(KEY_ATTEMPTED_STEP)
             .remove(KEY_ATTEMPTED_TARGET)
             .commit()
@@ -52,17 +52,17 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         }
     }
 
-    fun markOffered() = setLifecycleState(LifecycleState.OFFERED)
+    fun markOffered(): Boolean = setLifecycleState(LifecycleState.OFFERED)
 
-    fun markInProgress() = setLifecycleState(LifecycleState.IN_PROGRESS)
+    fun markInProgress(): Boolean = setLifecycleState(LifecycleState.IN_PROGRESS)
 
-    fun markDeferred() {
-        if (lifecycleState() == LifecycleState.COMPLETED) return
-        setLifecycleState(LifecycleState.DEFERRED)
+    fun markDeferred(): Boolean {
+        if (lifecycleState() == LifecycleState.COMPLETED) return false
+        return setLifecycleState(LifecycleState.DEFERRED)
     }
 
-    fun markCompleted() {
-        prefs.edit()
+    fun markCompleted(): Boolean {
+        return prefs.edit()
             .putBoolean(KEY_COMPLETED, true)
             .putString(KEY_LIFECYCLE_STATE, LifecycleState.COMPLETED.name)
             .remove(KEY_ATTEMPTED_STEP)
@@ -72,14 +72,14 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
 
     fun isCompleted(): Boolean = lifecycleState() == LifecycleState.COMPLETED
 
-    private fun setLifecycleState(state: LifecycleState) {
+    private fun setLifecycleState(state: LifecycleState): Boolean {
         check(state != LifecycleState.COMPLETED) {
             "COMPLETED must be persisted through markCompleted()"
         }
         // IN_PROGRESS is specifically used to recover after process death. Persist lifecycle
         // transitions synchronously before launching Android-owned permission/role surfaces, and
         // invalidate the legacy completion bit so a later migration can never resurrect stale READY.
-        prefs.edit()
+        return prefs.edit()
             .putBoolean(KEY_COMPLETED, false)
             .putString(KEY_LIFECYCLE_STATE, state.name)
             .commit()
@@ -93,6 +93,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
         SMS_ROLE,
         SMS_PERMISSIONS,
         MMS_PERMISSIONS,
+        MMS_SAFE_PREVIEW,
         NOTIFICATION_CHANNELS,
         COMPLETE
     }
@@ -100,14 +101,15 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
     data class Facts(
         val corePermissionsReady: Boolean,
         val dialerRoleHeld: Boolean,
-        val dialerRoleAvailable: Boolean = true,
+        val dialerRoleAvailable: Boolean,
         val callScreeningRoleHeld: Boolean,
-        val callScreeningRoleAvailable: Boolean = true,
+        val callScreeningRoleAvailable: Boolean,
         val callLogPermissionGranted: Boolean,
         val smsRoleHeld: Boolean,
-        val smsRoleAvailable: Boolean = true,
+        val smsRoleAvailable: Boolean,
         val smsRuntimePermissionsReady: Boolean,
         val mmsPermissionsReady: Boolean,
+        val mmsSafePreviewValidated: Boolean,
         val notificationChannelsReady: Boolean
     )
 
@@ -133,6 +135,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.SMS_ROLE,
             Step.SMS_PERMISSIONS,
             Step.MMS_PERMISSIONS,
+            Step.MMS_SAFE_PREVIEW,
             Step.NOTIFICATION_CHANNELS
         )
 
@@ -144,6 +147,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             !facts.smsRoleHeld -> Step.SMS_ROLE
             !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
             !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+            !facts.mmsSafePreviewValidated -> Step.MMS_SAFE_PREVIEW
             !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
             else -> Step.COMPLETE
         }
@@ -161,6 +165,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             !facts.smsRoleHeld && facts.smsRoleAvailable -> Step.SMS_ROLE
             facts.smsRoleHeld && !facts.smsRuntimePermissionsReady -> Step.SMS_PERMISSIONS
             facts.smsRoleHeld && !facts.mmsPermissionsReady -> Step.MMS_PERMISSIONS
+            facts.smsRoleHeld && !facts.mmsSafePreviewValidated -> Step.MMS_SAFE_PREVIEW
             !facts.notificationChannelsReady -> Step.NOTIFICATION_CHANNELS
             else -> nextStep(facts)
         }
@@ -199,8 +204,17 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.DIALER_ROLE -> facts.dialerRoleAvailable && !facts.dialerRoleHeld
             Step.CALL_SCREENING_ROLE -> facts.callScreeningRoleAvailable && !facts.callScreeningRoleHeld
             Step.SMS_ROLE -> facts.smsRoleAvailable && !facts.smsRoleHeld
+            Step.MMS_SAFE_PREVIEW -> false
             Step.COMPLETE -> false
             else -> true
+        }
+
+        /** True when the current blocker is an Android role the device cannot expose. */
+        fun isBlockedByUnavailableRole(step: Step, facts: Facts): Boolean = when (step) {
+            Step.DIALER_ROLE -> !facts.dialerRoleAvailable && !facts.dialerRoleHeld
+            Step.CALL_SCREENING_ROLE -> !facts.callScreeningRoleAvailable && !facts.callScreeningRoleHeld
+            Step.SMS_ROLE -> !facts.smsRoleAvailable && !facts.smsRoleHeld
+            else -> false
         }
 
         /**
@@ -271,6 +285,8 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
                 "Ces autorisations servent uniquement aux opérations SMS que le rôle Android permet réellement à Sentinel d’exécuter."
             Step.MMS_PERMISSIONS ->
                 "Ces autorisations permettent la réception MMS. La capacité opérationnelle reste distincte tant qu’elle n’est pas validée sur appareil réel."
+            Step.MMS_SAFE_PREVIEW ->
+                "Sentinel vérifie localement que le décodeur MMS sécurisé accepte un contenu borné et rejette un contenu usurpé avant d’ouvrir un aperçu."
             Step.NOTIFICATION_CHANNELS ->
                 "Cette étape regroupe l’autorisation Android des notifications, les canaux Appels/SMS et le plein écran d’appel lorsqu’Android l’exige."
             Step.COMPLETE ->
@@ -286,6 +302,8 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
                 "L’accès au journal reste local et dépend simultanément du rôle Téléphone et de l’autorisation Android."
             Step.SMS_PERMISSIONS, Step.MMS_PERMISSIONS ->
                 "Aucun message n’est transmis à un service distant par le seul fait d’accorder ces autorisations."
+            Step.MMS_SAFE_PREVIEW ->
+                "Ce contrôle reste local : aucun contenu MMS réel n’est requis ni transmis pour valider ce prérequis logiciel."
             Step.NOTIFICATION_CHANNELS ->
                 "Le contenu sensible des notifications reste gouverné par les préférences Sentinel et les réglages système."
             Step.COMPLETE ->
@@ -300,6 +318,7 @@ internal class PhoneCoreSetupWizardStore(context: Context) {
             Step.SMS_ROLE -> "Définir Sentinel comme application SMS"
             Step.SMS_PERMISSIONS -> "Autoriser l’envoi et la réception des SMS"
             Step.MMS_PERMISSIONS -> "Autoriser la réception des MMS"
+            Step.MMS_SAFE_PREVIEW -> "Vérifier l’aperçu MMS sécurisé"
             Step.NOTIFICATION_CHANNELS -> "Activer les notifications et le plein écran des appels"
             Step.COMPLETE -> "Prérequis logiciels prêts"
         }

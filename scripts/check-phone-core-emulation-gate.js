@@ -40,6 +40,10 @@ const setupResumeTest = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum',
   'PhoneCoreSetupResumeInstrumentationTest.kt'
 );
+const setupRebootTest = read(
+  'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum',
+  'PhoneCoreSetupRebootPreparationInstrumentationTest.kt'
+);
 const navigationSmoke = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui',
   'AllStaticNavigationSurfacesInstrumentationTest.kt'
@@ -47,6 +51,10 @@ const navigationSmoke = read(
 const standaloneSmoke = read(
   'native-android-app', 'app', 'src', 'androidTest', 'java', 'com', 'sentinel', 'quantum', 'ui',
   'StandaloneActivitySmokeInstrumentationTest.kt'
+);
+const activationUi = read(
+  'native-android-app', 'app', 'src', 'main', 'java', 'com', 'sentinel', 'quantum',
+  'PhoneCoreActivationActivity.kt'
 );
 const runtimeFlow = read('scripts', 'phone-core-emulator-flow.sh');
 const revocationFlow = read('scripts', 'phone-core-emulator-revocation-flow.sh');
@@ -95,8 +103,11 @@ const expectedRequiredChecks = [
   'standalone_activity_surfaces_render',
   'min_sdk_cold_launch',
   'cold_install_and_relaunch',
+  'sdk_api_exact',
+  'runtime_package_path',
   'phone_core_setup_resume',
   'synthetic_call_screening_observed',
+  'screening_latency_observed',
   'synthetic_call_screening_decision_observed',
   'incoming_call_telecom_flow',
   'outgoing_call_telecom_flow',
@@ -175,12 +186,24 @@ for (const marker of [
   'Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)',
   'const val LIFECYCLE_TAG = "SentinelLifecycle"',
   'const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"',
+  'const val RESPONSE_LATENCY_MARKER = "CallScreeningService:response_elapsed_ms="',
+  'const val RESPONSE_SENT_MARKER = "CallScreeningService:response_sent="',
+  'const val MAX_PRE_RESPONSE_MS = 450L',
+  'SystemClock.elapsedRealtime()',
+  'logResponseLatency(startedAtElapsedMs, responseSent)',
   'getSystemService(TelephonyManager::class.java).isEmergencyNumber',
   'if (emergency != false)',
   'CallBlocklistStore.cachedSnapshotForScreening()',
   'SCREENING_FINGERPRINTER::cachedCandidates',
-  'respondToCall(callDetails, CallResponse.Builder().build())'
+  'private fun respondAndLog(',
+  'respondAndLog(callDetails, CallResponse.Builder().build(), startedAtElapsedMs)'
 ]) requireText(callScreeningService, marker, 'CallScreeningService truth');
+const screeningBudgetMs = Number(
+  callScreeningService.match(/const val MAX_PRE_RESPONSE_MS = (\d+)L/)?.[1] ?? 0
+);
+if (screeningBudgetMs <= 0 || screeningBudgetMs >= 500) {
+  errors.push('CallScreeningService pre-response budget must remain strictly below the 500 ms physical gate');
+}
 requireText(callBlocklistStore, 'internal fun cachedSnapshotForScreening', 'memory-only screening cache');
 if (!/val verificationCode = if \(Build\.VERSION\.SDK_INT >= Build\.VERSION_CODES\.R\)\s*\{\s*when \(callDetails\.callerNumberVerificationStatus\)/.test(callScreeningService)) {
   errors.push('callerNumberVerificationStatus requires Android 11/API 30; Android 10 must retain UNKNOWN without calling the accessor');
@@ -218,12 +241,20 @@ for (const marker of [
   ':wearable-contract:test',
   ':wearable-security:test',
   ':app:lintDebug',
+  'npm run test:phone-intelligence',
   'CallRuleEngineTest',
   'SmsSubmitReadinessTest',
   ':app:connectedDebugAndroidTest',
   'id: instrumentation',
   'HOST_CONTRACT_RESULT: ${{ needs.contract-and-host-tests.result }}',
   'INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}',
+  'id: setup_reboot',
+  'adb shell reboot',
+  'adb shell am force-stop com.sentinel.quantum',
+  'timeout --signal=INT --kill-after=5s 30s',
+  'SETUP_REBOOT_OUTCOME: ${{ steps.setup_reboot.outcome }}',
+  'setupRebootObserved',
+  'run-as com.sentinel.quantum cat shared_prefs/phone_core_setup_wizard_v2.xml',
   "process.env.HOST_CONTRACT_RESULT === 'success'",
   "process.env.INSTRUMENTATION_OUTCOME === 'success'",
   'sentinel-instrumentation-api${api}-tests.log',
@@ -244,6 +275,13 @@ for (const marker of [
   'android_lint',
   'phone-core-emulator-flow.sh',
   'phone-core-emulator-revocation-flow.sh',
+  'pm path com.sentinel.quantum',
+  'runtime-package-path.txt',
+  'runtimePackagePathConfirmed',
+  'runtime_package_path',
+  'setup-reboot-sdk.txt',
+  'sdkApiExact',
+  'sdk_api_exact',
   'ACTUAL_API=',
   'PhoneCore-Emulation-Qualification',
   'FATAL EXCEPTION:',
@@ -253,6 +291,12 @@ for (const marker of [
   'commercial_release_claim: false',
   'effective_permission_denial_fail_closed'
 ]) requireText(workflow, marker, 'shadow emulation workflow');
+
+const hostPhoneContractsStep = workflow.indexOf('- name: Test Phone Intelligence host contracts');
+const gradleSetupStep = workflow.indexOf('- name: Setup Java 17');
+if (hostPhoneContractsStep < 0 || gradleSetupStep < 0 || hostPhoneContractsStep > gradleSetupStep) {
+  errors.push('Phone Intelligence host contracts must run before Java/Gradle and emulator preparation');
+}
 
 if (workflow.includes('set-bypassing-role-qualification')) {
   errors.push('emulator gate must never bypass Android role qualification');
@@ -279,10 +323,42 @@ for (const marker of [
   'ActivityScenario.launch<PhoneCoreActivationActivity>',
   'attempted_target',
   'completed',
-  'interruptedFirstRunResumesWithoutFalseCompletion'
+  'interruptedFirstRunResumesWithoutFalseCompletion',
+  'LifecycleState.IN_PROGRESS'
 ]) requireText(setupResumeTest, marker, 'setup resume instrumentation');
+if (/executeShellCommand\("am force-stop/.test(setupResumeTest)) {
+  errors.push('setup-resume instrumentation must not force-stop its own target process; host-driven reboot qualification owns process death');
+}
 if (setupResumeTest.includes('sendKeyDownUpSync')) {
   errors.push('setup-resume instrumentation must not require privileged key injection');
+}
+const resumedScenarioIndex = setupResumeTest.indexOf('val resumedScenario = ActivityScenario.launch');
+if (resumedScenarioIndex >= 0) {
+  const resumedBlock = setupResumeTest.slice(resumedScenarioIndex);
+  if (resumedBlock.indexOf('dismissSystemSetupDialog()') > resumedBlock.indexOf('resumedScenario.moveToState')) {
+    errors.push('setup resume must dismiss Android-owned dialogs before forcing the resumed lifecycle');
+  }
+}
+
+for (const marker of [
+  'PhoneCoreSetupRebootPreparationInstrumentationTest',
+  'preserve_state',
+  'waitForAttemptedTarget',
+  'cleanUpUnlessWorkflowWillReboot()',
+  'LifecycleState.IN_PROGRESS'
+]) requireText(setupRebootTest, marker, 'setup reboot preparation instrumentation');
+if (setupRebootTest.includes('markAttemptedTarget(')) {
+  errors.push('setup reboot preparation must observe the UI target, not seed an artificial target');
+}
+if (/executeShellCommand\("am force-stop/.test(setupRebootTest)) {
+  errors.push('setup reboot preparation must leave process termination to the external reboot workflow');
+}
+if (!/fun dismissSystemSetupDialog\(\)/.test(setupRebootTest) ||
+    !/cleanUpUnlessWorkflowWillReboot\(\)[\s\S]*dismissSystemSetupDialog\(\)/.test(setupRebootTest)) {
+  errors.push('setup reboot preparation must dismiss any Android role/permission dialog before releasing ActivityScenario');
+}
+if (setupRebootTest.includes('scenario.moveToState(Lifecycle.State.RESUMED)')) {
+  errors.push('setup reboot preparation must observe the real paused/resumed state instead of forcing RESUMED behind an Android-owned dialog');
 }
 
 for (const marker of [
@@ -304,15 +380,35 @@ for (const marker of [
 ]) requireText(standaloneSmoke, marker, 'standalone activity smoke');
 
 for (const marker of [
+  '!mmsSafePreviewValidated',
+  'Phone Core bloqué · aperçu MMS sécurisé indisponible'
+]) requireText(activationUi, marker, 'MMS locked Phone Core banner');
+
+for (const marker of [
   'wait_role_held android.app.role.CALL_SCREENING',
+  'ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"',
+  'ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"',
+  'command timeout',
+  'adb "$@"',
   'dumpsys role',
   'adb emu gsm call',
   'wait_logcat_marker "CallScreeningService:onScreenCall"',
+  'wait_logcat_marker "CallScreeningService:response_elapsed_ms="',
+  'wait_logcat_marker "CallScreeningService:response_sent=true"',
   'wait_incoming_sentinel_surface',
   'wait_private_timeline_signal_prefix "CALL_SCREENED:"',
   'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
   'wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"',
   'adb emu sms send',
+  'run_stability_qualification()',
+  'svc wifi disable',
+  'settings put system user_rotation 1',
+  'adb shell am force-stop "$FLOW_PACKAGE"',
+  'stability-offline',
+  'stability-rotation',
+  'stability-kill-restart',
+  'FATAL EXCEPTION:',
+  'ANR in com\\.sentinel\\.quantum',
   'Synthetic Telecom callback/calls, cold relaunch, and inline SMS reply verified'
 ]) requireText(runtimeFlow, marker, 'Phone Core emulator runtime flow');
 

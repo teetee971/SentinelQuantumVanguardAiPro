@@ -26,6 +26,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
 
       - name: Validate Android manifest security
         run: node scripts/check-android-manifest.js
@@ -116,6 +126,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
 
@@ -190,7 +213,7 @@ jobs:
             exit 1
           fi
 
-          adb install -r "$APK_PATH"
+          timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"
           adb shell pm path com.sentinel.quantum | grep -q '^package:'
           # Some hosted Android 10 emulator images deny clearing individual log buffers.
           # Log clearing is diagnostic hygiene, not an installability gate.
@@ -224,9 +247,72 @@ jobs:
 
           adb shell pidof com.sentinel.quantum
 
-          # An unfinished setup is intentionally resumable. Force-stop simulates the user
-          # leaving the app during Android's permission/default-role flow. The next cold launch
-          # must reopen PhoneCoreActivationActivity rather than losing progress.
+          # An unfinished setup is intentionally resumable. Only dismiss an Android-owned
+          # permission/role surface after dumpsys proves that it is foreground and bound back to
+          # PhoneCoreActivationActivity. If the app surface is already foreground, force-stopping
+          # Sentinel directly is the safe process-death simulation; sending BACK there would close
+          # the activity, persist DEFERRED through the result callback, and invalidate this probe.
+          INTERRUPTION_SURFACE=""
+          INTERRUPTION_DUMP="$RUNNER_TEMP/sentinel-interruption-before-back.txt"
+          for _ in $(seq 1 30); do
+            adb shell dumpsys activity activities > "$INTERRUPTION_DUMP" 2>/dev/null || true
+
+            if grep -Eq 'mResumedActivity.*permissioncontroller.*GrantPermissionsActivity|topResumedActivity=.*permissioncontroller.*GrantPermissionsActivity' "$INTERRUPTION_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$INTERRUPTION_DUMP"; then
+              INTERRUPTION_SURFACE="android"
+              break
+            fi
+            if grep -Eiq 'mResumedActivity.*permissioncontroller.*role.*Activity|topResumedActivity=.*permissioncontroller.*role.*Activity' "$INTERRUPTION_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$INTERRUPTION_DUMP"; then
+              INTERRUPTION_SURFACE="android"
+              break
+            fi
+            if grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$INTERRUPTION_DUMP"; then
+              INTERRUPTION_SURFACE="sentinel"
+              break
+            fi
+
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+              echo "Sentinel crashed or ANR'd before the interruption probe could identify its foreground surface."
+              adb logcat -d -v time | tail -n 400
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ -z "$INTERRUPTION_SURFACE" ]]; then
+            echo "Could not prove either an Android-owned setup surface or PhoneCoreActivationActivity before process-death simulation."
+            cat "$INTERRUPTION_DUMP"
+            exit 1
+          fi
+
+          if [[ "$INTERRUPTION_SURFACE" == "android" ]]; then
+            adb shell input keyevent KEYCODE_BACK
+            POST_BACK_READY=0
+            POST_BACK_DUMP="$RUNNER_TEMP/sentinel-interruption-dismiss.txt"
+            for _ in $(seq 1 10); do
+              adb shell dumpsys activity activities > "$POST_BACK_DUMP" 2>/dev/null || true
+              if grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$POST_BACK_DUMP"; then
+                POST_BACK_READY=1
+                break
+              fi
+              if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+                echo "Sentinel crashed or ANR'd while dismissing the Android-owned setup surface."
+                adb logcat -d -v time | tail -n 400
+                exit 1
+              fi
+              sleep 1
+            done
+            if [[ "$POST_BACK_READY" != "1" ]]; then
+              echo "Dismissing the Android-owned setup surface did not return to PhoneCoreActivationActivity."
+              cat "$POST_BACK_DUMP"
+              exit 1
+            fi
+          else
+            echo "PhoneCoreActivationActivity already foreground; simulating process death without BACK."
+            cp "$INTERRUPTION_DUMP" "$RUNNER_TEMP/sentinel-interruption-dismiss.txt"
+          fi
+
+          # The next cold launch must reopen PhoneCoreActivationActivity rather than losing progress.
           adb shell am force-stop com.sentinel.quantum
           adb logcat -c >/dev/null 2>&1 || true
           # am start -W can return non-zero when Android immediately hands foreground
@@ -323,7 +409,7 @@ jobs:
             apk_name: name,
             apk_sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
             apk_size_bytes: bytes.length,
-            build_commit: process.env.GITHUB_SHA,
+            build_commit: process.env.SOURCE_HEAD_SHA,
             source_head_commit: process.env.SOURCE_HEAD_SHA,
             source_base_commit: process.env.SOURCE_BASE_SHA || null,
             source_head_ref: process.env.SOURCE_HEAD_REF,
@@ -357,6 +443,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact source head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -376,6 +472,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+          ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+          if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+            [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+            echo "ADB watchdog values must be positive integer seconds."
+            exit 1
+          fi
+          ADB_BIN="$(command -v adb)"
+          test -x "$ADB_BIN"
+          adb() {
+            command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+              "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
+          }
           APK_PATH=$(find ci-apk -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
 
@@ -450,7 +559,32 @@ jobs:
             exit 1
           fi
 
-          adb install -r "$APK_PATH"
+          wait_for_package_manager() {
+            local package_probe=""
+            local package_probe_status=0
+            for _ in $(seq 1 60); do
+              set +e
+              package_probe="$(adb shell cmd package list packages 2>&1 | tr -d '\r')"
+              package_probe_status=$?
+              set -e
+              if [[ "$package_probe_status" -eq 0 ]] &&
+                ! grep -Fq "Can't find service: package" <<< "$package_probe"; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "Android package manager service did not become available within its bounded readiness window."
+            adb shell cmd package list packages || true
+            return 1
+          }
+          wait_for_package_manager
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell input keyevent KEYCODE_WAKEUP || true
+          adb shell wm dismiss-keyguard || true
+
+          timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"
           bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"
       - name: Upload Phone Core Android 16 screenshots
         if: always()

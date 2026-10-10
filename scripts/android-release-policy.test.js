@@ -35,6 +35,14 @@ test('production signing never falls back to a debug keystore', () => {
   assert.doesNotMatch(workflow, /debug\.keystore|assembleDebug|signingConfig\s+debug/i);
 });
 
+test('release qualification selects the newest retry deterministically', () => {
+  assert.match(
+    workflow,
+    /sort_by\(\[\.run_number, \.run_attempt, \.id\]\) \| last/
+  );
+  assert.doesNotMatch(workflow, /sort_by\(\.run_number\) \| last/);
+});
+
 
 test('releaseUnsigned explicitly clears any signing config inherited from release', () => {
   const block = androidBuild.match(/releaseUnsigned\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';

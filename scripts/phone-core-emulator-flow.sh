@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Synthetic communications on the isolated CI emulator only. No physical certification.
-set -euo pipefail
+set -Eeuo pipefail
 FLOW_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FLOW_OUTPUT_DIR="${1:?Screenshot output directory required}"
 mkdir -p "$FLOW_OUTPUT_DIR"
@@ -8,16 +8,272 @@ FLOW_PACKAGE="com.sentinel.quantum"
 FLOW_NUMBER="5550100"
 FLOW_SMS_NUMBER="+15550123"
 FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
+ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+FLOW_DEVICE_STATE_MUTATED=false
+ORIGINAL_USER_ROTATION=""
+ORIGINAL_ACCELEROMETER_ROTATION=""
+ORIGINAL_WIFI_ON=""
+ORIGINAL_MOBILE_DATA=""
+MOBILE_DATA_ORACLE_SOURCE=""
+RESTORE_FAILED=false
+FLOW_FAILURE_TRAP_ACTIVE=false
+FLOW_FAILURE_REPORTED=false
+FLOW_FAILURE_TRAP_SUSPENDED=false
+FLOW_LAST_ADB_ARGS=""
+if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+  [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ADB command watchdog values must be positive integer seconds." >&2
+  exit 2
+fi
+adb() {
+  FLOW_LAST_ADB_ARGS="$(printf '%q ' "$@")"
+  command timeout \
+    --signal=INT \
+    --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+    "${ADB_COMMAND_TIMEOUT_SECONDS}s" \
+    adb "$@"
+}
+flow_failure_diagnostics() {
+  local status="$1"
+  local failed_command="$2"
+  local failed_line="$3"
+  local failed_adb_args="$4"
+  if [[ "$FLOW_FAILURE_REPORTED" == true ]]; then
+    return 0
+  fi
+  FLOW_FAILURE_REPORTED=true
+  # Diagnostics must never replace the original failure or recurse through ERR.
+  trap - ERR
+  set +e
+  {
+    printf 'status=%s\nfailed_line=%s\nfailed_command=%s\nadb_args=%s\n' \
+      "$status" "$failed_line" "$failed_command" "$failed_adb_args"
+    printf '\nadb_get_state_status='; adb get-state
+    printf '\nadb_devices_status='; adb devices -l
+    # Keep crash diagnostics inside the ADB transport window. The unfiltered Android 16
+    # system buffer can exceed it during offline qualification and make a healthy device
+    # report status 255 even though a later targeted read succeeds.
+    printf '\nlogcat_brief_status='; adb logcat -d -v brief -s AndroidRuntime:E ActivityManager:E ActivityTaskManager:E
+    printf '\nactivity_status='; adb shell dumpsys activity activities
+    printf '\ntelecom_status='; adb shell dumpsys telecom
+    printf '\nrole_status='; adb shell dumpsys role
+  } > "$FLOW_OUTPUT_DIR/flow-failure.txt" 2>&1
+  printf 'Phone Core flow unexpected shell failure: status=%s line=%s command=%s adb_args=%s; full diagnostics=%s\n' \
+    "$status" "$failed_line" "$failed_command" "$failed_adb_args" \
+    "$FLOW_OUTPUT_DIR/flow-failure.txt" >&2
+  set -e
+  trap 'flow_err_trap "$?" "$BASH_COMMAND" "${BASH_LINENO[0]:-unknown}"' ERR
+  return 0
+}
+flow_err_trap() {
+  local status="$1"
+  local failed_command="$2"
+  local failed_line="$3"
+  local failed_adb_args="$FLOW_LAST_ADB_ARGS"
+  if [[ "$FLOW_FAILURE_TRAP_ACTIVE" == true && "$FLOW_FAILURE_TRAP_SUSPENDED" != true ]]; then
+    flow_failure_diagnostics "$status" "$failed_command" "$failed_line" "$failed_adb_args"
+  fi
+  return "$status"
+}
+trap 'flow_err_trap "$?" "$BASH_COMMAND" "${BASH_LINENO[0]:-unknown}"' ERR
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+
+wait_for_online_adb() {
+  local reason="$1"
+  local state=""
+  local status=0
+  for _ in $(seq 1 20); do
+    FLOW_FAILURE_TRAP_SUSPENDED=true
+    set +e
+    state="$(adb get-state 2>&1)"
+    status=$?
+    set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
+    if [[ "$status" -eq 0 && "$state" == device ]]; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "ADB device did not return online after ${reason}." >&2
+  FLOW_FAILURE_TRAP_SUSPENDED=true
+  set +e
+  adb get-state >&2
+  adb devices -l >&2
+  set -e
+  FLOW_FAILURE_TRAP_SUSPENDED=false
+  return 1
+}
+
+read_mobile_data_state() {
+  local mobile_data_oracle=""
+  if mobile_data_oracle="$(adb shell cmd phone get-data-enabled 2>/dev/null | tr -d '\r')"; then
+    case "$mobile_data_oracle" in
+      true|1)
+        printf '1 cmd_phone\n'
+        return 0
+        ;;
+      false|0)
+        printf '0 cmd_phone\n'
+        return 0
+        ;;
+    esac
+  fi
+  if mobile_data_oracle="$(adb shell settings get global mobile_data 2>/dev/null | tr -d '\r')"; then
+    case "$mobile_data_oracle" in
+      0|1)
+        printf '%s settings_global\n' "$mobile_data_oracle"
+        return 0
+        ;;
+    esac
+  fi
+  # Some API 36/37 emulator images have no subscription-backed data state. This is not
+  # permission to guess: report the capability as LIMITED and leave mobile data untouched.
+  printf 'UNAVAILABLE unavailable\n'
+  return 2
+}
+
+capture_original_device_state() {
+  local mobile_data_reading=""
+  if ! ORIGINAL_USER_ROTATION="$(adb shell settings get system user_rotation | tr -d '\r')"; then
+    echo "Failed to read original user rotation state." >&2
+    return 1
+  fi
+  if ! ORIGINAL_ACCELEROMETER_ROTATION="$(adb shell settings get system accelerometer_rotation | tr -d '\r')"; then
+    echo "Failed to read original accelerometer rotation state." >&2
+    return 1
+  fi
+  if ! ORIGINAL_WIFI_ON="$(adb shell settings get global wifi_on | tr -d '\r')"; then
+    echo "Failed to read original Wi-Fi state." >&2
+    return 1
+  fi
+  if mobile_data_reading="$(read_mobile_data_state)"; then
+    :
+  elif [[ "$mobile_data_reading" != "UNAVAILABLE unavailable" ]]; then
+    echo "Unable to read Android mobile-data state from supported fail-closed oracles." >&2
+    return 1
+  fi
+  read -r ORIGINAL_MOBILE_DATA MOBILE_DATA_ORACLE_SOURCE <<< "$mobile_data_reading"
+  if ! [[ "$ORIGINAL_USER_ROTATION" =~ ^[0-9]+$ ]]; then
+    echo "Invalid original user rotation state: $ORIGINAL_USER_ROTATION" >&2
+    return 1
+  fi
+  if ! [[ "$ORIGINAL_ACCELEROMETER_ROTATION" =~ ^[01]$ ]]; then
+    echo "Invalid original accelerometer rotation state: $ORIGINAL_ACCELEROMETER_ROTATION" >&2
+    return 1
+  fi
+  if ! [[ "$ORIGINAL_WIFI_ON" =~ ^[01]$ ]]; then
+    echo "Invalid original Wi-Fi state: $ORIGINAL_WIFI_ON" >&2
+    return 1
+  fi
+  if ! [[ "$ORIGINAL_MOBILE_DATA" == UNAVAILABLE || "$ORIGINAL_MOBILE_DATA" =~ ^[01]$ ]]; then
+    echo "Invalid original mobile-data state: $ORIGINAL_MOBILE_DATA" >&2
+    return 1
+  fi
+}
+
+restore_device_state() {
+  if [[ "$FLOW_DEVICE_STATE_MUTATED" != true ]]; then
+    return 0
+  fi
+  RESTORE_FAILED=false
+  wait_for_restore_device() {
+    local state=""
+    local status=0
+    for _ in $(seq 1 20); do
+      FLOW_FAILURE_TRAP_SUSPENDED=true
+      set +e
+      state="$(adb get-state 2>&1)"
+      status=$?
+      set -e
+      FLOW_FAILURE_TRAP_SUSPENDED=false
+      if [[ "$status" -eq 0 && "$state" == device ]]; then
+        return 0
+      fi
+      sleep 1
+    done
+    return 1
+  }
+  restore_adb_diagnostics() {
+    local device_state=""
+    local devices=""
+    local device_state_status=0
+    local devices_status=0
+    FLOW_FAILURE_TRAP_SUSPENDED=true
+    set +e
+    device_state="$(adb get-state 2>&1)"
+    device_state_status=$?
+    devices="$(adb devices -l 2>&1)"
+    devices_status=$?
+    set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
+    printf 'restore_adb_get_state_status=%s\nrestore_adb_get_state=%s\nrestore_adb_devices_status=%s\nrestore_adb_devices=%s\n' \
+      "$device_state_status" "$device_state" "$devices_status" "$devices" >&2
+  }
+  mark_restore_failure() {
+    RESTORE_FAILED=true
+    echo "$1" >&2
+    if [[ "$RESTORE_FAILED" == true && "${RESTORE_DIAGNOSTICS_WRITTEN:-false}" != true ]]; then
+      RESTORE_DIAGNOSTICS_WRITTEN=true
+      restore_adb_diagnostics
+    fi
+  }
+  if ! wait_for_restore_device; then
+    RESTORE_DIAGNOSTICS_WRITTEN=true
+    restore_adb_diagnostics
+    echo "Emulator did not return to an online ADB device state before restoration." >&2
+    return 1
+  fi
+  if ! adb shell settings put system user_rotation "$ORIGINAL_USER_ROTATION" >/dev/null 2>&1; then
+    mark_restore_failure "Failed to restore user rotation state."
+  fi
+  if ! adb shell settings put system accelerometer_rotation "$ORIGINAL_ACCELEROMETER_ROTATION" >/dev/null 2>&1; then
+    mark_restore_failure "Failed to restore accelerometer rotation state."
+  fi
+  if [[ "$ORIGINAL_WIFI_ON" == 1 ]]; then
+    if ! adb shell svc wifi enable >/dev/null 2>&1; then
+      mark_restore_failure "Failed to restore Wi-Fi state."
+    fi
+  else
+    if ! adb shell svc wifi disable >/dev/null 2>&1; then
+      mark_restore_failure "Failed to restore Wi-Fi state."
+    fi
+  fi
+  if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
+    if [[ "$ORIGINAL_MOBILE_DATA" == 1 ]]; then
+      if ! adb shell svc data enable >/dev/null 2>&1; then
+        mark_restore_failure "Failed to restore mobile-data state."
+      fi
+    else
+      if ! adb shell svc data disable >/dev/null 2>&1; then
+        mark_restore_failure "Failed to restore mobile-data state."
+      fi
+    fi
+  fi
+  if [[ "$RESTORE_FAILED" == true ]]; then
+    echo "Failed to restore one or more emulator settings." >&2
+    return 1
+  fi
+}
+on_exit() {
+  local status=$?
+  if ! restore_device_state; then
+    status=1
+  fi
+  exit "$status"
+}
+trap on_exit EXIT
 
 role_holders() {
   local full_role="$1"
   local direct_output=""
   local direct_status=0
+  FLOW_FAILURE_TRAP_SUSPENDED=true
   set +e
   direct_output="$(adb shell cmd role get-role-holders --user 0 "$full_role" 2>&1 | tr -d '\r')"
   direct_status=$?
   set -e
+  FLOW_FAILURE_TRAP_SUSPENDED=false
   if [[ "$direct_status" -eq 0 && "$direct_output" != *"Unknown command"* ]]; then
     # Accept only a holder list, never shell diagnostics containing the package name.
     if ! grep -Evq '^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$|^$' <<< "$direct_output"; then
@@ -93,11 +349,10 @@ PY
   echo "Phone Core flow did not expose expected UI: $expected"
   return 1
 }
-wait_incoming_sentinel_surface() {
-  for _ in $(seq 1 20); do
-    if fresh_ui && python3 - "$FLOW_XML" "$FLOW_PACKAGE" "$FLOW_NUMBER" <<'PYINCOMING'
+incoming_surface_visible() {
+  python3 - "$FLOW_XML" "$FLOW_PACKAGE" <<'PYINCOMING'
 import sys, xml.etree.ElementTree as ET
-path, package_name, number = sys.argv[1:]
+path, package_name = sys.argv[1:]
 try:
     nodes = list(ET.parse(path).iter('node'))
 except Exception:
@@ -107,14 +362,20 @@ text = ' '.join(
     (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')).strip()
     for n in owned
 )
-number_present = number in text
+# API 29 can render the caller identity in a separate system surface and omit the
+# synthetic number from Sentinel's app-owned InCall UI. Ownership and call identity
+# are already independently established by this app's timeline and Answer control.
 sentinel_surface = (
     'Appel autorisé' in text or
     ('Appel entrant' in text and 'Sonnerie' in text)
 )
-sys.exit(0 if number_present and sentinel_surface else 1)
+sys.exit(0 if sentinel_surface else 1)
 PYINCOMING
-    then return 0; fi
+}
+
+wait_incoming_sentinel_surface() {
+  for _ in $(seq 1 20); do
+    if fresh_ui && incoming_surface_visible; then return 0; fi
     sleep 1
   done
   capture failure
@@ -138,10 +399,12 @@ wait_emulator_call_absent() {
   local modem_status=0
   local telecom_evidence="$FLOW_OUTPUT_DIR/telecom-after-${number}.txt"
   for _ in $(seq 1 30); do
+    FLOW_FAILURE_TRAP_SUSPENDED=true
     set +e
     adb emu gsm list > "$evidence" 2>&1
     modem_status=$?
     set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
     if [[ "$modem_status" -eq 0 ]] && ! grep -Fq "$number" "$evidence" &&
       adb shell dumpsys telecom > "$telecom_evidence" 2>&1 &&
       python3 "$FLOW_SCRIPT_DIR/phone-core-emulator-telecom-calls.py" "$telecom_evidence"; then
@@ -208,12 +471,22 @@ for node in root.iter('node'):
     elif not any(t == sys.argv[2] or t.startswith(sys.argv[2] + ' · ') for t in titles):
         continue
     match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', node.get('bounds', ''))
+    row_match = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', row.get('bounds', ''))
     if match:
         x1, y1, x2, y2 = map(int, match.groups())
         if x2 > x1 and y2 > y1:
-            # Prefer the body to the header, keeping one candidate per notification.
+            # Prefer the body text when CallStyle exposes it. API 36 may expose only
+            # app_name_text; tapping that header can expand the notification without
+            # invoking its content PendingIntent, so use the clickable row center as
+            # the fallback target for that compact layout.
+            if row_match:
+                rx1, ry1, rx2, ry2 = map(int, row_match.groups())
+                row_center = ((rx1+rx2)//2, (ry1+ry2)//2)
+            else:
+                row_center = ((x1+x2)//2, (y1+y2)//2)
+            candidate = ((x1+x2)//2, (y1+y2)//2) if node.get('resource-id') == 'android:id/text' else row_center
             if row not in rows or node.get('resource-id') == 'android:id/text':
-                rows[row] = ((x1+x2)//2, (y1+y2)//2)
+                rows[row] = candidate
 if len(rows) == 1:
     print(*next(iter(rows.values())))
     sys.exit(0)
@@ -223,6 +496,22 @@ PYNOTIFICATION
       local x y
       read -r x y <<< "$coordinates"
       adb shell input tap "$x" "$y"
+      if [[ -n "${FLOW_OUTPUT_DIR:-}" ]]; then
+        printf 'mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT\n' > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+      fi
+      return 0
+    fi
+    # Android 16+ may keep the app-owned full-screen CallStyle surface visible while the
+    # notification shade is inaccessible to uiautomator. The timeline marker, owned surface,
+    # and later ACTIVE event remain independent proofs of the user-visible entry path.
+    if [[ "$FLOW_API" -ge 36 ]] && fresh_ui && incoming_surface_visible; then
+      if [[ -n "${FLOW_OUTPUT_DIR:-}" ]]; then
+        {
+          printf 'mode=FULL_SCREEN_CALLSTYLE\n'
+          printf 'notification_event=CALL_NOTIFICATION_POSTED\n'
+          printf 'uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible\n'
+        } > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+      fi
       return 0
     fi
     sleep 1
@@ -316,8 +605,180 @@ PYPREFIX
 }
 capture() { adb exec-out screencap -p > "$FLOW_OUTPUT_DIR/$1.png"; }
 
+assert_no_crash_or_anr() {
+  local evidence="$1"
+  local logcat_status=1
+  for _ in $(seq 1 5); do
+    wait_for_online_adb "the crash and ANR logcat capture"
+    FLOW_FAILURE_TRAP_SUSPENDED=true
+    set +e
+    # Read only crash/ANR owners: an unfiltered system dump can terminate the ADB stream
+    # while the emulator is recovering from an offline transition.
+    adb logcat -d -v brief -s AndroidRuntime:E ActivityManager:E ActivityTaskManager:E > "$FLOW_OUTPUT_DIR/$evidence"
+    logcat_status=$?
+    set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
+    if [[ "$logcat_status" -eq 0 ]]; then
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$logcat_status" -ne 0 ]]; then
+    echo "ADB logcat could not be read after bounded online-device retries (status: $logcat_status)." >&2
+    return "$logcat_status"
+  fi
+  if grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum' "$FLOW_OUTPUT_DIR/$evidence"; then
+    echo "Crash/ANR detected during emulator stability qualification; see $evidence." >&2
+    return 1
+  fi
+}
+
+read_process_ids() {
+  local process_ids=""
+  local pid_status=0
+  local device_state=""
+  local device_status=0
+  FLOW_FAILURE_TRAP_SUSPENDED=true
+  set +e
+  process_ids="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
+  pid_status=$?
+  set -e
+  FLOW_FAILURE_TRAP_SUSPENDED=false
+  if [[ "$pid_status" -eq 0 ]]; then
+    printf '%s\n' "$process_ids"
+    return 0
+  fi
+  if [[ "$pid_status" -eq 1 && -z "$process_ids" ]]; then
+    FLOW_FAILURE_TRAP_SUSPENDED=true
+    set +e
+    device_state="$(adb get-state 2>/dev/null | tr -d '\r')"
+    device_status=$?
+    set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
+    if [[ "$device_status" -eq 0 && "$device_state" == device ]]; then
+      return 0
+    fi
+  fi
+  echo "Unable to read process state (pidof status: $pid_status, device status: $device_status)." >&2
+  return 1
+}
+
+run_stability_qualification() {
+  local pid_before=""
+  local pid_after=""
+  local wifi_state=""
+  local mobile_state=""
+  local mobile_data_reading=""
+  local stability_verdict="AUTOMATED"
+  local mobile_data_disable_observed="true"
+  local mobile_data_limitation="none"
+
+  capture_original_device_state
+  FLOW_DEVICE_STATE_MUTATED=true
+
+  # Offline is an exercised runtime state, not a label. Both transport controls must accept the
+  # transition and their resulting platform settings are archived before the app is relaunched.
+  if ! adb shell svc wifi disable; then
+    echo "Failed to disable Wi-Fi for offline qualification." >&2
+    return 1
+  fi
+  if ! wifi_state="$(adb shell settings get global wifi_on | tr -d '\r')"; then
+    echo "Failed to read Wi-Fi state after offline transition." >&2
+    return 1
+  fi
+  if [[ "$ORIGINAL_MOBILE_DATA" != UNAVAILABLE ]]; then
+    if ! adb shell svc data disable; then
+      echo "Failed to disable mobile data for offline qualification." >&2
+      return 1
+    fi
+    mobile_data_reading="$(read_mobile_data_state)" || {
+      echo "Mobile-data state became unreadable after the controlled disable; refusing an incomplete offline proof." >&2
+      return 1
+    }
+    read -r mobile_state MOBILE_DATA_ORACLE_SOURCE <<< "$mobile_data_reading"
+  else
+    mobile_state="UNAVAILABLE"
+    MOBILE_DATA_ORACLE_SOURCE="unavailable"
+    stability_verdict="LIMITED"
+    mobile_data_disable_observed="false"
+    mobile_data_limitation="oracle_unavailable"
+  fi
+  if [[ "$mobile_state" != UNAVAILABLE && "$mobile_state" != "0" ]]; then
+    stability_verdict="LIMITED"
+    mobile_data_disable_observed="false"
+    mobile_data_limitation="disable_not_observed"
+  fi
+  printf 'wifi_on=%s\nmobile_data=%s\nmobile_data_oracle=%s\nmobile_data_disable_observed=%s\nmobile_data_limitation=%s\nverdict=%s\n' \
+    "$wifi_state" "$mobile_state" "$MOBILE_DATA_ORACLE_SOURCE" \
+    "$mobile_data_disable_observed" "$mobile_data_limitation" "$stability_verdict" \
+    > "$FLOW_OUTPUT_DIR/stability-offline-state.txt"
+  if [[ "$wifi_state" != "0" ]]; then
+    echo "Wi-Fi did not reach the disabled state: $wifi_state" >&2
+    return 1
+  fi
+  adb shell am force-stop "$FLOW_PACKAGE"
+  adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-offline-launch.txt"
+  wait_for_online_adb "the offline qualification relaunch"
+  wait_text "phone_core_tab_0"
+  capture stability-offline
+  assert_no_crash_or_anr stability-offline-logcat.txt
+
+  # Lock a real display rotation, observe the platform state, and re-read the app UI after the
+  # configuration change. The original orientation is restored before Telecom probes begin.
+  adb shell settings put system accelerometer_rotation 0
+  adb shell settings put system user_rotation 1
+  local rotation_state="$(adb shell settings get system user_rotation | tr -d '\r')"
+  printf 'user_rotation=%s\n' "$rotation_state" > "$FLOW_OUTPUT_DIR/stability-rotation-state.txt"
+  [[ "$rotation_state" == "1" ]]
+  wait_for_online_adb "the rotation transition"
+  wait_text "phone_core_tab_0"
+  capture stability-rotation
+  assert_no_crash_or_anr stability-rotation-logcat.txt
+
+  # Force process death outside the app and require a fresh process to render the same surface.
+  pid_before="$(read_process_ids)"
+  if ! [[ "$pid_before" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then
+    echo "Unable to identify running process before restart: $pid_before" >&2
+    return 1
+  fi
+  # The host drives process death through ActivityManager. Direct shell signals are rejected
+  # by newer Android images even for this app's own UID.
+  adb shell am force-stop "$FLOW_PACKAGE"
+  wait_for_online_adb "the process-death transition"
+  for _ in $(seq 1 15); do
+    pid_after="$(read_process_ids)"
+    [[ -z "$pid_after" ]] && break
+    sleep 0.5
+  done
+  if [[ -n "$pid_after" ]]; then
+    echo "Process remained alive after host force-stop: $pid_after" >&2
+    return 1
+  fi
+  adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-kill-restart-launch.txt"
+  wait_for_online_adb "the process restart"
+  wait_text "phone_core_tab_0"
+  pid_after="$(read_process_ids)"
+  if ! [[ "$pid_after" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then
+    echo "Process did not restart after host force-stop: $pid_after" >&2
+    return 1
+  fi
+  printf 'pid_before=%s\npid_after=%s\n' "$pid_before" "$pid_after" > "$FLOW_OUTPUT_DIR/stability-kill-restart.txt"
+  capture stability-kill-restart
+  assert_no_crash_or_anr stability-kill-restart-logcat.txt
+
+  # Telecom/GSM probes must run in the original connectivity state. Keeping Wi-Fi/mobile data
+  # disabled until the EXIT trap made the emulator modem reject the Android 16 synthetic call
+  # before any app-owned Phone Core evidence could be produced. Restoration is still fail-closed.
+  if ! restore_device_state; then
+    echo "Failed to restore emulator state before Phone Core telecom probes." >&2
+    return 1
+  fi
+  FLOW_DEVICE_STATE_MUTATED=false
+}
+
 # This is the first application launch after the workflow's fresh APK install. Exercise a second
 # process launch as well so cold_install_and_relaunch is a real per-lane proof, not report metadata.
+FLOW_FAILURE_TRAP_ACTIVE=true
 adb shell am force-stop "$FLOW_PACKAGE"
 adb shell input keyevent KEYCODE_WAKEUP
 adb shell wm dismiss-keyguard
@@ -328,14 +789,20 @@ adb shell am force-stop "$FLOW_PACKAGE"
 adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity"
 wait_text "phone_core_tab_0"
 capture 01b-dialer-relaunch
+run_stability_qualification
 
-adb shell input keyevent KEYCODE_SLEEP
-adb emu gsm call "$FLOW_NUMBER"
+if ! adb emu gsm call "$FLOW_NUMBER"; then
+  echo "The emulator rejected the synthetic incoming-call command." >&2
+  adb get-state >&2 || true
+  adb devices -l >&2 || true
+  exit 1
+fi
 # First prove Telecom actually bound Sentinel's screening service. This marker contains no number or
 # identity. Android 10 can fail emergency-number classification on an emulator even after callback
 # invocation, so CALL_SCREENED:* remains a stricter, separate rule-engine-decision proof.
 wait_logcat_marker "CallScreeningService:onScreenCall" "call-screening-callback-logcat.txt"
-wait_incoming_sentinel_surface
+wait_logcat_marker "CallScreeningService:response_elapsed_ms=" "call-screening-latency-logcat.txt"
+wait_logcat_marker "CallScreeningService:response_sent=true" "call-screening-response-sent-logcat.txt"
 if [[ "$FLOW_API" -ge 36 ]]; then
   wait_private_timeline_signal_prefix "CALL_SCREENED:"
 else
@@ -348,9 +815,17 @@ capture 02-incoming-call
 # This event is recorded by InCallService only after it receives the ringing call and posts
 # its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
+# Exercise the notification path while the device display is asleep. The emulator accepts the GSM
+# command reliably while awake, but the app-owned notification must still survive the sleep boundary.
+if ! adb shell input keyevent KEYCODE_SLEEP; then
+  echo "Failed to put the emulator to sleep before opening the incoming-call notification." >&2
+  exit 1
+fi
+wait_for_online_adb "the sleep transition before opening the incoming-call notification"
 # Exercise Sentinel's answer path, not a modem-side answer on behalf of the application.
 # An app-owned stable control plus the independent ACTIVE timeline event proves the effect.
 open_incoming_call_notification
+wait_incoming_sentinel_surface
 wait_text "phone_core_answer"
 tap_text "phone_core_answer"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"

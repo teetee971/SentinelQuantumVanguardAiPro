@@ -39,7 +39,7 @@ pre{padding:var(--spacing-md);overflow:auto;margin-top:var(--spacing-sm);border:
 <section class="status-section"><h2 class="section-title">État actuel</h2><p class="section-desc">Cette page décrit la configuration contrôlée du dépôt. Elle ne constitue pas une preuve de disponibilité, de certification, de couverture 24/7 ou de sécurité absolue. Les statuts opérationnels doivent être vérifiés dans les systèmes d'exécution concernés.</p>
 <div class="info"><strong>Principe de sécurité.</strong><br>Les fonctions sensibles sont conservatrices par défaut. Les feature flags et les contrôles de gouvernance présents dans le dépôt définissent ce qui peut être activé; ils ne remplacent pas une validation d'environnement ou un test d'intégration.</div>
 <div class="status-grid">
-<div class="status-card"><h3>Feature flags</h3><p>Configuration centralisée avec activation contrôlée des capacités sensibles.</p><span class="badge">CONFIGURATION CONTRÔLÉE</span></div>
+<div class="status-card"><h3>Feature flags</h3><p>Snapshot informatif de la configuration centralisée et de ses contrôles de gouvernance.</p><span class="badge" data-feature-flag-status role="status" aria-live="polite">Chargement du snapshot…</span></div>
 <div class="status-card"><h3>Backend</h3><p>Le dépôt documente un mode de fonctionnement restrictif. Aucun état de production n'est affirmé par cette page.</p><span class="badge">RESTRICTIF</span></div>
 <div class="status-card"><h3>IA / agents</h3><p>Les composants d'IA et d'automatisation sont soumis aux contrôles de gouvernance du dépôt. Aucun nombre d'agents actifs n'est revendiqué ici.</p><span class="badge">GOUVERNÉ</span></div>
 </div></section>
@@ -51,6 +51,7 @@ git push origin main</code></pre></div>
 <div class="info warning"><strong>Important.</strong><br>Ne pas annoncer « rollback instantané », « risque zéro », « système stable » ou un statut de production sans preuve issue de l'environnement concerné.</div></section>
 <section class="status-section"><h2 class="section-title">Référentiel actuel</h2><div class="status-grid"><div class="status-card"><h3>Version applicative</h3><p>2.0.0-pro</p></div><div class="status-card"><h3>Build</h3><p><code>npm run build</code> avec sortie <code>frontend/dist</code>.</p></div><div class="status-card"><h3>Runtime</h3><p>Node.js 24.20.0 LTS épinglé par <code>.node-version</code> pour rendre le runtime de build reproductible.</p></div></div></section>
 </main>
+<script type="module" src="./system-status.js"></script>
 <footer class="status-footer">Sentinel Quantum Vanguard AI Pro · Documentation factuelle · Les états d'exécution doivent être vérifiés sur l'environnement cible.</footer>
 </body>
 </html>

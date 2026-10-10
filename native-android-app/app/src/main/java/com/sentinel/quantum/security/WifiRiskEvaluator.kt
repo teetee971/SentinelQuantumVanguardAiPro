@@ -40,7 +40,7 @@ data class WifiRiskAssessment(
 
 object WifiRiskEvaluator {
 
-    const val HIDDEN_SSID_LABEL = "(unknown ssid)"
+    const val HIDDEN_SSID_LABEL = "(SSID inconnu)"
 
     const val OPEN_NETWORK_ADVICE =
         "Un réseau ouvert peut intercepter votre trafic. Évitez d'y saisir des identifiants sensibles."

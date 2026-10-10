@@ -15,6 +15,20 @@ EFFECTIVE_PERMISSION_DENIAL_PROVEN=false
 EFFECTIVE_PERMISSION_PROBE="UNSET"
 EFFECTIVE_PERMISSION_NOTE="No effective SEND_SMS denial proof completed."
 ROLE_REVOCATION_PROVEN=false
+ADB_COMMAND_TIMEOUT_SECONDS="${ADB_COMMAND_TIMEOUT_SECONDS:-30}"
+ADB_COMMAND_KILL_GRACE_SECONDS="${ADB_COMMAND_KILL_GRACE_SECONDS:-5}"
+if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
+  [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "ADB command watchdog values must be positive integer seconds." >&2
+  exit 2
+fi
+adb() {
+  command timeout \
+    --signal=INT \
+    --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
+    "${ADB_COMMAND_TIMEOUT_SECONDS}s" \
+    adb "$@"
+}
 
 capture() { adb exec-out screencap -p > "$OUT_DIR/$1.png" || true; }
 

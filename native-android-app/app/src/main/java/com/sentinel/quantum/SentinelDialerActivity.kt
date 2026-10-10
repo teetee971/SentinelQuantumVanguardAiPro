@@ -16,6 +16,7 @@ import android.provider.CallLog
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
@@ -68,6 +69,7 @@ import com.sentinel.quantum.security.PhoneCoreCertificationScopeProvider
 import com.sentinel.quantum.security.PhoneFavoriteStore
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
+import com.sentinel.quantum.security.MmsSafePreviewReadiness
 import com.sentinel.quantum.ui.design.PhoneCoreUiState
 import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelState
@@ -110,6 +112,12 @@ private const val CALL_HISTORY_LOAD_LIMIT = 500
 @OptIn(ExperimentalMaterial3Api::class)
 class SentinelDialerActivity : ComponentActivity() {
     private var pendingNumber: String? = null
+    /**
+     * Android may reuse the dialer activity for a second ACTION_DIAL request. Keep that handoff
+     * observable by Compose instead of leaving the number from the first launch on screen.
+     */
+    private var externalDialNumber by mutableStateOf("")
+    private var externalDialRequestEpoch by mutableStateOf(0)
     private var callActionStatus by mutableStateOf<String?>(null)
     private var contactsPermissionGranted by mutableStateOf(false)
     private var openContactsAfterPermissionGrant by mutableStateOf(false)
@@ -188,6 +196,54 @@ class SentinelDialerActivity : ComponentActivity() {
             }
         }
 
+    private fun launchDialerRoleRequest(request: Intent, pendingCall: Boolean) {
+        try {
+            if (pendingCall) {
+                dialerRoleLauncher.launch(request)
+            } else {
+                recentsDialerRoleLauncher.launch(request)
+            }
+        } catch (_: ActivityNotFoundException) {
+            pendingNumber = null
+            openRecentsAfterDialerRoleGrant = false
+            callActionStatus = if (pendingCall) {
+                "Android n’a pas pu ouvrir le sélecteur d’application Téléphone. Aucun appel n’a été lancé."
+            } else {
+                "Android n’a pas pu ouvrir le sélecteur d’application Téléphone pour l’historique."
+            }
+        } catch (_: RuntimeException) {
+            pendingNumber = null
+            openRecentsAfterDialerRoleGrant = false
+            callActionStatus = if (pendingCall) {
+                "Android a refusé l’ouverture du sélecteur d’application Téléphone. Aucun appel n’a été lancé."
+            } else {
+                "Android a refusé l’ouverture du sélecteur d’application Téléphone pour l’historique."
+            }
+        }
+    }
+
+    private fun launchPermissionOrReport(
+        launcher: ActivityResultLauncher<String>,
+        permission: String,
+        failureMessage: String,
+        onFailure: () -> Unit = {}
+    ) {
+        if (permission.isBlank()) {
+            onFailure()
+            callActionStatus = failureMessage
+            return
+        }
+        try {
+            launcher.launch(permission)
+        } catch (_: ActivityNotFoundException) {
+            onFailure()
+            callActionStatus = failureMessage
+        } catch (_: RuntimeException) {
+            onFailure()
+            callActionStatus = failureMessage
+        }
+    }
+
     private fun requestDialerRole(number: String) {
         val safeNumber = sanitizeDialNumber(number)
         if (safeNumber != null && EmergencyNumberOracle.isEmergency(this, safeNumber)) {
@@ -215,7 +271,7 @@ class SentinelDialerActivity : ComponentActivity() {
             }
             if (request != null) {
                 callActionStatus = "Sélectionnez Sentinel comme application Téléphone pour continuer."
-                dialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = true)
             } else {
                 pendingNumber = null
                 callActionStatus = "Le rôle Téléphone n’est pas disponible sur cet appareil."
@@ -227,7 +283,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 )
             }
             if (request != null) {
-                dialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = true)
             } else {
                 pendingNumber = null
                 callActionStatus = "Android n’a pas pu ouvrir le sélecteur d’application Téléphone."
@@ -248,7 +304,7 @@ class SentinelDialerActivity : ComponentActivity() {
             }
             if (request != null) {
                 callActionStatus = "Sélectionnez Sentinel comme application Téléphone pour afficher l’historique."
-                recentsDialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = false)
             } else {
                 callActionStatus = "Le rôle Téléphone n’est pas disponible sur cet appareil."
             }
@@ -259,7 +315,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 )
             }
             if (request != null) {
-                recentsDialerRoleLauncher.launch(request)
+                launchDialerRoleRequest(request, pendingCall = false)
             } else {
                 callActionStatus = "Android n’a pas pu ouvrir le sélecteur d’application Téléphone."
             }
@@ -391,14 +447,24 @@ class SentinelDialerActivity : ComponentActivity() {
             } else {
                 pendingNumber = safeNumber
                 callActionStatus = "Autorisation Android d’appel requise pour transmettre cet appel d’urgence."
-                callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                launchPermissionOrReport(
+                    callPermissionLauncher,
+                    Manifest.permission.CALL_PHONE,
+                    "Android n’a pas pu ouvrir la demande d’autorisation d’appel d’urgence. Aucun appel n’a été lancé.",
+                    onFailure = { pendingNumber = null }
+                )
             }
             return
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             pendingNumber = safeNumber
             callActionStatus = "Autorisation Android d’appel requise."
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            launchPermissionOrReport(
+                callPermissionLauncher,
+                Manifest.permission.CALL_PHONE,
+                "Android n’a pas pu ouvrir la demande d’autorisation d’appel. Aucun appel n’a été lancé.",
+                onFailure = { pendingNumber = null }
+            )
             return
         }
         val telecom = getSystemService(TelecomManager::class.java)
@@ -448,7 +514,12 @@ class SentinelDialerActivity : ComponentActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
             pendingNumber = safeNumber
             callActionStatus = "Autorisez la détection des lignes afin que Sentinel ne choisisse jamais une SIM arbitrairement."
-            phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE)
+            launchPermissionOrReport(
+                phoneStatePermissionLauncher,
+                Manifest.permission.READ_PHONE_STATE,
+                "Android n’a pas pu ouvrir la demande d’accès à l’état du téléphone. Aucun appel n’a été lancé.",
+                onFailure = { pendingNumber = null }
+            )
             return
         }
 
@@ -532,10 +603,29 @@ class SentinelDialerActivity : ComponentActivity() {
     }
 
     private fun initialDialNumber(): String {
-        if (intent?.action != Intent.ACTION_DIAL) return ""
-        val uri = intent?.data ?: return ""
+        return dialNumberFromIntent(intent).orEmpty()
+    }
+
+    private fun dialNumberFromIntent(source: Intent?): String? {
+        if (source?.action != Intent.ACTION_DIAL) return ""
+        val uri = source.data ?: return ""
         if (!uri.scheme.equals("tel", ignoreCase = true)) return ""
-        return sanitizeDialNumber(uri.schemeSpecificPart.orEmpty()) ?: ""
+        return sanitizeDialNumber(uri.schemeSpecificPart.orEmpty())
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action != Intent.ACTION_DIAL) return
+        // A new external request supersedes any permission/role confirmation still in flight;
+        // never let its callback place the number from the previous request.
+        pendingNumber = null
+        assistedConfirmationNumber = null
+        assistedConfirmationBypassNumber = null
+        assistedConfirmationBypassExpiresAtMs = 0L
+        callActionStatus = null
+        externalDialNumber = dialNumberFromIntent(intent).orEmpty()
+        externalDialRequestEpoch++
     }
 
     private fun currentInstallTimestamp(): Long = runCatching {
@@ -582,7 +672,29 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactsLoading by remember { mutableStateOf(false) }
                 var contactListStatus by remember { mutableStateOf<String?>(null) }
                 var pendingBlockNumber by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(externalDialRequestEpoch) {
+                    if (externalDialRequestEpoch == 0) return@LaunchedEffect
+                    number = externalDialNumber
+                    directoryStatus = if (number.isBlank()) {
+                        "Numéro reçu invalide ou indisponible."
+                    } else {
+                        "Saisissez un numéro pour l’identifier."
+                    }
+                    contactStatus = null
+                    reputationStatus = null
+                    showContacts = false
+                    showRecents = false
+                }
                 val context = this@SentinelDialerActivity
+                fun launchInternalActivityOrReport(request: Intent, failureMessage: String) {
+                    try {
+                        context.startActivity(request)
+                    } catch (_: ActivityNotFoundException) {
+                        callActionStatus = failureMessage
+                    } catch (_: RuntimeException) {
+                        callActionStatus = failureMessage
+                    }
+                }
                 val blocklist = remember { CallBlocklistStore(context) }
                 val favorites = remember { PhoneFavoriteStore(context) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
@@ -688,7 +800,12 @@ class SentinelDialerActivity : ComponentActivity() {
                             refreshRecents()
                         } else {
                             openRecentsAfterCallLogPermissionGrant = false
-                            callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                            launchPermissionOrReport(
+                                callLogPermissionLauncher,
+                                Manifest.permission.READ_CALL_LOG,
+                                "Android n’a pas pu ouvrir la demande d’accès à l’historique. L’historique reste verrouillé.",
+                                onFailure = { openRecentsAfterCallLogPermissionGrant = false }
+                            )
                         }
                     }
                 }
@@ -710,7 +827,12 @@ class SentinelDialerActivity : ComponentActivity() {
                             refreshContacts()
                         } else {
                             openContactsAfterPermissionGrant = false
-                            contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                            launchPermissionOrReport(
+                                contactsPermissionLauncher,
+                                Manifest.permission.READ_CONTACTS,
+                                "Android n’a pas pu ouvrir la demande d’accès aux contacts. Le répertoire reste verrouillé.",
+                                onFailure = { openContactsAfterPermissionGrant = false }
+                            )
                         }
                     }
                 }
@@ -796,7 +918,8 @@ class SentinelDialerActivity : ComponentActivity() {
                 val smsMmsPrerequisitesReady =
                     runtimeSetupFacts.smsRoleHeld &&
                         runtimeSetupFacts.smsRuntimePermissionsReady &&
-                        runtimeSetupFacts.mmsPermissionsReady
+                        runtimeSetupFacts.mmsPermissionsReady &&
+                        MmsSafePreviewReadiness.softwareValidated
                 val nextSetupLabel = PhoneCoreSetupWizardStore.stepLabel(nextSetupStep)
                 val physicalEvidence by produceState(
                     initialValue = PhoneCorePhysicalValidation.evaluate(emptyList()),
@@ -822,6 +945,7 @@ class SentinelDialerActivity : ComponentActivity() {
                     softwarePrerequisitesReady = protectionReady,
                     physicalCompleted = physicalEvidence.completedCount,
                     physicalRequired = physicalEvidence.requiredCount,
+                    physicalDeviceValidated = physicalEvidence.physicalDeviceValidated,
                     operationalEnvironmentReady = remember(resumeEpoch) {
                         PhoneCoreRuntimeFacts.hasOperationalCarrierEnvironment(applicationContext)
                     }
@@ -925,8 +1049,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                 SentinelStateChip(
                                     state = protectionState,
                                     onClick = {
-                                        context.startActivity(
-                                            Intent(context, PhoneCoreActivationActivity::class.java)
+                                        launchInternalActivityOrReport(
+                                            Intent(context, PhoneCoreActivationActivity::class.java),
+                                            "Android n’a pas pu ouvrir la configuration Phone Core. Vérifiez l’installation, puis réessayez."
                                         )
                                     }
                                 )
@@ -954,9 +1079,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                     FilledTonalIconButton(
                                         onClick = {
                                             val safe = sanitizeDialNumber(number) ?: return@FilledTonalIconButton
-                                            startActivity(
+                                            launchInternalActivityOrReport(
                                                 Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe)))
-                                                    .setClass(context, SmsComposeActivity::class.java)
+                                                    .setClass(context, SmsComposeActivity::class.java),
+                                                "Android n’a pas pu ouvrir la messagerie Sentinel. Vérifiez l’installation, puis réessayez."
                                             )
                                         },
                                         enabled = sanitizeDialNumber(number) != null,
@@ -1009,12 +1135,22 @@ class SentinelDialerActivity : ComponentActivity() {
                                         phoneTab = index
                                         if (index == 1) {
                                             if (!holdsDialerRole()) requestDialerRoleForRecents()
-                                            else if (!callLogPermissionGranted) callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                                            else if (!callLogPermissionGranted) launchPermissionOrReport(
+                                                callLogPermissionLauncher,
+                                                Manifest.permission.READ_CALL_LOG,
+                                                "Android n’a pas pu ouvrir la demande d’accès à l’historique. L’historique reste verrouillé.",
+                                                onFailure = { openRecentsAfterCallLogPermissionGrant = false }
+                                            )
                                             else refreshRecents()
                                         }
                                         if (index == 2) {
                                             if (contactsPermissionGranted) refreshContacts()
-                                            else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                            else launchPermissionOrReport(
+                                                contactsPermissionLauncher,
+                                                Manifest.permission.READ_CONTACTS,
+                                                "Android n’a pas pu ouvrir la demande d’accès aux contacts. Le répertoire reste verrouillé.",
+                                                onFailure = { openContactsAfterPermissionGrant = false }
+                                            )
                                         }
                                     }
                                 ) {
@@ -1069,11 +1205,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         )
                                         OutlinedButton(
                                             onClick = {
-                                                startActivity(
+                                                launchInternalActivityOrReport(
                                                     Intent(
                                                         this@SentinelDialerActivity,
                                                         PhoneCoreDiagnosticActivity::class.java
-                                                    )
+                                                    ),
+                                                    "Android n’a pas pu ouvrir le diagnostic technique. Vérifiez l’installation, puis réessayez."
                                                 )
                                             },
                                             modifier = Modifier.fillMaxWidth()
@@ -1083,11 +1220,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         if (!protectionReady) {
                                             Button(
                                                 onClick = {
-                                                    startActivity(
+                                                    launchInternalActivityOrReport(
                                                         Intent(
                                                             this@SentinelDialerActivity,
                                                             PhoneCoreActivationActivity::class.java
-                                                        )
+                                                        ),
+                                                        "Android n’a pas pu ouvrir la configuration Phone Core. Vérifiez l’installation, puis réessayez."
                                                     )
                                                 },
                                                 modifier = Modifier.fillMaxWidth()
@@ -1131,7 +1269,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                     when {
                                         !phoneStatePermissionGranted -> {
                                             Text("Autorisez la détection des lignes pour éviter tout choix arbitraire de SIM.", style = MaterialTheme.typography.bodySmall)
-                                            TextButton(onClick = { phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE) }) { Text("Autoriser") }
+                                            TextButton(
+                                                onClick = {
+                                                    launchPermissionOrReport(
+                                                        phoneStatePermissionLauncher,
+                                                        Manifest.permission.READ_PHONE_STATE,
+                                                        "Android n’a pas pu ouvrir la demande d’accès à l’état du téléphone. La sélection de ligne reste verrouillée."
+                                                    )
+                                                }
+                                            ) { Text("Autoriser") }
                                         }
                                         callLines.isEmpty() -> Text("Aucune ligne active détectée.", color = MaterialTheme.colorScheme.error)
                                         callLines.size == 1 -> Text(callLines.first().label + " · ligne unique active", style = MaterialTheme.typography.bodySmall)
@@ -1203,12 +1349,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                 ProtectionItem(
                                     "Filtrage d’appels",
                                     "Rôle Filtrage d’appels observé sur cet appareil",
-                                    if (runtimeSetupFacts.callScreeningRoleHeld) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (runtimeSetupFacts.callScreeningRoleHeld) SentinelState.READY else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Identification d’appel",
                                     "Accès Contacts observé sur cet appareil",
-                                    if (contactsPermissionGranted) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (contactsPermissionGranted) SentinelState.READY else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Protection SMS/MMS",
@@ -1216,7 +1362,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         "Rôle SMS et autorisations SMS/MMS observés"
                                     else
                                         "Rôle ou autorisations SMS/MMS à finaliser",
-                                    if (smsMmsPrerequisitesReady) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (smsMmsPrerequisitesReady) SentinelState.READY else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Enrichissement distant",
@@ -1224,7 +1370,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         "Activé par l’utilisateur ; disponibilité réseau non mesurée ici"
                                     else
                                         "Désactivé par l’utilisateur",
-                                    if (settings.callerReputationEnrichmentEnabled) SentinelState.UNKNOWN else SentinelState.TO_CONFIGURE
+                                    if (settings.callerReputationEnrichmentEnabled) SentinelState.LIMITED else SentinelState.LOCKED
                                 ),
                                 ProtectionItem(
                                     "Notifications téléphonie",
@@ -1232,7 +1378,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         "Canaux appels/SMS observés comme disponibles"
                                     else
                                         "Canaux appels/SMS à vérifier",
-                                    if (runtimeSetupFacts.notificationChannelsReady) SentinelState.READY else SentinelState.TO_CONFIGURE
+                                    if (runtimeSetupFacts.notificationChannelsReady) SentinelState.READY else SentinelState.LOCKED
                                 )
                             )
                             protectionItems.forEach { item ->
@@ -1704,14 +1850,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         FilledTonalIconButton(
                                                             onClick = {
                                                                 if (dialable != null) {
-                                                                    startActivity(
+                                                                    launchInternalActivityOrReport(
                                                                         Intent(
                                                                             Intent.ACTION_SENDTO,
                                                                             Uri.parse("smsto:" + Uri.encode(dialable))
                                                                         ).setClass(
                                                                             context,
                                                                             SmsComposeActivity::class.java
-                                                                        )
+                                                                        ),
+                                                                        "Android n’a pas pu ouvrir la messagerie Sentinel. Vérifiez l’installation, puis réessayez."
                                                                     )
                                                                 }
                                                             },

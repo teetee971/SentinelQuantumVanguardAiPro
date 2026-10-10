@@ -4,16 +4,26 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import java.util.concurrent.Executors
+import android.telephony.SubscriptionManager
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Bounded WAP/MMS intake for the default-SMS client.
  *
  * Notification.ind messages are handed to Android's public MMS download transport. A direct
  * M-Retrieve.conf takes the same private-persistence + fail-closed provider-projection path as the
- * later download callback, so the two ingress routes cannot diverge in product state.
+ * later download callback, so the two ingress routes cannot diverge in product state. Saturation
+ * first journals the bounded private PDU and SIM routing hints; a WorkManager replay performs the
+ * transport/provider work away from Android's broadcast callback thread.
  */
 class SentinelMmsDeliverReceiver : BroadcastReceiver() {
+    enum class DeliveryOutcome {
+        COMPLETE,
+        RETRY
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return
         if (intent.type.orEmpty() != MMS_MIME_TYPE) return
@@ -27,8 +37,24 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         val submitted = runCatching {
             WORKER.execute {
                 try {
-                    processDelivery(appContext, deliveredIntent)
+                    val outcome = processDelivery(appContext, deliveredIntent)
+                    if (outcome == DeliveryOutcome.RETRY) {
+                        deliveredIntent.getByteArrayExtra("data")?.let { retryData ->
+                            captureAndScheduleRecovery(appContext, retryData, deliveredIntent)
+                        }
+                    }
                 } catch (_: Exception) {
+                    deliveredIntent.getByteArrayExtra("data")?.let { retryData ->
+                        runCatching {
+                            captureAndScheduleRecovery(appContext, retryData, deliveredIntent)
+                        }.onFailure {
+                            LocalLogger(appContext).log(
+                                LocalLogger.LogLevel.SECURITY,
+                                "MmsDeliver",
+                                "Échec inattendu du MMS entrant et capture de reprise indisponible"
+                            )
+                        }
+                    }
                     LocalLogger(appContext).log(
                         LocalLogger.LogLevel.WARNING,
                         "MmsDeliver",
@@ -41,22 +67,88 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
         }.isSuccess
 
         if (!submitted) {
-            LocalLogger(appContext).log(
-                LocalLogger.LogLevel.WARNING,
-                "MmsDeliver",
-                "MMS entrant non planifié : worker indisponible"
-            )
+            runCatching {
+                captureAndScheduleRecovery(appContext, data.copyOf(), deliveredIntent)
+            }.onFailure {
+                LocalLogger(appContext).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsDeliver",
+                    "MMS entrant non planifié : capture durable indisponible après saturation"
+                )
+            }
             pendingResult.finish()
         }
     }
 
-    private fun processDelivery(context: Context, intent: Intent) {
-        if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return
-        if (intent.type.orEmpty() != MMS_MIME_TYPE) return
-        if (!holdsSmsRole(context)) return
+    private fun captureAndScheduleRecovery(
+        context: Context,
+        data: ByteArray,
+        sourceIntent: Intent
+    ) {
+        val journal = IncomingMmsWapIngressJournal(context)
+        val persistence = IncomingMmsWapIngressStore.persist(context.filesDir, data, journal)
+        val digest = persistence.digestHex
+        if (persistence.state == IncomingMmsWapIngressStore.State.FAILED || digest == null) {
+            LocalLogger(context).logAsync(
+                LocalLogger.LogLevel.SECURITY,
+                "MmsDeliver",
+                "Capture WAP MMS refusée : persistance privée indisponible"
+            )
+            return
+        }
 
-        val data = intent.getByteArrayExtra("data") ?: return
-        if (data.isEmpty() || data.size > MAX_PDU_BYTES) return
+        val journaled = journal.record(
+            digestHex = digest,
+            subscriptionId = MmsSubscriptionResolver.explicitSubscriptionIdForRecovery(sourceIntent)
+                ?: SubscriptionManager.INVALID_SUBSCRIPTION_ID,
+            slotIndex = MmsSubscriptionResolver.explicitSlotIndexForRecovery(sourceIntent)
+        )
+        if (!journaled) {
+            runCatching { IncomingMmsWapIngressStore.delete(context.filesDir, digest) }
+            LocalLogger(context).logAsync(
+                LocalLogger.LogLevel.SECURITY,
+                "MmsDeliver",
+                "Capture WAP MMS refusée : journal de routage indisponible"
+            )
+            return
+        }
+        runCatching {
+            IncomingMmsWapIngressRecoveryWorker.schedule(context)
+        }.onFailure {
+            LocalLogger(context).logAsync(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDeliver",
+                "Reprise WAP MMS journalisée mais non planifiée; le démarrage suivant la relancera"
+            )
+        }
+    }
+
+    internal fun processRecovery(
+        context: Context,
+        data: ByteArray,
+        record: IncomingMmsWapIngressJournal.Record
+    ): DeliveryOutcome {
+        val recoveryIntent = Intent(Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION)
+            .setType(MMS_MIME_TYPE)
+            .putExtra("data", data)
+            .putExtra(SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX, record.subscriptionId)
+            .apply {
+                record.slotIndex?.let { putExtra(SubscriptionManager.EXTRA_SLOT_INDEX, it) }
+            }
+        return processDelivery(context, recoveryIntent)
+    }
+
+    private fun processDelivery(context: Context, intent: Intent): DeliveryOutcome {
+        if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION) return DeliveryOutcome.COMPLETE
+        if (intent.type.orEmpty() != MMS_MIME_TYPE) return DeliveryOutcome.COMPLETE
+        // The broadcast was admitted while Sentinel held ROLE_SMS, but Android may revoke the
+        // role before the bounded worker or a process-death recovery runs. Keep the durable WAP
+        // journal in that case; dropping it would turn a temporary role transition into message
+        // loss. The age bound in IncomingMmsWapIngressRecoveryWorker remains the final cleanup.
+        if (!holdsSmsRole(context)) return DeliveryOutcome.RETRY
+
+        val data = intent.getByteArrayExtra("data") ?: return DeliveryOutcome.COMPLETE
+        if (data.isEmpty() || data.size > MAX_PDU_BYTES) return DeliveryOutcome.COMPLETE
 
         when (val download = MmsDownloadCoordinator.request(context, data, intent)) {
             is MmsDownloadCoordinator.Result.Requested -> {
@@ -82,7 +174,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                     preview = "Android récupère le contenu MMS sur le réseau opérateur.",
                     notificationId = download.fileName.hashCode()
                 )
-                return
+                return DeliveryOutcome.COMPLETE
             }
             is MmsDownloadCoordinator.Result.Rejected -> {
                 LocalLogger(context).log(
@@ -96,7 +188,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                     preview = "Le téléchargement MMS n’a pas pu être démarré. Vérifiez la SIM, les données mobiles et le rôle SMS.",
                     notificationId = data.contentHashCode()
                 )
-                return
+                return DeliveryOutcome.COMPLETE
             }
             MmsDownloadCoordinator.Result.NotNotification -> Unit
         }
@@ -109,7 +201,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 "MmsDeliver",
                 "Persistance MMS privée refusée fail-closed"
             )
-            return
+            return DeliveryOutcome.RETRY
         }
 
         val subscriptionId = MmsSubscriptionResolver.resolve(context, intent)
@@ -139,6 +231,7 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 "MmsProvider",
                 "MMS WAP conservé privé mais projection provider refusée; raison=${providerResult.reason}"
             )
+            return DeliveryOutcome.RETRY
         }
 
         val providerInserted =
@@ -199,15 +292,23 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             },
             notificationId = digest.take(16).hashCode()
         )
+        return DeliveryOutcome.COMPLETE
     }
 
     private fun holdsSmsRole(context: Context): Boolean =
         context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
     companion object {
-        private val WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-mms-deliver").apply { isDaemon = true }
-        }
+        private const val MAX_PENDING_CALLBACKS = 32
+        private val WORKER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { task -> Thread(task, "sentinel-mms-deliver").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
         private const val MMS_MIME_TYPE = "application/vnd.wap.mms-message"
         private const val MAX_PDU_BYTES = 512 * 1024
     }

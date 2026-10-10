@@ -22,6 +22,11 @@ import org.junit.runner.RunWith
  * PhoneCoreActivationActivity is intentionally exported=false. ActivityScenario launches it from
  * the instrumentation boundary, so CI never needs to expose this internal activation surface to
  * the adb shell or to another application.
+ *
+ * This in-process test proves persistence across an interrupted activity session. Real process
+ * death/reboot persistence is qualified separately by PhoneCoreSetupRebootPreparationInstrumentationTest
+ * and the host-driven reboot step, after AndroidJUnitRunner has exited. A test must never force-stop
+ * its own target package because instrumentation executes in that target process.
  */
 @RunWith(AndroidJUnit4::class)
 class PhoneCoreSetupResumeInstrumentationTest {
@@ -49,11 +54,26 @@ class PhoneCoreSetupResumeInstrumentationTest {
     fun interruptedFirstRunResumesWithoutFalseCompletion() {
         val intent = Intent(context, PhoneCoreActivationActivity::class.java)
             .putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+        val runtimeFactsBeforeLaunch = PhoneCoreRuntimeFacts.read(context)
+        val expectedStep = PhoneCoreSetupWizardStore.nextConfigurableStep(runtimeFactsBeforeLaunch)
+        val expectedStepActionable = PhoneCoreSetupWizardStore.isStepActionable(
+            expectedStep,
+            runtimeFactsBeforeLaunch
+        )
+        PhoneCoreSetupWizardStore(context).markInProgress()
 
         val firstScenario = ActivityScenario.launch<PhoneCoreActivationActivity>(intent)
         try {
             val attemptedTarget = waitForAttemptedTarget()
-            assertNotNull("first-run setup must persist the target it attempted", attemptedTarget)
+            if (expectedStepActionable) {
+                assertNotNull("first-run setup must persist the target it attempted", attemptedTarget)
+            } else {
+                assertEquals(
+                    "an unavailable first setup prerequisite must remain blocked without a fake attempt",
+                    null,
+                    attemptedTarget
+                )
+            }
             assertFalse("interrupted setup must never persist completed=true", prefs.getBoolean(KEY_COMPLETED, false))
 
             dismissSystemSetupDialog()
@@ -61,12 +81,31 @@ class PhoneCoreSetupResumeInstrumentationTest {
             firstScenario.close()
         }
 
+        // Closing the activity supplies an in-process interruption. The dedicated reboot
+        // qualification owns real process death after AndroidJUnitRunner exits; force-stopping
+        // the target package here would kill the runner and manufacture a false CI failure.
+        assertEquals(
+            "activity interruption must preserve an interrupted setup lifecycle",
+            PhoneCoreSetupWizardStore.LifecycleState.IN_PROGRESS,
+            PhoneCoreSetupWizardStore(context).lifecycleState()
+        )
         val persistedAttempt = prefs.getString(KEY_ATTEMPTED_TARGET, null)
-        assertNotNull("interrupted setup must retain its attempted target for resume", persistedAttempt)
+        if (expectedStepActionable) {
+            assertNotNull("interrupted setup must retain its attempted target for resume", persistedAttempt)
+        } else {
+            assertEquals(
+                "an unavailable prerequisite must remain blocked after interruption",
+                null,
+                persistedAttempt
+            )
+        }
         assertFalse("interruption must not manufacture completion", prefs.getBoolean(KEY_COMPLETED, false))
 
         val resumedScenario = ActivityScenario.launch<PhoneCoreActivationActivity>(intent)
         try {
+            // A resumed activity can immediately reopen the Android-owned role/permission
+            // surface. Dismiss that external window before asking ActivityScenario for RESUMED.
+            dismissSystemSetupDialog()
             resumedScenario.moveToState(Lifecycle.State.RESUMED)
             instrumentation.waitForIdleSync()
             SystemClock.sleep(300)
@@ -74,11 +113,19 @@ class PhoneCoreSetupResumeInstrumentationTest {
             resumedScenario.onActivity { activity ->
                 assertFalse("resumed setup activity finished unexpectedly", activity.isFinishing)
             }
-            assertEquals(
-                "resume must preserve the same unresolved target instead of skipping ahead",
-                persistedAttempt,
-                prefs.getString(KEY_ATTEMPTED_TARGET, null)
-            )
+            if (expectedStepActionable) {
+                assertEquals(
+                    "resume must preserve the same unresolved target instead of skipping ahead",
+                    persistedAttempt,
+                    prefs.getString(KEY_ATTEMPTED_TARGET, null)
+                )
+            } else {
+                assertEquals(
+                    "resume must not invent an attempted target for an unavailable prerequisite",
+                    null,
+                    prefs.getString(KEY_ATTEMPTED_TARGET, null)
+                )
+            }
             assertFalse(
                 "resumed incomplete setup must remain fail-closed",
                 prefs.getBoolean(KEY_COMPLETED, false)

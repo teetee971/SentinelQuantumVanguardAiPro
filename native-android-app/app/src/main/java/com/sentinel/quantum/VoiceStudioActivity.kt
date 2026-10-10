@@ -1,6 +1,7 @@
 package com.sentinel.quantum
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.MediaPlayer
@@ -76,6 +77,16 @@ class VoiceStudioActivity : ComponentActivity() {
                 }
             } else {
                 status = "Microphone refusé. Aucun enregistrement n’a été effectué."
+            }
+        }
+
+        fun requestMicrophonePermission() {
+            try {
+                microphoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            } catch (_: ActivityNotFoundException) {
+                status = "Android n’a pas pu ouvrir la demande de microphone. Vérifiez les réglages, puis réessayez."
+            } catch (_: RuntimeException) {
+                status = "Android a refusé la demande de microphone. Vérifiez les réglages, puis réessayez."
             }
         }
 
@@ -163,7 +174,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                             this@VoiceStudioActivity,
                                             Manifest.permission.RECORD_AUDIO
                                         ) != PackageManager.PERMISSION_GRANTED ->
-                                            microphoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                            requestMicrophonePermission()
                                         else -> {
                                             startRecording()?.let { failure -> status = failure } ?: run {
                                                 recording = true
@@ -388,7 +399,12 @@ class VoiceStudioActivity : ComponentActivity() {
     override fun onDestroy() {
         stopRecording()
         stopPlayback()
-        runCatching { previewFile.delete() }
+        // A configuration recreation must not destroy a local preview that the user can still
+        // listen to after rotation. The cache file is disposable only when the activity is
+        // actually finishing.
+        if (!isChangingConfigurations) {
+            runCatching { previewFile.delete() }
+        }
         super.onDestroy()
     }
 }

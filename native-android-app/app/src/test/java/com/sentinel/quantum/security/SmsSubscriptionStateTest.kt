@@ -25,4 +25,11 @@ class SmsSubscriptionStateTest {
     fun clearsSelectionWhenNoSimIsActive() {
         assertNull(SmsSubscriptionState.reconcileSelection(11, emptyList()))
     }
+
+    @Test
+    fun ignoresNegativeSubscriptionSentinelsWhenReconciling() {
+        assertNull(SmsSubscriptionState.reconcileSelection(null, listOf(-2)))
+        assertEquals(11, SmsSubscriptionState.reconcileSelection(null, listOf(-2, 11)))
+        assertNull(SmsSubscriptionState.reconcileSelection(-2, listOf(-2, 11)))
+    }
 }

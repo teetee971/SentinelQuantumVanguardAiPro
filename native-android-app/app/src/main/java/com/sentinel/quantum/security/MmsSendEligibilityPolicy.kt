@@ -1,7 +1,5 @@
 package com.sentinel.quantum.security
 
-import android.telephony.SubscriptionManager
-
 /**
  * Pure fail-closed eligibility boundary for future outgoing MMS transport.
  *
@@ -39,7 +37,7 @@ object MmsSendEligibilityPolicy {
         if (roleState != SmsActivationDiagnostics.SmsRoleState.HELD) {
             return Result.Rejected("SMS_ROLE_NOT_HELD")
         }
-        if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) {
             return Result.Rejected("MMS_SUBSCRIPTION_REQUIRED")
         }
         if (CallRuleEngine.normalizeNumber(destination) == null) {

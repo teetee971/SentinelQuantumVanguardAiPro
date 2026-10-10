@@ -4,10 +4,20 @@
 
   if (!('serviceWorker' in navigator)) return;
 
-  window.addEventListener('load', () => {
+  const register = () => {
     navigator.serviceWorker.register('/public/sw.js').catch(() => {
       // Service-worker registration is an optional enhancement; page operation
       // must remain unaffected when registration is unavailable.
     });
-  }, { once: true });
+  };
+
+  const scheduleRegistration = () => {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(register, { timeout: 5000 });
+    } else {
+      window.setTimeout(register, 0);
+    }
+  };
+
+  window.addEventListener('load', scheduleRegistration, { once: true });
 })();

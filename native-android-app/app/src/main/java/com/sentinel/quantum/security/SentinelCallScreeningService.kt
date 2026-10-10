@@ -3,6 +3,7 @@ package com.sentinel.quantum.security
 import android.content.Intent
 import android.app.role.RoleManager
 import android.os.Build
+import android.os.SystemClock
 import android.telephony.PhoneNumberUtils
 import android.telephony.TelephonyManager
 import android.telecom.Call
@@ -17,6 +18,7 @@ class SentinelCallScreeningService : CallScreeningService() {
     override fun onScreenCall(callDetails: Call.Details) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
+        val startedAtElapsedMs = SystemClock.elapsedRealtime()
 
         // PII-free lifecycle marker used by emulator qualification to prove that Telecom actually
         // invoked Sentinel for an incoming screening callback. Keep it before emergency-number
@@ -32,7 +34,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
             }
         ) {
-            respondToCall(callDetails, CallResponse.Builder().build())
+            respondOpen(callDetails, startedAtElapsedMs)
             return
         }
 
@@ -49,7 +51,7 @@ class SentinelCallScreeningService : CallScreeningService() {
         // fail open rather than applying a blocking or silencing rule. The lifecycle marker above
         // may still prove callback invocation, but no CALL_SCREENED:* evidence is manufactured.
         if (emergency != false) {
-            respondToCall(callDetails, CallResponse.Builder().build())
+            respondOpen(callDetails, startedAtElapsedMs)
             return
         }
 
@@ -65,7 +67,15 @@ class SentinelCallScreeningService : CallScreeningService() {
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
-            respondToCall(callDetails, CallResponse.Builder().build())
+            respondOpen(callDetails, startedAtElapsedMs)
+            return
+        }
+        // Keep a margin below the physical release gate (<500 ms before the Telecom response).
+        // The screening path is cache-only, but a corrupted or unexpectedly expensive local
+        // rule evaluation must fail open instead of spending the remaining Telecom deadline on a
+        // blocking/silencing decision.
+        if (responseBudgetExceeded(startedAtElapsedMs)) {
+            respondOpen(callDetails, startedAtElapsedMs)
             return
         }
         val response = CallResponse.Builder()
@@ -80,7 +90,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
             CallRuleEngine.Action.ALLOW -> Unit
         }
-        respondToCall(callDetails, response.build())
+        if (!respondAndLog(callDetails, response.build(), startedAtElapsedMs)) return
 
         // Caller-ID rendering happens only after the mandatory platform response. The profile is
         // computed offline and contains no invented person or company identity.
@@ -173,9 +183,40 @@ class SentinelCallScreeningService : CallScreeningService() {
         }
     }
 
+    private fun respondOpen(callDetails: Call.Details, startedAtElapsedMs: Long) {
+        respondAndLog(callDetails, CallResponse.Builder().build(), startedAtElapsedMs)
+    }
+
+    private fun respondAndLog(
+        callDetails: Call.Details,
+        response: CallResponse,
+        startedAtElapsedMs: Long
+    ): Boolean {
+        val responseSent = runCatching {
+            respondToCall(callDetails, response)
+            true
+        }.onFailure {
+            Log.w(LIFECYCLE_TAG, "Réponse Telecom de filtrage refusée", it)
+        }.getOrDefault(false)
+        logResponseLatency(startedAtElapsedMs, responseSent)
+        return responseSent
+    }
+
+    private fun logResponseLatency(startedAtElapsedMs: Long, responseSent: Boolean) {
+        val elapsedMs = (SystemClock.elapsedRealtime() - startedAtElapsedMs).coerceAtLeast(0L)
+        Log.i(LIFECYCLE_TAG, RESPONSE_LATENCY_MARKER + elapsedMs)
+        Log.i(LIFECYCLE_TAG, RESPONSE_SENT_MARKER + responseSent)
+    }
+
+    private fun responseBudgetExceeded(startedAtElapsedMs: Long): Boolean =
+        (SystemClock.elapsedRealtime() - startedAtElapsedMs).coerceAtLeast(0L) >= MAX_PRE_RESPONSE_MS
+
     private companion object {
         const val LIFECYCLE_TAG = "SentinelLifecycle"
         const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
+        const val RESPONSE_LATENCY_MARKER = "CallScreeningService:response_elapsed_ms="
+        const val RESPONSE_SENT_MARKER = "CallScreeningService:response_sent="
+        const val MAX_PRE_RESPONSE_MS = 450L
         val SCREENING_FINGERPRINTER = CallNumberFingerprinter()
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
             threadName = "sentinel-call-screening-post-response"

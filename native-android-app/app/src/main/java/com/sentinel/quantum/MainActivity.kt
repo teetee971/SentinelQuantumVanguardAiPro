@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.Spacer
@@ -91,18 +93,67 @@ private fun androidx.navigation.NavHostController.navigateBottomDestination(scre
 }
 
 class MainActivity : ComponentActivity() {
+    private var phoneCoreLaunchError by mutableStateOf<String?>(null)
+
     private val phoneCoreSetupLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
         val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
-        if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)) {
+        val persisted = if (PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)) {
             wizard.markCompleted()
         } else {
             // Returning from the user-visible setup without satisfying every Android fact is a
             // deliberate defer, never success. A process death while setup is open produces no
             // callback, leaving IN_PROGRESS so the next cold launch can resume automatically.
             wizard.markDeferred()
+        }
+        if (!persisted) {
+            // Do not leave the customer with a silent lifecycle write failure after the Android
+            // surface closes. Reopen the same setup surface with an explicit retryable error.
+            openPhoneCoreSetupRecoverySurface()
+        }
+    }
+
+    private fun reportPhoneCoreSetupLaunchFailure(message: String) {
+        phoneCoreLaunchError = message
+    }
+
+    private fun launchPhoneCoreSetup(persistenceError: Boolean = false) {
+        phoneCoreLaunchError = null
+        try {
+            phoneCoreSetupLauncher.launch(Intent(this, PhoneCoreActivationActivity::class.java).apply {
+                putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+                if (persistenceError) {
+                    putExtra(PhoneCoreActivationActivity.EXTRA_SETUP_PERSISTENCE_ERROR, true)
+                }
+            })
+        } catch (_: ActivityNotFoundException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android n’a pas pu ouvrir la configuration Phone Core. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
+        } catch (_: RuntimeException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android a refusé l’ouverture de la configuration Phone Core. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
+        }
+    }
+
+    private fun openPhoneCoreSetupRecoverySurface() {
+        phoneCoreLaunchError = null
+        try {
+            startActivity(Intent(this, PhoneCoreActivationActivity::class.java).apply {
+                putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+                putExtra(PhoneCoreActivationActivity.EXTRA_SETUP_PERSISTENCE_ERROR, true)
+            })
+        } catch (_: ActivityNotFoundException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android n’a pas pu rouvrir la configuration Phone Core après l’échec de persistance. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
+        } catch (_: RuntimeException) {
+            reportPhoneCoreSetupLaunchFailure(
+                "Android a refusé la réouverture de la configuration Phone Core après l’échec de persistance. Vérifiez l’installation de Sentinel, puis réessayez."
+            )
         }
     }
 
@@ -213,6 +264,34 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     if (showBrandLoading) SentinelBrandLoading()
+                    phoneCoreLaunchError?.let { message ->
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .safeDrawingPadding(),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            tonalElevation = 6.dp
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    "Configuration Phone Core non ouverte",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    message,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                androidx.compose.material3.OutlinedButton(
+                                    onClick = { launchPhoneCoreSetup(persistenceError = true) }
+                                ) {
+                                    Text("Réessayer la configuration Phone Core")
+                                }
+                            }
+                        }
+                    }
                     }
                 }
             }
@@ -233,8 +312,9 @@ class MainActivity : ComponentActivity() {
             lifecycleState != PhoneCoreSetupWizardStore.LifecycleState.COMPLETED &&
             PhoneCoreSetupWizardStore.softwarePrerequisitesReady(runtimeFacts)
         ) {
-            wizard.markCompleted()
-            lifecycleState = PhoneCoreSetupWizardStore.LifecycleState.COMPLETED
+            if (wizard.markCompleted()) {
+                lifecycleState = PhoneCoreSetupWizardStore.LifecycleState.COMPLETED
+            }
         }
 
         if (!PhoneCoreSetupWizardStore.shouldAutoOpenSetup(lifecycleState, runtimeFacts)) return
@@ -245,14 +325,16 @@ class MainActivity : ComponentActivity() {
         // process dies while the activation screen is open, IN_PROGRESS remains persisted and the
         // next cold launch resumes the assistant from the first fact Android still reports missing.
         if (lifecycleState == PhoneCoreSetupWizardStore.LifecycleState.NOT_STARTED) {
-            wizard.markOffered()
-        }
-        wizard.markInProgress()
-        phoneCoreSetupLauncher.launch(
-            Intent(this, PhoneCoreActivationActivity::class.java).apply {
-                putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
+            if (!wizard.markOffered()) {
+                launchPhoneCoreSetup(persistenceError = true)
+                return
             }
-        )
+        }
+        if (!wizard.markInProgress()) {
+            launchPhoneCoreSetup(persistenceError = true)
+            return
+        }
+        launchPhoneCoreSetup()
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.sentinel.quantum.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -29,12 +34,24 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 @Composable
 fun NumberSearchScreen() {
     val context = LocalContext.current
+    var actionStatus by remember { mutableStateOf<String?>(null) }
+
+    fun openDialer() {
+        actionStatus = null
+        try {
+            context.startActivity(Intent(context, SentinelDialerActivity::class.java))
+        } catch (_: ActivityNotFoundException) {
+            actionStatus = "Android n’a pas pu ouvrir le composeur Téléphone. Vérifiez l’installation de Sentinel, puis réessayez."
+        } catch (_: RuntimeException) {
+            actionStatus = "Android a refusé l’ouverture du composeur Téléphone. Vérifiez l’installation de Sentinel, puis réessayez."
+        }
+    }
 
     Scaffold(
         topBar = {
             SentinelTopBar(
                 title = "Recherche",
-                subtitle = "Numéros & Caller ID"
+                subtitle = "Numéros & identification de l’appelant"
             )
         }
     ) { padding ->
@@ -55,6 +72,12 @@ fun NumberSearchScreen() {
                     "État explicite" to SentinelD1.Cyan
                 )
             )
+            actionStatus?.let {
+                androidx.compose.material3.Text(
+                    it,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.error
+                )
+            }
 
             SentinelSectionHeader(
                 title = "Recherche téléphonique",
@@ -71,11 +94,7 @@ fun NumberSearchScreen() {
                     "La fiche numéro peut regrouper le pays, le type d’indicatif, les contacts locaux et les signaux de réputation réellement accessibles."
                 )
                 Button(
-                    onClick = {
-                        context.startActivity(
-                            Intent(context, SentinelDialerActivity::class.java)
-                        )
-                    },
+                    onClick = { openDialer() },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.Search, contentDescription = null)

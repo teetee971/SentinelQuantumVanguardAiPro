@@ -29,8 +29,19 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         }
 
         val key = key(sendToken, providerMessageId)
-        val raw = preferences.getString(key, null)
+        val rawExists = preferences.contains(key)
+        val raw = runCatching { preferences.getString(key, null) }.getOrElse {
+            onPersistenceFailure()
+            return@synchronized null
+        }
         val existing = decode(raw, nowMs)
+        if (rawExists && existing == null) {
+            // A present but malformed/expired record is not an empty ledger entry. Replacing it
+            // would erase the only durable indication that a callback was already observed and
+            // could let the watchdog later manufacture a timeout. Leave repair to recovery.
+            onPersistenceFailure()
+            return@synchronized null
+        }
         if (existing?.terminal == true && existing.providerApplied) return@synchronized null
         if (existing != null && existing.state.partCount != partCount) return@synchronized null
 
@@ -57,8 +68,16 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         }
         // The radio transition remains usable even when cleanup/storage fails.
         // The receiver must report that failure and suppress certification proofs.
-        if (!trimToBound(nowMs)) {
+        val trimmed = trimToBound(nowMs, protectedKey = key)
+        if (!trimmed) {
             onPersistenceFailure()
+            // If corruption has already pushed the store beyond its physical bound, there may be
+            // too few valid rows to evict. A brand-new callback must never make that degraded store
+            // grow further. Roll back only the new ledger row; never erase an existing callback
+            // history entry. The radio outcome is still returned, but persistence stays degraded.
+            if (!rawExists && !rollbackNewEntryIfStillOverCapacity(key)) {
+                onPersistenceFailure()
+            }
         }
         outcome
     }
@@ -68,12 +87,21 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
 
     fun pendingProviderWrites(nowMs: Long = System.currentTimeMillis()): List<PendingProviderWrite> = synchronized(LOCK) {
         preferences.all.entries.mapNotNull { (key, value) ->
-            val record = decode(value as? String, nowMs) ?: return@mapNotNull null
-            if (record.providerApplied) return@mapNotNull null
+            // A valid but expired record is ordinary retention cleanup. Any other malformed
+            // record is different: silently dropping it would let the submission watchdog
+            // convert an observed callback into a fabricated timeout.
+            val record = decode(value as? String, nowMs, enforceTtl = false)
+                ?: throw IllegalStateException("SMS callback progress contains corrupt state")
             val ids = key.split(":", limit = 2)
-            if (ids.size != 2) return@mapNotNull null
-            val sendToken = ids[0].toIntOrNull()?.takeIf { it > 0 } ?: return@mapNotNull null
-            val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L } ?: return@mapNotNull null
+            if (ids.size != 2) {
+                throw IllegalStateException("SMS callback progress key is corrupt")
+            }
+            val sendToken = ids[0].toIntOrNull()?.takeIf { it > 0 }
+                ?: throw IllegalStateException("SMS callback progress token is corrupt")
+            val providerId = ids[1].toLongOrNull()?.takeIf { it > 0L }
+                ?: throw IllegalStateException("SMS callback progress provider id is corrupt")
+            if (nowMs - record.createdAtMs > TTL_MS) return@mapNotNull null
+            if (record.providerApplied) return@mapNotNull null
             PendingProviderWrite(sendToken, providerId, SmsCallbackProgress.pendingProviderOutcome(record.state))
         }.take(MAX_TRACKED)
     }
@@ -87,30 +115,59 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
     }
 
     private fun prune(nowMs: Long): Boolean {
-        val expired = preferences.all.mapNotNull { (key, value) ->
-            val raw = value as? String ?: return@mapNotNull key
-            val persisted = decode(raw, nowMs, enforceTtl = false) ?: return@mapNotNull key
-            if (nowMs - persisted.createdAtMs > TTL_MS) key else null
+        var storageHealthy = true
+        val expired = mutableListOf<String>()
+        preferences.all.forEach { (key, value) ->
+            val raw = value as? String
+            if (raw == null) {
+                storageHealthy = false
+                return@forEach
+            }
+            val persisted = decode(raw, nowMs, enforceTtl = false)
+            if (persisted == null) {
+                // Corruption is recovery evidence, not ordinary retention garbage. Preserve it so
+                // the current callback cannot recreate a fresh ledger entry over unknown history.
+                storageHealthy = false
+                return@forEach
+            }
+            if (nowMs - persisted.createdAtMs > TTL_MS) {
+                expired += key
+            }
         }
         if (expired.isNotEmpty()) {
             val editor = preferences.edit()
             expired.forEach(editor::remove)
-            return editor.commit()
+            if (!editor.commit()) storageHealthy = false
         }
-        return true
+        return storageHealthy
     }
 
-    private fun trimToBound(nowMs: Long): Boolean {
-        val entries = preferences.all.mapNotNull { (key, value) ->
+    private fun trimToBound(nowMs: Long, protectedKey: String): Boolean {
+        val allEntries = preferences.all
+        val overflow = allEntries.size - MAX_TRACKED
+        if (overflow <= 0) return true
+
+        // Corrupt records still consume real SharedPreferences capacity even though they cannot be
+        // decoded. Never erase them as ordinary retention garbage; instead evict only the oldest
+        // valid records. If there are not enough valid records to restore the bound, fail closed
+        // and leave the corruption visible to recovery rather than pretending the store is healthy.
+        val removable = allEntries.mapNotNull { (key, value) ->
+            if (key == protectedKey) return@mapNotNull null
             val persisted = decode(value as? String, nowMs, enforceTtl = false)
                 ?: return@mapNotNull null
             key to persisted.createdAtMs
         }.sortedBy { it.second }
-        val overflow = entries.size - MAX_TRACKED
-        if (overflow <= 0) return true
+        if (removable.size < overflow) return false
+
         val editor = preferences.edit()
-        entries.take(overflow).forEach { editor.remove(it.first) }
+        removable.take(overflow).forEach { editor.remove(it.first) }
         return editor.commit()
+    }
+
+    private fun rollbackNewEntryIfStillOverCapacity(key: String): Boolean {
+        val size = runCatching { preferences.all.size }.getOrElse { return false }
+        if (size <= MAX_TRACKED) return true
+        return runCatching { preferences.edit().remove(key).commit() }.getOrDefault(false)
     }
 
     private data class Persisted(
@@ -163,11 +220,16 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         val deliveryFailed = parseIndexes(parts[6]) ?: return null
         if (sentOk.intersect(sentFailed).isNotEmpty()) return null
         if (deliveredOk.intersect(deliveryFailed).isNotEmpty()) return null
+        val providerApplied = when (parts.getOrNull(7)) {
+            null, "0" -> false
+            "1" -> true
+            else -> return null
+        }
 
         return Persisted(
             createdAtMs = created,
             terminal = terminal,
-            providerApplied = parts.getOrNull(7) == "1",
+            providerApplied = providerApplied,
             state = SmsCallbackProgress.State(
                 partCount = partCount,
                 sentOk = sentOk,
@@ -188,4 +250,3 @@ class SmsCallbackProgressStore internal constructor(private val preferences: Sha
         val LOCK = Any()
     }
 }
-

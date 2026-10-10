@@ -124,7 +124,7 @@ jobs:
                 "$api")"
             fi
 
-            latest="$(jq -c '[.workflow_runs[]] | sort_by(.run_number) | last // empty' <<<"$response")"
+            latest="$(jq -c '[.workflow_runs[]] | sort_by([.run_number, .run_attempt, .id]) | last // empty' <<<"$response")"
             if [[ -z "$latest" ]]; then
               echo "ERROR ${workflow}: no qualifying push run found"
               exit 1

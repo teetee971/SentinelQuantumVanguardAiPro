@@ -5,8 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Handles the explicit result callback for an outgoing MMS request.
@@ -31,7 +34,7 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
             SentinelMmsSender.EXTRA_SUBSCRIPTION_ID,
             SubscriptionManager.INVALID_SUBSCRIPTION_ID
         )
-        if (subscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) return
 
         // Keep callbacks created by an older installed build processable. They do not carry the
         // provider correlation id introduced with the provider projection. Such a callback may
@@ -58,12 +61,74 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                         androidResultCode,
                         httpStatus
                     )
+                } catch (_: Exception) {
+                    val captured = runCatching {
+                        captureAndScheduleRecovery(
+                            context = appContext,
+                            token = token,
+                            providerMessageId = providerMessageId,
+                            outcome = MmsSendResultClassifier.classify(
+                                androidResultCode,
+                                httpStatus
+                            )
+                        )
+                    }.getOrDefault(false)
+                    runCatching { queueProviderRepair(appContext) }
+                    if (!captured) {
+                        LocalLogger(appContext).logAsync(
+                            LocalLogger.LogLevel.WARNING,
+                            "MmsSend",
+                            "Callback MMS interrompu; résultat durable non confirmé"
+                        )
+                    }
                 } finally {
                     pendingResult.finish()
                 }
             }
         }.isSuccess
-        if (!scheduled) pendingResult.finish()
+        if (!scheduled) {
+            val captured = runCatching {
+                captureAndScheduleRecovery(
+                    context = appContext,
+                    token = token,
+                    providerMessageId = providerMessageId,
+                    outcome = MmsSendResultClassifier.classify(
+                        androidResultCode,
+                        httpStatus
+                    )
+                )
+            }.getOrDefault(false)
+            if (!captured) {
+                LocalLogger(appContext).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsSend",
+                    "Callback MMS non journalisé après saturation de la file"
+                )
+            }
+            pendingResult.finish()
+        }
+    }
+
+    /** Bounded fallback: persist only provider correlation/result, then repair off-broadcast. */
+    private fun captureAndScheduleRecovery(
+        context: Context,
+        token: String,
+        providerMessageId: Long?,
+        outcome: MmsSendResultClassifier.Outcome
+    ): Boolean {
+        val providerId = providerMessageId ?: return false
+        if (!MmsProviderJournal(context).markResult(token, providerId, outcome.success)) return false
+        MmsTransportStatusBus.publish(
+            MmsTransportStatusBus.Event(
+                token = token,
+                providerMessageId = providerId,
+                successful = outcome.success,
+                providerWriteSucceeded = false,
+                signal = outcome.signal
+            )
+        )
+        queueProviderRepair(context)
+        return true
     }
 
     private fun process(
@@ -103,14 +168,17 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
                     "MmsProvider",
                     "Callback MMS reçu mais projection provider non confirmée; réparation journalisée"
                 )
-                runCatching {
-                    REPAIR_WORKER.schedule(
-                        { runCatching { providerStore.repairJournal() } },
-                        PROVIDER_REPAIR_DELAY_SECONDS,
-                        TimeUnit.SECONDS
-                    )
-                }
+                queueProviderRepair(context)
             }
+            MmsTransportStatusBus.publish(
+                MmsTransportStatusBus.Event(
+                    token = token,
+                    providerMessageId = providerMessageId,
+                    successful = outcome.success,
+                    providerWriteSucceeded = providerUpdated,
+                    signal = outcome.signal
+                )
+            )
         } else {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
@@ -155,11 +223,37 @@ class SentinelMmsSendStatusReceiver : BroadcastReceiver() {
         )
     }
 
+    private fun queueProviderRepair(context: Context) {
+        if (!repairQueued.compareAndSet(false, true)) return
+        val appContext = context.applicationContext
+        val scheduled = runCatching {
+            REPAIR_WORKER.schedule(
+                {
+                    // Clear before the repair so a callback arriving during the repair can
+                    // enqueue one bounded follow-up instead of being lost behind this pass.
+                    repairQueued.set(false)
+                    runCatching { MmsConversationStore(appContext).repairJournal() }
+                },
+                PROVIDER_REPAIR_DELAY_SECONDS,
+                TimeUnit.SECONDS
+            )
+        }.isSuccess
+        if (!scheduled) repairQueued.set(false)
+    }
+
     private companion object {
         const val PROVIDER_REPAIR_DELAY_SECONDS = 60L
-        val WORKER = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "sentinel-mms-send").apply { isDaemon = true }
-        }
+        const val MAX_PENDING_CALLBACKS = 32
+        val repairQueued = AtomicBoolean(false)
+        val WORKER = ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(MAX_PENDING_CALLBACKS),
+            { task -> Thread(task, "sentinel-mms-send").apply { isDaemon = true } },
+            ThreadPoolExecutor.AbortPolicy()
+        )
         val REPAIR_WORKER = Executors.newSingleThreadScheduledExecutor { task ->
             Thread(task, "sentinel-mms-provider-repair").apply { isDaemon = true }
         }

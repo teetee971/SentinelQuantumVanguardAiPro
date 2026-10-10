@@ -31,7 +31,10 @@ class PwnedPasswordClient(
             .build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("HTTP_" + response.code)
-            val count = findOccurrenceCount(response.body.string(), suffix)
+            val count = findOccurrenceCount(
+                BoundedResponseBody.readText(response.body, MAX_RESPONSE_BYTES),
+                suffix
+            )
             return Result(exposed = count > 0L, occurrenceCount = count)
         }
     }
@@ -39,6 +42,7 @@ class PwnedPasswordClient(
     companion object {
         private const val BASE_URL = "https://api.pwnedpasswords.com/range/"
         private const val PREFIX_LENGTH = 5
+        private const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
         fun sha1Hex(value: String): String = MessageDigest.getInstance("SHA-1")
             .digest(value.toByteArray(Charsets.UTF_8))

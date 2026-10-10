@@ -32,7 +32,7 @@ class SmsSubscriptionState(private val context: Context) {
             val subscriptions = context.getSystemService(SubscriptionManager::class.java)
                 ?.activeSubscriptionInfoList
                 .orEmpty()
-                .filter { it.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
+                .filter { MmsSubscriptionResolver.isValidSubscriptionId(it.subscriptionId) }
                 .distinctBy { it.subscriptionId }
             Result.Available(subscriptions)
         } catch (_: SecurityException) {
@@ -44,10 +44,16 @@ class SmsSubscriptionState(private val context: Context) {
 
     companion object {
         /** Keep an explicit user choice only while that SIM remains active. */
-        fun reconcileSelection(selectedId: Int?, activeIds: List<Int>): Int? = when {
-            selectedId != null && selectedId in activeIds -> selectedId
-            activeIds.size == 1 -> activeIds.single()
-            else -> null
+        fun reconcileSelection(selectedId: Int?, activeIds: List<Int>): Int? {
+            val validActiveIds = activeIds
+                .filter(MmsSubscriptionResolver::isValidSubscriptionId)
+                .distinct()
+            return when {
+                selectedId != null && !MmsSubscriptionResolver.isValidSubscriptionId(selectedId) -> null
+                selectedId != null && selectedId in validActiveIds -> selectedId
+                validActiveIds.size == 1 -> validActiveIds.single()
+                else -> null
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.sentinel.quantum
 
+import android.content.ActivityNotFoundException
 import android.os.Bundle
 import android.os.SystemClock
 import com.sentinel.quantum.security.readTelecomInCall
@@ -142,6 +143,12 @@ class SentinelInCallActivity : ComponentActivity() {
                     val current = snapshot ?: return@LaunchedEffect
                     if (!resumed || recordedCallId == current.id ||
                         current.state == Call.STATE_DISCONNECTED || current.state == Call.STATE_DISCONNECTING) return@LaunchedEffect
+                    // Composition is not proof that a user-visible frame was presented. Wait
+                    // for the next frame and reject a Telecom session that ended in the gap.
+                    withFrameNanos { }
+                    if (SentinelInCallService.sessions.value.primary?.id != current.id) {
+                        return@LaunchedEffect
+                    }
                     val stored = withContext(Dispatchers.IO) {
                         runCatching {
                             physicalTimeline.append(
@@ -166,7 +173,14 @@ class SentinelInCallActivity : ComponentActivity() {
                         requestAndroidInCallScreen()
                     },
                     onConfigure = {
-                        startActivity(android.content.Intent(this, PhoneCoreDiagnosticActivity::class.java))
+                        try {
+                            startActivity(android.content.Intent(this, PhoneCoreDiagnosticActivity::class.java))
+                            null
+                        } catch (_: ActivityNotFoundException) {
+                            "Android n’a pas pu ouvrir le diagnostic technique. Vérifiez l’installation de Sentinel, puis réessayez."
+                        } catch (_: RuntimeException) {
+                            "Android a refusé l’ouverture du diagnostic technique. Vérifiez l’installation de Sentinel, puis réessayez."
+                        }
                     },
                     onClose = ::finish
                 )
@@ -181,12 +195,13 @@ private fun InCallScreen(
     calls: List<SentinelInCallService.CallSnapshot>,
     missingSession: InCallPresencePolicy.MissingSession,
     onRecover: () -> String,
-    onConfigure: () -> Unit,
+    onConfigure: () -> String?,
     onClose: () -> Unit
 ) {
     var showDialpad by rememberSaveable { mutableStateOf(false) }
     var showAudioRoutes by rememberSaveable { mutableStateOf(false) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var actionStatus by rememberSaveable { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     var trustIndicator by remember(snapshot?.handle) {
         mutableStateOf(
@@ -243,6 +258,10 @@ private fun InCallScreen(
         }
     }
 
+    LaunchedEffect(snapshot?.id, snapshot?.state) {
+        actionStatus = null
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -294,39 +313,73 @@ private fun InCallScreen(
                     }
                     snapshot.state != Call.STATE_RINGING -> {
                         if (showAudioRoutes) {
-                            AudioRoutePanel(snapshot)
+                            AudioRoutePanel(snapshot) { actionStatus = it }
                         }
 
                         if (showDialpad && snapshot.state == Call.STATE_ACTIVE) {
-                            DialpadPanel(snapshot)
+                            DialpadPanel(snapshot) { actionStatus = it }
                         }
 
-                        ConferencePanel(snapshot)
+                        ConferencePanel(snapshot) { actionStatus = it }
                     }
                 }
 
                 if (calls.size > 1) {
-                    ActiveCallsPanel(calls)
+                    ActiveCallsPanel(calls) { actionStatus = it }
                 }
             }
 
-            when {
-                snapshot?.state == Call.STATE_RINGING -> IncomingActions(snapshot)
-                snapshot != null &&
-                    snapshot.state != Call.STATE_DISCONNECTING &&
-                    snapshot.state != Call.STATE_DISCONNECTED -> {
-                    OngoingPrimaryControls(
-                        snapshot = snapshot,
-                        showDialpad = showDialpad,
-                        showAudioRoutes = showAudioRoutes,
-                        onToggleDialpad = {
-                            showDialpad = !showDialpad
-                            if (showDialpad) showAudioRoutes = false
+            snapshot?.let { currentSnapshot ->
+                when {
+                    currentSnapshot.state == Call.STATE_RINGING -> IncomingActions(
+                        snapshot = currentSnapshot,
+                        onReject = {
+                            if (!SentinelInCallService.reject(currentSnapshot.id)) {
+                                actionStatus = "Android n’a pas pu refuser cet appel ; son état a peut-être changé."
+                            }
                         },
-                        onToggleAudioRoutes = {
-                            showAudioRoutes = !showAudioRoutes
-                            if (showAudioRoutes) showDialpad = false
+                        onAnswer = {
+                            if (!SentinelInCallService.answer(currentSnapshot.id)) {
+                                actionStatus = "Android n’a pas pu décrocher cet appel ; son état a peut-être changé."
+                            }
                         }
+                    )
+                    currentSnapshot.state != Call.STATE_DISCONNECTING &&
+                        currentSnapshot.state != Call.STATE_DISCONNECTED -> {
+                        OngoingPrimaryControls(
+                            snapshot = currentSnapshot,
+                            showDialpad = showDialpad,
+                            showAudioRoutes = showAudioRoutes,
+                            onToggleDialpad = {
+                                showDialpad = !showDialpad
+                                if (showDialpad) showAudioRoutes = false
+                            },
+                            onToggleAudioRoutes = {
+                                showAudioRoutes = !showAudioRoutes
+                                if (showAudioRoutes) showDialpad = false
+                            },
+                            onActionFailure = { actionStatus = it },
+                            onHangup = {
+                                if (!SentinelInCallService.disconnect(currentSnapshot.id)) {
+                                    actionStatus = "Android n’a pas pu terminer cet appel ; son état a peut-être changé."
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            actionStatus?.let { message ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text(
+                        message,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
@@ -338,7 +391,7 @@ private fun InCallScreen(
 private fun MissingCallSession(
     state: InCallPresencePolicy.MissingSession,
     onRecover: () -> String,
-    onConfigure: () -> Unit,
+    onConfigure: () -> String?,
     onClose: () -> Unit
 ) {
     var actionStatus by remember { mutableStateOf<String?>(null) }
@@ -364,7 +417,10 @@ private fun MissingCallSession(
             if (state == InCallPresencePolicy.MissingSession.CALL_UNAVAILABLE ||
                 state == InCallPresencePolicy.MissingSession.UNKNOWN) {
                 Button(onClick = { actionStatus = onRecover() }, modifier = Modifier.fillMaxWidth()) { Text("Revenir à l’appel Android") }
-                OutlinedButton(onClick = onConfigure, modifier = Modifier.fillMaxWidth()) { Text("Vérifier la configuration") }
+                OutlinedButton(
+                    onClick = { onConfigure()?.let { actionStatus = it } },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Vérifier la configuration") }
             }
             actionStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             TextButton(onClick = onClose) { Text(if (state == InCallPresencePolicy.MissingSession.ENDED || state == InCallPresencePolicy.MissingSession.IDLE) "Terminer" else "Fermer") }
@@ -425,7 +481,11 @@ private fun CallerHero(
 }
 
 @Composable
-private fun IncomingActions(snapshot: SentinelInCallService.CallSnapshot) {
+private fun IncomingActions(
+    snapshot: SentinelInCallService.CallSnapshot,
+    onReject: () -> Unit,
+    onAnswer: () -> Unit
+) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
@@ -436,7 +496,7 @@ private fun IncomingActions(snapshot: SentinelInCallService.CallSnapshot) {
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,
             size = 78.dp
-        ) { SentinelInCallService.reject(snapshot.id) }
+        ) { onReject() }
 
         CallActionCircle(
             label = stringResource(R.string.phone_core_answer),
@@ -445,7 +505,7 @@ private fun IncomingActions(snapshot: SentinelInCallService.CallSnapshot) {
             containerColor = MaterialTheme.colorScheme.tertiary,
             contentColor = MaterialTheme.colorScheme.onTertiary,
             size = 78.dp
-        ) { SentinelInCallService.answer(snapshot.id) }
+        ) { onAnswer() }
     }
 }
 
@@ -455,7 +515,9 @@ private fun OngoingPrimaryControls(
     showDialpad: Boolean,
     showAudioRoutes: Boolean,
     onToggleDialpad: () -> Unit,
-    onToggleAudioRoutes: () -> Unit
+    onToggleAudioRoutes: () -> Unit,
+    onActionFailure: (String) -> Unit,
+    onHangup: () -> Unit
 ) {
     val activeOrHolding = snapshot.state == Call.STATE_ACTIVE || snapshot.state == Call.STATE_HOLDING
     val muted = snapshot.isMuted
@@ -487,7 +549,11 @@ private fun OngoingPrimaryControls(
                     enabled = activeOrHolding && snapshot.canMute && muted != null,
                     selected = muted == true
                 ) {
-                    muted?.let { SentinelInCallService.setMicrophoneMuted(snapshot.id, !it) }
+                    muted?.let {
+                        if (!SentinelInCallService.setMicrophoneMuted(snapshot.id, !it)) {
+                            onActionFailure("Android n’a pas pu modifier le microphone de cet appel.")
+                        }
+                    }
                 }
 
                 CallActionCircle(
@@ -526,7 +592,11 @@ private fun OngoingPrimaryControls(
                             icon = Icons.Rounded.Pause,
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = MaterialTheme.colorScheme.onSurface
-                        ) { SentinelInCallService.hold(snapshot.id) }
+                        ) {
+                            if (!SentinelInCallService.hold(snapshot.id)) {
+                                onActionFailure("Android n’a pas pu mettre l’appel en attente.")
+                            }
+                        }
                     }
                     snapshot.state == Call.STATE_HOLDING && snapshot.canHold -> {
                         CallActionCircle(
@@ -535,7 +605,11 @@ private fun OngoingPrimaryControls(
                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             selected = true
-                        ) { SentinelInCallService.unhold(snapshot.id) }
+                        ) {
+                            if (!SentinelInCallService.unhold(snapshot.id)) {
+                                onActionFailure("Android n’a pas pu reprendre l’appel.")
+                            }
+                        }
                     }
                     else -> {
                         CallActionCircle(
@@ -565,14 +639,17 @@ private fun OngoingPrimaryControls(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError,
                     size = 78.dp
-                ) { SentinelInCallService.disconnect(snapshot.id) }
+                ) { onHangup() }
             }
         }
     }
 }
 
 @Composable
-private fun AudioRoutePanel(snapshot: SentinelInCallService.CallSnapshot) {
+private fun AudioRoutePanel(
+    snapshot: SentinelInCallService.CallSnapshot,
+    onActionFailure: (String) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
@@ -592,7 +669,11 @@ private fun AudioRoutePanel(snapshot: SentinelInCallService.CallSnapshot) {
 
             snapshot.audioRoutes.forEach { route ->
                 OutlinedButton(
-                    onClick = { SentinelInCallService.selectAudioRoute(snapshot.id, route.id) },
+                    onClick = {
+                        if (!SentinelInCallService.selectAudioRoute(snapshot.id, route.id)) {
+                            onActionFailure("Android n’a pas pu sélectionner cette sortie audio.")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (route.selected) "✓ ${route.label}" else route.label)
@@ -611,7 +692,10 @@ private fun AudioRoutePanel(snapshot: SentinelInCallService.CallSnapshot) {
 }
 
 @Composable
-private fun DialpadPanel(snapshot: SentinelInCallService.CallSnapshot) {
+private fun DialpadPanel(
+    snapshot: SentinelInCallService.CallSnapshot,
+    onActionFailure: (String) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
@@ -629,13 +713,16 @@ private fun DialpadPanel(snapshot: SentinelInCallService.CallSnapshot) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            DtmfPad(snapshot.id)
+            DtmfPad(snapshot.id, onActionFailure)
         }
     }
 }
 
 @Composable
-private fun ConferencePanel(snapshot: SentinelInCallService.CallSnapshot) {
+private fun ConferencePanel(
+    snapshot: SentinelInCallService.CallSnapshot,
+    onActionFailure: (String) -> Unit
+) {
     if (!snapshot.canMergeConference && !snapshot.canSwapConference) return
 
     Card(
@@ -656,13 +743,21 @@ private fun ConferencePanel(snapshot: SentinelInCallService.CallSnapshot) {
             )
             if (snapshot.canMergeConference) {
                 OutlinedButton(
-                    onClick = { SentinelInCallService.mergeConference(snapshot.id) },
+                    onClick = {
+                        if (!SentinelInCallService.mergeConference(snapshot.id)) {
+                            onActionFailure("Android n’a pas pu fusionner les appels.")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Fusionner les appels") }
             }
             if (snapshot.canSwapConference) {
                 OutlinedButton(
-                    onClick = { SentinelInCallService.swapConference(snapshot.id) },
+                    onClick = {
+                        if (!SentinelInCallService.swapConference(snapshot.id)) {
+                            onActionFailure("Android n’a pas pu permuter les appels.")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Permuter les appels") }
             }
@@ -671,7 +766,10 @@ private fun ConferencePanel(snapshot: SentinelInCallService.CallSnapshot) {
 }
 
 @Composable
-private fun ActiveCallsPanel(calls: List<SentinelInCallService.CallSnapshot>) {
+private fun ActiveCallsPanel(
+    calls: List<SentinelInCallService.CallSnapshot>,
+    onActionFailure: (String) -> Unit
+) {
     Text(
         "Appels en cours",
         style = MaterialTheme.typography.titleMedium,
@@ -702,16 +800,28 @@ private fun ActiveCallsPanel(calls: List<SentinelInCallService.CallSnapshot>) {
 
                 when {
                     call.state == Call.STATE_ACTIVE && call.canHold ->
-                        TextButton(onClick = { SentinelInCallService.hold(call.id) }) {
+                        TextButton(onClick = {
+                            if (!SentinelInCallService.hold(call.id)) {
+                                onActionFailure("Android n’a pas pu mettre l’appel en attente.")
+                            }
+                        }) {
                             Text("Attente")
                         }
                     call.state == Call.STATE_HOLDING && call.canHold ->
-                        TextButton(onClick = { SentinelInCallService.unhold(call.id) }) {
+                        TextButton(onClick = {
+                            if (!SentinelInCallService.unhold(call.id)) {
+                                onActionFailure("Android n’a pas pu reprendre l’appel.")
+                            }
+                        }) {
                             Text("Reprendre")
                         }
                 }
 
-                TextButton(onClick = { SentinelInCallService.disconnect(call.id) }) {
+                TextButton(onClick = {
+                    if (!SentinelInCallService.disconnect(call.id)) {
+                        onActionFailure("Android n’a pas pu terminer cet appel.")
+                    }
+                }) {
                     Text(stringResource(R.string.phone_core_hangup))
                 }
             }
@@ -772,7 +882,7 @@ private fun CallActionCircle(
 }
 
 @Composable
-private fun DtmfPad(callId: String) {
+private fun DtmfPad(callId: String, onActionFailure: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     listOf("123", "456", "789", "*0#").forEach { row ->
         Row(
@@ -785,7 +895,11 @@ private fun DtmfPad(callId: String) {
                         scope.launch {
                             if (SentinelInCallService.startDtmf(callId, digit)) {
                                 delay(DTMF_TONE_DURATION_MS)
-                                SentinelInCallService.stopDtmf(callId)
+                                if (!SentinelInCallService.stopDtmf(callId)) {
+                                    onActionFailure("Android n’a pas pu arrêter la tonalité DTMF.")
+                                }
+                            } else {
+                                onActionFailure("Android n’a pas pu envoyer cette tonalité DTMF.")
                             }
                         }
                     },

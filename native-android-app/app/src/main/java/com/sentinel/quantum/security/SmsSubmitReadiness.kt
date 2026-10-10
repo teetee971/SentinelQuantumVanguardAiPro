@@ -13,9 +13,10 @@ object SmsSubmitReadiness {
         activeSubscriptionIds: Collection<Int>,
         selectedSubscriptionId: Int?,
         destinationPresent: Boolean,
-        bodyPresent: Boolean
+        bodyPresent: Boolean,
+        submissionInFlight: Boolean = false
     ): Boolean {
-        if (!activationCanSend || !destinationPresent || !bodyPresent) return false
+        if (submissionInFlight || !activationCanSend || !destinationPresent || !bodyPresent) return false
         return SmsSubscriptionSelectionPolicy.select(
             activeSubscriptionIds = activeSubscriptionIds.toSet(),
             requestedSubscriptionId = selectedSubscriptionId,

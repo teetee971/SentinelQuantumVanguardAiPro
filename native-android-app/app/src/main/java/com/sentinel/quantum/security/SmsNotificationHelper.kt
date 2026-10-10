@@ -28,18 +28,19 @@ object SmsNotificationHelper {
         title: String,
         preview: String,
         notificationId: Int
-    ): Boolean {
+    ): Boolean = runCatching {
         if (Build.VERSION.SDK_INT >= 33 &&
             PermissionChecker.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PermissionChecker.PERMISSION_GRANTED
-        ) return false
+        ) return@runCatching false
 
-        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return false
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return@runCatching false
         val manager = context.getSystemService(NotificationManager::class.java)
-        ensureChannel(context)
-        if (!isChannelEnabled(context)) return false
+            ?: return@runCatching false
+        if (!ensureChannel(context)) return@runCatching false
+        if (!isChannelEnabled(context)) return@runCatching false
 
         val presentation = SmsNotificationPrivacy.presentation(
             previewEnabled = SettingsStore(context).smsNotificationPreviewEnabled,
@@ -65,16 +66,15 @@ object SmsNotificationHelper {
         presentation.expandedText?.let {
             builder.setStyle(NotificationCompat.BigTextStyle().bigText(it))
         }
-        return runCatching {
-            manager.notify(notificationId, builder.build())
-            true
-        }.getOrDefault(false)
-    }
+        manager.notify(notificationId, builder.build())
+        true
+    }.getOrDefault(false)
 
-    fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    fun ensureChannel(context: Context): Boolean = runCatching {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return@runCatching true
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
+            ?: return@runCatching false
+        if (manager.getNotificationChannel(CHANNEL_ID) != null) return@runCatching true
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
@@ -85,13 +85,14 @@ object SmsNotificationHelper {
                 lockscreenVisibility = Notification.VISIBILITY_PRIVATE
             }
         )
-    }
+        true
+    }.getOrDefault(false)
 
     fun isChannelEnabled(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
-        ensureChannel(context)
+        if (!ensureChannel(context)) return false
         val channel = context.getSystemService(NotificationManager::class.java)
-            .getNotificationChannel(CHANNEL_ID)
+            ?.getNotificationChannel(CHANNEL_ID)
         return channel != null && channel.importance != NotificationManager.IMPORTANCE_NONE
     }
 }
