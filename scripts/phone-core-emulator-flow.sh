@@ -19,6 +19,7 @@ MOBILE_DATA_ORACLE_SOURCE=""
 RESTORE_FAILED=false
 FLOW_FAILURE_TRAP_ACTIVE=false
 FLOW_FAILURE_REPORTED=false
+FLOW_FAILURE_TRAP_SUSPENDED=false
 FLOW_LAST_ADB_ARGS=""
 if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
   [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
@@ -67,7 +68,7 @@ flow_err_trap() {
   local failed_command="$2"
   local failed_line="$3"
   local failed_adb_args="$FLOW_LAST_ADB_ARGS"
-  if [[ "$FLOW_FAILURE_TRAP_ACTIVE" == true ]]; then
+  if [[ "$FLOW_FAILURE_TRAP_ACTIVE" == true && "$FLOW_FAILURE_TRAP_SUSPENDED" != true ]]; then
     flow_failure_diagnostics "$status" "$failed_command" "$failed_line" "$failed_adb_args"
   fi
   return "$status"
@@ -584,19 +585,23 @@ read_process_ids() {
   local pid_status=0
   local device_state=""
   local device_status=0
+  FLOW_FAILURE_TRAP_SUSPENDED=true
   set +e
   process_ids="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
   pid_status=$?
   set -e
+  FLOW_FAILURE_TRAP_SUSPENDED=false
   if [[ "$pid_status" -eq 0 ]]; then
     printf '%s\n' "$process_ids"
     return 0
   fi
   if [[ "$pid_status" -eq 1 && -z "$process_ids" ]]; then
+    FLOW_FAILURE_TRAP_SUSPENDED=true
     set +e
     device_state="$(adb get-state 2>/dev/null | tr -d '\r')"
     device_status=$?
     set -e
+    FLOW_FAILURE_TRAP_SUSPENDED=false
     if [[ "$device_status" -eq 0 && "$device_state" == device ]]; then
       return 0
     fi
