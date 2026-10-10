@@ -559,6 +559,31 @@ jobs:
             exit 1
           fi
 
+          wait_for_package_manager() {
+            local package_probe=""
+            local package_probe_status=0
+            for _ in $(seq 1 60); do
+              set +e
+              package_probe="$(adb shell cmd package list packages 2>&1 | tr -d '\r')"
+              package_probe_status=$?
+              set -e
+              if [[ "$package_probe_status" -eq 0 ]] &&
+                ! grep -Fq "Can't find service: package" <<< "$package_probe"; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "Android package manager service did not become available within its bounded readiness window."
+            adb shell cmd package list packages || true
+            return 1
+          }
+          wait_for_package_manager
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell input keyevent KEYCODE_WAKEUP || true
+          adb shell wm dismiss-keyguard || true
+
           timeout --signal=INT --kill-after=30s 180s adb install -r "$APK_PATH"
           bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"
       - name: Upload Phone Core Android 16 screenshots

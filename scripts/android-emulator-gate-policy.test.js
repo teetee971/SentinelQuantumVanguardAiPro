@@ -116,6 +116,22 @@ test('native Android build emulator lanes bound ordinary ADB calls', () => {
   }
 });
 
+test('native Android 16 Phone Core lane waits for platform readiness before the flow', () => {
+  const block = nativeBuildWorkflow
+    .split('- name: Verify Telecom and inline reply on Android 16\n')[1]
+    ?.split('\n      - name: ')[0] || '';
+  assert.match(block, /wait_for_package_manager\(\)/,
+    'Android 16 Phone Core must wait for the package manager after boot');
+  assert.match(block, /cmd package list packages/,
+    'Android 16 Phone Core must probe the package manager service');
+  assert.match(block, /window_animation_scale/,
+    'Android 16 Phone Core must disable animation timing before UI qualification');
+  assert.match(block, /transition_animation_scale/,
+    'Android 16 Phone Core must disable transition animation timing before UI qualification');
+  assert.match(block, /animator_duration_scale/,
+    'Android 16 Phone Core must disable animator timing before UI qualification');
+});
+
 test('Android emulator qualification covers minimum, current and newest runtime lanes', () => {
   assert.match(instrumentationWorkflow, /api-level:\s*24\b/);
   assert.match(instrumentationWorkflow, /api-level:\s*36\b/);
