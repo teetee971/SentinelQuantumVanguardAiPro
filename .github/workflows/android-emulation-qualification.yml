@@ -657,7 +657,9 @@ jobs:
           const contains = (name, needle) => read(name).includes(needle);
           const packageHeld = (name) => read(name).split(/\r?\n/)
             .some((line) => line.trim() === 'com.sentinel.quantum');
-          const packageStateConfirmed = /^Package \[com\.sentinel\.quantum\](?:\s.*)?$/m.test(read('package.txt'));
+          // API 24 indents the package header (`  Package [...]`), while newer dumps may not.
+          // Whitespace is formatting, not package identity; the exact package token remains required.
+          const packageStateConfirmed = /^\s*Package \[com\.sentinel\.quantum\](?:\s.*)?$/m.test(read('package.txt'));
           const runtimePackagePathConfirmed = /^package:[^\r\n\s]+\.apk$/m.test(read('runtime-package-path.txt'));
           const sdkApiExact = read('setup-reboot-sdk.txt').trim() === String(api);
           const walk = (dir) => {

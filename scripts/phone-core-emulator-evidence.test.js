@@ -51,6 +51,18 @@ test('runtime qualification proves the exact package is installed through packag
   assert.match(workflow, /pm path com\.sentinel\.quantum/);
   assert.match(reportCode, /runtimePackagePathConfirmed/);
   assert.match(reportCode, /runtime_package_path/);
+  assert.ok(reportCode.includes('^\\s*Package \\[com\\.sentinel\\.quantum\\]'));
+});
+
+test('incoming app surface does not require Android to expose the synthetic number in app UI', () => {
+  const start = runtimeFlow.indexOf('wait_incoming_sentinel_surface() {');
+  const end = runtimeFlow.indexOf('\n}\nwait_logcat_marker()', start);
+  assert.ok(start >= 0 && end > start);
+  const oracle = runtimeFlow.slice(start, end);
+  assert.match(oracle, /sentinel_surface/);
+  assert.doesNotMatch(oracle, /number_present/);
+  assert.match(runtimeFlow, /wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"/);
+  assert.match(runtimeFlow, /wait_text "phone_core_answer"/);
 });
 
 test('emulator qualification proves setup state across a real reboot before runtime reset', () => {

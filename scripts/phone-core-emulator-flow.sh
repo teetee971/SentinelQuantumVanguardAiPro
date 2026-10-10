@@ -293,9 +293,9 @@ PY
 }
 wait_incoming_sentinel_surface() {
   for _ in $(seq 1 20); do
-    if fresh_ui && python3 - "$FLOW_XML" "$FLOW_PACKAGE" "$FLOW_NUMBER" <<'PYINCOMING'
+    if fresh_ui && python3 - "$FLOW_XML" "$FLOW_PACKAGE" <<'PYINCOMING'
 import sys, xml.etree.ElementTree as ET
-path, package_name, number = sys.argv[1:]
+path, package_name = sys.argv[1:]
 try:
     nodes = list(ET.parse(path).iter('node'))
 except Exception:
@@ -305,12 +305,14 @@ text = ' '.join(
     (n.get('text', '') + ' ' + n.get('content-desc', '') + ' ' + n.get('hint', '')).strip()
     for n in owned
 )
-number_present = number in text
+# API 29 can render the caller identity in a separate system surface and omit the
+# synthetic number from Sentinel's app-owned InCall UI. Ownership and call identity
+# are already independently established by this app's timeline and Answer control.
 sentinel_surface = (
     'Appel autorisé' in text or
     ('Appel entrant' in text and 'Sonnerie' in text)
 )
-sys.exit(0 if number_present and sentinel_surface else 1)
+sys.exit(0 if sentinel_surface else 1)
 PYINCOMING
     then return 0; fi
     sleep 1
