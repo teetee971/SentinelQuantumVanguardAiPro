@@ -522,7 +522,10 @@ run_stability_qualification() {
 
   # Force process death outside the app and require a fresh process to render the same surface.
   pid_before="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
-  [[ "$pid_before" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]
+  if ! [[ "$pid_before" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then
+    echo "Unable to identify running process before restart: $pid_before" >&2
+    return 1
+  fi
   # The host drives process death through ActivityManager. Direct shell signals are rejected
   # by newer Android images even for this app's own UID.
   adb shell am force-stop "$FLOW_PACKAGE"
@@ -531,11 +534,17 @@ run_stability_qualification() {
     [[ -z "$pid_after" ]] && break
     sleep 0.5
   done
-  [[ -z "$pid_after" ]]
+  if [[ -n "$pid_after" ]]; then
+    echo "Process remained alive after host force-stop: $pid_after" >&2
+    return 1
+  fi
   adb shell am start -W -n "$FLOW_PACKAGE/.SentinelDialerActivity" > "$FLOW_OUTPUT_DIR/stability-kill-restart-launch.txt"
   wait_text "phone_core_tab_0"
   pid_after="$(adb shell pidof "$FLOW_PACKAGE" | tr -d '\r')"
-  [[ "$pid_after" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]
+  if ! [[ "$pid_after" =~ ^[0-9]+([[:space:]][0-9]+)*$ ]]; then
+    echo "Process did not restart after host force-stop: $pid_after" >&2
+    return 1
+  fi
   printf 'pid_before=%s\npid_after=%s\n' "$pid_before" "$pid_after" > "$FLOW_OUTPUT_DIR/stability-kill-restart.txt"
   capture stability-kill-restart
   assert_no_crash_or_anr stability-kill-restart-logcat.txt

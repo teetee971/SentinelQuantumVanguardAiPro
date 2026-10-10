@@ -140,6 +140,9 @@ test('runtime stability reports invalid original device state instead of exiting
   assert.match(runtimeFlow, /mobile_data_disable_observed/);
   assert.match(runtimeFlow, /mobile_data_limitation/);
   assert.match(runtimeFlow, /stability_verdict="LIMITED"/);
+  assert.match(runtimeFlow, /Unable to identify running process before restart/);
+  assert.match(runtimeFlow, /Process remained alive after host force-stop/);
+  assert.match(runtimeFlow, /Process did not restart after host force-stop/);
 });
 
 test('reboot preparation leaves process termination to the external workflow', () => {
