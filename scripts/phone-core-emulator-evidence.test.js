@@ -197,6 +197,13 @@ test('runtime stability reports invalid original device state instead of exiting
   assert.match(runtimeFlow, /state.*== device/);
   assert.match(runtimeFlow, /adb get-state/);
   assert.match(runtimeFlow, /restore_adb_devices=/);
+  const stabilityStart = runtimeFlow.indexOf('run_stability_qualification() {');
+  const stabilityEnd = runtimeFlow.indexOf('\n}\n\n# This is the first application launch', stabilityStart);
+  const telecomProbe = runtimeFlow.indexOf('adb emu gsm call', stabilityEnd);
+  assert.ok(stabilityStart >= 0 && stabilityEnd > stabilityStart && telecomProbe > stabilityEnd);
+  const stability = runtimeFlow.slice(stabilityStart, stabilityEnd);
+  assert.match(stability, /restore_device_state/);
+  assert.match(stability, /FLOW_DEVICE_STATE_MUTATED=false/);
 });
 
 test('reboot preparation leaves process termination to the external workflow', () => {

@@ -621,7 +621,7 @@ run_stability_qualification() {
   assert_no_crash_or_anr stability-offline-logcat.txt
 
   # Lock a real display rotation, observe the platform state, and re-read the app UI after the
-  # configuration change. The original orientation is restored by the EXIT trap.
+  # configuration change. The original orientation is restored before Telecom probes begin.
   adb shell settings put system accelerometer_rotation 0
   adb shell settings put system user_rotation 1
   local rotation_state="$(adb shell settings get system user_rotation | tr -d '\r')"
@@ -659,6 +659,15 @@ run_stability_qualification() {
   printf 'pid_before=%s\npid_after=%s\n' "$pid_before" "$pid_after" > "$FLOW_OUTPUT_DIR/stability-kill-restart.txt"
   capture stability-kill-restart
   assert_no_crash_or_anr stability-kill-restart-logcat.txt
+
+  # Telecom/GSM probes must run in the original connectivity state. Keeping Wi-Fi/mobile data
+  # disabled until the EXIT trap made the emulator modem reject the Android 16 synthetic call
+  # before any app-owned Phone Core evidence could be produced. Restoration is still fail-closed.
+  if ! restore_device_state; then
+    echo "Failed to restore emulator state before Phone Core telecom probes." >&2
+    return 1
+  fi
+  FLOW_DEVICE_STATE_MUTATED=false
 }
 
 # This is the first application launch after the workflow's fresh APK install. Exercise a second
