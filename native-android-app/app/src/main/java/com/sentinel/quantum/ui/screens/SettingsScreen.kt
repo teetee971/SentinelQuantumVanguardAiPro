@@ -30,6 +30,7 @@ import androidx.core.content.ContextCompat
 import com.sentinel.quantum.R
 import com.sentinel.quantum.auth.Auth0SessionController
 import com.sentinel.quantum.auth.Auth0UserSummary
+import com.sentinel.quantum.auth.auth0ErrorMessage
 import com.sentinel.quantum.VoiceStudioActivity
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
@@ -83,7 +84,7 @@ fun SettingsScreen(
     var externalLinkStatus by remember { mutableStateOf<String?>(null) }
     var authUser by remember { mutableStateOf<Auth0UserSummary?>(null) }
     var authLoading by remember { mutableStateOf(true) }
-    var authError by remember { mutableStateOf(false) }
+    var authErrorMessage by remember { mutableStateOf<String?>(null) }
     val ioScope = rememberCoroutineScope()
 
     fun openExternalPage(url: String) {
@@ -250,13 +251,13 @@ fun SettingsScreen(
                     Button(
                         onClick = {
                             val currentActivity = activity ?: return@Button
-                            authError = false
+                            authErrorMessage = null
                             authController.login(
                                 currentActivity,
                                 onSuccess = { authUser = it },
-                                onFailure = {
+                                onFailure = { message ->
                                     authUser = null
-                                    authError = true
+                                    authErrorMessage = auth0ErrorMessage(message)
                                 }
                             )
                         },
@@ -298,11 +299,11 @@ fun SettingsScreen(
                     OutlinedButton(
                         onClick = {
                             val currentActivity = activity ?: return@OutlinedButton
-                            authError = false
+                            authErrorMessage = null
                             authController.logout(
                                 currentActivity,
                                 onSuccess = { authUser = null },
-                                onFailure = { authError = true }
+                                onFailure = { message -> authErrorMessage = auth0ErrorMessage(message) }
                             )
                         },
                         enabled = activity != null,
@@ -312,9 +313,9 @@ fun SettingsScreen(
                     }
                 }
             }
-            if (authError) {
+            authErrorMessage?.let { message ->
                 Text(
-                    text = stringResource(R.string.settings_auth_error),
+                    text = message,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
