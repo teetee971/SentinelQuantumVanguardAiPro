@@ -493,15 +493,19 @@ PYNOTIFICATION
       local x y
       read -r x y <<< "$coordinates"
       adb shell input tap "$x" "$y"
-      printf 'mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT\n' > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+      if [[ -n "${FLOW_OUTPUT_DIR:-}" ]]; then
+        printf 'mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT\n' > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+      fi
       return 0
     fi
     if [[ "$FLOW_API" -ge 37 ]] && fresh_ui && incoming_surface_visible; then
-      {
-        printf 'mode=FULL_SCREEN_CALLSTYLE\n'
-        printf 'notification_event=CALL_NOTIFICATION_POSTED\n'
-        printf 'uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible\n'
-      } > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+      if [[ -n "${FLOW_OUTPUT_DIR:-}" ]]; then
+        {
+          printf 'mode=FULL_SCREEN_CALLSTYLE\n'
+          printf 'notification_event=CALL_NOTIFICATION_POSTED\n'
+          printf 'uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible\n'
+        } > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+      fi
       return 0
     fi
     sleep 1
