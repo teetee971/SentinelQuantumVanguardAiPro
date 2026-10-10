@@ -143,7 +143,7 @@ function parseResourceRange(raw) {
   if (parts.length !== 2) fail('CTU_RANGE_INVALID', value);
   const start = normalizeResource(parts[0]);
   const end = normalizeResource(parts[1]);
-  if (start > end) fail('CTU_RANGE_INVALID', value);
+  if (BigInt(start) > BigInt(end)) fail('CTU_RANGE_INVALID', value);
   return [start, end];
 }
 
