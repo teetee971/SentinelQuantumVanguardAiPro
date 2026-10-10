@@ -125,6 +125,14 @@ test('runtime qualification treats an unavailable mobile-data oracle as an expli
   assert.match(runtimeFlow, /if \[\[ "\$ORIGINAL_MOBILE_DATA" != UNAVAILABLE \]\]/);
 });
 
+test('runtime qualification opens the real incoming-call notification before requiring the app surface', () => {
+  const screeningStart = runtimeFlow.indexOf('adb emu gsm call "$FLOW_NUMBER"');
+  const incomingSurface = runtimeFlow.indexOf('wait_incoming_sentinel_surface', screeningStart);
+  const notificationOpen = runtimeFlow.indexOf('open_incoming_call_notification', screeningStart);
+  assert.ok(screeningStart >= 0);
+  assert.ok(incomingSurface > notificationOpen);
+});
+
 test('runtime stability reports invalid original device state instead of exiting silently', () => {
   assert.match(runtimeFlow, /Invalid original user rotation state/);
   assert.match(runtimeFlow, /Invalid original accelerometer rotation state/);

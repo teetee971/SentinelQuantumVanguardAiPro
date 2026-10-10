@@ -612,7 +612,6 @@ adb emu gsm call "$FLOW_NUMBER"
 wait_logcat_marker "CallScreeningService:onScreenCall" "call-screening-callback-logcat.txt"
 wait_logcat_marker "CallScreeningService:response_elapsed_ms=" "call-screening-latency-logcat.txt"
 wait_logcat_marker "CallScreeningService:response_sent=true" "call-screening-response-sent-logcat.txt"
-wait_incoming_sentinel_surface
 if [[ "$FLOW_API" -ge 36 ]]; then
   wait_private_timeline_signal_prefix "CALL_SCREENED:"
 else
@@ -628,6 +627,7 @@ wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
 # Exercise Sentinel's answer path, not a modem-side answer on behalf of the application.
 # An app-owned stable control plus the independent ACTIVE timeline event proves the effect.
 open_incoming_call_notification
+wait_incoming_sentinel_surface
 wait_text "phone_core_answer"
 tap_text "phone_core_answer"
 wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
