@@ -12,6 +12,8 @@ def test_render_declares_separate_voice_service_closed_by_default():
     assert "dockerfilePath: ./backend/voice-api/Dockerfile" in text
     assert "healthCheckPath: /health/live" in text
     assert "- key: VOICE_SERVICE_ENABLED\n        value: \"false\"" in text
+    assert "- key: VOICE_ENTITLEMENT_CLAIM\n        value: https://sentinel-voice.onrender.com/claims/entitled" in text
+    assert "- key: VOICE_DEVICE_CLAIM\n        value: https://sentinel-voice.onrender.com/claims/device_ids" in text
 
 
 def test_render_voice_secrets_are_not_committed():

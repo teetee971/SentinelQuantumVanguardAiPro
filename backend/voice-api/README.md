@@ -26,9 +26,11 @@ placées dans l’APK ou écrites dans les logs :
 - `LIVEKIT_API_KEY` et `LIVEKIT_API_SECRET` ;
 - `VOICE_AUTH_JWKS_URL`, `VOICE_AUTH_ISSUER` et `VOICE_AUTH_AUDIENCE` ;
 - `VOICE_ENTITLEMENT_CLAIM` si le fournisseur d’identité utilise un nom différent.
+- `VOICE_DEVICE_CLAIM` pour le claim namespacé contenant les identifiants d’appareils.
 
-Le JWT OIDC doit contenir `sub`, `exp`, `iat`, un `device_id` ou `device_ids`,
-et un claim d’entitlement strictement égal à `true`. Le service vérifie aussi
+Le JWT OIDC doit contenir `sub`, `exp`, `iat`, le claim configuré par
+`VOICE_DEVICE_CLAIM` et un claim d’entitlement strictement égal à `true`.
+Le service vérifie aussi
 les révocations Redis, le rate limit et la correspondance appareil/session.
 
 Les tokens LiveKit sont limités à l’identité et à la room dérivée côté serveur,

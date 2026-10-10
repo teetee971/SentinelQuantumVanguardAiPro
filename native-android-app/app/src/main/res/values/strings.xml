@@ -12,6 +12,8 @@
     <string name="settings_auth_logout">Se déconnecter</string>
     <string name="settings_auth_logged_in_as">Connecté avec %1$s</string>
     <string name="settings_auth_no_email">Adresse e-mail non communiquée</string>
+    <string name="settings_auth_device_id">Identifiant de liaison de cet appareil : %1$s</string>
+    <string name="settings_auth_copy_device_id">Copier l’identifiant de l’appareil</string>
     <string name="settings_auth_error">Connexion impossible. Aucun jeton n’a été conservé.</string>
     <string name="launcher_phone_name">Sentinel Téléphone</string>
     <string name="launcher_sms_name">Sentinel Messages</string>

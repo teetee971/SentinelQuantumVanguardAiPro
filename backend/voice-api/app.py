@@ -41,6 +41,7 @@ class Settings:
     auth_issuer: str = ""
     auth_audience: str = ""
     entitlement_claim: str = "sentinel_voice_entitled"
+    device_claim: str = "device_ids"
     token_ttl_seconds: int = MAX_TOKEN_TTL_SECONDS
     rate_limit_per_minute: int = 30
 
@@ -58,6 +59,7 @@ class Settings:
             entitlement_claim=os.getenv(
                 "VOICE_ENTITLEMENT_CLAIM", "sentinel_voice_entitled"
             ),
+            device_claim=os.getenv("VOICE_DEVICE_CLAIM", "device_ids"),
             token_ttl_seconds=_int_env(
                 "VOICE_TOKEN_TTL_SECONDS", MAX_TOKEN_TTL_SECONDS
             ),
@@ -157,13 +159,7 @@ class OidcIdentityVerifier:
         subject = claims.get("sub")
         if not isinstance(subject, str) or not subject:
             return None
-        device_ids = claims.get("device_ids", claims.get("device_id", []))
-        if isinstance(device_ids, str):
-            device_ids = [device_ids]
-        if not isinstance(device_ids, list) or not all(
-            isinstance(item, str) and item for item in device_ids
-        ):
-            device_ids = []
+        device_ids = extract_device_ids(claims, self._settings.device_claim)
         return {
             "subject": subject,
             "device_ids": device_ids,
@@ -236,6 +232,18 @@ def _principal_device_ids(principal: dict[str, Any]) -> list[str]:
     if isinstance(device_ids, str):
         return [device_ids]
     return [item for item in device_ids if isinstance(item, str)]
+
+
+def extract_device_ids(claims: dict[str, Any], claim_name: str = "device_ids") -> list[str]:
+    """Normalize the configured Auth0 device claim without accepting malformed entries."""
+    device_ids = claims.get(claim_name)
+    if device_ids is None and claim_name == "device_ids":
+        device_ids = claims.get("device_id", [])
+    if isinstance(device_ids, str):
+        device_ids = [device_ids]
+    if not isinstance(device_ids, list):
+        return []
+    return [item for item in device_ids if isinstance(item, str) and item]
 
 
 def _expires_at_iso(ttl_seconds: int) -> str:

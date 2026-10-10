@@ -1,6 +1,8 @@
 package com.sentinel.quantum.ui.screens
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.content.pm.PackageManager
@@ -38,6 +40,7 @@ import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.FamilySafetyPolicy
+import com.sentinel.quantum.security.SentinelDeviceIdentity
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +57,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val activity = context as? ComponentActivity
     val authController = remember(context) { Auth0SessionController(context) }
+    val voiceDeviceId = remember(context) { SentinelDeviceIdentity.current(context) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val logger = remember(context) { LocalLogger(context) }
     val blocklistStore = remember(context) { CallBlocklistStore(context) }
@@ -270,6 +274,27 @@ fun SettingsScreen(
                         ),
                         style = MaterialTheme.typography.bodyMedium
                     )
+                    voiceDeviceId?.let { deviceId ->
+                        Text(
+                            text = stringResource(R.string.settings_auth_device_id, deviceId),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedButton(
+                            onClick = {
+                                context.getSystemService(ClipboardManager::class.java)
+                                    ?.setPrimaryClip(
+                                        ClipData.newPlainText(
+                                            "Sentinel device ID",
+                                            deviceId
+                                        )
+                                    )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.settings_auth_copy_device_id))
+                        }
+                    }
                     OutlinedButton(
                         onClick = {
                             val currentActivity = activity ?: return@OutlinedButton
