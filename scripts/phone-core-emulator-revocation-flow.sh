@@ -118,10 +118,22 @@ PYDISABLED
 }
 
 assert_no_crash() {
-  if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-    adb logcat -d -v time | tail -n 400
+  local brief_output=""
+  local brief_status=0
+  set +e
+  brief_output="$(adb logcat -d -v brief)"
+  brief_status=$?
+  set -e
+  if [[ "$brief_status" -ne 0 ]]; then
+    echo "Crash oracle is unreadable; cannot qualify crash-free state." >&2
     return 1
   fi
+  local oracle="${SCRIPT_DIR:-$(pwd)/scripts}/phone-core-logcat-crash-oracle.py"
+  if ! python3 "$oracle" /dev/stdin <<< "$brief_output"; then
+    adb logcat -d -v time | tail -n 400 || true
+    return 1
+  fi
+  return 0
 }
 
 role_holders() {
@@ -210,18 +222,47 @@ permission_granted() {
 
 probe_pm_revoke_send_sms() {
   local output="$OUT_DIR/send-sms-pm-revoke-observation.txt"
+  : > "$output"
+
+  # A post-revoke denied state is only evidence of a transition if the runtime
+  # permission was observably granted immediately before the revoke command.
+  # A non-observable probe is not a gate failure: the caller must continue to
+  # the established AppOp fallback and prove effective denial there.
+  if ! permission_granted android.permission.SEND_SMS; then
+    printf 'baseline_granted=false\nobservable=false\nreason=baseline_grant_not_proven\n' >> "$output"
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+    echo "SEND_SMS granted baseline could not be proven before runtime revocation; using fallback probe." >&2
+    return 0
+  fi
+  printf 'baseline_granted=true\n' >> "$output"
+
   set +e
-  adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS > "$output" 2>&1
+  adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS >> "$output" 2>&1
   local status=$?
   set -e
-  sleep 1
-  if permission_granted android.permission.SEND_SMS; then
-    printf 'pm_revoke_status=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" >> "$output"
+  printf 'pm_revoke_status=%s\n' "$status" >> "$output"
+  if [[ "$status" -ne 0 ]]; then
+    printf 'observable=false\nreason=pm_revoke_failed\n' >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-  else
-    printf 'pm_revoke_status=%s\nobservable=true\n' "$status" >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=true
+    echo "SEND_SMS runtime revoke command failed with status $status; using fallback probe." >&2
+    return 0
   fi
+
+  # A role-managed grant can be restored asynchronously. One transient denied read
+  # is not durable evidence, so require three consecutive observations one second apart.
+  local denied_observations=0
+  for observation in 1 2 3; do
+    sleep 1
+    if permission_granted android.permission.SEND_SMS; then
+      printf 'denial_stability_observations=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$denied_observations" >> "$output"
+      SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+      return 0
+    fi
+    denied_observations=$observation
+  done
+
+  printf 'denial_stability_observations=%s\nobservable=true\n' "$denied_observations" >> "$output"
+  SEND_SMS_PM_REVOCATION_OBSERVABLE=true
 }
 
 assert_send_sms_runtime_permission_denied() {

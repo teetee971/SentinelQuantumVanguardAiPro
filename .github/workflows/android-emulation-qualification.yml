@@ -242,7 +242,7 @@ jobs:
 
           BOOTED=0
           for _ in $(seq 1 120); do
-            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+            if [[ "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" == "$API_LEVEL" && "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
               BOOTED=1
               break
             fi
@@ -345,6 +345,25 @@ jobs:
           test -n "$APK_PATH"
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
+
+          assert_clean_runtime_logcat() {
+            local context="$1"
+            local evidence="$OUTPUT/min-sdk-logcat-brief.txt"
+            local error="$OUTPUT/min-sdk-logcat-error.txt"
+            local status=0
+            adb logcat -d -v brief > "$evidence" 2> "$error" || status=$?
+            if [[ "$status" -ne 0 ]]; then
+              echo "Unable to read logcat while ${context}; crash absence is UNKNOWN."
+              cat "$error" || true
+              return 1
+            fi
+            if ! python3 ../scripts/phone-core-logcat-crash-oracle.py "$evidence"; then
+              echo "Crash/ANR detected while ${context}."
+              adb logcat -d -v time | tail -n 400 || true
+              return 1
+            fi
+          }
+
           # Runtime evidence must start from a fresh app scope and fresh log buffer.
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
@@ -365,11 +384,7 @@ jobs:
             sleep 3
             adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-              echo "Crash/ANR detected on minSdk first launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            assert_clean_runtime_logcat "qualifying the minSdk first launch"
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
             sleep 3
@@ -406,6 +421,7 @@ jobs:
           BUILT_COMMIT="$(git rev-parse HEAD)" API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
+          const { spawnSync } = require('node:child_process');
           const api = Number(process.env.API_LEVEL);
           const output = process.env.OUTPUT;
           const modernPhoneCore = api >= 29;
@@ -524,8 +540,13 @@ jobs:
             screenshot('10-sms-role-revoked.png') &&
             screenshot('11-dialer-role-revoked.png') &&
             screenshot('12-call-screening-role-revoked.png');
-          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') &&
-            !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+          const crashOraclePath = process.env.GITHUB_WORKSPACE
+            ? path.join(process.env.GITHUB_WORKSPACE, 'scripts', 'phone-core-logcat-crash-oracle.py')
+            : path.resolve(process.env.PWD || '.', 'scripts', 'phone-core-logcat-crash-oracle.py');
+          const crashOracle = exists('logcat.txt')
+            ? spawnSync('python3', [crashOraclePath, file('logcat.txt')], { encoding: 'utf8' })
+            : { status: 2 };
+          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') && crashOracle.status === 0;
           const instrumentationKey = `connected_instrumentation_api${api}`;
 
           const checks = {

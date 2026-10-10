@@ -119,6 +119,25 @@ jobs:
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
 
+          assert_clean_logcat() {
+            local context="$1"
+            local slug="$2"
+            local evidence="$RUNNER_TEMP/${slug}-logcat-brief.txt"
+            local error="$RUNNER_TEMP/${slug}-logcat-error.txt"
+            local status=0
+            adb logcat -d -v brief > "$evidence" 2> "$error" || status=$?
+            if [[ "$status" -ne 0 ]]; then
+              echo "Unable to read logcat while ${context}; crash absence is UNKNOWN."
+              cat "$error" || true
+              return 1
+            fi
+            if ! python3 ../scripts/phone-core-logcat-crash-oracle.py "$evidence"; then
+              echo "Sentinel crashed or ANR'd while ${context}."
+              adb logcat -d -v time | tail -n 400 || true
+              return 1
+            fi
+          }
+
           SDK_PACKAGES=("emulator" "platforms;android-29" "system-images;android-29;google_apis;x86_64")
           SDK_READY=0
           for attempt in 1 2 3; do
@@ -207,11 +226,7 @@ jobs:
               FIRST_RUN_READY=1
               break
             fi
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
-              echo "Sentinel crashed or ANR'd during launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            assert_clean_logcat "waiting for the first Phone Core setup launch" "sentinel-first-launch"
             sleep 1
           done
           if [[ "$FIRST_RUN_READY" != "1" ]]; then
@@ -268,11 +283,7 @@ jobs:
               break
             fi
 
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
-              echo "Sentinel crashed or ANR'd while resuming Phone Core setup."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            assert_clean_logcat "resuming Phone Core setup" "sentinel-setup-resume"
             sleep 1
           done
           if [[ "$SETUP_RESUMED" != "1" ]]; then
