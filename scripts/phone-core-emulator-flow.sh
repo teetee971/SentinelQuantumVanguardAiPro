@@ -19,12 +19,14 @@ MOBILE_DATA_ORACLE_SOURCE=""
 RESTORE_FAILED=false
 FLOW_FAILURE_TRAP_ACTIVE=false
 FLOW_FAILURE_REPORTED=false
+FLOW_LAST_ADB_ARGS=""
 if [[ ! "$ADB_COMMAND_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] ||
   [[ ! "$ADB_COMMAND_KILL_GRACE_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
   echo "ADB command watchdog values must be positive integer seconds." >&2
   exit 2
 fi
 adb() {
+  FLOW_LAST_ADB_ARGS="$(printf '%q ' "$@")"
   command timeout \
     --signal=INT \
     --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
@@ -43,8 +45,8 @@ flow_failure_diagnostics() {
   trap - ERR
   set +e
   {
-    printf 'status=%s\nfailed_line=%s\nfailed_command=%s\n' \
-      "$status" "$failed_line" "$failed_command"
+    printf 'status=%s\nfailed_line=%s\nfailed_command=%s\nadb_args=%s\n' \
+      "$status" "$failed_line" "$failed_command" "$FLOW_LAST_ADB_ARGS"
     printf '\nadb_get_state_status='; adb get-state
     printf '\nadb_devices_status='; adb devices -l
     printf '\nlogcat_brief_status='; adb logcat -d -v brief
@@ -52,8 +54,9 @@ flow_failure_diagnostics() {
     printf '\ntelecom_status='; adb shell dumpsys telecom
     printf '\nrole_status='; adb shell dumpsys role
   } > "$FLOW_OUTPUT_DIR/flow-failure.txt" 2>&1
-  printf 'Phone Core flow unexpected shell failure: status=%s line=%s command=%s; full diagnostics=%s\n' \
-    "$status" "$failed_line" "$failed_command" "$FLOW_OUTPUT_DIR/flow-failure.txt" >&2
+  printf 'Phone Core flow unexpected shell failure: status=%s line=%s command=%s adb_args=%s; full diagnostics=%s\n' \
+    "$status" "$failed_line" "$failed_command" "$FLOW_LAST_ADB_ARGS" \
+    "$FLOW_OUTPUT_DIR/flow-failure.txt" >&2
   set -e
   trap 'flow_err_trap "$?" "$BASH_COMMAND" "${BASH_LINENO[0]:-unknown}"' ERR
   return 0
