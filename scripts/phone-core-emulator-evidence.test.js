@@ -61,6 +61,9 @@ test('emulator qualification proves setup state across a real reboot before runt
   assert.match(workflow, /adb shell reboot/);
   assert.match(workflow, /timeout --signal=INT --kill-after=5s 30s \\\n\s+adb shell reboot/);
   assert.match(workflow, /ro\.build\.version\.sdk/);
+  assert.equal((workflow.match(/^\s+wait_for_package_manager$/gm) || []).length, 2);
+  assert.match(workflow, /cmd package list packages/);
+  assert.match(workflow, /Can't find service: package/);
   assert.match(workflow, /run-as com\.sentinel\.quantum cat shared_prefs\/phone_core_setup_wizard_v2\.xml/);
   assert.match(workflow, /Configuration initiale/);
   assert.match(reportCode, /SETUP_REBOOT_OUTCOME/);

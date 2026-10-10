@@ -276,6 +276,24 @@ jobs:
           done
           test "$DEVICE_READY" = "1"
 
+          wait_for_package_manager() {
+            local package_probe=""
+            local package_probe_status=0
+            for _ in $(seq 1 60); do
+              set +e
+              package_probe="$(adb shell cmd package list packages 2>&1 | tr -d '\r')"
+              package_probe_status=$?
+              set -e
+              if [[ "$package_probe_status" -eq 0 ]] &&
+                ! grep -Fq "Can't find service: package" <<< "$package_probe"; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "Android package manager service did not become available within its bounded readiness window."
+            adb shell cmd package list packages || true
+            return 1
+          }
           BOOTED=0
           for _ in $(seq 1 120); do
             if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
@@ -292,6 +310,7 @@ jobs:
             cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"
             exit 1
           fi
+          wait_for_package_manager
 
           ACTUAL_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
           ACTUAL_RELEASE="$(adb shell getprop ro.build.version.release | tr -d '\r')"
@@ -397,6 +416,24 @@ jobs:
             command timeout --signal=INT --kill-after="${ADB_COMMAND_KILL_GRACE_SECONDS}s" \
               "${ADB_COMMAND_TIMEOUT_SECONDS}s" "$ADB_BIN" "$@"
           }
+          wait_for_package_manager() {
+            local package_probe=""
+            local package_probe_status=0
+            for _ in $(seq 1 60); do
+              set +e
+              package_probe="$(adb shell cmd package list packages 2>&1 | tr -d '\r')"
+              package_probe_status=$?
+              set -e
+              if [[ "$package_probe_status" -eq 0 ]] &&
+                ! grep -Fq "Can't find service: package" <<< "$package_probe"; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "Android package manager service did not become available within its bounded readiness window."
+            adb shell cmd package list packages || true
+            return 1
+          }
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           APP_APK="app/build/outputs/apk/debug/app-debug.apk"
@@ -464,6 +501,7 @@ jobs:
             sleep 2
           done
           test "$BOOTED" = "1"
+          wait_for_package_manager
           ACTUAL_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
           printf '%s\n' "$ACTUAL_API" > "$OUTPUT/setup-reboot-sdk.txt"
           test "$ACTUAL_API" = "$API_LEVEL"
