@@ -1,7 +1,6 @@
 package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -55,6 +54,24 @@ class SentinelDuplicateGroupsTest {
                     file("a", 100L),
                     file("b", 100L, hashedModifiedAtMs = 9L)
                 )
+            ).isEmpty()
+        )
+    }
+
+    @Test
+    fun missingHashEvidenceDoesNotCreateDuplicateGroup() {
+        val noHash = SentinelDuplicatePolicy.FileEvidence(
+            stableId = "a",
+            bytes = 100L,
+            sha256 = null,
+            canonicalId = "a",
+            modifiedAtMs = 10L,
+            hashedBytes = 100L,
+            hashedModifiedAtMs = 10L
+        )
+        assertTrue(
+            SentinelDuplicateGroups.confirmed(
+                listOf(noHash, noHash.copy(stableId = "b", canonicalId = "b"))
             ).isEmpty()
         )
     }
