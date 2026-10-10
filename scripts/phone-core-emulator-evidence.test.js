@@ -275,6 +275,40 @@ test('Android 17 full-screen CallStyle remains an explicit incoming-call entrypo
   assert.match(workflow, /mode=FULL_SCREEN_CALLSTYLE/);
 });
 
+test('Android 17 fallback records the observed full-screen entrypoint', () => {
+  const incomingSurface = flowFunction('incoming_surface_visible', 'wait_incoming_sentinel_surface');
+  const notificationOpen = flowFunction('open_incoming_call_notification', 'wait_reply_focus');
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-full-screen-entrypoint-'));
+  try {
+    const fixture = join(dir, 'fallback.sh');
+    writeFileSync(fixture, `#!/usr/bin/env bash
+set -Eeuo pipefail
+FLOW_API=37
+FLOW_NUMBER=5550100
+FLOW_PACKAGE=com.sentinel.quantum
+FLOW_OUTPUT_DIR="$1"
+FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
+fresh_ui() { return 0; }
+capture() { :; }
+sleep() { :; }
+adb() { return 0; }
+cat > "$FLOW_XML" <<'XML'
+<hierarchy><node package="com.sentinel.quantum" text="Appel entrant" content-desc="Sentinel Phone Core, Appel entrant, Sonnerie" /></hierarchy>
+XML
+${incomingSurface}
+${notificationOpen}
+open_incoming_call_notification
+cat "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+`, { mode: 0o700 });
+    const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /mode=FULL_SCREEN_CALLSTYLE/);
+    assert.match(result.stdout, /uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('incoming notification oracle uses the clickable row when compact CallStyle exposes only the app header', () => {
   const openStart = runtimeFlow.indexOf('open_incoming_call_notification() {');
   const openEnd = runtimeFlow.indexOf('\n}\n\nwait_reply_focus()', openStart);
@@ -395,6 +429,14 @@ function shellFunction(name) {
   const start = revocation.indexOf(`${name}() {`);
   assert.notEqual(start, -1);
   return revocation.slice(start, revocation.indexOf('\n}', start) + 2);
+}
+
+function flowFunction(name, nextName) {
+  const start = runtimeFlow.indexOf(`${name}() {`);
+  assert.notEqual(start, -1);
+  const end = runtimeFlow.indexOf(`\n}\n\n${nextName}`, start);
+  assert.ok(end > start, `Flow function boundary exists: ${name}`);
+  return runtimeFlow.slice(start, end + 2);
 }
 
 for (const [name, output, status, expected] of [
