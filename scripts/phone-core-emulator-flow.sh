@@ -346,9 +346,8 @@ PY
   echo "Phone Core flow did not expose expected UI: $expected"
   return 1
 }
-wait_incoming_sentinel_surface() {
-  for _ in $(seq 1 20); do
-    if fresh_ui && python3 - "$FLOW_XML" "$FLOW_PACKAGE" <<'PYINCOMING'
+incoming_surface_visible() {
+  python3 - "$FLOW_XML" "$FLOW_PACKAGE" <<'PYINCOMING'
 import sys, xml.etree.ElementTree as ET
 path, package_name = sys.argv[1:]
 try:
@@ -369,7 +368,11 @@ sentinel_surface = (
 )
 sys.exit(0 if sentinel_surface else 1)
 PYINCOMING
-    then return 0; fi
+}
+
+wait_incoming_sentinel_surface() {
+  for _ in $(seq 1 20); do
+    if fresh_ui && incoming_surface_visible; then return 0; fi
     sleep 1
   done
   capture failure
@@ -490,6 +493,15 @@ PYNOTIFICATION
       local x y
       read -r x y <<< "$coordinates"
       adb shell input tap "$x" "$y"
+      printf 'mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT\n' > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
+      return 0
+    fi
+    if [[ "$FLOW_API" -ge 37 ]] && fresh_ui && incoming_surface_visible; then
+      {
+        printf 'mode=FULL_SCREEN_CALLSTYLE\n'
+        printf 'notification_event=CALL_NOTIFICATION_POSTED\n'
+        printf 'uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible\n'
+      } > "$FLOW_OUTPUT_DIR/incoming-call-entrypoint.txt"
       return 0
     fi
     sleep 1

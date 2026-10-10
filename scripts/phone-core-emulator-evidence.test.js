@@ -245,6 +245,11 @@ test('runtime qualification opens the real incoming-call notification before req
   const notificationOpen = runtimeFlow.indexOf('open_incoming_call_notification', screeningStart);
   assert.ok(screeningStart >= 0);
   assert.ok(incomingSurface > notificationOpen);
+  assert.match(runtimeFlow, /incoming-call-entrypoint\.txt/);
+  assert.match(runtimeFlow, /mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT/);
+  assert.match(runtimeFlow, /mode=FULL_SCREEN_CALLSTYLE/);
+  assert.match(workflow, /incoming_call_entrypoint/);
+  assert.match(workflow, /incoming-call-entrypoint\.txt/);
 });
 
 test('incoming-call probe verifies ADB recovery after sleeping the emulator', () => {
@@ -256,6 +261,18 @@ test('incoming-call probe verifies ADB recovery after sleeping the emulator', ()
   assert.match(runtimeFlow.slice(sleep), /wait_for_online_adb/);
   assert.match(runtimeFlow, /ADB device did not return online/);
   assert.match(runtimeFlow, /adb devices -l/);
+});
+
+test('Android 17 full-screen CallStyle remains an explicit incoming-call entrypoint', () => {
+  const openStart = runtimeFlow.indexOf('open_incoming_call_notification() {');
+  const openEnd = runtimeFlow.indexOf('\n}\n\nwait_reply_focus()', openStart);
+  assert.ok(openStart >= 0 && openEnd > openStart);
+  const notificationOpen = runtimeFlow.slice(openStart, openEnd);
+  assert.match(notificationOpen, /FLOW_API.*-ge 37/);
+  assert.match(notificationOpen, /incoming_surface_visible/);
+  assert.match(notificationOpen, /uiautomator_systemui_row=not_exposed_while_full_screen_surface_visible/);
+  assert.match(workflow, /incomingCallEntrypointObserved/);
+  assert.match(workflow, /mode=FULL_SCREEN_CALLSTYLE/);
 });
 
 test('incoming notification oracle uses the clickable row when compact CallStyle exposes only the app header', () => {
@@ -439,6 +456,7 @@ function fixture(overrides = {}, alter = () => {}) {
     'CallScreeningService:response_elapsed_ms=12\nCallScreeningService:response_sent=true'
   );
   put('call-screening-response-sent-logcat.txt', 'CallScreeningService:response_sent=true');
+  put('incoming-call-entrypoint.txt', 'mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT\n');
   put('phone-private-timeline-prefix.xml', 'CALL_SCREENED:ALLOW');
   put('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
   put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
@@ -476,6 +494,15 @@ test('successful host fixture preserves exact build/source, base, and branch pro
   assert.equal(report.evidence_scope, 'developer_qualification');
   assert.equal(report.physical_modem_claim, false);
   assert.equal(report.commercial_release_claim, false);
+});
+
+test('unknown incoming-call entrypoint cannot qualify modern Phone Core', () => {
+  const { result, report } = fixture({}, ({ put }) => {
+    put('incoming-call-entrypoint.txt', 'mode=ASSUMED_NOTIFICATION\n');
+  });
+  assert.equal(result.status, 1);
+  assert.equal(report.checks.incoming_call_entrypoint, false);
+  assert.ok(report.evidence_failures.includes('incoming_call_entrypoint'));
 });
 
 test('screening latency without a successful Telecom response cannot qualify', () => {

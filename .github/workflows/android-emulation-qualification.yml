@@ -751,6 +751,10 @@ jobs:
             screenshot('02-incoming-call.png') &&
             screenshot('03-incoming-active-evidence.png') &&
             contains('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE');
+          const incomingCallEntrypointObserved = modernPhoneCore &&
+            /^(?:mode=SYSTEMUI_NOTIFICATION_PENDING_INTENT|mode=FULL_SCREEN_CALLSTYLE)$/m.test(
+              read('incoming-call-entrypoint.txt')
+            );
           const outgoingCallObserved = modernPhoneCore &&
             screenshot('05-outgoing-call.png') &&
             contains('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE');
@@ -818,6 +822,7 @@ jobs:
             screening_latency_observed: modernPhoneCore ? screeningLatencyObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
+            incoming_call_entrypoint: modernPhoneCore ? incomingCallEntrypointObserved : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
             incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
             sms_all_parts_sent_callback: modernPhoneCore ? smsSentCallbackObserved : null,
@@ -852,6 +857,7 @@ jobs:
                 'synthetic_call_screening_observed',
                 'screening_latency_observed',
                 'incoming_call_telecom_flow',
+                'incoming_call_entrypoint',
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',
                 'sms_all_parts_sent_callback',
