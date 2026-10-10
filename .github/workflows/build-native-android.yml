@@ -247,14 +247,71 @@ jobs:
 
           adb shell pidof com.sentinel.quantum
 
-          # An unfinished setup is intentionally resumable. Close any Android-owned
-          # permission/role surface before force-stopping Sentinel: otherwise RequestRoleActivity
-          # remains on top and the next am start is delivered to the controller instead of
-          # testing Sentinel's cold-launch recovery. The back event is the user interruption;
-          # it is not a readiness assertion.
-          adb shell input keyevent KEYCODE_BACK
-          sleep 1
-          adb shell dumpsys activity activities > "$RUNNER_TEMP/sentinel-interruption-dismiss.txt" 2>/dev/null || true
+          # An unfinished setup is intentionally resumable. Only dismiss an Android-owned
+          # permission/role surface after dumpsys proves that it is foreground and bound back to
+          # PhoneCoreActivationActivity. If the app surface is already foreground, force-stopping
+          # Sentinel directly is the safe process-death simulation; sending BACK there would close
+          # the activity, persist DEFERRED through the result callback, and invalidate this probe.
+          INTERRUPTION_SURFACE=""
+          INTERRUPTION_DUMP="$RUNNER_TEMP/sentinel-interruption-before-back.txt"
+          for _ in $(seq 1 30); do
+            adb shell dumpsys activity activities > "$INTERRUPTION_DUMP" 2>/dev/null || true
+
+            if grep -Eq 'mResumedActivity.*permissioncontroller.*GrantPermissionsActivity|topResumedActivity=.*permissioncontroller.*GrantPermissionsActivity' "$INTERRUPTION_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$INTERRUPTION_DUMP"; then
+              INTERRUPTION_SURFACE="android"
+              break
+            fi
+            if grep -Eiq 'mResumedActivity.*permissioncontroller.*role.*Activity|topResumedActivity=.*permissioncontroller.*role.*Activity' "$INTERRUPTION_DUMP" &&
+               grep -Eq 'resultTo=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$INTERRUPTION_DUMP"; then
+              INTERRUPTION_SURFACE="android"
+              break
+            fi
+            if grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$INTERRUPTION_DUMP"; then
+              INTERRUPTION_SURFACE="sentinel"
+              break
+            fi
+
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+              echo "Sentinel crashed or ANR'd before the interruption probe could identify its foreground surface."
+              adb logcat -d -v time | tail -n 400
+              exit 1
+            fi
+            sleep 1
+          done
+          if [[ -z "$INTERRUPTION_SURFACE" ]]; then
+            echo "Could not prove either an Android-owned setup surface or PhoneCoreActivationActivity before process-death simulation."
+            cat "$INTERRUPTION_DUMP"
+            exit 1
+          fi
+
+          if [[ "$INTERRUPTION_SURFACE" == "android" ]]; then
+            adb shell input keyevent KEYCODE_BACK
+            POST_BACK_READY=0
+            POST_BACK_DUMP="$RUNNER_TEMP/sentinel-interruption-dismiss.txt"
+            for _ in $(seq 1 10); do
+              adb shell dumpsys activity activities > "$POST_BACK_DUMP" 2>/dev/null || true
+              if grep -Eq 'mResumedActivity.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity|topResumedActivity=.*com\.sentinel\.quantum/\.PhoneCoreActivationActivity' "$POST_BACK_DUMP"; then
+                POST_BACK_READY=1
+                break
+              fi
+              if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION: main|ANR in com\.sentinel\.quantum'; then
+                echo "Sentinel crashed or ANR'd while dismissing the Android-owned setup surface."
+                adb logcat -d -v time | tail -n 400
+                exit 1
+              fi
+              sleep 1
+            done
+            if [[ "$POST_BACK_READY" != "1" ]]; then
+              echo "Dismissing the Android-owned setup surface did not return to PhoneCoreActivationActivity."
+              cat "$POST_BACK_DUMP"
+              exit 1
+            fi
+          else
+            echo "PhoneCoreActivationActivity already foreground; simulating process death without BACK."
+            cp "$INTERRUPTION_DUMP" "$RUNNER_TEMP/sentinel-interruption-dismiss.txt"
+          fi
+
           # The next cold launch must reopen PhoneCoreActivationActivity rather than losing progress.
           adb shell am force-stop com.sentinel.quantum
           adb logcat -c >/dev/null 2>&1 || true
