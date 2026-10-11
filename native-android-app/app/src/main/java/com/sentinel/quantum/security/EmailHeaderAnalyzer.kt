@@ -46,7 +46,10 @@ object EmailHeaderAnalyzer {
             if (line.length > MAX_LINE_LENGTH) return null
             if (line.startsWith(' ') || line.startsWith('\t')) {
                 if (unfolded.isEmpty()) return null
-                unfolded[unfolded.lastIndex] = unfolded.last() + " " + line.trim()
+                val continuation = line.trim()
+                val previous = unfolded.last()
+                if (previous.length + 1 + continuation.length > MAX_LINE_LENGTH) return null
+                unfolded[unfolded.lastIndex] = previous + " " + continuation
             } else if (line.isNotBlank()) unfolded += line
             if (unfolded.size > MAX_HEADERS) return null
         }
