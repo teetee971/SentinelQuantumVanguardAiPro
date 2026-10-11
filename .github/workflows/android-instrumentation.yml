@@ -185,7 +185,7 @@ jobs:
               exit "$DEPENDENCY_RESOLUTION_STATUS"
             fi
 
-            ./gradlew assembleDebug assembleDebugAndroidTest \
+            timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest \
               --stacktrace --no-daemon --offline
 
             APP_APK="app/build/outputs/apk/debug/app-debug.apk"

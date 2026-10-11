@@ -41,5 +41,6 @@ test('API 24 bounds dependency resolution before using an offline test build', (
   assert.match(api24Block, /DEPENDENCY_RESOLUTION_LOG/);
   assert.match(api24Block, /tee "\$DEPENDENCY_RESOLUTION_LOG"/);
   assert.match(api24Block, /assembleDebug assembleDebugAndroidTest[\s\S]*--offline/);
+  assert.match(api24Block, /timeout 600s \.\/gradlew assembleDebug assembleDebugAndroidTest/);
   assert.match(instrumentationWorkflow, /sentinel-instrumentation-api\$\{API_LEVEL\}-dependencies\.log/);
 });
