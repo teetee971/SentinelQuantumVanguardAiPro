@@ -21,11 +21,11 @@
   <section class="card ok">
     <h2>Architecture actuelle</h2>
     <ul>
-      <li>Web/PWA à la racine du dépôt, avec build contrôlé par Node/Vite.</li>
-      <li>Android natif exclusivement dans <code>native-android-app/</code>.</li>
-      <li>Gouvernance, décision, preuve et confiance dans <code>decision-plane/</code> et <code>security/</code>.</li>
-      <li>Contrôles d'intégrité et d'isolation dans <code>scripts/</code>.</li>
-      <li>CI/CD et validations dans <code>.github/workflows/</code>.</li>
+      <li>Surface Web/PWA publique construite par une chaîne contrôlée.</li>
+      <li>Surface Android maintenue séparément avec validation dédiée.</li>
+      <li>Gouvernance, décision, preuve et confiance organisées par domaines.</li>
+      <li>Contrôles d'intégrité et d'isolation appliqués avant publication.</li>
+      <li>Livraison et validations séparées des environnements d’exécution.</li>
     </ul>
   </section>
 
@@ -38,7 +38,7 @@
   <section class="card">
     <h2>Intégrité et chaîne d'approvisionnement</h2>
     <ul>
-      <li>Les actions GitHub externes sont épinglées sur des SHA immuables.</li>
+      <li>Les dépendances de livraison sont contrôlées et immobilisées par révision.</li>
       <li>Les tests de fuzzing de sécurité sont exécutés sur des scénarios synthétiques et autorisés.</li>
       <li>Les preuves disposent de contrôles d'intégrité et de provenance.</li>
       <li>Les workflows conservent des permissions minimales et explicites.</li>
@@ -48,23 +48,18 @@
   <section class="card warn">
     <h2>Validation</h2>
     <p>La présence d'un workflow ou d'un document ne suffit pas à déclarer le système validé. La chaîne de preuve requise est : correctif → tests exécutés → CI exécutée → résultats inspectés → validation de sécurité.</p>
-    <p>Un échec avant l'exécution du premier step d'un runner GitHub est classé comme problème d'infrastructure/runner et ne doit pas être présenté comme un échec des tests applicatifs.</p>
+    <p>Un échec avant l'exécution des tests est classé comme problème de chaîne de livraison et ne doit pas être présenté comme un échec applicatif.</p>
   </section>
 
   <section class="card ok">
     <h2>Séparation stricte des projets</h2>
-    <p><strong>Sentinel Quantum Vanguard AI Pro ≠ A KI PRI SA YÉ.</strong></p>
-    <p>Aucune dépendance, donnée, configuration, secret, intégration ou déploiement d'A KI PRI SA YÉ ne doit être introduit dans Sentinel.</p>
+    <p><strong>Sentinel Quantum Vanguard AI Pro reste indépendant des projets tiers.</strong></p>
+    <p>Aucune dépendance, donnée, configuration, secret, intégration ou déploiement non autorisé ne doit être introduit dans Sentinel.</p>
   </section>
 
   <section class="card">
     <h2>Références</h2>
-    <ul>
-      <li><a href="../AUDIT.md">AUDIT.md</a></li>
-      <li><a href="../SECURITY.md">SECURITY.md</a></li>
-      <li><a href="../ARCHITECTURE_REFERENCE.md">ARCHITECTURE_REFERENCE.md</a></li>
-      <li><a href="../VALIDATION_ARCHITECTURE.md">Architecture de validation</a></li>
-    </ul>
+    <p>Les politiques de sécurité et les critères de validation applicables sont maintenus dans les espaces documentaires autorisés.</p>
   </section>
 </main>
 </body>
