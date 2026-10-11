@@ -53,4 +53,4 @@ jobs:
       - name: Verify container imports production app
         run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; assert app_redis.app is not None"
       - name: Verify Collective Defense routes are packaged
-        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; paths={r.path for r in app_redis.app.routes}; assert '/v1/intelligence/lookup' in paths; assert '/v1/intelligence/lookup-fingerprint' in paths; assert '/v1/intelligence/report-public' in paths; assert '/v1/intelligence/relationships/report' in paths; assert '/v1/intelligence/graph/lookup' in paths; assert '/v1/intelligence/exposures/report' in paths; assert '/v1/intelligence/exposures/lookup' in paths"
+        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; paths=set(app_redis.app.openapi()['paths']); assert {'/v1/intelligence/lookup', '/v1/intelligence/lookup-fingerprint', '/v1/intelligence/report-public', '/v1/intelligence/relationships/report', '/v1/intelligence/graph/lookup', '/v1/intelligence/exposures/report', '/v1/intelligence/exposures/lookup'} <= paths"
