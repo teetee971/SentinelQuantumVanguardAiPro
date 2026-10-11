@@ -202,10 +202,30 @@ assert_sms_role_held() {
   role_holders android.app.role.SMS | grep -Fxq "$PACKAGE"
 }
 
-permission_granted() {
+permission_state() {
   local permission="$1"
-  adb shell dumpsys package "$PACKAGE" 2>/dev/null |
-    grep -E "${permission}: granted=true" >/dev/null
+  local dump=""
+  local status=0
+  set +e
+  dump="$(adb shell dumpsys package "$PACKAGE" 2>/dev/null | tr -d '\r')"
+  status=$?
+  set -e
+  if [[ "$status" -ne 0 ]]; then
+    return 2
+  fi
+  if grep -Fq "${permission}: granted=true" <<< "$dump"; then
+    printf 'granted\n'
+    return 0
+  fi
+  if grep -Fq "${permission}: granted=false" <<< "$dump"; then
+    printf 'denied\n'
+    return 0
+  fi
+  return 2
+}
+
+permission_granted() {
+  [[ "$(permission_state "$1")" == 'granted' ]]
 }
 
 probe_pm_revoke_send_sms() {
@@ -214,13 +234,40 @@ probe_pm_revoke_send_sms() {
   adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS > "$output" 2>&1
   local status=$?
   set -e
-  sleep 1
-  if permission_granted android.permission.SEND_SMS; then
-    printf 'pm_revoke_status=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-  else
+  local state='unknown'
+  local observed_denied=false
+  local observed_granted=false
+  local observed_unknown=false
+  # RoleController may briefly expose a revoked runtime permission before restoring the
+  # role-managed grant. Require a stable, readable state across the settling window so a
+  # transient false cannot be mistaken for durable denial evidence.
+  for attempt in $(seq 1 6); do
+    set +e
+    state="$(permission_state android.permission.SEND_SMS)"
+    local state_status=$?
+    set -e
+    if [[ "$state_status" -ne 0 ]]; then
+      state='unknown'
+      observed_unknown=true
+    elif [[ "$state" == 'denied' ]]; then
+      observed_denied=true
+    elif [[ "$state" == 'granted' ]]; then
+      observed_granted=true
+    else
+      state='unknown'
+      observed_unknown=true
+    fi
+    printf 'permission_state_attempt=%s state=%s\n' "$attempt" "$state" >> "$output"
+    if [[ "$attempt" -lt 6 ]]; then sleep 0.5; fi
+  done
+  if [[ "$state" == 'denied' && "$observed_denied" == true && "$observed_granted" == false && "$observed_unknown" == false ]]; then
     printf 'pm_revoke_status=%s\nobservable=true\n' "$status" >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=true
+  else
+    local reason='permission_state_not_stable'
+    if [[ "$observed_granted" == true ]]; then reason='role_controller_restored_runtime_permission'; fi
+    printf 'pm_revoke_status=%s\nobservable=false\nreason=%s\n' "$status" "$reason" >> "$output"
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
   fi
 }
 
