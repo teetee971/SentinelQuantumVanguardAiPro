@@ -20,6 +20,9 @@ const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.
 
 test('runtime setup installs after UTP cleanup, then rejects failed or unconfirmed data/log resets', () => {
   const runtime = workflow.split('- name: Run emulator application/runtime qualification\n')[1];
+  assert.match(runtime, /RUNTIME_LOG="\$RUNNER_TEMP\/phone-core-emulation-api\$\{API_LEVEL\}-runtime\.log"/);
+  assert.match(runtime, /exec > >\(tee "\$RUNTIME_LOG"\) 2>&1/);
+  assert.match(workflow, /phone-core-emulation-api\$\{\{ matrix\.api_level \}\}-runtime\.log/);
   const start = runtime.indexOf('          adb install -r');
   const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
   assert.ok(start >= 0 && end > start);

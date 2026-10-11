@@ -353,6 +353,8 @@ jobs:
           INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
         run: |
           set -euo pipefail
+          RUNTIME_LOG="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}-runtime.log"
+          exec > >(tee "$RUNTIME_LOG") 2>&1
           if [[ "$API_LEVEL" == "37" ]]; then
             # API 37 has repeatedly failed inside this step while instrumentation passes. Keep
             # command-level evidence for the runtime qualification without changing lower API
@@ -671,6 +673,7 @@ jobs:
             ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/
             ${{ runner.temp }}/sentinel-emulator-api${{ matrix.api_level }}.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api_level }}-tests.log
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}-runtime.log
             native-android-app/app/build/reports/androidTests/connected/
             native-android-app/app/build/outputs/androidTest-results/connected/
           if-no-files-found: warn
