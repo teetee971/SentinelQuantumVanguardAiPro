@@ -481,7 +481,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Session d’appel/PSTN non raccordée. La passerelle VoIP/PSTN, la validation physique et la certification d’appel restent nécessaires avant toute activation commerciale.",
+                                "Session d’appel/PSTN non raccordée. Aucun bouton d’appel n’est affiché pour joindre un numéro mobile. La passerelle VoIP/PSTN, la validation physique et la certification d’appel restent nécessaires avant toute activation commerciale.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
