@@ -45,4 +45,18 @@ class EmailHeaderAnalyzerTest {
         assertTrue(EmailHeaderAnalyzer.analyze(plain).anomalies.none { it.code == "MISSING_MIME_VERSION" })
         assertTrue(EmailHeaderAnalyzer.analyze(mime).anomalies.any { it.code == "MISSING_MIME_VERSION" })
     }
+
+    @Test fun rejectsOversizedUnfoldedHeaderValues() {
+        val valid = "Received: " + "a".repeat(8180) + "\n b"
+        val oversized = "Received: " + "a".repeat(8181) + "\n b"
+        assertTrue(EmailHeaderAnalyzer.parseHeaders(valid) != null)
+        assertTrue(EmailHeaderAnalyzer.parseHeaders(oversized) == null)
+        assertTrue(EmailHeaderAnalyzer.parseHeaders("Subject: x\n" + " y\n".repeat(5000)) == null)
+    }
+
+    @Test fun preservesOrdinaryHeaderFolding() {
+        val parsed = EmailHeaderAnalyzer.parseHeaders("Subject: hello\n world")
+        assertEquals(listOf("hello world"), parsed?.get("subject"))
+    }
+
 }
