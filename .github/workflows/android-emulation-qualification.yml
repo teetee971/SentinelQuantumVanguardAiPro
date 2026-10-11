@@ -353,6 +353,13 @@ jobs:
           INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
         run: |
           set -euo pipefail
+          if [[ "$API_LEVEL" == "37" ]]; then
+            # API 37 has repeatedly failed inside this step while instrumentation passes. Keep
+            # command-level evidence for the runtime qualification without changing lower API
+            # lanes or relaxing any assertion.
+            export PS4='+ [phone-core-api37] ${BASH_SOURCE}:${LINENO}: '
+            set -x
+          fi
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
           APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' -type f -print -quit)
           test -n "$APK_PATH"
@@ -370,8 +377,13 @@ jobs:
           if [[ "$API_LEVEL" -ge 29 ]]; then
             # Role establishment and proof are owned by the runtime scripts. They use the modern
             # get-role-holders shell command when available and a dumpsys-role proof on API 29.
-            bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-            bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+            if [[ "$API_LEVEL" == "37" ]]; then
+              bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+            else
+              bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+            fi
           else
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1
