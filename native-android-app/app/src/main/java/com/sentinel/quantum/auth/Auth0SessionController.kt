@@ -55,6 +55,30 @@ class Auth0SessionController(context: Context) {
         })
     }
 
+    /**
+     * Reads the current access token from Auth0's encrypted credentials store.
+     * The token is delivered only to the in-memory caller and is never persisted here.
+     */
+    fun accessToken(
+        onSuccess: (String) -> Unit,
+        onFailure: (String?) -> Unit
+    ) {
+        credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+            override fun onSuccess(result: Credentials) {
+                val token = result.accessToken
+                if (token.isNullOrBlank()) {
+                    onFailure("AUTH0_ACCESS_TOKEN_MISSING")
+                } else {
+                    onSuccess(token)
+                }
+            }
+
+            override fun onFailure(error: CredentialsManagerException) {
+                onFailure(error.message)
+            }
+        })
+    }
+
     fun login(
         activity: Activity,
         onSuccess: (Auth0UserSummary) -> Unit,
