@@ -71,6 +71,7 @@ jobs:
           AVD_NAME="sentinel_instrumentation_api${API_LEVEL}"
           EMULATOR_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-emulator.log"
           INSTRUMENTATION_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-tests.log"
+          DEPENDENCY_RESOLUTION_LOG="$RUNNER_TEMP/sentinel-instrumentation-api${API_LEVEL}-dependencies.log"
 
           echo "Qualifying runtime API ${API_LEVEL} with SDK package level ${SDK_PACKAGE_LEVEL}."
 
@@ -172,11 +173,16 @@ jobs:
             # Resolve AndroidTest artifacts before the manual API 24 build so a
             # transient Maven outage fails fast instead of holding the runner
             # through the full job timeout.
-            if ! timeout 300s ./gradlew dependencies \
+            set +e
+            timeout 300s ./gradlew dependencies \
                 --configuration debugAndroidTestRuntimeClasspath \
-                --no-daemon --console=plain; then
+                --no-daemon --console=plain 2>&1 |
+              tee "$DEPENDENCY_RESOLUTION_LOG"
+            DEPENDENCY_RESOLUTION_STATUS=${PIPESTATUS[0]}
+            set -e
+            if [[ "$DEPENDENCY_RESOLUTION_STATUS" -ne 0 ]]; then
               echo "Android API 24 test dependencies could not be resolved within 5 minutes."
-              exit 1
+              exit "$DEPENDENCY_RESOLUTION_STATUS"
             fi
 
             ./gradlew assembleDebug assembleDebugAndroidTest \
@@ -240,5 +246,6 @@ jobs:
             native-android-app/app/build/outputs/androidTest-results/connected/
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-emulator.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-tests.log
+            ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-dependencies.log
           if-no-files-found: warn
           retention-days: 14
