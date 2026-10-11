@@ -174,7 +174,7 @@ jobs:
             # transient Maven outage fails fast instead of holding the runner
             # through the full job timeout.
             set +e
-            timeout 300s ./gradlew dependencies \
+            timeout 300s ./gradlew :app:dependencies \
                 --configuration debugAndroidTestRuntimeClasspath \
                 --no-daemon --console=plain 2>&1 |
               tee "$DEPENDENCY_RESOLUTION_LOG"
