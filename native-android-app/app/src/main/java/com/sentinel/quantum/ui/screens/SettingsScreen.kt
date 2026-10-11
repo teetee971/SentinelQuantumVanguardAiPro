@@ -36,6 +36,7 @@ import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.SentinelPreferencesBackup
+import com.sentinel.quantum.data.SentinelUninstallFlow
 import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.CallBlocklistStore
@@ -81,6 +82,8 @@ fun SettingsScreen(
     }
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
+    var showUninstallDialog by remember { mutableStateOf(false) }
+    var uninstallAfterBackup by remember { mutableStateOf(false) }
     var externalLinkStatus by remember { mutableStateOf<String?>(null) }
     var authUser by remember { mutableStateOf<Auth0UserSummary?>(null) }
     var authLoading by remember { mutableStateOf(true) }
@@ -108,7 +111,7 @@ fun SettingsScreen(
     ) { uri ->
         if (uri != null) {
             ioScope.launch {
-                backupStatus = withContext(Dispatchers.IO) {
+                val exportMessage = withContext(Dispatchers.IO) {
                     runCatching {
                         val snapshot = SentinelPreferencesBackup.Snapshot(
                             themeMode = themeMode,
@@ -130,7 +133,24 @@ fun SettingsScreen(
                         "Échec de l’export de la sauvegarde locale."
                     }
                 }
+                val exportSucceeded = exportMessage == "Sauvegarde locale exportée."
+                backupStatus = exportMessage
+                if (SentinelUninstallFlow.shouldOpenUninstallAfterBackup(uninstallAfterBackup, exportSucceeded)) {
+                    uninstallAfterBackup = false
+                    runCatching {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_DELETE,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                        )
+                    }.onFailure {
+                        backupStatus = "Sauvegarde exportée, mais la confirmation de désinstallation n’a pas pu être ouverte."
+                    }
+                }
             }
+        } else {
+            uninstallAfterBackup = false
         }
     }
     val restoreBackupLauncher = rememberLauncherForActivityResult(
@@ -502,6 +522,15 @@ fun SettingsScreen(
                 onClick = { restoreBackupLauncher.launch(arrayOf("application/json", "text/plain")) },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Restaurer une sauvegarde") }
+            OutlinedButton(
+                onClick = { showUninstallDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Sauvegarder puis désinstaller") }
+            Text(
+                "Cette action exporte d’abord les préférences restaurables, puis ouvre la confirmation Android. Une désinstallation lancée directement depuis les réglages ne peut pas être interceptée par l’application.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             backupStatus?.let {
                 Text(
                     it,
@@ -587,6 +616,7 @@ fun SettingsScreen(
                         )
                     }
                 }
+
             }
 
             HorizontalDivider()
@@ -630,6 +660,30 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    if (showUninstallDialog) {
+        AlertDialog(
+            onDismissRequest = { showUninstallDialog = false },
+            title = { Text("Sauvegarder avant désinstallation ?") },
+            text = {
+                Text(
+                    "Un fichier JSON sera créé avec les préférences restaurables. Les jetons Auth0, les contacts, les SMS/MMS et l’historique d’appels ne seront pas exportés."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUninstallDialog = false
+                        uninstallAfterBackup = true
+                        createBackupLauncher.launch(SentinelUninstallFlow.BACKUP_FILE_NAME)
+                    }
+                ) { Text("Sauvegarder puis continuer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUninstallDialog = false }) { Text("Annuler") }
+            }
+        )
     }
 }
 
