@@ -469,7 +469,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le transport média côté client sont intégrés. Le parcours de session PTT de test est maintenant raccordé, sans ouvrir de chemin vers le réseau téléphonique mobile.",
+                                "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le transport média côté client sont intégrés. Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle : la session PTT ci-dessus reste un diagnostic contrôlé et sans numéro mobile.",
                                 style = MaterialTheme.typography.bodySmall
                             )
                             Text(
@@ -481,7 +481,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "La passerelle VoIP/PSTN, la validation physique et la certification d’appel restent nécessaires avant toute activation commerciale.",
+                                "Session d’appel/PSTN non raccordée. La passerelle VoIP/PSTN, la validation physique et la certification d’appel restent nécessaires avant toute activation commerciale.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
