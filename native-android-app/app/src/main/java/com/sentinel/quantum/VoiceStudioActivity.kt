@@ -38,15 +38,13 @@ import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
-import com.sentinel.quantum.voice.PushToTalkSession
 import com.sentinel.quantum.voice.SentinelLiveKitCallTransport
 import com.sentinel.quantum.voice.VoiceAddonPolicy
 import com.sentinel.quantum.voice.VoiceSessionClient
+import com.sentinel.quantum.voice.VoiceSessionCoordinator
 import com.sentinel.quantum.voice.VoiceSessionRequest
 import com.sentinel.quantum.voice.LiveKitVoiceAudioProcessor
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,24 +53,19 @@ class VoiceStudioActivity : ComponentActivity() {
     private var player: MediaPlayer? = null
     private lateinit var previewFile: File
     private lateinit var authController: Auth0SessionController
-    private lateinit var voiceSessionClient: VoiceSessionClient
-    private lateinit var voiceTransport: SentinelLiveKitCallTransport
-    private var activeVoiceSession: ActiveVoiceSession? = null
-
-    private data class ActiveVoiceSession(
-        val sessionId: String,
-        val authAccessToken: String,
-        val pushToTalk: PushToTalkSession
-    )
+    private lateinit var voiceSessionCoordinator: VoiceSessionCoordinator
+    private var activeVoiceSession: VoiceSessionCoordinator.ActiveSession? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         previewFile = File(cacheDir, "voice-studio-preview.m4a")
         authController = Auth0SessionController(this)
-        voiceSessionClient = VoiceSessionClient()
-        voiceTransport = SentinelLiveKitCallTransport(
-            this,
-            LiveKitVoiceAudioProcessor()
+        voiceSessionCoordinator = VoiceSessionCoordinator(
+            api = VoiceSessionClient(),
+            transport = SentinelLiveKitCallTransport(
+                this,
+                LiveKitVoiceAudioProcessor()
+            )
         )
         setContent {
             SentinelQuantumTheme {
@@ -131,47 +124,25 @@ class VoiceStudioActivity : ComponentActivity() {
 
             sessionBusy = true
             sessionStatus = "Récupération du jeton Auth0…"
-            voiceTransport.configureVoice(enabled = true, effect = selectedEffect)
             authController.accessToken(
                 onSuccess = { authToken ->
                     lifecycleScope.launch {
                         sessionStatus = "Création de la session sécurisée…"
-                        val created = withContext(Dispatchers.IO) {
-                            voiceSessionClient.createSession(
-                                accessToken = authToken,
-                                request = VoiceSessionRequest(
-                                    roomId = DEMO_ROOM_ID,
-                                    deviceId = deviceId,
-                                    appVersion = BuildConfig.VERSION_NAME
-                                )
-                            )
-                        }
+                        val created = voiceSessionCoordinator.connect(
+                            accessToken = authToken,
+                            request = VoiceSessionRequest(
+                                roomId = DEMO_ROOM_ID,
+                                deviceId = deviceId,
+                                appVersion = BuildConfig.VERSION_NAME
+                            ),
+                            effect = selectedEffect
+                        )
                         created.fold(
-                            onSuccess = { session ->
-                                sessionStatus = "Connexion au transport LiveKit…"
-                                val connected = voiceTransport.connectForPushToTalk(
-                                    SentinelLiveKitCallTransport.Credentials(
-                                        serverUrl = session.transport.serverUrl,
-                                        accessToken = session.transport.accessToken
-                                    )
-                                )
-                                connected.fold(
-                                    onSuccess = { pushToTalk ->
-                                        activeVoiceSession = ActiveVoiceSession(
-                                            sessionId = session.sessionId,
-                                            authAccessToken = authToken,
-                                            pushToTalk = pushToTalk
-                                        )
-                                        sessionConnected = true
-                                        sessionBusy = false
-                                        sessionStatus = "Session PTT connectée dans la salle de test."
-                                    },
-                                    onFailure = { failure ->
-                                        closeRemoteSessionBestEffort(authToken, session.sessionId)
-                                        sessionBusy = false
-                                        sessionStatus = "Connexion LiveKit impossible : ${failure.message.orEmpty()}"
-                                    }
-                                )
+                            onSuccess = { active ->
+                                activeVoiceSession = active
+                                sessionConnected = true
+                                sessionBusy = false
+                                sessionStatus = "Session PTT connectée dans la salle de test."
                             },
                             onFailure = { failure ->
                                 sessionBusy = false
@@ -588,22 +559,9 @@ class VoiceStudioActivity : ComponentActivity() {
             return
         }
         lifecycleScope.launch {
-            runCatching { active.pushToTalk.close() }
-            runCatching { voiceTransport.disconnect() }
-            withContext(Dispatchers.IO) {
-                voiceSessionClient.closeSession(
-                    accessToken = active.authAccessToken,
-                    sessionId = active.sessionId
-                )
-            }
+            voiceSessionCoordinator.disconnect()
             activeVoiceSession = null
             onFinished()
-        }
-    }
-
-    private fun closeRemoteSessionBestEffort(accessToken: String, sessionId: String) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            voiceSessionClient.closeSession(accessToken, sessionId)
         }
     }
 
@@ -611,13 +569,9 @@ class VoiceStudioActivity : ComponentActivity() {
         stopRecording()
         stopPlayback()
         runCatching { previewFile.delete() }
-        activeVoiceSession?.let { active ->
+        if (activeVoiceSession != null) {
             lifecycleScope.launch {
-                runCatching { active.pushToTalk.close() }
-                runCatching { voiceTransport.disconnect() }
-                withContext(Dispatchers.IO) {
-                    voiceSessionClient.closeSession(active.authAccessToken, active.sessionId)
-                }
+                voiceSessionCoordinator.disconnect()
                 activeVoiceSession = null
             }
         }

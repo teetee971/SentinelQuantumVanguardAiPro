@@ -64,13 +64,13 @@ data class VoiceSession(
 class VoiceSessionClient(
     endpointUrl: String = DEFAULT_ENDPOINT,
     private val client: OkHttpClient = defaultClient()
-) {
+) : VoiceSessionApi {
     private val endpoint: HttpUrl = endpoint(endpointUrl)
 
-    fun createSession(
+    override fun createSession(
         accessToken: String,
         request: VoiceSessionRequest,
-        idempotencyKey: String = UUID.randomUUID().toString()
+        idempotencyKey: String
     ): Result<VoiceSession> {
         if (accessToken.isBlank() || accessToken.any(Char::isWhitespace)) {
             return Result.failure(IllegalArgumentException("VOICE_ACCESS_TOKEN_INVALID"))
@@ -122,10 +122,10 @@ class VoiceSessionClient(
         }
     }
 
-    fun closeSession(
+    override fun closeSession(
         accessToken: String,
         sessionId: String,
-        idempotencyKey: String = UUID.randomUUID().toString()
+        idempotencyKey: String
     ): Result<Unit> {
         if (accessToken.isBlank() || accessToken.any(Char::isWhitespace)) {
             return Result.failure(IllegalArgumentException("VOICE_ACCESS_TOKEN_INVALID"))
@@ -163,6 +163,16 @@ class VoiceSessionClient(
             Result.failure(failure)
         }
     }
+
+    fun createSession(
+        accessToken: String,
+        request: VoiceSessionRequest
+    ): Result<VoiceSession> = createSession(accessToken, request, UUID.randomUUID().toString())
+
+    fun closeSession(
+        accessToken: String,
+        sessionId: String
+    ): Result<Unit> = closeSession(accessToken, sessionId, UUID.randomUUID().toString())
 
     private fun parseSession(raw: String): Result<VoiceSession> = runCatching {
         val root = JSONObject(raw)
