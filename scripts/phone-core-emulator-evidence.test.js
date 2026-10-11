@@ -45,6 +45,15 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
   assert.doesNotMatch(runtime, /adb shell am start[^\n]*min-sdk-(?:first|second)-launch[^\n]*\|\| true/);
 });
 
+test('API 24 connected instrumentation bounds the Gradle build time', () => {
+  const instrumentation = workflow.split('- name: Run connected instrumentation suite\n')[1];
+  const api24Block = instrumentation.split('          else\n')[0];
+  assert.match(
+    api24Block,
+    /timeout 600s \.\/gradlew :app:assembleDebug :app:assembleDebugAndroidTest \\\n\s+--stacktrace --no-daemon/
+  );
+});
+
 for (const [name, dump, status, holders] of [
   ['complete empty API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\n}\n{\nname=android.app.role.SMS\nholders=com.sentinel.quantum\n} ] }', 0, ''],
   ['complete held API 29 role', 'ROLE MANAGER STATE: { user_id=0 roles=[ {\nname=android.app.role.CALL_SCREENING\nholders=com.sentinel.quantum\n} ] }', 0, 'com.sentinel.quantum'],
