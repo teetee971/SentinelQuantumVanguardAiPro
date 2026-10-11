@@ -30,3 +30,13 @@ test('Android emulator qualification covers minimum, current and newest runtime 
 test('Android instrumentation leaves enough time for the uncached API 24 lane', () => {
   assert.match(instrumentationWorkflow, /timeout-minutes:\s*45\b/);
 });
+
+test('API 24 bounds dependency resolution before using an offline test build', () => {
+  const api24Block = instrumentationWorkflow.match(
+    /if \[\[ "\$API_LEVEL" == "24" \]\]; then[\s\S]*?else\n/
+  )?.[0];
+  assert.ok(api24Block, 'API 24 workflow branch must remain explicit');
+  assert.match(api24Block, /timeout 300s \.\/gradlew dependencies/);
+  assert.match(api24Block, /--configuration debugAndroidTestRuntimeClasspath/);
+  assert.match(api24Block, /assembleDebug assembleDebugAndroidTest[\s\S]*--offline/);
+});

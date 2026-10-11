@@ -169,7 +169,18 @@ jobs:
             # them explicitly, then run the AndroidJUnitRunner through adb with a
             # hard watchdog. This keeps API 24 blocking without accepting a 45 min
             # hung Gradle session as a qualification result.
-            ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon
+            # Resolve AndroidTest artifacts before the manual API 24 build so a
+            # transient Maven outage fails fast instead of holding the runner
+            # through the full job timeout.
+            if ! timeout 300s ./gradlew dependencies \
+                --configuration debugAndroidTestRuntimeClasspath \
+                --no-daemon --console=plain; then
+              echo "Android API 24 test dependencies could not be resolved within 5 minutes."
+              exit 1
+            fi
+
+            ./gradlew assembleDebug assembleDebugAndroidTest \
+              --stacktrace --no-daemon --offline
 
             APP_APK="app/build/outputs/apk/debug/app-debug.apk"
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
