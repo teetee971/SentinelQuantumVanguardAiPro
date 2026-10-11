@@ -26,3 +26,7 @@ test('Android emulator qualification covers minimum, current and newest runtime 
   assert.match(instrumentationWorkflow, /connectedDebugAndroidTest/);
   assert.match(instrumentationWorkflow, /ACTUAL_API=.*ro\.build\.version\.sdk/);
 });
+
+test('Android instrumentation leaves enough time for the uncached API 24 lane', () => {
+  assert.match(instrumentationWorkflow, /timeout-minutes:\s*45\b/);
+});

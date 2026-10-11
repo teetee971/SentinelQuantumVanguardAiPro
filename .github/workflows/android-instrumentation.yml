@@ -20,7 +20,10 @@ jobs:
   connected-tests:
     name: Compose instrumentation — ${{ matrix.android-version }} / API ${{ matrix.api-level }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # API 24 installs a fresh emulator image and builds both app APKs before
+    # the explicit instrumentation watchdog starts. Keep enough host time for
+    # that uncached lane without weakening the 15-minute test watchdog below.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
