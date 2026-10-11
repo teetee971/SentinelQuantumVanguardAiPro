@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.io.IOException
 import java.net.URI
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -90,22 +91,34 @@ class VoiceSessionClient(
             .post(request.toJson().toRequestBody(JSON_MEDIA_TYPE))
             .build()
 
-        return try {
-            client.newCall(httpRequest).execute().use { response ->
-                if (response.request.url != endpoint) {
-                    return Result.failure(SecurityException("VOICE_SESSION_ORIGIN_CHANGED"))
+        var attempt = 0
+        while (true) {
+            try {
+                client.newCall(httpRequest).execute().use { response ->
+                    if (response.request.url != endpoint) {
+                        return Result.failure(SecurityException("VOICE_SESSION_ORIGIN_CHANGED"))
+                    }
+                    if (!response.isSuccessful) {
+                        return Result.failure(IllegalStateException("VOICE_SESSION_HTTP_${response.code}"))
+                    }
+                    val body = response.body
+                    if (body.contentLength() !in 2..MAX_RESPONSE_BYTES) {
+                        return Result.failure(IllegalStateException("VOICE_SESSION_RESPONSE_SIZE_INVALID"))
+                    }
+                    return parseSession(body.string())
                 }
-                if (!response.isSuccessful) {
-                    return Result.failure(IllegalStateException("VOICE_SESSION_HTTP_${response.code}"))
+            } catch (failure: IOException) {
+                attempt += 1
+                if (attempt >= MAX_NETWORK_ATTEMPTS) {
+                    return Result.failure(failure)
                 }
-                val body = response.body
-                if (body.contentLength() !in 2..MAX_RESPONSE_BYTES) {
-                    return Result.failure(IllegalStateException("VOICE_SESSION_RESPONSE_SIZE_INVALID"))
+                try {
+                    Thread.sleep(RETRY_BACKOFF_MILLIS)
+                } catch (interrupted: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    return Result.failure(interrupted)
                 }
-                parseSession(body.string())
             }
-        } catch (failure: Exception) {
-            Result.failure(failure)
         }
     }
 
@@ -181,6 +194,8 @@ class VoiceSessionClient(
         const val DEFAULT_ENDPOINT = "https://sentinel-voice-api.onrender.com"
         private const val VOICE_HOST = "sentinel-voice-api.onrender.com"
         private const val MAX_RESPONSE_BYTES = 65_536L
+        private const val MAX_NETWORK_ATTEMPTS = 2
+        private const val RETRY_BACKOFF_MILLIS = 250L
         private val ROOM_ID_PATTERN = Regex("^[A-Za-z0-9._:-]{1,128}$")
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
@@ -201,9 +216,9 @@ class VoiceSessionClient(
         }
 
         private fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(4, TimeUnit.SECONDS)
-            .readTimeout(8, TimeUnit.SECONDS)
-            .callTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .callTimeout(30, TimeUnit.SECONDS)
             .followRedirects(false)
             .followSslRedirects(false)
             .build()
