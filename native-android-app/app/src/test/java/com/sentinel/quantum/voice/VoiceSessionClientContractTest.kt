@@ -7,6 +7,16 @@ import org.junit.Test
 
 class VoiceSessionClientContractTest {
     @Test
+    fun accepts_the_render_root_endpoint_and_appends_the_voice_session_path() {
+        val endpoint = VoiceSessionClient.endpoint(VoiceSessionClient.DEFAULT_ENDPOINT)
+
+        assertEquals(
+            "/v1/voice/sessions",
+            endpoint.encodedPath
+        )
+    }
+
+    @Test
     fun builds_the_authenticated_ptt_room_request() {
         val request = VoiceSessionRequest(
             roomId = "demo-room",

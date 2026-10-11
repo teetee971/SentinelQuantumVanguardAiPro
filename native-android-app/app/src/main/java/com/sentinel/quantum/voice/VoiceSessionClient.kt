@@ -191,7 +191,7 @@ class VoiceSessionClient(
                 parsed.isHttps &&
                     parsed.port == 443 &&
                     parsed.host == VOICE_HOST &&
-                    parsed.encodedPath.isEmpty() &&
+                    parsed.encodedPath == "/" &&
                     parsed.query == null &&
                     parsed.fragment == null &&
                     parsed.username.isEmpty() &&
