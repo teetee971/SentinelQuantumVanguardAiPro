@@ -9,6 +9,7 @@ Sentinel Quantum Vanguard AI Pro est une suite de cybersécurité défensive con
 Le produit réunit des expériences Web et mobile autour de plusieurs objectifs :
 
 - analyse prudente des informations téléphoniques publiques ;
+- synchronisation de cet index avec Android reste à construire ;
 - protection et aide à la décision pour les appels et les messages ;
 - traitement prudent des messages multimédias au moyen d’un décodeur WSP borné, d’une validation fail-closed et de formats d’aperçu limités (JPEG, PNG, GIF et WebP) ; la validation réelle sur appareil et opérateur reste obligatoire ;
 - signalement clair des incertitudes et des limites ;
