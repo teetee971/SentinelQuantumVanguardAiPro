@@ -131,8 +131,8 @@ Une modification du code ou des dépendances ne vaut pas validation CI tant que 
 
 ## Version actuelle
 
-- Version code : 7
-- Version nom : 1.0.6
+- Version code : 10
+- Version nom : 1.0.9
 - Package : `com.sentinel.quantum`
 - `minSdk` : 24
 - `targetSdk` : 36
