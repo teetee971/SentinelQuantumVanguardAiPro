@@ -199,6 +199,19 @@ printf 'observable=%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('runtime denial restored on app relaunch falls back to the AppOp proof', () => {
+  const start = revocation.indexOf('if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" == "true" ]]');
+  const end = revocation.indexOf('\n# ROLE_SMS revocation:', start);
+  assert.ok(start >= 0 && end > start);
+  const effectivePermissionBlock = revocation.slice(start, end);
+  assert.match(
+    effectivePermissionBlock,
+    /if ! assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-after-launch\.txt"; then/
+  );
+  assert.match(effectivePermissionBlock, /SEND_SMS_PM_REVOCATION_OBSERVABLE=false/);
+  assert.match(effectivePermissionBlock, /use_send_sms_appop_probe/);
+});
+
 function fixture(overrides = {}, alter = () => {}) {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-report-test-'));
   const output = join(dir, 'evidence');
