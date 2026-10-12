@@ -371,11 +371,11 @@ jobs:
             # Role establishment and proof are owned by the runtime scripts. They use the modern
             # get-role-holders shell command when available and a dumpsys-role proof on API 29.
             if [[ "$API_LEVEL" == "37" ]]; then
-              bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-              bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
             else
-              bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-              bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
             fi
           else
             adb shell am force-stop com.sentinel.quantum
