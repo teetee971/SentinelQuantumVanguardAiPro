@@ -170,21 +170,22 @@ jobs:
             # them explicitly, then run the AndroidJUnitRunner through adb with a
             # hard watchdog. This keeps API 24 blocking without accepting a 45 min
             # hung Gradle session as a qualification result.
-            # Resolve every compile/runtime classpath needed by the manual API 24
-            # build before switching Gradle to offline mode. This makes the lane
-            # deterministic even when the runner starts with a cold Gradle cache.
+            # Warm the exact app and androidTest build online so Gradle/AGP must
+            # materialize every JAR/AAR and transform input actually consumed by
+            # the build. Then delete build outputs and prove the same APKs rebuild
+            # with network access disabled through Gradle's offline mode.
             set +e
-            timeout 300s ./gradlew :app:dependencies \
-                --configuration debugAndroidTestRuntimeClasspath \
-                :wearable-security:dependencies --configuration compileClasspath \
-                --no-daemon --console=plain 2>&1 |
+            timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest \
+              --stacktrace --no-daemon 2>&1 |
               tee "$DEPENDENCY_RESOLUTION_LOG"
-            DEPENDENCY_RESOLUTION_STATUS=${PIPESTATUS[0]}
+            WARMUP_STATUS=${PIPESTATUS[0]}
             set -e
-            if [[ "$DEPENDENCY_RESOLUTION_STATUS" -ne 0 ]]; then
-              echo "Android API 24 test dependencies could not be resolved within 5 minutes."
-              exit "$DEPENDENCY_RESOLUTION_STATUS"
+            if [[ "$WARMUP_STATUS" -ne 0 ]]; then
+              echo "Android API 24 artifact warm-up failed or exceeded 10 minutes."
+              exit "$WARMUP_STATUS"
             fi
+
+            timeout 300s ./gradlew clean --no-daemon
 
             timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest \
               --stacktrace --no-daemon --offline
