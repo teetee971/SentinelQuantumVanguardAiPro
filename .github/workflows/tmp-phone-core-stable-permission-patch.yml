@@ -67,14 +67,21 @@ jobs:
           )
           PY
 
-      - name: Commit exact patch and remove temporary workflow
+      - name: Commit revocation script only
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/tmp-phone-core-stable-permission-patch.yml
-          git add scripts/phone-core-emulator-revocation-flow.sh .github/workflows/android-emulation-qualification.yml
+          git add scripts/phone-core-emulator-revocation-flow.sh
           git diff --cached --check
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git commit -m "fix(phone-core): stabilize effective permission probe"
+          git commit -m "fix(phone-core): add stable effective permission fallback"
           git push origin HEAD:fix/phone-core-stable-effective-permission-probe
+
+      - name: Export patched workflow
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: phone-core-stable-permission-workflow
+          path: .github/workflows/android-emulation-qualification.yml
+          if-no-files-found: error
+          retention-days: 1
