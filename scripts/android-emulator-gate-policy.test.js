@@ -42,5 +42,14 @@ test('API 24 bounds dependency resolution before using an offline test build', (
   assert.match(api24Block, /tee "\$DEPENDENCY_RESOLUTION_LOG"/);
   assert.match(api24Block, /assembleDebug assembleDebugAndroidTest[\s\S]*--offline/);
   assert.match(api24Block, /timeout 600s \.\/gradlew assembleDebug assembleDebugAndroidTest/);
+  const normalizedApi24Block = api24Block.replace(/\\\s*/g, ' ').replace(/\s+/g, ' ');
+  const onlineBuild = normalizedApi24Block.indexOf(
+    'timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon'
+  );
+  const offlineBuild = normalizedApi24Block.indexOf(
+    'timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon --offline'
+  );
+  assert.ok(onlineBuild >= 0, 'API 24 must warm the complete APK graph with network access');
+  assert.ok(offlineBuild > onlineBuild, 'offline API 24 build must follow the online warm-up');
   assert.match(instrumentationWorkflow, /sentinel-instrumentation-api\$\{API_LEVEL\}-dependencies\.log/);
 });

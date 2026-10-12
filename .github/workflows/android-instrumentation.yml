@@ -185,6 +185,12 @@ jobs:
               exit "$DEPENDENCY_RESOLUTION_STATUS"
             fi
 
+            # Resolving the dependency graph alone does not materialize every AAR used by
+            # AGP's navigation/Compose artifact transforms. Build once with network access so
+            # the subsequent offline build proves that the exact APK graph is reproducible.
+            timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest \
+              --stacktrace --no-daemon
+
             timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest \
               --stacktrace --no-daemon --offline
 
