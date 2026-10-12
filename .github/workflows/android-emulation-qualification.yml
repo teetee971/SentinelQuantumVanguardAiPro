@@ -515,6 +515,16 @@ jobs:
             screenshot('02-incoming-call.png') &&
             screenshot('03-incoming-active-evidence.png') &&
             contains('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE');
+          const api37LimitedEvidence = read('api37-incoming-answer-limited.txt');
+          const api37IncomingAnswerEmulatorLimitation = api === 37 &&
+            api37LimitedEvidence.includes('REQUEST_ACCEPT') &&
+            api37LimitedEvidence.includes('-> ANSWERED') &&
+            api37LimitedEvidence.includes('-> DISCONNECTED') &&
+            api37LimitedEvidence.includes('INCOMING_MISSED') &&
+            api37LimitedEvidence.includes('emulator_limit=api37_incoming_answer_transaction_failed') &&
+            !api37LimitedEvidence.includes('console_gsm_accept_after_answered') &&
+            !api37LimitedEvidence.includes('transport_sync=emulator_console_gsm_accept_after_answered') &&
+            !api37LimitedEvidence.includes('transport_handoff=android17_emulator_unknown_active');
           const outgoingCallObserved = modernPhoneCore &&
             screenshot('05-outgoing-call.png') &&
             contains('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE');
@@ -576,6 +586,7 @@ jobs:
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
+            api37_incoming_answer_emulator_limitation: api === 37 ? api37IncomingAnswerEmulatorLimitation : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
             incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
             sms_all_parts_sent_callback: modernPhoneCore ? smsSentCallbackObserved : null,
@@ -598,13 +609,16 @@ jobs:
             'cold_install_and_relaunch',
             'no_crash_or_anr'
           ];
+          const incomingRequirement = api === 37 && api37IncomingAnswerEmulatorLimitation
+            ? ['api37_incoming_answer_emulator_limitation']
+            : ['incoming_call_telecom_flow'];
           const required = api === 24
             ? [...commonRequired, 'min_sdk_cold_launch']
             : [
                 ...commonRequired,
                 'phone_core_setup_resume',
                 'synthetic_call_screening_observed',
-                'incoming_call_telecom_flow',
+                ...incomingRequirement,
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',
                 'sms_all_parts_sent_callback',
@@ -626,14 +640,18 @@ jobs:
           if (!nonEmpty('package.txt') || !contains('package.txt', 'com.sentinel.quantum')) {
             evidenceFailures.push('package_state');
           }
+          const limitations = api37IncomingAnswerEmulatorLimitation
+            ? ['api37_incoming_answer_transaction_failed']
+            : [];
 
           const report = {
-            schema_version: 3,
+            schema_version: 4,
             qualification: 'ANDROID_APPLICATION_EMULATION',
             rollout_mode: 'shadow',
             evidence_scope: 'developer_qualification',
             api_level: api,
-            result: evidenceFailures.length === 0 ? 'PASS' : 'FAIL',
+            result: evidenceFailures.length > 0 ? 'FAIL' : limitations.length > 0 ? 'LIMITED' : 'PASS',
+            limitations,
             synthetic_modem: modernPhoneCore,
             physical_modem_claim: false,
             commercial_release_claim: false,
@@ -652,7 +670,8 @@ jobs:
               instrumentation: api === 24 ? 'raw adb instrumentation log' : 'Gradle connected test XML',
               instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
-              revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null
+              revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null,
+              api37_incoming_answer_limitation: api === 37 ? 'api37-incoming-answer-limited.txt' : null
             },
             required_checks_for_lane: required,
             evidence_failures: evidenceFailures,
