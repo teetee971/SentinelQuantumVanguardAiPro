@@ -110,6 +110,8 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
+            val pendingUninstall = uninstallAfterBackup
+            uninstallAfterBackup = false
             ioScope.launch {
                 val exportMessage = withContext(Dispatchers.IO) {
                     runCatching {
@@ -135,8 +137,7 @@ fun SettingsScreen(
                 }
                 val exportSucceeded = exportMessage == "Sauvegarde locale exportée."
                 backupStatus = exportMessage
-                if (SentinelUninstallFlow.shouldOpenUninstallAfterBackup(uninstallAfterBackup, exportSucceeded)) {
-                    uninstallAfterBackup = false
+                if (SentinelUninstallFlow.shouldOpenUninstallAfterBackup(pendingUninstall, exportSucceeded)) {
                     runCatching {
                         context.startActivity(
                             Intent(
