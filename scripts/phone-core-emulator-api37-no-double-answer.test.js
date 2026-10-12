@@ -66,7 +66,7 @@ test('API 37 never races REQUEST_ACCEPT with a host gsm accept', () => {
   );
 });
 
-test('API 37 synchronizes the synthetic modem only after the same Telecom call is ANSWERED', () => {
+test('API 37 never turns Telecom ANSWERED into a host modem acceptance', () => {
   const answeredBlock = blockBetween(
     bridgeSource,
     'if accept_requested and not answered and call_id is not None:',
@@ -75,15 +75,19 @@ test('API 37 synchronizes the synthetic modem only after the same Telecom call i
 
   const answeredGuard = answeredBlock.indexOf('answered_match.group(1) == call_id');
   const answeredState = answeredBlock.indexOf('answered = True');
-  const api37Guard = answeredBlock.indexOf('api == 37', answeredState);
-  const consoleAccept = answeredBlock.indexOf('send_console_accept', api37Guard);
-  const syncMarker = answeredBlock.indexOf('transport_sync=emulator_console_gsm_accept_after_answered', consoleAccept);
 
   assert.ok(answeredGuard >= 0, 'ANSWERED must be correlated to the causal Telecom call');
-  assert.ok(answeredState > answeredGuard, 'the bridge must observe ANSWERED before synchronizing transport');
-  assert.ok(api37Guard > answeredState, 'API 37 synchronization must happen only after ANSWERED');
-  assert.ok(consoleAccept > api37Guard, 'API 37 must then synchronize the emulator GSM transport');
-  assert.ok(syncMarker > consoleAccept, 'the causal synchronization must be recorded as evidence');
+  assert.ok(answeredState > answeredGuard, 'the bridge must observe ANSWERED on the causal call');
+  assert.doesNotMatch(
+    answeredBlock,
+    /api == 37[\s\S]*send_console_accept/,
+    'API 37 must not manufacture ACTIVE by accepting the synthetic modem after Telecom ANSWERED'
+  );
+  assert.doesNotMatch(
+    answeredBlock,
+    /emulator_console_gsm_accept_after_answered/,
+    'API 37 evidence must never claim a host modem answer as app answer success'
+  );
 });
 
 test('the bridge keeps the normal same-call ACTIVE path', () => {
@@ -91,17 +95,33 @@ test('the bridge keeps the normal same-call ACTIVE path', () => {
   assert.match(bridgeSource, /active_match\.group\(1\) == call_id/);
 });
 
-test('API 37 synthetic handoff is accepted only after a tightly correlated emulator recreation', () => {
+test('API 37 records the causal emulator limitation instead of accepting a replacement Telecom call', () => {
   assert.match(bridgeSource, /INCOMING_MISSED/);
-  assert.match(bridgeSource, /UNKNOWN_CALL_RE/);
-  assert.match(bridgeSource, /UNKNOWN_ACTIVE_RE/);
-  assert.match(bridgeSource, /answered_handle/);
-  assert.match(bridgeSource, /handoff_call_id/);
-  assert.match(bridgeSource, /handoff_call_id != call_id/);
-  assert.match(bridgeSource, /unknown_handle == answered_handle/);
-  assert.match(bridgeSource, /handoff_deadline/);
-  assert.match(bridgeSource, /transport_handoff=android17_emulator_unknown_active/);
-  assert.match(bridgeSource, /api == 37/);
+  assert.match(bridgeSource, /emulator_limit=api37_incoming_answer_transaction_failed/);
+  assert.doesNotMatch(bridgeSource, /UNKNOWN_CALL_RE/);
+  assert.doesNotMatch(bridgeSource, /UNKNOWN_ACTIVE_RE/);
+  assert.doesNotMatch(bridgeSource, /transport_handoff=android17_emulator_unknown_active/);
+});
+
+test('API 37 limited incoming-answer path is explicit and still tears down before later probes', () => {
+  const answerTap = flowSource.indexOf('tap_text "phone_core_answer"');
+  const bridgeWait = flowSource.indexOf('wait_api37_incoming_answer_transport_bridge', answerTap);
+  const limitationCheck = flowSource.indexOf(
+    'emulator_limit=api37_incoming_answer_transaction_failed',
+    bridgeWait
+  );
+  const activeProof = flowSource.indexOf(
+    'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
+    bridgeWait
+  );
+  const teardown = flowSource.indexOf('wait_emulator_call_absent "$FLOW_NUMBER"', bridgeWait);
+  const outgoing = flowSource.indexOf('FLOW_OUTGOING_ACTIVE=0', bridgeWait);
+
+  assert.ok(bridgeWait > answerTap);
+  assert.ok(limitationCheck > bridgeWait, 'API 37 limitation must be explicitly recognized by the flow');
+  assert.ok(activeProof > bridgeWait, 'the normal full-proof path must remain present');
+  assert.ok(teardown > limitationCheck, 'limited incoming transport must still be torn down before continuing');
+  assert.ok(outgoing > teardown, 'outgoing qualification must continue only after bounded teardown');
 });
 
 test('composer acquires the process submission gate only after its lifecycle scope starts', () => {
