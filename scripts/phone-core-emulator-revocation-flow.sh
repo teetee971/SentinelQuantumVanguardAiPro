@@ -373,7 +373,9 @@ use_send_sms_appop_probe() {
   EFFECTIVE_PERMISSION_PROBE="SEND_SMS_APP_OP_DENIED"
   EFFECTIVE_PERMISSION_NOTE="ROLE_SMS restored the runtime grant, so the effective-denial proof used the SEND_SMS UID AppOp and verified the protected UI stayed non-actionable."
   set_send_sms_appop ignore "send-sms-appop-deny.txt"
-  assert_send_sms_appop_denied "send-sms-appop-denied-state.txt"
+  if ! assert_send_sms_appop_denied "send-sms-appop-denied-state.txt"; then
+    return 1
+  fi
   if ! permission_granted android.permission.SEND_SMS; then
     echo "SEND_SMS runtime permission unexpectedly disappeared during AppOp-only denial proof."
     exit 1
@@ -381,7 +383,34 @@ use_send_sms_appop_probe() {
   adb shell input keyevent KEYCODE_HOME
   launch_sms_surface "sms-send-appop-denied-launch.txt" warm
   assert_sms_role_held
-  assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"
+  if ! assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"; then
+    return 1
+  fi
+}
+
+assert_read_phone_state_runtime_permission_denied() {
+  local evidence="$1"
+  adb shell dumpsys package "$PACKAGE" > "$OUT_DIR/$evidence" 2>&1
+  if permission_granted android.permission.READ_PHONE_STATE; then
+    echo "READ_PHONE_STATE runtime permission was not observably revoked."
+    grep -E 'android\.permission\.READ_PHONE_STATE:' "$OUT_DIR/$evidence" || true
+    return 1
+  fi
+  if ! grep -Eq 'android\.permission\.READ_PHONE_STATE: granted=false' "$OUT_DIR/$evidence"; then
+    echo "READ_PHONE_STATE runtime permission denial could not be proven from package state."
+    return 1
+  fi
+}
+
+use_read_phone_state_runtime_permission_probe() {
+  EFFECTIVE_PERMISSION_PROBE="READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED"
+  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS remained held while READ_PHONE_STATE was observably revoked across foreground return; Sentinel stayed fail-closed because SIM selection could not be authorized."
+  adb_retry_transport shell pm revoke "$PACKAGE" android.permission.READ_PHONE_STATE
+  assert_read_phone_state_runtime_permission_denied "read-phone-state-runtime-permission-denied-state.txt"
+  adb shell input keyevent KEYCODE_HOME
+  launch_sms_surface "sms-read-phone-state-runtime-permission-denied-launch.txt" warm
+  assert_sms_role_held
+  assert_read_phone_state_runtime_permission_denied "read-phone-state-runtime-permission-denied-after-launch.txt"
 }
 
 launch_sms_surface() {
@@ -524,12 +553,20 @@ if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" == "true" ]]; then
   fi
 fi
 if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" != "true" ]]; then
-  # Some RoleController versions immediately restore the role-managed runtime grant. In that case,
-  # retain the established AppOp probe used by older emulator lanes.
-  use_send_sms_appop_probe
+  # Some RoleController versions restore both the SEND_SMS runtime grant and its AppOp on
+  # foreground return. Prefer the historical AppOp proof when it remains durable; otherwise
+  # fall back to READ_PHONE_STATE, which is independently required for SIM authorization.
+  if ! use_send_sms_appop_probe; then
+    set_send_sms_appop allow "send-sms-appop-fallback-restore.txt"
+    use_read_phone_state_runtime_permission_probe
+  fi
 fi
 
-scroll_until_ui_contains "Envoi SMS : autorisation Android requise."
+if [[ "$EFFECTIVE_PERMISSION_PROBE" == "READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED" ]]; then
+  scroll_until_ui_contains "Détection SIM : accès à l’état téléphonique requis."
+else
+  scroll_until_ui_contains "Envoi SMS : autorisation Android requise."
+fi
 scroll_until_ui_contains "phone_core_sms_send"
 assert_action_disabled "phone_core_sms_send"
 capture 08-sms-effective-permission-denied
@@ -537,7 +574,9 @@ assert_no_crash
 EFFECTIVE_PERMISSION_DENIAL_PROVEN=true
 
 if [[ "$EFFECTIVE_PERMISSION_PROBE" == "SEND_SMS_APP_OP_DENIED" ]]; then
-  set_send_sms_appop default "send-sms-appop-restore.txt"
+  set_send_sms_appop allow "send-sms-appop-restore.txt"
+elif [[ "$EFFECTIVE_PERMISSION_PROBE" == "READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED" ]]; then
+  adb_retry_transport shell pm grant "$PACKAGE" android.permission.READ_PHONE_STATE
 fi
 adb_retry_transport shell pm grant "$PACKAGE" android.permission.SEND_SMS
 
