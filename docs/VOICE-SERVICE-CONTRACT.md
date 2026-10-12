@@ -27,6 +27,14 @@ Toute vérification absente ou indéterminée doit refuser la session. Un
 entitlement client ne remplace jamais l’autorisation d’utiliser un numéro ou un
 réseau tiers.
 
+L’implémentation Android/PTT actuellement livrée est limitée au canal de démonstration
+`sentinel_room`. Elle accepte uniquement l’alias déterministe :
+`demo-` suivi des 32 premiers caractères hexadécimaux de
+`SHA-256("sentinel-voice-demo:v1:" + device_id)`. Le serveur lie ensuite la
+room LiveKit à l’identité authentifiée, à l’appareil et à cet alias. Les
+références de contacts/groupes et `pstn_number` restent des extensions non
+activées tant qu’elles ne disposent pas de leur propre autorisation serveur.
+
 ## API minimale
 
 ### Création d’une session
@@ -46,7 +54,7 @@ Corps minimal :
   "channel": "PTT_ROOM",
   "destination": {
     "type": "sentinel_room",
-    "room_id": "contact-or-group-reference"
+    "room_id": "demo-<device-bound-sha256-prefix>"
   },
   "client": {
     "device_id": "device-reference",
@@ -56,10 +64,8 @@ Corps minimal :
 }
 ```
 
-Pour un appel vers un numéro, `destination.type` devient
-`pstn_number` et le numéro doit être normalisé côté serveur. Le serveur doit
-appliquer les règles d’autorisation, de pays, de coût et de présentation du
-numéro avant toute réservation de route.
+Un client ne doit pas envoyer de référence de contact/groupe arbitraire ni
+`pstn_number` à cette version du service : ces destinations sont refusées.
 
 Réponse `201 Created` :
 
@@ -128,6 +134,9 @@ enregistrer le contenu audio.
   métadonnées d’appel, durées de conservation et suppression.
 - Protéger les endpoints par authentification, autorisation, rate limiting,
   anti-rejeu et idempotence.
+- Les nouvelles créations utilisent le namespace d’idempotence v2 ; les
+  records v1, qui peuvent contenir des jetons de l’ancien schéma de room,
+  doivent être ignorés et ne doivent jamais être rejoués.
 - Prévoir rotation/révocation des clés LiveKit, des credentials PSTN et des
   secrets de signature.
 - Émettre des erreurs génériques côté client ; conserver les détails

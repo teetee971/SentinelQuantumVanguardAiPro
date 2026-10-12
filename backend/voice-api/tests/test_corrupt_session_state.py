@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import Settings, _hash, create_app  # noqa: E402
+from app import Settings, _hash, create_app, demo_room_id_for_device  # noqa: E402
 
 
 class FakeRedis:
@@ -70,7 +70,10 @@ def close_headers():
 def valid_payload():
     return {
         "channel": "PTT_ROOM",
-        "destination": {"type": "sentinel_room", "room_id": "group-1"},
+        "destination": {
+            "type": "sentinel_room",
+            "room_id": demo_room_id_for_device("device-1"),
+        },
         "client": {
             "device_id": "device-1",
             "app_version": "1.0.0",
@@ -81,7 +84,7 @@ def valid_payload():
 
 def test_create_fails_closed_when_idempotency_record_is_corrupt():
     idempotency_key = "create-123456789012"
-    redis_key = f"voice:idempotency:v1:{_hash(f'user-1:{idempotency_key}')}"
+    redis_key = f"voice:idempotency:v2:{_hash(f'user-1:{idempotency_key}')}"
     redis_client = FakeRedis({redis_key: "{"})
     app = create_app(
         settings=configured_settings(),
