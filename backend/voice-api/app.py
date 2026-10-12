@@ -21,6 +21,21 @@ from redis.exceptions import RedisError
 
 MAX_TOKEN_TTL_SECONDS = 120
 ROOM_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
+SESSION_RESERVE_SCRIPT = """
+if redis.call('EXISTS', KEYS[1]) == 1 then
+    return 0
+end
+local first = redis.pcall('SET', KEYS[1], ARGV[1], 'EX', ARGV[3])
+if type(first) == 'table' and first.err then
+    return -1
+end
+local second = redis.pcall('SET', KEYS[2], ARGV[2], 'EX', ARGV[4])
+if type(second) == 'table' and second.err then
+    redis.call('DEL', KEYS[1])
+    return -1
+end
+return 1
+""".strip()
 
 
 def _int_env(name: str, default: int) -> int:
@@ -244,6 +259,47 @@ def _load_state_record(raw: str, required_keys: tuple[str, ...]) -> dict[str, An
     return record
 
 
+async def _reserve_session(
+    client: Any,
+    *,
+    idempotency_key: str,
+    idempotency_value: str,
+    session_key: str,
+    session_value: str,
+    idempotency_ttl: int,
+    session_ttl: int,
+) -> bool:
+    eval_method = getattr(client, "eval", None)
+    if callable(eval_method):
+        result = await eval_method(
+            SESSION_RESERVE_SCRIPT,
+            2,
+            idempotency_key,
+            session_key,
+            idempotency_value,
+            session_value,
+            str(idempotency_ttl),
+            str(session_ttl),
+        )
+        if result == -1:
+            raise RedisError("atomic voice session reservation failed")
+        return result == 1
+
+    stored = await client.set(
+        idempotency_key,
+        idempotency_value,
+        ex=idempotency_ttl,
+        nx=True,
+    )
+    if stored:
+        await client.set(
+            session_key,
+            session_value,
+            ex=session_ttl,
+        )
+    return bool(stored)
+
+
 def extract_device_ids(claims: dict[str, Any], claim_name: str = "device_ids") -> list[str]:
     """Normalize the configured Auth0 device claim without accepting malformed entries."""
     device_ids = claims.get(claim_name)
@@ -444,20 +500,17 @@ def create_app(
             "status": "open",
             "room": room,
         }
+        session_key = f"voice:session:v1:{session_id}"
         try:
-            stored = await client.set(
-                idempotency_record_key,
-                json.dumps(record, separators=(",", ":")),
-                ex=resolved_settings.token_ttl_seconds,
-                nx=True,
+            stored = await _reserve_session(
+                client,
+                idempotency_key=idempotency_record_key,
+                idempotency_value=json.dumps(record, separators=(",", ":")),
+                session_key=session_key,
+                session_value=json.dumps(session_record, separators=(",", ":")),
+                idempotency_ttl=resolved_settings.token_ttl_seconds,
+                session_ttl=resolved_settings.token_ttl_seconds + 60,
             )
-            if stored:
-                session_key = f"voice:session:v1:{session_id}"
-                await client.set(
-                    session_key,
-                    json.dumps(session_record, separators=(",", ":")),
-                    ex=resolved_settings.token_ttl_seconds + 60,
-                )
         except (RedisError, TimeoutError, OSError) as exc:
             raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
 
