@@ -174,8 +174,8 @@ jobs:
             # build before switching Gradle to offline mode. This makes the lane
             # deterministic even when the runner starts with a cold Gradle cache.
             set +e
-            timeout 300s ./gradlew \
-                :app:dependencies --configuration debugAndroidTestRuntimeClasspath \
+            timeout 300s ./gradlew :app:dependencies \
+                --configuration debugAndroidTestRuntimeClasspath \
                 :wearable-security:dependencies --configuration compileClasspath \
                 --no-daemon --console=plain 2>&1 |
               tee "$DEPENDENCY_RESOLUTION_LOG"
