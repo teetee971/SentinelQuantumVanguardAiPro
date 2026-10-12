@@ -466,6 +466,11 @@ def create_app(
             request, authorization, body.client.device_id
         )
         subject = principal["subject"]
+        room = _room_name(
+            body.destination.room_id,
+            subject=subject,
+            device_id=body.client.device_id,
+        )
         idempotency_hash = _hash(f"{subject}:{idempotency_key}")
         idempotency_record_key = f"voice:idempotency:v1:{idempotency_hash}"
         request_fingerprint = _hash(
@@ -484,11 +489,6 @@ def create_app(
             return record["response"]
 
         session_id = str(uuid.uuid4())
-        room = _room_name(
-            body.destination.room_id,
-            subject=subject,
-            device_id=body.client.device_id,
-        )
         token = app.state.voice_issuer.issue(
             identity=subject,
             room=room,
