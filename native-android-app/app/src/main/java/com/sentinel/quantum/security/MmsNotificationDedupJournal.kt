@@ -34,16 +34,15 @@ internal class MmsNotificationDedupJournal internal constructor(
         val state: State
     )
 
-    @Synchronized
     fun reserve(
         identity: String,
         fileName: String,
         requestedAtMs: Long = System.currentTimeMillis()
-    ): Reservation {
+    ): Reservation = synchronized(JOURNAL_LOCK) {
         if (!validIdentity(identity) || !validFileName(fileName) || requestedAtMs <= 0L) {
-            return Reservation.FAILED
+            return@synchronized Reservation.FAILED
         }
-        if (!prune(requestedAtMs)) return Reservation.FAILED
+        if (!prune(requestedAtMs)) return@synchronized Reservation.FAILED
 
         val all = preferences.all
         val storageKey = key(identity)
@@ -53,7 +52,7 @@ internal class MmsNotificationDedupJournal internal constructor(
                 requestedAtMs < existing.requestedAtMs ||
                     requestedAtMs - existing.requestedAtMs < TTL_MS
             ) {
-                return Reservation.DUPLICATE
+                return@synchronized Reservation.DUPLICATE
             }
         } else if (
             all.asSequence()
@@ -61,11 +60,11 @@ internal class MmsNotificationDedupJournal internal constructor(
                 .mapNotNull { decode(it.value) }
                 .count { it.state == State.ACTIVE } >= MAX_RECORDS
         ) {
-            return Reservation.FAILED
+            return@synchronized Reservation.FAILED
         }
 
         val encoded = encode(Record(fileName, requestedAtMs, State.ACTIVE))
-        return if (preferences.edit().putString(storageKey, encoded).commit()) {
+        if (preferences.edit().putString(storageKey, encoded).commit()) {
             Reservation.ACQUIRED
         } else {
             Reservation.FAILED
@@ -78,16 +77,15 @@ internal class MmsNotificationDedupJournal internal constructor(
      * separately bounded; oldest completed markers are evicted first and downstream MMS identity
      * projection remains idempotent if an evicted transport notification is replayed later.
      */
-    @Synchronized
-    fun complete(fileName: String): Boolean {
-        if (!validFileName(fileName)) return false
+    fun complete(fileName: String): Boolean = synchronized(JOURNAL_LOCK) {
+        if (!validFileName(fileName)) return@synchronized false
         val all = preferences.all
         val match = all.asSequence()
             .filter { it.key.startsWith(KEY_PREFIX) }
             .mapNotNull { entry -> decode(entry.value)?.let { entry.key to it } }
             .firstOrNull { (_, record) -> record.fileName == fileName }
-            ?: return false
-        if (match.second.state == State.COMPLETED) return true
+            ?: return@synchronized false
+        if (match.second.state == State.COMPLETED) return@synchronized true
 
         val completed = all.asSequence()
             .filter { it.key.startsWith(KEY_PREFIX) }
@@ -100,22 +98,21 @@ internal class MmsNotificationDedupJournal internal constructor(
         val editor = preferences.edit()
             .putString(match.first, encode(match.second.copy(state = State.COMPLETED)))
         completed.take(overflow).forEach { (storageKey, _) -> editor.remove(storageKey) }
-        return editor.commit()
+        editor.commit()
     }
 
-    @Synchronized
-    fun release(fileName: String): Boolean {
-        if (!validFileName(fileName)) return false
+    fun release(fileName: String): Boolean = synchronized(JOURNAL_LOCK) {
+        if (!validFileName(fileName)) return@synchronized false
         val keys = preferences.all.asSequence()
             .filter { (key, value) ->
                 key.startsWith(KEY_PREFIX) && decode(value)?.fileName == fileName
             }
             .map { it.key }
             .toList()
-        if (keys.isEmpty()) return true
+        if (keys.isEmpty()) return@synchronized true
         val editor = preferences.edit()
         keys.forEach(editor::remove)
-        return editor.commit()
+        editor.commit()
     }
 
     private fun prune(nowMs: Long): Boolean {
@@ -173,5 +170,6 @@ internal class MmsNotificationDedupJournal internal constructor(
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 512
         private val DIGEST = Regex("^[0-9a-f]{64}$")
+        private val JOURNAL_LOCK = Any()
     }
 }
