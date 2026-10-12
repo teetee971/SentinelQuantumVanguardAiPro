@@ -60,6 +60,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.security.MessageDigest
 
 @OptIn(ExperimentalMaterial3Api::class)
 class VoiceStudioActivity : ComponentActivity() {
@@ -156,7 +157,7 @@ class VoiceStudioActivity : ComponentActivity() {
                         val created = voiceSessionCoordinator.connect(
                             accessToken = authToken,
                             request = VoiceSessionRequest(
-                                roomId = DEMO_ROOM_ID,
+                                roomId = demoRoomId(deviceId),
                                 deviceId = deviceId,
                                 appVersion = BuildConfig.VERSION_NAME
                             ),
@@ -167,7 +168,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                 activeVoiceSession = active
                                 sessionConnected = true
                                 sessionBusy = false
-                                sessionStatus = "Session PTT connectée dans la salle de test."
+                                sessionStatus = "Session PTT connectée dans la salle de test isolée."
                             },
                             onFailure = { failure ->
                                 sessionBusy = false
@@ -347,7 +348,7 @@ class VoiceStudioActivity : ComponentActivity() {
                     ) {
                         Text("Session PTT Sentinel · test", fontWeight = FontWeight.Bold)
                         Text(
-                            "Cette session utilise Auth0, un jeton éphémère et LiveKit. Elle ne compose pas de numéro mobile et reste limitée à la salle de test « $DEMO_ROOM_ID ».",
+                            "Cette session utilise Auth0, un jeton éphémère et LiveKit. Elle ne compose pas de numéro mobile et utilise une salle de diagnostic isolée pour cet appareil.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Button(
@@ -627,6 +628,15 @@ class VoiceStudioActivity : ComponentActivity() {
         runCatching { current.release() }
     }
 
+    private fun demoRoomId(deviceId: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest("sentinel-voice-demo:v1:$deviceId".toByteArray(Charsets.UTF_8))
+        val suffix = digest.take(16).joinToString(separator = "") { byte ->
+            (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+        }
+        return "demo-$suffix"
+    }
+
     private suspend fun releasePushToTalk(): Result<Unit> {
         val session = activeVoiceSession ?: return Result.success(Unit)
         return withContext(NonCancellable) {
@@ -671,9 +681,5 @@ class VoiceStudioActivity : ComponentActivity() {
             }
         }
         super.onDestroy()
-    }
-
-    private companion object {
-        const val DEMO_ROOM_ID = "demo-room"
     }
 }
