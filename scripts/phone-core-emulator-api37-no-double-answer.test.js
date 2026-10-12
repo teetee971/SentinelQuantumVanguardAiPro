@@ -156,3 +156,22 @@ test('API 24 instrumentation enforces a hard wall-clock timeout instead of a det
   assert.doesNotMatch(instrumentation, /setsid adb shell am instrument/);
   assert.doesNotMatch(instrumentation, /INSTRUMENTATION_WATCHDOG_PID/);
 });
+
+test('runtime APK installation is bounded so a wedged ADB transport cannot consume the whole emulator job', () => {
+  const runtime = blockBetween(
+    workflowSource,
+    '      - name: Run emulator application/runtime qualification',
+    '      - name: Collect qualification evidence even after failure'
+  );
+
+  assert.match(
+    runtime,
+    /timeout --signal=TERM --kill-after=30s 120s adb install -r "\$APK_PATH"/,
+    'runtime APK installation must have its own hard foreground timeout'
+  );
+  assert.doesNotMatch(
+    runtime,
+    /\n\s*adb install -r "\$APK_PATH"/,
+    'runtime APK installation must never run unbounded'
+  );
+});
