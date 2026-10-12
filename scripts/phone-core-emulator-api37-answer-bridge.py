@@ -204,7 +204,7 @@ def run_bridge(
         answer_transaction: str | None = None
         call_id: str | None = None
         accept_requested = False
-        transport_ready = False
+        synchronized = False
         answered = False
         recovery_attempted = False
         active = False
@@ -249,7 +249,7 @@ def run_bridge(
                                 response_key="console_gsm_accept_response",
                                 failure_message="emulator console gsm accept failed",
                             )
-                            transport_ready = True
+                            synchronized = True
                             append_line(
                                 evidence,
                                 f"transport_sync=emulator_console_gsm_accept api={api} number={number} call_id={call_id} transaction={answer_transaction}",
@@ -271,14 +271,14 @@ def run_bridge(
                         append_line(evidence, line)
                         answered = True
                         if api == 37:
-                            transport_ready = True
+                            synchronized = True
                             append_line(
                                 evidence,
                                 f"transport_observation=telecom_answered api={api} call_id={call_id} transaction={answer_transaction}",
                             )
                         continue
 
-                if transport_ready and answered and not active and call_id is not None:
+                if synchronized and answered and not active and call_id is not None:
                     active_match = ACTIVE_RE.search(line)
                     if active_match and active_match.group(1) == call_id:
                         append_line(evidence, line)
@@ -328,7 +328,7 @@ def run_bridge(
                         )
                         continue
 
-                if answer_transaction and accept_requested and transport_ready and answered and active:
+                if answer_transaction and accept_requested and synchronized and answered and active:
                     return
 
             missing = []
@@ -336,8 +336,8 @@ def run_bridge(
                 missing.append("answer_request")
             if not accept_requested:
                 missing.append("request_accept")
-            if not transport_ready:
-                missing.append("transport_ready")
+            if not synchronized:
+                missing.append("transport_sync")
             if not answered:
                 missing.append("answered_same_call")
             if not active:
