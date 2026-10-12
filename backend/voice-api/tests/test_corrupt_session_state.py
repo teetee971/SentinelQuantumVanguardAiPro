@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import Settings, create_app  # noqa: E402
+from app import Settings, _hash, create_app  # noqa: E402
 
 
 class FakeRedis:
@@ -65,6 +65,43 @@ def close_headers():
         "Authorization": "Bearer valid",
         "Idempotency-Key": "close-123456789012",
     }
+
+
+def valid_payload():
+    return {
+        "channel": "PTT_ROOM",
+        "destination": {"type": "sentinel_room", "room_id": "group-1"},
+        "client": {
+            "device_id": "device-1",
+            "app_version": "1.0.0",
+            "platform": "android",
+        },
+    }
+
+
+def test_create_fails_closed_when_idempotency_record_is_corrupt():
+    idempotency_key = "create-123456789012"
+    redis_key = f"voice:idempotency:v1:{_hash(f'user-1:{idempotency_key}')}"
+    redis_client = FakeRedis({redis_key: "{"})
+    app = create_app(
+        settings=configured_settings(),
+        redis_client=redis_client,
+        identity_verifier=FakeIdentityVerifier(),
+        token_issuer=FakeTokenIssuer(),
+    )
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.post(
+            "/v1/voice/sessions",
+            headers={
+                "Authorization": "Bearer valid",
+                "Idempotency-Key": idempotency_key,
+            },
+            json=valid_payload(),
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Voice service unavailable"
 
 
 def test_close_fails_closed_when_open_session_record_is_corrupt():
