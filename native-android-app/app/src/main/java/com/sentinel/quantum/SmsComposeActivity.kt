@@ -288,8 +288,8 @@ class SmsComposeActivity : ComponentActivity() {
                     submissionGate.release()
                 }
                 fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
-                    if (!beginSubmission()) return
                     ioScope.launch {
+                        if (!beginSubmission()) return@launch
                         try {
                             val result = withContext(Dispatchers.IO) {
                                 sender.send(recipient, message, selectedSubscriptionId)
@@ -331,8 +331,8 @@ class SmsComposeActivity : ComponentActivity() {
                     attachments: List<MmsAttachmentLoader.LoadedAttachment>,
                     onAccepted: () -> Unit
                 ) {
-                    if (!beginSubmission()) return
                     ioScope.launch {
+                        if (!beginSubmission()) return@launch
                         try {
                             val result = withContext(Dispatchers.IO) {
                                 mmsSender.send(
