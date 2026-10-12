@@ -12,9 +12,13 @@ android {
         applicationId "com.sentinel.quantum"
         minSdk 24
         targetSdk 36
-        versionCode 7
-        versionName "1.0.6"
+        versionCode 10
+        versionName "1.0.9"
         buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'
+        manifestPlaceholders = [
+            auth0Domain: "@string/com_auth0_domain",
+            auth0Scheme: "@string/com_auth0_scheme"
+        ]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -121,6 +125,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:5.5.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
     implementation 'io.livekit:livekit-android:2.29.0'
+    implementation 'com.auth0.android:auth0:3.+'
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 

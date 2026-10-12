@@ -282,7 +282,8 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$API_LEVEL" == "24" ]]; then
-            ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
+            timeout 600s ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest \
+              --stacktrace --no-daemon
             APP_APK="app/build/outputs/apk/debug/app-debug.apk"
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
@@ -353,6 +354,15 @@ jobs:
           INSTRUMENTATION_OUTCOME: ${{ steps.instrumentation.outcome }}
         run: |
           set -euo pipefail
+          RUNTIME_LOG="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}-runtime.log"
+          exec > >(tee "$RUNTIME_LOG") 2>&1
+          if [[ "$API_LEVEL" == "37" ]]; then
+            # API 37 has repeatedly failed inside this step while instrumentation passes. Keep
+            # command-level evidence for the runtime qualification without changing lower API
+            # lanes or relaxing any assertion.
+            export PS4='+ [phone-core-api37] ${BASH_SOURCE}:${LINENO}: '
+            set -x
+          fi
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
           APK_PATH=$(find app/build/outputs/apk/debug -name '*.apk' -type f -print -quit)
           test -n "$APK_PATH"
@@ -370,8 +380,13 @@ jobs:
           if [[ "$API_LEVEL" -ge 29 ]]; then
             # Role establishment and proof are owned by the runtime scripts. They use the modern
             # get-role-holders shell command when available and a dumpsys-role proof on API 29.
-            bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-            bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+            if [[ "$API_LEVEL" == "37" ]]; then
+              bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+            else
+              bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+            fi
           else
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-first-launch.txt" 2>&1
@@ -659,6 +674,7 @@ jobs:
             ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}/
             ${{ runner.temp }}/sentinel-emulator-api${{ matrix.api_level }}.log
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api_level }}-tests.log
+            ${{ runner.temp }}/phone-core-emulation-api${{ matrix.api_level }}-runtime.log
             native-android-app/app/build/reports/androidTests/connected/
             native-android-app/app/build/outputs/androidTest-results/connected/
           if-no-files-found: warn

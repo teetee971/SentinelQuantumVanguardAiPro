@@ -49,10 +49,10 @@ code{background:var(--bg-primary);border:1px solid var(--border-secondary);paddi
 <section class="audit-section" aria-labelledby="controls-title">
 <h2 id="controls-title">Contrôles actuellement suivis</h2>
 <div class="audit-grid">
-<div class="audit-card"><h3>Isolation projet</h3><p>Le dépôt utilise <code>scripts/check-sentinel-isolation.js</code> comme scanner canonique. Les fixtures négatives contenant volontairement des références interdites restent des cas de test.</p><span class="status">CONTRÔLE DÉDIÉ</span></div>
-<div class="audit-card"><h3>Chaîne CI</h3><p>Les workflows actifs couvrent notamment l'isolation, la gouvernance, le fuzzing, CodeQL, l'OSINT, l'intégrité et la validation frontend.</p><span class="status">À EXÉCUTER</span></div>
-<div class="audit-card"><h3>Dépendances</h3><p>Dependabot est configuré et les Actions GitHub sont épinglées sur des SHA dans les workflows actifs.</p><span class="status">CONTRÔLE DE CHAÎNE</span></div>
-<div class="audit-card"><h3>Validation frontend</h3><p>Le contrôle des liens statiques, la construction et les garde-fous de contenu sont automatisés par <code>frontend-validation.yml</code>.</p><span class="status">AUTOMATISÉ</span></div>
+<div class="audit-card"><h3>Isolation projet</h3><p>Un contrôle dédié vérifie l’absence de dépendances opérationnelles interdites. Les cas négatifs restent des cas de test.</p><span class="status">CONTRÔLE DÉDIÉ</span></div>
+<div class="audit-card"><h3>Chaîne de livraison</h3><p>Les validations couvrent notamment l'isolation, la gouvernance, le fuzzing, l'intégrité et la qualité de la surface publique.</p><span class="status">À EXÉCUTER</span></div>
+<div class="audit-card"><h3>Dépendances</h3><p>Les dépendances et contrôles de provenance sont vérifiés avant les déclarations de validation.</p><span class="status">CONTRÔLE DE CHAÎNE</span></div>
+<div class="audit-card"><h3>Validation frontend</h3><p>Les liens statiques, la construction et les garde-fous de contenu sont vérifiés par la chaîne de validation.</p><span class="status">AUTOMATISÉ</span></div>
 <div class="audit-card"><h3>Hygiène des affirmations</h3><p>Le dépôt contrôle désormais certains termes opérationnels à risque dans les pages publiques afin d'éviter qu'une interface conceptuelle soit présentée comme un service de sécurité actif.</p><span class="status">CONTRÔLE DÉDIÉ</span></div>
 </div>
 </section>
@@ -73,7 +73,7 @@ code{background:var(--bg-primary);border:1px solid var(--border-secondary);paddi
 <section class="audit-section" aria-labelledby="references-title">
 <h2 id="references-title">Références opérationnelles</h2>
 <div class="audit-card">
-<p><code>README.md</code>, <code>SECURITY.md</code>, <code>VALIDATION_ARCHITECTURE.md</code>, <code>docs/AUDIT_WORKFLOWS.md</code>, <code>scripts/check-sentinel-isolation.js</code> et les workflows de <code>.github/workflows/</code> constituent les sources de référence du dépôt.</p>
+<p>Les politiques de sécurité, la documentation produit et les contrôles automatisés constituent les références de ce périmètre. Les détails d’implémentation et de livraison restent réservés aux espaces internes.</p>
 <p class="muted">La chaîne de validation doit rester bloquante en cas d'échec ; elle ne doit pas être désactivée pour obtenir un résultat vert.</p>
 </div>
 </section>

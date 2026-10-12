@@ -87,7 +87,9 @@ services:
       - key: VOICE_AUTH_AUDIENCE
         sync: false
       - key: VOICE_ENTITLEMENT_CLAIM
-        value: sentinel_voice_entitled
+        value: https://sentinel-voice.onrender.com/claims/entitled
+      - key: VOICE_DEVICE_CLAIM
+        value: https://sentinel-voice.onrender.com/claims/device_ids
       - key: VOICE_TOKEN_TTL_SECONDS
         value: "120"
       - key: VOICE_RATE_LIMIT_PER_MINUTE

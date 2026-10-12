@@ -27,7 +27,7 @@
     <aside class="sq-command-panel" aria-label="Principes de sécurité">
       <div class="sq-command-head"><strong>Posture publique</strong><span>Septembre 2026</span></div>
       <div class="sq-status-row"><span class="sq-status-dot ready"></span><div class="sq-status-copy"><strong>Isolation Sentinel</strong><small>Contrôles dédiés à la séparation du projet.</small></div><span class="sq-status-value">Gate CI</span></div>
-      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>CodeQL &amp; tests</strong><small>Résultats à lire sur l’exécution réellement associée au commit.</small></div><span class="sq-status-value">Par commit</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>Analyse et tests</strong><small>Résultats à lire sur l’exécution réellement associée à la révision.</small></div><span class="sq-status-value">Par révision</span></div>
       <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Certification externe</strong><small>Aucune certification externe revendiquée sans preuve correspondante.</small></div><span class="sq-status-value">Non revendiquée</span></div>
     </aside>
   </section>
@@ -40,9 +40,9 @@
 
     <div class="sq-grid">
       <article class="sq-card span-4"><span class="sq-state ready">Isolation</span><h3>Projet séparé</h3><p>Le contrôle d’isolation cherche les dépendances et contaminations interdites entre Sentinel et d’autres projets.</p></article>
-      <article class="sq-card span-4"><span class="sq-state validation">Supply chain</span><h3>Actions et provenance</h3><p>Pinning des GitHub Actions, intégrité, dépendances et contrôles de provenance sont vérifiés par des workflows dédiés.</p></article>
+      <article class="sq-card span-4"><span class="sq-state validation">Chaîne de livraison</span><h3>Intégrité et provenance</h3><p>L’intégrité, les dépendances et la provenance sont contrôlées par des validations dédiées.</p></article>
       <article class="sq-card span-4"><span class="sq-state validation">IA</span><h3>Gouvernance</h3><p>Évaluation, garde-fous et séparation des sorties IA avant toute automatisation à impact.</p></article>
-      <article class="sq-card span-6"><span class="sq-state validation">Analyse</span><h3>CodeQL, tests et fuzzing</h3><p>Analyse statique, tests déterministes, fuzzing de gouvernance et validations ciblées lorsqu’ils s’exécutent effectivement.</p></article>
+      <article class="sq-card span-6"><span class="sq-state validation">Analyse</span><h3>Analyse, tests et fuzzing</h3><p>Analyse statique, tests déterministes, fuzzing de gouvernance et validations ciblées lorsqu’ils s’exécutent effectivement.</p></article>
       <article class="sq-card span-6"><span class="sq-state planned">Terrain</span><h3>Ce que la CI ne peut pas prouver seule</h3><p>Comportement radio, opérateur, double-SIM, matériel, réseau réel, expérience utilisateur et exploitation doivent être testés dans leur environnement propre.</p></article>
     </div>
   </section>
@@ -57,13 +57,13 @@
     <div class="sq-grid">
       <article class="sq-card span-6">
         <span class="sq-state ready">Séparation stricte</span>
-        <h3>A KI PRI SA YÉ reste hors du périmètre Sentinel.</h3>
-        <p>Aucun déploiement, secret, dépendance, configuration ni flux de données de A KI PRI SA YÉ ne doit être introduit dans ce dépôt.</p>
+        <h3>Les projets tiers restent hors du périmètre Sentinel.</h3>
+        <p>Aucun déploiement, secret, dépendance, configuration ni flux de données d’un projet tiers non autorisé ne doit être introduit dans ce périmètre.</p>
       </article>
       <article class="sq-card span-6">
         <span class="sq-state planned">Dépendances externes</span>
-        <h3>GitHub, Cloudflare Pages, Render et Upstash</h3>
-        <p>Ces fournisseurs participent aujourd’hui à la chaîne technique. La roadmap de souveraineté porte donc sur la réversibilité et la maîtrise, pas sur une souveraineté déjà acquise.</p>
+        <h3>Services externes maîtrisés</h3>
+        <p>La chaîne peut utiliser des services externes selon l’environnement. La roadmap porte sur la réversibilité, la minimisation des dépendances et la maîtrise des flux.</p>
       </article>
     </div>
   </section>

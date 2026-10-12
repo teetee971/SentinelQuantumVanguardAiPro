@@ -36,16 +36,16 @@
     </div>
   </section>
 
-  <section class="notice info"><strong>Absence de backend :</strong> le site peut être déployé sur Cloudflare Pages et certains modules de veille peuvent consulter des sources publiques. Une absence de transfert de données ne doit donc pas être affirmée sans vérification de la configuration effectivement déployée.</section>
+  <section class="notice info"><strong>Absence de backend :</strong> le site peut être publié sur une plateforme externe et certains modules de veille peuvent consulter des sources publiques. Une absence de transfert de données ne doit donc pas être affirmée sans vérification de la configuration effectivement déployée.</section>
 
   <section aria-labelledby="independance-title">
     <div class="section-heading"><span class="eyebrow">Indépendance</span><h2 id="independance-title">Isolation vis-à-vis des projets interdits.</h2></div>
-    <div class="card"><p>Sentinel n’a pas de dépendance opérationnelle à Firebase ni à A KI PRI SA YÉ. Les références Firebase conservées dans les contrôles d’isolation et tests négatifs sont des fixtures de sécurité destinées à vérifier la détection de dépendances interdites. Cette isolation entre projets ne signifie pas absence de fournisseurs externes : GitHub, Cloudflare Pages, Render et Upstash font partie des dépendances actuellement documentées.</p></div>
+    <div class="card"><p>Sentinel n’a pas de dépendance opérationnelle vers un projet tiers non autorisé. Les cas négatifs conservés dans les contrôles d’isolation servent uniquement à vérifier la détection de dépendances interdites. Cette isolation entre projets ne signifie pas absence de services externes : les dépendances effectivement activées doivent être vérifiées sur la configuration déployée.</p></div>
   </section>
 
   <section aria-labelledby="android-title">
     <div class="section-heading"><span class="eyebrow">Android</span><h2 id="android-title">Code canonique conservé séparément.</h2></div>
-    <div class="card"><p>Le code Android canonique se trouve dans <code>native-android-app/</code>. Aucun APK précompilé et signé n'est actuellement annoncé comme distribué. Les permissions et communications d'une future application devront être vérifiées sur l'artefact réellement construit.</p></div>
+    <div class="card"><p>Le code Android canonique est conservé séparément et validé selon son propre cycle. Aucun APK précompilé et signé n'est actuellement annoncé comme distribué. Les permissions et communications d'une future application devront être vérifiées sur l'artefact réellement construit.</p></div>
   </section>
 
   <section aria-labelledby="conformite-title">

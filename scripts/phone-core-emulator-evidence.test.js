@@ -20,6 +20,9 @@ const roleParser = new URL('./phone-core-emulator-role-holders.py', import.meta.
 
 test('runtime setup installs after UTP cleanup, then rejects failed or unconfirmed data/log resets', () => {
   const runtime = workflow.split('- name: Run emulator application/runtime qualification\n')[1];
+  assert.match(runtime, /RUNTIME_LOG="\$RUNNER_TEMP\/phone-core-emulation-api\$\{API_LEVEL\}-runtime\.log"/);
+  assert.match(runtime, /exec > >\(tee "\$RUNTIME_LOG"\) 2>&1/);
+  assert.match(workflow, /phone-core-emulation-api\$\{\{ matrix\.api_level \}\}-runtime\.log/);
   const start = runtime.indexOf('          adb install -r');
   const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
   assert.ok(start >= 0 && end > start);
@@ -40,6 +43,15 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
     } finally { rmSync(dir, { recursive: true, force: true }); }
   }
   assert.doesNotMatch(runtime, /adb shell am start[^\n]*min-sdk-(?:first|second)-launch[^\n]*\|\| true/);
+});
+
+test('API 24 connected instrumentation bounds the Gradle build time', () => {
+  const instrumentation = workflow.split('- name: Run connected instrumentation suite\n')[1];
+  const api24Block = instrumentation.split('          else\n')[0];
+  assert.match(
+    api24Block,
+    /timeout 600s \.\/gradlew :app:assembleDebug :app:assembleDebugAndroidTest \\\n\s+--stacktrace --no-daemon/
+  );
 });
 
 for (const [name, dump, status, holders] of [
@@ -145,6 +157,59 @@ test('UID denial with no observed effect falls back to package mode and restores
     assert.match(commands, /--uid com\.sentinel\.quantum SEND_SMS allow/);
     assert.match(commands, /--user 0 com\.sentinel\.quantum SEND_SMS allow/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('transient runtime permission denial falls back after RoleController restores the grant', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-runtime-permission-race-'));
+  try {
+    const start = revocation.indexOf('permission_state() {');
+    const end = revocation.indexOf('\nassert_send_sms_runtime_permission_denied() {', start);
+    assert.ok(start >= 0 && end > start);
+    const functions = revocation.slice(start, end);
+    const result = spawnSync('bash', ['-c', `
+PACKAGE=com.sentinel.quantum
+OUT_DIR="$1"
+SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+sleep() { :; }
+adb() {
+  if [[ "$*" == "shell pm revoke com.sentinel.quantum android.permission.SEND_SMS" ]]; then
+    return 0
+  fi
+  if [[ "$*" == "shell dumpsys package com.sentinel.quantum" ]]; then
+    dump_calls=0
+    if [[ -f "$OUT_DIR/dump-calls" ]]; then dump_calls="$(cat "$OUT_DIR/dump-calls")"; fi
+    dump_calls=$((dump_calls + 1))
+    printf '%s\n' "$dump_calls" > "$OUT_DIR/dump-calls"
+    if [[ "$dump_calls" -eq 1 ]]; then
+      printf 'android.permission.SEND_SMS: granted=false, flags=[USER_SENSITIVE_WHEN_GRANTED]\n'
+    else
+      printf 'android.permission.SEND_SMS: granted=true, flags=[GRANTED_BY_ROLE]\n'
+    fi
+    return 0
+  fi
+  return 99
+}
+${functions}
+probe_pm_revoke_send_sms
+printf 'observable=%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"
+`, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /observable=false/);
+    assert.match(readFileSync(join(dir, 'send-sms-pm-revoke-observation.txt'), 'utf8'), /role_controller_restored_runtime_permission/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('runtime denial restored on app relaunch falls back to the AppOp proof', () => {
+  const start = revocation.indexOf('if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" == "true" ]]');
+  const end = revocation.indexOf('\n# ROLE_SMS revocation:', start);
+  assert.ok(start >= 0 && end > start);
+  const effectivePermissionBlock = revocation.slice(start, end);
+  assert.match(
+    effectivePermissionBlock,
+    /if ! assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-after-launch\.txt"; then/
+  );
+  assert.match(effectivePermissionBlock, /SEND_SMS_PM_REVOCATION_OBSERVABLE=false/);
+  assert.match(effectivePermissionBlock, /use_send_sms_appop_probe/);
 });
 
 function fixture(overrides = {}, alter = () => {}) {

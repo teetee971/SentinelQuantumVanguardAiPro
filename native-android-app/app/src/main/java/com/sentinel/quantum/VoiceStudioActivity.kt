@@ -13,6 +13,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,25 +31,58 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.sentinel.quantum.BuildConfig
+import com.sentinel.quantum.auth.Auth0SessionController
+import com.sentinel.quantum.security.SentinelDeviceIdentity
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.voice.LiveKitVoiceAudioProcessor
+import com.sentinel.quantum.voice.SentinelLiveKitCallTransport
 import com.sentinel.quantum.voice.VoiceAddonPolicy
+import com.sentinel.quantum.voice.VoiceSessionClient
+import com.sentinel.quantum.voice.VoiceSessionCoordinator
+import com.sentinel.quantum.voice.VoiceSessionRequest
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.security.MessageDigest
 
 @OptIn(ExperimentalMaterial3Api::class)
 class VoiceStudioActivity : ComponentActivity() {
     private var recorder: MediaRecorder? = null
     private var player: MediaPlayer? = null
     private lateinit var previewFile: File
+    private lateinit var authController: Auth0SessionController
+    private lateinit var voiceSessionCoordinator: VoiceSessionCoordinator
+    private var activeVoiceSession: VoiceSessionCoordinator.ActiveSession? = null
+    private var pttGestureJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         previewFile = File(cacheDir, "voice-studio-preview.m4a")
+        authController = Auth0SessionController(this)
+        voiceSessionCoordinator = VoiceSessionCoordinator(
+            api = VoiceSessionClient(),
+            transport = SentinelLiveKitCallTransport(
+                this,
+                LiveKitVoiceAudioProcessor()
+            )
+        )
         setContent {
             SentinelQuantumTheme {
                 VoiceStudioScreen()
@@ -60,10 +97,26 @@ class VoiceStudioActivity : ComponentActivity() {
         var playing by remember { mutableStateOf(false) }
         var previewReady by remember { mutableStateOf(previewFile.exists()) }
         var showTechnicalDetails by remember { mutableStateOf(false) }
+        var sessionConnected by remember { mutableStateOf(false) }
+        var sessionBusy by remember { mutableStateOf(false) }
+        var transmitting by remember { mutableStateOf(false) }
+        var sessionStatus by remember {
+            mutableStateOf("Choisissez Grave ou Aiguë pour démarrer une session PTT de test.")
+        }
         var status by remember {
             mutableStateOf("Testez votre voix localement avant son utilisation dans un appel Sentinel compatible.")
         }
         val commercialState = remember { VoiceAddonPolicy.currentState() }
+        val pttGestureScope = rememberCoroutineScope()
+        val pttEnabled = sessionConnected && !sessionBusy
+
+        LaunchedEffect(pttEnabled) {
+            if (!pttEnabled) {
+                pttGestureJob?.cancel()
+                pttGestureJob = null
+                transmitting = false
+            }
+        }
 
         val microphoneLauncher = rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -76,6 +129,68 @@ class VoiceStudioActivity : ComponentActivity() {
                 }
             } else {
                 status = "Microphone refusé. Aucun enregistrement n’a été effectué."
+            }
+        }
+
+        fun connectVoiceSession() {
+            if (sessionBusy || sessionConnected) return
+            if (selectedEffect == VoiceAddonPolicy.Effect.NATURAL) {
+                sessionStatus = "Sélectionnez un rendu transformé avant de démarrer la session."
+                return
+            }
+            if (carrierCallActive()) {
+                sessionStatus = "Session vocale bloquée pendant un appel mobile actif."
+                return
+            }
+            val deviceId = SentinelDeviceIdentity.current(this@VoiceStudioActivity)
+            if (deviceId == null) {
+                sessionStatus = "Identifiant Android indisponible : session refusée."
+                return
+            }
+
+            sessionBusy = true
+            sessionStatus = "Récupération du jeton Auth0…"
+            authController.accessToken(
+                onSuccess = { authToken ->
+                    lifecycleScope.launch {
+                        sessionStatus = "Création de la session sécurisée…"
+                        val created = voiceSessionCoordinator.connect(
+                            accessToken = authToken,
+                            request = VoiceSessionRequest(
+                                roomId = demoRoomId(deviceId),
+                                deviceId = deviceId,
+                                appVersion = BuildConfig.VERSION_NAME
+                            ),
+                            effect = selectedEffect
+                        )
+                        created.fold(
+                            onSuccess = { active ->
+                                activeVoiceSession = active
+                                sessionConnected = true
+                                sessionBusy = false
+                                sessionStatus = "Session PTT connectée dans la salle de test isolée."
+                            },
+                            onFailure = { failure ->
+                                sessionBusy = false
+                                sessionStatus = "Session vocale refusée : ${failure.message.orEmpty()}"
+                            }
+                        )
+                    }
+                },
+                onFailure = { message ->
+                    sessionBusy = false
+                    sessionStatus = "Jeton Auth0 indisponible : ${message.orEmpty()}"
+                }
+            )
+        }
+
+        val sessionMicrophoneLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) {
+                connectVoiceSession()
+            } else {
+                sessionStatus = "Microphone refusé. La session PTT n’a pas démarré."
             }
         }
 
@@ -224,6 +339,134 @@ class VoiceStudioActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text("Session PTT Sentinel · test", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Cette session utilise Auth0, un jeton éphémère et LiveKit. Elle ne compose pas de numéro mobile et utilise une salle de diagnostic isolée pour cet appareil.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Button(
+                            onClick = {
+                                if (sessionConnected) {
+                                    sessionBusy = true
+                                    disconnectVoiceSession {
+                                        sessionConnected = false
+                                        transmitting = false
+                                        sessionBusy = false
+                                        sessionStatus = "Session PTT fermée."
+                                    }
+                                } else if (!sessionBusy) {
+                                    if (ContextCompat.checkSelfPermission(
+                                        this@VoiceStudioActivity,
+                                        Manifest.permission.RECORD_AUDIO
+                                    ) != PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        sessionMicrophoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    } else {
+                                        connectVoiceSession()
+                                    }
+                                }
+                            },
+                            enabled = !sessionBusy,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(if (sessionConnected) "Fermer la session" else "Démarrer la session PTT")
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics {
+                                    role = Role.Button
+                                    contentDescription = when {
+                                        transmitting -> "Relâchez pour couper le microphone"
+                                        else -> "Maintenez pour parler en PTT"
+                                    }
+                                    if (!pttEnabled) disabled()
+                                }
+                                .pointerInput(pttEnabled, activeVoiceSession) {
+                                    if (!pttEnabled) return@pointerInput
+                                    awaitEachGesture {
+                                        awaitFirstDown(requireUnconsumed = false)
+                                        val session = activeVoiceSession ?: return@awaitEachGesture
+                                        pttGestureJob?.cancel()
+                                        pttGestureJob = pttGestureScope.launch {
+                                            val pressResult = session.pushToTalk.press()
+                                            if (pressResult.isFailure) {
+                                                transmitting = false
+                                                sessionStatus = "Contrôle PTT impossible : ${pressResult.exceptionOrNull()?.message.orEmpty()}"
+                                                return@launch
+                                            }
+
+                                            transmitting = true
+                                            sessionStatus = "Microphone ouvert : maintenez pour parler."
+                                            try {
+                                                awaitCancellation()
+                                            } finally {
+                                                val releaseResult = releasePushToTalk()
+                                                transmitting = false
+                                                sessionStatus = if (releaseResult.isSuccess) {
+                                                    "Microphone coupé : session PTT toujours connectée."
+                                                } else {
+                                                    "Fermeture du microphone impossible : ${releaseResult.exceptionOrNull()?.message.orEmpty()}"
+                                                }
+                                            }
+                                        }
+                                        waitForUpOrCancellation()
+                                        pttGestureJob?.cancel()
+                                        pttGestureJob = null
+                                    }
+                                },
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(
+                                1.dp,
+                                if (pttEnabled) {
+                                    MaterialTheme.colorScheme.outline
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                }
+                            ),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = when {
+                                        transmitting -> "Relâchez pour couper"
+                                        else -> "Maintenez pour parler"
+                                    },
+                                    color = if (pttEnabled) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    }
+                                )
+                            }
+                        }
+
+                        Text(
+                            sessionStatus,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer
                     )
                 ) {
@@ -247,11 +490,11 @@ class VoiceStudioActivity : ComponentActivity() {
                             }
                         }
                         Text(
-                            "Vous pouvez déjà enregistrer et écouter vos rendus localement. L’utilisation pendant un véritable appel Sentinel n’est pas encore activée.",
+                            "Vous pouvez enregistrer et écouter vos rendus localement, ou lancer la session PTT de test ci-dessus. L’appel vers un numéro mobile n’est pas activé.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            "Aucun bouton d’appel n’est proposé tant que le parcours complet n’a pas été raccordé et validé.",
+                            "La session de test ne remplace pas encore la certification d’un appel réel : elle valide uniquement Auth0, l’accès éphémère LiveKit et le bouton PTT.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -273,7 +516,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le transport média côté client sont intégrés. Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle : ce chemin reste volontairement non opérationnel.",
+                                "Le moteur temps réel, le post-traitement LiveKit/WebRTC et le transport média côté client sont intégrés. Aucun parcours utilisateur ne lance encore une session d’appel Sentinel réelle : la session PTT ci-dessus reste un diagnostic contrôlé et sans numéro mobile.",
                                 style = MaterialTheme.typography.bodySmall
                             )
                             Text(
@@ -285,7 +528,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Aucun bouton d’appel n’est affiché tant que le service de jetons, le signaling, la passerelle VoIP/PSTN et la validation physique ne sont pas réellement disponibles.",
+                                "Session d’appel/PSTN non raccordée. Aucun bouton d’appel n’est affiché pour joindre un numéro mobile. La passerelle VoIP/PSTN, la validation physique et la certification d’appel restent nécessaires avant toute activation commerciale.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -385,10 +628,58 @@ class VoiceStudioActivity : ComponentActivity() {
         runCatching { current.release() }
     }
 
+    private fun demoRoomId(deviceId: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest("sentinel-voice-demo:v1:$deviceId".toByteArray(Charsets.UTF_8))
+        val suffix = digest.take(16).joinToString(separator = "") { byte ->
+            (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+        }
+        return "demo-$suffix"
+    }
+
+    private suspend fun releasePushToTalk(): Result<Unit> {
+        val session = activeVoiceSession ?: return Result.success(Unit)
+        return withContext(NonCancellable) {
+            session.pushToTalk.release()
+        }
+    }
+
+    private fun disconnectVoiceSession(onFinished: () -> Unit) {
+        val active = activeVoiceSession
+        if (active == null) {
+            onFinished()
+            return
+        }
+        lifecycleScope.launch {
+            voiceSessionCoordinator.disconnect()
+            activeVoiceSession = null
+            onFinished()
+        }
+    }
+
+    override fun onStop() {
+        pttGestureJob?.cancel()
+        pttGestureJob = null
+        if (activeVoiceSession != null) {
+            (application as SentinelApplication).launchVoiceTeardown {
+                releasePushToTalk()
+            }
+        }
+        super.onStop()
+    }
+
     override fun onDestroy() {
+        pttGestureJob?.cancel()
+        pttGestureJob = null
         stopRecording()
         stopPlayback()
         runCatching { previewFile.delete() }
+        if (activeVoiceSession != null) {
+            activeVoiceSession = null
+            (application as SentinelApplication).launchVoiceTeardown {
+                voiceSessionCoordinator.disconnect()
+            }
+        }
         super.onDestroy()
     }
 }

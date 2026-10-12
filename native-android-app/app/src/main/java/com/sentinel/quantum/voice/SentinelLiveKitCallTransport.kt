@@ -22,7 +22,7 @@ class SentinelLiveKitCallTransport internal constructor(
     private val voiceProcessor: LiveKitVoiceAudioProcessor,
     private val permissionGranted: () -> Boolean,
     private val roomFactory: () -> Room
-) {
+) : VoiceSessionTransportPort {
     constructor(
         context: Context,
         voiceProcessor: LiveKitVoiceAudioProcessor
@@ -89,6 +89,10 @@ class SentinelLiveKitCallTransport internal constructor(
 
     fun state(): State = state
 
+    override fun configureVoice(effect: VoiceAddonPolicy.Effect) {
+        voiceProcessor.configure(enabled = true, effect = effect)
+    }
+
     fun configureVoice(
         enabled: Boolean,
         effect: VoiceAddonPolicy.Effect
@@ -105,7 +109,7 @@ class SentinelLiveKitCallTransport internal constructor(
      * The returned session owns the only microphone gate and enables media exclusively while
      * the user holds the push-to-talk control.
      */
-    suspend fun connectForPushToTalk(
+    override suspend fun connectForPushToTalk(
         credentials: Credentials
     ): Result<PushToTalkSession> {
         val connection = connectInternal(credentials, publishMicrophone = false)
@@ -207,7 +211,7 @@ class SentinelLiveKitCallTransport internal constructor(
         }
     }
 
-    suspend fun disconnect() = mutex.withLock {
+    override suspend fun disconnect() = mutex.withLock {
         val connectedRoom = room
         room = null
         try {
@@ -216,5 +220,6 @@ class SentinelLiveKitCallTransport internal constructor(
             disposeRoomBestEffort(connectedRoom)
             state = State.DISCONNECTED
         }
+        Unit
     }
 }

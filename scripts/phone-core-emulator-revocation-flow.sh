@@ -16,6 +16,58 @@ EFFECTIVE_PERMISSION_PROBE="UNSET"
 EFFECTIVE_PERMISSION_NOTE="No effective SEND_SMS denial proof completed."
 ROLE_REVOCATION_PROVEN=false
 
+adb_transport_ready() {
+  local attempts="${SENTINEL_ADB_READY_ATTEMPTS:-20}"
+  local delay="${SENTINEL_ADB_RETRY_DELAY_SECONDS:-0.5}"
+  local state=""
+  for attempt in $(seq 1 "$attempts"); do
+    if state="$(adb get-state 2>/dev/null)" && [[ "$state" == "device" ]]; then
+      return 0
+    fi
+    if [[ "$attempt" -lt "$attempts" ]]; then sleep "$delay"; fi
+  done
+  return 1
+}
+
+adb_retry_transport() {
+  local attempts="${SENTINEL_ADB_RETRY_ATTEMPTS:-3}"
+  local delay="${SENTINEL_ADB_RETRY_DELAY_SECONDS:-0.5}"
+  local stdout_file stderr_file status diagnostic
+  stdout_file="$(mktemp)"
+  stderr_file="$(mktemp)"
+  for attempt in $(seq 1 "$attempts"); do
+    : > "$stdout_file"
+    : > "$stderr_file"
+    if adb "$@" > "$stdout_file" 2> "$stderr_file"; then
+      status=0
+    else
+      status=$?
+    fi
+    cat "$stdout_file"
+    cat "$stderr_file" >&2
+    if [[ "$status" -eq 0 ]]; then
+      rm -f "$stdout_file" "$stderr_file"
+      return 0
+    fi
+    diagnostic="$(cat "$stdout_file")"$'\n'"$(cat "$stderr_file")"
+    if ! grep -Eqi 'device offline|no devices/emulators found|device .* not found|connection terminated|transport error|failed to read response from daemon|cannot connect to daemon|protocol fault' <<< "$diagnostic"; then
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+    if [[ "$attempt" -ge "$attempts" ]]; then
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+    if ! adb_transport_ready; then
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+    sleep "$delay"
+  done
+  rm -f "$stdout_file" "$stderr_file"
+  return 1
+}
+
 capture() { adb exec-out screencap -p > "$OUT_DIR/$1.png" || true; }
 
 dump_ui() {
@@ -202,10 +254,30 @@ assert_sms_role_held() {
   role_holders android.app.role.SMS | grep -Fxq "$PACKAGE"
 }
 
-permission_granted() {
+permission_state() {
   local permission="$1"
-  adb shell dumpsys package "$PACKAGE" 2>/dev/null |
-    grep -E "${permission}: granted=true" >/dev/null
+  local dump=""
+  local status=0
+  set +e
+  dump="$(adb shell dumpsys package "$PACKAGE" 2>/dev/null | tr -d '\r')"
+  status=$?
+  set -e
+  if [[ "$status" -ne 0 ]]; then
+    return 2
+  fi
+  if grep -Fq "${permission}: granted=true" <<< "$dump"; then
+    printf 'granted\n'
+    return 0
+  fi
+  if grep -Fq "${permission}: granted=false" <<< "$dump"; then
+    printf 'denied\n'
+    return 0
+  fi
+  return 2
+}
+
+permission_granted() {
+  [[ "$(permission_state "$1")" == 'granted' ]]
 }
 
 probe_pm_revoke_send_sms() {
@@ -214,13 +286,40 @@ probe_pm_revoke_send_sms() {
   adb shell pm revoke "$PACKAGE" android.permission.SEND_SMS > "$output" 2>&1
   local status=$?
   set -e
-  sleep 1
-  if permission_granted android.permission.SEND_SMS; then
-    printf 'pm_revoke_status=%s\nobservable=false\nreason=role_controller_restored_runtime_permission\n' "$status" >> "$output"
-    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
-  else
+  local state='unknown'
+  local observed_denied=false
+  local observed_granted=false
+  local observed_unknown=false
+  # RoleController may briefly expose a revoked runtime permission before restoring the
+  # role-managed grant. Require a stable, readable state across the settling window so a
+  # transient false cannot be mistaken for durable denial evidence.
+  for attempt in $(seq 1 6); do
+    set +e
+    state="$(permission_state android.permission.SEND_SMS)"
+    local state_status=$?
+    set -e
+    if [[ "$state_status" -ne 0 ]]; then
+      state='unknown'
+      observed_unknown=true
+    elif [[ "$state" == 'denied' ]]; then
+      observed_denied=true
+    elif [[ "$state" == 'granted' ]]; then
+      observed_granted=true
+    else
+      state='unknown'
+      observed_unknown=true
+    fi
+    printf 'permission_state_attempt=%s state=%s\n' "$attempt" "$state" >> "$output"
+    if [[ "$attempt" -lt 6 ]]; then sleep 0.5; fi
+  done
+  if [[ "$state" == 'denied' && "$observed_denied" == true && "$observed_granted" == false && "$observed_unknown" == false ]]; then
     printf 'pm_revoke_status=%s\nobservable=true\n' "$status" >> "$output"
     SEND_SMS_PM_REVOCATION_OBSERVABLE=true
+  else
+    local reason='permission_state_not_stable'
+    if [[ "$observed_granted" == true ]]; then reason='role_controller_restored_runtime_permission'; fi
+    printf 'pm_revoke_status=%s\nobservable=false\nreason=%s\n' "$status" "$reason" >> "$output"
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
   fi
 }
 
@@ -264,6 +363,25 @@ assert_send_sms_appop_denied() {
     cat "$OUT_DIR/$evidence"
     return 1
   fi
+}
+
+use_send_sms_appop_probe() {
+  # Some RoleController versions expose a durable runtime denial in the package dump,
+  # then restore the role-managed grant as soon as the SMS surface returns to foreground.
+  # In that case the AppOp remains the effective, observable denial boundary.
+  adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
+  EFFECTIVE_PERMISSION_PROBE="SEND_SMS_APP_OP_DENIED"
+  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS restored the runtime grant, so the effective-denial proof used the SEND_SMS AppOp and verified the protected UI stayed non-actionable."
+  set_send_sms_appop ignore "send-sms-appop-deny.txt"
+  assert_send_sms_appop_denied "send-sms-appop-denied-state.txt"
+  if ! permission_granted android.permission.SEND_SMS; then
+    echo "SEND_SMS runtime permission unexpectedly disappeared during AppOp-only denial proof."
+    exit 1
+  fi
+  adb shell input keyevent KEYCODE_HOME
+  launch_sms_surface "sms-send-appop-denied-launch.txt" warm
+  assert_sms_role_held
+  assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"
 }
 
 launch_sms_surface() {
@@ -394,27 +512,21 @@ ensure_role_held android.app.role.SMS
 if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" == "true" ]]; then
   EFFECTIVE_PERMISSION_PROBE="SEND_SMS_RUNTIME_PERMISSION_REVOKED"
   EFFECTIVE_PERMISSION_NOTE="ROLE_SMS remained held while Android exposed a real SEND_SMS runtime-permission revocation; Sentinel stayed fail-closed before and after foreground return."
-  assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-state.txt"
-  adb shell input keyevent KEYCODE_HOME
-  launch_sms_surface "sms-send-runtime-permission-denied-launch.txt" warm
-  assert_sms_role_held
-  assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-after-launch.txt"
-else
+  if ! assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-state.txt"; then
+    SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+  else
+    adb shell input keyevent KEYCODE_HOME
+    launch_sms_surface "sms-send-runtime-permission-denied-launch.txt" warm
+    assert_sms_role_held
+    if ! assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-after-launch.txt"; then
+      SEND_SMS_PM_REVOCATION_OBSERVABLE=false
+    fi
+  fi
+fi
+if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" != "true" ]]; then
   # Some RoleController versions immediately restore the role-managed runtime grant. In that case,
   # retain the established AppOp probe used by older emulator lanes.
-  adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
-  EFFECTIVE_PERMISSION_PROBE="SEND_SMS_APP_OP_DENIED"
-  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS restored the runtime grant, so the effective-denial proof used the SEND_SMS AppOp and verified the protected UI stayed non-actionable."
-  set_send_sms_appop ignore "send-sms-appop-deny.txt"
-  assert_send_sms_appop_denied "send-sms-appop-denied-state.txt"
-  if ! permission_granted android.permission.SEND_SMS; then
-    echo "SEND_SMS runtime permission unexpectedly disappeared during AppOp-only denial proof."
-    exit 1
-  fi
-  adb shell input keyevent KEYCODE_HOME
-  launch_sms_surface "sms-send-appop-denied-launch.txt" warm
-  assert_sms_role_held
-  assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"
+  use_send_sms_appop_probe
 fi
 
 scroll_until_ui_contains "Envoi SMS : autorisation Android requise."
@@ -427,10 +539,10 @@ EFFECTIVE_PERMISSION_DENIAL_PROVEN=true
 if [[ "$EFFECTIVE_PERMISSION_PROBE" == "SEND_SMS_APP_OP_DENIED" ]]; then
   set_send_sms_appop allow "send-sms-appop-restore.txt"
 fi
-adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
+adb_retry_transport shell pm grant "$PACKAGE" android.permission.SEND_SMS
 
 # ROLE_SMS revocation: the protected send action must remain disabled and must not reacquire the role.
-adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
+adb_retry_transport shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
 wait_role_absent android.app.role.SMS
 launch_sms_surface "sms-role-revoked-launch.txt"
 scroll_until_ui_contains "rôle SMS disponible mais non accordé"
@@ -452,7 +564,7 @@ assert_no_crash
 assert_sms_role_held
 
 # DIALER role: a real tap on Appeler must not create any emulator-modem call while the role is absent.
-adb shell cmd role remove-role-holder --user 0 android.app.role.DIALER "$PACKAGE"
+adb_retry_transport shell cmd role remove-role-holder --user 0 android.app.role.DIALER "$PACKAGE"
 wait_role_absent android.app.role.DIALER
 adb shell am force-stop "$PACKAGE"
 adb shell am start -W -a android.intent.action.DIAL -d "tel:$DIALER_PROBE_NUMBER" \

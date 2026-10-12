@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Sentinel Quantum Vanguard</string>
+    <string name="com_auth0_domain">sentinel-voice.eu.auth0.com</string>
+    <string name="com_auth0_client_id">K2FMNCrBhR7ygmffRNlZcx8YuieSWuRG</string>
+    <string name="com_auth0_scheme">com.sentinel.quantum</string>
+    <string name="com_auth0_audience">https://sentinel-voice-api.onrender.com</string>
+    <string name="settings_auth_title">Compte Sentinel</string>
+    <string name="settings_auth_description">Connexion sécurisée pour les fonctions vocales et les sessions protégées.</string>
+    <string name="settings_auth_loading">Vérification de la session…</string>
+    <string name="settings_auth_login">Se connecter avec Auth0</string>
+    <string name="settings_auth_logout">Se déconnecter</string>
+    <string name="settings_auth_logged_in_as">Connecté avec %1$s</string>
+    <string name="settings_auth_no_email">Adresse e-mail non communiquée</string>
+    <string name="settings_auth_device_id">Identifiant de liaison de cet appareil : %1$s</string>
+    <string name="settings_auth_copy_device_id">Copier l’identifiant de l’appareil</string>
+    <string name="settings_auth_error">Connexion impossible. Aucun jeton n’a été conservé.</string>
     <string name="launcher_phone_name">Sentinel Téléphone</string>
     <string name="launcher_sms_name">Sentinel Messages</string>
     <string name="home_title">Sentinel Quantum Vanguard AI Pro</string>

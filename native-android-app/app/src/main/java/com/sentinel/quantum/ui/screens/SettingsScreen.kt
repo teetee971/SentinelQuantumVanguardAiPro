@@ -1,10 +1,13 @@
 package com.sentinel.quantum.ui.screens
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -25,16 +28,21 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.R
+import com.sentinel.quantum.auth.Auth0SessionController
+import com.sentinel.quantum.auth.Auth0UserSummary
+import com.sentinel.quantum.auth.auth0ErrorMessage
 import com.sentinel.quantum.VoiceStudioActivity
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.data.SentinelPreferencesBackup
+import com.sentinel.quantum.data.SentinelUninstallFlow
 import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.FamilySafetyPolicy
+import com.sentinel.quantum.security.SentinelDeviceIdentity
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +57,9 @@ fun SettingsScreen(
     onThemeModeChange: (ThemeMode) -> Unit
 ) {
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    val authController = remember(context) { Auth0SessionController(context) }
+    val voiceDeviceId = remember(context) { SentinelDeviceIdentity.current(context) }
     val settingsStore = remember(context) { SettingsStore(context) }
     val logger = remember(context) { LocalLogger(context) }
     val blocklistStore = remember(context) { CallBlocklistStore(context) }
@@ -71,7 +82,12 @@ fun SettingsScreen(
     }
     var statusMessageRes by remember { mutableStateOf<Int?>(null) }
     var backupStatus by remember { mutableStateOf<String?>(null) }
+    var showUninstallDialog by remember { mutableStateOf(false) }
+    var uninstallAfterBackup by remember { mutableStateOf(false) }
     var externalLinkStatus by remember { mutableStateOf<String?>(null) }
+    var authUser by remember { mutableStateOf<Auth0UserSummary?>(null) }
+    var authLoading by remember { mutableStateOf(true) }
+    var authErrorMessage by remember { mutableStateOf<String?>(null) }
     val ioScope = rememberCoroutineScope()
 
     fun openExternalPage(url: String) {
@@ -94,8 +110,10 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
+            val pendingUninstall = uninstallAfterBackup
+            uninstallAfterBackup = false
             ioScope.launch {
-                backupStatus = withContext(Dispatchers.IO) {
+                val exportMessage = withContext(Dispatchers.IO) {
                     runCatching {
                         val snapshot = SentinelPreferencesBackup.Snapshot(
                             themeMode = themeMode,
@@ -117,7 +135,23 @@ fun SettingsScreen(
                         "Échec de l’export de la sauvegarde locale."
                     }
                 }
+                val exportSucceeded = exportMessage == "Sauvegarde locale exportée."
+                backupStatus = exportMessage
+                if (SentinelUninstallFlow.shouldOpenUninstallAfterBackup(pendingUninstall, exportSucceeded)) {
+                    runCatching {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_DELETE,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                        )
+                    }.onFailure {
+                        backupStatus = "Sauvegarde exportée, mais la confirmation de désinstallation n’a pas pu être ouverte."
+                    }
+                }
             }
+        } else {
+            uninstallAfterBackup = false
         }
     }
     val restoreBackupLauncher = rememberLauncherForActivityResult(
@@ -198,6 +232,19 @@ fun SettingsScreen(
         }
     }
 
+    LaunchedEffect(authController) {
+        authController.restore(
+            onSuccess = {
+                authUser = it
+                authLoading = false
+            },
+            onFailure = {
+                authUser = null
+                authLoading = false
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -215,6 +262,88 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_auth_title),
+                subtitle = stringResource(R.string.settings_auth_description)
+            )
+            when {
+                authLoading -> Text(stringResource(R.string.settings_auth_loading))
+                authUser == null -> {
+                    Button(
+                        onClick = {
+                            val currentActivity = activity ?: return@Button
+                            authErrorMessage = null
+                            authController.login(
+                                currentActivity,
+                                onSuccess = { authUser = it },
+                                onFailure = { message ->
+                                    authUser = null
+                                    authErrorMessage = auth0ErrorMessage(message)
+                                }
+                            )
+                        },
+                        enabled = activity != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_auth_login))
+                    }
+                }
+                else -> {
+                    Text(
+                        text = stringResource(
+                            R.string.settings_auth_logged_in_as,
+                            authUser?.email ?: stringResource(R.string.settings_auth_no_email)
+                        ),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    voiceDeviceId?.let { deviceId ->
+                        Text(
+                            text = stringResource(R.string.settings_auth_device_id, deviceId),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedButton(
+                            onClick = {
+                                context.getSystemService(ClipboardManager::class.java)
+                                    ?.setPrimaryClip(
+                                        ClipData.newPlainText(
+                                            "Sentinel device ID",
+                                            deviceId
+                                        )
+                                    )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.settings_auth_copy_device_id))
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val currentActivity = activity ?: return@OutlinedButton
+                            authErrorMessage = null
+                            authController.logout(
+                                currentActivity,
+                                onSuccess = { authUser = null },
+                                onFailure = { message -> authErrorMessage = auth0ErrorMessage(message) }
+                            )
+                        },
+                        enabled = activity != null,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.settings_auth_logout))
+                    }
+                }
+            }
+            authErrorMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            HorizontalDivider()
+
             SentinelSectionHeader(
                 title = stringResource(R.string.settings_theme_title),
                 subtitle = "Choisissez l’apparence de Sentinel sans modifier les fonctions de sécurité."
@@ -394,6 +523,15 @@ fun SettingsScreen(
                 onClick = { restoreBackupLauncher.launch(arrayOf("application/json", "text/plain")) },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Restaurer une sauvegarde") }
+            OutlinedButton(
+                onClick = { showUninstallDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Sauvegarder puis désinstaller") }
+            Text(
+                "Cette action exporte d’abord les préférences restaurables, puis ouvre la confirmation Android. Une désinstallation lancée directement depuis les réglages ne peut pas être interceptée par l’application.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             backupStatus?.let {
                 Text(
                     it,
@@ -479,6 +617,7 @@ fun SettingsScreen(
                         )
                     }
                 }
+
             }
 
             HorizontalDivider()
@@ -522,6 +661,30 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    if (showUninstallDialog) {
+        AlertDialog(
+            onDismissRequest = { showUninstallDialog = false },
+            title = { Text("Sauvegarder avant désinstallation ?") },
+            text = {
+                Text(
+                    "Un fichier JSON sera créé avec les préférences restaurables. Les jetons Auth0, les contacts, les SMS/MMS et l’historique d’appels ne seront pas exportés."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUninstallDialog = false
+                        uninstallAfterBackup = true
+                        createBackupLauncher.launch(SentinelUninstallFlow.BACKUP_FILE_NAME)
+                    }
+                ) { Text("Sauvegarder puis continuer") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUninstallDialog = false }) { Text("Annuler") }
+            }
+        )
     }
 }
 

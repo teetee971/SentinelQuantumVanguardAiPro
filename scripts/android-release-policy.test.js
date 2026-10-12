@@ -41,3 +41,8 @@ test('releaseUnsigned explicitly clears any signing config inherited from releas
   assert.match(block, /initWith\s+release/);
   assert.match(block, /signingConfig\s*=\s*null/);
 });
+
+test('the next Android release is version 1.0.9 with a monotonic version code', () => {
+  assert.match(androidBuild, /versionCode\s+10\b/);
+  assert.match(androidBuild, /versionName\s+"1\.0\.9"/);
+});
