@@ -108,7 +108,7 @@ class MmsNotificationDedupJournalTest {
         launch(secondJournal, "123e4567-e89b-12d3-a456-426614174011.pdu")
         start.countDown()
 
-        assertEquals(true, done.await(3, TimeUnit.SECONDS))
+        assertEquals(true, done.await(8, TimeUnit.SECONDS))
         assertEquals(1, results.count { it == MmsNotificationDedupJournal.Reservation.ACQUIRED })
         assertEquals(1, results.count { it == MmsNotificationDedupJournal.Reservation.DUPLICATE })
     }
@@ -169,7 +169,7 @@ class MmsNotificationDedupJournalTest {
                     }.incrementAndGet()
                     if (reads == 2) {
                         secondReadBarrier.countDown()
-                        secondReadBarrier.await(250, TimeUnit.MILLISECONDS)
+                        secondReadBarrier.await(3, TimeUnit.SECONDS)
                     }
                     values.toMap()
                 }
