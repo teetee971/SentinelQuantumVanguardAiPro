@@ -22,15 +22,19 @@ class SentinelUninstallFlowTest {
         val backupCallback = settingsSource
             .substringAfter("val createBackupLauncher = rememberLauncherForActivityResult(")
             .substringBefore("val restoreBackupLauncher = rememberLauncherForActivityResult(")
-        val exportSucceeded = backupCallback.indexOf("val exportSucceeded =")
-        val consumePendingUninstall = backupCallback.indexOf("uninstallAfterBackup = false", exportSucceeded)
-        val uninstallDecision = backupCallback.indexOf(
-            "SentinelUninstallFlow.shouldOpenUninstallAfterBackup(",
-            exportSucceeded
+        val capturePendingUninstall = backupCallback.indexOf(
+            "val pendingUninstall = uninstallAfterBackup"
+        )
+        val consumePendingUninstall = backupCallback.indexOf("uninstallAfterBackup = false")
+        val exportLaunch = backupCallback.indexOf("ioScope.launch")
+        val capturedDecision = backupCallback.indexOf(
+            "SentinelUninstallFlow.shouldOpenUninstallAfterBackup(pendingUninstall, exportSucceeded)"
         )
 
-        assertTrue("backup callback must compute the export result", exportSucceeded >= 0)
-        assertTrue("pending uninstall intent must be consumed for every completed export", consumePendingUninstall >= 0)
-        assertTrue("pending uninstall intent must be consumed before deciding whether to uninstall", consumePendingUninstall < uninstallDecision)
+        assertTrue("current export must snapshot the pending uninstall intent", capturePendingUninstall >= 0)
+        assertTrue("pending uninstall intent must be consumed for this export", consumePendingUninstall >= 0)
+        assertTrue("uninstall intent must be captured before export work starts", capturePendingUninstall < exportLaunch)
+        assertTrue("uninstall intent must be consumed before export work starts", consumePendingUninstall < exportLaunch)
+        assertTrue("uninstall decision must use the captured one-shot intent", capturedDecision >= 0)
     }
 }
