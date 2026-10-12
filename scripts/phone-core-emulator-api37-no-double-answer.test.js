@@ -47,7 +47,7 @@ test('the incoming flow waits for ADB to return online before injecting gsm call
   assert.ok(gsmCall > onlineWait, 'synthetic call must be injected only after ADB is online');
 });
 
-test('API 37 does not race the app answer with a host gsm accept', () => {
+test('API 37 never races REQUEST_ACCEPT with a host gsm accept', () => {
   const requestAcceptBlock = blockBetween(
     bridgeSource,
     'if answer_transaction is not None and not accept_requested:',
@@ -58,8 +58,28 @@ test('API 37 does not race the app answer with a host gsm accept', () => {
   assert.doesNotMatch(
     requestAcceptBlock,
     /api == 37[\s\S]*send_console_accept/,
-    'API 37 must let Telecom execute the causal answer without a parallel host accept'
+    'API 37 must not mutate the synthetic modem while Telecom is still accepting the app answer'
   );
+});
+
+test('API 37 synchronizes the synthetic modem only after the same Telecom call is ANSWERED', () => {
+  const answeredBlock = blockBetween(
+    bridgeSource,
+    'if accept_requested and not answered and call_id is not None:',
+    'if synchronized and answered and not active and call_id is not None:'
+  );
+
+  const answeredGuard = answeredBlock.indexOf('answered_match.group(1) == call_id');
+  const answeredState = answeredBlock.indexOf('answered = True');
+  const api37Guard = answeredBlock.indexOf('api == 37', answeredState);
+  const consoleAccept = answeredBlock.indexOf('send_console_accept', api37Guard);
+  const syncMarker = answeredBlock.indexOf('transport_sync=emulator_console_gsm_accept_after_answered', consoleAccept);
+
+  assert.ok(answeredGuard >= 0, 'ANSWERED must be correlated to the causal Telecom call');
+  assert.ok(answeredState > answeredGuard, 'the bridge must observe ANSWERED before synchronizing transport');
+  assert.ok(api37Guard > answeredState, 'API 37 synchronization must happen only after ANSWERED');
+  assert.ok(consoleAccept > api37Guard, 'API 37 must then synchronize the emulator GSM transport');
+  assert.ok(syncMarker > consoleAccept, 'the causal synchronization must be recorded as evidence');
 });
 
 test('the bridge requires ACTIVE on the same Telecom call that accepted the answer', () => {
