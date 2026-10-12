@@ -65,9 +65,6 @@ object MmsDownloadCoordinator {
                 return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
             }
 
-            // Journal the routing identity before creating the staging file. If the process dies at any
-            // later point, startup recovery can reconstruct both recovery and the original cleanup
-            // deadline. A journal without a file is safely self-healing.
             val requestedAtMs = System.currentTimeMillis()
             val recoveryJournal = MmsDownloadRecoveryJournal(context.applicationContext)
             if (!recoveryJournal.record(canonicalFile.name, subscriptionId, requestedAtMs)) {
@@ -181,21 +178,19 @@ object MmsDownloadCoordinator {
             if (removed) releaseNotificationDedup(context, fileName)
         }
 
-    /** Called after durable private persistence/provider handling succeeded. */
+    /** Called after durable private persistence/provider handling succeeded or terminal cleanup. */
     internal fun finishRecovery(
         context: Context,
         fileName: String,
         cancelCleanupWorker: Boolean = true
-    ): Boolean {
-        if (!completeNotificationDedup(context, fileName)) return false
-        return deleteInternal(
+    ): Boolean =
+        deleteInternal(
             context = context,
             fileName = fileName,
             cancelCleanup = cancelCleanupWorker,
             cancelRecovery = false,
             removeRecoveryMetadata = true
         )
-    }
 
     private fun deleteInternal(
         context: Context,
@@ -216,10 +211,6 @@ object MmsDownloadCoordinator {
         val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
         if (!removed) return false
 
-        // Do not cancel the durable safety nets until the recovery journal is durably retired.
-        // Otherwise a SharedPreferences commit failure can strand phantom recovery metadata with no
-        // worker left to revisit it. A failed metadata retirement therefore stays fail-closed and
-        // leaves the existing workers scheduled for a later cleanup/recovery pass.
         if (removeRecoveryMetadata) {
             val metadataRemoved = MmsDownloadRecoveryJournal(context.applicationContext).remove(fileName)
             if (!metadataRemoved) return false
@@ -233,14 +224,6 @@ object MmsDownloadCoordinator {
         return true
     }
 
-    /**
-     * Secondary final-deadline recovery for stale, oversized or malformed staging files.
-     *
-     * Valid staged MMS files are never unlinked raw: if durable routing metadata exists, they get
-     * the same final private/provider recovery attempt as the cleanup worker before staging is
-     * retired. This also removes the matching recovery journal and worker state instead of leaving
-     * phantom work behind. Invalid filenames cannot have valid journal entries and are deleted raw.
-     */
     fun pruneExpired(context: Context): Int {
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return 0
         val directory = File(canonicalCache, DOWNLOAD_DIRECTORY)
@@ -273,8 +256,6 @@ object MmsDownloadCoordinator {
                             )
                         }
                     }
-                    // Mirror the cleanup deadline even if final recovery could not complete: retire
-                    // the staged file, its recovery metadata and any pending recovery worker.
                     expire(context, file.name)
                 } else {
                     runCatching { file.delete() }
