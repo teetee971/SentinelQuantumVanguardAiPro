@@ -99,10 +99,13 @@ class MmsNotificationDedupJournalTest {
         val results = mutableListOf<MmsNotificationDedupJournal.Reservation>()
 
         fun launch(journal: MmsNotificationDedupJournal, fileName: String) = Thread {
-            start.await()
-            val result = journal.reserve(identity, fileName, requestedAtMs = 5_000L)
-            synchronized(results) { results += result }
-            done.countDown()
+            try {
+                start.await()
+                val result = journal.reserve(identity, fileName, requestedAtMs = 5_000L)
+                synchronized(results) { results += result }
+            } finally {
+                done.countDown()
+            }
         }.also { it.start() }
 
         launch(firstJournal, "123e4567-e89b-12d3-a456-426614174010.pdu")
@@ -159,6 +162,7 @@ class MmsNotificationDedupJournalTest {
         private val firstReadBarrier = CountDownLatch(2)
         private val secondReadBarrier = CountDownLatch(2)
         private val concurrentPairObserved = AtomicBoolean(false)
+        private val firstReadTimedOut = AtomicBoolean(false)
         private val readsByThread = ConcurrentHashMap<Long, AtomicInteger>()
 
         val preferences = Proxy.newProxyInstance(
@@ -172,7 +176,10 @@ class MmsNotificationDedupJournalTest {
                     }.incrementAndGet()
                     if (reads == 1) {
                         firstReadBarrier.countDown()
-                        if (firstReadBarrier.await(1, TimeUnit.SECONDS)) {
+                        val paired = firstReadBarrier.await(1, TimeUnit.SECONDS)
+                        if (!paired) {
+                            firstReadTimedOut.set(true)
+                        } else if (!firstReadTimedOut.get()) {
                             concurrentPairObserved.set(true)
                         }
                         values.toMap()
