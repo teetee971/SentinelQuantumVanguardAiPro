@@ -234,6 +234,16 @@ def _principal_device_ids(principal: dict[str, Any]) -> list[str]:
     return [item for item in device_ids if isinstance(item, str)]
 
 
+def _load_state_record(raw: str, required_keys: tuple[str, ...]) -> dict[str, Any]:
+    try:
+        record = json.loads(raw)
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
+    if not isinstance(record, dict) or any(key not in record for key in required_keys):
+        raise HTTPException(status_code=503, detail="Voice service unavailable")
+    return record
+
+
 def extract_device_ids(claims: dict[str, Any], claim_name: str = "device_ids") -> list[str]:
     """Normalize the configured Auth0 device claim without accepting malformed entries."""
     device_ids = claims.get(claim_name)
@@ -400,9 +410,11 @@ def create_app(
         except (RedisError, TimeoutError, OSError) as exc:
             raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
         if existing:
-            record = json.loads(existing)
+            record = _load_state_record(existing, ("request_fingerprint", "response"))
             if record["request_fingerprint"] != request_fingerprint:
                 raise HTTPException(status_code=409, detail="Idempotency-Key reused")
+            if not isinstance(record["response"], dict):
+                raise HTTPException(status_code=503, detail="Voice service unavailable")
             return record["response"]
 
         session_id = str(uuid.uuid4())
@@ -449,12 +461,20 @@ def create_app(
             raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
 
         if not stored:
-            replay = await client.get(idempotency_record_key)
+            try:
+                replay = await client.get(idempotency_record_key)
+            except (RedisError, TimeoutError, OSError) as exc:
+                raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
             if replay:
-                replay_record = json.loads(replay)
+                replay_record = _load_state_record(
+                    replay, ("request_fingerprint", "response")
+                )
                 if replay_record["request_fingerprint"] != request_fingerprint:
                     raise HTTPException(status_code=409, detail="Idempotency-Key reused")
+                if not isinstance(replay_record["response"], dict):
+                    raise HTTPException(status_code=503, detail="Voice service unavailable")
                 return replay_record["response"]
+            raise HTTPException(status_code=503, detail="Voice service unavailable")
         return response
 
     @app.post("/v1/voice/sessions/{session_id}/close")
@@ -479,7 +499,9 @@ def create_app(
             if not record:
                 closed_record = await client.get(closed_key)
                 if closed_record:
-                    closed_session = json.loads(closed_record)
+                    closed_session = _load_state_record(
+                        closed_record, ("subject", "device_id")
+                    )
                     if (
                         closed_session["subject"] != principal["subject"]
                         or closed_session["device_id"]
@@ -488,7 +510,7 @@ def create_app(
                         raise HTTPException(status_code=403, detail="Voice access denied")
                     return {"session_id": session_id, "status": "closed"}
                 raise HTTPException(status_code=404, detail="Voice session not found")
-            session = json.loads(record)
+            session = _load_state_record(record, ("subject", "device_id"))
             if (
                 session["subject"] != principal["subject"]
                 or session["device_id"] not in _principal_device_ids(principal)
