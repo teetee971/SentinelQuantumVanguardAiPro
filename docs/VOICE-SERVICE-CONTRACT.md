@@ -134,6 +134,9 @@ enregistrer le contenu audio.
   métadonnées d’appel, durées de conservation et suppression.
 - Protéger les endpoints par authentification, autorisation, rate limiting,
   anti-rejeu et idempotence.
+- Les nouvelles créations utilisent le namespace d’idempotence v2 ; les
+  records v1, qui peuvent contenir des jetons de l’ancien schéma de room,
+  doivent être ignorés et ne doivent jamais être rejoués.
 - Prévoir rotation/révocation des clés LiveKit, des credentials PSTN et des
   secrets de signature.
 - Émettre des erreurs génériques côté client ; conserver les détails

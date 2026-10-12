@@ -227,6 +227,47 @@ def test_legacy_idempotency_replay_cannot_bypass_room_authorization():
     assert issuer.calls == []
 
 
+def test_legacy_valid_room_replay_is_not_reused_after_room_binding_change():
+    idempotency_key = "legacy-valid-123456"
+    payload = valid_payload()
+    redis = FakeRedis()
+    redis.values[
+        f"voice:idempotency:v1:{_hash(f'user-1:{idempotency_key}') }"
+    ] = json.dumps(
+        {
+            "request_fingerprint": _hash(
+                json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            ),
+            "response": {
+                "session_id": "legacy-session",
+                "transport": {"access_token": "legacy-v1-token"},
+            },
+        }
+    )
+    issuer = FakeTokenIssuer()
+    app = create_app(
+        settings=configured_settings(),
+        redis_client=redis,
+        identity_verifier=FakeIdentityVerifier(entitled_principal()),
+        token_issuer=issuer,
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/voice/sessions",
+            headers={
+                "Authorization": "Bearer valid",
+                "Idempotency-Key": idempotency_key,
+            },
+            json=payload,
+        )
+
+    assert response.status_code == 201
+    assert response.json()["session_id"] != "legacy-session"
+    assert response.json()["transport"]["access_token"] == "ephemeral-livekit-token"
+    assert issuer.calls
+
+
 def test_session_creation_is_idempotent_and_room_scoped():
     client, issuer = make_client()
     headers = {

@@ -84,7 +84,7 @@ def valid_payload():
 
 def test_create_fails_closed_when_idempotency_record_is_corrupt():
     idempotency_key = "create-123456789012"
-    redis_key = f"voice:idempotency:v1:{_hash(f'user-1:{idempotency_key}')}"
+    redis_key = f"voice:idempotency:v2:{_hash(f'user-1:{idempotency_key}')}"
     redis_client = FakeRedis({redis_key: "{"})
     app = create_app(
         settings=configured_settings(),

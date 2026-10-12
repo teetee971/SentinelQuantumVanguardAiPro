@@ -33,7 +33,7 @@ class RaceRedis:
         return 1
 
     async def set(self, key, value, ex=None, nx=False):
-        if nx and key.startswith("voice:idempotency:v1:"):
+        if nx and key.startswith("voice:idempotency:v2:"):
             candidate = json.loads(value)
             winner = json.loads(value)
             winner["response"] = dict(candidate["response"])
@@ -65,7 +65,7 @@ class AtomicRedis(RaceRedis):
         return 1
 
     async def set(self, key, value, ex=None, nx=False):
-        if key.startswith("voice:idempotency:v1:") or key.startswith("voice:session:v1:"):
+        if key.startswith("voice:idempotency:v2:") or key.startswith("voice:session:v1:"):
             raise AssertionError("voice reservation must use Redis EVAL atomically")
         return await super().set(key, value, ex=ex, nx=nx)
 

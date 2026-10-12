@@ -472,7 +472,9 @@ def create_app(
             device_id=body.client.device_id,
         )
         idempotency_hash = _hash(f"{subject}:{idempotency_key}")
-        idempotency_record_key = f"voice:idempotency:v1:{idempotency_hash}"
+        # v1 records predate device-bound room names and may contain tokens for the old
+        # shared-room scheme. Never replay them after room authorization changes.
+        idempotency_record_key = f"voice:idempotency:v2:{idempotency_hash}"
         request_fingerprint = _hash(
             json.dumps(body.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
         )
