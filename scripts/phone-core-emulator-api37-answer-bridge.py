@@ -4,16 +4,15 @@
 This helper is host-only qualification infrastructure. It observes one causal Telecom answer
 transaction and requires REQUEST_ACCEPT, ANSWERED and ACTIVE for the same Telecom call.
 
-Android 16/API 36 still needs an explicit emulator-console `gsm accept` after the causal
-REQUEST_ACCEPT. Android 17/API 37 must not receive that extra host-side answer while Telephony
-is already executing the app's answer request: forcing the synthetic modem ACTIVE in parallel
-can disconnect the causal TC@ call as MISSED and recreate the transport under a new TC@ id.
-For API 37 the helper therefore performs correlation only during the normal answer path and
-lets Telephony drive the modem. A console `gsm accept` is allowed only as a narrowly scoped
-recovery after the same causal call has explicitly transitioned from ANSWERED to ON_HOLD.
-Neither correlation nor recovery is enough for qualification: the exact REQUEST_ACCEPT call
-must still reach ANSWERED and real CallsManager ACTIVE. The shell harness separately requires
-Sentinel's private INCALL_ACTIVE evidence.
+Android 16/API 36 needs an explicit emulator-console `gsm accept` after the causal
+REQUEST_ACCEPT. Android 17/API 37 must not receive that mutation while Telephony is still
+accepting the app's answer request: doing so races the causal Telecom transaction. Instead,
+API 37 waits until the same causal TC@ call has reached ANSWERED, then synchronizes the
+synthetic modem with `gsm accept` before requiring real CallsManager ACTIVE on that same call.
+A later ON_HOLD transition retains the narrowly scoped recovery path. Neither synchronization
+nor recovery is sufficient on its own: the exact REQUEST_ACCEPT call must reach ANSWERED and
+real CallsManager ACTIVE, and the shell harness separately requires Sentinel's private
+INCALL_ACTIVE evidence.
 """
 
 from __future__ import annotations
@@ -240,15 +239,16 @@ def run_bridge(
                                 response_key="console_gsm_accept_response",
                                 failure_message="emulator console gsm accept failed",
                             )
-                            sync_kind = "emulator_console_gsm_accept"
+                            synchronized = True
+                            append_line(
+                                evidence,
+                                f"transport_sync=emulator_console_gsm_accept api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                            )
                         else:
-                            sync_kind = "telecom_request_accept_no_console_mutation"
-
-                        append_line(
-                            evidence,
-                            f"transport_sync={sync_kind} api={api} number={number} call_id={call_id} transaction={answer_transaction}",
-                        )
-                        synchronized = True
+                            append_line(
+                                evidence,
+                                f"transport_sync=pending_telecom_answered api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                            )
                         continue
 
                 if accept_requested and not answered and call_id is not None:
@@ -260,6 +260,19 @@ def run_bridge(
                     ):
                         append_line(evidence, line)
                         answered = True
+                        if api == 37:
+                            send_console_accept(
+                                console,
+                                number,
+                                evidence,
+                                response_key="console_gsm_accept_after_answered_response",
+                                failure_message="emulator console gsm accept after ANSWERED failed",
+                            )
+                            synchronized = True
+                            append_line(
+                                evidence,
+                                f"transport_sync=emulator_console_gsm_accept_after_answered api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                            )
                         continue
 
                 if synchronized and answered and not active and call_id is not None:
