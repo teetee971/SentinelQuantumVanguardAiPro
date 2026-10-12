@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git add .tmp/android-emulation-qualification.patched.yml
+          git add -f .tmp/android-emulation-qualification.patched.yml
           git diff --cached --check
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
