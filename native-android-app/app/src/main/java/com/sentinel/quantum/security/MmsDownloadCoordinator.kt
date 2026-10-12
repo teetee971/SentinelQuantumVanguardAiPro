@@ -143,6 +143,10 @@ object MmsDownloadCoordinator {
         }
     }
 
+    /** Marks a successfully handled Notification.ind as a bounded replay marker. */
+    internal fun completeNotificationDedup(context: Context, fileName: String): Boolean =
+        MmsNotificationDedupJournal(context.applicationContext).complete(fileName)
+
     /** Releases a Notification.ind reservation only when its transport request definitively failed. */
     internal fun releaseNotificationDedup(context: Context, fileName: String): Boolean =
         MmsNotificationDedupJournal(context.applicationContext).release(fileName)
@@ -272,7 +276,7 @@ object MmsDownloadCoordinator {
     private fun holdsSmsRole(context: Context): Boolean =
         context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
 
-    internal fun isValidStagedFileName(fileName: String): Boolean = FILE_NAME.matches(fileName)
+    internal fun isValidStagedFileName(fileName: String) = FILE_NAME.matches(fileName)
 
     const val ACTION_DOWNLOAD_COMPLETE = "com.sentinel.quantum.MMS_DOWNLOAD_COMPLETE"
     const val EXTRA_FILE_NAME = "mms.download.file"
