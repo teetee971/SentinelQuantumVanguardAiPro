@@ -334,7 +334,7 @@ jobs:
             physical_validation: 'not-executed',
             functional_100_percent: false
           };
-          fs.writeFileSync(`${name}.build.json`, JSON.stringify(identity, null,2) + '\n');
+          fs.writeFileSync(`${name}.build.json`, JSON.stringify(identity, null, 2) + '\n');
           NODE
 
       - name: Upload APK artifact
