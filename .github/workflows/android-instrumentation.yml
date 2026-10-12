@@ -170,12 +170,13 @@ jobs:
             # them explicitly, then run the AndroidJUnitRunner through adb with a
             # hard watchdog. This keeps API 24 blocking without accepting a 45 min
             # hung Gradle session as a qualification result.
-            # Resolve AndroidTest artifacts before the manual API 24 build so a
-            # transient Maven outage fails fast instead of holding the runner
-            # through the full job timeout.
+            # Resolve every compile/runtime classpath needed by the manual API 24
+            # build before switching Gradle to offline mode. This makes the lane
+            # deterministic even when the runner starts with a cold Gradle cache.
             set +e
-            timeout 300s ./gradlew :app:dependencies \
-                --configuration debugAndroidTestRuntimeClasspath \
+            timeout 300s ./gradlew \
+                :app:dependencies --configuration debugAndroidTestRuntimeClasspath \
+                :wearable-security:dependencies --configuration compileClasspath \
                 --no-daemon --console=plain 2>&1 |
               tee "$DEPENDENCY_RESOLUTION_LOG"
             DEPENDENCY_RESOLUTION_STATUS=${PIPESTATUS[0]}
