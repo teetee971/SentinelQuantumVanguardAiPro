@@ -2,6 +2,10 @@ package com.sentinel.quantum.security
 
 import android.content.SharedPreferences
 import java.lang.reflect.Proxy
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -84,6 +88,31 @@ class MmsNotificationDedupJournalTest {
         )
     }
 
+    @Test fun concurrentJournalInstancesCannotReserveSameNotification() {
+        val preferences = RacingPreferences()
+        val firstJournal = MmsNotificationDedupJournal(preferences.preferences)
+        val secondJournal = MmsNotificationDedupJournal(preferences.preferences)
+        val identity = "c".repeat(64)
+        val start = CountDownLatch(1)
+        val done = CountDownLatch(2)
+        val results = mutableListOf<MmsNotificationDedupJournal.Reservation>()
+
+        fun launch(journal: MmsNotificationDedupJournal, fileName: String) = Thread {
+            start.await()
+            val result = journal.reserve(identity, fileName, requestedAtMs = 5_000L)
+            synchronized(results) { results += result }
+            done.countDown()
+        }.also { it.start() }
+
+        launch(firstJournal, "123e4567-e89b-12d3-a456-426614174010.pdu")
+        launch(secondJournal, "123e4567-e89b-12d3-a456-426614174011.pdu")
+        start.countDown()
+
+        assertEquals(true, done.await(3, TimeUnit.SECONDS))
+        assertEquals(1, results.count { it == MmsNotificationDedupJournal.Reservation.ACQUIRED })
+        assertEquals(1, results.count { it == MmsNotificationDedupJournal.Reservation.DUPLICATE })
+    }
+
     private class Preferences {
         val values = linkedMapOf<String, String>()
         val preferences = Proxy.newProxyInstance(
@@ -115,6 +144,60 @@ class MmsNotificationDedupJournalTest {
                     }
                     "commit" -> {
                         removals.forEach(values::remove)
+                        true
+                    }
+                    else -> error("Unexpected editor call: ${method.name}")
+                }
+            } as SharedPreferences.Editor
+            return editor
+        }
+    }
+
+    private class RacingPreferences {
+        private val values = ConcurrentHashMap<String, String>()
+        private val secondReadBarrier = CountDownLatch(2)
+        private val readsByThread = ConcurrentHashMap<Long, AtomicInteger>()
+
+        val preferences = Proxy.newProxyInstance(
+            SharedPreferences::class.java.classLoader,
+            arrayOf(SharedPreferences::class.java)
+        ) { _, method, _ ->
+            when (method.name) {
+                "getAll" -> {
+                    val reads = readsByThread.computeIfAbsent(Thread.currentThread().id) {
+                        AtomicInteger()
+                    }.incrementAndGet()
+                    if (reads == 2) {
+                        secondReadBarrier.countDown()
+                        secondReadBarrier.await(250, TimeUnit.MILLISECONDS)
+                    }
+                    values.toMap()
+                }
+                "edit" -> editor()
+                else -> error("Unexpected preferences call: ${method.name}")
+            }
+        } as SharedPreferences
+
+        private fun editor(): SharedPreferences.Editor {
+            val writes = linkedMapOf<String, String>()
+            val removals = mutableSetOf<String>()
+            lateinit var editor: SharedPreferences.Editor
+            editor = Proxy.newProxyInstance(
+                SharedPreferences.Editor::class.java.classLoader,
+                arrayOf(SharedPreferences.Editor::class.java)
+            ) { _, method, args ->
+                when (method.name) {
+                    "putString" -> {
+                        writes[args!![0] as String] = args[1] as String
+                        editor
+                    }
+                    "remove" -> {
+                        removals += args!![0] as String
+                        editor
+                    }
+                    "commit" -> {
+                        removals.forEach(values::remove)
+                        values.putAll(writes)
                         true
                     }
                     else -> error("Unexpected editor call: ${method.name}")
