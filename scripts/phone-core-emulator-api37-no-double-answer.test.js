@@ -5,6 +5,7 @@ import test from 'node:test';
 const flowSource = fs.readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
 const bridgePath = 'scripts/phone-core-emulator-api37-answer-bridge.py';
 const bridgeSource = fs.existsSync(bridgePath) ? fs.readFileSync(bridgePath, 'utf8') : '';
+const workflowSource = fs.readFileSync('.github/workflows/android-emulation-qualification.yml', 'utf8');
 const composerSource = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt',
   'utf8'
@@ -138,4 +139,20 @@ test('composer acquires the process submission gate only after its lifecycle sco
       `${name} must not acquire the process-wide gate before a cancelled lifecycle scope can start`
     );
   }
+});
+
+test('API 24 instrumentation enforces a hard wall-clock timeout instead of a detached watchdog', () => {
+  const instrumentation = blockBetween(
+    workflowSource,
+    'if [[ "$API_LEVEL" == "24" ]]; then',
+    '          else\n            timeout --signal=INT --kill-after=30s 900s'
+  );
+
+  assert.match(
+    instrumentation,
+    /timeout --signal=TERM --kill-after=30s 900s \\\n\s+adb shell am instrument -w -r "\$INSTRUMENTATION_RUNNER" > "\$INSTRUMENTATION_LOG_RAW" 2>&1/,
+    'API 24 instrumentation must be bounded by a hard timeout owned by the foreground shell'
+  );
+  assert.doesNotMatch(instrumentation, /setsid adb shell am instrument/);
+  assert.doesNotMatch(instrumentation, /INSTRUMENTATION_WATCHDOG_PID/);
 });
