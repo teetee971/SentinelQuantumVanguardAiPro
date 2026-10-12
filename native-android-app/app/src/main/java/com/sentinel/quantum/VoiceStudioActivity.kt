@@ -337,9 +337,9 @@ class VoiceStudioActivity : ComponentActivity() {
                                     }
                                 } else if (!sessionBusy) {
                                     if (ContextCompat.checkSelfPermission(
-                                            this@VoiceStudioActivity,
-                                            Manifest.permission.RECORD_AUDIO
-                                        ) != PackageManager.PERMISSION_GRANTED
+                                        this@VoiceStudioActivity,
+                                        Manifest.permission.RECORD_AUDIO
+                                    ) != PackageManager.PERMISSION_GRANTED
                                     ) {
                                         sessionMicrophoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     } else {
@@ -570,9 +570,9 @@ class VoiceStudioActivity : ComponentActivity() {
         stopPlayback()
         runCatching { previewFile.delete() }
         if (activeVoiceSession != null) {
-            lifecycleScope.launch {
+            activeVoiceSession = null
+            (application as SentinelApplication).launchVoiceTeardown {
                 voiceSessionCoordinator.disconnect()
-                activeVoiceSession = null
             }
         }
         super.onDestroy()
