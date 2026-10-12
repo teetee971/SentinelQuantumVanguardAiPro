@@ -5,6 +5,10 @@ import test from 'node:test';
 const flowSource = fs.readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8');
 const bridgePath = 'scripts/phone-core-emulator-api37-answer-bridge.py';
 const bridgeSource = fs.existsSync(bridgePath) ? fs.readFileSync(bridgePath, 'utf8') : '';
+const composerSource = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt',
+  'utf8'
+);
 
 function blockBetween(source, startNeedle, endNeedle) {
   const start = source.indexOf(startNeedle);
@@ -98,4 +102,20 @@ test('API 37 synthetic handoff is accepted only after a tightly correlated emula
   assert.match(bridgeSource, /handoff_deadline/);
   assert.match(bridgeSource, /transport_handoff=android17_emulator_unknown_active/);
   assert.match(bridgeSource, /api == 37/);
+});
+
+test('composer acquires the process submission gate only after its lifecycle scope starts', () => {
+  const smsBlock = blockBetween(composerSource, 'fun submitSms(', 'fun submitMms(');
+  const mmsBlock = blockBetween(composerSource, 'fun submitMms(', 'DisposableEffect(activationEpoch)');
+
+  for (const [name, block] of [['SMS', smsBlock], ['MMS', mmsBlock]]) {
+    const launch = block.indexOf('ioScope.launch {');
+    const acquire = block.indexOf('if (!beginSubmission()) return@launch', launch);
+
+    assert.ok(launch >= 0, `${name} submission must run in the lifecycle coroutine scope`);
+    assert.ok(
+      acquire > launch,
+      `${name} must not acquire the process-wide gate before a cancelled lifecycle scope can start`
+    );
+  }
 });
