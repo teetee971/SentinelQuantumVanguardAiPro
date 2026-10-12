@@ -9,7 +9,12 @@ from redis.exceptions import RedisError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import LiveKitTokenIssuer, Settings, create_app  # noqa: E402
+from app import (  # noqa: E402
+    LiveKitTokenIssuer,
+    Settings,
+    create_app,
+    demo_room_id_for_device,
+)
 
 
 class FakeRedis:
@@ -74,7 +79,8 @@ def configured_settings():
     )
 
 
-def valid_payload(room_id="group-1"):
+def valid_payload(room_id=None):
+    room_id = room_id or demo_room_id_for_device("device-1")
     return {
         "channel": "PTT_ROOM",
         "destination": {"type": "sentinel_room", "room_id": room_id},
@@ -196,6 +202,23 @@ def test_session_creation_is_idempotent_and_room_scoped():
     assert issuer.calls[0]["identity"] == "user-1"
     assert issuer.calls[0]["ttl_seconds"] == 120
     assert issuer.calls[0]["room"].startswith("sentinel-ptt-")
+
+
+def test_session_rejects_room_not_bound_to_authenticated_device():
+    client, issuer = make_client()
+
+    response = client.post(
+        "/v1/voice/sessions",
+        headers={
+            "Authorization": "Bearer valid",
+            "Idempotency-Key": "key-923456789012",
+        },
+        json=valid_payload(room_id="other-users-private-room"),
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Voice destination unavailable"
+    assert issuer.calls == []
 
 
 def test_close_is_idempotent_and_prevents_reuse():

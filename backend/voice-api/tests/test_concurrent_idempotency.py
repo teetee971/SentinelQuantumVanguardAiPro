@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import Settings, create_app  # noqa: E402
+from app import Settings, create_app, demo_room_id_for_device  # noqa: E402
 
 
 class RaceRedis:
@@ -96,7 +96,10 @@ def settings():
 def payload():
     return {
         "channel": "PTT_ROOM",
-        "destination": {"type": "sentinel_room", "room_id": "group-1"},
+        "destination": {
+            "type": "sentinel_room",
+            "room_id": demo_room_id_for_device("device-1"),
+        },
         "client": {
             "device_id": "device-1",
             "app_version": "1.0.0",

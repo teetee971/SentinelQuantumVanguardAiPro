@@ -214,10 +214,20 @@ def _hash(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def _room_name(room_id: str) -> str:
+def demo_room_id_for_device(device_id: str) -> str:
+    """Return the client-visible room alias bound to one authenticated device."""
+    digest = hashlib.sha256(
+        f"sentinel-voice-demo:v1:{device_id}".encode("utf-8")
+    ).hexdigest()[:32]
+    return f"demo-{digest}"
+
+
+def _room_name(room_id: str, *, subject: str, device_id: str) -> str:
     if not ROOM_ID_PATTERN.fullmatch(room_id):
         raise HTTPException(status_code=422, detail="Invalid voice destination")
-    return f"sentinel-ptt-{_hash(f'v1:{room_id}')[:32]}"
+    if room_id != demo_room_id_for_device(device_id):
+        raise HTTPException(status_code=403, detail="Voice destination unavailable")
+    return f"sentinel-ptt-{_hash(f'v2:{subject}:{device_id}:{room_id}')[:32]}"
 
 
 def _authorization_required(authorization: str | None) -> str:
@@ -474,7 +484,11 @@ def create_app(
             return record["response"]
 
         session_id = str(uuid.uuid4())
-        room = _room_name(body.destination.room_id)
+        room = _room_name(
+            body.destination.room_id,
+            subject=subject,
+            device_id=body.client.device_id,
+        )
         token = app.state.voice_issuer.issue(
             identity=subject,
             room=room,
