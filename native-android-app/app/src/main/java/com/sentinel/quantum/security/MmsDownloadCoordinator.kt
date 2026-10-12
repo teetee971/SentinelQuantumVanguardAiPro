@@ -151,6 +151,15 @@ object MmsDownloadCoordinator {
     internal fun releaseNotificationDedup(context: Context, fileName: String): Boolean =
         MmsNotificationDedupJournal(context.applicationContext).release(fileName)
 
+    /**
+     * Retires a successful callback only after the replay marker is durable. If that transition
+     * fails, staging and recovery metadata remain available for a later retry.
+     */
+    internal fun finishDownload(context: Context, fileName: String): Boolean {
+        if (!completeNotificationDedup(context, fileName)) return false
+        return delete(context, fileName)
+    }
+
     fun delete(context: Context, fileName: String): Boolean =
         deleteInternal(
             context = context,
@@ -177,14 +186,16 @@ object MmsDownloadCoordinator {
         context: Context,
         fileName: String,
         cancelCleanupWorker: Boolean = true
-    ): Boolean =
-        deleteInternal(
+    ): Boolean {
+        if (!completeNotificationDedup(context, fileName)) return false
+        return deleteInternal(
             context = context,
             fileName = fileName,
             cancelCleanup = cancelCleanupWorker,
             cancelRecovery = false,
             removeRecoveryMetadata = true
         )
+    }
 
     private fun deleteInternal(
         context: Context,
