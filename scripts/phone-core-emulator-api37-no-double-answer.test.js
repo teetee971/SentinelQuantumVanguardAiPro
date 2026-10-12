@@ -34,6 +34,19 @@ test('the incoming flow arms the transport bridge before the answer tap', () => 
   assert.ok(waitForBridge > answerTap);
 });
 
+test('the incoming flow waits for ADB to return online before injecting gsm call', () => {
+  const sleep = flowSource.indexOf('adb shell input keyevent KEYCODE_SLEEP');
+  const onlineWait = flowSource.indexOf(
+    'wait_for_online_adb "the sleep transition before the incoming gsm call"',
+    sleep
+  );
+  const gsmCall = flowSource.indexOf('adb emu gsm call "$FLOW_NUMBER"', sleep);
+
+  assert.ok(sleep >= 0);
+  assert.ok(onlineWait > sleep, 'sleep transition must be followed by an online-state wait');
+  assert.ok(gsmCall > onlineWait, 'synthetic call must be injected only after ADB is online');
+});
+
 test('API 37 does not race the app answer with a host gsm accept', () => {
   const requestAcceptBlock = blockBetween(
     bridgeSource,

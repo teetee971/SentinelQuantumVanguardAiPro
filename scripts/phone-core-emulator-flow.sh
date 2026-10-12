@@ -11,6 +11,22 @@ FLOW_XML="$FLOW_OUTPUT_DIR/window.xml"
 FLOW_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 FLOW_INCOMING_TRANSPORT_PID=""
 
+wait_for_online_adb() {
+  local reason="$1"
+  local state=""
+  for _ in $(seq 1 20); do
+    state="$(adb get-state 2>&1 | tr -d '\r')" || state=""
+    if [[ "$state" == "device" ]]; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "ADB device did not return online after ${reason}." >&2
+  adb get-state >&2 || true
+  adb devices -l >&2 || true
+  return 1
+}
+
 role_holders() {
   local full_role="$1"
   local direct_output=""
@@ -389,6 +405,7 @@ wait_text "phone_core_tab_0"
 capture 01b-dialer-relaunch
 
 adb shell input keyevent KEYCODE_SLEEP
+wait_for_online_adb "the sleep transition before the incoming gsm call"
 adb emu gsm call "$FLOW_NUMBER"
 # First prove Telecom actually bound Sentinel's screening service. This marker contains no number or
 # identity. Android 10 can fail emergency-number classification on an emulator even after callback

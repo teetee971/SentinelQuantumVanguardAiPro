@@ -31,21 +31,25 @@ test('Android instrumentation leaves enough time for the uncached API 24 lane', 
   assert.match(instrumentationWorkflow, /timeout-minutes:\s*45\b/);
 });
 
-test('API 24 warms the real APK artifacts before proving the build offline', () => {
+test('API 24 bounds dependency resolution before using an offline test build', () => {
   const api24Block = instrumentationWorkflow.match(
     /if \[\[ "\$API_LEVEL" == "24" \]\]; then[\s\S]*?else\n/
   )?.[0];
   assert.ok(api24Block, 'API 24 workflow branch must remain explicit');
-
-  const warmupIndex = api24Block.indexOf('timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest');
-  const cleanIndex = api24Block.indexOf('timeout 300s ./gradlew clean');
-  const offlineIndex = api24Block.indexOf('timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest \\\n              --stacktrace --no-daemon --offline');
-
-  assert.notEqual(warmupIndex, -1, 'API 24 must warm the actual app and androidTest APK artifacts online');
-  assert.notEqual(cleanIndex, -1, 'API 24 must clean build outputs before the offline proof');
-  assert.notEqual(offlineIndex, -1, 'API 24 must rebuild the app and androidTest APKs offline');
-  assert.ok(warmupIndex < cleanIndex, 'online warm-up must run before clean');
-  assert.ok(cleanIndex < offlineIndex, 'clean must run before the offline proof');
-  assert.match(api24Block.slice(warmupIndex, cleanIndex), /--stacktrace --no-daemon(?![\s\S]*--offline)/);
-  assert.match(api24Block.slice(offlineIndex), /--offline/);
+  assert.match(api24Block, /timeout 300s \.\/gradlew :app:dependencies/);
+  assert.match(api24Block, /--configuration debugAndroidTestRuntimeClasspath/);
+  assert.match(api24Block, /DEPENDENCY_RESOLUTION_LOG/);
+  assert.match(api24Block, /tee "\$DEPENDENCY_RESOLUTION_LOG"/);
+  assert.match(api24Block, /assembleDebug assembleDebugAndroidTest[\s\S]*--offline/);
+  assert.match(api24Block, /timeout 600s \.\/gradlew assembleDebug assembleDebugAndroidTest/);
+  const normalizedApi24Block = api24Block.replace(/\\\s*/g, ' ').replace(/\s+/g, ' ');
+  const onlineBuild = normalizedApi24Block.indexOf(
+    'timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon'
+  );
+  const offlineBuild = normalizedApi24Block.indexOf(
+    'timeout 600s ./gradlew assembleDebug assembleDebugAndroidTest --stacktrace --no-daemon --offline'
+  );
+  assert.ok(onlineBuild >= 0, 'API 24 must warm the complete APK graph with network access');
+  assert.ok(offlineBuild > onlineBuild, 'offline API 24 build must follow the online warm-up');
+  assert.match(instrumentationWorkflow, /sentinel-instrumentation-api\$\{API_LEVEL\}-dependencies\.log/);
 });
