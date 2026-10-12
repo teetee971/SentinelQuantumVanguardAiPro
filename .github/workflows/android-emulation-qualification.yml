@@ -360,7 +360,7 @@ jobs:
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
           # the exact runtime APK before requiring a successful app-data reset.
-          adb install -r "$APK_PATH"
+          timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
