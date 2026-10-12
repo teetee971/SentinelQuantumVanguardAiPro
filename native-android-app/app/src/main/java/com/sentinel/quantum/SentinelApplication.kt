@@ -4,6 +4,10 @@ import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Process-level initialization for exact-number call blocking and durable telecom repair.
@@ -19,6 +23,14 @@ import com.sentinel.quantum.security.SentinelSmsStatusReceiver
  * false block; prefix and signed-prefix rules remain available.
  */
 class SentinelApplication : Application() {
+    private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    fun launchVoiceTeardown(block: suspend () -> Unit) {
+        voiceTeardownScope.launch {
+            block()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         SentinelSmsStatusReceiver.queueProviderRepair(this)
