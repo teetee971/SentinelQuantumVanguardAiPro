@@ -50,6 +50,40 @@ class MmsNotificationDedupJournalTest {
         )
     }
 
+    @Test fun completedReplayMarkersDoNotExhaustActiveReservationCapacity() {
+        val preferences = Preferences()
+        val journal = MmsNotificationDedupJournal(preferences.preferences)
+        val firstIdentity = "%064x".format(1)
+        val firstFile = "123e4567-e89b-12d3-a456-426614174001.pdu"
+
+        for (index in 1..MmsNotificationDedupJournal.MAX_RECORDS) {
+            val identity = "%064x".format(index)
+            val fileName = "123e4567-e89b-12d3-a456-%012d.pdu".format(index)
+            assertEquals(
+                MmsNotificationDedupJournal.Reservation.ACQUIRED,
+                journal.reserve(identity, fileName, requestedAtMs = 1_000L + index)
+            )
+            assertEquals(true, journal.complete(fileName))
+        }
+
+        assertEquals(
+            MmsNotificationDedupJournal.Reservation.ACQUIRED,
+            journal.reserve(
+                "%064x".format(MmsNotificationDedupJournal.MAX_RECORDS + 1),
+                "123e4567-e89b-12d3-a456-426614174999.pdu",
+                requestedAtMs = 2_000L
+            )
+        )
+        assertEquals(
+            MmsNotificationDedupJournal.Reservation.DUPLICATE,
+            journal.reserve(
+                firstIdentity,
+                "123e4567-e89b-12d3-a456-426614175000.pdu",
+                requestedAtMs = 2_001L
+            )
+        )
+    }
+
     private class Preferences {
         val values = linkedMapOf<String, String>()
         val preferences = Proxy.newProxyInstance(
