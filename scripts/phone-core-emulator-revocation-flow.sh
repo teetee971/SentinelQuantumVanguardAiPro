@@ -16,6 +16,58 @@ EFFECTIVE_PERMISSION_PROBE="UNSET"
 EFFECTIVE_PERMISSION_NOTE="No effective SEND_SMS denial proof completed."
 ROLE_REVOCATION_PROVEN=false
 
+adb_transport_ready() {
+  local attempts="${SENTINEL_ADB_READY_ATTEMPTS:-20}"
+  local delay="${SENTINEL_ADB_RETRY_DELAY_SECONDS:-0.5}"
+  local state=""
+  for attempt in $(seq 1 "$attempts"); do
+    if state="$(adb get-state 2>/dev/null)" && [[ "$state" == "device" ]]; then
+      return 0
+    fi
+    if [[ "$attempt" -lt "$attempts" ]]; then sleep "$delay"; fi
+  done
+  return 1
+}
+
+adb_retry_transport() {
+  local attempts="${SENTINEL_ADB_RETRY_ATTEMPTS:-3}"
+  local delay="${SENTINEL_ADB_RETRY_DELAY_SECONDS:-0.5}"
+  local stdout_file stderr_file status diagnostic
+  stdout_file="$(mktemp)"
+  stderr_file="$(mktemp)"
+  for attempt in $(seq 1 "$attempts"); do
+    : > "$stdout_file"
+    : > "$stderr_file"
+    if adb "$@" > "$stdout_file" 2> "$stderr_file"; then
+      status=0
+    else
+      status=$?
+    fi
+    cat "$stdout_file"
+    cat "$stderr_file" >&2
+    if [[ "$status" -eq 0 ]]; then
+      rm -f "$stdout_file" "$stderr_file"
+      return 0
+    fi
+    diagnostic="$(cat "$stdout_file")"$'\n'"$(cat "$stderr_file")"
+    if ! grep -Eqi 'device offline|no devices/emulators found|device .* not found|connection terminated|transport error|failed to read response from daemon|cannot connect to daemon|protocol fault' <<< "$diagnostic"; then
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+    if [[ "$attempt" -ge "$attempts" ]]; then
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+    if ! adb_transport_ready; then
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+    sleep "$delay"
+  done
+  rm -f "$stdout_file" "$stderr_file"
+  return 1
+}
+
 capture() { adb exec-out screencap -p > "$OUT_DIR/$1.png" || true; }
 
 dump_ui() {
@@ -487,10 +539,10 @@ EFFECTIVE_PERMISSION_DENIAL_PROVEN=true
 if [[ "$EFFECTIVE_PERMISSION_PROBE" == "SEND_SMS_APP_OP_DENIED" ]]; then
   set_send_sms_appop allow "send-sms-appop-restore.txt"
 fi
-adb shell pm grant "$PACKAGE" android.permission.SEND_SMS >/dev/null 2>&1 || true
+adb_retry_transport shell pm grant "$PACKAGE" android.permission.SEND_SMS
 
 # ROLE_SMS revocation: the protected send action must remain disabled and must not reacquire the role.
-adb shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
+adb_retry_transport shell cmd role remove-role-holder --user 0 android.app.role.SMS "$PACKAGE"
 wait_role_absent android.app.role.SMS
 launch_sms_surface "sms-role-revoked-launch.txt"
 scroll_until_ui_contains "rôle SMS disponible mais non accordé"
@@ -512,7 +564,7 @@ assert_no_crash
 assert_sms_role_held
 
 # DIALER role: a real tap on Appeler must not create any emulator-modem call while the role is absent.
-adb shell cmd role remove-role-holder --user 0 android.app.role.DIALER "$PACKAGE"
+adb_retry_transport shell cmd role remove-role-holder --user 0 android.app.role.DIALER "$PACKAGE"
 wait_role_absent android.app.role.DIALER
 adb shell am force-stop "$PACKAGE"
 adb shell am start -W -a android.intent.action.DIAL -d "tel:$DIALER_PROBE_NUMBER" \
