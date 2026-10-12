@@ -10,25 +10,16 @@ class Auth0LogoutContractTest {
         val controllerSource = File(
             "src/main/java/com/sentinel/quantum/auth/Auth0SessionController.kt"
         ).readText()
-        val settingsSource = File(
-            "src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt"
-        ).readText()
 
         val logout = controllerSource.substringAfter("fun logout(")
             .substringBefore("private fun Credentials.toSummary")
         val localClear = logout.indexOf("credentialsManager.clearCredentials()")
+        val localSuccess = logout.indexOf("onSuccess()")
         val remoteLogout = logout.indexOf("WebAuthProvider.logout(account)")
 
         assertTrue("local credentials must be cleared before remote SSO logout starts", localClear >= 0)
         assertTrue("local credentials must be cleared before remote SSO logout starts", localClear < remoteLogout)
-
-        val settingsLogout = settingsSource.substringAfter("authController.logout(")
-            .substringBefore("enabled = activity != null")
-        val remoteFailure = settingsLogout.substringAfter("onFailure =")
-
-        assertTrue(
-            "remote logout failure must still leave the local UI signed out",
-            remoteFailure.contains("authUser = null")
-        )
+        assertTrue("local UI success callback must run before remote SSO logout starts", localSuccess >= 0)
+        assertTrue("local UI success callback must run before remote SSO logout starts", localSuccess < remoteLogout)
     }
 }
