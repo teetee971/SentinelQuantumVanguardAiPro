@@ -29,4 +29,22 @@ class SmsSubmissionGateTest {
         assertTrue(recreatedOwner.tryAcquire())
         recreatedOwner.release()
     }
+
+    @Test fun recreatedOwnerObservesProcessWideInFlightState() {
+        val firstOwner = SmsSubmissionGate()
+        val recreatedOwner = SmsSubmissionGate()
+
+        assertFalse(firstOwner.inFlight.value)
+        assertFalse(recreatedOwner.inFlight.value)
+
+        assertTrue(firstOwner.tryAcquire())
+
+        assertTrue(firstOwner.inFlight.value)
+        assertTrue(recreatedOwner.inFlight.value)
+
+        firstOwner.release()
+
+        assertFalse(firstOwner.inFlight.value)
+        assertFalse(recreatedOwner.inFlight.value)
+    }
 }
