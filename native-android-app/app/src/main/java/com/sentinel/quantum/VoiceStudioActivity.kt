@@ -13,6 +13,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +30,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -38,13 +42,15 @@ import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.voice.LiveKitVoiceAudioProcessor
 import com.sentinel.quantum.voice.SentinelLiveKitCallTransport
 import com.sentinel.quantum.voice.VoiceAddonPolicy
 import com.sentinel.quantum.voice.VoiceSessionClient
 import com.sentinel.quantum.voice.VoiceSessionCoordinator
 import com.sentinel.quantum.voice.VoiceSessionRequest
-import com.sentinel.quantum.voice.LiveKitVoiceAudioProcessor
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -353,31 +359,39 @@ class VoiceStudioActivity : ComponentActivity() {
                             Text(if (sessionConnected) "Fermer la session" else "Démarrer la session PTT")
                         }
                         OutlinedButton(
-                            onClick = {
-                                val session = activeVoiceSession ?: return@OutlinedButton
-                                lifecycleScope.launch {
-                                    val result = if (transmitting) {
-                                        session.pushToTalk.release()
-                                    } else {
-                                        session.pushToTalk.press()
-                                    }
-                                    if (result.isSuccess) {
-                                        transmitting = !transmitting
-                                        sessionStatus = if (transmitting) {
-                                            "Microphone ouvert : transmission PTT en cours."
-                                        } else {
-                                            "Microphone coupé : session PTT toujours connectée."
+                            onClick = {},
+                            enabled = sessionConnected && !sessionBusy,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(sessionConnected, sessionBusy, activeVoiceSession) {
+                                    if (!sessionConnected || sessionBusy) return@pointerInput
+                                    awaitEachGesture {
+                                        awaitFirstDown(requireUnconsumed = false)
+                                        val session = activeVoiceSession ?: return@awaitEachGesture
+                                        val pressResult = session.pushToTalk.press()
+                                        if (pressResult.isFailure) {
+                                            transmitting = false
+                                            sessionStatus = "Contrôle PTT impossible : ${pressResult.exceptionOrNull()?.message.orEmpty()}"
+                                            return@awaitEachGesture
                                         }
-                                    } else {
-                                        transmitting = false
-                                        sessionStatus = "Contrôle PTT impossible : ${result.exceptionOrNull()?.message.orEmpty()}"
+
+                                        transmitting = true
+                                        sessionStatus = "Microphone ouvert : maintenez pour parler."
+                                        try {
+                                            waitForUpOrCancellation()
+                                        } finally {
+                                            val releaseResult = releasePushToTalk()
+                                            transmitting = false
+                                            sessionStatus = if (releaseResult.isSuccess) {
+                                                "Microphone coupé : session PTT toujours connectée."
+                                            } else {
+                                                "Fermeture du microphone impossible : ${releaseResult.exceptionOrNull()?.message.orEmpty()}"
+                                            }
+                                        }
                                     }
                                 }
-                            },
-                            enabled = sessionConnected && !sessionBusy,
-                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(if (transmitting) "Couper le microphone" else "Parler en PTT")
+                            Text(if (transmitting) "Relâchez pour couper" else "Maintenez pour parler")
                         }
                         Text(
                             sessionStatus,
@@ -552,6 +566,13 @@ class VoiceStudioActivity : ComponentActivity() {
         runCatching { current.release() }
     }
 
+    private suspend fun releasePushToTalk(): Result<Unit> {
+        val session = activeVoiceSession ?: return Result.success(Unit)
+        return withContext(NonCancellable) {
+            session.pushToTalk.release()
+        }
+    }
+
     private fun disconnectVoiceSession(onFinished: () -> Unit) {
         val active = activeVoiceSession
         if (active == null) {
@@ -563,6 +584,15 @@ class VoiceStudioActivity : ComponentActivity() {
             activeVoiceSession = null
             onFinished()
         }
+    }
+
+    override fun onStop() {
+        if (activeVoiceSession != null) {
+            (application as SentinelApplication).launchVoiceTeardown {
+                releasePushToTalk()
+            }
+        }
+        super.onStop()
     }
 
     override fun onDestroy() {
