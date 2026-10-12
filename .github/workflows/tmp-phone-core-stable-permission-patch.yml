@@ -18,7 +18,7 @@ jobs:
           ref: fix/phone-core-stable-effective-permission-probe
           fetch-depth: 0
 
-      - name: Apply exact fail-closed fallback patch
+      - name: Build exact patched workflow blob
         shell: bash
         run: |
           set -euo pipefail
@@ -32,28 +32,6 @@ jobs:
                   raise SystemExit(f'{path}: expected exactly one match, got {count}')
               path.write_text(text.replace(old, new, 1))
 
-          rev = Path('scripts/phone-core-emulator-revocation-flow.sh')
-          replace_once(
-              rev,
-              '''  set_send_sms_appop ignore "send-sms-appop-deny.txt"\n  assert_send_sms_appop_denied "send-sms-appop-denied-state.txt"\n''',
-              '''  set_send_sms_appop ignore "send-sms-appop-deny.txt"\n  if ! assert_send_sms_appop_denied "send-sms-appop-denied-state.txt"; then\n    return 1\n  fi\n'''
-          )
-          replace_once(
-              rev,
-              '''  assert_sms_role_held\n  assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"\n}\n\nlaunch_sms_surface() {\n''',
-              '''  assert_sms_role_held\n  if ! assert_send_sms_appop_denied "send-sms-appop-denied-after-launch.txt"; then\n    return 1\n  fi\n}\n\nassert_read_phone_state_runtime_permission_denied() {\n  local evidence="$1"\n  adb shell dumpsys package "$PACKAGE" > "$OUT_DIR/$evidence" 2>&1\n  if permission_granted android.permission.READ_PHONE_STATE; then\n    echo "READ_PHONE_STATE runtime permission was not observably revoked."\n    grep -E 'android\\.permission\\.READ_PHONE_STATE:' "$OUT_DIR/$evidence" || true\n    return 1\n  fi\n  if ! grep -Eq 'android\\.permission\\.READ_PHONE_STATE: granted=false' "$OUT_DIR/$evidence"; then\n    echo "READ_PHONE_STATE runtime permission denial could not be proven from package state."\n    return 1\n  fi\n}\n\nuse_read_phone_state_runtime_permission_probe() {\n  EFFECTIVE_PERMISSION_PROBE="READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED"\n  EFFECTIVE_PERMISSION_NOTE="ROLE_SMS remained held while READ_PHONE_STATE was observably revoked across foreground return; Sentinel stayed fail-closed because SIM selection could not be authorized."\n  adb_retry_transport shell pm revoke "$PACKAGE" android.permission.READ_PHONE_STATE\n  assert_read_phone_state_runtime_permission_denied "read-phone-state-runtime-permission-denied-state.txt"\n  adb shell input keyevent KEYCODE_HOME\n  launch_sms_surface "sms-read-phone-state-runtime-permission-denied-launch.txt" warm\n  assert_sms_role_held\n  assert_read_phone_state_runtime_permission_denied "read-phone-state-runtime-permission-denied-after-launch.txt"\n}\n\nlaunch_sms_surface() {\n'''
-          )
-          replace_once(
-              rev,
-              '''if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" != "true" ]]; then\n  # Some RoleController versions immediately restore the role-managed runtime grant. In that case,\n  # retain the established AppOp probe used by older emulator lanes.\n  use_send_sms_appop_probe\nfi\n\nscroll_until_ui_contains "Envoi SMS : autorisation Android requise."\n''',
-              '''if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" != "true" ]]; then\n  # Some RoleController versions restore both the SEND_SMS runtime grant and its AppOp on\n  # foreground return. Prefer the historical AppOp proof when it remains durable; otherwise\n  # fall back to READ_PHONE_STATE, which is independently required for SIM authorization.\n  if ! use_send_sms_appop_probe; then\n    set_send_sms_appop allow "send-sms-appop-fallback-restore.txt"\n    use_read_phone_state_runtime_permission_probe\n  fi\nfi\n\nif [[ "$EFFECTIVE_PERMISSION_PROBE" == "READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED" ]]; then\n  scroll_until_ui_contains "Détection SIM : accès à l’état téléphonique requis."\nelse\n  scroll_until_ui_contains "Envoi SMS : autorisation Android requise."\nfi\n'''
-          )
-          replace_once(
-              rev,
-              '''if [[ "$EFFECTIVE_PERMISSION_PROBE" == "SEND_SMS_APP_OP_DENIED" ]]; then\n  set_send_sms_appop allow "send-sms-appop-restore.txt"\nfi\nadb_retry_transport shell pm grant "$PACKAGE" android.permission.SEND_SMS\n''',
-              '''if [[ "$EFFECTIVE_PERMISSION_PROBE" == "SEND_SMS_APP_OP_DENIED" ]]; then\n  set_send_sms_appop allow "send-sms-appop-restore.txt"\nelif [[ "$EFFECTIVE_PERMISSION_PROBE" == "READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED" ]]; then\n  adb_retry_transport shell pm grant "$PACKAGE" android.permission.READ_PHONE_STATE\nfi\nadb_retry_transport shell pm grant "$PACKAGE" android.permission.SEND_SMS\n'''
-          )
-
           workflow = Path('.github/workflows/android-emulation-qualification.yml')
           replace_once(
               workflow,
@@ -65,23 +43,19 @@ jobs:
               '''          const effectivePermissionEvidenceValid = revocation?.schema_version === 2\n            ? appOpDeniedEvidence\n            : appOpDeniedEvidence || runtimePermissionDeniedEvidence;\n''',
               '''          const effectivePermissionEvidenceValid = revocation?.schema_version === 2\n            ? appOpDeniedEvidence\n            : appOpDeniedEvidence || runtimePermissionDeniedEvidence || phoneStatePermissionDeniedEvidence;\n'''
           )
+          out = Path('.tmp/android-emulation-qualification.patched.yml')
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_bytes(workflow.read_bytes())
           PY
+          git diff --no-index --check /dev/null .tmp/android-emulation-qualification.patched.yml || true
 
-      - name: Commit revocation script only
+      - name: Publish patched workflow as ordinary blob
         shell: bash
         run: |
           set -euo pipefail
-          git add scripts/phone-core-emulator-revocation-flow.sh
+          git add .tmp/android-emulation-qualification.patched.yml
           git diff --cached --check
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git commit -m "fix(phone-core): add stable effective permission fallback"
+          git commit -m "ci(tmp): publish patched Phone Core workflow blob"
           git push origin HEAD:fix/phone-core-stable-effective-permission-probe
-
-      - name: Export patched workflow
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: phone-core-stable-permission-workflow
-          path: .github/workflows/android-emulation-qualification.yml
-          if-no-files-found: error
-          retention-days: 1
