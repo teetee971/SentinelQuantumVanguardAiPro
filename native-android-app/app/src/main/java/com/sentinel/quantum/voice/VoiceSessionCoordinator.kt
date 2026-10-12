@@ -109,15 +109,23 @@ class VoiceSessionCoordinator(
         val active = activeSession ?: return Result.success(Unit)
         activeSession = null
 
-        withContext(NonCancellable) {
-            val closeResult = runCatching { active.pushToTalk.close() }
-                .getOrElse { Result.failure(it) }
+        var cancellation: CancellationException? = null
+        val closeResult = try {
+            active.pushToTalk.close()
+        } catch (cancelled: CancellationException) {
+            cancellation = cancelled
+            Result.failure(cancelled)
+        }
+
+        val remoteResult = withContext(NonCancellable) {
             runCatching { transport.disconnect() }
-            val remoteResult = withContext(Dispatchers.IO) {
+            withContext(Dispatchers.IO) {
                 api.closeSession(active.authAccessToken, active.sessionId)
             }
-            if (closeResult.isFailure) closeResult else remoteResult
         }
+
+        cancellation?.let { throw it }
+        if (closeResult.isFailure) closeResult else remoteResult
     }
 
     fun isConnected(): Boolean = activeSession != null
