@@ -38,4 +38,23 @@ class SmsSubmitReadinessTest {
             )
         )
     }
+
+    @Test fun recreatedComposerObservesProcessStableSubmissionAdmission() {
+        val owner = SmsSubmissionGate()
+        assertTrue(owner.tryAcquire())
+        try {
+            assertFalse(
+                SmsSubmitReadiness.canSubmit(
+                    activationCanSend = true,
+                    activeSubscriptionIds = listOf(1),
+                    selectedSubscriptionId = 1,
+                    destinationPresent = true,
+                    bodyPresent = true,
+                    submissionInFlight = false
+                )
+            )
+        } finally {
+            owner.release()
+        }
+    }
 }
