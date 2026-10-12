@@ -38,6 +38,8 @@ test('API 24 bounds dependency resolution before using an offline test build', (
   assert.ok(api24Block, 'API 24 workflow branch must remain explicit');
   assert.match(api24Block, /timeout 300s \.\/gradlew :app:dependencies/);
   assert.match(api24Block, /--configuration debugAndroidTestRuntimeClasspath/);
+  assert.match(api24Block, /:wearable-security:dependencies/);
+  assert.match(api24Block, /--configuration compileClasspath/);
   assert.match(api24Block, /DEPENDENCY_RESOLUTION_LOG/);
   assert.match(api24Block, /tee "\$DEPENDENCY_RESOLUTION_LOG"/);
   assert.match(api24Block, /assembleDebug assembleDebugAndroidTest[\s\S]*--offline/);
