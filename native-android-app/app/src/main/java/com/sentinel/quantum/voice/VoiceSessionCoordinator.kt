@@ -1,6 +1,8 @@
 package com.sentinel.quantum.voice
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -62,35 +64,45 @@ class VoiceSessionCoordinator(
         val created = withContext(Dispatchers.IO) {
             api.createSession(accessToken, request)
         }
-        created.fold(
-            onSuccess = { session ->
-                val connected = transport.connectForPushToTalk(
-                    SentinelLiveKitCallTransport.Credentials(
-                        serverUrl = session.transport.serverUrl,
-                        accessToken = session.transport.accessToken
-                    )
+        if (created.isFailure) {
+            return Result.failure(created.exceptionOrNull() ?: IllegalStateException("VOICE_SESSION_CREATE_FAILED"))
+        }
+        val session = created.getOrThrow()
+
+        try {
+            val connected = transport.connectForPushToTalk(
+                SentinelLiveKitCallTransport.Credentials(
+                    serverUrl = session.transport.serverUrl,
+                    accessToken = session.transport.accessToken
                 )
-                connected.fold(
-                    onSuccess = { pushToTalk ->
-                        val active = ActiveSession(
-                            sessionId = session.sessionId,
-                            authAccessToken = accessToken,
-                            pushToTalk = pushToTalk
-                        )
-                        activeSession = active
-                        Result.success(active)
-                    },
-                    onFailure = { failure ->
-                        runCatching { transport.disconnect() }
-                        withContext(Dispatchers.IO) {
-                            api.closeSession(accessToken, session.sessionId)
-                        }
-                        Result.failure(failure)
-                    }
+            )
+            if (connected.isFailure) {
+                cleanupCreatedSession(accessToken, session.sessionId)
+                return Result.failure(
+                    connected.exceptionOrNull() ?: IllegalStateException("VOICE_TRANSPORT_CONNECT_FAILED")
                 )
-            },
-            onFailure = { failure -> Result.failure(failure) }
-        )
+            }
+
+            val active = ActiveSession(
+                sessionId = session.sessionId,
+                authAccessToken = accessToken,
+                pushToTalk = connected.getOrThrow()
+            )
+            activeSession = active
+            Result.success(active)
+        } catch (cancelled: CancellationException) {
+            cleanupCreatedSession(accessToken, session.sessionId)
+            throw cancelled
+        }
+    }
+
+    private suspend fun cleanupCreatedSession(accessToken: String, sessionId: String) {
+        withContext(NonCancellable) {
+            runCatching { transport.disconnect() }
+            withContext(Dispatchers.IO) {
+                api.closeSession(accessToken, sessionId)
+            }
+        }
     }
 
     suspend fun disconnect(): Result<Unit> = mutex.withLock {
