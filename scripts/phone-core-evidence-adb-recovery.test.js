@@ -51,3 +51,27 @@ test('Phone Core evidence collection hard-bounds every ADB evidence command', ()
     /timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys package com\.sentinel\.quantum/
   );
 });
+
+test('Phone Core modern runtime scripts have whole-script watchdogs', () => {
+  const runtime = workflowStep(
+    'Run emulator application/runtime qualification',
+    'Collect qualification evidence even after failure'
+  );
+
+  assert.match(
+    runtime,
+    /timeout --signal=TERM --kill-after=30s 600s bash -x \.\.\/scripts\/phone-core-emulator-flow\.sh "\$OUTPUT"/
+  );
+  assert.match(
+    runtime,
+    /timeout --signal=TERM --kill-after=30s 600s bash -x \.\.\/scripts\/phone-core-emulator-revocation-flow\.sh "\$OUTPUT"/
+  );
+  assert.match(
+    runtime,
+    /timeout --signal=TERM --kill-after=30s 600s bash \.\.\/scripts\/phone-core-emulator-flow\.sh "\$OUTPUT"/
+  );
+  assert.match(
+    runtime,
+    /timeout --signal=TERM --kill-after=30s 600s bash \.\.\/scripts\/phone-core-emulator-revocation-flow\.sh "\$OUTPUT"/
+  );
+});
