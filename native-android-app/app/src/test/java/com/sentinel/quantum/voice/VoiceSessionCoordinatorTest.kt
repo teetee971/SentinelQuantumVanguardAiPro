@@ -1,7 +1,12 @@
 package com.sentinel.quantum.voice
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -26,8 +31,32 @@ class VoiceSessionCoordinatorTest {
         assertTrue(coordinator.isConnected())
     }
 
+    @Test
+    fun cancellation_after_backend_creation_closes_remote_and_transport_state() = runBlocking {
+        val api = FakeSessionApi()
+        val transport = CancellingSessionTransport()
+        val coordinator = VoiceSessionCoordinator(api, transport)
+
+        val connectJob = launch {
+            coordinator.connect(
+                accessToken = "auth-token",
+                request = VoiceSessionRequest("demo-room", "device-1", "1.0.6"),
+                effect = VoiceAddonPolicy.Effect.DEEP
+            )
+        }
+
+        transport.connectStarted.await()
+        connectJob.cancelAndJoin()
+
+        assertEquals(1, api.createCalls)
+        assertEquals(1, api.closeCalls)
+        assertEquals(1, transport.disconnectCalls)
+        assertFalse(coordinator.isConnected())
+    }
+
     private class FakeSessionApi : VoiceSessionApi {
         var createCalls = 0
+        var closeCalls = 0
 
         override fun createSession(
             accessToken: String,
@@ -53,8 +82,10 @@ class VoiceSessionCoordinatorTest {
             accessToken: String,
             sessionId: String,
             idempotencyKey: String
-        ): Result<Unit> =
-            Result.success(Unit)
+        ): Result<Unit> {
+            closeCalls += 1
+            return Result.success(Unit)
+        }
     }
 
     private class FakeSessionTransport : VoiceSessionTransportPort {
@@ -73,5 +104,23 @@ class VoiceSessionCoordinatorTest {
         }
 
         override suspend fun disconnect() = Unit
+    }
+
+    private class CancellingSessionTransport : VoiceSessionTransportPort {
+        val connectStarted = CompletableDeferred<Unit>()
+        var disconnectCalls = 0
+
+        override fun configureVoice(effect: VoiceAddonPolicy.Effect) = Unit
+
+        override suspend fun connectForPushToTalk(
+            credentials: SentinelLiveKitCallTransport.Credentials
+        ): Result<PushToTalkSession> {
+            connectStarted.complete(Unit)
+            awaitCancellation()
+        }
+
+        override suspend fun disconnect() {
+            disconnectCalls += 1
+        }
     }
 }
