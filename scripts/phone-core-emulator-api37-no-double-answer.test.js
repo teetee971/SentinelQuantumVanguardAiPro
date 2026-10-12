@@ -82,8 +82,20 @@ test('API 37 synchronizes the synthetic modem only after the same Telecom call i
   assert.ok(syncMarker > consoleAccept, 'the causal synchronization must be recorded as evidence');
 });
 
-test('the bridge requires ACTIVE on the same Telecom call that accepted the answer', () => {
+test('the bridge keeps the normal same-call ACTIVE path', () => {
   assert.match(bridgeSource, /call_id = accept_match\.group\(1\)/);
   assert.match(bridgeSource, /active_match\.group\(1\) == call_id/);
-  assert.match(bridgeSource, /disconnected before ACTIVE/);
+});
+
+test('API 37 synthetic handoff is accepted only after a tightly correlated emulator recreation', () => {
+  assert.match(bridgeSource, /INCOMING_MISSED/);
+  assert.match(bridgeSource, /UNKNOWN_CALL_RE/);
+  assert.match(bridgeSource, /UNKNOWN_ACTIVE_RE/);
+  assert.match(bridgeSource, /answered_handle/);
+  assert.match(bridgeSource, /handoff_call_id/);
+  assert.match(bridgeSource, /handoff_call_id != call_id/);
+  assert.match(bridgeSource, /unknown_handle == answered_handle/);
+  assert.match(bridgeSource, /handoff_deadline/);
+  assert.match(bridgeSource, /transport_handoff=android17_emulator_unknown_active/);
+  assert.match(bridgeSource, /api == 37/);
 });
