@@ -7,18 +7,15 @@ transaction and requires REQUEST_ACCEPT and ANSWERED for that exact Telecom call
 Android 16/API 36 needs an explicit emulator-console `gsm accept` after the causal
 REQUEST_ACCEPT and must then reach ACTIVE on the same Telecom call.
 
-Android 17/API 37 must not receive that mutation while Telephony is still accepting the app's
-answer request. It waits until the causal TC@ call has reached ANSWERED, then synchronizes the
-synthetic modem with `gsm accept`. Current API 37 emulator images can recreate that already-
-answered synthetic radio leg as an "unknown" Telecom call: the answered TC@ is marked
-INCOMING_MISSED and a new TC@ with the same masked handle is surfaced ACTIVE immediately.
-That emulator-only handoff is accepted only when every correlation invariant is present: the
-original call was ANSWERED, the disconnect cause is exactly INCOMING_MISSED, the replacement
-call id is distinct, the masked handle is identical, and the replacement reaches ACTIVE inside
-a short bounded window. A normal same-call ACTIVE transition remains preferred and accepted.
+Android 17/API 37 never receives a host modem answer. The helper observes Telecom only. A genuine
+same-call ANSWERED -> ACTIVE transition is accepted. Current API 37 emulator images can instead
+move the causal call from ANSWERED to DISCONNECTED/INCOMING_MISSED while Android reports that the
+answer transaction failed. That exact emulator-only signature is recorded as a qualification
+limitation so later Phone Core probes can continue; it is never promoted to ACTIVE or PASS.
 
-Neither transport synchronization nor the API 37 emulator handoff is a physical-device claim.
-The shell harness separately requires Sentinel's private INCALL_ACTIVE evidence.
+Neither the API 36 synthetic transport synchronization nor the API 37 limitation is a
+physical-device claim. Full incoming-call proof still requires Sentinel's private INCALL_ACTIVE
+evidence on lanes where the causal call reaches ACTIVE.
 """
 
 from __future__ import annotations
@@ -56,15 +53,8 @@ DISCONNECTED_RE = re.compile(
 INCOMING_MISSED_RE = re.compile(
     r"Event: RecordEntry (TC@\d+): SET_DISCONNECTED,.*Reason: \(INCOMING_MISSED\)"
 )
-UNKNOWN_CALL_RE = re.compile(
-    r"CallsManager: onSuccessfulUnknownCall for call \[Call id=(TC@\d+),.*?handle=(tel:[^,]+),"
-)
-UNKNOWN_ACTIVE_RE = re.compile(
-    r"CallsManager: setCallState NEW(?:\(NEW\))? -> ACTIVE, call: \[Call id=(TC@\d+),"
-)
 TRANSACTION_TOKEN_RE = re.compile(r"@([A-Za-z0-9]+)[^A-Za-z0-9]*$")
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
-API37_HANDOFF_WINDOW_S = 1.5
 
 
 def append_line(path: Path, line: str) -> None:
@@ -213,16 +203,12 @@ def run_bridge(
         deadline = time.monotonic() + timeout_s
         answer_transaction: str | None = None
         call_id: str | None = None
-        answered_handle: str | None = None
         accept_requested = False
-        synchronized = False
+        transport_ready = False
         answered = False
         recovery_attempted = False
         active = False
         causal_disconnected = False
-        causal_missed = False
-        handoff_call_id: str | None = None
-        handoff_deadline: float | None = None
         try:
             while time.monotonic() < deadline:
                 remaining = max(0.0, deadline - time.monotonic())
@@ -231,13 +217,6 @@ def run_bridge(
                 except queue.Empty:
                     if logcat.poll() is not None and line_queue.empty():
                         break
-                    if (
-                        api == 37
-                        and causal_disconnected
-                        and handoff_deadline is not None
-                        and time.monotonic() > handoff_deadline
-                    ):
-                        raise RuntimeError("API 37 synthetic handoff did not become ACTIVE inside bounded window")
                     continue
                 if line is None:
                     break
@@ -270,7 +249,7 @@ def run_bridge(
                                 response_key="console_gsm_accept_response",
                                 failure_message="emulator console gsm accept failed",
                             )
-                            synchronized = True
+                            transport_ready = True
                             append_line(
                                 evidence,
                                 f"transport_sync=emulator_console_gsm_accept api={api} number={number} call_id={call_id} transaction={answer_transaction}",
@@ -278,7 +257,7 @@ def run_bridge(
                         else:
                             append_line(
                                 evidence,
-                                f"transport_sync=pending_telecom_answered api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                                f"transport_mode=telecom_observation_only api={api} number={number} call_id={call_id} transaction={answer_transaction}",
                             )
                         continue
 
@@ -291,24 +270,15 @@ def run_bridge(
                     ):
                         append_line(evidence, line)
                         answered = True
-                        answered_handle = answered_match.group(2)
                         if api == 37:
-                            send_console_accept(
-                                console,
-                                number,
-                                evidence,
-                                response_key="console_gsm_accept_after_answered_response",
-                                failure_message="emulator console gsm accept after ANSWERED failed",
-                            )
-                            synchronized = True
-                            handoff_deadline = time.monotonic() + API37_HANDOFF_WINDOW_S
+                            transport_ready = True
                             append_line(
                                 evidence,
-                                f"transport_sync=emulator_console_gsm_accept_after_answered api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                                f"transport_observation=telecom_answered api={api} call_id={call_id} transaction={answer_transaction}",
                             )
                         continue
 
-                if synchronized and answered and not active and call_id is not None:
+                if transport_ready and answered and not active and call_id is not None:
                     active_match = ACTIVE_RE.search(line)
                     if active_match and active_match.group(1) == call_id:
                         append_line(evidence, line)
@@ -329,49 +299,20 @@ def run_bridge(
                         missed_match = INCOMING_MISSED_RE.search(line)
                         if missed_match and missed_match.group(1) == call_id:
                             append_line(evidence, line)
-                            causal_missed = True
-                            continue
-
-                        if causal_missed and handoff_deadline is not None:
-                            if time.monotonic() > handoff_deadline:
-                                raise RuntimeError(
-                                    "API 37 synthetic handoff did not become ACTIVE inside bounded window"
-                                )
-
-                            unknown_match = UNKNOWN_CALL_RE.search(line)
-                            if unknown_match:
-                                handoff_call_id = unknown_match.group(1)
-                                unknown_handle = unknown_match.group(2)
-                                if handoff_call_id != call_id and unknown_handle == answered_handle:
-                                    append_line(evidence, line)
-                                else:
-                                    append_line(
-                                        evidence,
-                                        "handoff_candidate_rejected="
-                                        f"call_id={handoff_call_id} handle={unknown_handle} "
-                                        f"expected_handle={answered_handle}",
-                                    )
-                                    handoff_call_id = None
-                                continue
-
-                            handoff_active_match = UNKNOWN_ACTIVE_RE.search(line)
-                            if (
-                                handoff_call_id is not None
-                                and handoff_active_match
-                                and handoff_active_match.group(1) == handoff_call_id
-                            ):
-                                append_line(evidence, line)
-                                append_line(
-                                    evidence,
-                                    "transport_handoff=android17_emulator_unknown_active "
-                                    f"original_call_id={call_id} active_call_id={handoff_call_id} "
-                                    f"handle={answered_handle}",
-                                )
-                                active = True
-                                continue
+                            append_line(
+                                evidence,
+                                "emulator_limit=api37_incoming_answer_transaction_failed "
+                                f"call_id={call_id} transaction={answer_transaction}",
+                            )
+                            return
 
                     held_match = HELD_RE.search(line)
-                    if held_match and held_match.group(1) == call_id and not recovery_attempted:
+                    if (
+                        api == 36
+                        and held_match
+                        and held_match.group(1) == call_id
+                        and not recovery_attempted
+                    ):
                         append_line(evidence, line)
                         send_console_accept(
                             console,
@@ -387,7 +328,7 @@ def run_bridge(
                         )
                         continue
 
-                if answer_transaction and accept_requested and synchronized and answered and active:
+                if answer_transaction and accept_requested and transport_ready and answered and active:
                     return
 
             missing = []
@@ -395,8 +336,8 @@ def run_bridge(
                 missing.append("answer_request")
             if not accept_requested:
                 missing.append("request_accept")
-            if not synchronized:
-                missing.append("transport_sync")
+            if not transport_ready:
+                missing.append("transport_ready")
             if not answered:
                 missing.append("answered_same_call")
             if not active:
