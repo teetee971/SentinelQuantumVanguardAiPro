@@ -27,3 +27,27 @@ test('Phone Core evidence collection gives a transient offline emulator a bounde
   const collection = evidence.indexOf('adb logcat -d -v time');
   assert.ok(recovery >= 0 && collection > recovery, 'ADB recovery must run before evidence collection');
 });
+
+test('Phone Core evidence collection hard-bounds every ADB evidence command', () => {
+  const evidence = workflowStep(
+    'Collect qualification evidence even after failure',
+    'Upload emulator qualification evidence'
+  );
+
+  assert.match(
+    evidence,
+    /timeout --signal=TERM --kill-after=5s 20s adb logcat -d -v time[^\n]*LOGCAT_STATUS=\$\?/
+  );
+  assert.match(
+    evidence,
+    /timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys telecom/
+  );
+  assert.match(
+    evidence,
+    /timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys role/
+  );
+  assert.match(
+    evidence,
+    /timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys package com\.sentinel\.quantum/
+  );
+});
