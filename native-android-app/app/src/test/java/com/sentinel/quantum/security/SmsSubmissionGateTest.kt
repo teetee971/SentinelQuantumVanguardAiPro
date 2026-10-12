@@ -14,5 +14,19 @@ class SmsSubmissionGateTest {
         gate.release()
 
         assertTrue(gate.tryAcquire())
+        gate.release()
+    }
+
+    @Test fun recreatedOwnerCannotBypassAnInFlightSubmission() {
+        val firstOwner = SmsSubmissionGate()
+        val recreatedOwner = SmsSubmissionGate()
+
+        assertTrue(firstOwner.tryAcquire())
+        assertFalse(recreatedOwner.tryAcquire())
+
+        firstOwner.release()
+
+        assertTrue(recreatedOwner.tryAcquire())
+        recreatedOwner.release()
     }
 }
