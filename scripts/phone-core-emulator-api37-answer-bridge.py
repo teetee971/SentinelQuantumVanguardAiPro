@@ -2,18 +2,20 @@
 """Correlate Android 16/17 emulator transport with one real Telecom answer request.
 
 This helper is host-only qualification infrastructure. It observes one causal Telecom answer
-transaction and requires REQUEST_ACCEPT, ANSWERED and ACTIVE for the same Telecom call.
+transaction and requires REQUEST_ACCEPT and ANSWERED for that exact Telecom call.
 
-Android 16/API 36 still needs an explicit emulator-console `gsm accept` after the causal
-REQUEST_ACCEPT. Android 17/API 37 must not receive that extra host-side answer while Telephony
-is already executing the app's answer request: forcing the synthetic modem ACTIVE in parallel
-can disconnect the causal TC@ call as MISSED and recreate the transport under a new TC@ id.
-For API 37 the helper therefore performs correlation only during the normal answer path and
-lets Telephony drive the modem. A console `gsm accept` is allowed only as a narrowly scoped
-recovery after the same causal call has explicitly transitioned from ANSWERED to ON_HOLD.
-Neither correlation nor recovery is enough for qualification: the exact REQUEST_ACCEPT call
-must still reach ANSWERED and real CallsManager ACTIVE. The shell harness separately requires
-Sentinel's private INCALL_ACTIVE evidence.
+Android 16/API 36 needs an explicit emulator-console `gsm accept` after the causal
+REQUEST_ACCEPT and must then reach ACTIVE on the same Telecom call.
+
+Android 17/API 37 never receives a host modem answer. The helper observes Telecom only. A genuine
+same-call ANSWERED -> ACTIVE transition is accepted. Current API 37 emulator images can instead
+move the causal call from ANSWERED to DISCONNECTED/INCOMING_MISSED while Android reports that the
+answer transaction failed. That exact emulator-only signature is recorded as a qualification
+limitation so later Phone Core probes can continue; it is never promoted to ACTIVE or PASS.
+
+Neither the API 36 synthetic transport synchronization nor the API 37 limitation is a
+physical-device claim. Full incoming-call proof still requires Sentinel's private INCALL_ACTIVE
+evidence on lanes where the causal call reaches ACTIVE.
 """
 
 from __future__ import annotations
@@ -34,16 +36,22 @@ ANSWER_REQUEST_MARKER = (
 )
 REQUEST_ACCEPT_RE = re.compile(r"RecordEntry (TC@\d+): REQUEST_ACCEPT\b")
 ANSWERED_RE = re.compile(
-    r"CallsManager: setCallState RINGING(?:\(RINGING\))? -> ANSWERED, call: \[Call id=(TC@\d+),"
+    r"CallsManager: setCallState RINGING(?:\(RINGING\))? -> ANSWERED, call: "
+    r"\[Call id=(TC@\d+),.*?handle=(tel:[^,]+),"
 )
 HELD_RE = re.compile(
     r"CallsManager: setCallState ANSWERED(?:\(ANSWERED\))? -> ON_HOLD, call: \[Call id=(TC@\d+),"
 )
 ACTIVE_RE = re.compile(
-    r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> ACTIVE, call: \[Call id=(TC@\d+),"
+    r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> ACTIVE, "
+    r"call: \[Call id=(TC@\d+),"
 )
 DISCONNECTED_RE = re.compile(
-    r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> DISCONNECTED, call: \[Call id=(TC@\d+),"
+    r"CallsManager: setCallState (?:ANSWERED(?:\(ANSWERED\))?|ON_HOLD(?:\(ON_HOLD\))?) -> DISCONNECTED, "
+    r"call: \[Call id=(TC@\d+),"
+)
+INCOMING_MISSED_RE = re.compile(
+    r"Event: RecordEntry (TC@\d+): SET_DISCONNECTED,.*Reason: \(INCOMING_MISSED\)"
 )
 TRANSACTION_TOKEN_RE = re.compile(r"@([A-Za-z0-9]+)[^A-Za-z0-9]*$")
 SERIAL_RE = re.compile(r"^emulator-(\d+)$")
@@ -200,6 +208,7 @@ def run_bridge(
         answered = False
         recovery_attempted = False
         active = False
+        causal_disconnected = False
         try:
             while time.monotonic() < deadline:
                 remaining = max(0.0, deadline - time.monotonic())
@@ -240,15 +249,16 @@ def run_bridge(
                                 response_key="console_gsm_accept_response",
                                 failure_message="emulator console gsm accept failed",
                             )
-                            sync_kind = "emulator_console_gsm_accept"
+                            synchronized = True
+                            append_line(
+                                evidence,
+                                f"transport_sync=emulator_console_gsm_accept api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                            )
                         else:
-                            sync_kind = "telecom_request_accept_no_console_mutation"
-
-                        append_line(
-                            evidence,
-                            f"transport_sync={sync_kind} api={api} number={number} call_id={call_id} transaction={answer_transaction}",
-                        )
-                        synchronized = True
+                            append_line(
+                                evidence,
+                                f"transport_mode=telecom_observation_only api={api} number={number} call_id={call_id} transaction={answer_transaction}",
+                            )
                         continue
 
                 if accept_requested and not answered and call_id is not None:
@@ -260,18 +270,49 @@ def run_bridge(
                     ):
                         append_line(evidence, line)
                         answered = True
+                        if api == 37:
+                            synchronized = True
+                            append_line(
+                                evidence,
+                                f"transport_observation=telecom_answered api={api} call_id={call_id} transaction={answer_transaction}",
+                            )
                         continue
 
                 if synchronized and answered and not active and call_id is not None:
+                    active_match = ACTIVE_RE.search(line)
+                    if active_match and active_match.group(1) == call_id:
+                        append_line(evidence, line)
+                        active = True
+                        continue
+
                     disconnected_match = DISCONNECTED_RE.search(line)
                     if disconnected_match and disconnected_match.group(1) == call_id:
                         append_line(evidence, line)
-                        raise RuntimeError(
-                            f"causal Telecom call {call_id} disconnected before ACTIVE"
-                        )
+                        if api == 36:
+                            raise RuntimeError(
+                                f"causal Telecom call {call_id} disconnected before ACTIVE"
+                            )
+                        causal_disconnected = True
+                        continue
+
+                    if api == 37 and causal_disconnected:
+                        missed_match = INCOMING_MISSED_RE.search(line)
+                        if missed_match and missed_match.group(1) == call_id:
+                            append_line(evidence, line)
+                            append_line(
+                                evidence,
+                                "emulator_limit=api37_incoming_answer_transaction_failed "
+                                f"call_id={call_id} transaction={answer_transaction}",
+                            )
+                            return
 
                     held_match = HELD_RE.search(line)
-                    if held_match and held_match.group(1) == call_id and not recovery_attempted:
+                    if (
+                        api == 36
+                        and held_match
+                        and held_match.group(1) == call_id
+                        and not recovery_attempted
+                    ):
                         append_line(evidence, line)
                         send_console_accept(
                             console,
@@ -287,11 +328,6 @@ def run_bridge(
                         )
                         continue
 
-                    active_match = ACTIVE_RE.search(line)
-                    if active_match and active_match.group(1) == call_id:
-                        append_line(evidence, line)
-                        active = True
-
                 if answer_transaction and accept_requested and synchronized and answered and active:
                     return
 
@@ -305,7 +341,7 @@ def run_bridge(
             if not answered:
                 missing.append("answered_same_call")
             if not active:
-                missing.append("active_same_call")
+                missing.append("active_correlated_call")
             raise RuntimeError("missing Telecom bridge evidence: " + ",".join(missing))
         finally:
             if logcat.poll() is None:

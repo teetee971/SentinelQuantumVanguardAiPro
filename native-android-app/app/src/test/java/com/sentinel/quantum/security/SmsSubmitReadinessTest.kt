@@ -25,4 +25,36 @@ class SmsSubmitReadinessTest {
         assertFalse(SmsSubmitReadiness.canSubmit(true, listOf(1), 1, true, false))
         assertTrue(SmsSubmitReadiness.canSubmit(true, listOf(1), 1, true, true))
     }
+
+    @Test fun blocksSubmissionWhileAnotherMessageIsInFlight() {
+        assertFalse(
+            SmsSubmitReadiness.canSubmit(
+                activationCanSend = true,
+                activeSubscriptionIds = listOf(1),
+                selectedSubscriptionId = 1,
+                destinationPresent = true,
+                bodyPresent = true,
+                submissionInFlight = true
+            )
+        )
+    }
+
+    @Test fun recreatedComposerObservesProcessStableSubmissionAdmission() {
+        val owner = SmsSubmissionGate()
+        assertTrue(owner.tryAcquire())
+        try {
+            assertFalse(
+                SmsSubmitReadiness.canSubmit(
+                    activationCanSend = true,
+                    activeSubscriptionIds = listOf(1),
+                    selectedSubscriptionId = 1,
+                    destinationPresent = true,
+                    bodyPresent = true,
+                    submissionInFlight = false
+                )
+            )
+        } finally {
+            owner.release()
+        }
+    }
 }

@@ -23,7 +23,7 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
   assert.match(runtime, /RUNTIME_LOG="\$RUNNER_TEMP\/phone-core-emulation-api\$\{API_LEVEL\}-runtime\.log"/);
   assert.match(runtime, /exec > >\(tee "\$RUNTIME_LOG"\) 2>&1/);
   assert.match(workflow, /phone-core-emulation-api\$\{\{ matrix\.api_level \}\}-runtime\.log/);
-  const start = runtime.indexOf('          adb install -r');
+  const start = runtime.indexOf('          timeout --signal=TERM --kill-after=30s 120s adb install -r');
   const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
   assert.ok(start >= 0 && end > start);
   const reset = runtime.slice(start, end);
@@ -33,7 +33,7 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-runtime-reset-'));
     try {
       const fixture = join(dir, 'reset.sh');
-      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
+      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\ntimeout() { while [[ "$1" == --* ]]; do shift; done; shift; "$@"; }\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
       const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
       assert.equal(result.status, expected, result.stderr);
       assert.equal(result.stdout.includes('FRESH_RUNTIME_SCOPE'), expected === 0);

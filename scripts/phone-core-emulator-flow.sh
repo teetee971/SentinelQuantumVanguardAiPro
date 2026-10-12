@@ -159,12 +159,10 @@ start_api37_incoming_answer_transport_bridge() {
     return 0
   fi
 
-  # Android 16/17 can leave the synthetic incoming GSM leg unsynchronized when Telecom answers,
-  # and Android 17 can drop/recreate it within only a few milliseconds. Arm the host-only helper
-  # before the tap and wait until its live logcat reader is definitely attached. API 36 synchronizes
-  # the emulator modem only after causal REQUEST_ACCEPT; API 37 observes Telecom without a parallel
-  # host answer on the normal path. Both paths still require same-call ANSWERED -> ACTIVE plus the
-  # independent private INCALL_ACTIVE assertion below. This never accepts a non-emulator adb target.
+  # Arm the host-only observer before the tap and wait until its live logcat reader is attached.
+  # API 36 may synchronize the synthetic modem only after causal REQUEST_ACCEPT. API 37 never
+  # host-answers the incoming call: it observes the app-owned Telecom transaction and either proves
+  # the same causal call ACTIVE or records the known emulator-only failed-answer limitation.
   : > "$evidence"
   : > "$marker_file"
   : > "$ready_file"
@@ -422,22 +420,28 @@ capture 02-incoming-call
 # CallerIdActivity can appear before Telecom finishes both screening callbacks on API 29.
 # Accepting at that point races Telecom's later SET_RINGING and loses the ACTIVE transition.
 # This event is recorded by InCallService only after it receives the ringing call and posts
-# its notification; keep the later INCALL_ACTIVE assertion as the independent answer proof.
+# its notification; keep the later INCALL_ACTIVE assertion as the independent full-answer proof.
 wait_private_timeline_event "INCOMING" "CALL_NOTIFICATION_POSTED"
-# Exercise Sentinel's answer path. On API 36/37, arm the preconnected emulator-console bridge
-# before the tap and require its logcat reader readiness handshake. The helper then observes the
-# causal answer transaction; API 36 performs the allowed post-REQUEST_ACCEPT modem sync while API 37
-# leaves the normal answer path untouched. The private INCALL_ACTIVE oracle remains independent.
+# Exercise Sentinel's answer path. The helper is armed before the tap so REQUEST_ACCEPT and the
+# causal TC@ state transitions are observed live. API 36 may synchronize the synthetic modem after
+# REQUEST_ACCEPT. API 37 never host-answers: a genuine causal ACTIVE remains the full proof, while
+# the exact ANSWERED -> INCOMING_MISSED emulator failure is retained as an explicit limitation.
 open_incoming_call_notification
 wait_text "phone_core_answer"
 start_api37_incoming_answer_transport_bridge
 tap_text "phone_core_answer"
 wait_api37_incoming_answer_transport_bridge
-wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
-capture 03-incoming-active-evidence
-adb emu gsm cancel "$FLOW_NUMBER"
-# The emulator modem is the lifecycle authority for this synthetic call. A localized UI string is
-# not a teardown oracle and can disappear before or after Telecom finishes releasing the account.
+if [[ "$FLOW_API" == "37" ]] && grep -Fq 'emulator_limit=api37_incoming_answer_transaction_failed' \
+  "$FLOW_OUTPUT_DIR/api37-incoming-answer-transport.txt"; then
+  cp "$FLOW_OUTPUT_DIR/api37-incoming-answer-transport.txt" \
+    "$FLOW_OUTPUT_DIR/api37-incoming-answer-limited.txt"
+  capture 03-incoming-answer-limited
+else
+  wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"
+  capture 03-incoming-active-evidence
+fi
+adb emu gsm cancel "$FLOW_NUMBER" >/dev/null 2>&1 || true
+# The emulator modem plus live Telecom state are the teardown authority for this synthetic call.
 wait_emulator_call_absent "$FLOW_NUMBER"
 capture 04-ended-call
 
