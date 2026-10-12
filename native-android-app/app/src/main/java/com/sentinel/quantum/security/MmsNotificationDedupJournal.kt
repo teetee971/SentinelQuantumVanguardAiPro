@@ -7,8 +7,8 @@ import org.json.JSONObject
 /**
  * Durable replay barrier for Notification.ind requests.
  *
- * The Android download callback may arrive after process death, so an in-memory set is not enough.
- * Only the opaque notification identity, staging filename and bounded request time are retained.
+ * Active transport reservations are capacity-bounded separately from completed replay markers so
+ * successful MMS traffic cannot exhaust the download admission budget for the rest of the TTL.
  */
 internal class MmsNotificationDedupJournal internal constructor(
     private val preferences: SharedPreferences
@@ -23,9 +23,15 @@ internal class MmsNotificationDedupJournal internal constructor(
         FAILED
     }
 
+    private enum class State {
+        ACTIVE,
+        COMPLETED
+    }
+
     private data class Record(
         val fileName: String,
-        val requestedAtMs: Long
+        val requestedAtMs: Long,
+        val state: State
     )
 
     @Synchronized
@@ -39,8 +45,9 @@ internal class MmsNotificationDedupJournal internal constructor(
         }
         if (!prune(requestedAtMs)) return Reservation.FAILED
 
+        val all = preferences.all
         val storageKey = key(identity)
-        val existing = decode(preferences.all[storageKey])
+        val existing = decode(all[storageKey])
         if (existing != null) {
             if (
                 requestedAtMs < existing.requestedAtMs ||
@@ -48,20 +55,52 @@ internal class MmsNotificationDedupJournal internal constructor(
             ) {
                 return Reservation.DUPLICATE
             }
-        } else if (preferences.all.keys.count { it.startsWith(KEY_PREFIX) } >= MAX_RECORDS) {
+        } else if (
+            all.asSequence()
+                .filter { it.key.startsWith(KEY_PREFIX) }
+                .mapNotNull { decode(it.value) }
+                .count { it.state == State.ACTIVE } >= MAX_RECORDS
+        ) {
             return Reservation.FAILED
         }
 
-        val encoded = JSONObject()
-            .put("schema", SCHEMA_VERSION)
-            .put("file_name", fileName)
-            .put("requested_at_ms", requestedAtMs)
-            .toString()
+        val encoded = encode(Record(fileName, requestedAtMs, State.ACTIVE))
         return if (preferences.edit().putString(storageKey, encoded).commit()) {
             Reservation.ACQUIRED
         } else {
             Reservation.FAILED
         }
+    }
+
+    /**
+     * Converts one active reservation into a replay marker. Completed markers retain duplicate
+     * protection for the TTL but do not consume the active download capacity. The completed set is
+     * separately bounded; oldest completed markers are evicted first and downstream MMS identity
+     * projection remains idempotent if an evicted transport notification is replayed later.
+     */
+    @Synchronized
+    fun complete(fileName: String): Boolean {
+        if (!validFileName(fileName)) return false
+        val all = preferences.all
+        val match = all.asSequence()
+            .filter { it.key.startsWith(KEY_PREFIX) }
+            .mapNotNull { entry -> decode(entry.value)?.let { entry.key to it } }
+            .firstOrNull { (_, record) -> record.fileName == fileName }
+            ?: return false
+        if (match.second.state == State.COMPLETED) return true
+
+        val completed = all.asSequence()
+            .filter { it.key.startsWith(KEY_PREFIX) }
+            .mapNotNull { entry -> decode(entry.value)?.let { entry.key to it } }
+            .filter { (_, record) -> record.state == State.COMPLETED }
+            .sortedBy { (_, record) -> record.requestedAtMs }
+            .toList()
+        val overflow = (completed.size + 1 - MAX_COMPLETED_RECORDS).coerceAtLeast(0)
+
+        val editor = preferences.edit()
+            .putString(match.first, encode(match.second.copy(state = State.COMPLETED)))
+        completed.take(overflow).forEach { (storageKey, _) -> editor.remove(storageKey) }
+        return editor.commit()
     }
 
     @Synchronized
@@ -95,6 +134,13 @@ internal class MmsNotificationDedupJournal internal constructor(
         return editor.commit()
     }
 
+    private fun encode(record: Record): String = JSONObject()
+        .put("schema", SCHEMA_VERSION)
+        .put("file_name", record.fileName)
+        .put("requested_at_ms", record.requestedAtMs)
+        .put("state", record.state.name)
+        .toString()
+
     private fun decode(raw: Any?): Record? {
         val encoded = raw as? String ?: return null
         if (encoded.length > MAX_ENCODED_CHARS) return null
@@ -103,7 +149,10 @@ internal class MmsNotificationDedupJournal internal constructor(
             if (json.optInt("schema", -1) != SCHEMA_VERSION) return@runCatching null
             val record = Record(
                 fileName = json.getString("file_name"),
-                requestedAtMs = json.getLong("requested_at_ms")
+                requestedAtMs = json.getLong("requested_at_ms"),
+                state = runCatching {
+                    State.valueOf(json.optString("state", State.ACTIVE.name))
+                }.getOrDefault(State.ACTIVE)
             )
             record.takeIf { validFileName(it.fileName) && it.requestedAtMs > 0L }
         }.getOrNull()
@@ -120,6 +169,7 @@ internal class MmsNotificationDedupJournal internal constructor(
         internal const val KEY_PREFIX = "notification."
         internal const val TTL_MS = 24L * 60L * 60L * 1000L
         internal const val MAX_RECORDS = 64
+        internal const val MAX_COMPLETED_RECORDS = 64
         private const val SCHEMA_VERSION = 1
         private const val MAX_ENCODED_CHARS = 512
         private val DIGEST = Regex("^[0-9a-f]{64}$")
