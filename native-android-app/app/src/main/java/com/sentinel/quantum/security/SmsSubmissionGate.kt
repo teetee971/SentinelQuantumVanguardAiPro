@@ -18,7 +18,9 @@ class SmsSubmissionGate {
         IN_FLIGHT.set(false)
     }
 
-    private companion object {
-        val IN_FLIGHT = AtomicBoolean(false)
+    companion object {
+        private val IN_FLIGHT = AtomicBoolean(false)
+
+        internal fun isInFlight(): Boolean = IN_FLIGHT.get()
     }
 }
