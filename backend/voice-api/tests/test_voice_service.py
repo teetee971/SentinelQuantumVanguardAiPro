@@ -1,3 +1,4 @@
+import json
 import sys
 import time
 from datetime import datetime
@@ -9,7 +10,13 @@ from redis.exceptions import RedisError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import LiveKitTokenIssuer, Settings, create_app  # noqa: E402
+from app import (  # noqa: E402
+    LiveKitTokenIssuer,
+    Settings,
+    _hash,
+    create_app,
+    demo_room_id_for_device,
+)
 
 
 class FakeRedis:
@@ -74,7 +81,8 @@ def configured_settings():
     )
 
 
-def valid_payload(room_id="group-1"):
+def valid_payload(room_id=None):
+    room_id = room_id or demo_room_id_for_device("device-1")
     return {
         "channel": "PTT_ROOM",
         "destination": {"type": "sentinel_room", "room_id": room_id},
@@ -133,6 +141,12 @@ def test_malformed_numeric_configuration_stays_fail_closed(monkeypatch):
     )
 
 
+def test_demo_room_id_matches_the_android_sha256_vector():
+    assert demo_room_id_for_device("android-device-1") == (
+        "demo-378710ccedce6ac9623900dbafac6ea6"
+    )
+
+
 def test_redis_failure_returns_unavailable_instead_of_server_error():
     app = create_app(
         settings=configured_settings(),
@@ -173,6 +187,87 @@ def test_session_requires_authenticated_entitled_matching_device():
     assert issuer.calls == []
 
 
+def test_legacy_idempotency_replay_cannot_bypass_room_authorization():
+    idempotency_key = "legacy-key-123456"
+    payload = valid_payload("other-users-private-room")
+    redis = FakeRedis()
+    redis.values[
+        f"voice:idempotency:v1:{_hash(f'user-1:{idempotency_key}')}"
+    ] = json.dumps(
+        {
+            "request_fingerprint": _hash(
+                json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            ),
+            "response": {
+                "session_id": "legacy-session",
+                "transport": {"access_token": "legacy-token"},
+            },
+        }
+    )
+    issuer = FakeTokenIssuer()
+    app = create_app(
+        settings=configured_settings(),
+        redis_client=redis,
+        identity_verifier=FakeIdentityVerifier(entitled_principal()),
+        token_issuer=issuer,
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/voice/sessions",
+            headers={
+                "Authorization": "Bearer valid",
+                "Idempotency-Key": idempotency_key,
+            },
+            json=payload,
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Voice destination unavailable"
+    assert issuer.calls == []
+
+
+def test_legacy_valid_room_replay_is_not_reused_after_room_binding_change():
+    idempotency_key = "legacy-valid-123456"
+    payload = valid_payload()
+    redis = FakeRedis()
+    redis.values[
+        f"voice:idempotency:v1:{_hash(f'user-1:{idempotency_key}') }"
+    ] = json.dumps(
+        {
+            "request_fingerprint": _hash(
+                json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            ),
+            "response": {
+                "session_id": "legacy-session",
+                "transport": {"access_token": "legacy-v1-token"},
+            },
+        }
+    )
+    issuer = FakeTokenIssuer()
+    app = create_app(
+        settings=configured_settings(),
+        redis_client=redis,
+        identity_verifier=FakeIdentityVerifier(entitled_principal()),
+        token_issuer=issuer,
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/voice/sessions",
+            headers={
+                "Authorization": "Bearer valid",
+                "Idempotency-Key": idempotency_key,
+            },
+            json=payload,
+        )
+
+    assert response.status_code == 201
+    assert response.json()["session_id"] != "legacy-session"
+    assert response.json()["transport"]["access_token"] == "ephemeral-livekit-token"
+    assert issuer.calls
+
+
 def test_session_creation_is_idempotent_and_room_scoped():
     client, issuer = make_client()
     headers = {
@@ -191,11 +286,29 @@ def test_session_creation_is_idempotent_and_room_scoped():
     assert first.status_code == 201
     assert replay.status_code == 201
     assert replay.json() == first.json()
-    assert mismatch.status_code == 409
+    assert mismatch.status_code == 403
+    assert mismatch.json()["detail"] == "Voice destination unavailable"
     assert len(issuer.calls) == 1
     assert issuer.calls[0]["identity"] == "user-1"
     assert issuer.calls[0]["ttl_seconds"] == 120
     assert issuer.calls[0]["room"].startswith("sentinel-ptt-")
+
+
+def test_session_rejects_room_not_bound_to_authenticated_device():
+    client, issuer = make_client()
+
+    response = client.post(
+        "/v1/voice/sessions",
+        headers={
+            "Authorization": "Bearer valid",
+            "Idempotency-Key": "key-923456789012",
+        },
+        json=valid_payload(room_id="other-users-private-room"),
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Voice destination unavailable"
+    assert issuer.calls == []
 
 
 def test_close_is_idempotent_and_prevents_reuse():

@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import Settings, create_app  # noqa: E402
+from app import Settings, create_app, demo_room_id_for_device  # noqa: E402
 
 
 class RaceRedis:
@@ -33,7 +33,7 @@ class RaceRedis:
         return 1
 
     async def set(self, key, value, ex=None, nx=False):
-        if nx and key.startswith("voice:idempotency:v1:"):
+        if nx and key.startswith("voice:idempotency:v2:"):
             candidate = json.loads(value)
             winner = json.loads(value)
             winner["response"] = dict(candidate["response"])
@@ -65,7 +65,7 @@ class AtomicRedis(RaceRedis):
         return 1
 
     async def set(self, key, value, ex=None, nx=False):
-        if key.startswith("voice:idempotency:v1:") or key.startswith("voice:session:v1:"):
+        if key.startswith("voice:idempotency:v2:") or key.startswith("voice:session:v1:"):
             raise AssertionError("voice reservation must use Redis EVAL atomically")
         return await super().set(key, value, ex=ex, nx=nx)
 
@@ -96,7 +96,10 @@ def settings():
 def payload():
     return {
         "channel": "PTT_ROOM",
-        "destination": {"type": "sentinel_room", "room_id": "group-1"},
+        "destination": {
+            "type": "sentinel_room",
+            "room_id": demo_room_id_for_device("device-1"),
+        },
         "client": {
             "device_id": "device-1",
             "app_version": "1.0.0",
