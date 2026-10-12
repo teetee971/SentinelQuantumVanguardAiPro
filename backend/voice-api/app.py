@@ -451,12 +451,13 @@ def create_app(
                 ex=resolved_settings.token_ttl_seconds,
                 nx=True,
             )
-            session_key = f"voice:session:v1:{session_id}"
-            await client.set(
-                session_key,
-                json.dumps(session_record, separators=(",", ":")),
-                ex=resolved_settings.token_ttl_seconds + 60,
-            )
+            if stored:
+                session_key = f"voice:session:v1:{session_id}"
+                await client.set(
+                    session_key,
+                    json.dumps(session_record, separators=(",", ":")),
+                    ex=resolved_settings.token_ttl_seconds + 60,
+                )
         except (RedisError, TimeoutError, OSError) as exc:
             raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
 
