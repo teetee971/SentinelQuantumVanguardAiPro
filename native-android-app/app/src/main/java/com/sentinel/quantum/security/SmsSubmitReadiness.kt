@@ -5,7 +5,8 @@ package com.sentinel.quantum.security
  *
  * This does not authorize sending by itself: the concrete sender remains the final enforcement
  * boundary. It prevents the composer from presenting an actionable send button when the active
- * SIM state still requires an explicit user choice.
+ * SIM state still requires an explicit user choice or another composer instance still owns the
+ * process-stable transport admission gate.
  */
 object SmsSubmitReadiness {
     fun canSubmit(
@@ -16,7 +17,13 @@ object SmsSubmitReadiness {
         bodyPresent: Boolean,
         submissionInFlight: Boolean = false
     ): Boolean {
-        if (!activationCanSend || !destinationPresent || !bodyPresent || submissionInFlight) return false
+        if (
+            !activationCanSend ||
+            !destinationPresent ||
+            !bodyPresent ||
+            submissionInFlight ||
+            SmsSubmissionGate.isInFlight()
+        ) return false
         return SmsSubscriptionSelectionPolicy.select(
             activeSubscriptionIds = activeSubscriptionIds.toSet(),
             requestedSubscriptionId = selectedSubscriptionId,
