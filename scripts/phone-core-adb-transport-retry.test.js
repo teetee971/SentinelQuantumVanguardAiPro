@@ -1,0 +1,100 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
+
+function shellFunction(name) {
+  const start = revocation.indexOf(`${name}() {`);
+  assert.notEqual(start, -1, `${name} must exist in the revocation harness`);
+  const next = revocation.indexOf('\n}', start);
+  assert.ok(next > start, `${name} must have a complete shell body`);
+  return revocation.slice(start, next + 2);
+}
+
+function runRetryFixture(mode) {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-adb-retry-'));
+  try {
+    const script = `
+set -u
+OUT_DIR="$1"
+MODE="$2"
+TARGET_ATTEMPTS=0
+GET_STATE_ATTEMPTS=0
+sleep() { :; }
+adb() {
+  if [[ "$1" == "get-state" ]]; then
+    GET_STATE_ATTEMPTS=$((GET_STATE_ATTEMPTS + 1))
+    printf 'device\n'
+    return 0
+  fi
+  TARGET_ATTEMPTS=$((TARGET_ATTEMPTS + 1))
+  case "$MODE" in
+    transient)
+      if [[ "$TARGET_ATTEMPTS" -eq 1 ]]; then
+        printf 'error: device offline\n' >&2
+        return 1
+      fi
+      printf 'role command completed\n'
+      return 0
+      ;;
+    semantic)
+      printf 'Security exception: role change rejected\n' >&2
+      return 1
+      ;;
+    persistent)
+      printf 'connection terminated: write failed\n' >&2
+      return 1
+      ;;
+  esac
+}
+${shellFunction('adb_transport_ready')}
+${shellFunction('adb_retry_transport')}
+adb_retry_transport shell cmd role remove-role-holder --user 0 android.app.role.SMS com.sentinel.quantum
+status=$?
+printf 'status=%s target_attempts=%s get_state_attempts=%s\n' "$status" "$TARGET_ATTEMPTS" "$GET_STATE_ATTEMPTS"
+exit "$status"
+`;
+    return spawnSync('bash', ['-c', script, 'test', dir, mode], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        SENTINEL_ADB_RETRY_ATTEMPTS: '3',
+        SENTINEL_ADB_READY_ATTEMPTS: '2',
+        SENTINEL_ADB_RETRY_DELAY_SECONDS: '0'
+      }
+    });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('transient device-offline transport loss retries the interrupted ADB command', () => {
+  const result = runRetryFixture('transient');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /role command completed/);
+  assert.match(result.stdout, /target_attempts=2/);
+});
+
+test('semantic ADB failure is fatal and is not retried', () => {
+  const result = runRetryFixture('semantic');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Security exception/);
+  assert.match(result.stdout, /target_attempts=1/);
+});
+
+test('persistent transport loss fails closed after the bounded retry budget', () => {
+  const result = runRetryFixture('persistent');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /connection terminated: write failed/);
+  assert.match(result.stdout, /target_attempts=3/);
+});
+
+test('role and permission transition commands use the bounded transport retry', () => {
+  assert.match(revocation, /adb_retry_transport shell pm grant \"\$PACKAGE\" android\.permission\.SEND_SMS/);
+  assert.match(revocation, /adb_retry_transport shell cmd role remove-role-holder --user 0 android\.app\.role\.SMS \"\$PACKAGE\"/);
+  assert.match(revocation, /adb_retry_transport shell cmd role remove-role-holder --user 0 android\.app\.role\.DIALER \"\$PACKAGE\"/);
+});
