@@ -105,13 +105,13 @@ class Auth0SessionController(context: Context) {
         onSuccess: () -> Unit,
         onFailure: (String?) -> Unit
     ) {
+        credentialsManager.clearCredentials()
+        onSuccess()
+
         WebAuthProvider.logout(account)
             .withScheme(configuration.scheme)
             .start(activity, object : Callback<Void?, AuthenticationException> {
-                override fun onSuccess(result: Void?) {
-                    credentialsManager.clearCredentials()
-                    onSuccess()
-                }
+                override fun onSuccess(result: Void?) = Unit
 
                 override fun onFailure(error: AuthenticationException) {
                     onFailure(error.message)
