@@ -6,6 +6,7 @@ const flowSource = fs.readFileSync('scripts/phone-core-emulator-flow.sh', 'utf8'
 const bridgePath = 'scripts/phone-core-emulator-api37-answer-bridge.py';
 const bridgeSource = fs.existsSync(bridgePath) ? fs.readFileSync(bridgePath, 'utf8') : '';
 const workflowSource = fs.readFileSync('.github/workflows/android-emulation-qualification.yml', 'utf8');
+const instrumentationWorkflowSource = fs.readFileSync('.github/workflows/android-instrumentation.yml', 'utf8');
 const composerSource = fs.readFileSync(
   'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt',
   'utf8'
@@ -155,6 +156,32 @@ test('API 24 instrumentation enforces a hard wall-clock timeout instead of a det
   );
   assert.doesNotMatch(instrumentation, /setsid adb shell am instrument/);
   assert.doesNotMatch(instrumentation, /INSTRUMENTATION_WATCHDOG_PID/);
+});
+
+test('API 24 APK installs are hard-bounded in both instrumentation workflows', () => {
+  for (const [name, source] of [
+    ['Phone Core qualification', workflowSource],
+    ['Android instrumentation', instrumentationWorkflowSource]
+  ]) {
+    const api24 = blockBetween(
+      source,
+      'if [[ "$API_LEVEL" == "24" ]]; then',
+      '          else\n            timeout --signal=INT --kill-after=30s 900s'
+    );
+
+    for (const apkVariable of ['APP_APK', 'TEST_APK']) {
+      assert.match(
+        api24,
+        new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
+        `${name} must hard-bound ${apkVariable} installation`
+      );
+      assert.doesNotMatch(
+        api24,
+        new RegExp(`\\n\\s*adb install -r "\\$${apkVariable}"`),
+        `${name} must not leave ${apkVariable} installation unbounded`
+      );
+    }
+  }
 });
 
 test('runtime APK installation is bounded so a wedged ADB transport cannot consume the whole emulator job', () => {
