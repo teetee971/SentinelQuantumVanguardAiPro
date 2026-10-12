@@ -13,6 +13,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -31,6 +32,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -358,13 +364,21 @@ class VoiceStudioActivity : ComponentActivity() {
                         ) {
                             Text(if (sessionConnected) "Fermer la session" else "Démarrer la session PTT")
                         }
-                        OutlinedButton(
-                            onClick = {},
-                            enabled = sessionConnected && !sessionBusy,
+
+                        val pttEnabled = sessionConnected && !sessionBusy
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .pointerInput(sessionConnected, sessionBusy, activeVoiceSession) {
-                                    if (!sessionConnected || sessionBusy) return@pointerInput
+                                .semantics {
+                                    role = Role.Button
+                                    contentDescription = when {
+                                        transmitting -> "Relâchez pour couper le microphone"
+                                        else -> "Maintenez pour parler en PTT"
+                                    }
+                                    if (!pttEnabled) disabled()
+                                }
+                                .pointerInput(pttEnabled, activeVoiceSession) {
+                                    if (!pttEnabled) return@pointerInput
                                     awaitEachGesture {
                                         awaitFirstDown(requireUnconsumed = false)
                                         val session = activeVoiceSession ?: return@awaitEachGesture
@@ -389,10 +403,39 @@ class VoiceStudioActivity : ComponentActivity() {
                                             }
                                         }
                                     }
+                                },
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(
+                                1.dp,
+                                if (pttEnabled) {
+                                    MaterialTheme.colorScheme.outline
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                                 }
+                            ),
+                            color = MaterialTheme.colorScheme.surface
                         ) {
-                            Text(if (transmitting) "Relâchez pour couper" else "Maintenez pour parler")
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = when {
+                                        transmitting -> "Relâchez pour couper"
+                                        else -> "Maintenez pour parler"
+                                    },
+                                    color = if (pttEnabled) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    }
+                                )
+                            }
                         }
+
                         Text(
                             sessionStatus,
                             style = MaterialTheme.typography.bodySmall,
