@@ -175,13 +175,17 @@ class MmsNotificationDedupJournalTest {
                         if (firstReadBarrier.await(1, TimeUnit.SECONDS)) {
                             concurrentPairObserved.set(true)
                         }
+                        values.toMap()
                     } else if (reads == 2 && concurrentPairObserved.get()) {
+                        val snapshot = values.toMap()
                         secondReadBarrier.countDown()
                         check(secondReadBarrier.await(2, TimeUnit.SECONDS)) {
-                            "Both unsynchronized journal transactions did not reach the read-check-write window"
+                            "Both unsynchronized journal transactions did not capture the same stale snapshot"
                         }
+                        snapshot
+                    } else {
+                        values.toMap()
                     }
-                    values.toMap()
                 }
                 "edit" -> editor()
                 else -> error("Unexpected preferences call: ${method.name}")
