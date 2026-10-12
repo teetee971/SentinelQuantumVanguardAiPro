@@ -54,7 +54,9 @@ import com.sentinel.quantum.voice.VoiceAddonPolicy
 import com.sentinel.quantum.voice.VoiceSessionClient
 import com.sentinel.quantum.voice.VoiceSessionCoordinator
 import com.sentinel.quantum.voice.VoiceSessionRequest
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -67,6 +69,7 @@ class VoiceStudioActivity : ComponentActivity() {
     private lateinit var authController: Auth0SessionController
     private lateinit var voiceSessionCoordinator: VoiceSessionCoordinator
     private var activeVoiceSession: VoiceSessionCoordinator.ActiveSession? = null
+    private var pttGestureJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -103,6 +106,16 @@ class VoiceStudioActivity : ComponentActivity() {
             mutableStateOf("Testez votre voix localement avant son utilisation dans un appel Sentinel compatible.")
         }
         val commercialState = remember { VoiceAddonPolicy.currentState() }
+        val pttGestureScope = rememberCoroutineScope()
+        val pttEnabled = sessionConnected && !sessionBusy
+
+        LaunchedEffect(pttEnabled) {
+            if (!pttEnabled) {
+                pttGestureJob?.cancel()
+                pttGestureJob = null
+                transmitting = false
+            }
+        }
 
         val microphoneLauncher = rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -365,7 +378,6 @@ class VoiceStudioActivity : ComponentActivity() {
                             Text(if (sessionConnected) "Fermer la session" else "Démarrer la session PTT")
                         }
 
-                        val pttEnabled = sessionConnected && !sessionBusy
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -382,26 +394,32 @@ class VoiceStudioActivity : ComponentActivity() {
                                     awaitEachGesture {
                                         awaitFirstDown(requireUnconsumed = false)
                                         val session = activeVoiceSession ?: return@awaitEachGesture
-                                        val pressResult = session.pushToTalk.press()
-                                        if (pressResult.isFailure) {
-                                            transmitting = false
-                                            sessionStatus = "Contrôle PTT impossible : ${pressResult.exceptionOrNull()?.message.orEmpty()}"
-                                            return@awaitEachGesture
-                                        }
+                                        pttGestureJob?.cancel()
+                                        pttGestureJob = pttGestureScope.launch {
+                                            val pressResult = session.pushToTalk.press()
+                                            if (pressResult.isFailure) {
+                                                transmitting = false
+                                                sessionStatus = "Contrôle PTT impossible : ${pressResult.exceptionOrNull()?.message.orEmpty()}"
+                                                return@launch
+                                            }
 
-                                        transmitting = true
-                                        sessionStatus = "Microphone ouvert : maintenez pour parler."
-                                        try {
-                                            waitForUpOrCancellation()
-                                        } finally {
-                                            val releaseResult = releasePushToTalk()
-                                            transmitting = false
-                                            sessionStatus = if (releaseResult.isSuccess) {
-                                                "Microphone coupé : session PTT toujours connectée."
-                                            } else {
-                                                "Fermeture du microphone impossible : ${releaseResult.exceptionOrNull()?.message.orEmpty()}"
+                                            transmitting = true
+                                            sessionStatus = "Microphone ouvert : maintenez pour parler."
+                                            try {
+                                                awaitCancellation()
+                                            } finally {
+                                                val releaseResult = releasePushToTalk()
+                                                transmitting = false
+                                                sessionStatus = if (releaseResult.isSuccess) {
+                                                    "Microphone coupé : session PTT toujours connectée."
+                                                } else {
+                                                    "Fermeture du microphone impossible : ${releaseResult.exceptionOrNull()?.message.orEmpty()}"
+                                                }
                                             }
                                         }
+                                        waitForUpOrCancellation()
+                                        pttGestureJob?.cancel()
+                                        pttGestureJob = null
                                     }
                                 },
                             shape = RoundedCornerShape(20.dp),
@@ -630,6 +648,8 @@ class VoiceStudioActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        pttGestureJob?.cancel()
+        pttGestureJob = null
         if (activeVoiceSession != null) {
             (application as SentinelApplication).launchVoiceTeardown {
                 releasePushToTalk()
@@ -639,6 +659,8 @@ class VoiceStudioActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        pttGestureJob?.cancel()
+        pttGestureJob = null
         stopRecording()
         stopPlayback()
         runCatching { previewFile.delete() }
