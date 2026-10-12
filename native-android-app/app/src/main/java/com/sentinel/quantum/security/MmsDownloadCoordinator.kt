@@ -40,81 +40,112 @@ object MmsDownloadCoordinator {
         }
         prune(context.applicationContext, canonicalDirectory)
 
+        val notificationIdentity = MmsNotificationIdentity.from(
+            contentLocation = notification.contentLocation,
+            subscriptionId = subscriptionId
+        ) ?: return Result.Rejected("MMS_NOTIFICATION_IDENTITY_INVALID")
+        val notificationDedup = MmsNotificationDedupJournal(context.applicationContext)
         val token = UUID.randomUUID().toString()
         val fileName = "$token.pdu"
-        val file = File(canonicalDirectory, fileName)
-        val canonicalFile = runCatching { file.canonicalFile }.getOrNull()
-            ?: return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
-        if (canonicalFile.parentFile != canonicalDirectory) {
-            return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
+        when (notificationDedup.reserve(notificationIdentity, fileName)) {
+            MmsNotificationDedupJournal.Reservation.DUPLICATE ->
+                return Result.Rejected("MMS_NOTIFICATION_DUPLICATE")
+            MmsNotificationDedupJournal.Reservation.FAILED ->
+                return Result.Rejected("MMS_NOTIFICATION_DEDUP_UNAVAILABLE")
+            MmsNotificationDedupJournal.Reservation.ACQUIRED -> Unit
         }
 
-        // Journal the routing identity before creating the staging file. If the process dies at any
-        // later point, startup recovery can reconstruct both recovery and the original cleanup
-        // deadline from this durable timestamp. A journal without a file is safely self-healing.
-        val requestedAtMs = System.currentTimeMillis()
-        val recoveryJournal = MmsDownloadRecoveryJournal(context.applicationContext)
-        if (!recoveryJournal.record(canonicalFile.name, subscriptionId, requestedAtMs)) {
-            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED")
-        }
-        if (!runCatching { canonicalFile.createNewFile() }.getOrDefault(false)) {
-            recoveryJournal.remove(canonicalFile.name)
-            return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
-        }
-
-        val contentUri = runCatching {
-            FileProvider.getUriForFile(
-                context,
-                context.packageName + ".fileprovider",
-                canonicalFile
-            )
-        }.getOrElse {
-            delete(context, canonicalFile.name)
-            return Result.Rejected("MMS_DOWNLOAD_URI_FAILED")
-        }
-
-        val safetyNetScheduled = runCatching {
-            MmsDownloadCleanupWorker.scheduleAtDeadline(
-                context = context.applicationContext,
-                fileName = canonicalFile.name,
-                requestedAtMs = requestedAtMs
-            )
-            MmsDownloadRecoveryWorker.schedule(context.applicationContext, canonicalFile.name)
-            true
-        }.getOrDefault(false)
-        if (!safetyNetScheduled) {
-            delete(context, canonicalFile.name)
-            return Result.Rejected("MMS_DOWNLOAD_RECOVERY_SCHEDULE_FAILED")
-        }
-
+        var requestAccepted = false
+        var stagingCreated = false
         return try {
-            val callbackIntent = Intent(context, SentinelMmsDownloadReceiver::class.java)
-                .setAction(ACTION_DOWNLOAD_COMPLETE)
-                .setData(Uri.parse("sentinel-mms-download://result/$token"))
-                .putExtra(EXTRA_FILE_NAME, canonicalFile.name)
-                .putExtra(EXTRA_SUBSCRIPTION_ID, subscriptionId)
-            val callback = PendingIntent.getBroadcast(
-                context,
-                token.hashCode(),
-                callbackIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val file = File(canonicalDirectory, fileName)
+            val canonicalFile = runCatching { file.canonicalFile }.getOrNull()
+                ?: return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
+            if (canonicalFile.parentFile != canonicalDirectory) {
+                return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
+            }
 
-            @Suppress("DEPRECATION")
-            SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
-                .downloadMultimediaMessage(
+            // Journal the routing identity before creating the staging file. If the process dies at any
+            // later point, startup recovery can reconstruct both recovery and the original cleanup
+            // deadline. A journal without a file is safely self-healing.
+            val requestedAtMs = System.currentTimeMillis()
+            val recoveryJournal = MmsDownloadRecoveryJournal(context.applicationContext)
+            if (!recoveryJournal.record(canonicalFile.name, subscriptionId, requestedAtMs)) {
+                return Result.Rejected("MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED")
+            }
+            if (!runCatching { canonicalFile.createNewFile() }.getOrDefault(false)) {
+                recoveryJournal.remove(canonicalFile.name)
+                return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
+            }
+            stagingCreated = true
+
+            val contentUri = runCatching {
+                FileProvider.getUriForFile(
                     context,
-                    notification.contentLocation,
-                    contentUri,
-                    null,
-                    callback
+                    context.packageName + ".fileprovider",
+                    canonicalFile
                 )
-            Result.Requested(subscriptionId, canonicalFile.name)
-        } catch (_: Exception) {
-            delete(context, canonicalFile.name)
-            Result.Rejected("MMS_DOWNLOAD_REQUEST_FAILED")
+            }.getOrElse {
+                if (delete(context, canonicalFile.name)) {
+                    notificationDedup.release(fileName)
+                }
+                return Result.Rejected("MMS_DOWNLOAD_URI_FAILED")
+            }
+
+            val safetyNetScheduled = runCatching {
+                MmsDownloadCleanupWorker.scheduleAtDeadline(
+                    context = context.applicationContext,
+                    fileName = canonicalFile.name,
+                    requestedAtMs = requestedAtMs
+                )
+                MmsDownloadRecoveryWorker.schedule(context.applicationContext, canonicalFile.name)
+                true
+            }.getOrDefault(false)
+            if (!safetyNetScheduled) {
+                if (delete(context, canonicalFile.name)) {
+                    notificationDedup.release(fileName)
+                }
+                return Result.Rejected("MMS_DOWNLOAD_RECOVERY_SCHEDULE_FAILED")
+            }
+
+            try {
+                val callbackIntent = Intent(context, SentinelMmsDownloadReceiver::class.java)
+                    .setAction(ACTION_DOWNLOAD_COMPLETE)
+                    .setData(Uri.parse("sentinel-mms-download://result/$token"))
+                    .putExtra(EXTRA_FILE_NAME, canonicalFile.name)
+                    .putExtra(EXTRA_SUBSCRIPTION_ID, subscriptionId)
+                val callback = PendingIntent.getBroadcast(
+                    context,
+                    token.hashCode(),
+                    callbackIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                @Suppress("DEPRECATION")
+                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+                    .downloadMultimediaMessage(
+                        context,
+                        notification.contentLocation,
+                        contentUri,
+                        null,
+                        callback
+                    )
+                requestAccepted = true
+                Result.Requested(subscriptionId, canonicalFile.name)
+            } catch (_: Exception) {
+                if (delete(context, canonicalFile.name)) {
+                    notificationDedup.release(fileName)
+                }
+                Result.Rejected("MMS_DOWNLOAD_REQUEST_FAILED")
+            }
+        } finally {
+            if (!requestAccepted && !stagingCreated) notificationDedup.release(fileName)
         }
     }
+
+    /** Releases a Notification.ind reservation only when its transport request definitively failed. */
+    internal fun releaseNotificationDedup(context: Context, fileName: String): Boolean =
+        MmsNotificationDedupJournal(context.applicationContext).release(fileName)
 
     fun delete(context: Context, fileName: String): Boolean =
         deleteInternal(
@@ -133,7 +164,9 @@ object MmsDownloadCoordinator {
             cancelCleanup = false,
             cancelRecovery = true,
             removeRecoveryMetadata = true
-        )
+        ).also { removed ->
+            if (removed) releaseNotificationDedup(context, fileName)
+        }
 
     /** Called after durable private persistence/provider handling succeeded. */
     internal fun finishRecovery(

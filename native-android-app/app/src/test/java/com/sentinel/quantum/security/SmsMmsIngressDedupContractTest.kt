@@ -1,0 +1,37 @@
+package com.sentinel.quantum.security
+
+import java.io.File
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class SmsMmsIngressDedupContractTest {
+    @Test fun smsReceiverDeduplicatesBeforeProviderInsert() {
+        val source = sourceFile("SentinelSmsDeliverReceiver.kt").readText()
+        val identity = source.indexOf("SmsIngressIdentity.from")
+        val duplicateCheck = source.indexOf("hasExistingIncomingSms")
+        val insert = source.indexOf("contentResolver.insert")
+
+        assertTrue(identity >= 0)
+        assertTrue(duplicateCheck > identity)
+        assertTrue(insert > duplicateCheck)
+    }
+
+    @Test fun mmsNotificationDeduplicatesBeforeStagingFileCreation() {
+        val source = sourceFile("MmsDownloadCoordinator.kt").readText()
+        val reserve = source.indexOf("notificationDedup.reserve")
+        val createFile = source.indexOf("canonicalFile.createNewFile")
+
+        assertTrue(reserve >= 0)
+        assertTrue(createFile > reserve)
+    }
+
+    private fun sourceFile(name: String): File {
+        val candidates = listOf(
+            File("src/main/java/com/sentinel/quantum/security/$name"),
+            File("app/src/main/java/com/sentinel/quantum/security/$name"),
+            File("native-android-app/app/src/main/java/com/sentinel/quantum/security/$name")
+        )
+        return candidates.firstOrNull(File::isFile)
+            ?: error("Unable to locate $name from ${File(".").absolutePath}")
+    }
+}

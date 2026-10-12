@@ -95,7 +95,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             context.readSmsRoleStateFailClosed() !=
                 SmsActivationDiagnostics.SmsRoleState.HELD
         ) {
-            MmsDownloadCoordinator.delete(context, fileName)
+            if (MmsDownloadCoordinator.delete(context, fileName)) {
+                MmsDownloadCoordinator.releaseNotificationDedup(context, fileName)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
@@ -105,7 +107,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }
 
         if (deliveredResultCode != Activity.RESULT_OK) {
-            MmsDownloadCoordinator.delete(context, fileName)
+            if (MmsDownloadCoordinator.delete(context, fileName)) {
+                MmsDownloadCoordinator.releaseNotificationDedup(context, fileName)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "DefaultSms",
@@ -122,7 +126,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
 
         val size = target.length()
         if (size !in 1..MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            MmsDownloadCoordinator.delete(context, fileName)
+            if (MmsDownloadCoordinator.delete(context, fileName)) {
+                MmsDownloadCoordinator.releaseNotificationDedup(context, fileName)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
