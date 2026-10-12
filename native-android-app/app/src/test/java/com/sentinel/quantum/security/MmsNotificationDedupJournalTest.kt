@@ -5,6 +5,7 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -155,7 +156,9 @@ class MmsNotificationDedupJournalTest {
 
     private class RacingPreferences {
         private val values = ConcurrentHashMap<String, String>()
+        private val firstReadBarrier = CountDownLatch(2)
         private val secondReadBarrier = CountDownLatch(2)
+        private val concurrentPairObserved = AtomicBoolean(false)
         private val readsByThread = ConcurrentHashMap<Long, AtomicInteger>()
 
         val preferences = Proxy.newProxyInstance(
@@ -167,9 +170,16 @@ class MmsNotificationDedupJournalTest {
                     val reads = readsByThread.computeIfAbsent(Thread.currentThread().id) {
                         AtomicInteger()
                     }.incrementAndGet()
-                    if (reads == 2) {
+                    if (reads == 1) {
+                        firstReadBarrier.countDown()
+                        if (firstReadBarrier.await(1, TimeUnit.SECONDS)) {
+                            concurrentPairObserved.set(true)
+                        }
+                    } else if (reads == 2 && concurrentPairObserved.get()) {
                         secondReadBarrier.countDown()
-                        secondReadBarrier.await(3, TimeUnit.SECONDS)
+                        check(secondReadBarrier.await(2, TimeUnit.SECONDS)) {
+                            "Both unsynchronized journal transactions did not reach the read-check-write window"
+                        }
                     }
                     values.toMap()
                 }
