@@ -412,11 +412,11 @@ jobs:
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
           LOGCAT_STATUS=0
-          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
+          timeout --signal=TERM --kill-after=5s 20s adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
-          adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
-          adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
-          adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
 
           if [[ -s app/build/outputs/apk/debug/app-debug.apk ]]; then
             sha256sum app/build/outputs/apk/debug/app-debug.apk > "$OUTPUT/apk.sha256"
