@@ -54,6 +54,31 @@ class VoiceSessionCoordinatorTest {
         assertFalse(coordinator.isConnected())
     }
 
+    @Test
+    fun cancellation_during_disconnect_still_closes_transport_and_remote_session() = runBlocking {
+        val api = FakeSessionApi()
+        val transport = CancellingDisconnectTransport()
+        val coordinator = VoiceSessionCoordinator(api, transport)
+
+        val active = coordinator.connect(
+            accessToken = "auth-token",
+            request = VoiceSessionRequest("demo-room", "device-1", "1.0.6"),
+            effect = VoiceAddonPolicy.Effect.DEEP
+        ).getOrThrow()
+        assertTrue(active.pushToTalk.press().isSuccess)
+
+        val disconnectJob = launch {
+            coordinator.disconnect()
+        }
+
+        transport.muteStarted.await()
+        disconnectJob.cancelAndJoin()
+
+        assertEquals(1, api.closeCalls)
+        assertEquals(1, transport.disconnectCalls)
+        assertFalse(coordinator.isConnected())
+    }
+
     private class FakeSessionApi : VoiceSessionApi {
         var createCalls = 0
         var closeCalls = 0
@@ -118,6 +143,30 @@ class VoiceSessionCoordinatorTest {
             connectStarted.complete(Unit)
             awaitCancellation()
         }
+
+        override suspend fun disconnect() {
+            disconnectCalls += 1
+        }
+    }
+
+    private class CancellingDisconnectTransport : VoiceSessionTransportPort {
+        val muteStarted = CompletableDeferred<Unit>()
+        var disconnectCalls = 0
+
+        override fun configureVoice(effect: VoiceAddonPolicy.Effect) = Unit
+
+        override suspend fun connectForPushToTalk(
+            credentials: SentinelLiveKitCallTransport.Credentials
+        ): Result<PushToTalkSession> = Result.success(
+            PushToTalkSession { enabled ->
+                if (enabled) {
+                    Result.success(Unit)
+                } else {
+                    muteStarted.complete(Unit)
+                    awaitCancellation()
+                }
+            }
+        )
 
         override suspend fun disconnect() {
             disconnectCalls += 1
