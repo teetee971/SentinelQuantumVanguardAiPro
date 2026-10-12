@@ -46,3 +46,10 @@ test('the next Android release is version 1.0.9 with a monotonic version code', 
   assert.match(androidBuild, /versionCode\s+10\b/);
   assert.match(androidBuild, /versionName\s+"1\.0\.9"/);
 });
+
+test('Auth0 Android dependency is pinned to the exact qualified version', () => {
+  const declaration = androidBuild.match(/implementation\s+['"]com\.auth0\.android:auth0:([^'"]+)['"]/);
+  assert.ok(declaration, 'Auth0 Android dependency must be declared');
+  assert.equal(declaration[1], '3.21.1-beta.0');
+  assert.doesNotMatch(declaration[1], /[+*]|latest\./i);
+});
