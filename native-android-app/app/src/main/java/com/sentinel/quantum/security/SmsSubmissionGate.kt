@@ -3,17 +3,22 @@ package com.sentinel.quantum.security
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Admission guard for the composer transport boundary.
+ * Process-stable admission guard for the composer transport boundary.
  *
- * The UI disables its send actions while this guard is held, but the atomic admission check is
- * still required because two click callbacks can arrive before Compose has recomposed the UI.
+ * Activity/Compose recreation must not manufacture a fresh unlocked transport gate while the
+ * previous owner's submission is still crossing Android telephony. All gate instances therefore
+ * share one process-local admission bit. This remains intentionally narrower than delivery-state
+ * tracking: SENT/DELIVERED callback ownership is handled by the existing message identity/status
+ * pipeline, not by this short-lived submission guard.
  */
 class SmsSubmissionGate {
-    private val inFlight = AtomicBoolean(false)
-
-    fun tryAcquire(): Boolean = inFlight.compareAndSet(false, true)
+    fun tryAcquire(): Boolean = IN_FLIGHT.compareAndSet(false, true)
 
     fun release() {
-        inFlight.set(false)
+        IN_FLIGHT.set(false)
+    }
+
+    private companion object {
+        val IN_FLIGHT = AtomicBoolean(false)
     }
 }
