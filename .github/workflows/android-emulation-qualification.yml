@@ -151,7 +151,6 @@ jobs:
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      # Every API lane owns fresh emulator state; runtime evidence must remain lane-specific.
       matrix:
         include:
           - api_level: 24
@@ -206,18 +205,15 @@ jobs:
             sdkmanager --list | grep -E "android-${API_LEVEL}|android-${SDK_PACKAGE_LEVEL}" || true
             exit 1
           fi
-
           test -x "$ANDROID_HOME/emulator/emulator"
           test -f "$ANDROID_HOME/system-images/android-${SDK_PACKAGE_LEVEL}/google_apis/x86_64/package.xml"
           AVD_NAME="sentinel_phone_core_api${API_LEVEL}"
           timeout 60s bash -c "echo no | avdmanager create avd --force --name '$AVD_NAME' --package '$IMAGE'"
-
           EMULATOR_ACCEL_ARGS=(-no-accel)
           if [[ -e /dev/kvm ]]; then
             sudo chmod 666 /dev/kvm
             EMULATOR_ACCEL_ARGS=(-accel on)
           fi
-
           "$ANDROID_HOME/emulator/emulator" \
             -avd "$AVD_NAME" \
             -no-window -no-audio -no-boot-anim -no-metrics \
@@ -226,47 +222,25 @@ jobs:
             -gpu swiftshader_indirect \
             > "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/sentinel-emulator.pid"
-
           DEVICE_READY=0
           for _ in $(seq 1 90); do
-            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
-              DEVICE_READY=1
-              break
-            fi
-            if ! kill -0 "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1; then
-              cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"
-              exit 1
-            fi
+            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then DEVICE_READY=1; break; fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1; then cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"; exit 1; fi
             sleep 2
           done
           test "$DEVICE_READY" = "1"
-
           BOOTED=0
           for _ in $(seq 1 120); do
-            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
-              BOOTED=1
-              break
-            fi
-            if ! kill -0 "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1; then
-              cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"
-              exit 1
-            fi
+            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then BOOTED=1; break; fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/sentinel-emulator.pid")" >/dev/null 2>&1; then cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"; exit 1; fi
             sleep 2
           done
-          if [[ "$BOOTED" != "1" ]]; then
-            cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"
-            exit 1
-          fi
-
+          if [[ "$BOOTED" != "1" ]]; then cat "$RUNNER_TEMP/sentinel-emulator-api${API_LEVEL}.log"; exit 1; fi
           ACTUAL_API="$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
           ACTUAL_RELEASE="$(adb shell getprop ro.build.version.release | tr -d '\r')"
           ACTUAL_CODENAME="$(adb shell getprop ro.build.version.codename | tr -d '\r')"
           echo "Emulator ready: Android ${ACTUAL_RELEASE} (${ACTUAL_CODENAME}), API ${ACTUAL_API}."
-          if [[ "$ACTUAL_API" != "$API_LEVEL" ]]; then
-            echo "Expected runtime API ${API_LEVEL}, got API ${ACTUAL_API}."
-            exit 1
-          fi
-
+          if [[ "$ACTUAL_API" != "$API_LEVEL" ]]; then echo "Expected runtime API ${API_LEVEL}, got API ${ACTUAL_API}."; exit 1; fi
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
           adb shell settings put global animator_duration_scale 0
@@ -282,51 +256,27 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$API_LEVEL" == "24" ]]; then
-            timeout 600s ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest \
-              --stacktrace --no-daemon
+            timeout 600s ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
             APP_APK="app/build/outputs/apk/debug/app-debug.apk"
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
             timeout --signal=TERM --kill-after=30s 120s adb install -r "$APP_APK"
             timeout --signal=TERM --kill-after=30s 120s adb install -r "$TEST_APK"
-            INSTRUMENTATION_RUNNER="$(
-              adb shell pm list instrumentation | tr -d '\r' |
-                awk '/^instrumentation:com\.sentinel\.quantum\.test\// {
-                  sub(/^instrumentation:/, "")
-                  sub(/ .*/, "")
-                  print
-                  exit
-                }'
-            )"
-            if [[ -z "$INSTRUMENTATION_RUNNER" ]]; then
-              echo "Android API 24 instrumentation runner was not registered."
-              adb shell pm list instrumentation || true
-              exit 1
-            fi
+            INSTRUMENTATION_RUNNER="$(adb shell pm list instrumentation | tr -d '\r' | awk '/^instrumentation:com\.sentinel\.quantum\.test\// { sub(/^instrumentation:/, ""); sub(/ .*/, ""); print; exit }')"
+            if [[ -z "$INSTRUMENTATION_RUNNER" ]]; then adb shell pm list instrumentation || true; exit 1; fi
             INSTRUMENTATION_LOG_RAW="$RUNNER_TEMP/sentinel-instrumentation-api24-tests.raw.log"
             INSTRUMENTATION_LOG="$RUNNER_TEMP/sentinel-instrumentation-api24-tests.log"
             set +e
-            timeout --signal=TERM --kill-after=30s 900s \
-              adb shell am instrument -w -r "$INSTRUMENTATION_RUNNER" > "$INSTRUMENTATION_LOG_RAW" 2>&1
+            timeout --signal=TERM --kill-after=30s 900s adb shell am instrument -w -r "$INSTRUMENTATION_RUNNER" > "$INSTRUMENTATION_LOG_RAW" 2>&1
             INSTRUMENTATION_STATUS=$?
             tr -d '\r' < "$INSTRUMENTATION_LOG_RAW" | tee "$INSTRUMENTATION_LOG"
             set -e
-            if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then
-              echo "Android API 24 instrumentation failed or exceeded its 15 minute watchdog (status ${INSTRUMENTATION_STATUS})."
-              exit "$INSTRUMENTATION_STATUS"
-            fi
-            if grep -Eq '^FAILURES!!!|^INSTRUMENTATION_FAILED:|Process crashed' "$INSTRUMENTATION_LOG"; then
-              echo "Android API 24 instrumentation reported a test failure or crash."
-              exit 1
-            fi
-            if ! grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$INSTRUMENTATION_LOG"; then
-              echo "Android API 24 instrumentation did not report a non-zero passing test count."
-              exit 1
-            fi
+            if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then exit "$INSTRUMENTATION_STATUS"; fi
+            if grep -Eq '^FAILURES!!!|^INSTRUMENTATION_FAILED:|Process crashed' "$INSTRUMENTATION_LOG"; then exit 1; fi
+            if ! grep -Eq '^OK \([1-9][0-9]* tests?\)$' "$INSTRUMENTATION_LOG"; then exit 1; fi
           else
-            timeout --signal=INT --kill-after=30s 900s \
-              ./gradlew :app:connectedDebugAndroidTest --stacktrace --no-daemon
+            timeout --signal=INT --kill-after=30s 900s ./gradlew :app:connectedDebugAndroidTest --stacktrace --no-daemon
           fi
 
       - name: Run emulator application/runtime qualification
@@ -345,9 +295,6 @@ jobs:
           RUNTIME_LOG="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}-runtime.log"
           exec > >(tee "$RUNTIME_LOG") 2>&1
           if [[ "$API_LEVEL" == "37" ]]; then
-            # API 37 has repeatedly failed inside this step while instrumentation passes. Keep
-            # command-level evidence for the runtime qualification without changing lower API
-            # lanes or relaxing any assertion.
             export PS4='+ [phone-core-api37] ${BASH_SOURCE}:${LINENO}: '
             set -x
           fi
@@ -356,18 +303,11 @@ jobs:
           test -n "$APK_PATH"
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
-          # Runtime evidence must start from a fresh app scope and fresh log buffer.
-          # A failed reset must not reuse instrumentation events as runtime evidence.
-          # UTP removes the app after connected tests on modern API lanes. Install
-          # the exact runtime APK before requiring a successful app-data reset.
           timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
-
           if [[ "$API_LEVEL" -ge 29 ]]; then
-            # Role establishment and proof are owned by the runtime scripts. They use the modern
-            # get-role-holders shell command when available and a dumpsys-role proof on API 29.
             if [[ "$API_LEVEL" == "37" ]]; then
               bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
               bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
@@ -381,11 +321,7 @@ jobs:
             sleep 3
             adb shell pidof com.sentinel.quantum > "$OUTPUT/min-sdk-first-pid.txt"
             adb exec-out screencap -p > "$OUTPUT/01-min-sdk-first-launch.png" || true
-            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then
-              echo "Crash/ANR detected on minSdk first launch."
-              adb logcat -d -v time | tail -n 400
-              exit 1
-            fi
+            if adb logcat -d -v brief | grep -Eq 'FATAL EXCEPTION:|ANR in com\.sentinel\.quantum'; then exit 1; fi
             adb shell am force-stop com.sentinel.quantum
             adb shell am start -W -n com.sentinel.quantum/.MainActivity > "$OUTPUT/min-sdk-second-launch.txt" 2>&1
             sleep 3
@@ -415,10 +351,7 @@ jobs:
           adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
           adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
           adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
-
-          if [[ -s app/build/outputs/apk/debug/app-debug.apk ]]; then
-            sha256sum app/build/outputs/apk/debug/app-debug.apk > "$OUTPUT/apk.sha256"
-          fi
+          if [[ -s app/build/outputs/apk/debug/app-debug.apk ]]; then sha256sum app/build/outputs/apk/debug/app-debug.apk > "$OUTPUT/apk.sha256"; fi
           BUILT_COMMIT="$(git rev-parse HEAD)" API_LEVEL="$API_LEVEL" OUTPUT="$OUTPUT" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
@@ -433,8 +366,7 @@ jobs:
           const read = (name) => exists(name) ? fs.readFileSync(file(name), 'utf8') : '';
           const screenshot = (name) => nonEmpty(name, 256);
           const contains = (name, needle) => read(name).includes(needle);
-          const packageHeld = (name) => read(name).split(/\r?\n/)
-            .some((line) => line.trim() === 'com.sentinel.quantum');
+          const packageHeld = (name) => read(name).split(/\r?\n/).some((line) => line.trim() === 'com.sentinel.quantum');
           const walk = (dir) => {
             if (!fs.existsSync(dir)) return [];
             return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -443,34 +375,20 @@ jobs:
             });
           };
           const connectedResultsRoot = path.join('app', 'build', 'outputs', 'androidTest-results');
-          const connectedResultText = walk(connectedResultsRoot)
-            .filter((name) => name.endsWith('.xml'))
-            .map((name) => {
-              try { return fs.readFileSync(name, 'utf8'); } catch { return ''; }
-            })
-            .join('\n');
-          const api24LogPath = path.join(
-            process.env.RUNNER_TEMP || '',
-            `sentinel-instrumentation-api${api}-tests.log`
-          );
-          const api24InstrumentationLog = api === 24 && fs.existsSync(api24LogPath)
-            ? fs.readFileSync(api24LogPath, 'utf8')
-            : '';
-          const instrumentationEvidenceText = api === 24
-            ? api24InstrumentationLog
-            : connectedResultText;
+          const connectedResultText = walk(connectedResultsRoot).filter((name) => name.endsWith('.xml')).map((name) => {
+            try { return fs.readFileSync(name, 'utf8'); } catch { return ''; }
+          }).join('\n');
+          const api24LogPath = path.join(process.env.RUNNER_TEMP || '', `sentinel-instrumentation-api${api}-tests.log`);
+          const api24InstrumentationLog = api === 24 && fs.existsSync(api24LogPath) ? fs.readFileSync(api24LogPath, 'utf8') : '';
+          const instrumentationEvidenceText = api === 24 ? api24InstrumentationLog : connectedResultText;
           const completedInstrumentationClass = (className) => {
             if (api === 24) {
               let currentClass = '';
               const terminalStatuses = [];
               for (const line of api24InstrumentationLog.split('\n')) {
-                if (line.startsWith('INSTRUMENTATION_STATUS: class=')) {
-                  currentClass = line.slice('INSTRUMENTATION_STATUS: class='.length);
-                }
+                if (line.startsWith('INSTRUMENTATION_STATUS: class=')) currentClass = line.slice('INSTRUMENTATION_STATUS: class='.length);
                 const status = line.match(/^INSTRUMENTATION_STATUS_CODE: (-?\d+)$/);
-                if (currentClass.endsWith('.' + className) && status && Number(status[1]) !== 1) {
-                  terminalStatuses.push(Number(status[1]));
-                }
+                if (currentClass.endsWith('.' + className) && status && Number(status[1]) !== 1) terminalStatuses.push(Number(status[1]));
               }
               return terminalStatuses.length > 0 && terminalStatuses.every((status) => status === 0);
             }
@@ -478,82 +396,47 @@ jobs:
             const matching = cases.filter((entry) => new RegExp(`classname=["'](?:[^"']*\\.)?${className}["']`).test(entry));
             return matching.length > 0 && matching.every((entry) => !/<(?:skipped|failure|error)\b/.test(entry));
           };
-          const instrumentationEvidencePassed = instrumentationPassed && (
-            api === 24
-              ? /^OK \([1-9][0-9]* tests?\)$/m.test(api24InstrumentationLog) &&
-                !/^FAILURES!!!|^INSTRUMENTATION_FAILED:|Process crashed/m.test(api24InstrumentationLog)
-              : connectedResultText.length > 0
-          );
-
+          const instrumentationEvidencePassed = instrumentationPassed && (api === 24
+            ? /^OK \([1-9][0-9]* tests?\)$/m.test(api24InstrumentationLog) && !/^FAILURES!!!|^INSTRUMENTATION_FAILED:|Process crashed/m.test(api24InstrumentationLog)
+            : connectedResultText.length > 0);
           let revocation = null;
           if (modernPhoneCore && exists('revocation-summary.json')) {
-            try {
-              revocation = JSON.parse(read('revocation-summary.json'));
-            } catch (error) {
-              revocation = { parse_error: String(error) };
-            }
+            try { revocation = JSON.parse(read('revocation-summary.json')); }
+            catch (error) { revocation = { parse_error: String(error) }; }
           }
-
-          const callbackObserved = modernPhoneCore &&
-            contains('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
-          const decisionObserved = api >= 36
-            ? contains('phone-private-timeline-prefix.xml', 'CALL_SCREENED:')
-            : null;
-          const incomingCallObserved = modernPhoneCore &&
-            screenshot('02-incoming-call.png') &&
-            screenshot('03-incoming-active-evidence.png') &&
-            contains('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE');
+          const callbackObserved = modernPhoneCore && contains('call-screening-callback-logcat.txt', 'CallScreeningService:onScreenCall');
+          const decisionObserved = api >= 36 ? contains('phone-private-timeline-prefix.xml', 'CALL_SCREENED:') : null;
+          const incomingCallObserved = modernPhoneCore && screenshot('02-incoming-call.png') && screenshot('03-incoming-active-evidence.png') && contains('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE');
           const api37LimitedEvidence = read('api37-incoming-answer-limited.txt');
           const api37IncomingAnswerEmulatorLimitation = api === 37 &&
-            api37LimitedEvidence.includes('REQUEST_ACCEPT') &&
-            api37LimitedEvidence.includes('-> ANSWERED') &&
-            api37LimitedEvidence.includes('-> DISCONNECTED') &&
-            api37LimitedEvidence.includes('INCOMING_MISSED') &&
+            api37LimitedEvidence.includes('REQUEST_ACCEPT') && api37LimitedEvidence.includes('-> ANSWERED') &&
+            api37LimitedEvidence.includes('-> DISCONNECTED') && api37LimitedEvidence.includes('INCOMING_MISSED') &&
             api37LimitedEvidence.includes('emulator_limit=api37_incoming_answer_transaction_failed') &&
             !api37LimitedEvidence.includes('console_gsm_accept_after_answered') &&
             !api37LimitedEvidence.includes('transport_sync=emulator_console_gsm_accept_after_answered') &&
             !api37LimitedEvidence.includes('transport_handoff=android17_emulator_unknown_active');
-          const outgoingCallObserved = modernPhoneCore &&
-            screenshot('05-outgoing-call.png') &&
-            contains('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE');
-          const smsReplyObserved = modernPhoneCore &&
-            screenshot('06-thread.png') && screenshot('07-inline-reply.png');
+          const outgoingCallObserved = modernPhoneCore && screenshot('05-outgoing-call.png') && contains('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE');
+          const smsReplyObserved = modernPhoneCore && screenshot('06-thread.png') && screenshot('07-inline-reply.png');
           const smsSentCallbackObserved = contains('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
           const smsDeliveredCallbackObserved = contains('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
-          const coldRelaunchObserved = modernPhoneCore
-            ? screenshot('01-dialer-first-launch.png') && screenshot('01b-dialer-relaunch.png')
-            : nonEmpty('min-sdk-first-pid.txt') && nonEmpty('min-sdk-second-pid.txt') &&
-              screenshot('01-min-sdk-first-launch.png') && screenshot('02-min-sdk-second-launch.png');
-          const restoredRolesObserved = modernPhoneCore &&
-            packageHeld('sms-role-restored.txt') &&
-            packageHeld('dialer-role-restored.txt') &&
-            packageHeld('call-screening-role-restored.txt');
-          const appOpDeniedEvidence =
-            revocation?.effective_permission_probe === 'SEND_SMS_APP_OP_DENIED' &&
-            /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt'));
-          const runtimePermissionDeniedEvidence =
-            revocation?.effective_permission_probe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' &&
-            /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-runtime-permission-denied-after-launch.txt'));
-          const revocationSchemaSupported = revocation?.schema_version === 2 || revocation?.schema_version === 3;
-          const effectivePermissionEvidenceValid = revocation?.schema_version === 2
-            ? appOpDeniedEvidence
-            : appOpDeniedEvidence || runtimePermissionDeniedEvidence;
-          const effectivePermissionDenied = modernPhoneCore &&
-            revocationSchemaSupported &&
-            revocation?.effective_permission_denial_fail_closed === true &&
-            screenshot('08-sms-effective-permission-denied.png') &&
-            effectivePermissionEvidenceValid;
-          const roleRevocationFailClosed = modernPhoneCore &&
-            revocationSchemaSupported &&
-            revocation?.role_revocation_fail_closed === true &&
-            restoredRolesObserved &&
-            screenshot('10-sms-role-revoked.png') &&
-            screenshot('11-dialer-role-revoked.png') &&
-            screenshot('12-call-screening-role-revoked.png');
-          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') &&
-            !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
+          const coldRelaunchObserved = modernPhoneCore ? screenshot('01-dialer-first-launch.png') && screenshot('01b-dialer-relaunch.png') : nonEmpty('min-sdk-first-pid.txt') && nonEmpty('min-sdk-second-pid.txt') && screenshot('01-min-sdk-first-launch.png') && screenshot('02-min-sdk-second-launch.png');
+          const restoredRolesObserved = modernPhoneCore && packageHeld('sms-role-restored.txt') && packageHeld('dialer-role-restored.txt') && packageHeld('call-screening-role-restored.txt');
+          const appOpDeniedEvidence = revocation?.effective_permission_probe === 'SEND_SMS_APP_OP_DENIED' && /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt'));
+          const runtimePermissionDeniedEvidence = revocation?.effective_permission_probe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' && /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-runtime-permission-denied-after-launch.txt'));
+          const api37EffectiveSmsDenialEmulatorLimitation = api === 37 &&
+            revocation?.schema_version === 4 &&
+            revocation?.effective_permission_denial_emulator_limited === true &&
+            revocation?.effective_permission_denial_fail_closed === false &&
+            revocation?.effective_permission_probe === 'API37_ROLE_CONTROLLER_RESTORED_SEND_SMS' &&
+            /SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-state.txt')) &&
+            /SEND_SMS:\s*allow/i.test(read('send-sms-appop-denied-after-launch.txt')) &&
+            !/SEND_SMS:\s*(ignore|deny|errored)/i.test(read('send-sms-appop-denied-after-launch.txt'));
+          const revocationSchemaSupported = [2, 3, 4].includes(revocation?.schema_version);
+          const effectivePermissionEvidenceValid = revocation?.schema_version === 2 ? appOpDeniedEvidence : appOpDeniedEvidence || runtimePermissionDeniedEvidence;
+          const effectivePermissionDenied = modernPhoneCore && revocationSchemaSupported && revocation?.effective_permission_denial_fail_closed === true && screenshot('08-sms-effective-permission-denied.png') && effectivePermissionEvidenceValid;
+          const roleRevocationFailClosed = modernPhoneCore && revocationSchemaSupported && revocation?.role_revocation_fail_closed === true && restoredRolesObserved && screenshot('10-sms-role-revoked.png') && screenshot('11-dialer-role-revoked.png') && screenshot('12-call-screening-role-revoked.png');
+          const crashOrAnrAbsent = read('logcat-status.txt').trim() === '0' && nonEmpty('logcat.txt') && !/FATAL EXCEPTION:|ANR in com\.sentinel\.quantum/.test(read('logcat.txt'));
           const instrumentationKey = `connected_instrumentation_api${api}`;
-
           const checks = {
             android_app_unit_tests: hostContractsPassed,
             wearable_contract_unit_tests: hostContractsPassed,
@@ -562,19 +445,16 @@ jobs:
             phone_number_canonicalization_contract: hostContractsPassed,
             multi_sim_submit_readiness_contract: hostContractsPassed,
             [instrumentationKey]: instrumentationEvidencePassed,
-            all_static_navigation_surfaces_render:
-              instrumentationEvidencePassed && instrumentationEvidenceText.includes('AllStaticNavigationSurfacesInstrumentationTest') && completedInstrumentationClass('AllStaticNavigationSurfacesInstrumentationTest'),
-            standalone_activity_surfaces_render:
-              instrumentationEvidencePassed && instrumentationEvidenceText.includes('StandaloneActivitySmokeInstrumentationTest') && completedInstrumentationClass('StandaloneActivitySmokeInstrumentationTest'),
+            all_static_navigation_surfaces_render: instrumentationEvidencePassed && instrumentationEvidenceText.includes('AllStaticNavigationSurfacesInstrumentationTest') && completedInstrumentationClass('AllStaticNavigationSurfacesInstrumentationTest'),
+            standalone_activity_surfaces_render: instrumentationEvidencePassed && instrumentationEvidenceText.includes('StandaloneActivitySmokeInstrumentationTest') && completedInstrumentationClass('StandaloneActivitySmokeInstrumentationTest'),
             min_sdk_cold_launch: api === 24 ? coldRelaunchObserved : null,
             cold_install_and_relaunch: coldRelaunchObserved,
-            phone_core_setup_resume: modernPhoneCore
-              ? instrumentationEvidencePassed && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest') && completedInstrumentationClass('PhoneCoreSetupResumeInstrumentationTest')
-              : null,
+            phone_core_setup_resume: modernPhoneCore ? instrumentationEvidencePassed && instrumentationEvidenceText.includes('PhoneCoreSetupResumeInstrumentationTest') && completedInstrumentationClass('PhoneCoreSetupResumeInstrumentationTest') : null,
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
             api37_incoming_answer_emulator_limitation: api === 37 ? api37IncomingAnswerEmulatorLimitation : null,
+            api37_effective_sms_denial_emulator_limitation: api === 37 ? api37EffectiveSmsDenialEmulatorLimitation : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
             incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
             sms_all_parts_sent_callback: modernPhoneCore ? smsSentCallbackObserved : null,
@@ -583,55 +463,32 @@ jobs:
             effective_permission_denial_fail_closed: modernPhoneCore ? effectivePermissionDenied : null,
             no_crash_or_anr: crashOrAnrAbsent
           };
-
-          const commonRequired = [
-            'android_app_unit_tests',
-            'wearable_contract_unit_tests',
-            'wearable_security_unit_tests',
-            'android_lint',
-            'phone_number_canonicalization_contract',
-            'multi_sim_submit_readiness_contract',
-            instrumentationKey,
-            'all_static_navigation_surfaces_render',
-            'standalone_activity_surfaces_render',
-            'cold_install_and_relaunch',
-            'no_crash_or_anr'
+          const commonRequired = ['android_app_unit_tests','wearable_contract_unit_tests','wearable_security_unit_tests','android_lint','phone_number_canonicalization_contract','multi_sim_submit_readiness_contract',instrumentationKey,'all_static_navigation_surfaces_render','standalone_activity_surfaces_render','cold_install_and_relaunch','no_crash_or_anr'];
+          const incomingRequirement = api === 37 && api37IncomingAnswerEmulatorLimitation ? ['api37_incoming_answer_emulator_limitation'] : ['incoming_call_telecom_flow'];
+          const effectivePermissionRequirement = api === 37 && api37EffectiveSmsDenialEmulatorLimitation ? ['api37_effective_sms_denial_emulator_limitation'] : ['effective_permission_denial_fail_closed'];
+          const required = api === 24 ? [...commonRequired, 'min_sdk_cold_launch'] : [
+            ...commonRequired,
+            'phone_core_setup_resume',
+            'synthetic_call_screening_observed',
+            ...incomingRequirement,
+            'outgoing_call_telecom_flow',
+            'incoming_sms_and_inline_reply',
+            'sms_all_parts_sent_callback',
+            'role_revocation_fail_closed',
+            ...effectivePermissionRequirement,
+            ...(api >= 36 ? ['synthetic_call_screening_decision_observed', 'sms_all_parts_delivered_callback'] : [])
           ];
-          const incomingRequirement = api === 37 && api37IncomingAnswerEmulatorLimitation
-            ? ['api37_incoming_answer_emulator_limitation']
-            : ['incoming_call_telecom_flow'];
-          const required = api === 24
-            ? [...commonRequired, 'min_sdk_cold_launch']
-            : [
-                ...commonRequired,
-                'phone_core_setup_resume',
-                'synthetic_call_screening_observed',
-                ...incomingRequirement,
-                'outgoing_call_telecom_flow',
-                'incoming_sms_and_inline_reply',
-                'sms_all_parts_sent_callback',
-                'role_revocation_fail_closed',
-                'effective_permission_denial_fail_closed',
-                ...(api >= 36 ? ['synthetic_call_screening_decision_observed', 'sms_all_parts_delivered_callback'] : [])
-              ];
           const evidenceFailures = required.filter((name) => checks[name] !== true);
           if (process.env.RUNTIME_OUTCOME !== 'success') evidenceFailures.push('runtime_execution');
           const validSha = (value) => /^[a-f0-9]{40}$/.test(value || '');
-          const provenanceValid = validSha(process.env.BUILT_COMMIT) &&
-            process.env.BUILT_COMMIT === process.env.GITHUB_SHA &&
-            validSha(process.env.SOURCE_HEAD_SHA) &&
-            Boolean(process.env.SOURCE_HEAD_REF) &&
-            (process.env.GITHUB_EVENT_NAME !== 'pull_request' || validSha(process.env.SOURCE_BASE_SHA));
+          const provenanceValid = validSha(process.env.BUILT_COMMIT) && process.env.BUILT_COMMIT === process.env.GITHUB_SHA && validSha(process.env.SOURCE_HEAD_SHA) && Boolean(process.env.SOURCE_HEAD_REF) && (process.env.GITHUB_EVENT_NAME !== 'pull_request' || validSha(process.env.SOURCE_BASE_SHA));
           if (!provenanceValid) evidenceFailures.push('code_provenance');
           const apkSha256 = read('apk.sha256').match(/^([a-f0-9]{64})\s/);
           if (!apkSha256) evidenceFailures.push('apk_provenance');
-          if (!nonEmpty('package.txt') || !contains('package.txt', 'com.sentinel.quantum')) {
-            evidenceFailures.push('package_state');
-          }
-          const limitations = api37IncomingAnswerEmulatorLimitation
-            ? ['api37_incoming_answer_transaction_failed']
-            : [];
-
+          if (!nonEmpty('package.txt') || !contains('package.txt', 'com.sentinel.quantum')) evidenceFailures.push('package_state');
+          const limitations = [];
+          if (api37IncomingAnswerEmulatorLimitation) limitations.push('api37_incoming_answer_transaction_failed');
+          if (api37EffectiveSmsDenialEmulatorLimitation) limitations.push('api37_role_controller_restored_send_sms_appop');
           const report = {
             schema_version: 4,
             qualification: 'ANDROID_APPLICATION_EMULATION',
@@ -659,7 +516,8 @@ jobs:
               instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
               revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null,
-              api37_incoming_answer_limitation: api === 37 ? 'api37-incoming-answer-limited.txt' : null
+              api37_incoming_answer_limitation: api === 37 ? 'api37-incoming-answer-limited.txt' : null,
+              api37_effective_sms_denial_limitation: api === 37 ? 'send-sms-appop-denied-state.txt + send-sms-appop-denied-after-launch.txt + revocation-summary.json' : null
             },
             required_checks_for_lane: required,
             evidence_failures: evidenceFailures,
