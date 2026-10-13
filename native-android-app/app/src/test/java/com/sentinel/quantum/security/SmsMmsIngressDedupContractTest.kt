@@ -68,13 +68,15 @@ class SmsMmsIngressDedupContractTest {
 
     @Test fun recoveryJournalEnumerationFailsClosedWhenSanitationCannotCommit() {
         val source = sourceFile("MmsDownloadRecoveryJournal.kt").readText()
-        val allMethod = source.indexOf("fun all(): List<Record>")
-        val failClosed = source.indexOf("if (!sanitizeInvalidEntries()) return emptyList()", startIndex = allMethod)
-        val enumeration = source.indexOf("return preferences.all.asSequence()", startIndex = allMethod)
+        val allMethod = source.indexOf("fun all(): List<Record> = synchronized(LOCK) {")
+        val nextMethod = source.indexOf("private fun sanitizeInvalidEntries", startIndex = allMethod)
+        val failClosed = source.indexOf("if (!sanitizeInvalidEntries()) return@synchronized emptyList()", startIndex = allMethod)
+        val enumeration = source.indexOf("preferences.all.asSequence()", startIndex = allMethod)
 
         assertTrue(allMethod >= 0)
-        assertTrue(failClosed > allMethod)
-        assertTrue(enumeration > failClosed)
+        assertTrue(nextMethod > allMethod)
+        assertTrue(failClosed in allMethod until nextMethod)
+        assertTrue(enumeration in (failClosed + 1) until nextMethod)
     }
 
     @Test fun recoveryJournalCapacityUsesProcessWideLock() {
