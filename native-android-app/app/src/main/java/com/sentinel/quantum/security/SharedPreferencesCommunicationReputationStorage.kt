@@ -34,8 +34,9 @@ class SharedPreferencesCommunicationReputationStorage(
         preferences.getString(storageKey(key), null)
 
     override fun put(key: String, value: String) {
+        val persistedKey = storageKey(key)
         requirePersistenceAllowed()
-        check(preferences.edit().putString(storageKey(key), value).commit()) {
+        check(preferences.edit().putString(persistedKey, value).commit()) {
             "Unable to persist communication reputation"
         }
     }
