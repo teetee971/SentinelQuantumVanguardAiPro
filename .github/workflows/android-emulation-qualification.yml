@@ -415,7 +415,7 @@ jobs:
               ADB_RECOVERY_READY=1
               break
             fi
-            adb reconnect >/dev/null 2>&1 || true
+            timeout --signal=TERM --kill-after=1s 3s adb reconnect >/dev/null 2>&1 || true
             sleep 2
           done
           printf '%s\n' "$ADB_RECOVERY_READY" > "$OUTPUT/adb-recovery-status.txt"
