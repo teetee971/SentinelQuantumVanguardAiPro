@@ -151,7 +151,7 @@ test('API 24 instrumentation enforces a hard wall-clock timeout instead of a det
 
   assert.match(
     instrumentation,
-    /timeout --signal=TERM --kill-after=30s 900s \\\n\s+adb shell am instrument -w -r "\$INSTRUMENTATION_RUNNER" > "\$INSTRUMENTATION_LOG_RAW" 2>&1/,
+    /timeout --signal=TERM --kill-after=30s 900s\s+(?:\\\n\s*)?adb shell am instrument -w -r "\$INSTRUMENTATION_RUNNER" > "\$INSTRUMENTATION_LOG_RAW" 2>&1/,
     'API 24 instrumentation must be bounded by a hard timeout owned by the foreground shell'
   );
   assert.doesNotMatch(instrumentation, /setsid adb shell am instrument/);
