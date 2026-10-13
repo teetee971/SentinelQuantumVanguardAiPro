@@ -207,7 +207,7 @@ internal object MmsDownloadRecovery {
                             else -> "MMS_DOWNLOAD_RECOVERED_PRIVATE_ONLY"
                         }
                     )
-                }
+                )
             }
         }
 
