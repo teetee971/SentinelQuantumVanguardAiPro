@@ -32,7 +32,7 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
         val fileName = "123e4567-e89b-12d3-a456-426614174000.pdu"
         createdFiles += fileName
         val subscriptionId = 1
-        val requestedAtMs = 1_234_567L
+        val requestedAtMs = System.currentTimeMillis()
 
         assertTrue(
             MmsDownloadRecoveryJournal(context).record(
@@ -109,7 +109,7 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
             MmsDownloadRecoveryJournal(context).record(
                 fileName = validFile,
                 subscriptionId = 1,
-                requestedAtMs = 99L
+                requestedAtMs = System.currentTimeMillis()
             )
         )
 
@@ -118,5 +118,39 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
             preferences.all.keys.count { it.startsWith(MmsDownloadRecoveryJournal.KEY_PREFIX) }
         )
         assertEquals(validFile, MmsDownloadRecoveryJournal(context).read(validFile)?.fileName)
+    }
+
+    @Test
+    fun expiredEntriesCannotPermanentlyConsumeRecoveryCapacity() {
+        val journal = MmsDownloadRecoveryJournal(context)
+        val staleRequestedAt =
+            System.currentTimeMillis() - MmsDownloadCoordinator.DOWNLOAD_TTL_MS - 1L
+
+        repeat(MmsDownloadRecoveryJournal.MAX_RECORDS) { index ->
+            val fileName = String.format(
+                Locale.US,
+                "11111111-1111-1111-1111-%012x.pdu",
+                index
+            )
+            createdFiles += fileName
+            assertTrue(
+                journal.record(
+                    fileName = fileName,
+                    subscriptionId = 1,
+                    requestedAtMs = staleRequestedAt
+                )
+            )
+        }
+
+        val freshFile = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee.pdu"
+        createdFiles += freshFile
+        assertTrue(
+            journal.record(
+                fileName = freshFile,
+                subscriptionId = 1,
+                requestedAtMs = System.currentTimeMillis()
+            )
+        )
+        assertEquals(freshFile, journal.read(freshFile)?.fileName)
     }
 }
