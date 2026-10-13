@@ -100,6 +100,7 @@ class VoiceStudioActivity : ComponentActivity() {
         var sessionConnected by remember { mutableStateOf(false) }
         var sessionBusy by remember { mutableStateOf(false) }
         var transmitting by remember { mutableStateOf(false) }
+        var sessionTechnicalStatus by remember { mutableStateOf<String?>(null) }
         var sessionStatus by remember {
             mutableStateOf("Choisissez Grave ou Aiguë pour démarrer une session PTT de test.")
         }
@@ -109,6 +110,12 @@ class VoiceStudioActivity : ComponentActivity() {
         val commercialState = remember { VoiceAddonPolicy.currentState() }
         val pttGestureScope = rememberCoroutineScope()
         val pttEnabled = sessionConnected && !sessionBusy
+        val pttAvailability = when {
+            sessionConnected -> "connecté"
+            sessionTechnicalStatus != null -> "indisponible"
+            sessionBusy -> "vérification en cours"
+            else -> "à vérifier"
+        }
 
         LaunchedEffect(pttEnabled) {
             if (!pttEnabled) {
@@ -134,6 +141,7 @@ class VoiceStudioActivity : ComponentActivity() {
 
         fun connectVoiceSession() {
             if (sessionBusy || sessionConnected) return
+            sessionTechnicalStatus = null
             if (selectedEffect == VoiceAddonPolicy.Effect.NATURAL) {
                 sessionStatus = "Sélectionnez un rendu transformé avant de démarrer la session."
                 return
@@ -144,12 +152,13 @@ class VoiceStudioActivity : ComponentActivity() {
             }
             val deviceId = SentinelDeviceIdentity.current(this@VoiceStudioActivity)
             if (deviceId == null) {
-                sessionStatus = "Identifiant Android indisponible : session refusée."
+                sessionStatus = "Cet appareil ne peut pas démarrer la session PTT pour le moment."
+                sessionTechnicalStatus = "DEVICE_ID_UNAVAILABLE"
                 return
             }
 
             sessionBusy = true
-            sessionStatus = "Récupération du jeton Auth0…"
+            sessionStatus = "Connexion au service PTT…"
             authController.accessToken(
                 onSuccess = { authToken ->
                     lifecycleScope.launch {
@@ -168,18 +177,21 @@ class VoiceStudioActivity : ComponentActivity() {
                                 activeVoiceSession = active
                                 sessionConnected = true
                                 sessionBusy = false
+                                sessionTechnicalStatus = null
                                 sessionStatus = "Session PTT connectée dans la salle de test isolée."
                             },
                             onFailure = { failure ->
                                 sessionBusy = false
-                                sessionStatus = "Session vocale refusée : ${failure.message.orEmpty()}"
+                                sessionTechnicalStatus = failure.message.orEmpty().ifBlank { "VOICE_SESSION_UNKNOWN" }
+                                sessionStatus = voiceSessionUserMessage(failure.message)
                             }
                         )
                     }
                 },
                 onFailure = { message ->
                     sessionBusy = false
-                    sessionStatus = "Jeton Auth0 indisponible : ${message.orEmpty()}"
+                    sessionTechnicalStatus = message.orEmpty().ifBlank { "AUTH_TOKEN_UNAVAILABLE" }
+                    sessionStatus = voiceSessionUserMessage(message)
                 }
             )
         }
@@ -198,7 +210,7 @@ class VoiceStudioActivity : ComponentActivity() {
             topBar = {
                 SentinelTopBar(
                     title = "Studio voix",
-                    subtitle = "Aperçu local · moteur temps réel intégré",
+                    subtitle = "Aperçu local · capacités séparées",
                     onBack = { finish() }
                 )
             }
@@ -216,6 +228,23 @@ class VoiceStudioActivity : ComponentActivity() {
                     status = commercialState.customerLabel,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("Aperçu local : disponible", fontWeight = FontWeight.SemiBold)
+                        Text("PTT de test : $pttAvailability", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Appels téléphoniques transformés : non disponibles",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
 
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -348,7 +377,7 @@ class VoiceStudioActivity : ComponentActivity() {
                     ) {
                         Text("Session PTT Sentinel · test", fontWeight = FontWeight.Bold)
                         Text(
-                            "Cette session utilise Auth0, un jeton éphémère et LiveKit. Elle ne compose pas de numéro mobile et utilise une salle de diagnostic isolée pour cet appareil.",
+                            "Cette session de diagnostic ne compose pas de numéro mobile. Son état réel est vérifié au démarrage.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Button(
@@ -359,6 +388,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                         sessionConnected = false
                                         transmitting = false
                                         sessionBusy = false
+                                        sessionTechnicalStatus = null
                                         sessionStatus = "Session PTT fermée."
                                     }
                                 } else if (!sessionBusy) {
@@ -400,7 +430,9 @@ class VoiceStudioActivity : ComponentActivity() {
                                             val pressResult = session.pushToTalk.press()
                                             if (pressResult.isFailure) {
                                                 transmitting = false
-                                                sessionStatus = "Contrôle PTT impossible : ${pressResult.exceptionOrNull()?.message.orEmpty()}"
+                                                val technical = pressResult.exceptionOrNull()?.message
+                                                sessionTechnicalStatus = technical.orEmpty().ifBlank { "PTT_PRESS_FAILED" }
+                                                sessionStatus = voiceSessionUserMessage(technical)
                                                 return@launch
                                             }
 
@@ -414,7 +446,9 @@ class VoiceStudioActivity : ComponentActivity() {
                                                 sessionStatus = if (releaseResult.isSuccess) {
                                                     "Microphone coupé : session PTT toujours connectée."
                                                 } else {
-                                                    "Fermeture du microphone impossible : ${releaseResult.exceptionOrNull()?.message.orEmpty()}"
+                                                    val technical = releaseResult.exceptionOrNull()?.message
+                                                    sessionTechnicalStatus = technical.orEmpty().ifBlank { "PTT_RELEASE_FAILED" }
+                                                    voiceSessionUserMessage(technical)
                                                 }
                                             }
                                         }
@@ -483,20 +517,15 @@ class VoiceStudioActivity : ComponentActivity() {
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    "En préparation",
+                                    "Non disponibles",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
                         Text(
-                            "Vous pouvez enregistrer et écouter vos rendus localement, ou lancer la session PTT de test ci-dessus. L’appel vers un numéro mobile n’est pas activé.",
+                            "L’aperçu local fonctionne indépendamment. La session PTT reste un test technique ; aucun appel téléphonique transformé vers un numéro mobile n’est activé.",
                             style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            "La session de test ne remplace pas encore la certification d’un appel réel : elle valide uniquement Auth0, l’accès éphémère LiveKit et le bouton PTT.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         TextButton(
                             onClick = { showTechnicalDetails = !showTechnicalDetails },
@@ -511,6 +540,13 @@ class VoiceStudioActivity : ComponentActivity() {
                         }
                         if (showTechnicalDetails) {
                             HorizontalDivider()
+                            sessionTechnicalStatus?.let { technical ->
+                                Text(
+                                    "Diagnostic PTT : $technical",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                             Text(
                                 "Transformation en appel · intégration obligatoire",
                                 fontWeight = FontWeight.Bold
@@ -528,7 +564,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Session d’appel/PSTN non raccordée. Aucun bouton d’appel n’est affiché pour joindre un numéro mobile. La passerelle VoIP/PSTN, la validation physique et la certification d’appel restent nécessaires avant toute activation commerciale.",
+                                "Aucun bouton d’appel n’est affiché pour joindre un numéro mobile. La passerelle VoIP/PSTN, la validation physique et la certification d’appel restent nécessaires avant toute activation commerciale.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -681,5 +717,20 @@ class VoiceStudioActivity : ComponentActivity() {
             }
         }
         super.onDestroy()
+    }
+}
+
+private fun voiceSessionUserMessage(message: String?): String {
+    val technical = message.orEmpty()
+    return when {
+        technical.contains("VOICE_SESSION_HTTP_503", ignoreCase = true) ->
+            "Service PTT temporairement indisponible. Réessayez plus tard."
+        technical.contains("401") || technical.contains("403") ||
+            technical.contains("AUTH", ignoreCase = true) ->
+            "Votre session sécurisée doit être renouvelée avant de réessayer."
+        technical.contains("TIMEOUT", ignoreCase = true) ||
+            technical.contains("NETWORK", ignoreCase = true) ->
+            "Le service PTT est momentanément inaccessible. Vérifiez la connexion puis réessayez."
+        else -> "La session PTT n’a pas pu démarrer. Consultez les détails techniques si nécessaire."
     }
 }
