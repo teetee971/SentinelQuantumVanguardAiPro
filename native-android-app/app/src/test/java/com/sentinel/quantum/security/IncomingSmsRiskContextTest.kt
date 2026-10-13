@@ -62,6 +62,36 @@ class IncomingSmsRiskContextTest {
         assertEquals(PhoneRiskCard.RiskBand.UNKNOWN, assessment.reputationBand)
     }
 
+    @Test fun revokedConsentMakesCachedReputationInvisible() {
+        val storage = InMemoryStorage()
+        val cache = CommunicationReputationCache(storage)
+        val sender = "+33612345678"
+        assertTrue(
+            cache.put(
+                sender,
+                CommunicationReputationCache.Entry(
+                    riskScore = 99,
+                    categories = listOf("SPOOFING"),
+                    signals = 20,
+                    observedAtMs = 900L,
+                    ttlMs = 5_000L
+                ),
+                nowMs = 1_000L
+            )
+        )
+
+        val assessment = IncomingSmsRiskContext(cache).assess(
+            sender = sender,
+            sms = smsAnalysis(SmsLinkAnalyzer.RiskLevel.LOW),
+            allowCachedReputation = false,
+            nowMs = 1_000L
+        )
+
+        assertEquals(UnifiedCommunicationRisk.Level.LOW, assessment.level)
+        assertEquals(PhoneRiskCard.RiskBand.UNKNOWN, assessment.reputationBand)
+        assertTrue(assessment.reasons.isEmpty())
+    }
+
     private fun smsAnalysis(level: SmsLinkAnalyzer.RiskLevel) =
         SmsLinkAnalyzer.Analysis(
             accepted = true,
