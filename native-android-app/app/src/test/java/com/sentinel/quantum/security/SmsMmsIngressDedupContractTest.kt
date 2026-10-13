@@ -36,6 +36,17 @@ class SmsMmsIngressDedupContractTest {
         assertTrue(createFile > reserve)
     }
 
+    @Test fun expiredMmsRecoveryTerminatesBeforeStagedPayloadAccess() {
+        val source = sourceFile("MmsDownloadRecoveryWorker.kt").readText()
+        val recordRead = source.indexOf("val record = journal.read(fileName)")
+        val expiryCheck = source.indexOf("MmsDownloadRecoveryJournal.isExpired", startIndex = recordRead)
+        val stagedFileRead = source.indexOf("stagedFile(appContext, fileName)", startIndex = recordRead)
+
+        assertTrue(recordRead >= 0)
+        assertTrue(expiryCheck > recordRead)
+        assertTrue(stagedFileRead > expiryCheck)
+    }
+
     private fun sourceFile(name: String): File {
         val candidates = listOf(
             File("src/main/java/com/sentinel/quantum/security/$name"),
