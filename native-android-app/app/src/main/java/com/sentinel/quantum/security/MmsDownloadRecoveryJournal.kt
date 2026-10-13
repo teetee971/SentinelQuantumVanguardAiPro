@@ -71,14 +71,16 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
     }
 
     /**
-     * Removes malformed journal values, wrong SharedPreferences value types and invalid filenames.
-     * Returns false only when a required cleanup commit failed, so callers can remain fail-closed.
+     * Removes malformed journal values, wrong SharedPreferences value types, invalid filenames and
+     * records whose staged-download retention deadline has passed. Returns false only when a
+     * required cleanup commit failed, so callers can remain fail-closed.
      */
-    private fun sanitizeInvalidEntries(): Boolean {
+    private fun sanitizeInvalidEntries(nowMs: Long = System.currentTimeMillis()): Boolean {
         val invalidKeys = preferences.all.asSequence()
             .filter { (name, value) ->
-                name.startsWith(KEY_PREFIX) &&
-                    decode(name.removePrefix(KEY_PREFIX), value) == null
+                if (!name.startsWith(KEY_PREFIX)) return@filter false
+                val record = decode(name.removePrefix(KEY_PREFIX), value)
+                record == null || isExpired(record.requestedAtMs, nowMs)
             }
             .map { it.key }
             .toList()
@@ -127,5 +129,10 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
             MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
                 MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId) &&
                 requestedAtMs >= 0L
+
+        internal fun isExpired(requestedAtMs: Long, nowMs: Long): Boolean =
+            requestedAtMs >= 0L &&
+                nowMs >= requestedAtMs &&
+                nowMs - requestedAtMs >= MmsDownloadCoordinator.DOWNLOAD_TTL_MS
     }
 }
