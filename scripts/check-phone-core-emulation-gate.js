@@ -237,6 +237,9 @@ for (const marker of [
   'connected_instrumentation_api${api}',
   'phone_core_setup_resume',
   'synthetic_call_screening_decision_observed',
+  'api37_incoming_answer_emulator_limitation',
+  'api37_incoming_answer_transaction_failed',
+  "limitations.length > 0 ? 'LIMITED' : 'PASS'",
   'no_crash_or_anr',
   'android_app_unit_tests',
   'wearable_contract_unit_tests',
@@ -248,7 +251,7 @@ for (const marker of [
   'PhoneCore-Emulation-Qualification',
   'FATAL EXCEPTION:',
   'ANR in com\\.sentinel\\.quantum',
-  'schema_version: 3',
+  'schema_version: 4',
   'physical_modem_claim: false',
   'commercial_release_claim: false',
   'effective_permission_denial_fail_closed'
@@ -311,6 +314,8 @@ for (const marker of [
   'wait_incoming_sentinel_surface',
   'wait_private_timeline_signal_prefix "CALL_SCREENED:"',
   'wait_private_timeline_event "INCOMING" "INCALL_ACTIVE"',
+  'emulator_limit=api37_incoming_answer_transaction_failed',
+  'api37-incoming-answer-limited.txt',
   'wait_private_timeline_event "OUTGOING" "INCALL_ACTIVE"',
   'adb emu sms send',
   'Synthetic Telecom callback/calls, cold relaunch, and inline SMS reply verified'
