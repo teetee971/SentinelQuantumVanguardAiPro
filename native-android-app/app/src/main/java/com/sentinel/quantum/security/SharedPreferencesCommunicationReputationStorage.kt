@@ -3,6 +3,7 @@ package com.sentinel.quantum.security
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
+import com.sentinel.quantum.data.SettingsStore
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import javax.crypto.Mac
@@ -33,6 +34,7 @@ class SharedPreferencesCommunicationReputationStorage(
         preferences.getString(storageKey(key), null)
 
     override fun put(key: String, value: String) {
+        requirePersistenceAllowed()
         check(preferences.edit().putString(storageKey(key), value).commit()) {
             "Unable to persist communication reputation"
         }
@@ -41,6 +43,16 @@ class SharedPreferencesCommunicationReputationStorage(
     override fun remove(key: String) {
         check(preferences.edit().remove(storageKey(key)).commit()) {
             "Unable to remove communication reputation"
+        }
+    }
+
+    private fun requirePersistenceAllowed() {
+        val settings = SettingsStore(appContext)
+        if (
+            !settings.callerReputationEnrichmentEnabled ||
+            !ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
+        ) {
+            throw SecurityException("REMOTE_REPUTATION_PERSISTENCE_REVOKED")
         }
     }
 
