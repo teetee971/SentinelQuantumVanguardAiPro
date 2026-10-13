@@ -88,6 +88,7 @@ fun SettingsScreen(
     var authUser by remember { mutableStateOf<Auth0UserSummary?>(null) }
     var authLoading by remember { mutableStateOf(true) }
     var authErrorMessage by remember { mutableStateOf<String?>(null) }
+    var showFullDeviceId by remember { mutableStateOf(false) }
     val ioScope = rememberCoroutineScope()
 
     fun openExternalPage(url: String) {
@@ -297,11 +298,24 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyMedium
                     )
                     voiceDeviceId?.let { deviceId ->
+                        val displayedDeviceId = if (showFullDeviceId) deviceId else maskDeviceId(deviceId)
                         Text(
-                            text = stringResource(R.string.settings_auth_device_id, deviceId),
+                            text = stringResource(R.string.settings_auth_device_id, displayedDeviceId),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        TextButton(
+                            onClick = { showFullDeviceId = !showFullDeviceId },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                if (showFullDeviceId) {
+                                    "Masquer l’identifiant complet"
+                                } else {
+                                    "Afficher l’identifiant complet"
+                                }
+                            )
+                        }
                         OutlinedButton(
                             onClick = {
                                 context.getSystemService(ClipboardManager::class.java)
@@ -410,7 +424,7 @@ fun SettingsScreen(
 
             SentinelSectionHeader(
                 title = "Studio voix",
-                subtitle = "Aperçu local du moteur vocal · transformation en appel Sentinel obligatoire avant livraison de l’add-on."
+                subtitle = "Aperçu local disponible · PTT de test à vérifier · appels téléphoniques transformés non disponibles."
             )
             ElevatedCard(
                 onClick = {
@@ -424,12 +438,12 @@ fun SettingsScreen(
                 ) {
                     Text("Tester ma voix", fontWeight = FontWeight.Bold)
                     Text(
-                        "Essayez gratuitement les rendus Naturelle, Grave et Aiguë. Le même moteur temps réel est réservé au chemin média des appels Sentinel contrôlés ; l’aperçu local n’est jamais injecté dans un appel SIM natif.",
+                        "Essayez les rendus Naturelle, Grave et Aiguë dans l’aperçu local. Aucun aperçu n’est injecté dans un appel SIM natif.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        "Appels transformés : moteur + client WebRTC intégrés · serveur/token/PSTN et validation physique encore requis avant activation payante.",
+                        "Ouvrez le Studio voix pour vérifier séparément l’aperçu, le PTT de test et l’état du raccordement téléphonique.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -701,6 +715,12 @@ private fun ThemeOptionRow(label: String, selected: Boolean, onClick: () -> Unit
         Spacer(modifier = Modifier.width(8.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+private fun maskDeviceId(value: String): String {
+    if (value.length <= 12) return "••••"
+    val prefixLength = minOf(12, value.length - 5)
+    return value.take(prefixLength) + "…" + value.takeLast(5)
 }
 
 private fun readBoundedBackupText(
