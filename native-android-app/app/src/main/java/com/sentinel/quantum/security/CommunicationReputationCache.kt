@@ -33,8 +33,10 @@ class CommunicationReputationCache(
     ): Boolean {
         val key = cacheKeyFor(rawNumber) ?: return false
         if (!isValid(entry, nowMs)) return false
-        storage.put(key, encode(entry))
-        return true
+        return runCatching {
+            storage.put(key, encode(entry))
+            true
+        }.getOrDefault(false)
     }
 
     fun get(
@@ -42,10 +44,10 @@ class CommunicationReputationCache(
         nowMs: Long = System.currentTimeMillis()
     ): Entry? {
         val key = cacheKeyFor(rawNumber) ?: return null
-        val encoded = storage.get(key) ?: return null
+        val encoded = runCatching { storage.get(key) }.getOrNull() ?: return null
         val entry = decode(encoded)
         if (entry == null || !isValid(entry, nowMs) || isExpired(entry, nowMs)) {
-            storage.remove(key)
+            runCatching { storage.remove(key) }
             return null
         }
         return entry
