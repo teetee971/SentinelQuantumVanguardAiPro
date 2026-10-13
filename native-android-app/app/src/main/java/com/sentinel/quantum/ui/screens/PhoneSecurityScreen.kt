@@ -37,6 +37,9 @@ import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CommunicationReputationCache
+import com.sentinel.quantum.security.CommunicationReputationWriter
+import com.sentinel.quantum.security.SharedPreferencesCommunicationReputationStorage
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.RtrDirectoryClient
@@ -412,7 +415,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                             scope.launch {
                                 val checked = withContext(Dispatchers.IO) {
                                     runCatching {
-                                        CallerReputationClient(
+                                        val result = CallerReputationClient(
                                             egressGate = {
                                                 settingsStore.callerReputationEnrichmentEnabled &&
                                                     ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
@@ -424,6 +427,12 @@ fun PhoneSecurityScreen(navController: NavController) {
                                             privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                             explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                         )
+                                        CommunicationReputationWriter(
+                                            CommunicationReputationCache(
+                                                SharedPreferencesCommunicationReputationStorage(context.applicationContext)
+                                            )
+                                        ).persist(candidate, result)
+                                        result
                                     }
                                 }
                                 remoteRunning = false

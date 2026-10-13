@@ -51,6 +51,8 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallerIdProvenance
+import com.sentinel.quantum.security.CommunicationReputationCache
+import com.sentinel.quantum.security.CommunicationReputationWriter
 import com.sentinel.quantum.security.ProtectionProvenance
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
@@ -63,6 +65,7 @@ import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
 import com.sentinel.quantum.security.SentinelConfidence
 import com.sentinel.quantum.security.SentinelNumberCard
+import com.sentinel.quantum.security.SharedPreferencesCommunicationReputationStorage
 import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
@@ -168,7 +171,7 @@ class CallerIdActivity : ComponentActivity() {
                         remoteStatus = "Enrichissement en cours…"
                         remoteResult = withContext(Dispatchers.IO) {
                             runCatching {
-                                CallerReputationClient(
+                                val result = CallerReputationClient(
                                     egressGate = {
                                         settingsStore.callerReputationEnrichmentEnabled &&
                                             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
@@ -180,6 +183,12 @@ class CallerIdActivity : ComponentActivity() {
                                     privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                     explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                 )
+                                CommunicationReputationWriter(
+                                    CommunicationReputationCache(
+                                        SharedPreferencesCommunicationReputationStorage(applicationContext)
+                                    )
+                                ).persist(number, result)
+                                result
                             }.getOrNull()
                         }
                         remoteStatus = if (remoteResult == null) {

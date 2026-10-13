@@ -58,6 +58,9 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CommunicationReputationCache
+import com.sentinel.quantum.security.CommunicationReputationWriter
+import com.sentinel.quantum.security.SharedPreferencesCommunicationReputationStorage
 import com.sentinel.quantum.security.CallLineSelectionPolicy
 import com.sentinel.quantum.security.OutgoingCallPermissionPolicy
 import com.sentinel.quantum.security.CallRuleEngine
@@ -777,6 +780,11 @@ class SentinelDialerActivity : ComponentActivity() {
                                         privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                         explicitConsent = settings.callerReputationEnrichmentEnabled
                                     )
+                                    CommunicationReputationWriter(
+                                        CommunicationReputationCache(
+                                            SharedPreferencesCommunicationReputationStorage(applicationContext)
+                                        )
+                                    ).persist(lookupNumber, r)
                                     "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
                                         if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
