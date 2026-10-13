@@ -42,7 +42,7 @@ object SentinelPreferencesBackup {
             .put("theme_mode", snapshot.themeMode.name)
             .put("protection_mode", snapshot.protectionMode.name)
             .put("family_safety_profile", snapshot.familySafetyProfile.name)
-            .put("caller_reputation_enrichment_enabled", snapshot.callerReputationEnrichmentEnabled)
+            .put("caller_reputation_enrichment_enabled", false)
             .put("osint_refresh_interval_hours", SettingsStore.sanitizeInterval(snapshot.osintRefreshIntervalHours))
             .put("osint_notifications_enabled", snapshot.osintNotificationsEnabled)
             .put("sms_notification_preview_enabled", snapshot.smsNotificationPreviewEnabled)
