@@ -20,7 +20,16 @@ test('Phone Core evidence collection gives a transient offline emulator a bounde
   assert.match(evidence, /ADB_RECOVERY_READY=0/);
   assert.match(evidence, /for _ in \$\(seq 1 10\); do/);
   assert.match(evidence, /timeout 3s adb get-state[^\n]*grep -Fxq ['"]device['"]/);
-  assert.match(evidence, /adb reconnect/);
+  assert.match(
+    evidence,
+    /timeout --signal=TERM --kill-after=1s 3s adb reconnect[^\n]*\|\| true/,
+    'ADB reconnect must be bounded so a wedged client/server transport cannot stall the recovery loop'
+  );
+  assert.doesNotMatch(
+    evidence,
+    /\n\s*adb reconnect[^\n]*\|\| true/,
+    'ADB reconnect must never run unbounded inside the recovery loop'
+  );
   assert.match(evidence, /adb-recovery-status\.txt/);
 
   const recovery = evidence.indexOf('ADB_RECOVERY_READY=0');
