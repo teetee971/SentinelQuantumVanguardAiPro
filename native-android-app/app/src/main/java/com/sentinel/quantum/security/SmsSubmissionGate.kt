@@ -1,5 +1,7 @@
 package com.sentinel.quantum.security
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -12,15 +14,29 @@ import java.util.concurrent.atomic.AtomicBoolean
  * pipeline, not by this short-lived submission guard.
  */
 class SmsSubmissionGate {
-    fun tryAcquire(): Boolean = IN_FLIGHT.compareAndSet(false, true)
+    val inFlight: State<Boolean>
+        get() = MUTABLE_IN_FLIGHT
+
+    fun tryAcquire(): Boolean {
+        if (!IN_FLIGHT.compareAndSet(false, true)) return false
+        MUTABLE_IN_FLIGHT.value = true
+        return true
+    }
 
     fun release() {
         IN_FLIGHT.set(false)
+        MUTABLE_IN_FLIGHT.value = false
     }
 
     companion object {
         private val IN_FLIGHT = AtomicBoolean(false)
+        private val MUTABLE_IN_FLIGHT = mutableStateOf(false)
 
-        internal fun isInFlight(): Boolean = IN_FLIGHT.get()
+        internal fun isInFlight(): Boolean {
+            // Register a Compose snapshot read for callers invoked during composition while keeping
+            // the AtomicBoolean as the authoritative transport admission state.
+            MUTABLE_IN_FLIGHT.value
+            return IN_FLIGHT.get()
+        }
     }
 }
