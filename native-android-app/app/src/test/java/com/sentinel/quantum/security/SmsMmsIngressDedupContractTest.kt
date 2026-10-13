@@ -42,11 +42,26 @@ class SmsMmsIngressDedupContractTest {
         val expiryCheck = source.indexOf("MmsDownloadRecoveryJournal.isExpired", startIndex = recordRead)
         val stagedFileRead = source.indexOf("stagedFile(appContext, fileName)", startIndex = recordRead)
         val cleanupBypass = source.indexOf("!allowQuarantine &&", startIndex = recordRead)
+        val recoverySafeExpiry = source.indexOf("MmsDownloadCoordinator.expireFromRecovery", startIndex = expiryCheck)
 
         assertTrue(recordRead >= 0)
         assertTrue(cleanupBypass > recordRead)
         assertTrue(expiryCheck > cleanupBypass)
-        assertTrue(stagedFileRead > expiryCheck)
+        assertTrue(recoverySafeExpiry > expiryCheck)
+        assertTrue(stagedFileRead > recoverySafeExpiry)
+    }
+
+    @Test fun recoveryExpiryDoesNotCancelTheRunningRecoveryWorker() {
+        val source = sourceFile("MmsDownloadCoordinator.kt").readText()
+        val method = source.indexOf("internal fun expireFromRecovery")
+        val cancelCleanup = source.indexOf("cancelCleanup = true", startIndex = method)
+        val keepRecovery = source.indexOf("cancelRecovery = false", startIndex = method)
+        val release = source.indexOf("releaseNotificationDedup(context, fileName)", startIndex = method)
+
+        assertTrue(method >= 0)
+        assertTrue(cancelCleanup > method)
+        assertTrue(keepRecovery > cancelCleanup)
+        assertTrue(release > keepRecovery)
     }
 
     @Test fun recoveryJournalEnumerationFailsClosedWhenSanitationCannotCommit() {
