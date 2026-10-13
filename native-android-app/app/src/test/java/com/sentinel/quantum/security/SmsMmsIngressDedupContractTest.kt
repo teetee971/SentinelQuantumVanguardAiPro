@@ -41,9 +41,11 @@ class SmsMmsIngressDedupContractTest {
         val recordRead = source.indexOf("val record = journal.read(fileName)")
         val expiryCheck = source.indexOf("MmsDownloadRecoveryJournal.isExpired", startIndex = recordRead)
         val stagedFileRead = source.indexOf("stagedFile(appContext, fileName)", startIndex = recordRead)
+        val cleanupBypass = source.indexOf("!allowQuarantine &&", startIndex = recordRead)
 
         assertTrue(recordRead >= 0)
-        assertTrue(expiryCheck > recordRead)
+        assertTrue(cleanupBypass > recordRead)
+        assertTrue(expiryCheck > cleanupBypass)
         assertTrue(stagedFileRead > expiryCheck)
     }
 
