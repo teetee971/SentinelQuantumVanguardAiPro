@@ -288,8 +288,8 @@ jobs:
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
-            adb install -r "$APP_APK"
-            adb install -r "$TEST_APK"
+            timeout --signal=TERM --kill-after=30s 120s adb install -r "$APP_APK"
+            timeout --signal=TERM --kill-after=30s 120s adb install -r "$TEST_APK"
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
                 awk '/^instrumentation:com\.sentinel\.quantum\.test\// {
@@ -307,21 +307,9 @@ jobs:
             INSTRUMENTATION_LOG_RAW="$RUNNER_TEMP/sentinel-instrumentation-api24-tests.raw.log"
             INSTRUMENTATION_LOG="$RUNNER_TEMP/sentinel-instrumentation-api24-tests.log"
             set +e
-            setsid adb shell am instrument -w -r "$INSTRUMENTATION_RUNNER" > "$INSTRUMENTATION_LOG_RAW" 2>&1 &
-            INSTRUMENTATION_PID=$!
-            (
-              sleep 900
-              if kill -0 "$INSTRUMENTATION_PID" 2>/dev/null; then
-                kill -TERM -- "-$INSTRUMENTATION_PID" 2>/dev/null || kill -TERM "$INSTRUMENTATION_PID" 2>/dev/null || true
-                sleep 30
-                kill -KILL -- "-$INSTRUMENTATION_PID" 2>/dev/null || kill -KILL "$INSTRUMENTATION_PID" 2>/dev/null || true
-              fi
-            ) &
-            INSTRUMENTATION_WATCHDOG_PID=$!
-            wait "$INSTRUMENTATION_PID"
+            timeout --signal=TERM --kill-after=30s 900s \
+              adb shell am instrument -w -r "$INSTRUMENTATION_RUNNER" > "$INSTRUMENTATION_LOG_RAW" 2>&1
             INSTRUMENTATION_STATUS=$?
-            kill "$INSTRUMENTATION_WATCHDOG_PID" >/dev/null 2>&1 || true
-            wait "$INSTRUMENTATION_WATCHDOG_PID" >/dev/null 2>&1 || true
             tr -d '\r' < "$INSTRUMENTATION_LOG_RAW" | tee "$INSTRUMENTATION_LOG"
             set -e
             if [[ "$INSTRUMENTATION_STATUS" -ne 0 ]]; then
@@ -372,7 +360,7 @@ jobs:
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
           # the exact runtime APK before requiring a successful app-data reset.
-          adb install -r "$APK_PATH"
+          timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
@@ -381,11 +369,11 @@ jobs:
             # Role establishment and proof are owned by the runtime scripts. They use the modern
             # get-role-holders shell command when available and a dumpsys-role proof on API 29.
             if [[ "$API_LEVEL" == "37" ]]; then
-              bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-              bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
             else
-              bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-              bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
             fi
           else
             adb shell am force-stop com.sentinel.quantum
@@ -421,12 +409,22 @@ jobs:
           set -euo pipefail
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
+          ADB_RECOVERY_READY=0
+          for _ in $(seq 1 10); do
+            if timeout 3s adb get-state 2>/dev/null | grep -Fxq 'device'; then
+              ADB_RECOVERY_READY=1
+              break
+            fi
+            adb reconnect >/dev/null 2>&1 || true
+            sleep 2
+          done
+          printf '%s\n' "$ADB_RECOVERY_READY" > "$OUTPUT/adb-recovery-status.txt"
           LOGCAT_STATUS=0
-          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
+          timeout --signal=TERM --kill-after=5s 20s adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
-          adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
-          adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
-          adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
 
           if [[ -s app/build/outputs/apk/debug/app-debug.apk ]]; then
             sha256sum app/build/outputs/apk/debug/app-debug.apk > "$OUTPUT/apk.sha256"
@@ -515,6 +513,16 @@ jobs:
             screenshot('02-incoming-call.png') &&
             screenshot('03-incoming-active-evidence.png') &&
             contains('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE');
+          const api37LimitedEvidence = read('api37-incoming-answer-limited.txt');
+          const api37IncomingAnswerEmulatorLimitation = api === 37 &&
+            api37LimitedEvidence.includes('REQUEST_ACCEPT') &&
+            api37LimitedEvidence.includes('-> ANSWERED') &&
+            api37LimitedEvidence.includes('-> DISCONNECTED') &&
+            api37LimitedEvidence.includes('INCOMING_MISSED') &&
+            api37LimitedEvidence.includes('emulator_limit=api37_incoming_answer_transaction_failed') &&
+            !api37LimitedEvidence.includes('console_gsm_accept_after_answered') &&
+            !api37LimitedEvidence.includes('transport_sync=emulator_console_gsm_accept_after_answered') &&
+            !api37LimitedEvidence.includes('transport_handoff=android17_emulator_unknown_active');
           const outgoingCallObserved = modernPhoneCore &&
             screenshot('05-outgoing-call.png') &&
             contains('phone-private-timeline-outgoing-incall_active.xml', 'INCALL_ACTIVE');
@@ -576,6 +584,7 @@ jobs:
             synthetic_call_screening_observed: modernPhoneCore ? callbackObserved : null,
             synthetic_call_screening_decision_observed: api >= 36 ? decisionObserved : null,
             incoming_call_telecom_flow: modernPhoneCore ? incomingCallObserved : null,
+            api37_incoming_answer_emulator_limitation: api === 37 ? api37IncomingAnswerEmulatorLimitation : null,
             outgoing_call_telecom_flow: modernPhoneCore ? outgoingCallObserved : null,
             incoming_sms_and_inline_reply: modernPhoneCore ? smsReplyObserved : null,
             sms_all_parts_sent_callback: modernPhoneCore ? smsSentCallbackObserved : null,
@@ -598,13 +607,14 @@ jobs:
             'cold_install_and_relaunch',
             'no_crash_or_anr'
           ];
+          const incomingRequirement = ['incoming_call_telecom_flow'];
           const required = api === 24
             ? [...commonRequired, 'min_sdk_cold_launch']
             : [
                 ...commonRequired,
                 'phone_core_setup_resume',
                 'synthetic_call_screening_observed',
-                'incoming_call_telecom_flow',
+                ...incomingRequirement,
                 'outgoing_call_telecom_flow',
                 'incoming_sms_and_inline_reply',
                 'sms_all_parts_sent_callback',
@@ -626,14 +636,18 @@ jobs:
           if (!nonEmpty('package.txt') || !contains('package.txt', 'com.sentinel.quantum')) {
             evidenceFailures.push('package_state');
           }
+          const limitations = api37IncomingAnswerEmulatorLimitation
+            ? ['api37_incoming_answer_transaction_failed']
+            : [];
 
           const report = {
-            schema_version: 3,
+            schema_version: 4,
             qualification: 'ANDROID_APPLICATION_EMULATION',
             rollout_mode: 'shadow',
             evidence_scope: 'developer_qualification',
             api_level: api,
-            result: evidenceFailures.length === 0 ? 'PASS' : 'FAIL',
+            result: evidenceFailures.length > 0 ? 'FAIL' : limitations.length > 0 ? 'LIMITED' : 'PASS',
+            limitations,
             synthetic_modem: modernPhoneCore,
             physical_modem_claim: false,
             commercial_release_claim: false,
@@ -652,7 +666,8 @@ jobs:
               instrumentation: api === 24 ? 'raw adb instrumentation log' : 'Gradle connected test XML',
               instrumentation_outcome: process.env.INSTRUMENTATION_OUTCOME,
               runtime: 'files produced in this API lane',
-              revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null
+              revocation: modernPhoneCore ? 'revocation-summary.json + UI/platform denial evidence' : null,
+              api37_incoming_answer_limitation: api === 37 ? 'api37-incoming-answer-limited.txt' : null
             },
             required_checks_for_lane: required,
             evidence_failures: evidenceFailures,
