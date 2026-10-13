@@ -76,6 +76,8 @@ import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsOtpPrivacy
 import com.sentinel.quantum.security.WhatsAppClickToChat
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.SmsConversationIdentityPolicy
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.MmsLocalInbox
 import com.sentinel.quantum.security.SmsActivationActions
@@ -221,6 +223,7 @@ class SmsComposeActivity : ComponentActivity() {
                 val sender = remember { SentinelSmsSender(applicationContext) }
                 val mmsSender = remember { SentinelMmsSender(applicationContext) }
                 val conversations = remember { SmsConversationStore(applicationContext) }
+                val contactLookup = remember { LocalContactLookup(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val ioScope = rememberCoroutineScope()
                 val attachmentLoader = remember { MmsAttachmentLoader(applicationContext) }
@@ -267,6 +270,9 @@ class SmsComposeActivity : ComponentActivity() {
                 var providerEpoch by remember { mutableStateOf(0) }
                 var threads by remember {
                     mutableStateOf(emptyList<SmsConversationStore.ThreadSummary>())
+                }
+                var conversationIdentities by remember {
+                    mutableStateOf<Map<String, SmsConversationIdentityPolicy.ResolvedIdentity>>(emptyMap())
                 }
                 var selectedThreadId by rememberSaveable { mutableStateOf<Long?>(null) }
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
@@ -404,6 +410,21 @@ class SmsComposeActivity : ComponentActivity() {
                     }
                     threads = refreshed.first
                     threadMessages = refreshed.second
+                }
+                LaunchedEffect(threads) {
+                    val addresses = threads.asSequence()
+                        .map { it.address }
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                        .toList()
+                    conversationIdentities = withContext(Dispatchers.IO) {
+                        addresses.associateWith { address ->
+                            SmsConversationIdentityPolicy.resolve(
+                                address = address,
+                                localIdentity = contactLookup.find(address)
+                            )
+                        }
+                    }
                 }
                 LaunchedEffect(selectedThreadId, threadMessages.lastOrNull()?.id) {
                     if (selectedThreadId != null && threadMessages.isNotEmpty()) {
@@ -967,8 +988,17 @@ class SmsComposeActivity : ComponentActivity() {
                                     visibleThreads.forEach { thread ->
                                         key(thread.threadId) {
                                             val previewRisk = remember(thread.threadId, thread.latestBody) { smsAnalyzer.analyze(thread.latestBody) }
+                                            val resolvedIdentity = conversationIdentities[thread.address]
+                                                ?: SmsConversationIdentityPolicy.resolve(thread.address, null)
+                                            val conversationLabel = if (
+                                                resolvedIdentity.provenance == SmsConversationIdentityPolicy.Provenance.ANDROID_CONTACT
+                                            ) {
+                                                "${resolvedIdentity.displayLabel} · ${resolvedIdentity.address}"
+                                            } else {
+                                                resolvedIdentity.displayLabel
+                                            }
                                             PhoneCoreConversationRow(
-                                                address = thread.address,
+                                                address = conversationLabel,
                                                 preview = thread.latestBody.take(240),
                                                 date = (if (SmsTimestampOrder.isAnomalous(thread.latestTimestampMs, System.currentTimeMillis())) "Date anormale (Android) : " else "") +
                                                     DateFormat.getDateTimeInstance().format(Date(thread.latestTimestampMs)),
