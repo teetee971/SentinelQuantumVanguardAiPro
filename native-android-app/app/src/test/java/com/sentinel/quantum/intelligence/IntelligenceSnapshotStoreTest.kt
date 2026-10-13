@@ -92,6 +92,19 @@ class IntelligenceSnapshotStoreTest {
     }
 
     @Test
+    fun duplicate_event_id_is_an_idempotent_no_op() {
+        val directory = newDirectory()
+        val store = IntelligenceSnapshotStore(directory, maxEntries = 10, maxAgeMs = 60_000L)
+        val original = reputationEvent("same-id", 1_000L, 10_000L, score = 82)
+        val conflictingDuplicate = reputationEvent("same-id", 1_500L, 10_000L, score = 7)
+
+        store.append(original, nowMs = 2_000L)
+        store.append(conflictingDuplicate, nowMs = 2_000L)
+
+        assertEquals(listOf(original), store.read(identity, nowMs = 2_000L))
+    }
+
+    @Test
     fun restart_rebuild_reproduces_snapshot_from_same_retained_evidence() {
         val directory = newDirectory()
         val originalStore = IntelligenceSnapshotStore(directory, maxEntries = 10, maxAgeMs = 60_000L)
