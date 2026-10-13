@@ -29,11 +29,12 @@ class IntelligenceSnapshotStore(
     @Synchronized
     fun append(event: IntelligenceEvent, nowMs: Long) {
         require(nowMs >= 0L) { "nowMs must be non-negative" }
-        val retained = prune(loadAll(), nowMs)
-            .filterNot { it.eventId == event.eventId }
-            .plus(event)
-            .let { prune(it, nowMs) }
-        writeAll(retained)
+        val existing = prune(loadAll(), nowMs)
+        if (existing.any { it.eventId == event.eventId }) {
+            writeAll(existing)
+            return
+        }
+        writeAll(prune(existing + event, nowMs))
     }
 
     @Synchronized
