@@ -194,7 +194,7 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 selection,
                 selectionArgs,
                 null
-            )?.use { cursor -> cursor.moveToFirst() } ?: false
+            )?.use { cursor -> cursor.moveToFirst() } ?: true
         } catch (_: Exception) {
             // Do not insert when the provider cannot answer the replay check: otherwise a
             // transient provider failure can turn one delivery into two durable inbox rows.
