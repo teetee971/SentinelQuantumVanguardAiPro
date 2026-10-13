@@ -2,6 +2,7 @@ package com.sentinel.quantum.data
 
 import com.sentinel.quantum.security.ProtectionMode
 import com.sentinel.quantum.security.FamilySafetyPolicy
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -46,6 +47,16 @@ class SentinelPreferencesBackupTest {
 
         assertFalse(
             SentinelPreferencesBackup.decode(raw)?.callerReputationEnrichmentEnabled ?: true
+        )
+    }
+
+    @Test fun encodedBackupNeverCarriesRemoteCallerReputationConsent() {
+        val raw = SentinelPreferencesBackup.encode(
+            snapshot.copy(callerReputationEnrichmentEnabled = true)
+        )
+
+        assertFalse(
+            JSONObject(raw).optBoolean("caller_reputation_enrichment_enabled", true)
         )
     }
 
