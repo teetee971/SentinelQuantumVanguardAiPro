@@ -262,8 +262,8 @@ private fun InCallScreen(
             )
 
             // Caller identity and secondary panels may scroll, but call-critical controls stay
-            // pinned below this region. This prevents answer/reject/hang-up controls from being
-            // pushed off-screen on compact devices or when the dialpad/audio panels are open.
+            // pinned below this region. When the DTMF keypad is open it owns this viewport so it
+            // cannot be appended below caller details and remain invisible on compact devices.
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -273,40 +273,38 @@ private fun InCallScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (snapshot != null) {
-                    CallerHero(
-                        snapshot = snapshot,
-                        duration = callDurationLabel(snapshot, nowMs),
-                        trustIndicator = trustIndicator
-                    )
-                }
-
-                when {
-                    snapshot == null -> {
-                        MissingCallSession(missingSession, onRecover, onConfigure, onClose)
-                    }
-                    snapshot.state == Call.STATE_DISCONNECTING || snapshot.state == Call.STATE_DISCONNECTED -> {
-                        Text(
-                            "L’appel est terminé.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (showDialpad && snapshot.state == Call.STATE_ACTIVE) {
+                        DialpadPanel(snapshot)
+                    } else {
+                        CallerHero(
+                            snapshot = snapshot,
+                            duration = callDurationLabel(snapshot, nowMs),
+                            trustIndicator = trustIndicator
                         )
-                        OutlinedButton(onClick = onClose) { Text("Fermer l’écran d’appel") }
-                    }
-                    snapshot.state != Call.STATE_RINGING -> {
-                        if (showAudioRoutes) {
-                            AudioRoutePanel(snapshot)
+
+                        when {
+                            snapshot.state == Call.STATE_DISCONNECTING || snapshot.state == Call.STATE_DISCONNECTED -> {
+                                Text(
+                                    "L’appel est terminé.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                OutlinedButton(onClick = onClose) { Text("Fermer l’écran d’appel") }
+                            }
+                            snapshot.state != Call.STATE_RINGING -> {
+                                if (showAudioRoutes) {
+                                    AudioRoutePanel(snapshot)
+                                }
+                                ConferencePanel(snapshot)
+                            }
                         }
 
-                        if (showDialpad && snapshot.state == Call.STATE_ACTIVE) {
-                            DialpadPanel(snapshot)
+                        if (calls.size > 1) {
+                            ActiveCallsPanel(calls)
                         }
-
-                        ConferencePanel(snapshot)
                     }
-                }
-
-                if (calls.size > 1) {
-                    ActiveCallsPanel(calls)
+                } else {
+                    MissingCallSession(missingSession, onRecover, onConfigure, onClose)
                 }
             }
 
