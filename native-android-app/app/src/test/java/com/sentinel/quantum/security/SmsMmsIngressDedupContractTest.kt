@@ -49,6 +49,17 @@ class SmsMmsIngressDedupContractTest {
         assertTrue(stagedFileRead > expiryCheck)
     }
 
+    @Test fun recoveryJournalEnumerationFailsClosedWhenSanitationCannotCommit() {
+        val source = sourceFile("MmsDownloadRecoveryJournal.kt").readText()
+        val allMethod = source.indexOf("fun all(): List<Record>")
+        val failClosed = source.indexOf("if (!sanitizeInvalidEntries()) return emptyList()", startIndex = allMethod)
+        val enumeration = source.indexOf("return preferences.all.asSequence()", startIndex = allMethod)
+
+        assertTrue(allMethod >= 0)
+        assertTrue(failClosed > allMethod)
+        assertTrue(enumeration > failClosed)
+    }
+
     private fun sourceFile(name: String): File {
         val candidates = listOf(
             File("src/main/java/com/sentinel/quantum/security/$name"),
