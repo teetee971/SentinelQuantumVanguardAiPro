@@ -607,9 +607,7 @@ jobs:
             'cold_install_and_relaunch',
             'no_crash_or_anr'
           ];
-          const incomingRequirement = api === 37 && api37IncomingAnswerEmulatorLimitation
-            ? ['api37_incoming_answer_emulator_limitation']
-            : ['incoming_call_telecom_flow'];
+          const incomingRequirement = ['incoming_call_telecom_flow'];
           const required = api === 24
             ? [...commonRequired, 'min_sdk_cold_launch']
             : [
