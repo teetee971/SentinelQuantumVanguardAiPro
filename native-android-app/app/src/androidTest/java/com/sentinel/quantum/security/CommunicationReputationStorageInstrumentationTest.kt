@@ -3,11 +3,13 @@ package com.sentinel.quantum.security
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.sentinel.quantum.data.SettingsStore
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -16,8 +18,20 @@ class CommunicationReputationStorageInstrumentationTest {
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
 
+    @Before
+    fun enableRemoteReputationForPersistenceTests() {
+        SettingsStore(context).apply {
+            protectionMode = ProtectionMode.ENHANCED
+            callerReputationEnrichmentEnabled = true
+        }
+    }
+
     @After
     fun cleanup() {
+        SettingsStore(context).apply {
+            callerReputationEnrichmentEnabled = false
+            protectionMode = ProtectionMode.LOCAL_ONLY
+        }
         context.getSharedPreferences(
             SharedPreferencesCommunicationReputationStorage.PREFS_NAME,
             Context.MODE_PRIVATE
@@ -116,6 +130,30 @@ class CommunicationReputationStorageInstrumentationTest {
         assertTrue(reputationPreferences.all.keys.all { it.startsWith("h1:") })
         assertTrue(keyPreferences.all.isNotEmpty())
         assertFalse(keyPreferences.all.keys.any { it.startsWith("h1:") })
+    }
+
+    @Test
+    fun revokedConsentPreventsNewReputationPersistence() {
+        val settings = SettingsStore(context)
+        settings.callerReputationEnrichmentEnabled = false
+        val cache = CommunicationReputationCache(
+            SharedPreferencesCommunicationReputationStorage(context)
+        )
+        val entry = CommunicationReputationCache.Entry(
+            riskScore = 92,
+            categories = listOf("SPOOFING"),
+            signals = 7,
+            observedAtMs = 1_000L,
+            ttlMs = 60_000L
+        )
+
+        assertFalse(cache.put("+33612345678", entry, nowMs = 1_100L))
+
+        val preferences = context.getSharedPreferences(
+            SharedPreferencesCommunicationReputationStorage.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        assertTrue(preferences.all.isEmpty())
     }
 
     @Test
