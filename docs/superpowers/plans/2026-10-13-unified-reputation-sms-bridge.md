@@ -18,6 +18,7 @@
 - Persisted reputation keys must not be reversible through trivial enumeration of bare phone-number hashes.
 - Expired or malformed reputation must resolve to UNKNOWN / absent, never a synthetic PASS.
 - Current consent/privacy policy must be re-evaluated when cached remote-derived reputation is consumed.
+- Current consent/privacy policy must also still permit persistence at the final Android storage boundary after a remote response returns.
 - Existing module contracts are reused; no God object and no circular dependencies.
 
 ## Review Focus
@@ -29,6 +30,7 @@
 - Cached HIGH reputation can raise an otherwise LOW SMS context without changing the original analyzer result.
 - Disabling remote enrichment must make cached remote-derived reputation invisible immediately.
 - Every production surface that successfully obtains a consented `CallerReputationClient.Result` must feed the shared cache instead of retaining it in a UI silo.
+- Revocation during an already-authorized in-flight HTTP lookup must prevent a new cache commit when the response returns.
 
 ---
 
@@ -37,10 +39,6 @@
 **Files:**
 - Create: `native-android-app/app/src/main/java/com/sentinel/quantum/security/UnifiedCommunicationRisk.kt`
 - Test: `native-android-app/app/src/test/java/com/sentinel/quantum/security/UnifiedCommunicationRiskTest.kt`
-
-**Interfaces:**
-- Consumes: `SmsLinkAnalyzer.Analysis?`, `PhoneRiskCard.Card?`
-- Produces: `UnifiedCommunicationRisk.Assessment` with `level`, `smsLevel`, `reputationBand`, `reasons`.
 
 - [x] Write tests proving max-severity composition, UNKNOWN preservation, and independent reasons.
 - [x] Implement the minimal pure evaluator.
@@ -53,10 +51,6 @@
 - Create: `native-android-app/app/src/main/java/com/sentinel/quantum/security/SharedPreferencesCommunicationReputationStorage.kt`
 - Test: `native-android-app/app/src/test/java/com/sentinel/quantum/security/CommunicationReputationCacheContractTest.kt`
 - Instrumentation: `native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/CommunicationReputationStorageInstrumentationTest.kt`
-
-**Interfaces:**
-- Consumes: normalized phone input plus bounded `CallerReputationClient.Result` fields.
-- Produces: fresh `Entry?` containing score, categories, signals, observedAtMs and ttlMs.
 
 - [x] Cover expiry, malformed timestamps, bounded values and no raw-number persistence.
 - [x] Reject future timestamps/non-positive TTL.
@@ -71,10 +65,6 @@
 - Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/CallerIdActivity.kt`
 - Test: `native-android-app/app/src/test/java/com/sentinel/quantum/CallerIdReputationPersistenceContractTest.kt`
 
-**Interfaces:**
-- Consumes: successful consented `CallerReputationClient.Result`.
-- Produces: local bounded cache entry after remote enrichment, off the main thread.
-
 - [x] Add source contract.
 - [x] Persist successful reputation only on the existing IO path.
 - [x] Commit.
@@ -85,10 +75,6 @@
 - Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsDeliverReceiver.kt`
 - Create: `native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingSmsRiskContext.kt`
 - Test: `native-android-app/app/src/test/java/com/sentinel/quantum/security/IncomingSmsRiskContextTest.kt`
-
-**Interfaces:**
-- Consumes: local SMS analysis plus fresh cached reputation for sender.
-- Produces: a unified local risk assessment and PII-free timeline signal `SMS_UNIFIED_RISK_HIGH` when meaningful.
 
 - [x] Prove cached caller reputation affects SMS context without network access.
 - [x] Read cache on the existing worker and build the pure assessment.
@@ -115,8 +101,20 @@
 
 - [x] Observe RED on head `2f94a455e836afbb56fc62f28f724a5ac982a30a`: 1117 tests, exactly one failure in `PhoneSecurityReputationPersistenceContractTest`.
 - [x] Persist the successful consented Phone Security lookup through `CommunicationReputationWriter` inside its existing `Dispatchers.IO` path.
-- [ ] Observe exact-head GREEN on the implementation head or a documentation-only descendant containing the same code.
+- [ ] Observe exact-head GREEN on the implementation head or a documentation/test-only descendant containing the same code.
 - [ ] Run final lint/build/instrumentation/emulation and required gates.
+
+### Task 7: Fail closed on consent revocation before final persistence
+
+**Files:**
+- Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/security/SharedPreferencesCommunicationReputationStorage.kt`
+- Instrumentation: `native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/CommunicationReputationStorageInstrumentationTest.kt`
+
+- [x] Add instrumentation setup that explicitly enables ENHANCED + caller reputation consent for persistence-positive tests.
+- [x] Add a behavioral test that revokes caller-reputation consent immediately before `cache.put(...)` and requires persistence to return false with no reputation entry committed.
+- [ ] Observe RED on the current ungated storage implementation.
+- [ ] Re-check `SettingsStore.callerReputationEnrichmentEnabled` and `ProtectionModePolicy.permitsCallerNumberEnrichment(...)` at the final storage `put` boundary.
+- [ ] Observe instrumentation GREEN.
 
 ## Producer Audit
 
@@ -124,13 +122,9 @@ Production uses of `CallerReputationClient` found by the repository audit are:
 
 - `CallerIdActivity` — wired to shared cache;
 - `SentinelDialerActivity` — wired to shared cache;
-- `PhoneSecurityScreen` — wired to shared cache on current implementation head.
+- `PhoneSecurityScreen` — wired to shared cache.
 
 No remote reputation lookup is introduced into CallScreening or SMS delivery.
-
-## Remaining Privacy Review
-
-A stricter follow-up should verify post-response persistence when consent is revoked while an already-authorized HTTP request is in flight. The dynamic egress gate already prevents a request from starting/continuing past its pre-send gate, and SMS consumption rechecks current consent, but persistence after the HTTP response should also be explicitly fail-closed before this slice is considered complete.
 
 ## Final Validation
 
