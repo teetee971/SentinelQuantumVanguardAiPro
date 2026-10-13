@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
+// RED gate: production Intelligence Core contracts are intentionally absent at this commit.
 class IntelligenceContractsTest {
     @Test
     fun phone_identity_key_is_versioned_and_never_raw_number_namespace() {
