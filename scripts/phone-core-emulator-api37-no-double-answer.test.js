@@ -218,3 +218,19 @@ test('runtime APK installation is bounded so a wedged ADB transport cannot consu
     'runtime APK installation must never run unbounded'
   );
 });
+
+test('API 24 ADB recovery bounds both transport and package probes', () => {
+  const recovery = blockBetween(
+    instrumentationWorkflowSource,
+    '# Modern adb defaults to streamed package installation',
+    '            INSTRUMENTATION_RUNNER='
+  );
+  const boundedWait = 'timeout --signal=TERM --kill-after=5s 45s adb wait-for-device';
+  assert.equal(recovery.split(boundedWait).length - 1, 2, 'both install recoveries must bound device reconnect');
+  assert.doesNotMatch(recovery, /^\s*adb wait-for-device\s*$/m);
+  for (const pkg of ['com.sentinel.quantum', 'com.sentinel.quantum.test']) {
+    const boundedProbe = 'timeout --signal=TERM --kill-after=5s 20s adb shell pm path ' + pkg + ' |';
+    assert.equal(recovery.split(boundedProbe).length - 1, 2, pkg + ' must have bounded recovery and final probes');
+  }
+  assert.doesNotMatch(recovery, /^\s*adb shell pm path /m);
+});

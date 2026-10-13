@@ -205,30 +205,30 @@ jobs:
             # attempt hard-bounded, verify whether the package landed, and retry once at most.
             if ! timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APP_APK"; then
               echo "Android API 24 app APK non-streaming install exceeded its first 120s attempt; checking device state before one bounded retry."
-              adb wait-for-device
-              if ! adb shell pm path com.sentinel.quantum | tr -d '\r' | grep -q '^package:'; then
+              timeout --signal=TERM --kill-after=5s 45s adb wait-for-device
+              if ! timeout --signal=TERM --kill-after=5s 20s adb shell pm path com.sentinel.quantum | tr -d '\r' | grep -q '^package:'; then
                 sleep 10
                 timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APP_APK"
               else
                 echo "Android API 24 app package is present despite the host-side install timeout."
               fi
             fi
-            if ! adb shell pm path com.sentinel.quantum | tr -d '\r' | grep -q '^package:'; then
+            if ! timeout --signal=TERM --kill-after=5s 20s adb shell pm path com.sentinel.quantum | tr -d '\r' | grep -q '^package:'; then
               echo "Android API 24 app package was not installed after bounded recovery."
               exit 1
             fi
 
             if ! timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$TEST_APK"; then
               echo "Android API 24 test APK non-streaming install exceeded its first 120s attempt; checking device state before one bounded retry."
-              adb wait-for-device
-              if ! adb shell pm path com.sentinel.quantum.test | tr -d '\r' | grep -q '^package:'; then
+              timeout --signal=TERM --kill-after=5s 45s adb wait-for-device
+              if ! timeout --signal=TERM --kill-after=5s 20s adb shell pm path com.sentinel.quantum.test | tr -d '\r' | grep -q '^package:'; then
                 sleep 10
                 timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$TEST_APK"
               else
                 echo "Android API 24 test package is present despite the host-side install timeout."
               fi
             fi
-            if ! adb shell pm path com.sentinel.quantum.test | tr -d '\r' | grep -q '^package:'; then
+            if ! timeout --signal=TERM --kill-after=5s 20s adb shell pm path com.sentinel.quantum.test | tr -d '\r' | grep -q '^package:'; then
               echo "Android API 24 test package was not installed after bounded recovery."
               exit 1
             fi
