@@ -101,7 +101,10 @@ internal object MmsDownloadRecovery {
         val journal = MmsDownloadRecoveryJournal(appContext)
         val record = journal.read(fileName) ?: return Outcome.TERMINAL
         if (nowMs < 0L || record.requestedAtMs > nowMs) return Outcome.RETRY
-        if (MmsDownloadRecoveryJournal.isExpired(record.requestedAtMs, nowMs)) {
+        if (
+            !allowQuarantine &&
+            MmsDownloadRecoveryJournal.isExpired(record.requestedAtMs, nowMs)
+        ) {
             MmsDownloadCoordinator.expire(appContext, fileName)
             return Outcome.TERMINAL
         }
