@@ -21,7 +21,7 @@ class CommunicationReputationCacheContractTest {
         val storage = FakeStorage()
         val cache = CommunicationReputationCache(storage)
 
-        assertFalse(cache.put("123", freshEntry()))
+        assertFalse(cache.put("123", freshEntry(), nowMs = 1_100L))
         assertTrue(storage.values.isEmpty())
         assertNull(CommunicationReputationCache.cacheKeyFor("123"))
     }
@@ -32,7 +32,7 @@ class CommunicationReputationCacheContractTest {
         val raw = "06 12 34 56 78"
         val canonical = "+33612345678"
 
-        assertTrue(cache.put(raw, freshEntry()))
+        assertTrue(cache.put(raw, freshEntry(), nowMs = 1_100L))
         val persisted = storage.values.entries.joinToString("\n") { "${it.key}=${it.value}" }
 
         assertFalse(persisted.contains(raw))
@@ -45,7 +45,7 @@ class CommunicationReputationCacheContractTest {
         val cache = CommunicationReputationCache(storage)
         val entry = freshEntry(categories = listOf("SPOOFING", "ROBOCALL"), signals = 7, riskScore = 88)
 
-        assertTrue(cache.put("+33612345678", entry))
+        assertTrue(cache.put("+33612345678", entry, nowMs = 1_100L))
         assertEquals(entry, cache.get("06 12 34 56 78", nowMs = 1_100L))
     }
 
@@ -53,7 +53,7 @@ class CommunicationReputationCacheContractTest {
         val storage = FakeStorage()
         val cache = CommunicationReputationCache(storage)
 
-        assertTrue(cache.put("+33612345678", freshEntry(observedAtMs = 1_000L, ttlMs = 100L)))
+        assertTrue(cache.put("+33612345678", freshEntry(observedAtMs = 1_000L, ttlMs = 100L), nowMs = 1_000L))
         assertNull(cache.get("+33612345678", nowMs = 1_101L))
         assertTrue(storage.values.isEmpty())
     }
@@ -72,9 +72,9 @@ class CommunicationReputationCacheContractTest {
         val storage = FakeStorage()
         val cache = CommunicationReputationCache(storage)
 
-        assertFalse(cache.put("+33612345678", freshEntry(riskScore = 101)))
-        assertFalse(cache.put("+33612345678", freshEntry(signals = -1)))
-        assertFalse(cache.put("+33612345678", freshEntry(categories = listOf("A".repeat(65)))))
+        assertFalse(cache.put("+33612345678", freshEntry(riskScore = 101), nowMs = 1_100L))
+        assertFalse(cache.put("+33612345678", freshEntry(signals = -1), nowMs = 1_100L))
+        assertFalse(cache.put("+33612345678", freshEntry(categories = listOf("A".repeat(65))), nowMs = 1_100L))
         assertTrue(storage.values.isEmpty())
     }
 
