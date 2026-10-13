@@ -77,6 +77,19 @@ class SmsMmsIngressDedupContractTest {
         assertTrue(enumeration > failClosed)
     }
 
+    @Test fun recoveryJournalCapacityUsesProcessWideLock() {
+        val source = sourceFile("MmsDownloadRecoveryJournal.kt").readText()
+        val sharedLock = source.indexOf("private val LOCK = Any()")
+        val recordMethod = source.indexOf("fun record(")
+        val nextMethod = source.indexOf("fun read(", startIndex = recordMethod)
+        val recordLock = source.indexOf("synchronized(LOCK)", startIndex = recordMethod)
+
+        assertTrue(sharedLock >= 0)
+        assertTrue(recordMethod >= 0)
+        assertTrue(nextMethod > recordMethod)
+        assertTrue(recordLock in recordMethod until nextMethod)
+    }
+
     private fun sourceFile(name: String): File {
         val candidates = listOf(
             File("src/main/java/com/sentinel/quantum/security/$name"),
