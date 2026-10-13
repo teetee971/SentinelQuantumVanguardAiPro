@@ -115,7 +115,7 @@
 
 - [x] Observe RED on head `2f94a455e836afbb56fc62f28f724a5ac982a30a`: 1117 tests, exactly one failure in `PhoneSecurityReputationPersistenceContractTest`.
 - [x] Persist the successful consented Phone Security lookup through `CommunicationReputationWriter` inside its existing `Dispatchers.IO` path.
-- [ ] Observe exact-head GREEN on the implementation head.
+- [ ] Observe exact-head GREEN on the implementation head or a documentation-only descendant containing the same code.
 - [ ] Run final lint/build/instrumentation/emulation and required gates.
 
 ## Producer Audit
@@ -131,3 +131,7 @@ No remote reputation lookup is introduced into CallScreening or SMS delivery.
 ## Remaining Privacy Review
 
 A stricter follow-up should verify post-response persistence when consent is revoked while an already-authorized HTTP request is in flight. The dynamic egress gate already prevents a request from starting/continuing past its pre-send gate, and SMS consumption rechecks current consent, but persistence after the HTTP response should also be explicitly fail-closed before this slice is considered complete.
+
+## Final Validation
+
+The branch remains fail-closed until the current exact head passes unit tests, lint, build/APK checks, Android instrumentation, Phone Core emulation and the repository/security gates required by the PR. Historical green checks on superseded heads are evidence for those exact heads only and are not promoted to a current-head readiness claim.
