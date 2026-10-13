@@ -2,9 +2,6 @@ package com.sentinel.quantum.intelligence
 
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.util.Base64
 
 /**
  * Small app-private persistence boundary for already-sanitized intelligence evidence.
@@ -78,19 +75,35 @@ class IntelligenceSnapshotStore(
         }
         runCatching {
             temp.writeText(payload, StandardCharsets.UTF_8)
-            try {
-                Files.move(
-                    temp.toPath(),
-                    target.toPath(),
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING
-                )
-            } catch (_: Exception) {
-                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
+            replaceFromTemp(temp, target)
         }.onFailure {
             temp.delete()
         }
+    }
+
+    private fun replaceFromTemp(temp: File, target: File) {
+        val backup = File(directory, "$FILE_NAME.bak")
+        if (backup.exists() && !backup.delete()) {
+            error("Unable to clear stale intelligence backup")
+        }
+
+        val hadTarget = target.exists()
+        if (hadTarget && !target.renameTo(backup)) {
+            error("Unable to stage previous intelligence store")
+        }
+
+        if (temp.renameTo(target)) {
+            backup.delete()
+            return
+        }
+
+        if (hadTarget) {
+            if (target.exists()) target.delete()
+            if (!backup.renameTo(target)) {
+                error("Unable to restore previous intelligence store")
+            }
+        }
+        error("Unable to replace intelligence store")
     }
 
     private fun encodeEvent(event: IntelligenceEvent): String {
@@ -251,8 +264,33 @@ class IntelligenceSnapshotStore(
 
     private fun nullable(value: String?): String = value?.let(::enc) ?: NULL
     private fun decodeNullable(value: String): String? = if (value == NULL) null else dec(value)
-    private fun enc(value: String): String = ENCODER.encodeToString(value.toByteArray(StandardCharsets.UTF_8))
-    private fun dec(value: String): String = String(DECODER.decode(value), StandardCharsets.UTF_8)
+
+    private fun enc(value: String): String {
+        val bytes = value.toByteArray(StandardCharsets.UTF_8)
+        val encoded = CharArray(bytes.size * 2)
+        var index = 0
+        for (byte in bytes) {
+            val valueInt = byte.toInt() and 0xff
+            encoded[index++] = HEX[valueInt ushr 4]
+            encoded[index++] = HEX[valueInt and 0x0f]
+        }
+        return String(encoded)
+    }
+
+    private fun dec(value: String): String {
+        require(value.length % 2 == 0) { "Invalid encoded string length" }
+        val decoded = ByteArray(value.length / 2)
+        var sourceIndex = 0
+        var targetIndex = 0
+        while (sourceIndex < value.length) {
+            val high = Character.digit(value[sourceIndex], 16)
+            val low = Character.digit(value[sourceIndex + 1], 16)
+            require(high >= 0 && low >= 0) { "Invalid encoded string" }
+            decoded[targetIndex++] = ((high shl 4) or low).toByte()
+            sourceIndex += 2
+        }
+        return String(decoded, StandardCharsets.UTF_8)
+    }
 
     companion object {
         const val FILE_NAME = "sentinel-intelligence-v1.store"
@@ -261,7 +299,6 @@ class IntelligenceSnapshotStore(
         private const val SEPARATOR = "|"
         private const val CATEGORY_SEPARATOR = "\u001f"
         private const val BASE_FIELD_COUNT = 13
-        private val ENCODER = Base64.getUrlEncoder().withoutPadding()
-        private val DECODER = Base64.getUrlDecoder()
+        private const val HEX = "0123456789abcdef"
     }
 }
