@@ -78,6 +78,18 @@ class CommunicationReputationCacheContractTest {
         assertTrue(storage.values.isEmpty())
     }
 
+    @Test fun storageWriteFailureIsBoundedToFalse() {
+        val cache = CommunicationReputationCache(ThrowingStorage(throwOnPut = true))
+
+        assertFalse(cache.put("+33612345678", freshEntry(), nowMs = 1_100L))
+    }
+
+    @Test fun storageReadFailureIsBoundedToMissingEvidence() {
+        val cache = CommunicationReputationCache(ThrowingStorage(throwOnGet = true))
+
+        assertNull(cache.get("+33612345678", nowMs = 1_100L))
+    }
+
     private fun freshEntry(
         categories: List<String> = listOf("SPOOFING"),
         signals: Int = 3,
@@ -98,5 +110,21 @@ class CommunicationReputationCacheContractTest {
         override fun get(key: String): String? = values[key]
         override fun put(key: String, value: String) { values[key] = value }
         override fun remove(key: String) { values.remove(key) }
+    }
+
+    private class ThrowingStorage(
+        private val throwOnGet: Boolean = false,
+        private val throwOnPut: Boolean = false
+    ) : CommunicationReputationCache.Storage {
+        override fun get(key: String): String? {
+            if (throwOnGet) error("storage read failed")
+            return null
+        }
+
+        override fun put(key: String, value: String) {
+            if (throwOnPut) error("storage write failed")
+        }
+
+        override fun remove(key: String) = Unit
     }
 }
