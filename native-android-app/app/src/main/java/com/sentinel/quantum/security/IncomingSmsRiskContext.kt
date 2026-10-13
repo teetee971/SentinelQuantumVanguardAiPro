@@ -5,6 +5,8 @@ package com.sentinel.quantum.security
  * communication reputation for the same sender.
  *
  * This class performs no network access and never persists SMS content or the raw sender number.
+ * Cached remote-derived reputation is ignored when the current privacy/consent policy no longer
+ * permits its use.
  */
 class IncomingSmsRiskContext(
     private val cache: CommunicationReputationCache
@@ -12,20 +14,25 @@ class IncomingSmsRiskContext(
     fun assess(
         sender: String,
         sms: SmsLinkAnalyzer.Analysis?,
+        allowCachedReputation: Boolean = true,
         nowMs: Long = System.currentTimeMillis()
     ): UnifiedCommunicationRisk.Assessment {
-        val reputation = cache.get(sender, nowMs)?.let { entry ->
-            PhoneRiskCard.build(
-                PhoneRiskCard.Input(
-                    riskScore = entry.riskScore,
-                    communitySignals = entry.signals,
-                    categoryCodes = entry.categories,
-                    sourceLabel = SOURCE_LABEL,
-                    observedAtMs = entry.observedAtMs,
-                    ttlMs = entry.ttlMs
-                ),
-                nowMs = nowMs
-            )
+        val reputation = if (allowCachedReputation) {
+            cache.get(sender, nowMs)?.let { entry ->
+                PhoneRiskCard.build(
+                    PhoneRiskCard.Input(
+                        riskScore = entry.riskScore,
+                        communitySignals = entry.signals,
+                        categoryCodes = entry.categories,
+                        sourceLabel = SOURCE_LABEL,
+                        observedAtMs = entry.observedAtMs,
+                        ttlMs = entry.ttlMs
+                    ),
+                    nowMs = nowMs
+                )
+            }
+        } else {
+            null
         }
         return UnifiedCommunicationRisk.assess(sms = sms, reputation = reputation)
     }
