@@ -194,6 +194,42 @@ class CommunicationReputationStorageInstrumentationTest {
     }
 
     @Test
+    fun leavingEnhancedModePurgesPersistedReputationButKeepsInstallSecret() {
+        val cache = CommunicationReputationCache(
+            SharedPreferencesCommunicationReputationStorage(context)
+        )
+        assertTrue(
+            cache.put(
+                "+33612345678",
+                CommunicationReputationCache.Entry(
+                    riskScore = 86,
+                    categories = listOf("SCAM"),
+                    signals = 3,
+                    observedAtMs = 1_000L,
+                    ttlMs = 60_000L
+                ),
+                nowMs = 1_100L
+            )
+        )
+
+        val reputationPreferences = context.getSharedPreferences(
+            SharedPreferencesCommunicationReputationStorage.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        val keyPreferences = context.getSharedPreferences(
+            SharedPreferencesCommunicationReputationStorage.KEY_PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        assertTrue(reputationPreferences.all.isNotEmpty())
+        assertTrue(keyPreferences.all.isNotEmpty())
+
+        SettingsStore(context).protectionMode = ProtectionMode.LOCAL_ONLY
+
+        assertTrue(reputationPreferences.all.isEmpty())
+        assertTrue(keyPreferences.all.isNotEmpty())
+    }
+
+    @Test
     fun removeDeletesThePersistedOpaqueEntry() {
         val storage = SharedPreferencesCommunicationReputationStorage(context)
         val cache = CommunicationReputationCache(storage)
