@@ -3,6 +3,7 @@ package com.sentinel.quantum.data
 import com.sentinel.quantum.security.ProtectionMode
 import com.sentinel.quantum.security.FamilySafetyPolicy
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -28,6 +29,24 @@ class SentinelPreferencesBackupTest {
         assertEquals(FamilySafetyPolicy.Profile.ASSISTED, decoded?.familySafetyProfile)
         assertEquals(12, decoded?.osintRefreshIntervalHours)
         assertEquals(listOf("+590", "+33"), decoded?.blockedPrefixes)
+    }
+
+    @Test fun restoredBackupNeverReactivatesRemoteCallerReputationConsent() {
+        val raw = """{
+          "schema_version":1,
+          "theme_mode":"SYSTEM",
+          "protection_mode":"ENHANCED",
+          "family_safety_profile":"STANDARD",
+          "caller_reputation_enrichment_enabled":true,
+          "osint_refresh_interval_hours":0,
+          "osint_notifications_enabled":true,
+          "sms_notification_preview_enabled":false,
+          "blocked_prefixes":[]
+        }"""
+
+        assertFalse(
+            SentinelPreferencesBackup.decode(raw)?.callerReputationEnrichmentEnabled ?: true
+        )
     }
 
     @Test fun unsupportedSchemaFailsClosed() {
