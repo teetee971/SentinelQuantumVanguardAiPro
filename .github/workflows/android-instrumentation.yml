@@ -199,15 +199,16 @@ jobs:
             test -s "$APP_APK"
             test -s "$TEST_APK"
 
-            # API 24 package manager can outlive the host-side adb install response on
-            # cold emulators. Keep every install attempt hard-bounded, verify whether the
-            # package actually landed after a timeout, and retry once only when necessary.
-            if ! timeout --signal=TERM --kill-after=30s 120s adb install -r "$APP_APK"; then
-              echo "Android API 24 app APK install exceeded its first 120s attempt; checking device state before one bounded retry."
+            # Modern adb defaults to streamed package installation, which can stall against
+            # the Android 7.0 / API 24 package manager even while the emulator remains healthy.
+            # Force the legacy push + PackageManager transport for this lane only. Keep every
+            # attempt hard-bounded, verify whether the package landed, and retry once at most.
+            if ! timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APP_APK"; then
+              echo "Android API 24 app APK non-streaming install exceeded its first 120s attempt; checking device state before one bounded retry."
               adb wait-for-device
               if ! adb shell pm path com.sentinel.quantum | tr -d '\r' | grep -q '^package:'; then
                 sleep 10
-                timeout --signal=TERM --kill-after=30s 120s adb install -r "$APP_APK"
+                timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APP_APK"
               else
                 echo "Android API 24 app package is present despite the host-side install timeout."
               fi
@@ -217,12 +218,12 @@ jobs:
               exit 1
             fi
 
-            if ! timeout --signal=TERM --kill-after=30s 120s adb install -r "$TEST_APK"; then
-              echo "Android API 24 test APK install exceeded its first 120s attempt; checking device state before one bounded retry."
+            if ! timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$TEST_APK"; then
+              echo "Android API 24 test APK non-streaming install exceeded its first 120s attempt; checking device state before one bounded retry."
               adb wait-for-device
               if ! adb shell pm path com.sentinel.quantum.test | tr -d '\r' | grep -q '^package:'; then
                 sleep 10
-                timeout --signal=TERM --kill-after=30s 120s adb install -r "$TEST_APK"
+                timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$TEST_APK"
               else
                 echo "Android API 24 test package is present despite the host-side install timeout."
               fi
