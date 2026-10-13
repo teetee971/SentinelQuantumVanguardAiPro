@@ -186,6 +186,7 @@ class CommunicationReputationStorageInstrumentationTest {
         assertTrue(reputationPreferences.all.isNotEmpty())
         assertTrue(keyPreferences.all.isNotEmpty())
 
+        // Revocation must minimize retained remote-derived metadata, not just hide it from readers.
         SettingsStore(context).callerReputationEnrichmentEnabled = false
 
         assertTrue(reputationPreferences.all.isEmpty())
