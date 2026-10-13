@@ -105,7 +105,7 @@ internal object MmsDownloadRecovery {
             !allowQuarantine &&
             MmsDownloadRecoveryJournal.isExpired(record.requestedAtMs, nowMs)
         ) {
-            MmsDownloadCoordinator.expire(appContext, fileName)
+            MmsDownloadCoordinator.expireFromRecovery(appContext, fileName)
             return Outcome.TERMINAL
         }
 
@@ -207,7 +207,7 @@ internal object MmsDownloadRecovery {
                             else -> "MMS_DOWNLOAD_RECOVERED_PRIVATE_ONLY"
                         }
                     )
-                )
+                }
             }
         }
 
