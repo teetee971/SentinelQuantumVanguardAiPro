@@ -104,14 +104,15 @@ function fixture({ limited = false, hostAccepted = false } = {}) {
   }
 }
 
-test('API 37 exact incoming-answer emulator limitation produces LIMITED while later evidence remains required', () => {
+test('API 37 incoming-answer emulator limitation remains fail-closed for the required incoming-call gate', () => {
   const { result, report } = fixture({ limited: true });
-  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.status, 1);
   assert.equal(report.schema_version, 4);
-  assert.equal(report.result, 'LIMITED');
+  assert.equal(report.result, 'FAIL');
   assert.equal(report.checks.incoming_call_telecom_flow, false);
   assert.equal(report.checks.api37_incoming_answer_emulator_limitation, true);
   assert.deepEqual(report.limitations, ['api37_incoming_answer_transaction_failed']);
+  assert.ok(report.evidence_failures.includes('incoming_call_telecom_flow'));
   assert.equal(report.checks.outgoing_call_telecom_flow, true);
   assert.equal(report.checks.incoming_sms_and_inline_reply, true);
   assert.equal(report.physical_modem_claim, false);
