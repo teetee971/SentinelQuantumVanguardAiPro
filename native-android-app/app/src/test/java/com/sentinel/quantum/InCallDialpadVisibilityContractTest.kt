@@ -5,6 +5,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InCallDialpadVisibilityContractTest {
+    // Regression contract from physical S24+ validation: tapping Clavier must expose DTMF immediately.
     @Test
     fun activeDialpadTakesVisualPriorityBeforeCallerDetails() {
         val source = File(
