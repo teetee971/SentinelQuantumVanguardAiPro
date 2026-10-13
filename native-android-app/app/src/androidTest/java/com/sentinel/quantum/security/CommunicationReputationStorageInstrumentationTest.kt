@@ -22,6 +22,10 @@ class CommunicationReputationStorageInstrumentationTest {
             SharedPreferencesCommunicationReputationStorage.PREFS_NAME,
             Context.MODE_PRIVATE
         ).edit().clear().commit()
+        context.getSharedPreferences(
+            SharedPreferencesCommunicationReputationStorage.KEY_PREFS_NAME,
+            Context.MODE_PRIVATE
+        ).edit().clear().commit()
     }
 
     @Test
@@ -54,6 +58,32 @@ class CommunicationReputationStorageInstrumentationTest {
         ).get("+33612345678", nowMs = 1_100L)
         assertNotNull(restored)
         assertTrue(restored == entry)
+    }
+
+    @Test
+    fun persistedStorageKeyIsSecretDerivedNotBarePhoneDigest() {
+        val number = "+33612345678"
+        val cache = CommunicationReputationCache(
+            SharedPreferencesCommunicationReputationStorage(context)
+        )
+        val entry = CommunicationReputationCache.Entry(
+            riskScore = 80,
+            categories = listOf("ROBOCALL"),
+            signals = 2,
+            observedAtMs = 1_000L,
+            ttlMs = 60_000L
+        )
+
+        assertTrue(cache.put(number, entry, nowMs = 1_100L))
+
+        val bareDigestKey = CommunicationReputationCache.cacheKeyFor(number)!!
+        val preferences = context.getSharedPreferences(
+            SharedPreferencesCommunicationReputationStorage.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        assertTrue(preferences.all.keys.isNotEmpty())
+        assertFalse(preferences.all.keys.contains(bareDigestKey))
+        assertTrue(preferences.all.keys.all { it.startsWith("h1:") })
     }
 
     @Test
