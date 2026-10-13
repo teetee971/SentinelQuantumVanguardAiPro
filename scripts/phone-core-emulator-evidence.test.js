@@ -48,9 +48,10 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
 test('API 24 connected instrumentation bounds the Gradle build time', () => {
   const instrumentation = workflow.split('- name: Run connected instrumentation suite\n')[1];
   const api24Block = instrumentation.split('          else\n')[0];
+  const normalizedApi24Block = api24Block.replace(/\\\n\s+/g, ' ');
   assert.match(
-    api24Block,
-    /timeout 600s \.\/gradlew :app:assembleDebug :app:assembleDebugAndroidTest \\\n\s+--stacktrace --no-daemon/
+    normalizedApi24Block,
+    /timeout 600s \.\/gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon/
   );
 });
 
@@ -200,16 +201,17 @@ printf 'observable=%s\\n' "$SEND_SMS_PM_REVOCATION_OBSERVABLE"
 });
 
 test('runtime denial restored on app relaunch falls back to the AppOp proof', () => {
-  const start = revocation.indexOf('if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" == "true" ]]');
-  const end = revocation.indexOf('\n# ROLE_SMS revocation:', start);
-  assert.ok(start >= 0 && end > start);
-  const effectivePermissionBlock = revocation.slice(start, end);
+  const appOpProbe = shellFunction('use_send_sms_appop_probe');
   assert.match(
-    effectivePermissionBlock,
-    /if ! assert_send_sms_runtime_permission_denied "send-sms-runtime-permission-denied-after-launch\.txt"; then/
+    appOpProbe,
+    /if ! assert_send_sms_appop_denied "send-sms-appop-denied-after-launch\.txt"; then/
   );
-  assert.match(effectivePermissionBlock, /SEND_SMS_PM_REVOCATION_OBSERVABLE=false/);
-  assert.match(effectivePermissionBlock, /use_send_sms_appop_probe/);
+  assert.match(appOpProbe, /api37_role_controller_restored_send_sms_appop/);
+  assert.match(appOpProbe, /EFFECTIVE_PERMISSION_DENIAL_EMULATOR_LIMITED=true/);
+  const fallbackStart = revocation.indexOf('if [[ "$SEND_SMS_PM_REVOCATION_OBSERVABLE" != "true" ]]');
+  assert.ok(fallbackStart >= 0);
+  const fallbackBlock = revocation.slice(fallbackStart, revocation.indexOf('\nfi', fallbackStart) + 3);
+  assert.match(fallbackBlock, /use_send_sms_appop_probe/);
 });
 
 function fixture(overrides = {}, alter = () => {}) {
