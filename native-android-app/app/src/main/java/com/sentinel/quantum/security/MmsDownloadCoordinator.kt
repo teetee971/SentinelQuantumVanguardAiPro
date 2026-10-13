@@ -178,6 +178,21 @@ object MmsDownloadCoordinator {
             if (removed) releaseNotificationDedup(context, fileName)
         }
 
+    /**
+     * Called by a recovery worker that has crossed the retention deadline. It retires the cleanup
+     * sibling and durable metadata without cancelling the currently running recovery work itself.
+     */
+    internal fun expireFromRecovery(context: Context, fileName: String): Boolean =
+        deleteInternal(
+            context = context,
+            fileName = fileName,
+            cancelCleanup = true,
+            cancelRecovery = false,
+            removeRecoveryMetadata = true
+        ).also { removed ->
+            if (removed) releaseNotificationDedup(context, fileName)
+        }
+
     /** Called after durable private persistence/provider handling succeeded or terminal cleanup. */
     internal fun finishRecovery(
         context: Context,
