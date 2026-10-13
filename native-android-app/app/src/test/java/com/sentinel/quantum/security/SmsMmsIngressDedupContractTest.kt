@@ -18,13 +18,15 @@ class SmsMmsIngressDedupContractTest {
 
     @Test fun smsReplayCheckFailsClosedWhenProviderReturnsNullCursor() {
         val source = sourceFile("SentinelSmsDeliverReceiver.kt").readText()
-        val query = source.indexOf("context.contentResolver.query(")
-        val insert = source.indexOf("contentResolver.insert")
+        val method = source.indexOf("private fun hasExistingIncomingSms")
+        val methodEnd = source.indexOf("private fun holdsSmsRole", startIndex = method)
+        val query = source.indexOf("context.contentResolver.query(", startIndex = method)
         val nullCursorFailsClosed = source.indexOf("?: true", startIndex = query)
 
-        assertTrue(query >= 0)
-        assertTrue(insert > query)
-        assertTrue(nullCursorFailsClosed in query until insert)
+        assertTrue(method >= 0)
+        assertTrue(methodEnd > method)
+        assertTrue(query in method until methodEnd)
+        assertTrue(nullCursorFailsClosed in query until methodEnd)
     }
 
     @Test fun mmsNotificationDeduplicatesBeforeStagingFileCreation() {
