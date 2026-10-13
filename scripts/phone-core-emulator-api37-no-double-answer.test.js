@@ -158,29 +158,45 @@ test('API 24 instrumentation enforces a hard wall-clock timeout instead of a det
   assert.doesNotMatch(instrumentation, /INSTRUMENTATION_WATCHDOG_PID/);
 });
 
-test('API 24 APK installs are hard-bounded in both instrumentation workflows', () => {
-  for (const [name, source] of [
-    ['Phone Core qualification', workflowSource],
-    ['Android instrumentation', instrumentationWorkflowSource]
-  ]) {
-    const api24 = blockBetween(
-      source,
-      'if [[ "$API_LEVEL" == "24" ]]; then',
-      '          else\n            timeout --signal=INT --kill-after=30s 900s'
+test('API 24 APK installs are hard-bounded and Android instrumentation uses legacy non-streaming transport', () => {
+  const phoneCoreApi24 = blockBetween(
+    workflowSource,
+    'if [[ "$API_LEVEL" == "24" ]]; then',
+    '          else\n            timeout --signal=INT --kill-after=30s 900s'
+  );
+  const instrumentationApi24 = blockBetween(
+    instrumentationWorkflowSource,
+    'if [[ "$API_LEVEL" == "24" ]]; then',
+    '          else\n            timeout --signal=INT --kill-after=30s 900s'
+  );
+
+  for (const apkVariable of ['APP_APK', 'TEST_APK']) {
+    assert.match(
+      phoneCoreApi24,
+      new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
+      `Phone Core qualification must hard-bound ${apkVariable} installation`
+    );
+    assert.doesNotMatch(
+      phoneCoreApi24,
+      new RegExp(`\\n\\s*adb install -r "\\$${apkVariable}"`),
+      `Phone Core qualification must not leave ${apkVariable} installation unbounded`
     );
 
-    for (const apkVariable of ['APP_APK', 'TEST_APK']) {
-      assert.match(
-        api24,
-        new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
-        `${name} must hard-bound ${apkVariable} installation`
-      );
-      assert.doesNotMatch(
-        api24,
-        new RegExp(`\\n\\s*adb install -r "\\$${apkVariable}"`),
-        `${name} must not leave ${apkVariable} installation unbounded`
-      );
-    }
+    assert.match(
+      instrumentationApi24,
+      new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "\\$${apkVariable}"`),
+      `Android instrumentation must hard-bound ${apkVariable} installation and disable adb streaming on API 24`
+    );
+    assert.doesNotMatch(
+      instrumentationApi24,
+      new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
+      `Android instrumentation must not use the streaming install path for ${apkVariable} on API 24`
+    );
+    assert.doesNotMatch(
+      instrumentationApi24,
+      new RegExp(`\\n\\s*adb install(?: --no-streaming)? -r "\\$${apkVariable}"`),
+      `Android instrumentation must not leave ${apkVariable} installation unbounded`
+    );
   }
 });
 
