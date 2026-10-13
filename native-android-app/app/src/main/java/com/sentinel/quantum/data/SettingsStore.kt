@@ -48,7 +48,23 @@ class SettingsStore(context: Context) {
             ProtectionMode.LOCAL_ONLY
         }
         set(value) {
-            preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+            if (value == ProtectionMode.ENHANCED) {
+                preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+            } else {
+                check(
+                    preferences.edit().putString(PROTECTION_MODE, value.name).commit()
+                ) {
+                    "Unable to persist protection mode downgrade"
+                }
+                check(
+                    appContext.getSharedPreferences(
+                        COMMUNICATION_REPUTATION_PREFERENCES,
+                        Context.MODE_PRIVATE
+                    ).edit().clear().commit()
+                ) {
+                    "Unable to purge cached communication reputation"
+                }
+            }
         }
 
     /**
