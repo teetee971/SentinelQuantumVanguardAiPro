@@ -465,7 +465,7 @@ jobs:
           };
           const commonRequired = ['android_app_unit_tests','wearable_contract_unit_tests','wearable_security_unit_tests','android_lint','phone_number_canonicalization_contract','multi_sim_submit_readiness_contract',instrumentationKey,'all_static_navigation_surfaces_render','standalone_activity_surfaces_render','cold_install_and_relaunch','no_crash_or_anr'];
           const incomingRequirement = api === 37 && api37IncomingAnswerEmulatorLimitation ? ['api37_incoming_answer_emulator_limitation'] : ['incoming_call_telecom_flow'];
-          const effectivePermissionRequirement = api === 37 && api37EffectiveSmsDenialEmulatorLimitation ? ['api37_effective_sms_denial_emulator_limitation'] : ['effective_permission_denial_fail_closed'];
+          const effectivePermissionRequirement = ['effective_permission_denial_fail_closed'];
           const required = api === 24 ? [...commonRequired, 'min_sdk_cold_launch'] : [
             ...commonRequired,
             'phone_core_setup_resume',

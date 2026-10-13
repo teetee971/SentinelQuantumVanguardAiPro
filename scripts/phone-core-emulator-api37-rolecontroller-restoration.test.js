@@ -50,3 +50,12 @@ test('API 37 runtime evidence records the platform limitation but still requires
   assert.match(workflow, /api37_role_controller_restored_send_sms_appop/);
   assert.match(workflow, /result: evidenceFailures\.length > 0 \? 'FAIL' : limitations\.length > 0 \? 'LIMITED' : 'PASS'/);
 });
+
+test('API 37 limitation cannot replace required effective SMS-denial proof', () => {
+  const requirement = workflow.match(/const effectivePermissionRequirement = ([^\n]+);/);
+  assert.ok(requirement, 'effective SMS permission proof requirement must be declared');
+  assert.equal(requirement[1].trim(), "['effective_permission_denial_fail_closed']");
+  assert.match(workflow, /\.\.\.effectivePermissionRequirement,/);
+  assert.match(workflow, /const evidenceFailures = required\.filter\(\(name\) => checks\[name\] !== true\)/);
+  assert.match(workflow, /api37_effective_sms_denial_emulator_limitation/);
+});
