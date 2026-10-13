@@ -87,6 +87,38 @@ class CommunicationReputationStorageInstrumentationTest {
     }
 
     @Test
+    fun secretIsSeparatedFromReputationEntries() {
+        val cache = CommunicationReputationCache(
+            SharedPreferencesCommunicationReputationStorage(context)
+        )
+        assertTrue(
+            cache.put(
+                "+33612345678",
+                CommunicationReputationCache.Entry(
+                    riskScore = 65,
+                    categories = emptyList(),
+                    signals = 1,
+                    observedAtMs = 1_000L,
+                    ttlMs = 60_000L
+                ),
+                nowMs = 1_100L
+            )
+        )
+
+        val reputationPreferences = context.getSharedPreferences(
+            SharedPreferencesCommunicationReputationStorage.PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        val keyPreferences = context.getSharedPreferences(
+            SharedPreferencesCommunicationReputationStorage.KEY_PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        assertTrue(reputationPreferences.all.keys.all { it.startsWith("h1:") })
+        assertTrue(keyPreferences.all.isNotEmpty())
+        assertFalse(keyPreferences.all.keys.any { it.startsWith("h1:") })
+    }
+
+    @Test
     fun removeDeletesThePersistedOpaqueEntry() {
         val storage = SharedPreferencesCommunicationReputationStorage(context)
         val cache = CommunicationReputationCache(storage)
