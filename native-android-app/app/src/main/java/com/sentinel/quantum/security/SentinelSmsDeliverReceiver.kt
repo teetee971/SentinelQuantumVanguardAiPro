@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
+import com.sentinel.quantum.data.SettingsStore
 import java.util.concurrent.Executors
 
 /**
@@ -118,6 +119,9 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 }
             }
 
+            val settings = SettingsStore(context)
+            val allowCachedReputation = settings.callerReputationEnrichmentEnabled &&
+                ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
             val unifiedAssessment = runCatching {
                 IncomingSmsRiskContext(
                     CommunicationReputationCache(
@@ -126,6 +130,7 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 ).assess(
                     sender = address,
                     sms = smsAnalysis,
+                    allowCachedReputation = allowCachedReputation,
                     nowMs = receivedAt
                 )
             }.getOrNull()
