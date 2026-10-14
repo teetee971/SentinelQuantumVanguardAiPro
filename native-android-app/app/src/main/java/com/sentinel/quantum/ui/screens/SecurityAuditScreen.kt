@@ -15,9 +15,13 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SecurityAudit
+import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.presentation.DeviceAnalysisFacts
+import com.sentinel.quantum.ui.presentation.DeviceAnalysisLayerFacts
+import com.sentinel.quantum.ui.presentation.DeviceAnalysisPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,6 +35,34 @@ fun SecurityAuditScreen(navController: NavController) {
     val logger = remember { LocalLogger(context) }
     val securityAudit = remember { SecurityAudit(context, logger) }
     val scope = rememberCoroutineScope()
+
+    val analysisState = remember(auditResult, isLoading) {
+        val result = auditResult
+        DeviceAnalysisPresentation.from(
+            DeviceAnalysisFacts(
+                installation = when {
+                    isLoading -> DeviceAnalysisLayerFacts(running = true)
+                    result != null -> DeviceAnalysisLayerFacts(
+                        completed = true,
+                        healthyEvidence = true,
+                        findingCount = 0
+                    )
+                    else -> DeviceAnalysisLayerFacts()
+                },
+                permissions = when {
+                    isLoading -> DeviceAnalysisLayerFacts(running = true)
+                    result != null -> DeviceAnalysisLayerFacts(
+                        completed = true,
+                        healthyEvidence = result.warnings.isEmpty(),
+                        findingCount = result.warnings.size,
+                        criticalFindingCount = 0
+                    )
+                    else -> DeviceAnalysisLayerFacts()
+                },
+                applications = DeviceAnalysisLayerFacts(implemented = false)
+            )
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -58,6 +90,13 @@ fun SecurityAuditScreen(navController: NavController) {
                     "Observable" to SentinelD1.Cyan
                 )
             )
+
+            DeviceAnalysisStatusPanel(
+                state = analysisState,
+                title = "Contrôles locaux",
+                subtitle = "Installation et autorisations Android. Aucun scan antivirus complet n’est revendiqué."
+            )
+
             Button(
                 onClick = {
                     if (isLoading) return@Button
