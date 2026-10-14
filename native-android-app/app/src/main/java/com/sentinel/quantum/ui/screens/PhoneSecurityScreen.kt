@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
@@ -11,15 +13,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.VpnLock
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,6 +59,10 @@ import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
+import com.sentinel.quantum.ui.design.SentinelActionTile
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import kotlinx.coroutines.Dispatchers
@@ -115,6 +125,17 @@ fun PhoneSecurityScreen(navController: NavController) {
             phoneCoreFacts.smsRuntimePermissionsReady &&
             phoneCoreFacts.mmsPermissionsReady
     }
+    val protectionMotion = remember(context, postureEpoch) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
+    }
 
     Scaffold(
         topBar = {
@@ -133,10 +154,16 @@ fun PhoneSecurityScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ProtectionHero(
-                phoneCoreReady = phoneCoreReady,
-                callReady = callPrerequisitesReady,
-                smsReady = messagePrerequisitesReady
+            SentinelHeroVisual(
+                status = SentinelStatus.LIMITED,
+                title = "Protection de l’appareil",
+                subtitle = if (phoneCoreReady) {
+                    "Contrôles locaux disponibles · état global partiellement mesuré · validation physique distincte."
+                } else {
+                    "Contrôles locaux disponibles · Phone Core à configurer · état global partiellement mesuré."
+                },
+                modifier = Modifier.testTag("protection-command-center"),
+                motionLevel = protectionMotion
             )
 
             ElevatedCard(
@@ -195,24 +222,43 @@ fun PhoneSecurityScreen(navController: NavController) {
             }
 
             SentinelSectionHeader(
-                title = "Fonctionnalités de protection",
-                subtitle = "Accès direct aux contrôles locaux sans masquer les prérequis manquants."
+                title = "Centre de contrôle",
+                subtitle = "Analyses locales et protections disponibles, sans transformer une heuristique en détection malware."
             )
+            SentinelActionTile(
+                title = "Audit local",
+                subtitle = "Vérifier l’installation et les autorisations Android avec des résultats observables.",
+                icon = Icons.Default.Security,
+                onClick = { navController.navigate(Screen.SecurityAudit.route) },
+                modifier = Modifier.testTag("protection-analysis-action")
+            )
+            SentinelActionTile(
+                title = "Applications & permissions",
+                subtitle = "Analyser les permissions sensibles. Un niveau de risque élevé n’est pas une preuve de malware.",
+                icon = Icons.Default.Apps,
+                onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                modifier = Modifier.testTag("protection-app-permissions-action")
+            )
+            SentinelActionTile(
+                title = "Réseau local",
+                subtitle = "Ouvrir les observations Wi‑Fi et réseau avec leurs limites Android explicites.",
+                icon = Icons.Default.Wifi,
+                onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                modifier = Modifier.testTag("protection-network-action")
+            )
+            SentinelActionTile(
+                title = "VPN Sentinel",
+                subtitle = "Configurer le tunnel défensif et consulter son état réel avant toute connexion.",
+                icon = Icons.Default.VpnLock,
+                onClick = { navController.navigate(Screen.Vpn.route) },
+                modifier = Modifier.testTag("protection-vpn-action")
+            )
+
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = { navController.navigate(Screen.DigitalExposure.route) },
                     modifier = Modifier.weight(1f)
                 ) { Text("Exposition numérique") }
-                OutlinedButton(
-                    onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
-                    modifier = Modifier.weight(1f)
-                ) { Text("Applications") }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
-                    modifier = Modifier.weight(1f)
-                ) { Text("Réseau local") }
                 OutlinedButton(
                     onClick = { navController.navigate(Screen.SmsScanner.route) },
                     modifier = Modifier.weight(1f)
