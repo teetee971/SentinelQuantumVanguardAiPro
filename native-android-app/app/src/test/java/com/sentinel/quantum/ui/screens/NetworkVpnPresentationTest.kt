@@ -16,6 +16,32 @@ class NetworkVpnPresentationTest {
     }
 
     @Test
+    fun `network summary stays truthful and is dominated by strongest observed risk`() {
+        assertEquals(
+            SentinelStatus.UNKNOWN,
+            NetworkVpnPresentation.aggregateNetworkStatus(emptyList())
+        )
+        assertEquals(
+            SentinelStatus.UNKNOWN,
+            NetworkVpnPresentation.aggregateNetworkStatus(
+                listOf(NetworkRiskLevel.LOW, NetworkRiskLevel.LOW)
+            )
+        )
+        assertEquals(
+            SentinelStatus.WARN,
+            NetworkVpnPresentation.aggregateNetworkStatus(
+                listOf(NetworkRiskLevel.LOW, NetworkRiskLevel.MEDIUM)
+            )
+        )
+        assertEquals(
+            SentinelStatus.BAD,
+            NetworkVpnPresentation.aggregateNetworkStatus(
+                listOf(NetworkRiskLevel.LOW, NetworkRiskLevel.MEDIUM, NetworkRiskLevel.HIGH)
+            )
+        )
+    }
+
+    @Test
     fun `VPN is OK only after backend reports PROTECTED`() {
         SentinelVpnController.RuntimeState.entries.forEach { state ->
             val expected = when (state) {
