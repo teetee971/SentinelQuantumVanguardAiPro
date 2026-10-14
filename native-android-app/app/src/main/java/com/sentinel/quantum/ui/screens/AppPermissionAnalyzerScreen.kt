@@ -1,5 +1,7 @@
 package com.sentinel.quantum.ui.screens
 
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,11 +28,15 @@ import com.sentinel.quantum.data.PermissionRiskLabel
 import com.sentinel.quantum.data.PermissionRiskLevel
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
-import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.presentation.DeviceAnalysisFacts
 import com.sentinel.quantum.ui.presentation.DeviceAnalysisLayerFacts
 import com.sentinel.quantum.ui.presentation.DeviceAnalysisPresentation
+import com.sentinel.quantum.ui.presentation.PermissionRiskPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -39,6 +45,18 @@ import kotlinx.coroutines.withContext
 fun AppPermissionAnalyzerScreen(navController: NavController) {
     val context = LocalContext.current
     val analyzer = remember { AppPermissionAnalyzer(context.packageManager) }
+    val motionLevel = remember(context) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
+    }
+
     var profiles by remember { mutableStateOf<List<InstalledAppPermissionProfile>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -101,6 +119,18 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
         }
     }
 
+    val heroTitle = when {
+        isLoading -> "Analyse locale en cours"
+        errorMessage != null -> "Analyse locale limitée"
+        else -> "Contrôle des permissions"
+    }
+    val heroSubtitle = when {
+        isLoading -> "Sentinel inspecte localement les permissions déclarées par les applications visibles."
+        errorMessage != null -> "Le contrôle n’a pas produit de résultat exploitable. Aucun verdict de sécurité n’est déduit."
+        highRiskApps > 0 -> "$highRiskApps application(s) présentent une heuristique de permissions élevée. Cela ne prouve pas la présence d’un malware."
+        else -> "Le contrôle local n’observe pas d’heuristique élevée parmi les applications visibles. Cela ne constitue pas un scan antivirus."
+    }
+
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -110,68 +140,54 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
             )
         }
     ) { paddingValues ->
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.background),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            item {
+                SentinelHeroVisual(
+                    status = analysisState.overallStatus,
+                    title = heroTitle,
+                    subtitle = heroSubtitle,
+                    motionLevel = motionLevel
+                )
+            }
+
+            item {
+                DeviceAnalysisStatusPanel(
+                    state = analysisState,
+                    title = "Analyse des permissions applications",
+                    subtitle = "Heuristique locale des permissions déclarées. Ce contrôle n’est pas un scan antivirus."
+                )
+            }
+
             when {
-                isLoading -> Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    DeviceAnalysisStatusPanel(
-                        state = analysisState,
-                        title = "Analyse des permissions applications",
-                        subtitle = "Contrôle local des permissions déclarées. Ce contrôle n’est pas un scan antivirus."
-                    )
-                    CircularProgressIndicator()
+                isLoading -> item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 28.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-                errorMessage != null -> Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp)
-                ) {
-                    DeviceAnalysisStatusPanel(
-                        state = analysisState,
-                        title = "Analyse des permissions applications",
-                        subtitle = "Le contrôle local n’a pas pu produire de résultat exploitable."
-                    )
+
+                errorMessage != null -> item {
                     AnalyzerStateMessage(message = errorMessage.orEmpty())
                 }
-                profiles.isEmpty() -> Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp)
-                ) {
-                    DeviceAnalysisStatusPanel(
-                        state = analysisState,
-                        title = "Analyse des permissions applications",
-                        subtitle = "Contrôle terminé sur les applications visibles pour Sentinel."
-                    )
+
+                profiles.isEmpty() -> item {
                     AnalyzerStateMessage(message = "Aucune application installée visible pour l'analyse.")
                 }
-                else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    item {
-                        DeviceAnalysisStatusPanel(
-                            state = analysisState,
-                            title = "Analyse des permissions applications",
-                            subtitle = "Heuristique locale de permissions. Un niveau de risque élevé ne signifie pas qu’un malware a été détecté."
-                        )
-                    }
-                    item {
-                        PermissionSummaryCard(profiles)
-                    }
+
+                else -> {
+                    item { PermissionSummaryCard(profiles) }
+                    item { PermissionScopeCard() }
                     item {
                         OutlinedTextField(
                             value = query,
@@ -210,29 +226,37 @@ private fun PermissionSummaryCard(profiles: List<InstalledAppPermissionProfile>)
         profile.permissions.any { it.riskLevel == PermissionRiskLevel.HIGH_RISK }
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SentinelD1.Card)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Synthèse locale",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-            SummaryRow("Applications analysées", profiles.size.toString())
-            SummaryRow("Applications à risque de permissions élevé", highRiskApps.toString())
-            SummaryRow("Applications avec permissions sensibles", sensitiveApps.toString())
-            Text(
-                text = "Ces indicateurs décrivent des permissions déclarées ; ils ne constituent pas une détection de virus ou de malware.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Synthèse locale",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+        SummaryRow("Applications analysées", profiles.size.toString())
+        SummaryRow("Heuristiques de permissions élevées", highRiskApps.toString())
+        SummaryRow("Applications avec permissions sensibles", sensitiveApps.toString())
+        Text(
+            text = "Ces compteurs décrivent des permissions déclarées. Ils ne représentent ni des virus détectés, ni des malwares bloqués, ni des éléments placés en quarantaine.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun PermissionScopeCard() {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Portée du contrôle",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Sentinel analyse ici les permissions déclarées des applications visibles pour Android. Cette surface n’inspecte pas le contenu binaire d’une application et n’affirme pas détecter un malware à partir d’une permission seule.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -248,86 +272,61 @@ private fun SummaryRow(label: String, value: String) {
 private fun AppPermissionProfileCard(profile: InstalledAppPermissionProfile) {
     var expanded by rememberSaveable(profile.packageName) { mutableStateOf(false) }
 
-    Card(
+    SentinelGlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clickable { expanded = !expanded }
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = profile.appName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = profile.packageName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                RiskBadge(profile.overallRisk)
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Réduire" else "Développer"
-                    )
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = profile.appName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = profile.packageName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-
-            Text(
-                text = "Score de permissions : ${profile.riskScore} · Permissions déclarées : ${profile.permissions.size}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (expanded) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-                PermissionGroups(profile.permissions)
+            IconButton(onClick = { expanded = !expanded }) {
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Réduire" else "Développer"
+                )
             }
+        }
+
+        PermissionRiskBadge(profile.overallRisk)
+
+        Text(
+            text = "Score heuristique de permissions : ${profile.riskScore} · Permissions déclarées : ${profile.permissions.size}",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        if (expanded) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+            PermissionGroups(profile.permissions)
         }
     }
 }
 
 @Composable
-private fun RiskBadge(risk: OverallPermissionRisk) {
-    val containerColor = when (risk) {
-        OverallPermissionRisk.CRITICAL -> MaterialTheme.colorScheme.error
-        OverallPermissionRisk.HIGH -> MaterialTheme.colorScheme.errorContainer
-        OverallPermissionRisk.MEDIUM -> MaterialTheme.colorScheme.secondary
-        OverallPermissionRisk.LOW -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    val contentColor = when (risk) {
-        OverallPermissionRisk.CRITICAL -> MaterialTheme.colorScheme.onError
-        OverallPermissionRisk.HIGH -> MaterialTheme.colorScheme.onErrorContainer
-        OverallPermissionRisk.MEDIUM -> MaterialTheme.colorScheme.onSecondary
-        OverallPermissionRisk.LOW -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Surface(color = containerColor, shape = MaterialTheme.shapes.small) {
-        Text(
-            text = risk.name,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor,
-            fontWeight = FontWeight.Bold
-        )
-    }
+private fun PermissionRiskBadge(risk: OverallPermissionRisk) {
+    SentinelStatusChip(
+        status = PermissionRiskPresentation.status(risk),
+        label = PermissionRiskPresentation.label(risk)
+    )
 }
 
 @Composable
@@ -342,9 +341,9 @@ private fun PermissionGroups(permissions: List<PermissionRiskLabel>) {
     }
 
     listOf(
-        PermissionRiskLevel.HIGH_RISK to "Risque élevé",
-        PermissionRiskLevel.MEDIUM_RISK to "Risque moyen",
-        PermissionRiskLevel.LOW_RISK to "Risque faible"
+        PermissionRiskLevel.HIGH_RISK to "Permissions à vigilance élevée",
+        PermissionRiskLevel.MEDIUM_RISK to "Permissions à vigilance intermédiaire",
+        PermissionRiskLevel.LOW_RISK to "Signaux faibles / non concluants"
     ).forEach { (riskLevel, title) ->
         val group = permissions.filter { it.riskLevel == riskLevel }
         if (group.isNotEmpty()) {
@@ -362,10 +361,11 @@ private fun PermissionGroups(permissions: List<PermissionRiskLabel>) {
 
 @Composable
 private fun AnalyzerStateMessage(message: String, modifier: Modifier = Modifier) {
-    Text(
-        text = message,
-        modifier = modifier.padding(16.dp),
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+    SentinelGlassCard(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
