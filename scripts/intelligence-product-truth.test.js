@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
   auditIntelligenceProductTruth,
   loadIntelligenceProductTruthSources
@@ -79,4 +80,11 @@ test('physical evidence collector rejects PII sources and automatic physical val
     const errors = auditPhysicalEvidenceCollector(`${safe}\n${forbidden}`);
     assert.ok(errors.length > 0, `expected rejection for ${forbidden}`);
   }
+});
+
+test('physical evidence collector has valid bash syntax', () => {
+  const result = spawnSync('bash', ['-n', 'scripts/phone-core-physical-evidence.sh'], {
+    encoding: 'utf8'
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
 });
