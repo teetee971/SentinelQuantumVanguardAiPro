@@ -15,6 +15,59 @@ class HomeSecurityPresentationTest {
     )
 
     @Test
+    fun unavailableAndroidRoleIsLimitedWhileAnAvailableMissingRoleIsRemediable() {
+        listOf(false, true).forEach { locked ->
+            val state = HomeSecurityPresentation.from(
+                HomeRuntimeFacts(
+                    healthy().copy(requiredRolesAvailable = false, locked = locked),
+                    healthy(), healthy(), healthy()
+                )
+            )
+            assertEquals(SentinelStatus.LIMITED, state.modules.first().status)
+            assertEquals("Rôle Android indisponible sur cet appareil", state.modules.first().detail)
+            assertEquals(SentinelStatus.LIMITED, state.overallStatus)
+            assertEquals("Phone Core · Rôle Android indisponible sur cet appareil", state.priorityMessage)
+        }
+        val remediable = HomeSecurityPresentation.from(
+            HomeRuntimeFacts(healthy().copy(locked = true), healthy(), healthy(), healthy())
+        )
+        assertEquals(SentinelStatus.LOCKED, remediable.modules.first().status)
+        assertEquals("Action, rôle ou permission requis", remediable.modules.first().detail)
+    }
+
+    @Test
+    fun componentHealthNeverInventsAnActivityHistoryOrAnEmptyHistoryClaim() {
+        listOf(
+            healthy(),
+            healthy().copy(evidenceObserved = false),
+            healthy().copy(condition = HomeCondition.DANGER),
+            healthy().copy(customerAvailable = false, locked = true)
+        ).forEach { facts ->
+            val state = HomeSecurityPresentation.from(HomeRuntimeFacts(facts, facts, facts, facts))
+            assertEquals(
+                "Activité récente indisponible : aucun historique d’événements fourni à l’accueil.",
+                state.activitySummary
+            )
+        }
+    }
+
+    @Test
+    fun unavailableCapabilityTakesPrecedenceOverAMissingRole() {
+        listOf(
+            healthy().copy(customerAvailable = false, locked = true),
+            healthy().copy(implemented = false, locked = true)
+        ).forEach { phoneCore ->
+            val state = HomeSecurityPresentation.from(
+                HomeRuntimeFacts(phoneCore, healthy(), healthy(), healthy())
+            )
+            assertEquals(SentinelStatus.LIMITED, state.modules.first().status)
+            assertEquals(SentinelStatus.LIMITED, state.overallStatus)
+            assertTrue(state.priorityMessage.contains(state.modules.first().detail))
+            assertNotEquals("Action, rôle ou permission requis", state.modules.first().detail)
+        }
+    }
+
+    @Test
     fun allExplicitlyHealthyComponentsCanProduceOverallOk() {
         val state = HomeSecurityPresentation.from(
             HomeRuntimeFacts(

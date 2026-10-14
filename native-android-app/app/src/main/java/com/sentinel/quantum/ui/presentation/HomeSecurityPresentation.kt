@@ -20,7 +20,8 @@ data class HomeComponentFacts(
     val customerAvailable: Boolean,
     val evidenceObserved: Boolean,
     val condition: HomeCondition = HomeCondition.HEALTHY,
-    val locked: Boolean = false
+    val locked: Boolean = false,
+    val requiredRolesAvailable: Boolean = true
 )
 
 data class HomeRuntimeFacts(
@@ -42,6 +43,7 @@ data class HomeSecurityUiState(
     val headline: String,
     val summary: String,
     val priorityMessage: String,
+    val activitySummary: String,
     val modules: List<HomeModulePresentation>
 )
 
@@ -59,6 +61,8 @@ object HomeSecurityPresentation {
             headline = headline(overall),
             summary = summary(overall),
             priorityMessage = priorityMessage(modules),
+            // Component posture is not an event history; Home currently has no event input.
+            activitySummary = "Activité récente indisponible : aucun historique d’événements fourni à l’accueil.",
             modules = modules
         )
     }
@@ -69,9 +73,10 @@ object HomeSecurityPresentation {
         facts: HomeComponentFacts
     ): HomeModulePresentation {
         val status = when {
-            facts.locked -> SentinelStatus.LOCKED
             !facts.implemented -> SentinelStatus.LIMITED
             !facts.customerAvailable -> SentinelStatus.LIMITED
+            !facts.requiredRolesAvailable -> SentinelStatus.LIMITED
+            facts.locked -> SentinelStatus.LOCKED
             !facts.evidenceObserved -> SentinelStatus.UNKNOWN
             facts.condition == HomeCondition.DANGER -> SentinelStatus.BAD
             facts.condition == HomeCondition.DEGRADED -> SentinelStatus.WARN
@@ -85,6 +90,7 @@ object HomeSecurityPresentation {
             SentinelStatus.LIMITED -> when {
                 !facts.implemented -> "Fonction non implémentée"
                 !facts.customerAvailable -> "Non disponible pour le client"
+                !facts.requiredRolesAvailable -> "Rôle Android indisponible sur cet appareil"
                 else -> "Capacité limitée"
             }
             SentinelStatus.LOCKED -> "Action, rôle ou permission requis"

@@ -83,6 +83,7 @@ import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.presentation.HomeComponentFacts
@@ -158,7 +159,10 @@ fun HomeScreen(navController: NavController) {
                     customerAvailable = phoneCapability?.availableAt() == true,
                     evidenceObserved = true,
                     condition = if (phoneCoreReady) HomeCondition.HEALTHY else HomeCondition.DEGRADED,
-                    locked = !phoneCoreFacts.dialerRoleHeld || !phoneCoreFacts.callScreeningRoleHeld
+                    locked = !phoneCoreFacts.dialerRoleHeld || !phoneCoreFacts.callScreeningRoleHeld ||
+                        !phoneCoreFacts.smsRoleHeld,
+                    requiredRolesAvailable = phoneCoreFacts.dialerRoleAvailable &&
+                        phoneCoreFacts.callScreeningRoleAvailable && phoneCoreFacts.smsRoleAvailable
                 ),
                 vpn = HomeComponentFacts(
                     implemented = vpnCapability?.implemented ?: false,
@@ -178,6 +182,7 @@ fun HomeScreen(navController: NavController) {
             )
         )
     }
+    val phoneCoreModule = homeState.modules.first { it.id == HomeModuleId.PHONE_CORE }
 
     val tools = homeTools(context, navController)
     val normalizedQuery = toolQuery.trim().lowercase(Locale.FRENCH)
@@ -207,6 +212,24 @@ fun HomeScreen(navController: NavController) {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SentinelActionTile(
+                title = when {
+                    phoneCoreModule.status == SentinelStatus.LIMITED -> "Examiner Phone Core"
+                    phoneCoreReady -> "Vérifier Phone Core"
+                    else -> "Continuer l’activation"
+                },
+                subtitle = when {
+                    phoneCoreModule.status == SentinelStatus.LIMITED -> phoneCoreModule.detail
+                    phoneCoreReady -> "$readyCount/8 étapes prêtes · validation physique distincte."
+                    else -> "$readyCount/8 étapes d’activation Android prêtes · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
+                },
+                icon = Icons.Default.Shield,
+                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_primary_action")
+            )
+
             SentinelHeroVisual(
                 status = homeState.overallStatus,
                 title = homeState.headline,
@@ -234,19 +257,10 @@ fun HomeScreen(navController: NavController) {
                 )
             }
 
-            SentinelActionTile(
-                title = if (phoneCoreReady) "Vérifier Phone Core" else "Continuer l’activation",
-                subtitle = if (phoneCoreReady) {
-                    "$readyCount/8 étapes prêtes · validation physique distincte."
-                } else {
-                    "$readyCount/8 étapes d’activation Android prêtes · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
-                },
-                icon = Icons.Default.Shield,
-                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_primary_action")
-            )
+            SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("home_activity_summary")) {
+                Text("Activité récente", style = MaterialTheme.typography.titleMedium)
+                Text(homeState.activitySummary, style = MaterialTheme.typography.bodySmall)
+            }
 
             OutlinedTextField(
                 value = toolQuery,
