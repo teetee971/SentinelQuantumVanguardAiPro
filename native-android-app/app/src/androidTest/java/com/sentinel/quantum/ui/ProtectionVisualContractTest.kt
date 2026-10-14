@@ -3,7 +3,6 @@ package com.sentinel.quantum.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -26,10 +25,10 @@ class ProtectionVisualContractTest {
         }
 
         composeRule.onNodeWithTag("protection-command-center").assertIsDisplayed()
-        composeRule.onNodeWithTag("protection-analysis-action").assertExists()
-        composeRule.onNodeWithTag("protection-app-permissions-action").assertExists()
-        composeRule.onNodeWithTag("protection-network-action").assertExists()
-        composeRule.onNodeWithTag("protection-vpn-action").assertExists()
+        composeRule.onNodeWithTag("protection-analysis-action").fetchSemanticsNode()
+        composeRule.onNodeWithTag("protection-app-permissions-action").fetchSemanticsNode()
+        composeRule.onNodeWithTag("protection-network-action").fetchSemanticsNode()
+        composeRule.onNodeWithTag("protection-vpn-action").fetchSemanticsNode()
     }
 
     @Test
@@ -45,10 +44,10 @@ class ProtectionVisualContractTest {
             }
         }
 
-        composeRule.onNodeWithTag("protection-command-center").assertExists()
-        composeRule.onNodeWithTag("protection-analysis-action").assertExists()
-        composeRule.onNodeWithTag("protection-app-permissions-action").assertExists()
-        composeRule.onNodeWithTag("protection-network-action").assertExists()
-        composeRule.onNodeWithTag("protection-vpn-action").assertExists()
+        composeRule.onNodeWithTag("protection-command-center").fetchSemanticsNode()
+        composeRule.onNodeWithTag("protection-analysis-action").fetchSemanticsNode()
+        composeRule.onNodeWithTag("protection-app-permissions-action").fetchSemanticsNode()
+        composeRule.onNodeWithTag("protection-network-action").fetchSemanticsNode()
+        composeRule.onNodeWithTag("protection-vpn-action").fetchSemanticsNode()
     }
 }
