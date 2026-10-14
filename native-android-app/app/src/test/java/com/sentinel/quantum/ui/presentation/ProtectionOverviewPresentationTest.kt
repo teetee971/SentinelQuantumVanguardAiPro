@@ -49,4 +49,20 @@ class ProtectionOverviewPresentationTest {
             )
         )
     }
+
+    @Test
+    fun readyPrerequisiteChannelIsLimitedNotOk() {
+        assertEquals(
+            SentinelStatus.LIMITED,
+            ProtectionOverviewPresentation.prerequisiteStatus(ready = true)
+        )
+    }
+
+    @Test
+    fun missingPrerequisiteChannelRequiresAttention() {
+        assertEquals(
+            SentinelStatus.WARN,
+            ProtectionOverviewPresentation.prerequisiteStatus(ready = false)
+        )
+    }
 }
