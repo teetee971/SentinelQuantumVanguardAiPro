@@ -1,5 +1,7 @@
 package com.sentinel.quantum.ui.screens
 
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,12 +18,16 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SecurityAudit
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.presentation.DeviceAnalysisFacts
 import com.sentinel.quantum.ui.presentation.DeviceAnalysisLayerFacts
 import com.sentinel.quantum.ui.presentation.DeviceAnalysisPresentation
+import com.sentinel.quantum.ui.presentation.SecurityAuditPermissionPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,6 +41,17 @@ fun SecurityAuditScreen(navController: NavController) {
     val logger = remember { LocalLogger(context) }
     val securityAudit = remember { SecurityAudit(context, logger) }
     val scope = rememberCoroutineScope()
+    val motionLevel = remember(context) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
+    }
 
     val analysisState = remember(auditResult, isLoading) {
         val result = auditResult
@@ -64,6 +81,19 @@ fun SecurityAuditScreen(navController: NavController) {
         )
     }
 
+    val heroTitle = when {
+        isLoading -> "Audit local en cours"
+        auditResult == null -> "Audit de configuration"
+        analysisState.overallStatus == SentinelStatus.OK -> "Contrôles locaux terminés"
+        else -> "Points de configuration à examiner"
+    }
+    val heroSubtitle = when {
+        isLoading -> "Sentinel vérifie l’installation et les autorisations Android accessibles à cette surface."
+        auditResult == null -> "Exécutez les contrôles locaux pour obtenir des résultats observables. Aucun scan antivirus complet n’est revendiqué."
+        auditResult?.warnings?.isNotEmpty() == true -> "Des avertissements de configuration ont été observés. Ils ne constituent pas, à eux seuls, une détection de malware."
+        else -> "Les contrôles exécutés n’ont pas produit d’avertissement de configuration. Cela ne prouve pas l’absence de malware."
+    }
+
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -81,14 +111,11 @@ fun SecurityAuditScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Audit",
-                title = stringResource(R.string.security_audit_heading),
-                body = stringResource(R.string.security_audit_description),
-                badges = listOf(
-                    "Local" to SentinelD1.Success,
-                    "Observable" to SentinelD1.Cyan
-                )
+            SentinelHeroVisual(
+                status = analysisState.overallStatus,
+                title = heroTitle,
+                subtitle = heroSubtitle,
+                motionLevel = motionLevel
             )
 
             DeviceAnalysisStatusPanel(
@@ -110,58 +137,87 @@ fun SecurityAuditScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading
-            ) { Text(if (isLoading) stringResource(R.string.security_audit_running) else stringResource(R.string.security_audit_run)) }
+            ) {
+                Text(
+                    if (isLoading) stringResource(R.string.security_audit_running)
+                    else stringResource(R.string.security_audit_run)
+                )
+            }
 
             auditResult?.let { result ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(stringResource(R.string.security_audit_results), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        HorizontalDivider()
-                        Text(stringResource(R.string.security_audit_version, result.appInfo.versionName))
-                        Text("Code de version : ${result.appInfo.versionCode}")
-                        Text(stringResource(R.string.security_audit_package, result.appInfo.packageName))
-                        HorizontalDivider()
-                        Text("Autorisations Android", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Text(
-                            "Cette vue distingue ce que vous avez accordé, ce qui reste à activer et ce qu’Android gère automatiquement. Le nom technique reste disponible en petit pour le diagnostic.",
+                            stringResource(R.string.security_audit_results),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SentinelStatusChip(status = analysisState.overallStatus)
+                    }
+                    HorizontalDivider()
+                    Text(stringResource(R.string.security_audit_version, result.appInfo.versionName))
+                    Text("Code de version : ${result.appInfo.versionCode}")
+                    Text(stringResource(R.string.security_audit_package, result.appInfo.packageName))
+                    HorizontalDivider()
+                    Text(
+                        "Autorisations Android",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        "Cette vue distingue ce que vous avez accordé, ce qui reste à activer et ce qu’Android gère automatiquement. Une autorisation manquante est un état de configuration, pas une preuve de compromission.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    val runtimeGranted = result.permissions.filter {
+                        it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && it.granted
+                    }
+                    val runtimeMissing = result.permissions.filter {
+                        it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && !it.granted
+                    }
+                    val automatic = result.permissions.filter {
+                        it.grantModel == SecurityAudit.PermissionGrantModel.INSTALL_TIME
+                    }
+                    val systemControlled = result.permissions.filter {
+                        it.grantModel == SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED
+                    }
+
+                    Text(
+                        "${runtimeGranted.size} accordée(s) · ${runtimeMissing.size} à activer · ${automatic.size} automatique(s)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    PermissionSection("À activer", runtimeMissing)
+                    PermissionSection("Accordées", runtimeGranted)
+                    PermissionSection("Automatiques", automatic)
+                    PermissionSection("Gérées par Android", systemControlled)
+
+                    if (result.warnings.isNotEmpty()) {
+                        HorizontalDivider()
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SentinelStatusChip(
+                                status = SentinelStatus.WARN,
+                                label = "${result.warnings.size} avertissement(s)"
+                            )
+                        }
+                        result.warnings.forEach { warning ->
+                            Text(
+                                "• $warning",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            "Ces avertissements décrivent des contrôles de configuration observables ; ils ne sont pas comptés comme des virus ou malwares détectés.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        val runtimeGranted = result.permissions.filter {
-                            it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && it.granted
-                        }
-                        val runtimeMissing = result.permissions.filter {
-                            it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && !it.granted
-                        }
-                        val automatic = result.permissions.filter {
-                            it.grantModel == SecurityAudit.PermissionGrantModel.INSTALL_TIME
-                        }
-                        val systemControlled = result.permissions.filter {
-                            it.grantModel == SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED
-                        }
-
-                        Text(
-                            "${runtimeGranted.size} accordée(s) · ${runtimeMissing.size} à activer · ${automatic.size} automatique(s)",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        PermissionSection("À activer", runtimeMissing)
-                        PermissionSection("Accordées", runtimeGranted)
-                        PermissionSection("Automatiques", automatic)
-                        PermissionSection("Gérées par Android", systemControlled)
-                        if (result.warnings.isNotEmpty()) {
-                            HorizontalDivider()
-                            Text(
-                                stringResource(R.string.security_audit_warnings, result.warnings.size),
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            result.warnings.forEach { warning ->
-                                Text("• $warning", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            }
-                        }
                     }
                 }
             }
@@ -205,23 +261,6 @@ fun PermissionItem(permission: SecurityAudit.PermissionStatus) {
             stringResource(R.string.security_audit_permission_system_controlled)
     }
 
-    val statusColor = when (permission.grantModel) {
-        SecurityAudit.PermissionGrantModel.INSTALL_TIME ->
-            if (permission.granted) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.error
-            }
-        SecurityAudit.PermissionGrantModel.RUNTIME_USER ->
-            if (permission.granted) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-        SecurityAudit.PermissionGrantModel.SYSTEM_CONTROLLED ->
-            MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -240,10 +279,12 @@ fun PermissionItem(permission: SecurityAudit.PermissionStatus) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Text(
-            text = statusText,
-            color = statusColor,
-            style = MaterialTheme.typography.bodySmall
+        SentinelStatusChip(
+            status = SecurityAuditPermissionPresentation.status(
+                permission.grantModel,
+                permission.granted
+            ),
+            label = statusText
         )
     }
 }
