@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
+import com.sentinel.quantum.data.SettingsStore
 import java.util.concurrent.Executors
 
 /**
@@ -118,6 +119,34 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 }
             }
 
+            val settings = SettingsStore(context)
+            val allowCachedReputation = settings.callerReputationEnrichmentEnabled &&
+                ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
+            val unifiedAssessment = runCatching {
+                IncomingSmsRiskContext(
+                    CommunicationReputationCache(
+                        SharedPreferencesCommunicationReputationStorage(context)
+                    )
+                ).assess(
+                    sender = address,
+                    sms = smsAnalysis,
+                    allowCachedReputation = allowCachedReputation,
+                    nowMs = receivedAt
+                )
+            }.getOrNull()
+            if (unifiedAssessment?.level == UnifiedCommunicationRisk.Level.HIGH) {
+                runCatching {
+                    PhonePrivateTimelineStore(context).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.SMS,
+                            timestampMs = receivedAt,
+                            direction = "INCOMING",
+                            signal = SIGNAL_SMS_UNIFIED_RISK_HIGH
+                        )
+                    )
+                }
+            }
+
             val notificationPosted = runCatching {
                 SmsNotificationHelper.notifyMessage(
                     context,
@@ -142,10 +171,13 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             val analysisSummary = smsAnalysis?.let {
                 "analyse locale=" + it.riskLevel.name + "; liens=" + it.linksInspected
             } ?: "analyse locale indisponible"
+            val unifiedSummary = unifiedAssessment?.let {
+                "; risque unifié=" + it.level.name + "; raisons=" + it.reasons.size
+            }.orEmpty()
             logger.log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
-                "SMS entrant enregistré; " + analysisSummary
+                "SMS entrant enregistré; " + analysisSummary + unifiedSummary
             )
         } else {
             logger.log(
@@ -162,6 +194,7 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
     private companion object {
         const val EXTRA_SUBSCRIPTION_INDEX = "android.telephony.extra.SUBSCRIPTION_INDEX"
         const val EXTRA_LEGACY_SUBSCRIPTION = "subscription"
+        const val SIGNAL_SMS_UNIFIED_RISK_HIGH = "SMS_UNIFIED_RISK_HIGH"
         val WORKER = Executors.newSingleThreadExecutor { task ->
             Thread(task, "sentinel-sms-deliver").apply { isDaemon = true }
         }

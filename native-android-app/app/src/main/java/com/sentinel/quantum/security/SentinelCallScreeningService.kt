@@ -10,6 +10,8 @@ import android.telecom.CallScreeningService
 import android.telecom.Connection
 import android.util.Log
 import com.sentinel.quantum.CallerIdActivity
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.PublishResult
 import java.util.concurrent.atomic.AtomicLong
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
@@ -144,6 +146,21 @@ class SentinelCallScreeningService : CallScreeningService() {
                     "CallScreening",
                     "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
                 )
+
+                when (IntelligenceCoreRuntime.publishCallDecision(appContext, decision, verificationCode)) {
+                    PublishResult.OVERFLOW -> logger.log(
+                        LocalLogger.LogLevel.WARNING,
+                        "CallScreening",
+                        "Intelligence Core saturé; la décision Android reste valide"
+                    )
+                    PublishResult.REJECTED -> logger.log(
+                        LocalLogger.LogLevel.WARNING,
+                        "CallScreening",
+                        "Intelligence Core indisponible; la décision Android reste valide"
+                    )
+                    PublishResult.ACCEPTED,
+                    PublishResult.DUPLICATE -> Unit
+                }
 
                 runCatching {
                     CallFilterLogStore.get(appContext).recordAsync(decision)
