@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -67,7 +66,7 @@ fun SentinelStatusChip(
     val shape = RoundedCornerShape(999.dp)
     Surface(
         modifier = modifier
-            .semantics { contentDescription = "État : $label" }
+            .semantics(mergeDescendants = true) { }
             .border(1.dp, accent.copy(alpha = 0.58f), shape),
         shape = shape,
         color = accent.copy(alpha = 0.15f),
