@@ -27,4 +27,13 @@ class PhoneDecisionJournalTest {
             now
         ))
     }
+
+    @Test fun clockSkewCheckIsOverflowSafeNearLongMaxValue() {
+        val now = Long.MAX_VALUE - 1_000L
+        val current = PhoneDecisionJournal.Entry(now, PhoneDecisionJournal.Action.ALLOW, "RULE", SentinelConfidence.UNKNOWN, "LOCAL", true)
+        assertEquals(now, PhoneDecisionJournal.sanitize(current, now)?.timestampMs)
+        assertEquals(Long.MAX_VALUE, PhoneDecisionJournal.sanitize(current.copy(timestampMs = Long.MAX_VALUE), now)?.timestampMs)
+        val tooFarFuture = now - 300_001L
+        assertNull(PhoneDecisionJournal.sanitize(current, tooFarFuture))
+    }
 }
