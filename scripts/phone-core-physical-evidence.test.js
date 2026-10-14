@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 
 const read = (path) => readFileSync(resolve(path), 'utf8');
 
+// This contract deliberately lands before the collector so CI must prove the RED state.
 test('physical evidence collector is privacy-bounded and never self-certifies release readiness', () => {
   const collector = read('scripts/phone-core-physical-evidence.sh');
 
