@@ -42,13 +42,17 @@ class CallScreeningIntelligenceBoundaryTest {
     }
 
     private fun callScreeningSource(): String {
-        val relative = "app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt"
+        val packagePath = "com/sentinel/quantum/security/SentinelCallScreeningService.kt"
         val candidates = listOf(
-            File(relative),
-            File("native-android-app/$relative")
+            File("src/main/java/$packagePath"),
+            File("app/src/main/java/$packagePath"),
+            File("native-android-app/app/src/main/java/$packagePath")
         )
         val source = candidates.firstOrNull(File::isFile)
-            ?: error("SentinelCallScreeningService.kt not found from ${File(".").absolutePath}")
+            ?: error(
+                "SentinelCallScreeningService.kt not found from ${File(".").absolutePath}; " +
+                    "checked ${candidates.joinToString { it.path }}"
+            )
         return source.readText()
     }
 }
