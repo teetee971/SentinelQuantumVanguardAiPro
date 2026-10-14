@@ -83,7 +83,6 @@ import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
-import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.presentation.HomeComponentFacts
@@ -238,9 +237,9 @@ fun HomeScreen(navController: NavController) {
             SentinelActionTile(
                 title = if (phoneCoreReady) "Vérifier Phone Core" else "Continuer l’activation",
                 subtitle = if (phoneCoreReady) {
-                    "Prérequis logiciels observés ; la validation physique reste distincte."
+                    "$readyCount/8 étapes prêtes · validation physique distincte."
                 } else {
-                    "$readyCount/8 prérequis observés · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
+                    "$readyCount/8 étapes d’activation Android prêtes · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
                 },
                 icon = Icons.Default.Shield,
                 onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
@@ -282,8 +281,22 @@ fun HomeScreen(navController: NavController) {
                     )
                 }
             } else if (normalizedQuery.isBlank() && !showAllTools) {
-                matchingTools.forEach { tool ->
-                    HomeToolTile(tool)
+                matchingTools.chunked(2).forEach { rowTools ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        rowTools.forEach { tool ->
+                            QuickToolCard(
+                                title = tool.title,
+                                subtitle = capabilitySubtitle(tool),
+                                icon = tool.icon,
+                                onClick = tool.onClick,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowTools.size == 1) Spacer(Modifier.weight(1f))
+                    }
                 }
             } else if (normalizedQuery.isNotBlank()) {
                 matchingTools.forEach { tool -> HomeToolTile(tool) }
@@ -345,6 +358,38 @@ private fun HomeModuleCard(
             }
             Spacer(Modifier.width(12.dp))
             SentinelStatusChip(module.status)
+        }
+    }
+}
+
+@Composable
+private fun QuickToolCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier
+            .heightIn(min = 142.dp)
+            .border(1.dp, SentinelD1.BorderStrong.copy(alpha = 0.72f), RoundedCornerShape(22.dp)),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card.copy(alpha = 0.92f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = SentinelD1.Cyan)
+            Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3
+            )
         }
     }
 }
