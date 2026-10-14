@@ -20,7 +20,7 @@ function shellFunction(name) {
   return revocation.slice(start, revocation.indexOf('\n}', start) + 2);
 }
 
-function fixture({ limited = false, hostAccepted = false } = {}) {
+function fixture({ limited = false, hostAccepted = false, contradictoryAppOp = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'sentinel-api37-limited-'));
   const output = join(root, 'evidence');
   mkdirSync(output, { recursive: true });
@@ -46,7 +46,12 @@ function fixture({ limited = false, hostAccepted = false } = {}) {
   put('phone-private-timeline-outgoing-sms_all_parts_sent.xml', 'SMS_ALL_PARTS_SENT');
   put('phone-private-timeline-outgoing-sms_all_parts_delivered.xml', 'SMS_ALL_PARTS_DELIVERED');
   if (!limited) put('phone-private-timeline-incoming-incall_active.xml', 'INCALL_ACTIVE');
-  put('send-sms-appop-denied-after-launch.txt', 'Uid mode: SEND_SMS: ignore\n');
+  put(
+    'send-sms-appop-denied-after-launch.txt',
+    contradictoryAppOp
+      ? 'Uid mode: SEND_SMS: ignore\nSEND_SMS: allow; time=+1s\n'
+      : 'Uid mode: SEND_SMS: ignore\n'
+  );
   put('revocation-summary.json', JSON.stringify({
     schema_version: 2,
     effective_permission_denial_fail_closed: true,
@@ -132,6 +137,14 @@ test('API 37 full causal ACTIVE evidence remains PASS rather than LIMITED', () =
   assert.equal(report.checks.incoming_call_telecom_flow, true);
   assert.equal(report.checks.api37_incoming_answer_emulator_limitation, false);
   assert.deepEqual(report.limitations, []);
+});
+
+test('API 37 qualification rejects contradictory SEND_SMS AppOp evidence even if summary claims success', () => {
+  const { result, report } = fixture({ contradictoryAppOp: true });
+  assert.equal(result.status, 1, 'contradictory effective-denial evidence must fail qualification');
+  assert.equal(report.result, 'FAIL');
+  assert.equal(report.checks.effective_permission_denial_fail_closed, false);
+  assert.ok(report.evidence_failures.includes('effective_permission_denial_fail_closed'));
 });
 
 test('API 37 host modem acceptance cannot be certified as a limited app-answer observation', () => {
