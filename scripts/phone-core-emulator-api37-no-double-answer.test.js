@@ -184,7 +184,7 @@ test('API 24 APK installs are hard-bounded in both instrumentation workflows', (
   }
 });
 
-test('runtime APK installation is bounded so a wedged ADB transport cannot consume the whole emulator job', () => {
+test('runtime APK installation is directly non-streaming and bounded so a wedged ADB transport cannot consume the whole emulator job', () => {
   const runtime = blockBetween(
     workflowSource,
     '      - name: Run emulator application/runtime qualification',
@@ -193,12 +193,12 @@ test('runtime APK installation is bounded so a wedged ADB transport cannot consu
 
   assert.match(
     runtime,
-    /timeout --signal=TERM --kill-after=30s 120s adb install -r "\$APK_PATH"/,
-    'runtime APK installation must have its own hard foreground timeout'
+    /timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "\$APK_PATH"/,
+    'runtime APK installation must pass --no-streaming directly under its hard foreground timeout'
   );
   assert.doesNotMatch(
     runtime,
-    /\n\s*adb install -r "\$APK_PATH"/,
+    /\n\s*adb install(?: --no-streaming)? -r "\$APK_PATH"/,
     'runtime APK installation must never run unbounded'
   );
 });

@@ -288,8 +288,6 @@ jobs:
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
-            # Android 7/API 24 can wedge PackageManagerService while ADB streams an APK.
-            # Force legacy push-then-install semantics without weakening the 120s watchdogs.
             timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APP_APK"
             timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$TEST_APK"
             INSTRUMENTATION_RUNNER="$(
@@ -358,9 +356,12 @@ jobs:
           test -n "$APK_PATH"
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
-          # Runtime evidence starts from a freshly installed, freshly cleared app scope.
-          # Use push-then-install transport under a hard watchdog to avoid ADB streaming
-          # deadlocks while preserving identical APK bytes/provenance on every matrix lane.
+          # Runtime evidence must start from a fresh app scope and fresh log buffer.
+          # A failed reset must not reuse instrumentation events as runtime evidence.
+          # UTP removes the app after connected tests on modern API lanes. Install
+          # the exact runtime APK before requiring a successful app-data reset.
+          # Android 7/API 24 can deadlock on modern ADB streamed installs. Pass
+          # --no-streaming directly because timeout invokes adb without shell functions.
           timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APK_PATH"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
