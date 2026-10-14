@@ -360,11 +360,19 @@ jobs:
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
           # the exact runtime APK before requiring a successful app-data reset.
+          # Android 7/API 24 can deadlock on modern ADB streamed installs. Keep the
+          # evidence command unchanged while routing only install through legacy-safe transport.
           if [[ "$API_LEVEL" == "24" ]]; then
-            timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APK_PATH"
-          else
-            timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
+            adb() {
+              if [[ "${1:-}" == "install" ]]; then
+                shift
+                command adb install --no-streaming "$@"
+              else
+                command adb "$@"
+              fi
+            }
           fi
+          timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
