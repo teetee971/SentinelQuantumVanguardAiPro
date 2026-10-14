@@ -52,18 +52,30 @@ object SentinelD1 {
 
 private data class StateVisual(val color: Color, val icon: ImageVector)
 
+private fun visualRoleColor(role: VisualRole): Color = when (role) {
+    VisualRole.SUCCESS -> SentinelD1.Success
+    VisualRole.ATTENTION -> SentinelD1.Warning
+    VisualRole.DANGER -> SentinelD1.Danger
+    VisualRole.NEUTRAL -> SentinelD1.Unknown
+    VisualRole.LIMITED -> SentinelD1.Warning
+    VisualRole.LOCKED -> SentinelD1.Unknown
+}
+
 @Composable
-private fun stateVisual(state: SentinelState): StateVisual = when (state) {
-    SentinelState.TO_CONFIGURE -> StateVisual(SentinelD1.Unknown, Icons.Default.Settings)
-    SentinelState.READY -> StateVisual(SentinelD1.Success, Icons.Default.CheckCircle)
-    SentinelState.TO_TEST -> StateVisual(SentinelD1.Cyan, Icons.Default.HourglassTop)
-    // Validation is a semantic success, not a second brand accent.
-    SentinelState.VALIDATED -> StateVisual(SentinelD1.Success, Icons.Default.Verified)
-    SentinelState.PARTIAL -> StateVisual(SentinelD1.Warning, Icons.Default.ErrorOutline)
-    SentinelState.DEGRADED -> StateVisual(SentinelD1.Warning, Icons.Default.HourglassTop)
-    SentinelState.BLOCKED -> StateVisual(SentinelD1.Danger, Icons.Default.Block)
-    SentinelState.UNKNOWN -> StateVisual(SentinelD1.Unknown, Icons.Default.HelpOutline)
-    SentinelState.UNAVAILABLE -> StateVisual(SentinelD1.Unknown, Icons.Default.Block)
+private fun stateVisual(state: SentinelState): StateVisual {
+    val color = visualRoleColor(state.toStatus().visual().role)
+    val icon = when (state) {
+        SentinelState.TO_CONFIGURE -> Icons.Default.Settings
+        SentinelState.READY -> Icons.Default.CheckCircle
+        SentinelState.TO_TEST -> Icons.Default.HourglassTop
+        SentinelState.VALIDATED -> Icons.Default.Verified
+        SentinelState.PARTIAL -> Icons.Default.ErrorOutline
+        SentinelState.DEGRADED -> Icons.Default.HourglassTop
+        SentinelState.BLOCKED -> Icons.Default.Block
+        SentinelState.UNKNOWN -> Icons.Default.HelpOutline
+        SentinelState.UNAVAILABLE -> Icons.Default.Block
+    }
+    return StateVisual(color, icon)
 }
 
 @Composable
@@ -111,7 +123,6 @@ fun SentinelStateChip(
         }
     }
 }
-
 
 @Composable
 fun SentinelEvidenceProgress(
