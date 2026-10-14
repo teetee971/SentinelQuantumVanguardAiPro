@@ -25,8 +25,12 @@ import com.sentinel.quantum.data.OverallPermissionRisk
 import com.sentinel.quantum.data.PermissionRiskLabel
 import com.sentinel.quantum.data.PermissionRiskLevel
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.presentation.DeviceAnalysisFacts
+import com.sentinel.quantum.ui.presentation.DeviceAnalysisLayerFacts
+import com.sentinel.quantum.ui.presentation.DeviceAnalysisPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -52,6 +56,37 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
         } finally {
             isLoading = false
         }
+    }
+
+    val highRiskApps = remember(profiles) {
+        profiles.count {
+            it.overallRisk == OverallPermissionRisk.CRITICAL || it.overallRisk == OverallPermissionRisk.HIGH
+        }
+    }
+    val sensitiveApps = remember(profiles) {
+        profiles.count { profile ->
+            profile.permissions.any { it.riskLevel == PermissionRiskLevel.HIGH_RISK }
+        }
+    }
+    val analysisState = remember(profiles, isLoading, errorMessage, highRiskApps, sensitiveApps) {
+        DeviceAnalysisPresentation.from(
+            DeviceAnalysisFacts(
+                installation = DeviceAnalysisLayerFacts(implemented = false),
+                permissions = DeviceAnalysisLayerFacts(implemented = false),
+                applications = when {
+                    isLoading -> DeviceAnalysisLayerFacts(running = true)
+                    errorMessage != null -> DeviceAnalysisLayerFacts(failed = true)
+                    else -> DeviceAnalysisLayerFacts(
+                        completed = true,
+                        healthyEvidence = true,
+                        findingCount = highRiskApps,
+                        // CRITICAL/HIGH here is a permission-risk heuristic, not malware evidence.
+                        criticalFindingCount = 0
+                    )
+                },
+                sensitivePermissionCount = sensitiveApps
+            )
+        )
     }
 
     val filteredProfiles = remember(profiles, query) {
@@ -82,20 +117,58 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
                 .background(MaterialTheme.colorScheme.background)
         ) {
             when {
-                isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                errorMessage != null -> AnalyzerStateMessage(
-                    message = errorMessage.orEmpty(),
-                    modifier = Modifier.align(Alignment.Center)
-                )
-                profiles.isEmpty() -> AnalyzerStateMessage(
-                    message = "Aucune application installée visible pour l'analyse.",
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                isLoading -> Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    DeviceAnalysisStatusPanel(
+                        state = analysisState,
+                        title = "Analyse des permissions applications",
+                        subtitle = "Contrôle local des permissions déclarées. Ce contrôle n’est pas un scan antivirus."
+                    )
+                    CircularProgressIndicator()
+                }
+                errorMessage != null -> Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+                    DeviceAnalysisStatusPanel(
+                        state = analysisState,
+                        title = "Analyse des permissions applications",
+                        subtitle = "Le contrôle local n’a pas pu produire de résultat exploitable."
+                    )
+                    AnalyzerStateMessage(message = errorMessage.orEmpty())
+                }
+                profiles.isEmpty() -> Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+                    DeviceAnalysisStatusPanel(
+                        state = analysisState,
+                        title = "Analyse des permissions applications",
+                        subtitle = "Contrôle terminé sur les applications visibles pour Sentinel."
+                    )
+                    AnalyzerStateMessage(message = "Aucune application installée visible pour l'analyse.")
+                }
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    item {
+                        DeviceAnalysisStatusPanel(
+                            state = analysisState,
+                            title = "Analyse des permissions applications",
+                            subtitle = "Heuristique locale de permissions. Un niveau de risque élevé ne signifie pas qu’un malware a été détecté."
+                        )
+                    }
                     item {
                         PermissionSummaryCard(profiles)
                     }
@@ -152,8 +225,13 @@ private fun PermissionSummaryCard(profiles: List<InstalledAppPermissionProfile>)
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
             SummaryRow("Applications analysées", profiles.size.toString())
-            SummaryRow("Applications à risque élevé", highRiskApps.toString())
+            SummaryRow("Applications à risque de permissions élevé", highRiskApps.toString())
             SummaryRow("Applications avec permissions sensibles", sensitiveApps.toString())
+            Text(
+                text = "Ces indicateurs décrivent des permissions déclarées ; ils ne constituent pas une détection de virus ou de malware.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -213,7 +291,7 @@ private fun AppPermissionProfileCard(profile: InstalledAppPermissionProfile) {
             }
 
             Text(
-                text = "Score : ${profile.riskScore} · Permissions déclarées : ${profile.permissions.size}",
+                text = "Score de permissions : ${profile.riskScore} · Permissions déclarées : ${profile.permissions.size}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
