@@ -680,15 +680,9 @@ private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady
 
 @Composable
 private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifier = Modifier) {
-    val container = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
-    val content = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-    Surface(modifier = modifier, shape = MaterialTheme.shapes.large, color = container) {
-        Text(
-            text = "$label · " + if (ready) "Prérequis prêts" else "À configurer",
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            color = content,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold
-        )
-    }
+    com.sentinel.quantum.ui.design.SentinelStatusChip(
+        status = ProtectionOverviewPresentation.prerequisiteStatus(ready),
+        modifier = modifier,
+        label = "$label · " + if (ready) "Prérequis prêts" else "À configurer"
+    )
 }
