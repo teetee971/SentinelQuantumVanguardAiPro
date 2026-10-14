@@ -9,9 +9,9 @@ Ce document décrit la configuration réellement présente dans `native-android-
 | Élément | Valeur | Source |
 |---|---:|---|
 | Android Gradle Plugin | 9.4.1 | `native-android-app/build.gradle` |
-| Kotlin / Compose plugin | 2.4.20 | `native-android-app/build.gradle` |
+| Kotlin / Compose plugin | 2.4.21 | `native-android-app/build.gradle` |
 | KSP | 2.3.12 | `native-android-app/build.gradle` |
-| Gradle wrapper | 9.8.0 | `gradle/wrapper/gradle-wrapper.properties` |
+| Gradle wrapper | 9.8.1 | `gradle/wrapper/gradle-wrapper.properties` |
 | JDK | 17 | `app/build.gradle` / CI |
 | compileSdk | 37 | `app/build.gradle` |
 | targetSdk | 36 | `app/build.gradle` |
