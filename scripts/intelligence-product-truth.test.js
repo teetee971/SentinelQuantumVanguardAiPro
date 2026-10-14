@@ -4,6 +4,7 @@ import {
   auditIntelligenceProductTruth,
   loadIntelligenceProductTruthSources
 } from './intelligence-product-truth.js';
+import { auditPhysicalEvidenceCollector } from './check-phone-core-physical-evidence.js';
 
 const source = () => loadIntelligenceProductTruthSources();
 
@@ -46,4 +47,36 @@ test('rejects a general snapshot being used as direct automatic blocking authori
   s.intelligenceRuntime += '\nfun autoBlock(snapshot: IntelligenceSnapshot) = snapshot.riskAssessment.enforcementAuthorized\n';
 
   assert.ok(auditIntelligenceProductTruth(s).some((error) => error.includes('automatic-blocking authority')));
+});
+
+test('physical evidence collector rejects PII sources and automatic physical validation', () => {
+  const safe = [
+    '#!/usr/bin/env bash',
+    'SOURCE_HEAD_SHA=test',
+    'APK_SHA256=test',
+    'adb shell getprop ro.build.fingerprint',
+    'adb shell dumpsys package com.sentinel.quantum',
+    'adb shell dumpsys role',
+    'adb shell dumpsys telecom',
+    'adb logcat -b crash -d',
+    'adb shell dumpsys batterystats',
+    'OBSERVED MISSING NOT_EXECUTED',
+    'physical-evidence.json',
+    'commercial_release_claim=false',
+  ].join('\n');
+  assert.deepEqual(auditPhysicalEvidenceCollector(safe), []);
+
+  for (const forbidden of [
+    'content://sms',
+    'content://mms',
+    'content://contacts',
+    'content://call_log',
+    'subscription_id',
+    'subscriber_id',
+    'physically_validated=true',
+    'commercial_release_claim=true',
+  ]) {
+    const errors = auditPhysicalEvidenceCollector(`${safe}\n${forbidden}`);
+    assert.ok(errors.length > 0, `expected rejection for ${forbidden}`);
+  }
 });
