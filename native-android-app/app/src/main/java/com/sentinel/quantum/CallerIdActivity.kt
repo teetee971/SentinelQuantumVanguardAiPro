@@ -48,6 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.intelligence.Freshness
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentation
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallerIdProvenance
@@ -350,6 +353,16 @@ private fun CallerCard(
     val localEvidence = CallerIdProvenance.localIdentity(name, organisation)
     val decisionEvidence = CallerIdProvenance.sentinelDecision(PhoneCoreFrenchLabels.reason(reason))
     val context = androidx.compose.ui.platform.LocalContext.current
+    val intelligencePresentation by produceState<IntelligenceSnapshotPresentation?>(
+        initialValue = null,
+        key1 = context,
+        key2 = number
+    ) {
+        value = withContext(Dispatchers.IO) {
+            IntelligenceCoreRuntime.snapshotForNumber(context.applicationContext, number)
+                ?.let { IntelligenceSnapshotPresentation.from(it) }
+        }
+    }
     val timelineSummary by produceState(
         initialValue = PhonePrivateTimeline.Summary(emptyList(), coordinatedCallSms = false),
         key1 = context
@@ -442,6 +455,11 @@ private fun CallerCard(
                 if (source.isNotBlank()) Fact("Source déclarée", source)
                 EvidenceFact(decisionEvidence)
             }
+        }
+        intelligencePresentation?.let { intelligencePresentation ->
+            IntelligenceSnapshotCard(
+                intelligencePresentation = intelligencePresentation
+            )
         }
         Card(
             colors = CardDefaults.cardColors(containerColor = SentinelD1.Card),
@@ -613,6 +631,60 @@ private fun CallerCard(
         }
         Spacer(Modifier.height(4.dp))
         Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Fermer la fiche") }
+    }
+}
+
+@Composable
+private fun IntelligenceSnapshotCard(
+    intelligencePresentation: IntelligenceSnapshotPresentation
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = SentinelD1.Card),
+        shape = RoundedCornerShape(18.dp)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Intelligence Sentinel locale", fontWeight = FontWeight.Bold)
+            Fact("Révision locale", intelligencePresentation.revision.toString())
+            Fact(
+                "Score indicatif partagé",
+                intelligencePresentation.riskScore?.let { "$it/100" } ?: "Non mesuré"
+            )
+            Fact(
+                "Fraîcheur",
+                when (intelligencePresentation.freshness) {
+                    Freshness.FRESH -> "À jour"
+                    Freshness.STALE -> "Expirée"
+                    Freshness.UNKNOWN -> "Non déterminée"
+                }
+            )
+            Fact("Preuves actives", intelligencePresentation.activeEvidenceCount.toString())
+            Fact("Preuves expirées", intelligencePresentation.staleEvidenceCount.toString())
+            if (intelligencePresentation.sources.isNotEmpty()) {
+                Fact(
+                    "Sources",
+                    intelligencePresentation.sources.joinToString(" · ") { it.name }
+                )
+            }
+            if (intelligencePresentation.evidenceStates.isNotEmpty()) {
+                Fact(
+                    "États de preuve",
+                    intelligencePresentation.evidenceStates.joinToString(" · ") { it.name }
+                )
+            }
+            if (intelligencePresentation.communityAggregatePresent) {
+                Text(
+                    "Des signaux communautaires sont présents comme contexte uniquement ; ils n’autorisent pas à eux seuls un blocage.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Text(
+                "Vue locale en lecture seule. Ces éléments n’altèrent pas la décision d’appel déjà rendue.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 
