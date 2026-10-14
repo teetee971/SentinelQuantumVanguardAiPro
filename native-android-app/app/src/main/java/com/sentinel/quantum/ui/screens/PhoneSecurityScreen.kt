@@ -36,6 +36,9 @@ import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.intelligence.Freshness
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentation
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CommunicationReputationCache
 import com.sentinel.quantum.security.CommunicationReputationWriter
@@ -74,6 +77,7 @@ fun PhoneSecurityScreen(navController: NavController) {
     var rtrResult by remember { mutableStateOf<RtrDirectoryClient.Result?>(null) }
     var pendingBlockConfirmation by remember { mutableStateOf(false) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
+    var intelligencePresentation by remember { mutableStateOf<IntelligenceSnapshotPresentation?>(null) }
     var postureEpoch by remember { mutableStateOf(0) }
     val hostActivity = context as? ComponentActivity
     DisposableEffect(hostActivity) {
@@ -223,7 +227,10 @@ fun PhoneSecurityScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = phoneNumber,
-                onValueChange = { phoneNumber = it.take(32) },
+                onValueChange = {
+                    phoneNumber = it.take(32)
+                    intelligencePresentation = null
+                },
                 label = { Text(stringResource(R.string.phone_security_label)) },
                 placeholder = { Text(stringResource(R.string.phone_security_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -242,6 +249,10 @@ fun PhoneSecurityScreen(navController: NavController) {
                         arcepStatus = "Recherche dans l’annuaire officiel…"
                         val candidate = phoneNumber
                         scope.launch {
+                            intelligencePresentation = withContext(Dispatchers.IO) {
+                                IntelligenceCoreRuntime.snapshotForNumber(context.applicationContext, candidate)
+                                    ?.let { IntelligenceSnapshotPresentation.from(it) }
+                            }
                             val isAustria = RtrDirectoryClient.normalize(candidate) != null
                             if (isAustria) {
                                 val lookup = withContext(Dispatchers.IO) { runCatching { RtrDirectoryClient().lookup(candidate) } }
@@ -398,10 +409,19 @@ fun PhoneSecurityScreen(navController: NavController) {
                             allocation.area?.let { Text("Zone : $it") }
                             allocation.holderId?.let { Text("Identifiant RTR : $it") }
                         }
-                        Text("Attribution réglementaire uniquement : elle ne prouve ni l’opérateur actuel, ni l’identité de l’appelant, ni une fraude.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Attribution réglementaire uniquement : elle ne prouve ni l’opérateur actuel, ni l’identité de l’appelant, ni une fraude.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+            }
+
+            intelligencePresentation?.let { intelligencePresentation ->
+                IntelligenceDiagnosticCard(
+                    intelligencePresentation = intelligencePresentation
+                )
             }
 
             if (remoteEnrichmentEnabled) {
@@ -528,6 +548,55 @@ fun PhoneSecurityScreen(navController: NavController) {
     }
 }
 
+@Composable
+private fun IntelligenceDiagnosticCard(
+    intelligencePresentation: IntelligenceSnapshotPresentation
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                "Intelligence Sentinel locale",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text("Révision locale : ${intelligencePresentation.revision}")
+            Text(
+                "Score indicatif partagé : " +
+                    (intelligencePresentation.riskScore?.let { "$it/100" } ?: "Non mesuré")
+            )
+            Text(
+                "Fraîcheur : " + when (intelligencePresentation.freshness) {
+                    Freshness.FRESH -> "À jour"
+                    Freshness.STALE -> "Expirée"
+                    Freshness.UNKNOWN -> "Non déterminée"
+                }
+            )
+            Text("Preuves actives : ${intelligencePresentation.activeEvidenceCount}")
+            Text("Preuves expirées : ${intelligencePresentation.staleEvidenceCount}")
+            if (intelligencePresentation.sources.isNotEmpty()) {
+                Text("Sources : " + intelligencePresentation.sources.joinToString(" · ") { it.name })
+            }
+            if (intelligencePresentation.evidenceStates.isNotEmpty()) {
+                Text("États de preuve : " + intelligencePresentation.evidenceStates.joinToString(" · ") { it.name })
+            }
+            if (intelligencePresentation.communityAggregatePresent) {
+                Text(
+                    "Des signaux communautaires sont présents comme contexte uniquement ; ils n’autorisent pas à eux seuls un blocage.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                "Vue diagnostique locale en lecture seule. Ces éléments ne déclenchent aucune action automatique.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 @Composable
 private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady: Boolean) {
@@ -554,7 +623,6 @@ private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady
         }
     }
 }
-
 
 @Composable
 private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifier = Modifier) {
