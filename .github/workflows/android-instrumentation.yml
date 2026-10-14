@@ -199,8 +199,10 @@ jobs:
             test -s "$APP_APK"
             test -s "$TEST_APK"
 
-            timeout --signal=TERM --kill-after=30s 120s adb install -r "$APP_APK"
-            timeout --signal=TERM --kill-after=30s 120s adb install -r "$TEST_APK"
+            # Android 7 package manager can wedge streamed installs on emulator transport.
+            # Keep both APK installs bounded and force legacy push-then-install semantics.
+            timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APP_APK"
+            timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$TEST_APK"
 
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
