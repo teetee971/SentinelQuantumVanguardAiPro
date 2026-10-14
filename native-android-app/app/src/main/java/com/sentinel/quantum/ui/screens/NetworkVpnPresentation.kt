@@ -19,6 +19,12 @@ object NetworkVpnPresentation {
         NetworkRiskLevel.LOW -> SentinelStatus.UNKNOWN
     }
 
+    fun aggregateNetworkStatus(levels: List<NetworkRiskLevel>): SentinelStatus {
+        if (levels.any { it == NetworkRiskLevel.HIGH }) return SentinelStatus.BAD
+        if (levels.any { it == NetworkRiskLevel.MEDIUM }) return SentinelStatus.WARN
+        return SentinelStatus.UNKNOWN
+    }
+
     fun vpnStatus(state: SentinelVpnController.RuntimeState): SentinelStatus = when (state) {
         SentinelVpnController.RuntimeState.READY_NO_GATEWAY -> SentinelStatus.LOCKED
         SentinelVpnController.RuntimeState.CONSENT_REQUIRED -> SentinelStatus.LIMITED
