@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { auditPhysicalEvidenceCollector } from './check-phone-core-physical-evidence.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -8,7 +9,8 @@ const SOURCE_PATHS = Object.freeze({
   callScreening: 'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt',
   screeningProjection: 'native-android-app/app/src/main/java/com/sentinel/quantum/intelligence/ScreeningProjection.kt',
   intelligenceStore: 'native-android-app/app/src/main/java/com/sentinel/quantum/intelligence/IntelligenceSnapshotStore.kt',
-  intelligenceRuntime: 'native-android-app/app/src/main/java/com/sentinel/quantum/intelligence/IntelligenceCoreRuntime.kt'
+  intelligenceRuntime: 'native-android-app/app/src/main/java/com/sentinel/quantum/intelligence/IntelligenceCoreRuntime.kt',
+  physicalEvidenceCollector: 'scripts/phone-core-physical-evidence.sh'
 });
 
 export function loadIntelligenceProductTruthSources(root = ROOT) {
@@ -26,7 +28,8 @@ export function auditIntelligenceProductTruth(sources) {
     callScreening = '',
     screeningProjection = '',
     intelligenceStore = '',
-    intelligenceRuntime = ''
+    intelligenceRuntime = '',
+    physicalEvidenceCollector = ''
   } = sources;
 
   const callbackStart = callScreening.indexOf('override fun onScreenCall');
@@ -68,6 +71,7 @@ export function auditIntelligenceProductTruth(sources) {
     errors.push('intelligence general snapshot must not become direct automatic-blocking authority');
   }
 
+  errors.push(...auditPhysicalEvidenceCollector(physicalEvidenceCollector));
   return errors;
 }
 
