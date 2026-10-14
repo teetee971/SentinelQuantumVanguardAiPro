@@ -6,11 +6,18 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const workflow = readFileSync(new URL('../.github/workflows/android-emulation-qualification.yml', import.meta.url), 'utf8');
+const revocation = readFileSync(new URL('./phone-core-emulator-revocation-flow.sh', import.meta.url), 'utf8');
 
 function reportCode() {
   const step = workflow.split('- name: Collect qualification evidence even after failure\n')[1];
   assert.ok(step, 'qualification evidence step must exist');
   return step.split("node <<'NODE'\n")[1].split('\n          NODE')[0];
+}
+
+function shellFunction(name) {
+  const start = revocation.indexOf(`${name}() {`);
+  assert.notEqual(start, -1, `missing shell function ${name}`);
+  return revocation.slice(start, revocation.indexOf('\n}', start) + 2);
 }
 
 function fixture({ limited = false, hostAccepted = false } = {}) {
@@ -133,4 +140,18 @@ test('API 37 host modem acceptance cannot be certified as a limited app-answer o
   assert.equal(report.result, 'FAIL');
   assert.equal(report.checks.api37_incoming_answer_emulator_limitation, false);
   assert.ok(report.evidence_failures.includes('incoming_call_telecom_flow'));
+});
+
+test('API 37 contradictory UID ignore plus package allow cannot certify SEND_SMS denial', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sentinel-api37-appop-contradiction-'));
+  try {
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nadb() {\n  if [[ "$*" == "shell appops get com.sentinel.quantum SEND_SMS" ]]; then\n    printf '%s\\n' 'Uid mode: SEND_SMS: ignore' 'SEND_SMS: allow; time=+1s'\n    return 0\n  fi\n  return 99\n}\n${shellFunction('assert_send_sms_appop_denied')}\nassert_send_sms_appop_denied contradictory.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', root], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0, 'contradictory AppOp evidence must remain fail-closed');
+    assert.match(result.stdout, /explicit allow/);
+    assert.match(readFileSync(join(root, 'contradictory.txt'), 'utf8'), /Uid mode: SEND_SMS: ignore/);
+    assert.match(readFileSync(join(root, 'contradictory.txt'), 'utf8'), /SEND_SMS: allow/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
