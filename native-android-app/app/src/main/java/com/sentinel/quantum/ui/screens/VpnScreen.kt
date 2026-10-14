@@ -91,6 +91,12 @@ fun VpnScreen(navController: NavController) {
                 SentinelStatusChip(status = runtimeStatus, label = "Passerelle absente")
                 Text(
                     text = "Client intégré",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = SentinelD1.Cyan,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Client WireGuard intégré",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
