@@ -7,7 +7,7 @@ import com.sentinel.quantum.ui.design.SentinelStatus
  *
  * Software prerequisites can require attention, but software readiness alone is not enough to
  * claim global device protection or physical Phone Core validation. Consequently this projection
- * never produces OK or BAD from these three prerequisite booleans alone.
+ * never produces OK or BAD from these prerequisite booleans alone.
  */
 object ProtectionOverviewPresentation {
     fun status(
@@ -25,4 +25,11 @@ object ProtectionOverviewPresentation {
             SentinelStatus.WARN
         }
     }
+
+    /**
+     * A single prerequisite channel being ready is still only software readiness.
+     * It must never be rendered as an operationally validated OK state.
+     */
+    fun prerequisiteStatus(ready: Boolean): SentinelStatus =
+        if (ready) SentinelStatus.LIMITED else SentinelStatus.WARN
 }
