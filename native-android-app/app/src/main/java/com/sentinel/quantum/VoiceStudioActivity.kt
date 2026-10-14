@@ -109,11 +109,11 @@ class VoiceStudioActivity : ComponentActivity() {
         }
         val commercialState = remember { VoiceAddonPolicy.currentState() }
         val pttGestureScope = rememberCoroutineScope()
-        val pttEnabled = sessionConnected && !sessionBusy
+        val pttEnabled = sessionConnected && !sessionBusy && sessionTechnicalStatus == null
         val pttAvailability = when {
-            sessionConnected -> "connecté"
             sessionTechnicalStatus != null -> "indisponible"
             sessionBusy -> "vérification en cours"
+            sessionConnected -> "connecté"
             else -> "à vérifier"
         }
 
@@ -432,7 +432,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                                 transmitting = false
                                                 val technical = pressResult.exceptionOrNull()?.message
                                                 sessionTechnicalStatus = technical.orEmpty().ifBlank { "PTT_PRESS_FAILED" }
-                                                sessionStatus = voiceSessionUserMessage(technical)
+                                                sessionStatus = "Impossible d’ouvrir le microphone PTT. Fermez la session puis réessayez."
                                                 return@launch
                                             }
 
@@ -448,7 +448,7 @@ class VoiceStudioActivity : ComponentActivity() {
                                                 } else {
                                                     val technical = releaseResult.exceptionOrNull()?.message
                                                     sessionTechnicalStatus = technical.orEmpty().ifBlank { "PTT_RELEASE_FAILED" }
-                                                    voiceSessionUserMessage(technical)
+                                                    "Erreur de fermeture du microphone PTT. Fermez la session pour réinitialiser."
                                                 }
                                             }
                                         }
