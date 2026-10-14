@@ -65,6 +65,7 @@ import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -125,6 +126,13 @@ fun PhoneSecurityScreen(navController: NavController) {
             phoneCoreFacts.smsRuntimePermissionsReady &&
             phoneCoreFacts.mmsPermissionsReady
     }
+    val protectionStatus = remember(phoneCoreReady, callPrerequisitesReady, messagePrerequisitesReady) {
+        ProtectionOverviewPresentation.status(
+            phoneCoreReady = phoneCoreReady,
+            callPrerequisitesReady = callPrerequisitesReady,
+            messagePrerequisitesReady = messagePrerequisitesReady
+        )
+    }
     val protectionMotion = remember(context, postureEpoch) {
         val animatorScale = runCatching {
             Settings.Global.getFloat(
@@ -155,12 +163,12 @@ fun PhoneSecurityScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SentinelHeroVisual(
-                status = SentinelStatus.LIMITED,
+                status = protectionStatus,
                 title = "Protection de l’appareil",
-                subtitle = if (phoneCoreReady) {
-                    "Contrôles locaux disponibles · état global partiellement mesuré · validation physique distincte."
+                subtitle = if (protectionStatus == SentinelStatus.LIMITED) {
+                    "Prérequis logiciels Phone Core prêts · état global partiellement mesuré · validation physique distincte."
                 } else {
-                    "Contrôles locaux disponibles · Phone Core à configurer · état global partiellement mesuré."
+                    "Prérequis Phone Core à finaliser · état global partiellement mesuré · validation physique distincte."
                 },
                 modifier = Modifier.testTag("protection-command-center"),
                 motionLevel = protectionMotion
