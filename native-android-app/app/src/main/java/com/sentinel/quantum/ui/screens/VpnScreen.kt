@@ -73,7 +73,7 @@ fun VpnScreen(navController: NavController) {
             SentinelHeroVisual(
                 status = runtimeStatus,
                 title = "Passerelle requise",
-                subtitle = "Client intégré · Passerelle absente. Service VPN public non opérationnel : aucune passerelle Sentinel disponible et validée.",
+                subtitle = "Service VPN public non opérationnel : aucune passerelle Sentinel disponible et validée.",
                 modifier = Modifier.testTag("vpn-command-center"),
                 motionLevel = motionLevel
             )
@@ -88,9 +88,9 @@ fun VpnScreen(navController: NavController) {
                     .fillMaxWidth()
                     .testTag("vpn-runtime-truth")
             ) {
-                SentinelStatusChip(status = runtimeStatus, label = "LOCKED · aucune passerelle")
+                SentinelStatusChip(status = runtimeStatus, label = "Passerelle absente")
                 Text(
-                    text = "Client WireGuard intégré",
+                    text = "Client intégré",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
