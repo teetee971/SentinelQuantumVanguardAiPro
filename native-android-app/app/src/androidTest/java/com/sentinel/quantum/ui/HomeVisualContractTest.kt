@@ -37,7 +37,6 @@ class HomeVisualContractTest {
             }
         }
 
-        composeRule.waitForIdle()
         composeRule.onNodeWithTag("home_primary_action")
             .assertIsDisplayed()
             .assertHasClickAction()
