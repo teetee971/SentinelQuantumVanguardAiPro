@@ -73,7 +73,7 @@ fun VpnScreen(navController: NavController) {
             SentinelHeroVisual(
                 status = runtimeStatus,
                 title = "Passerelle requise",
-                subtitle = "Le client WireGuard Sentinel est présent, mais aucune passerelle de sortie Sentinel validée n’est disponible. Aucun tunnel n’est présenté comme actif.",
+                subtitle = "Client intégré · Passerelle absente. Service VPN public non opérationnel : aucune passerelle Sentinel disponible et validée.",
                 modifier = Modifier.testTag("vpn-command-center"),
                 motionLevel = motionLevel
             )
@@ -98,6 +98,10 @@ fun VpnScreen(navController: NavController) {
                     text = "Le contrôleur Sentinel impose un tunnel complet IPv4 + IPv6, un DNS épinglé à la passerelle et le consentement VPN Android. La configuration sensible est effacée du buffer après validation.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Text(
+                    text = "Un état protégé exige un handshake WireGuard réellement établi et confirmé par le backend.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             SentinelSectionHeader(
@@ -114,6 +118,10 @@ fun VpnScreen(navController: NavController) {
                 )
                 Text(
                     text = "Une connexion ne peut démarrer qu’avec une passerelle marquée AVAILABLE par le catalogue/control plane Sentinel et disposant de DNS épinglés. Les états PLANNED, PROVISIONING, DRAINING, OFFLINE ou REVOKED restent verrouillés.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Une action de connexion ne sera affichée que lorsque toute la chaîne sera réellement vérifiable.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
