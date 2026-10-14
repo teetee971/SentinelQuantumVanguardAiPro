@@ -1,24 +1,68 @@
 package com.sentinel.quantum.ui.screens
 
+import android.content.Context
 import android.content.Intent
-import androidx.compose.ui.res.stringResource
-import com.sentinel.quantum.R
-import com.sentinel.quantum.security.GeneratedProductCapabilities
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.HomeWork
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.MarkChatUnread
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material.icons.filled.VpnLock
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -27,13 +71,27 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.PhoneCoreActivationActivity
 import com.sentinel.quantum.PhoneCoreRuntimeFacts
 import com.sentinel.quantum.PhoneCoreSetupWizardStore
+import com.sentinel.quantum.R
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.security.GeneratedProductCapabilities
+import com.sentinel.quantum.ui.design.MotionLevel
+import com.sentinel.quantum.ui.design.SentinelActionTile
 import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.presentation.HomeComponentFacts
+import com.sentinel.quantum.ui.presentation.HomeCondition
+import com.sentinel.quantum.ui.presentation.HomeModuleId
+import com.sentinel.quantum.ui.presentation.HomeModulePresentation
+import com.sentinel.quantum.ui.presentation.HomeRuntimeFacts
+import com.sentinel.quantum.ui.presentation.HomeSecurityPresentation
 import java.util.Locale
 
 private enum class HomeDomain(val label: String, val description: String) {
@@ -55,7 +113,6 @@ private data class HomeTool(
     val onClick: () -> Unit
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
@@ -89,158 +146,41 @@ fun HomeScreen(navController: NavController) {
     val phoneCoreReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(phoneCoreFacts)
     val nextPhoneCoreStep = PhoneCoreSetupWizardStore.nextStep(phoneCoreFacts)
 
-    val tools = listOf(
-        HomeTool(
-            "Téléphone",
-            "Appeler, retrouver un contact ou consulter les appels récents",
-            Icons.Default.Phone,
-            setOf("appel", "appeler", "telephone", "téléphone", "contact", "contacts", "recent", "récents"),
-            HomeDomain.COMMUNICATIONS,
-            capabilityId = "phone_core_android",
-            featured = true
-        ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
-        HomeTool(
-            "Répertoire",
-            "Retrouver vos contacts, appeler ou écrire en quelques secondes",
-            Icons.Default.Contacts,
-            setOf("contact", "contacts", "repertoire", "répertoire", "annuaire"),
-            HomeDomain.COMMUNICATIONS,
-            featured = true
-        ) {
-            context.startActivity(
-                Intent(context, SentinelDialerActivity::class.java)
-                    .putExtra(SentinelDialerActivity.EXTRA_OPEN_CONTACTS, true)
-            )
-        },
-        HomeTool(
-            "Messages",
-            "Lire les conversations ou écrire un SMS",
-            Icons.Default.Sms,
-            setOf("sms", "message", "messages", "conversation", "mms"),
-            HomeDomain.COMMUNICATIONS,
-            capabilityId = "phone_core_android",
-            featured = true
-        ) { context.startActivity(Intent(context, SmsComposeActivity::class.java)) },
-        HomeTool(
-            "Vérifier un numéro",
-            "Pays, attribution officielle et signaux de risque disponibles",
-            Icons.Default.Search,
-            setOf("numero", "numéro", "recherche", "chercher", "identifier", "identification"),
-            HomeDomain.COMMUNICATIONS,
-            featured = true
-        ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
-        HomeTool(
-            "Bloquer un appel",
-            "Gérer les règles locales de blocage et d’identification",
-            Icons.Default.Block,
-            setOf("bloquer", "blocage", "spam", "indesirable", "indésirable", "filtrage"),
-            HomeDomain.PROTECTION,
-            featured = true
-        ) { navController.navigate(Screen.CallBlocking.route) },
-        HomeTool(
-            "Protection mobile",
-            "Ce qui est protégé, à configurer ou encore non mesuré",
-            Icons.Default.Shield,
-            setOf("protection", "securite", "sécurité", "telephone", "téléphone"),
-            HomeDomain.PROTECTION,
-            featured = true
-        ) { navController.navigate(Screen.PhoneSecurity.route) },
-        HomeTool(
-            "Communications",
-            "Appels, SMS/MMS et canaux de communication",
-            Icons.Default.Forum,
-            setOf("communication", "appels", "sms", "mms"),
-            HomeDomain.COMMUNICATIONS
-        ) { navController.navigate(Screen.CommunicationsHub.route) },
-        HomeTool(
-            "Scanner un SMS ou un lien",
-            "Analyser localement un message, une URL ou un contenu suspect",
-            Icons.Default.MarkChatUnread,
-            setOf("sms", "lien", "url", "phishing", "arnaque", "message"),
-            HomeDomain.ANALYSIS
-        ) { navController.navigate(Screen.SmsScanner.route) },
-        HomeTool(
-            "Réseau & appareils proches",
-            "Wi-Fi, Bluetooth et visibilité locale",
-            Icons.Default.Wifi,
-            setOf("wifi", "wi-fi", "bluetooth", "reseau", "réseau", "scanner"),
-            HomeDomain.NETWORK
-        ) { navController.navigate(Screen.NetworkSurveillance.route) },
-        HomeTool(
-            "Diagnostic de l’appareil",
-            "Stockage, correctifs et signaux de sécurité observables",
-            Icons.Default.Security,
-            setOf("diagnostic", "appareil", "stockage", "correctif", "systeme", "système"),
-            HomeDomain.PROTECTION
-        ) { navController.navigate(Screen.SystemDoctor.route) },
-        HomeTool(
-            "Permissions des applications",
-            "Repérer les accès sensibles accordés aux applications",
-            Icons.Default.Apps,
-            setOf("permission", "permissions", "applications", "apps", "acces", "accès"),
-            HomeDomain.PROTECTION
-        ) { navController.navigate(Screen.AppPermissionAnalyzer.route) },
-        HomeTool(
-            "Exposition numérique",
-            "Contrôler les signaux d’exposition disponibles",
-            Icons.Default.Key,
-            setOf("exposition", "numerique", "numérique", "fuite", "identite", "identité"),
-            HomeDomain.ANALYSIS
-        ) { navController.navigate(Screen.DigitalExposure.route) },
-        HomeTool(
-            "Défense collective",
-            "Analyser, signaler et surveiller des indicateurs techniques",
-            Icons.Default.Groups,
-            setOf("defense", "défense", "collective", "phishing", "malware", "url", "email", "sha256"),
-            HomeDomain.ANALYSIS,
-            capabilityId = "collective_defense_android",
-            featured = true
-        ) { navController.navigate(Screen.CollectiveDefense.route) },
-        HomeTool(
-            "VPN",
-            "Protection réseau défensive et configuration du tunnel",
-            Icons.Default.VpnLock,
-            setOf("vpn", "wireguard", "tunnel", "reseau", "réseau"),
-            HomeDomain.NETWORK,
-            capabilityId = "sentinel_vpn_service",
-        ) { navController.navigate(Screen.Vpn.route) },
-        HomeTool(
-            "Maison & objets connectés",
-            "Montres, caméras, éclairage et appareils compatibles",
-            Icons.Default.HomeWork,
-            setOf("maison", "montre", "camera", "caméra", "iot", "domotique", "objet"),
-            HomeDomain.NETWORK
-        ) { navController.navigate(Screen.SmartHome.route) },
-        HomeTool(
-            "Analyser un e-mail",
-            "Examiner localement les en-têtes, domaines et liens",
-            Icons.Default.Email,
-            setOf("email", "e-mail", "mail", "entete", "en-tête", "phishing"),
-            HomeDomain.ANALYSIS
-        ) { navController.navigate(Screen.EmailSecurity.route) },
-        HomeTool(
-            "Historique des appels filtrés",
-            "Comprendre les décisions de filtrage prises par Sentinel",
-            Icons.Default.History,
-            setOf("historique", "appel", "filtre", "journal"),
-            HomeDomain.COMMUNICATIONS
-        ) { navController.navigate(Screen.CallFilterHistory.route) },
-        HomeTool(
-            "Audit sécurité",
-            "Lancer les contrôles techniques disponibles",
-            Icons.Default.Security,
-            setOf("audit", "securite", "sécurité", "controle", "contrôle"),
-            HomeDomain.PROTECTION
-        ) { navController.navigate(Screen.SecurityAudit.route) },
-        HomeTool(
-            "Veille & événements",
-            "Consulter les événements OSINT disponibles",
-            Icons.Default.Public,
-            setOf("osint", "veille", "evenement", "événement", "monde", "geopolitique", "géopolitique"),
-            HomeDomain.WATCH
-        ) { navController.navigate(Screen.OsintFeed.route) }
-    )
+    val motionLevel = remember(postureEpoch) { resolveHomeMotion(context) }
+    val phoneCapability = GeneratedProductCapabilities.states["phone_core_android"]
+    val vpnCapability = GeneratedProductCapabilities.states["sentinel_vpn_service"]
+    val collectiveCapability = GeneratedProductCapabilities.states["collective_defense_android"]
 
+    val homeState = remember(phoneCoreFacts, postureEpoch) {
+        HomeSecurityPresentation.from(
+            HomeRuntimeFacts(
+                phoneCore = HomeComponentFacts(
+                    implemented = phoneCapability?.implemented ?: true,
+                    customerAvailable = phoneCapability?.availableAt() == true,
+                    evidenceObserved = true,
+                    condition = if (phoneCoreReady) HomeCondition.HEALTHY else HomeCondition.DEGRADED,
+                    locked = !phoneCoreFacts.dialerRoleHeld || !phoneCoreFacts.callScreeningRoleHeld
+                ),
+                vpn = HomeComponentFacts(
+                    implemented = vpnCapability?.implemented ?: false,
+                    customerAvailable = vpnCapability?.availableAt() == true,
+                    evidenceObserved = false
+                ),
+                network = HomeComponentFacts(
+                    implemented = true,
+                    customerAvailable = true,
+                    evidenceObserved = false
+                ),
+                collectiveDefense = HomeComponentFacts(
+                    implemented = collectiveCapability?.implemented ?: false,
+                    customerAvailable = collectiveCapability?.availableAt() == true,
+                    evidenceObserved = false
+                )
+            )
+        )
+    }
+
+    val tools = homeTools(context, navController)
     val normalizedQuery = toolQuery.trim().lowercase(Locale.FRENCH)
     val matchingTools = if (normalizedQuery.isBlank()) {
         if (showAllTools) tools else tools.filter { it.featured }
@@ -256,7 +196,7 @@ fun HomeScreen(navController: NavController) {
         topBar = {
             SentinelTopBar(
                 title = "SENTINEL",
-                subtitle = "Protection simple · état réel"
+                subtitle = "Protection · état observé"
             )
         }
     ) { padding ->
@@ -268,15 +208,45 @@ fun HomeScreen(navController: NavController) {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelHero(
-                eyebrow = if (phoneCoreReady) "Prérequis Android prêts" else "Configuration en cours",
-                title = "Que voulez-vous faire ?",
-                body = "Un accès direct aux actions courantes et aux protections dont vous avez besoin.",
-                badges = listOf(
-                    (if (phoneCoreReady) "Prérequis prêts" else "$readyCount/8 étapes prêtes") to
-                        (if (phoneCoreReady) SentinelD1.Success else SentinelD1.Cyan),
-                    "Traitement local" to SentinelD1.Cyan
+            SentinelHeroVisual(
+                status = homeState.overallStatus,
+                title = homeState.headline,
+                subtitle = homeState.summary,
+                motionLevel = motionLevel,
+                modifier = Modifier.testTag("home_security_hero")
+            )
+
+            SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                Text("Priorité", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
+                Text(homeState.priorityMessage, fontWeight = FontWeight.Bold)
+                Text(
+                    "Les états inconnus, limités ou verrouillés restent visibles : Sentinel ne les transforme pas en protection confirmée.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            SentinelSectionHeader(title = "Protection principale")
+            homeState.modules.forEach { module ->
+                HomeModuleCard(
+                    module = module,
+                    modifier = Modifier.testTag(moduleTag(module.id)),
+                    onClick = { navigateHomeModule(module.id, navController, context) }
+                )
+            }
+
+            SentinelActionTile(
+                title = if (phoneCoreReady) "Vérifier Phone Core" else "Continuer l’activation",
+                subtitle = if (phoneCoreReady) {
+                    "Prérequis logiciels observés ; la validation physique reste distincte."
+                } else {
+                    "$readyCount/8 prérequis observés · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
+                },
+                icon = Icons.Default.Shield,
+                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_primary_action")
             )
 
             OutlinedTextField(
@@ -299,63 +269,35 @@ fun HomeScreen(navController: NavController) {
 
             SentinelSectionHeader(
                 title = if (normalizedQuery.isBlank()) "Accès directs" else "Résultats",
-                subtitle = if (normalizedQuery.isBlank()) {
-                    "Les actions courantes sans parcourir les menus."
-                } else {
-                    "${matchingTools.size} fonction(s) trouvée(s) pour « ${toolQuery.trim()} »."
-                }
+                trailing = if (normalizedQuery.isBlank()) null else "${matchingTools.size}"
             )
 
             if (matchingTools.isEmpty()) {
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
-                ) {
-                    Column(
-                        Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("Aucun résultat", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Essayez appel, SMS, Wi-Fi, VPN, e-mail, blocage ou permissions.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Text("Aucun résultat", fontWeight = FontWeight.Bold)
+                    Text(
+                        "Essayez appel, SMS, Wi-Fi, VPN, e-mail, blocage ou permissions.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             } else if (normalizedQuery.isBlank() && !showAllTools) {
-                matchingTools.chunked(2).forEach { rowTools ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rowTools.forEach { tool ->
-                            QuickToolCard(
-                                title = tool.title,
-                                subtitle = capabilitySubtitle(tool),
-                                icon = tool.icon,
-                                onClick = tool.onClick,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (rowTools.size == 1) Spacer(Modifier.weight(1f))
-                    }
+                matchingTools.forEach { tool ->
+                    HomeToolTile(tool)
                 }
             } else if (normalizedQuery.isNotBlank()) {
-                matchingTools.forEach { tool ->
-                    DashboardCard(tool.title, capabilitySubtitle(tool), tool.icon, tool.onClick)
-                }
+                matchingTools.forEach { tool -> HomeToolTile(tool) }
             } else {
                 HomeDomain.entries.forEach { domain ->
                     val domainTools = matchingTools.filter { it.domain == domain }
                     if (domainTools.isNotEmpty()) {
-                        SentinelSectionHeader(
-                            title = domain.label,
-                            subtitle = domain.description
+                        SentinelSectionHeader(title = domain.label)
+                        Text(
+                            domain.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        domainTools.forEach { tool ->
-                            DashboardCard(tool.title, capabilitySubtitle(tool), tool.icon, tool.onClick)
-                        }
+                        domainTools.forEach { tool -> HomeToolTile(tool) }
                     }
                 }
             }
@@ -372,158 +314,76 @@ fun HomeScreen(navController: NavController) {
                     Spacer(Modifier.width(6.dp))
                     Text(if (showAllTools) "Revenir aux actions essentielles" else "Explorer toutes les protections")
                 }
-
-                SentinelSectionHeader(
-                    title = if (phoneCoreReady) "Vérifier votre protection" else "Continuer l’activation",
-                    subtitle = if (phoneCoreReady) {
-                        "Les prérequis Android sont observés comme prêts ; les tests physiques sont distincts."
-                    } else {
-                        "$readyCount/8 étapes d’activation Android prêtes. Une étape guidée à la fois."
-                    }
-                )
-                ElevatedCard(
-                    onClick = {
-                        context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, SentinelD1.Border, RoundedCornerShape(20.dp)),
-                    colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
-                ) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                if (phoneCoreReady) Icons.Default.Verified else Icons.Default.Tune,
-                                contentDescription = null,
-                                tint = if (phoneCoreReady) SentinelD1.Success else SentinelD1.Cyan
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    if (phoneCoreReady) "Ouvrir les tests Phone Core" else "Terminer la configuration",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    if (phoneCoreReady) {
-                                        "Valider les fonctionnalités sur cet appareil."
-                                    } else {
-                                        "Prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}."
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(Icons.Default.ChevronRight, contentDescription = null)
-                        }
-                        if (!phoneCoreReady) {
-                            LinearProgressIndicator(
-                                progress = { readyCount / 8f },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
             }
         }
     }
 }
 
 @Composable
-private fun QuickToolCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    ElevatedCard(
-        onClick = onClick,
-        modifier = modifier
-            .heightIn(min = 142.dp)
-            .border(1.dp, SentinelD1.Border, RoundedCornerShape(22.dp)),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SentinelD1.Panel
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.padding(12.dp).size(30.dp),
-                    tint = SentinelD1.Cyan
-                )
-            }
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                subtitle,
-                maxLines = 3,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun DashboardCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
+private fun HomeModuleCard(
+    module: HomeModulePresentation,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    ElevatedCard(
-        onClick = onClick,
-        modifier = Modifier
+    SentinelGlassCard(
+        modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, SentinelD1.Border, RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
+            .clickable(onClick = onClick)
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = SentinelD1.Panel
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.padding(12.dp).size(28.dp),
-                    tint = SentinelD1.Cyan
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(module.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    subtitle,
+                    module.detail,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Spacer(Modifier.width(12.dp))
+            SentinelStatusChip(module.status)
         }
     }
+}
+
+@Composable
+private fun HomeToolTile(tool: HomeTool) {
+    SentinelActionTile(
+        title = tool.title,
+        subtitle = capabilitySubtitle(tool),
+        icon = tool.icon,
+        onClick = tool.onClick,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+private fun moduleTag(id: HomeModuleId): String = when (id) {
+    HomeModuleId.PHONE_CORE -> "home_module_phone_core"
+    HomeModuleId.VPN -> "home_module_vpn"
+    HomeModuleId.NETWORK -> "home_module_network"
+    HomeModuleId.COLLECTIVE_DEFENSE -> "home_module_collective_defense"
+}
+
+private fun navigateHomeModule(id: HomeModuleId, navController: NavController, context: Context) {
+    when (id) {
+        HomeModuleId.PHONE_CORE -> context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
+        HomeModuleId.VPN -> navController.navigate(Screen.Vpn.route)
+        HomeModuleId.NETWORK -> navController.navigate(Screen.NetworkSurveillance.route)
+        HomeModuleId.COLLECTIVE_DEFENSE -> navController.navigate(Screen.CollectiveDefense.route)
+    }
+}
+
+private fun resolveHomeMotion(context: Context): MotionLevel {
+    val animatorScale = runCatching {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+    }.getOrDefault(1f)
+    val powerSave = runCatching {
+        (context.getSystemService(Context.POWER_SERVICE) as? PowerManager)?.isPowerSaveMode == true
+    }.getOrDefault(false)
+    return SentinelMotionPolicy.resolve(animatorScale, powerSave)
 }
 
 @Composable
@@ -533,7 +393,160 @@ private fun capabilitySubtitle(tool: HomeTool): String {
     val label = when {
         state?.availableAt() == true -> R.string.product_capability_available
         state?.implemented == false -> R.string.product_capability_not_implemented
-        else -> R.string.product_capability_unverified
+        state?.customerAvailable == false -> R.string.product_capability_preproduction
+        else -> R.string.product_capability_unavailable
     }
     return stringResource(label) + " · " + tool.subtitle
 }
+
+private fun homeTools(context: Context, navController: NavController): List<HomeTool> = listOf(
+    HomeTool(
+        "Téléphone",
+        "Appeler, retrouver un contact ou consulter les appels récents",
+        Icons.Default.Phone,
+        setOf("appel", "appeler", "telephone", "téléphone", "contact", "contacts", "recent", "récents"),
+        HomeDomain.COMMUNICATIONS,
+        featured = true,
+        capabilityId = "phone_core_android"
+    ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+    HomeTool(
+        "Répertoire",
+        "Retrouver vos contacts, appeler ou écrire en quelques secondes",
+        Icons.Default.Contacts,
+        setOf("contact", "contacts", "repertoire", "répertoire", "annuaire"),
+        HomeDomain.COMMUNICATIONS,
+        featured = true
+    ) {
+        context.startActivity(
+            Intent(context, SentinelDialerActivity::class.java)
+                .putExtra(SentinelDialerActivity.EXTRA_OPEN_CONTACTS, true)
+        )
+    },
+    HomeTool(
+        "Messages",
+        "Lire les conversations ou écrire un SMS",
+        Icons.Default.Sms,
+        setOf("sms", "message", "messages", "conversation", "mms"),
+        HomeDomain.COMMUNICATIONS,
+        featured = true,
+        capabilityId = "phone_core_android"
+    ) { context.startActivity(Intent(context, SmsComposeActivity::class.java)) },
+    HomeTool(
+        "Vérifier un numéro",
+        "Pays, attribution officielle et signaux de risque disponibles",
+        Icons.Default.Search,
+        setOf("numero", "numéro", "recherche", "chercher", "identifier", "identification"),
+        HomeDomain.COMMUNICATIONS,
+        featured = true
+    ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+    HomeTool(
+        "Bloquer un appel",
+        "Gérer les règles locales de blocage et d’identification",
+        Icons.Default.Block,
+        setOf("bloquer", "blocage", "spam", "indesirable", "indésirable", "filtrage"),
+        HomeDomain.PROTECTION,
+        featured = true
+    ) { navController.navigate(Screen.CallBlocking.route) },
+    HomeTool(
+        "Protection mobile",
+        "Ce qui est protégé, à configurer ou encore non mesuré",
+        Icons.Default.Shield,
+        setOf("protection", "securite", "sécurité", "telephone", "téléphone"),
+        HomeDomain.PROTECTION,
+        featured = true
+    ) { navController.navigate(Screen.PhoneSecurity.route) },
+    HomeTool(
+        "Communications",
+        "Appels, SMS/MMS et canaux de communication",
+        Icons.Default.Forum,
+        setOf("communication", "appels", "sms", "mms"),
+        HomeDomain.COMMUNICATIONS
+    ) { navController.navigate(Screen.CommunicationsHub.route) },
+    HomeTool(
+        "Scanner un SMS ou un lien",
+        "Analyser localement un message, une URL ou un contenu suspect",
+        Icons.Default.MarkChatUnread,
+        setOf("sms", "lien", "url", "phishing", "arnaque", "message"),
+        HomeDomain.ANALYSIS
+    ) { navController.navigate(Screen.SmsScanner.route) },
+    HomeTool(
+        "Réseau & appareils proches",
+        "Wi-Fi, Bluetooth et visibilité locale",
+        Icons.Default.Wifi,
+        setOf("wifi", "wi-fi", "bluetooth", "reseau", "réseau", "scanner"),
+        HomeDomain.NETWORK
+    ) { navController.navigate(Screen.NetworkSurveillance.route) },
+    HomeTool(
+        "Diagnostic de l’appareil",
+        "Stockage, correctifs et signaux de sécurité observables",
+        Icons.Default.Security,
+        setOf("diagnostic", "appareil", "stockage", "correctif", "systeme", "système"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.SystemDoctor.route) },
+    HomeTool(
+        "Permissions des applications",
+        "Repérer les accès sensibles accordés aux applications",
+        Icons.Default.Apps,
+        setOf("permission", "permissions", "applications", "apps", "acces", "accès"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+    HomeTool(
+        "Exposition numérique",
+        "Contrôler les signaux d’exposition disponibles",
+        Icons.Default.Key,
+        setOf("exposition", "numerique", "numérique", "fuite", "identite", "identité"),
+        HomeDomain.ANALYSIS
+    ) { navController.navigate(Screen.DigitalExposure.route) },
+    HomeTool(
+        "Défense collective",
+        "Analyser, signaler et surveiller des indicateurs techniques",
+        Icons.Default.Groups,
+        setOf("defense", "défense", "collective", "phishing", "malware", "url", "email", "sha256"),
+        HomeDomain.ANALYSIS,
+        featured = true,
+        capabilityId = "collective_defense_android"
+    ) { navController.navigate(Screen.CollectiveDefense.route) },
+    HomeTool(
+        "VPN",
+        "Protection réseau défensive et configuration du tunnel",
+        Icons.Default.VpnLock,
+        setOf("vpn", "wireguard", "tunnel", "reseau", "réseau"),
+        HomeDomain.NETWORK,
+        capabilityId = "sentinel_vpn_service"
+    ) { navController.navigate(Screen.Vpn.route) },
+    HomeTool(
+        "Maison & objets connectés",
+        "Montres, caméras, éclairage et appareils compatibles",
+        Icons.Default.HomeWork,
+        setOf("maison", "montre", "camera", "caméra", "iot", "domotique", "objet"),
+        HomeDomain.NETWORK
+    ) { navController.navigate(Screen.SmartHome.route) },
+    HomeTool(
+        "Analyser un e-mail",
+        "Examiner localement les en-têtes, domaines et liens",
+        Icons.Default.Email,
+        setOf("email", "e-mail", "mail", "entete", "en-tête", "phishing"),
+        HomeDomain.ANALYSIS
+    ) { navController.navigate(Screen.EmailSecurity.route) },
+    HomeTool(
+        "Historique des appels filtrés",
+        "Comprendre les décisions de filtrage prises par Sentinel",
+        Icons.Default.History,
+        setOf("historique", "appel", "filtre", "journal"),
+        HomeDomain.COMMUNICATIONS
+    ) { navController.navigate(Screen.CallFilterHistory.route) },
+    HomeTool(
+        "Audit sécurité",
+        "Lancer les contrôles techniques disponibles",
+        Icons.Default.Security,
+        setOf("audit", "securite", "sécurité", "controle", "contrôle"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.SecurityAudit.route) },
+    HomeTool(
+        "Veille & événements",
+        "Consulter les événements OSINT disponibles",
+        Icons.Default.Public,
+        setOf("osint", "veille", "evenement", "événement", "monde", "geopolitique", "géopolitique"),
+        HomeDomain.WATCH
+    ) { navController.navigate(Screen.OsintFeed.route) }
+)
