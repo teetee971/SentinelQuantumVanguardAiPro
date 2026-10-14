@@ -340,24 +340,27 @@ assert_send_sms_runtime_permission_denied() {
 set_send_sms_appop() {
   local mode="$1"
   local evidence="$2"
-  # Recent RoleController versions grant a UID-level mode. Android 10 can instead
-  # retain only a package mode. Try UID first, then the package boundary if the UID
-  # denial did not become observable. The caller must still prove denial after launch.
+  # RoleController versions differ on whether SEND_SMS is represented at the UID or
+  # package boundary. Keep both boundaries synchronized: a stale package-level allow
+  # can override an observed UID ignore and must never be mistaken for effective denial.
   if ! adb shell appops set --user 0 --uid "$PACKAGE" SEND_SMS "$mode" > "$OUT_DIR/$evidence" 2>&1; then
-    echo "UID AppOp command failed; checking effective mode." >> "$OUT_DIR/$evidence"
+    echo "UID AppOp command failed; package boundary will still be attempted." >> "$OUT_DIR/$evidence"
+  fi
+  if ! adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1; then
+    echo "Package AppOp command failed." >> "$OUT_DIR/$evidence"
   fi
   sleep 1
   adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  if [[ "$mode" == "allow" ]] || ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
-    adb shell appops set --user 0 "$PACKAGE" SEND_SMS "$mode" >> "$OUT_DIR/$evidence" 2>&1
-    sleep 1
-    adb shell appops get "$PACKAGE" SEND_SMS >> "$OUT_DIR/$evidence" 2>&1 || true
-  fi
 }
 
 assert_send_sms_appop_denied() {
   local evidence="$1"
   adb shell appops get "$PACKAGE" SEND_SMS > "$OUT_DIR/$evidence" 2>&1
+  if grep -Eiq 'SEND_SMS: *allow' "$OUT_DIR/$evidence"; then
+    echo "SEND_SMS AppOp contains an explicit allow and is not effectively denied."
+    cat "$OUT_DIR/$evidence"
+    return 1
+  fi
   if ! grep -Eiq 'SEND_SMS: *(ignore|deny|errored)' "$OUT_DIR/$evidence"; then
     echo "SEND_SMS AppOp was not observably denied."
     cat "$OUT_DIR/$evidence"
