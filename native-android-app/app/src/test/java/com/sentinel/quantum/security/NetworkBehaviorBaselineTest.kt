@@ -117,6 +117,37 @@ class NetworkBehaviorBaselineTest {
         assertEquals(0, result.baselineSampleCount)
     }
 
+
+    @Test
+    fun overlongCurrentDestinationFailsClosedRatherThanAliasingKnownDestination() {
+        val knownDestination = "a".repeat(253)
+        val result = NetworkBehaviorBaseline.assess(
+            history = List(6) { sample(destination = knownDestination) },
+            current = sample(destination = knownDestination + "b")
+        )
+
+        assertFalse(result.baselineReady)
+        assertEquals(0, result.baselineSampleCount)
+        assertEquals(0, result.riskScore)
+        assertTrue(result.anomalies.isEmpty())
+    }
+
+    @Test
+    fun overlongHistoryIsExcludedWithoutCollidingWithValidDestination() {
+        val validDestination = "a".repeat(253)
+        val history = List(5) { sample(destination = validDestination) } +
+            List(5) { sample(destination = validDestination + "b") }
+
+        val result = NetworkBehaviorBaseline.assess(
+            history = history,
+            current = sample(destination = validDestination)
+        )
+
+        assertTrue(result.baselineReady)
+        assertEquals(5, result.baselineSampleCount)
+        assertTrue(result.anomalies.isEmpty())
+    }
+
     @Test
     fun invalidCurrentSampleFailsClosed() {
         val result = NetworkBehaviorBaseline.assess(
