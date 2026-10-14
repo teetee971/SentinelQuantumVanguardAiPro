@@ -145,8 +145,8 @@ fun SentinelActionTile(
 @Composable
 fun SentinelSectionHeader(
     title: String,
-    modifier: Modifier = Modifier,
-    trailing: String? = null
+    trailing: String?,
+    modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
