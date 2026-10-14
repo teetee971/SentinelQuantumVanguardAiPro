@@ -281,11 +281,12 @@ const settingsVoicePath =
 const settingsVoiceSource = readRequired(settingsVoicePath);
 if (settingsVoiceSource) {
   for (const marker of [
-    'transformation en appel Sentinel obligatoire',
-    'moteur + client WebRTC intégrés',
+    'Aperçu local disponible',
+    'PTT de test à vérifier',
+    'appels téléphoniques transformés non disponibles',
   ]) {
     if (!settingsVoiceSource.includes(marker)) {
-      errors.push(`mandatory live-voice settings marker missing (${marker}): ${settingsVoicePath}`);
+      errors.push(`customer voice-status marker missing (${marker}): ${settingsVoicePath}`);
     }
   }
   if (settingsVoiceSource.includes('futur add-on optionnel')) {
@@ -403,7 +404,6 @@ if (callScreeningSource) {
     errors.push(`call-screening callback performs a synchronous Contacts provider lookup before Caller ID UI: ${callScreeningPath}`);
   }
 }
-
 
 const contactLookupPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalContactLookup.kt';
@@ -659,7 +659,6 @@ if (activationSource) {
     errors.push(`activation physical-evidence provider probes moved back onto the Compose thread: ${activationPath}`);
   }
 }
-
 
 const inCallActivityPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt';

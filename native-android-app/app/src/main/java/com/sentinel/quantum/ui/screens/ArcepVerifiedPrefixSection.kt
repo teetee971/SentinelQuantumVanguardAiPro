@@ -41,7 +41,7 @@ internal fun ArcepVerifiedPrefixSection(
     var query by remember { mutableStateOf("") }
 
     HorizontalDivider()
-    Text("Protection ARCEP contre les appels automatisés", fontWeight = FontWeight.Bold)
+    Text("Filtrage des plages ARCEP", fontWeight = FontWeight.Bold)
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -55,14 +55,14 @@ internal fun ArcepVerifiedPrefixSection(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (enabled) "Protection ARCEP active" else "Protection ARCEP inactive",
+                        if (enabled) "Filtrage des plages ARCEP actif" else "Filtrage des plages ARCEP inactif",
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         if (enabled) {
-                            "${ArcepVerifiedPrefixCatalog.entries.size} plages sont appliquées au filtrage local."
+                            "${ArcepVerifiedPrefixCatalog.entries.size} plages chargées localement · filtrage actif."
                         } else {
-                            "${ArcepVerifiedPrefixCatalog.entries.size} plages disponibles · aucune n’est appliquée automatiquement."
+                            "${ArcepVerifiedPrefixCatalog.entries.size} plages chargées localement · filtrage inactif."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -76,15 +76,15 @@ internal fun ArcepVerifiedPrefixSection(
                             onRulesChanged(
                                 store.snapshot(),
                                 if (requested) {
-                                    "Protection ARCEP activée : les plages officielles sont maintenant appliquées au filtrage local."
+                                    "Filtrage des plages ARCEP activé localement."
                                 } else {
-                                    "Protection ARCEP désactivée : vos préfixes personnels restent inchangés."
+                                    "Filtrage des plages ARCEP désactivé : vos préfixes personnels restent inchangés."
                                 }
                             )
                         } else {
                             onRulesChanged(
                                 store.snapshot(),
-                                "Impossible d’activer la protection ARCEP : capacité maximale de règles atteinte."
+                                "Impossible d’activer le filtrage des plages ARCEP : capacité maximale de règles atteinte."
                             )
                         }
                     }
@@ -122,7 +122,7 @@ internal fun ArcepVerifiedPrefixSection(
             ) {
                 Text("Préfixes ARCEP", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    if (enabled) "Protection active · ces plages sont actuellement appliquées." else "Protection inactive · liste informative uniquement.",
+                    if (enabled) "Filtrage actif · ces plages sont actuellement appliquées localement." else "Filtrage inactif · liste informative uniquement.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

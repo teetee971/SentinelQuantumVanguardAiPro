@@ -151,36 +151,52 @@ test('API 24 instrumentation enforces a hard wall-clock timeout instead of a det
 
   assert.match(
     instrumentation,
-    /timeout --signal=TERM --kill-after=30s 900s \\\n\s+adb shell am instrument -w -r "\$INSTRUMENTATION_RUNNER" > "\$INSTRUMENTATION_LOG_RAW" 2>&1/,
+    /timeout --signal=TERM --kill-after=30s 900s\s+(?:\\\n\s*)?adb shell am instrument -w -r "\$INSTRUMENTATION_RUNNER" > "\$INSTRUMENTATION_LOG_RAW" 2>&1/,
     'API 24 instrumentation must be bounded by a hard timeout owned by the foreground shell'
   );
   assert.doesNotMatch(instrumentation, /setsid adb shell am instrument/);
   assert.doesNotMatch(instrumentation, /INSTRUMENTATION_WATCHDOG_PID/);
 });
 
-test('API 24 APK installs are hard-bounded in both instrumentation workflows', () => {
-  for (const [name, source] of [
-    ['Phone Core qualification', workflowSource],
-    ['Android instrumentation', instrumentationWorkflowSource]
-  ]) {
-    const api24 = blockBetween(
-      source,
-      'if [[ "$API_LEVEL" == "24" ]]; then',
-      '          else\n            timeout --signal=INT --kill-after=30s 900s'
+test('API 24 APK installs are hard-bounded and Android instrumentation uses legacy non-streaming transport', () => {
+  const phoneCoreApi24 = blockBetween(
+    workflowSource,
+    'if [[ "$API_LEVEL" == "24" ]]; then',
+    '          else\n            timeout --signal=INT --kill-after=30s 900s'
+  );
+  const instrumentationApi24 = blockBetween(
+    instrumentationWorkflowSource,
+    'if [[ "$API_LEVEL" == "24" ]]; then',
+    '          else\n            timeout --signal=INT --kill-after=30s 900s'
+  );
+
+  for (const apkVariable of ['APP_APK', 'TEST_APK']) {
+    assert.match(
+      phoneCoreApi24,
+      new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
+      `Phone Core qualification must hard-bound ${apkVariable} installation`
+    );
+    assert.doesNotMatch(
+      phoneCoreApi24,
+      new RegExp(`\\n\\s*adb install -r "\\$${apkVariable}"`),
+      `Phone Core qualification must not leave ${apkVariable} installation unbounded`
     );
 
-    for (const apkVariable of ['APP_APK', 'TEST_APK']) {
-      assert.match(
-        api24,
-        new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
-        `${name} must hard-bound ${apkVariable} installation`
-      );
-      assert.doesNotMatch(
-        api24,
-        new RegExp(`\\n\\s*adb install -r "\\$${apkVariable}"`),
-        `${name} must not leave ${apkVariable} installation unbounded`
-      );
-    }
+    assert.match(
+      instrumentationApi24,
+      new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "\\$${apkVariable}"`),
+      `Android instrumentation must hard-bound ${apkVariable} installation and disable adb streaming on API 24`
+    );
+    assert.doesNotMatch(
+      instrumentationApi24,
+      new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
+      `Android instrumentation must not use the streaming install path for ${apkVariable} on API 24`
+    );
+    assert.doesNotMatch(
+      instrumentationApi24,
+      new RegExp(`\\n\\s*adb install(?: --no-streaming)? -r "\\$${apkVariable}"`),
+      `Android instrumentation must not leave ${apkVariable} installation unbounded`
+    );
   }
 });
 
@@ -201,4 +217,20 @@ test('runtime APK installation is bounded so a wedged ADB transport cannot consu
     /\n\s*adb install -r "\$APK_PATH"/,
     'runtime APK installation must never run unbounded'
   );
+});
+
+test('API 24 ADB recovery bounds both transport and package probes', () => {
+  const recovery = blockBetween(
+    instrumentationWorkflowSource,
+    '# Modern adb defaults to streamed package installation',
+    '            INSTRUMENTATION_RUNNER='
+  );
+  const boundedWait = 'timeout --signal=TERM --kill-after=5s 45s adb wait-for-device';
+  assert.equal(recovery.split(boundedWait).length - 1, 2, 'both install recoveries must bound device reconnect');
+  assert.doesNotMatch(recovery, /^\s*adb wait-for-device\s*$/m);
+  for (const pkg of ['com.sentinel.quantum', 'com.sentinel.quantum.test']) {
+    const boundedProbe = 'timeout --signal=TERM --kill-after=5s 20s adb shell pm path ' + pkg + ' |';
+    assert.equal(recovery.split(boundedProbe).length - 1, 2, pkg + ' must have bounded recovery and final probes');
+  }
+  assert.doesNotMatch(recovery, /^\s*adb shell pm path /m);
 });
