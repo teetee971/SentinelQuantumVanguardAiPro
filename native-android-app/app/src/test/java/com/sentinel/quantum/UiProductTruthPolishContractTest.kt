@@ -47,11 +47,12 @@ class UiProductTruthPolishContractTest {
     }
 
     @Test
-    fun digitalExposureKeepsScrollableContentAboveSystemNavigation() {
+    fun digitalExposureUsesScaffoldInsetsWithoutDoubleNavigationPadding() {
         val source = File(
             "src/main/java/com/sentinel/quantum/ui/screens/DigitalExposureScreen.kt"
         ).readText()
 
-        assertTrue(source.contains("navigationBarsPadding()"))
+        assertTrue(source.contains(".padding(padding)"))
+        assertFalse(source.contains("navigationBarsPadding()"))
     }
 }
