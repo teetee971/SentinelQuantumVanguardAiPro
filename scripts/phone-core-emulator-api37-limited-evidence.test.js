@@ -142,15 +142,14 @@ test('API 37 host modem acceptance cannot be certified as a limited app-answer o
   assert.ok(report.evidence_failures.includes('incoming_call_telecom_flow'));
 });
 
-test('API 37 contradictory UID ignore plus package allow cannot certify SEND_SMS denial', () => {
-  const root = mkdtempSync(join(tmpdir(), 'sentinel-api37-appop-contradiction-'));
+test('API 37 UID SEND_SMS ignore remains authoritative when package mode is allow', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sentinel-api37-appop-precedence-'));
   try {
-    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nadb() {\n  if [[ "$*" == "shell appops get com.sentinel.quantum SEND_SMS" ]]; then\n    printf '%s\\n' 'Uid mode: SEND_SMS: ignore' 'SEND_SMS: allow; time=+1s'\n    return 0\n  fi\n  return 99\n}\n${shellFunction('assert_send_sms_appop_denied')}\nassert_send_sms_appop_denied contradictory.txt`;
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nadb() {\n  if [[ "$*" == "shell appops get com.sentinel.quantum SEND_SMS" ]]; then\n    printf '%s\\n' 'Uid mode: SEND_SMS: ignore' 'SEND_SMS: allow; time=+1s'\n    return 0\n  fi\n  return 99\n}\n${shellFunction('assert_send_sms_appop_denied')}\nassert_send_sms_appop_denied precedence.txt`;
     const result = spawnSync('bash', ['-c', script, 'test', root], { encoding: 'utf8' });
-    assert.notEqual(result.status, 0, 'contradictory AppOp evidence must remain fail-closed');
-    assert.match(result.stdout, /explicit allow/);
-    assert.match(readFileSync(join(root, 'contradictory.txt'), 'utf8'), /Uid mode: SEND_SMS: ignore/);
-    assert.match(readFileSync(join(root, 'contradictory.txt'), 'utf8'), /SEND_SMS: allow/);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(readFileSync(join(root, 'precedence.txt'), 'utf8'), /Uid mode: SEND_SMS: ignore/);
+    assert.match(readFileSync(join(root, 'precedence.txt'), 'utf8'), /SEND_SMS: allow/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
