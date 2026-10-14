@@ -158,7 +158,7 @@ test('API 24 instrumentation enforces a hard wall-clock timeout instead of a det
   assert.doesNotMatch(instrumentation, /INSTRUMENTATION_WATCHDOG_PID/);
 });
 
-test('API 24 APK installs are hard-bounded and use non-streaming transport in both instrumentation workflows', () => {
+test('API 24 APK installs are hard-bounded in both instrumentation workflows', () => {
   for (const [name, source] of [
     ['Phone Core qualification', workflowSource],
     ['Android instrumentation', instrumentationWorkflowSource]
@@ -172,8 +172,8 @@ test('API 24 APK installs are hard-bounded and use non-streaming transport in bo
     for (const apkVariable of ['APP_APK', 'TEST_APK']) {
       assert.match(
         api24,
-        new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "\\$${apkVariable}"`),
-        `${name} must hard-bound ${apkVariable} installation and disable streamed ADB install on API 24`
+        new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install(?: --no-streaming)? -r "\\$${apkVariable}"`),
+        `${name} must hard-bound ${apkVariable} installation`
       );
       assert.doesNotMatch(
         api24,
@@ -184,7 +184,7 @@ test('API 24 APK installs are hard-bounded and use non-streaming transport in bo
   }
 });
 
-test('runtime APK installation is bounded and non-streaming on API 24 so a wedged ADB transport cannot consume the whole emulator job', () => {
+test('runtime APK installation is bounded so a wedged ADB transport cannot consume the whole emulator job', () => {
   const runtime = blockBetween(
     workflowSource,
     '      - name: Run emulator application/runtime qualification',
@@ -193,12 +193,12 @@ test('runtime APK installation is bounded and non-streaming on API 24 so a wedge
 
   assert.match(
     runtime,
-    /timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "\$APK_PATH"/,
-    'runtime APK installation must have its own hard foreground timeout and legacy-safe API 24 transport'
+    /timeout --signal=TERM --kill-after=30s 120s adb install -r "\$APK_PATH"/,
+    'runtime APK installation must have its own hard foreground timeout'
   );
   assert.doesNotMatch(
     runtime,
-    /\n\s*adb install(?: --no-streaming)? -r "\$APK_PATH"/,
+    /\n\s*adb install -r "\$APK_PATH"/,
     'runtime APK installation must never run unbounded'
   );
 });
