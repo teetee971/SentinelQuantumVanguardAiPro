@@ -9,11 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.HourglassTop
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
@@ -72,7 +72,7 @@ private fun stateVisual(state: SentinelState): StateVisual {
         SentinelState.PARTIAL -> Icons.Default.ErrorOutline
         SentinelState.DEGRADED -> Icons.Default.HourglassTop
         SentinelState.BLOCKED -> Icons.Default.Block
-        SentinelState.UNKNOWN -> Icons.Default.HelpOutline
+        SentinelState.UNKNOWN -> Icons.AutoMirrored.Filled.HelpOutline
         SentinelState.UNAVAILABLE -> Icons.Default.Block
     }
     return StateVisual(color, icon)
