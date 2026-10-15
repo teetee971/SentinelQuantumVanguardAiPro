@@ -41,10 +41,18 @@ class HomeVisualContractTest {
             .assertHasClickAction()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         composeRule.onNodeWithTag("home_security_hero").assertExists()
-        composeRule.onNodeWithTag("home_module_phone_core").performScrollTo().assertExists()
-        composeRule.onNodeWithTag("home_module_vpn").performScrollTo().assertExists()
-        composeRule.onNodeWithTag("home_module_network").performScrollTo().assertExists()
-        composeRule.onNodeWithTag("home_module_collective_defense").performScrollTo().assertExists()
+        listOf(
+            "home_module_phone_core",
+            "home_module_vpn",
+            "home_module_network",
+            "home_module_collective_defense"
+        ).forEach { tag ->
+            composeRule.onNodeWithTag(tag)
+                .performScrollTo()
+                .assertIsDisplayed()
+                .assertHasClickAction()
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        }
         composeRule.onNodeWithTag("home_activity_summary").performScrollTo().assertExists()
     }
 
