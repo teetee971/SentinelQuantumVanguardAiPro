@@ -9,34 +9,41 @@ class CallScreeningIntelligenceBoundaryTest {
     fun `intelligence publication occurs only inside post-response work`() {
         val source = callScreeningSource()
         val responseIndex = source.indexOf("respondToCall(callDetails, response.build())")
-        val workerIndex = source.indexOf("POST_RESPONSE_WORKER.execute", startIndex = responseIndex.coerceAtLeast(0))
-        val publicationIndex = source.indexOf("IntelligenceCoreRuntime.publishCallDecision(", startIndex = workerIndex.coerceAtLeast(0))
+        val postResponseIndex = source.indexOf("responseBoundary.submitPostResponse")
+        val publicationIndex = source.indexOf(
+            "IntelligenceCoreRuntime.publishCallDecision(",
+            startIndex = postResponseIndex.coerceAtLeast(0)
+        )
 
         assertTrue("screening must render the Android response", responseIndex >= 0)
-        assertTrue("post-response worker must remain after respondToCall", workerIndex > responseIndex)
         assertTrue(
-            "Intelligence call evidence must be published only from post-response work",
-            publicationIndex > workerIndex
+            "post-response work must be submitted only after the normal Telecom response",
+            postResponseIndex > responseIndex
+        )
+        assertTrue(
+            "Intelligence call evidence must be published only from boundary-guarded post-response work",
+            publicationIndex > postResponseIndex
         )
     }
 
     @Test
     fun `critical path never reads intelligence persistence contacts remote reputation or aggregator`() {
         val source = callScreeningSource()
-        val responseIndex = source.indexOf("respondToCall(callDetails, response.build())")
-        assertTrue("screening must render the Android response", responseIndex >= 0)
+        val postResponseIndex = source.indexOf("responseBoundary.submitPostResponse")
+        assertTrue("screening must expose a guarded post-response boundary", postResponseIndex >= 0)
 
-        val preResponse = source.substring(0, responseIndex)
+        val preResponseWork = source.substring(0, postResponseIndex)
         listOf(
             "IntelligenceSnapshotStore",
             "IntelligenceAggregator",
             "LocalContactLookup",
             "CallerReputationClient",
-            "BoundedIntelligenceEventSink"
+            "BoundedIntelligenceEventSink",
+            "IntelligenceCoreRuntime.publishCallDecision("
         ).forEach { forbidden ->
             assertTrue(
-                "$forbidden must not be used before respondToCall",
-                !preResponse.contains(forbidden)
+                "$forbidden must not be used before boundary-guarded post-response work",
+                !preResponseWork.contains(forbidden)
             )
         }
     }
