@@ -851,14 +851,18 @@ if (systemDoctorSource) {
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
-if (chrome) {
+const glassComponentsPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelGlassComponents.kt';
+const glassComponents = readRequired(glassComponentsPath);
+const sharedComponentSources = [chrome, glassComponents].filter(Boolean).join('\n');
+if (sharedComponentSources) {
   for (const component of [
     'SentinelTopBar',
     'SentinelHero',
     'SentinelPanel',
     'SentinelSectionHeader',
   ]) {
-    if (!chrome.includes(`fun ${component}(`)) {
+    if (!sharedComponentSources.includes(`fun ${component}(`)) {
       errors.push(`shared UI component missing: ${component}`);
     }
   }
