@@ -128,7 +128,6 @@ fun OsintFeedScreen(navController: NavController) {
                 isLoading = false
             }
         }
-        Unit
     }
 
     LaunchedEffect(Unit) {
