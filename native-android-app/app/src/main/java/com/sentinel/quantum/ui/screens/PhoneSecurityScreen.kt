@@ -90,7 +90,31 @@ fun PhoneSecurityScreen(navController: NavController) {
     var pendingBlockConfirmation by remember { mutableStateOf(false) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
     var intelligencePresentation by remember { mutableStateOf<IntelligenceSnapshotPresentation?>(null) }
+    var lookupGeneration by remember { mutableStateOf(0) }
     var postureEpoch by remember { mutableStateOf(0) }
+
+    fun clearLookupResults() {
+        checkResult = null
+        explanation = null
+        monitorStats = null
+        remoteResult = null
+        remoteStatus = null
+        remoteRunning = false
+        arcepResult = null
+        arcepStatus = null
+        directoryRunning = false
+        rtrResult = null
+        intelligencePresentation = null
+        actionStatus = null
+        pendingBlockConfirmation = false
+    }
+
+    fun isCurrentLookup(
+        generation: Int,
+        candidate: String,
+        currentGeneration: Int,
+        currentPhoneNumber: String
+    ): Boolean = generation == currentGeneration && candidate == currentPhoneNumber
     val hostActivity = context as? ComponentActivity
     DisposableEffect(hostActivity) {
         val observer = LifecycleEventObserver { _, event ->
@@ -283,8 +307,9 @@ fun PhoneSecurityScreen(navController: NavController) {
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = {
+                    lookupGeneration = lookupGeneration + 1
                     phoneNumber = it.take(32)
-                    intelligencePresentation = null
+                    clearLookupResults()
                 },
                 label = { Text(stringResource(R.string.phone_security_label)) },
                 placeholder = { Text(stringResource(R.string.phone_security_placeholder)) },
@@ -296,29 +321,34 @@ fun PhoneSecurityScreen(navController: NavController) {
             Button(
                 onClick = {
                     if (phoneNumber.isNotBlank()) {
+                        lookupGeneration = lookupGeneration + 1
+                        clearLookupResults()
+                        val generation = lookupGeneration
+                        val candidate = phoneNumber
                         checkResult = phoneMonitor.checkNumber(phoneNumber)
                         explanation = checkResult?.let(explainableAI::explainSpamCheck)
                         monitorStats = phoneMonitor.getStats()
                         directoryRunning = true
-                        arcepResult = null
                         arcepStatus = "Recherche dans l’annuaire officiel…"
-                        val candidate = phoneNumber
                         scope.launch {
-                            intelligencePresentation = withContext(Dispatchers.IO) {
+                            val snapshotPresentation = withContext(Dispatchers.IO) {
                                 IntelligenceCoreRuntime.snapshotForNumber(context.applicationContext, candidate)
                                     ?.let { IntelligenceSnapshotPresentation.from(it) }
                             }
+                            if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                            intelligencePresentation = snapshotPresentation
                             val isAustria = RtrDirectoryClient.normalize(candidate) != null
                             if (isAustria) {
                                 val lookup = withContext(Dispatchers.IO) { runCatching { RtrDirectoryClient().lookup(candidate) } }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     rtrResult = it
                                     arcepStatus = if (it != null && it.matches.isNotEmpty()) "Attribution RTR trouvée" else "Aucune attribution RTR correspondante"
                                 }.onFailure { arcepStatus = "Annuaire RTR temporairement indisponible" }
                             } else {
-                                rtrResult = null
                                 val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     arcepResult = it
@@ -484,8 +514,10 @@ fun PhoneSecurityScreen(navController: NavController) {
                     onClick = {
                         val candidate = phoneNumber
                         if (candidate.isNotBlank()) {
+                            lookupGeneration = lookupGeneration + 1
+                            clearLookupResults()
+                            val generation = lookupGeneration
                             remoteRunning = true
-                            remoteResult = null
                             remoteStatus = "Enrichissement Sentinel en cours…"
                             scope.launch {
                                 val checked = withContext(Dispatchers.IO) {
@@ -510,6 +542,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                                         result
                                     }
                                 }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 remoteRunning = false
                                 checked.onSuccess {
                                     remoteResult = it
