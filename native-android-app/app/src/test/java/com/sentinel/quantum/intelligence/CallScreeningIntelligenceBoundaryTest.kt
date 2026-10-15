@@ -9,14 +9,23 @@ class CallScreeningIntelligenceBoundaryTest {
     fun `intelligence publication occurs only inside post-response work`() {
         val source = callScreeningSource()
         val responseIndex = source.indexOf("respondToCall(callDetails, response.build())")
-        val workerIndex = source.indexOf("POST_RESPONSE_WORKER.execute", startIndex = responseIndex.coerceAtLeast(0))
-        val publicationIndex = source.indexOf("IntelligenceCoreRuntime.publishCallDecision(", startIndex = workerIndex.coerceAtLeast(0))
+        val postResponseSubmissionIndex = source.indexOf(
+            "postResponseBoundary.submitPostResponse {",
+            startIndex = responseIndex.coerceAtLeast(0)
+        )
+        val publicationIndex = source.indexOf(
+            "IntelligenceCoreRuntime.publishCallDecision(",
+            startIndex = postResponseSubmissionIndex.coerceAtLeast(0)
+        )
 
         assertTrue("screening must render the Android response", responseIndex >= 0)
-        assertTrue("post-response worker must remain after respondToCall", workerIndex > responseIndex)
+        assertTrue(
+            "post-response submission must remain after respondToCall",
+            postResponseSubmissionIndex > responseIndex
+        )
         assertTrue(
             "Intelligence call evidence must be published only from post-response work",
-            publicationIndex > workerIndex
+            publicationIndex > postResponseSubmissionIndex
         )
     }
 
