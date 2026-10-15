@@ -4,6 +4,8 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -35,6 +37,16 @@ class CallScreeningResponseBoundaryTest {
 
         assertFalse(boundary.submitPostResponse { ran.set(true) })
         assertFalse(ran.get())
+    }
+
+    @Test fun duplicate_response_delivery_is_rejected() {
+        val deliveries = AtomicInteger(0)
+        val boundary = CallScreeningResponseBoundary { command -> command.run() }
+
+        boundary.deliverResponse { deliveries.incrementAndGet() }
+        boundary.deliverResponse { deliveries.incrementAndGet() }
+
+        assertEquals(1, deliveries.get())
     }
 
     @Test fun concurrent_submission_cannot_run_before_response_returns() {
