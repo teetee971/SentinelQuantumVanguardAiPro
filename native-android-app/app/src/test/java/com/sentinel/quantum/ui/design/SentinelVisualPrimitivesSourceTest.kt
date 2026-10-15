@@ -93,6 +93,15 @@ class SentinelVisualPrimitivesSourceTest {
     }
 
     @Test
+    fun motionLevelTransitionsUseSeparateComposeMemoryKeys() {
+        val effects = source("SentinelVisualEffects")
+        assertTrue(
+            "Motion branches must be keyed so STATIC/REDUCED and FULL can change safely",
+            effects.contains("key(motionLevel)")
+        )
+    }
+
+    @Test
     fun particleSeedsAndRingStrokesAreCachedOutsideDrawing() {
         val particles = effect("SentinelParticleField")
         val orbits = effect("SentinelOrbitField")
