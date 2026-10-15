@@ -17,7 +17,8 @@ object PhoneDecisionJournal {
     )
 
     fun sanitize(entry: Entry, nowMs: Long): Entry? {
-        if (nowMs < 0L || entry.timestampMs < 0L || entry.timestampMs > nowMs + MAX_FUTURE_SKEW_MS) return null
+        if (nowMs < 0L || entry.timestampMs < 0L) return null
+        if (entry.timestampMs > nowMs && entry.timestampMs - nowMs > MAX_FUTURE_SKEW_MS) return null
         val rule = token(entry.ruleCode, MAX_RULE)
         val provenance = token(entry.provenance, MAX_PROVENANCE)
         if (rule.isBlank() || provenance.isBlank()) return null
