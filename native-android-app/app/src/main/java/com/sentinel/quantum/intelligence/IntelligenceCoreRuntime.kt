@@ -3,6 +3,8 @@ package com.sentinel.quantum.intelligence
 import android.content.Context
 import com.sentinel.quantum.security.CallNumberFingerprinter
 import com.sentinel.quantum.security.CallRuleEngine
+import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.SmsProviderIdentityLookup
 import java.io.File
 import java.util.UUID
 
@@ -15,6 +17,7 @@ import java.util.UUID
  */
 object IntelligenceCoreRuntime {
     private const val CALL_EVENT_TTL_MS = 30L * 24L * 60L * 60L * 1000L
+    private const val SMS_EVENT_TTL_MS = 30L * 24L * 60L * 60L * 1000L
     private const val STORE_MAX_AGE_MS = 90L * 24L * 60L * 60L * 1000L
     private const val STORE_MAX_ENTRIES = 2_048
     private const val EVENT_QUEUE_CAPACITY = 256
@@ -56,6 +59,61 @@ object IntelligenceCoreRuntime {
             privacyClass = PrivacyClass.BOUNDED_METADATA
         )
         runtime.sink.publish(event)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes a validated Android SMS transport callback without persisting the destination.
+     *
+     * The provider row id is used only to resolve the transient address. That value is normalized,
+     * converted immediately into the existing device-bound fingerprint, and discarded before the
+     * [IntelligenceEvent] is constructed. Replayed callbacks use a deterministic PII-free event id,
+     * so the snapshot store's event-id idempotence prevents duplicate evidence.
+     */
+    fun publishSmsDelivery(
+        context: Context,
+        providerMessageId: Long,
+        event: SmsDeliveryStatusBus.Event,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult = runCatching {
+        if (
+            observedAtMs < 0L ||
+            providerMessageId <= 0L ||
+            event.providerMessageId != providerMessageId ||
+            event.sendToken <= 0 ||
+            event.partCount <= 0 ||
+            event.partIndex !in 0 until event.partCount
+        ) return@runCatching PublishResult.REJECTED
+
+        val rawAddress = SmsProviderIdentityLookup(context.applicationContext)
+            .addressForProviderMessage(providerMessageId)
+            ?: return@runCatching PublishResult.REJECTED
+        val normalizedNumber = CallRuleEngine.normalizeNumber(rawAddress)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+
+        val evidence = SmsMmsEvidenceAdapter.fromSmsDelivery(
+            event = event,
+            direction = IntelligenceEvidence.Direction.OUTGOING
+        )
+        val intelligenceEvent = IntelligenceEvent(
+            eventId = smsStatusEventId(event),
+            identityKey = identityKey,
+            evidence = evidence,
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, SMS_EVENT_TTL_MS),
+            source = EvidenceSource.SMS,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.SMS_CORE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.LOCAL_PLATFORM_ASSERTION
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
+        )
+        runtime.sink.publish(intelligenceEvent)
     }.getOrDefault(PublishResult.REJECTED)
 
     fun snapshotForNumber(
@@ -107,6 +165,9 @@ object IntelligenceCoreRuntime {
             ?: return null
         return SentinelIdentityKey.phoneFingerprint(fingerprint, version)
     }
+
+    private fun smsStatusEventId(event: SmsDeliveryStatusBus.Event): String =
+        "sms-status:${event.sendToken}:${event.providerMessageId}:${event.stage.name}:${event.partIndex}:${event.partCount}"
 
     private fun networkVerification(code: String): IntelligenceEvidence.NetworkVerification = when (code) {
         "VERIFIED" -> IntelligenceEvidence.NetworkVerification.VERIFIED
