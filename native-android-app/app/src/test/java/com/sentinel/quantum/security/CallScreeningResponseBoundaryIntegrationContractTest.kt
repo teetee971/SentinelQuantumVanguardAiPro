@@ -20,8 +20,12 @@ class CallScreeningResponseBoundaryIntegrationContractTest {
         assertTrue(boundaryIndex >= 0)
         assertTrue(roleReadIndex > boundaryIndex)
         assertTrue(postResponseIndex > roleReadIndex)
-        assertEquals(4, Regex("responseBoundary\\.deliverResponse").findAll(source).count())
-        assertEquals(4, Regex("respondToCall\\(").findAll(source).count())
+        assertEquals(4, Regex("responseBoundary\\.deliverResponse\\s*\\{").findAll(source).count())
+        assertEquals(4, Regex("respondToCall\\(callDetails,").findAll(source).count())
+        assertFalse(
+            "no direct Telecom response may appear before the per-call boundary is created",
+            source.substring(0, boundaryIndex).contains("respondToCall(callDetails,")
+        )
     }
 
     @Test
