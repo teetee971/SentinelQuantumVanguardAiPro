@@ -69,8 +69,52 @@ import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.Locale
+
+/**
+ * Serializes a reputation write with its stale-generation cleanup.
+ *
+ * Generation invalidation is synchronous and only touches a small in-memory counter, so editing
+ * the field never waits for disk I/O. A persistence operation owns the mutex across the actual
+ * write and the conditional cleanup; a newer generation observed during I/O therefore removes
+ * the old candidate before another queued write can begin.
+ */
+internal class GenerationSafeReputationPersistence<T>(
+    private val persist: suspend (candidate: String, value: T) -> Unit,
+    private val discard: suspend (candidate: String) -> Unit
+) {
+    private val stateLock = Any()
+    private val persistenceLock = Mutex()
+    private var generation = 0
+
+    fun invalidate(): Int = synchronized(stateLock) {
+        generation += 1
+        generation
+    }
+
+    suspend fun persistIfCurrent(
+        expectedGeneration: Int,
+        candidate: String,
+        value: T
+    ): Boolean = persistenceLock.withLock {
+        if (!isCurrent(expectedGeneration)) return@withLock false
+
+        persist(candidate, value)
+
+        if (!isCurrent(expectedGeneration)) {
+            discard(candidate)
+            return@withLock false
+        }
+        true
+    }
+
+    private fun isCurrent(expectedGeneration: Int): Boolean = synchronized(stateLock) {
+        generation == expectedGeneration
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,6 +178,23 @@ fun PhoneSecurityScreen(navController: NavController) {
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
     }
     val scope = rememberCoroutineScope()
+    val reputationStorage = remember(context) {
+        SharedPreferencesCommunicationReputationStorage(context.applicationContext)
+    }
+    val reputationCache = remember(reputationStorage) {
+        CommunicationReputationCache(reputationStorage)
+    }
+    val reputationWriter = remember(reputationCache) {
+        CommunicationReputationWriter(reputationCache)
+    }
+    val generationSafeReputationPersistence = remember(reputationWriter, reputationStorage) {
+        GenerationSafeReputationPersistence<CallerReputationClient.Result>(
+            persist = { candidate, result -> reputationWriter.persist(candidate, result) },
+            discard = { candidate ->
+                CommunicationReputationCache.cacheKeyFor(candidate)?.let(reputationStorage::remove)
+            }
+        )
+    }
     val phoneCoreFacts = remember(context, postureEpoch) {
         PhoneCoreRuntimeFacts.read(context.applicationContext)
     }
@@ -307,7 +368,7 @@ fun PhoneSecurityScreen(navController: NavController) {
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = {
-                    lookupGeneration = lookupGeneration + 1
+                    lookupGeneration = generationSafeReputationPersistence.invalidate()
                     phoneNumber = it.take(32)
                     clearLookupResults()
                 },
@@ -321,7 +382,7 @@ fun PhoneSecurityScreen(navController: NavController) {
             Button(
                 onClick = {
                     if (phoneNumber.isNotBlank()) {
-                        lookupGeneration = lookupGeneration + 1
+                        lookupGeneration = generationSafeReputationPersistence.invalidate()
                         clearLookupResults()
                         val generation = lookupGeneration
                         val candidate = phoneNumber
@@ -514,7 +575,7 @@ fun PhoneSecurityScreen(navController: NavController) {
                     onClick = {
                         val candidate = phoneNumber
                         if (candidate.isNotBlank()) {
-                            lookupGeneration = lookupGeneration + 1
+                            lookupGeneration = generationSafeReputationPersistence.invalidate()
                             clearLookupResults()
                             val generation = lookupGeneration
                             remoteRunning = true
@@ -546,11 +607,11 @@ fun PhoneSecurityScreen(navController: NavController) {
                                     if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                     runCatching {
                                         withContext(Dispatchers.IO) {
-                                            CommunicationReputationWriter(
-                                                CommunicationReputationCache(
-                                                    SharedPreferencesCommunicationReputationStorage(context.applicationContext)
-                                                )
-                                            ).persist(candidate, result)
+                                            generationSafeReputationPersistence.persistIfCurrent(
+                                                expectedGeneration = generation,
+                                                candidate = candidate,
+                                                value = result
+                                            )
                                         }
                                     }.onFailure {
                                         if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch

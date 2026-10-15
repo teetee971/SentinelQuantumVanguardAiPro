@@ -5,14 +5,15 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PhoneSecurityReputationPersistenceContractTest {
-    @Test fun successfulConsentedPhoneSecurityLookupFeedsSharedCommunicationCache() {
-        val source = File(
-            "src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt"
-        ).readText()
+    private val source = File(
+        "src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt"
+    ).readText()
 
+    @Test fun successfulConsentedPhoneSecurityLookupFeedsSharedCommunicationCache() {
         assertTrue(source.contains("CommunicationReputationWriter"))
         assertTrue(source.contains("SharedPreferencesCommunicationReputationStorage(context.applicationContext)"))
-        assertTrue(source.contains(".persist(candidate, result)"))
+        assertTrue(source.contains("GenerationSafeReputationPersistence"))
+        assertTrue(source.contains("persistIfCurrent"))
     }
 
     @Test fun staleLookupIsRejectedBeforeReputationPersistence() {
@@ -23,7 +24,7 @@ class PhoneSecurityReputationPersistenceContractTest {
 
         val lookupBlock = source.substring(lookupBlockStart, lookupBlockEnd + "remoteStatus = \"Réputation distante reçue\"".length)
         val guardIndex = lookupBlock.indexOf("if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber))")
-        val persistIndex = lookupBlock.indexOf(".persist(candidate, result)")
+        val persistIndex = lookupBlock.indexOf("persistIfCurrent")
         val remoteResultIndex = lookupBlock.indexOf("remoteResult = result")
         val lastGuardIndex = lookupBlock.lastIndexOf("if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber))")
 
