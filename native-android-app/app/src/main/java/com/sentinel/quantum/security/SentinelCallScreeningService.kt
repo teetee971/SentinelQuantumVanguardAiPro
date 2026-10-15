@@ -10,6 +10,7 @@ import android.telecom.CallScreeningService
 import android.telecom.Connection
 import android.util.Log
 import com.sentinel.quantum.CallerIdActivity
+import com.sentinel.quantum.SentinelApplication
 import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
 import com.sentinel.quantum.intelligence.PublishResult
 import java.util.concurrent.atomic.AtomicLong
