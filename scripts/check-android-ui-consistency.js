@@ -854,19 +854,16 @@ const chrome = readRequired(chromePath);
 const glassComponentsPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelGlassComponents.kt';
 const glassComponents = readRequired(glassComponentsPath);
-const sharedComponentSources = [chrome, glassComponents].filter(Boolean).join('\n');
-if (sharedComponentSources) {
-  for (const component of [
-    'SentinelTopBar',
-    'SentinelHero',
-    'SentinelPanel',
-    'SentinelSectionHeader',
-  ]) {
-    if (!sharedComponentSources.includes(`fun ${component}(`)) {
-      errors.push(`shared UI component missing: ${component}`);
-    }
+function assertSharedComponent(source, component, relativePath) {
+  if (!source || !source.includes(`fun ${component}(`)) {
+    errors.push(`shared UI component missing: ${component} (${relativePath})`);
   }
 }
+
+for (const component of ['SentinelTopBar', 'SentinelHero', 'SentinelPanel']) {
+  assertSharedComponent(chrome, component, chromePath);
+}
+assertSharedComponent(glassComponents, 'SentinelSectionHeader', glassComponentsPath);
 
 if (errors.length) {
   console.error('Android UI consistency check failed:');
