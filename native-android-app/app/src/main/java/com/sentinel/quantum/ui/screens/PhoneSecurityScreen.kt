@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.VpnLock
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -75,7 +76,7 @@ import java.util.Locale
 @Composable
 fun PhoneSecurityScreen(navController: NavController) {
     val context = LocalContext.current
-    var phoneNumber by remember { mutableStateOf("") }
+    var phoneNumber by rememberSaveable { mutableStateOf("") }
     var checkResult by remember { mutableStateOf<PhoneMonitor.SpamCheckResult?>(null) }
     var explanation by remember { mutableStateOf<ExplainableAI.Explanation?>(null) }
     var monitorStats by remember { mutableStateOf<PhoneMonitor.MonitorStats?>(null) }
