@@ -12,6 +12,18 @@ class HomeVisualSourceContractTest {
     ).readText()
 
     @Test
+    fun homeInstrumentationKeepsComposeClockAutoAdvanceEnabled() {
+        val instrumentationSource = File(
+            "src/androidTest/java/com/sentinel/quantum/ui/HomeVisualContractTest.kt"
+        ).readText()
+        assertFalse(
+            "Home instrumentation must not disable Compose clock auto-advance",
+            Regex("\\bmainClock\\s*\\.\\s*autoAdvance\\s*=\\s*false\\b")
+                .containsMatchIn(instrumentationSource)
+        )
+    }
+
+    @Test
     fun primaryActivationActionPrecedesTheTallHeroAndModuleList() {
         val action = source.indexOf("SentinelActionTile(")
         val hero = source.indexOf("SentinelHeroVisual(")
