@@ -458,7 +458,7 @@ class SmsComposeActivity : ComponentActivity() {
                                             liveRegion = LiveRegionMode.Polite
                                         }, style = MaterialTheme.typography.bodySmall)
                                     }
-                                    if (replyVisible && threadId != null) {
+                                    if (replyVisible) {
                                         val draft = replyDrafts[threadId].orEmpty()
                                         if (activeSubscriptions.size > 1) {
                                             PhoneCoreDisclosure(title = "Ligne d’envoi") {

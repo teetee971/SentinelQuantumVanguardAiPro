@@ -42,7 +42,10 @@ object PhoneRiskCard {
     fun build(input: Input, nowMs: Long): Card {
         val validatedScore = input.riskScore?.takeIf { it in 0..100 }
         val freshness = freshness(input.observedAtMs, input.ttlMs, nowMs)
-        val currentScore = validatedScore.takeUnless { freshness == Freshness.STALE }
+        val invalidObservationTime = input.observedAtMs?.let { it < 0L || it > nowMs } == true
+        val currentScore = validatedScore.takeUnless {
+            freshness == Freshness.STALE || invalidObservationTime
+        }
         val categories = input.categoryCodes
             .mapNotNull(PhoneFraudTaxonomy::fromSignal)
             .distinct()

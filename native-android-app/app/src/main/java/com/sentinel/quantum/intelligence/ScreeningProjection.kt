@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference
  * exact/prefix rules, explicitly enabled verified ARCEP prefixes, and still-valid signed silence
  * rules. IntelligenceSnapshot contributes revision context only and can never mint enforcement.
  */
+@ConsistentCopyVisibility
 data class ScreeningProjection private constructor(
     val blockedNumberHashes: Set<String>,
     val blockedPrefixes: Set<String>,

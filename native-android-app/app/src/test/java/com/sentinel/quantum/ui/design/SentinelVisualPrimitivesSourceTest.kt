@@ -124,4 +124,13 @@ class SentinelVisualPrimitivesSourceTest {
             assertTrue(body.contains(".clearAndSetSemantics { }"))
         }
     }
+
+    @Test
+    fun unknownStateUsesAutoMirroredHelpIcon() {
+        val d1 = source("SentinelD1")
+        assertTrue(d1.contains("import androidx.compose.material.icons.automirrored.filled.HelpOutline"))
+        assertTrue(d1.contains("SentinelState.UNKNOWN -> Icons.AutoMirrored.Filled.HelpOutline"))
+        assertFalse(d1.contains("import androidx.compose.material.icons.filled.HelpOutline"))
+        assertFalse(d1.contains("SentinelState.UNKNOWN -> Icons.Default.HelpOutline"))
+    }
 }

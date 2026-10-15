@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -116,10 +117,16 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         }
         if (progress == null) {
             if (progressPersistenceFailed) {
-                SmsDeliveryStatusBus.publish(SmsDeliveryStatusBus.Event(
-                    sendToken, providerMessageId, partIndex, partCount, stage, successful,
+                val statusEvent = SmsDeliveryStatusBus.Event(
+                    sendToken = sendToken,
+                    providerMessageId = providerMessageId,
+                    partIndex = partIndex,
+                    partCount = partCount,
+                    stage = stage,
+                    successful = successful,
                     providerWriteSucceeded = false
-                ))
+                )
+                publishValidatedStatus(context, statusEvent)
                 LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Persistance du statut SMS indisponible")
             }
             return
@@ -145,17 +152,16 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
             LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Écriture du statut dans le provider SMS non confirmée")
         }
 
-        SmsDeliveryStatusBus.publish(
-            SmsDeliveryStatusBus.Event(
-                sendToken = sendToken,
-                providerMessageId = providerMessageId,
-                partIndex = partIndex,
-                partCount = partCount,
-                stage = stage,
-                successful = successful,
-                providerWriteSucceeded = providerUpdated && !progressPersistenceFailed
-            )
+        val statusEvent = SmsDeliveryStatusBus.Event(
+            sendToken = sendToken,
+            providerMessageId = providerMessageId,
+            partIndex = partIndex,
+            partCount = partCount,
+            stage = stage,
+            successful = successful,
+            providerWriteSucceeded = providerUpdated && !progressPersistenceFailed
         )
+        publishValidatedStatus(context, statusEvent)
         LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
         val timeline = PhonePrivateTimelineStore(context)
         val timestampMs = System.currentTimeMillis()
@@ -196,6 +202,17 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         }
     }
 
+    private fun publishValidatedStatus(context: Context, statusEvent: SmsDeliveryStatusBus.Event) {
+        SmsDeliveryStatusBus.publish(statusEvent)
+        runCatching {
+            IntelligenceCoreRuntime.publishSmsDelivery(
+                context = context,
+                providerMessageId = statusEvent.providerMessageId,
+                event = statusEvent
+            )
+        }
+    }
+
     companion object {
         private val repairQueued = AtomicBoolean(false)
 
@@ -233,4 +250,3 @@ class SentinelSmsStatusReceiver : BroadcastReceiver() {
         }
     }
 }
-

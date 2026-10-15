@@ -40,8 +40,8 @@ class AppPermissionAnalyzer(
         getInstalledApplications()
             .mapNotNull { applicationInfo ->
                 val packageName = applicationInfo.packageName ?: return@mapNotNull null
-                val appName = applicationInfo.loadLabel(packageManager)?.toString()
-                    ?.takeIf { it.isNotBlank() }
+                val appName = applicationInfo.loadLabel(packageManager).toString()
+                    .takeIf { it.isNotBlank() }
                     ?: packageName
                 val permissions = getRequestedPermissions(packageName)
                     .orEmpty()
@@ -89,8 +89,8 @@ class AppPermissionAnalyzer(
         try {
             packageManager.getPermissionInfo(permissionName, 0)
                 .loadLabel(packageManager)
-                ?.toString()
-                ?.takeIf { it.isNotBlank() }
+                .toString()
+                .takeIf { it.isNotBlank() }
                 ?: permissionName
         } catch (_: PackageManager.NameNotFoundException) {
             permissionName

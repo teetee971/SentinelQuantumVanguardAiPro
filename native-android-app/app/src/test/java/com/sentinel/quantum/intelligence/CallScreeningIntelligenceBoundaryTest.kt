@@ -8,13 +8,13 @@ class CallScreeningIntelligenceBoundaryTest {
     @Test
     fun `intelligence publication occurs only inside post-response work`() {
         val source = callScreeningSource()
-        val deliveryIndex = source.indexOf("postResponseBoundary.deliverResponse {")
+        val deliveryIndex = source.indexOf("responseBoundary.deliverResponse {")
         val responseIndex = source.indexOf(
             "respondToCall(callDetails, response.build())",
             startIndex = deliveryIndex.coerceAtLeast(0)
         )
         val postResponseSubmissionIndex = source.indexOf(
-            "postResponseBoundary.submitPostResponse {",
+            "responseBoundary.submitPostResponse {",
             startIndex = responseIndex.coerceAtLeast(0)
         )
         val publicationIndex = source.indexOf(

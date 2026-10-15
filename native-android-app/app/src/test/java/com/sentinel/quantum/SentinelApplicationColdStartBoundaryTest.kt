@@ -51,7 +51,7 @@ class SentinelApplicationColdStartBoundaryTest {
         )
         val responseIndex = serviceSource.indexOf("respondToCall(callDetails, response.build())")
         val submissionIndex = serviceSource.indexOf(
-            "postResponseBoundary.submitPostResponse",
+            "responseBoundary.submitPostResponse",
             responseIndex
         )
         val maintenanceIndex = serviceSource.indexOf("runPostResponseMaintenance()", submissionIndex)
