@@ -35,6 +35,16 @@ class SentinelApplicationColdStartBoundaryTest {
     }
 
     @Test
+    fun foreground_resume_keeps_sms_mms_maintenance_alive() {
+        val activitySource = source("src/main/java/com/sentinel/quantum/MainActivity.kt")
+        val applicationSource = source("src/main/java/com/sentinel/quantum/SentinelApplication.kt")
+
+        assertTrue(activitySource.contains("override fun onPostResume()"))
+        assertTrue(activitySource.contains("launchForegroundMaintenance()"))
+        assertTrue(applicationSource.contains("fun launchForegroundMaintenance()"))
+    }
+
+    @Test
     fun maintenance_is_owned_by_post_response_screening_work() {
         val serviceSource = source(
             "src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt"
