@@ -167,7 +167,7 @@ object IntelligenceCoreRuntime {
     }
 
     private fun smsStatusEventId(event: SmsDeliveryStatusBus.Event): String =
-        "sms-status:${event.sendToken}:${event.stage.name}:${event.partIndex}:${event.partCount}"
+        "sms-status:${event.sendToken}:${event.providerMessageId}:${event.stage.name}:${event.partIndex}:${event.partCount}"
 
     private fun networkVerification(code: String): IntelligenceEvidence.NetworkVerification = when (code) {
         "VERIFIED" -> IntelligenceEvidence.NetworkVerification.VERIFIED
