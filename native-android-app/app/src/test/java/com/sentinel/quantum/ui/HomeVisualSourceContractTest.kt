@@ -26,6 +26,9 @@ class HomeVisualSourceContractTest {
     fun clockGuardRejectsParenthesizedAndCommentSeparatedFalse() {
         listOf(
             "composeRule.mainClock.autoAdvance = false",
+            "(composeRule.mainClock).autoAdvance = false",
+            "((composeRule).mainClock).autoAdvance = (false)",
+            "((composeRule.mainClock)).autoAdvance = ((false))",
             "composeRule.mainClock.autoAdvance = (false)",
             "composeRule.mainClock.autoAdvance = ((false))",
             "composeRule.mainClock\n  . autoAdvance = (\n false \n)",
@@ -40,9 +43,11 @@ class HomeVisualSourceContractTest {
     fun clockGuardIgnoresCommentsAndStringLiterals() {
         listOf(
             "// composeRule.mainClock.autoAdvance = false",
+            "// (composeRule.mainClock).autoAdvance = false",
             "/* composeRule.mainClock.autoAdvance = (false) */",
             "/* outer /* composeRule.mainClock.autoAdvance = false */ end */",
             "val example = \"composeRule.mainClock.autoAdvance = false\"",
+            "val example = \"(composeRule.mainClock).autoAdvance = false\"",
             "val example = \"\"\"composeRule.mainClock.autoAdvance = (false)\"\"\""
         ).forEach { nonExecutableText ->
             assertFalse("Must ignore: $nonExecutableText", containsDisabledComposeClock(nonExecutableText))
@@ -55,7 +60,7 @@ class HomeVisualSourceContractTest {
         while (parenthesizedFalse.containsMatchIn(code)) {
             code = code.replace(parenthesizedFalse, "false")
         }
-        return Regex("""\bmainClock\s*\.\s*autoAdvance\s*=\s*false\b""")
+        return Regex("""\bmainClock\s*\)*\s*\.\s*autoAdvance\s*=\s*false\b""")
             .containsMatchIn(code)
     }
 
