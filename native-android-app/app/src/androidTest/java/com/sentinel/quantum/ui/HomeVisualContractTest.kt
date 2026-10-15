@@ -29,7 +29,6 @@ class HomeVisualContractTest {
 
     @Test
     fun homeExposesTruthfulCommandCenterSemantics() {
-        composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
             SentinelQuantumTheme {
                 val navController = rememberNavController()
@@ -51,7 +50,6 @@ class HomeVisualContractTest {
 
     @Test
     fun primaryActionIsVisibleWithoutScrollingOnNarrowLargeFontHome() {
-        composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
                 SentinelQuantumTheme {
