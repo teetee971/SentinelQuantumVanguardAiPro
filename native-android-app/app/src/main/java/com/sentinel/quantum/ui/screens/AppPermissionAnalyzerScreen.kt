@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -287,7 +288,7 @@ private fun AppPermissionProfileCard(profile: InstalledAppPermissionProfile) {
     SentinelGlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }
+            .clickable(role = Role.Button, onClick = { expanded = !expanded })
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -310,12 +311,10 @@ private fun AppPermissionProfileCard(profile: InstalledAppPermissionProfile) {
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            IconButton(onClick = { expanded = !expanded }) {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Réduire" else "Développer"
-                )
-            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null
+            )
         }
 
         PermissionRiskBadge(profile.overallRisk)
