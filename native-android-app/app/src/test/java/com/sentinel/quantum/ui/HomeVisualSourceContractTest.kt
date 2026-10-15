@@ -175,4 +175,20 @@ class HomeVisualSourceContractTest {
             !source.contains("\"Prérequis prêts\"")
         )
     }
+
+    @Test
+    fun phoneCoreDoesNotClaimObservedEvidenceFromSoftwarePrerequisites() {
+        val phoneCore = source
+            .substringAfter("phoneCore = HomeComponentFacts(")
+            .substringBefore("vpn = HomeComponentFacts(")
+
+        assertTrue(
+            "Home must keep Phone Core evidence unknown until an explicit runtime proof exists",
+            phoneCore.contains("evidenceObserved = false")
+        )
+        assertFalse(
+            "Software prerequisites must not be presented as observed Phone Core evidence",
+            phoneCore.contains("evidenceObserved = true")
+        )
+    }
 }

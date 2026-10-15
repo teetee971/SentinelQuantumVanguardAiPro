@@ -157,7 +157,7 @@ fun HomeScreen(navController: NavController) {
                 phoneCore = HomeComponentFacts(
                     implemented = phoneCapability?.implemented ?: true,
                     customerAvailable = phoneCapability?.availableAt() == true,
-                    evidenceObserved = true,
+                    evidenceObserved = false,
                     condition = if (phoneCoreReady) HomeCondition.HEALTHY else HomeCondition.DEGRADED,
                     locked = !phoneCoreFacts.dialerRoleHeld || !phoneCoreFacts.callScreeningRoleHeld ||
                         !phoneCoreFacts.smsRoleHeld,
