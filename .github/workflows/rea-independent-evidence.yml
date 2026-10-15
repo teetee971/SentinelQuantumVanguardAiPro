@@ -124,13 +124,19 @@ jobs:
           mkdir -p "$OUT/screens"
           SERIAL="$REQUESTED_SERIAL"
 
+          adb devices -l > "$OUT/adb-devices-host.txt"
+          mapfile -t DEVICES < <(awk 'NR > 1 && $2 == "device" {print $1}' "$OUT/adb-devices-host.txt")
+          if [[ ${#DEVICES[@]} -ne 1 ]]; then
+            printf 'device_collection=skipped\nreason=expected_exactly_one_connected_device\nobserved=%s\n' "${#DEVICES[@]}" > "$OUT/device-collection-status.txt"
+            exit 0
+          fi
+
+          OBSERVED_SERIAL="${DEVICES[0]}"
+          if [[ -n "$SERIAL" && "$SERIAL" != "$OBSERVED_SERIAL" ]]; then
+            printf 'device_collection=skipped\nreason=requested_serial_not_observed\nobserved=%s\nobserved_serial=%s\nrequested_serial=%s\n' "${#DEVICES[@]}" "$OBSERVED_SERIAL" "$SERIAL" > "$OUT/device-collection-status.txt"
+            exit 0
+          fi
           if [[ -z "$SERIAL" ]]; then
-            adb devices -l > "$OUT/adb-devices-host.txt"
-            mapfile -t DEVICES < <(awk 'NR > 1 && $2 == "device" {print $1}' "$OUT/adb-devices-host.txt")
-            if [[ ${#DEVICES[@]} -ne 1 ]]; then
-              printf 'device_collection=skipped\nreason=expected_exactly_one_connected_device\nobserved=%s\n' "${#DEVICES[@]}" > "$OUT/device-collection-status.txt"
-              exit 0
-            fi
             SERIAL="${DEVICES[0]}"
           fi
 

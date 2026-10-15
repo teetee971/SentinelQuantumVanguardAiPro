@@ -35,6 +35,18 @@ test('REA device evidence keeps the no-device state explicit', () => {
   assert.match(workflow, /capture-adb-screen/);
 });
 
+test('REA device evidence cannot bypass the single-device guard with a requested serial', () => {
+  const deviceStep = workflow.slice(workflow.indexOf('Collect REA device evidence when one device is available'));
+  const enumeration = deviceStep.indexOf('adb devices -l > "$OUT/adb-devices-host.txt"');
+  const singleDeviceGuard = deviceStep.indexOf('if [[ ${#DEVICES[@]} -ne 1 ]]; then');
+  const requestedSerialBranch = deviceStep.indexOf('if [[ -z "$SERIAL" ]]; then');
+
+  assert.ok(enumeration >= 0, 'device enumeration must always be present');
+  assert.ok(singleDeviceGuard > enumeration, 'the single-device guard must follow enumeration');
+  assert.ok(requestedSerialBranch === -1 || requestedSerialBranch > singleDeviceGuard,
+    'a requested serial must not bypass the single-device guard');
+});
+
 test('REA workflow commands are observation-only', () => {
   for (const forbidden of [
     'install-adb-package',
