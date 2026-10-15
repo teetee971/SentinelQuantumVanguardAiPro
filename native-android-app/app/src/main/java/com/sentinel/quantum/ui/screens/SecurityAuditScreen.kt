@@ -2,6 +2,7 @@ package com.sentinel.quantum.ui.screens
 
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
@@ -36,12 +39,21 @@ import kotlinx.coroutines.withContext
 @Composable
 fun SecurityAuditScreen(navController: NavController) {
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    var motionEpoch by remember { mutableIntStateOf(0) }
+    DisposableEffect(activity) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) motionEpoch++
+        }
+        activity?.lifecycle?.addObserver(observer)
+        onDispose { activity?.lifecycle?.removeObserver(observer) }
+    }
     var auditResult by remember { mutableStateOf<SecurityAudit.SecurityAuditResult?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     val logger = remember { LocalLogger(context) }
     val securityAudit = remember { SecurityAudit(context, logger) }
     val scope = rememberCoroutineScope()
-    val motionLevel = remember(context) {
+    val motionLevel = remember(context, motionEpoch) {
         val animatorScale = runCatching {
             Settings.Global.getFloat(
                 context.contentResolver,
