@@ -1,7 +1,10 @@
 package com.sentinel.quantum.ui.screens
 
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -9,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -22,15 +24,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.PwnedPasswordClient
 import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
-import com.sentinel.quantum.ui.design.SentinelPanel
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,18 +47,30 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DigitalExposureScreen(navController: NavController) {
+    val context = LocalContext.current
     var password by remember { mutableStateOf("") }
     var result by remember { mutableStateOf<PwnedPasswordClient.Result?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
     var running by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val client = remember { PwnedPasswordClient() }
+    val motionLevel = remember(context) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
+    }
 
     Scaffold(
         topBar = {
             SentinelTopBar(
-                title = "Exposition numérique",
-                subtitle = "Contrôles locaux & preuves externes",
+                title = "Empreinte numérique",
+                subtitle = "Preuves d’exposition & capacités réelles",
                 onBack = { navController.navigateUp() }
             )
         }
@@ -63,79 +83,194 @@ fun DigitalExposureScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Exposition",
-                title = "Vérifier sans divulguer le secret",
-                body = "Le mot de passe est haché localement. Sentinel transmet uniquement les 5 premiers caractères du SHA-1 au service Pwned Passwords, puis compare le suffixe sur l’appareil. Le mot de passe et son hash complet ne sont jamais envoyés.",
-                badges = listOf(
-                    "k-anonyme" to SentinelD1.Success,
-                    "Hash local" to SentinelD1.Cyan
-                )
+            SentinelHeroVisual(
+                status = SentinelStatus.LIMITED,
+                title = "Empreinte numérique",
+                subtitle = "Sentinel vérifie actuellement les mots de passe compromis par k-anonymat. La veille e-mail et domaine reste verrouillée tant qu’un backend autorisé n’est pas configuré.",
+                modifier = Modifier.testTag("exposure-command-center"),
+                motionLevel = motionLevel
             )
+
+            ExposureCapabilityGraph(result = result)
+
             SentinelSectionHeader(
                 title = "Mot de passe compromis",
-                subtitle = "Le résultat indique uniquement si une correspondance a été trouvée dans la base interrogée."
+                subtitle = "Contrôle disponible · source externe interrogée sans transmettre le secret."
             )
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it.take(256) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Mot de passe à vérifier") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-            )
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = password.isNotEmpty() && !running,
-                onClick = {
-                    val candidate = password
-                    password = ""
-                    result = null
-                    status = null
-                    running = true
-                    scope.launch {
-                        val checked = withContext(Dispatchers.IO) {
-                            runCatching { client.check(candidate) }
-                        }
-                        candidate.toCharArray().fill('\u0000')
-                        running = false
-                        checked.onSuccess { result = it }
-                            .onFailure { status = "Service d’exposition indisponible : " + (it.message ?: "erreur réseau") }
-                    }
-                }
+
+            SentinelGlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("exposure-password-check")
             ) {
-                Text(if (running) "Vérification…" else "Vérifier maintenant")
+                Text(
+                    "Vérification k-anonyme",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Le mot de passe est haché localement. Sentinel transmet uniquement les 5 premiers caractères du SHA-1 au service Pwned Passwords, puis compare le suffixe sur l’appareil. Le mot de passe et son hash complet ne sont jamais envoyés.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it.take(256) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Mot de passe à vérifier") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                )
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = password.isNotEmpty() && !running,
+                    onClick = {
+                        val candidate = password
+                        password = ""
+                        result = null
+                        status = null
+                        running = true
+                        scope.launch {
+                            val checked = withContext(Dispatchers.IO) {
+                                runCatching { client.check(candidate) }
+                            }
+                            candidate.toCharArray().fill('\u0000')
+                            running = false
+                            checked.onSuccess { result = it }
+                                .onFailure {
+                                    status = "Service d’exposition indisponible : " +
+                                        (it.message ?: "erreur réseau")
+                                }
+                        }
+                    }
+                ) {
+                    Text(if (running) "Vérification…" else "Vérifier maintenant")
+                }
             }
 
             result?.let { exposure ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val resultStatus = if (exposure.exposed) SentinelStatus.BAD else SentinelStatus.UNKNOWN
+                SentinelGlassCard(Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Text(
                             if (exposure.exposed) "Mot de passe exposé" else "Aucune correspondance trouvée",
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
                         )
-                        if (exposure.exposed) {
-                            Text("Occurrences connues : ${exposure.occurrenceCount}")
-                            Text("N’utilisez plus ce mot de passe. Remplacez-le partout où il est utilisé, choisissez un mot de passe unique et activez la MFA lorsque disponible.")
-                        } else {
-                            Text("Aucune correspondance dans la base interrogée. Cela ne prouve pas que le mot de passe est sûr ou secret.")
-                        }
+                        SentinelStatusChip(
+                            status = resultStatus,
+                            label = if (exposure.exposed) "EXPOSÉ" else "NON PROUVÉ"
+                        )
+                    }
+                    if (exposure.exposed) {
+                        Text("Occurrences connues : ${exposure.occurrenceCount}")
+                        Text(
+                            "Action recommandée : remplacez ce mot de passe partout où il est utilisé, choisissez un secret unique et activez la MFA ou une passkey lorsque disponible.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            "Aucune correspondance dans la base interrogée. Cela ne prouve pas que le mot de passe est sûr, secret ou absent d’autres sources de fuite.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
             status?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            SentinelPanel {
-                SentinelSectionHeader(
-                    title = "Veille d’e-mail / domaine",
-                    subtitle = "Non activée sans fournisseur autorisé et secret serveur."
+            SentinelGlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("exposure-email-watch")
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "Veille e-mail / domaine",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    SentinelStatusChip(status = SentinelStatus.LOCKED, label = "LOCKED")
+                }
+                Text(
+                    "Backend autorisé requis. Aucun scan d’adresse e-mail, de domaine ou de source dite « dark web » n’est simulé depuis l’APK.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    "Les recherches d’adresses ou de domaines ne seront pas simulées ni effectuées depuis l’APK avec une clé embarquée.",
+                    "L’activation future devra utiliser un fournisseur autorisé, une vérification explicite de l’adresse et des secrets conservés côté serveur.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ExposureCapabilityGraph(result: PwnedPasswordClient.Result?) {
+    val passwordStatus = when {
+        result?.exposed == true -> SentinelStatus.BAD
+        result != null -> SentinelStatus.UNKNOWN
+        else -> SentinelStatus.UNKNOWN
+    }
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "Carte des preuves",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            "Une connexion visuelle indique une capacité ou une preuve disponible, jamais une exposition supposée.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        ExposureNode(
+            title = "Identité numérique",
+            detail = "Point de convergence local",
+            status = SentinelStatus.LIMITED
+        )
+        Text("│", color = SentinelD1.Cyan)
+        ExposureNode(
+            title = "Mot de passe compromis",
+            detail = if (result == null) "Contrôle k-anonyme disponible" else "Dernier contrôle affiché ci-dessous",
+            status = passwordStatus
+        )
+        Text("├────────", color = SentinelD1.Cyan)
+        ExposureNode(
+            title = "E-mail / domaine",
+            detail = "Backend fournisseur autorisé requis",
+            status = SentinelStatus.LOCKED
+        )
+        Text("└────────", color = SentinelD1.Cyan)
+        ExposureNode(
+            title = "Téléphone / profils publics",
+            detail = "Non analysés dans cet écran",
+            status = SentinelStatus.UNKNOWN
+        )
+    }
+}
+
+@Composable
+private fun ExposureNode(
+    title: String,
+    detail: String,
+    status: SentinelStatus
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.Bold)
+            Text(
+                detail,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        SentinelStatusChip(status = status)
     }
 }

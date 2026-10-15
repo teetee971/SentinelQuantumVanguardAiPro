@@ -23,17 +23,17 @@ test('runtime setup installs after UTP cleanup, then rejects failed or unconfirm
   assert.match(runtime, /RUNTIME_LOG="\$RUNNER_TEMP\/phone-core-emulation-api\$\{API_LEVEL\}-runtime\.log"/);
   assert.match(runtime, /exec > >\(tee "\$RUNTIME_LOG"\) 2>&1/);
   assert.match(workflow, /phone-core-emulation-api\$\{\{ matrix\.api_level \}\}-runtime\.log/);
-  const start = runtime.indexOf('          timeout --signal=TERM --kill-after=30s 120s adb install -r');
-  const end = runtime.indexOf('\n          if [[ "$API_LEVEL"', start);
+  const start = runtime.indexOf('          timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r');
+  const end = runtime.indexOf('\n          adb shell pm clear', start);
   assert.ok(start >= 0 && end > start);
-  const reset = runtime.slice(start, end);
+  const reset = runtime.slice(start, end + '\n          adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1\n          grep -Fxq \'Success\' "$OUTPUT/runtime-app-reset.txt"\n          adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1'.length);
   for (const [installStatus, dataStatus, dataOutput, logStatus, expected] of [
     [0, 0, 'Success', 0, 0], [1, 0, 'Success', 0, 1], [0, 1, 'Success', 0, 1], [0, 0, 'Failed', 0, 1], [0, 0, 'Success', 1, 1]
   ]) {
     const dir = mkdtempSync(join(tmpdir(), 'sentinel-runtime-reset-'));
     try {
       const fixture = join(dir, 'reset.sh');
-      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\ntimeout() { while [[ "$1" == --* ]]; do shift; done; shift; "$@"; }\nadb() {\n case "$*" in\n 'install -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
+      writeFileSync(fixture, `set -euo pipefail\nOUTPUT="$1"\nAPK_PATH=fixture.apk\nINSTALLED=0\ntimeout() { while [[ "$1" == --* ]]; do shift; done; shift; "$@"; }\nadb() {\n case "$*" in\n 'install --no-streaming -r fixture.apk') INSTALLED=1; echo INSTALL_EXECUTED; return ${installStatus};;\n 'shell pm clear com.sentinel.quantum') if [[ "$INSTALLED" != 1 ]]; then echo Failed; return 1; fi; echo RESET_EXECUTED >&2; printf '%s\\n' '${dataOutput}'; return ${dataStatus};;\n 'logcat -c') return ${logStatus};;\n *) return 99;;\n esac\n}\n${reset}\necho FRESH_RUNTIME_SCOPE\n`, { mode: 0o600 });
       const result = spawnSync('bash', [fixture, dir], { encoding: 'utf8' });
       assert.equal(result.status, expected, result.stderr);
       assert.equal(result.stdout.includes('FRESH_RUNTIME_SCOPE'), expected === 0);
@@ -134,28 +134,35 @@ for (const [name, output, status, expected] of [
   });
 }
 
-test('effective SEND_SMS denial and restore target the role-managed UID mode', () => {
+test('effective SEND_SMS denial and restore target only the authoritative UID mode', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-test-'));
   try {
-    const result = spawnSync('bash', ['-c', `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nsleep() { :; }\nadb() { printf '%s\\n' "$*"; }\n${shellFunction('set_send_sms_appop')}\nset_send_sms_appop ignore deny.txt\nset_send_sms_appop allow restore.txt`, 'test', dir], { encoding: 'utf8' });
+    const result = spawnSync('bash', ['-c', `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nsleep() { :; }\nadb() { printf '%s\\n' "$*"; }\n${shellFunction('set_send_sms_appop')}\nset_send_sms_appop ignore deny.txt\nset_send_sms_appop default restore.txt`, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     assert.match(readFileSync(join(dir, 'deny.txt'), 'utf8'), /appops set --user 0 --uid com\.sentinel\.quantum SEND_SMS ignore/);
-    assert.match(readFileSync(join(dir, 'restore.txt'), 'utf8'), /appops set --user 0 --uid com\.sentinel\.quantum SEND_SMS allow/);
+    assert.match(readFileSync(join(dir, 'restore.txt'), 'utf8'), /appops set --user 0 --uid com\.sentinel\.quantum SEND_SMS default/);
+    assert.doesNotMatch(readFileSync(join(dir, 'deny.txt'), 'utf8'), /appops set --user 0 com\.sentinel\.quantum SEND_SMS/);
+    assert.doesNotMatch(readFileSync(join(dir, 'restore.txt'), 'utf8'), /appops set --user 0 com\.sentinel\.quantum SEND_SMS/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('UID denial with no observed effect falls back to package mode and restores both boundaries', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-legacy-test-'));
+test('UID ignore remains authoritative when appops get also reports package allow', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-precedence-'));
   try {
-    const result = spawnSync('bash', ['-c', `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nMODE=allow\nsleep() { :; }\nadb() {\n  printf '%s\\n' "$*" >> "$OUT_DIR/commands.txt"\n  if [[ "$*" == "shell appops get com.sentinel.quantum SEND_SMS" ]]; then printf 'SEND_SMS: %s\\n' "$MODE"; fi\n  if [[ "$*" == "shell appops set --user 0 com.sentinel.quantum SEND_SMS ignore" ]]; then MODE=ignore; fi\n  if [[ "$*" == "shell appops set --user 0 com.sentinel.quantum SEND_SMS allow" ]]; then MODE=allow; fi\n  return 0\n}\n${shellFunction('set_send_sms_appop')}\nset_send_sms_appop ignore deny.txt\nset_send_sms_appop allow restore.txt`, 'test', dir], { encoding: 'utf8' });
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nadb() {\n  if [[ "$*" == "shell appops get com.sentinel.quantum SEND_SMS" ]]; then\n    printf 'Uid mode: SEND_SMS: ignore\\nSEND_SMS: allow; time=+8s ago\\n'\n    return 0\n  fi\n  return 99\n}\n${shellFunction('assert_send_sms_appop_denied')}\nassert_send_sms_appop_denied state.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
-    assert.match(readFileSync(join(dir, 'deny.txt'), 'utf8'), /SEND_SMS: ignore/);
-    assert.match(readFileSync(join(dir, 'restore.txt'), 'utf8'), /SEND_SMS: allow/);
-    const commands = readFileSync(join(dir, 'commands.txt'), 'utf8');
-    assert.match(commands, /--uid com\.sentinel\.quantum SEND_SMS ignore/);
-    assert.match(commands, /--user 0 com\.sentinel\.quantum SEND_SMS ignore/);
-    assert.match(commands, /--uid com\.sentinel\.quantum SEND_SMS allow/);
-    assert.match(commands, /--user 0 com\.sentinel\.quantum SEND_SMS allow/);
+    assert.match(readFileSync(join(dir, 'state.txt'), 'utf8'), /^Uid mode: SEND_SMS: ignore/m);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('package-only SEND_SMS ignore cannot masquerade as authoritative UID denial', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sentinel-appop-fail-closed-'));
+  try {
+    const script = `PACKAGE=com.sentinel.quantum\nOUT_DIR="$1"\nadb() {\n  if [[ "$*" == "shell appops get com.sentinel.quantum SEND_SMS" ]]; then\n    printf 'SEND_SMS: ignore\\n'\n    return 0\n  fi\n  return 99\n}\n${shellFunction('assert_send_sms_appop_denied')}\nassert_send_sms_appop_denied state.txt`;
+    const result = spawnSync('bash', ['-c', script, 'test', dir], { encoding: 'utf8' });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stdout, /UID AppOp denial was not observably established/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

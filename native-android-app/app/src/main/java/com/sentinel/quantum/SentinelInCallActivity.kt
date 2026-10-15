@@ -1,9 +1,8 @@
 package com.sentinel.quantum
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
-import com.sentinel.quantum.security.readTelecomInCall
-import com.sentinel.quantum.security.requestAndroidInCallScreen
 import android.os.PowerManager
 import android.telecom.Call
 import androidx.activity.ComponentActivity
@@ -42,8 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.sentinel.quantum.intelligence.Freshness
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentation
 import com.sentinel.quantum.security.InCallPresencePolicy
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.readTelecomInCall
+import com.sentinel.quantum.security.requestAndroidInCallScreen
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import kotlinx.coroutines.flow.collect
 import com.sentinel.quantum.security.CallBlocklistStore
@@ -137,7 +141,6 @@ class SentinelInCallActivity : ComponentActivity() {
                     }
                 }
 
-                // Recording a proof must never cancel the independent live session collector.
                 LaunchedEffect(snapshot?.id, snapshot?.state, resumed) {
                     val current = snapshot ?: return@LaunchedEffect
                     if (!resumed || recordedCallId == current.id ||
@@ -166,7 +169,13 @@ class SentinelInCallActivity : ComponentActivity() {
                         requestAndroidInCallScreen()
                     },
                     onConfigure = {
-                        startActivity(android.content.Intent(this, PhoneCoreDiagnosticActivity::class.java))
+                        startActivity(Intent(this, PhoneCoreDiagnosticActivity::class.java))
+                    },
+                    onOpenCallerCard = { number ->
+                        startActivity(
+                            Intent(this, CallerIdActivity::class.java)
+                                .putExtra(CallerIdActivity.EXTRA_NUMBER, number)
+                        )
                     },
                     onClose = ::finish
                 )
@@ -182,26 +191,31 @@ private fun InCallScreen(
     missingSession: InCallPresencePolicy.MissingSession,
     onRecover: () -> String,
     onConfigure: () -> Unit,
+    onOpenCallerCard: (String) -> Unit,
     onClose: () -> Unit
 ) {
     var showDialpad by rememberSaveable { mutableStateOf(false) }
     var showAudioRoutes by rememberSaveable { mutableStateOf(false) }
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val context = LocalContext.current
+    var intelligencePresentation by remember(snapshot?.handle) {
+        mutableStateOf<IntelligenceSnapshotPresentation?>(null)
+    }
     var trustIndicator by remember(snapshot?.handle) {
         mutableStateOf(
             CallTrustIndicator.Result(
                 level = CallTrustIndicator.Level.UNKNOWN,
-                title = "Aucune information locale",
-                detail = "Analyse locale en attente."
+                title = "Données insuffisantes",
+                detail = "Aucune preuve locale exploitable pour ce numéro pour le moment."
             )
         )
     }
 
     LaunchedEffect(snapshot?.handle) {
         val number = snapshot?.handle?.takeIf { it.isNotBlank() }
-        trustIndicator = if (number == null) {
-            CallTrustIndicator.assess(
+        if (number == null) {
+            intelligencePresentation = null
+            trustIndicator = CallTrustIndicator.assess(
                 CallTrustIndicator.Input(
                     contactKnown = false,
                     localDecision = null,
@@ -209,7 +223,7 @@ private fun InCallScreen(
                 )
             )
         } else {
-            withContext(Dispatchers.IO) {
+            val result = withContext(Dispatchers.IO) {
                 val appContext = context.applicationContext
                 val store = CallBlocklistStore(appContext)
                 val rules = store.snapshot()
@@ -224,14 +238,20 @@ private fun InCallScreen(
                 val contactKnown = runCatching {
                     LocalContactLookup(appContext).find(number) != null
                 }.getOrDefault(false)
-                CallTrustIndicator.assess(
+                val intelligence = runCatching {
+                    IntelligenceCoreRuntime.snapshotForNumber(appContext, number)
+                }.getOrNull()?.let { IntelligenceSnapshotPresentation.from(it) }
+                val indicator = CallTrustIndicator.assess(
                     CallTrustIndicator.Input(
                         contactKnown = contactKnown,
                         localDecision = decision,
                         premiumRateCaution = PhoneNumberRiskRules.isKnownPremiumRatePrefix(number)
                     )
                 )
+                indicator to intelligence
             }
+            trustIndicator = result.first
+            intelligencePresentation = result.second
         }
     }
 
@@ -261,9 +281,6 @@ private fun InCallScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Caller identity and secondary panels may scroll, but call-critical controls stay
-            // pinned below this region. This prevents answer/reject/hang-up controls from being
-            // pushed off-screen on compact devices or when the dialpad/audio panels are open.
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -276,7 +293,8 @@ private fun InCallScreen(
                     CallerHero(
                         snapshot = snapshot,
                         duration = callDurationLabel(snapshot, nowMs),
-                        trustIndicator = trustIndicator
+                        trustIndicator = trustIndicator,
+                        intelligencePresentation = intelligencePresentation
                     )
                 }
 
@@ -285,29 +303,22 @@ private fun InCallScreen(
                         MissingCallSession(missingSession, onRecover, onConfigure, onClose)
                     }
                     snapshot.state == Call.STATE_DISCONNECTING || snapshot.state == Call.STATE_DISCONNECTED -> {
-                        Text(
-                            "L’appel est terminé.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        EndedCallSummary(
+                            snapshot = snapshot,
+                            duration = callSessionDurationLabel(snapshot, nowMs),
+                            intelligencePresentation = intelligencePresentation,
+                            onOpenCallerCard = onOpenCallerCard,
+                            onClose = onClose
                         )
-                        OutlinedButton(onClick = onClose) { Text("Fermer l’écran d’appel") }
                     }
                     snapshot.state != Call.STATE_RINGING -> {
-                        if (showAudioRoutes) {
-                            AudioRoutePanel(snapshot)
-                        }
-
-                        if (showDialpad && snapshot.state == Call.STATE_ACTIVE) {
-                            DialpadPanel(snapshot)
-                        }
-
+                        if (showAudioRoutes) AudioRoutePanel(snapshot)
+                        if (showDialpad && snapshot.state == Call.STATE_ACTIVE) DialpadPanel(snapshot)
                         ConferencePanel(snapshot)
                     }
                 }
 
-                if (calls.size > 1) {
-                    ActiveCallsPanel(calls)
-                }
+                if (calls.size > 1) ActiveCallsPanel(calls)
             }
 
             when {
@@ -350,12 +361,9 @@ private fun MissingCallSession(
                 when (state) {
                     InCallPresencePolicy.MissingSession.CALL_UNAVAILABLE ->
                         "Un appel est bien détecté par Android, mais Sentinel n’a pas encore reçu les commandes de cet appel."
-                    InCallPresencePolicy.MissingSession.CONNECTING ->
-                        "Connexion à l’appel en cours…"
-                    InCallPresencePolicy.MissingSession.ENDED ->
-                        "L’appel est terminé. Vous pouvez fermer cet écran."
-                    InCallPresencePolicy.MissingSession.IDLE ->
-                        "Aucun appel n’est en cours."
+                    InCallPresencePolicy.MissingSession.CONNECTING -> "Connexion à l’appel en cours…"
+                    InCallPresencePolicy.MissingSession.ENDED -> "L’appel est terminé. Vous pouvez fermer cet écran."
+                    InCallPresencePolicy.MissingSession.IDLE -> "Aucun appel n’est en cours."
                     InCallPresencePolicy.MissingSession.UNKNOWN ->
                         "Sentinel ne peut pas vérifier l’état de l’appel pour le moment. Vous pouvez relancer l’écran d’appel ou vérifier la configuration."
                 },
@@ -376,7 +384,8 @@ private fun MissingCallSession(
 private fun CallerHero(
     snapshot: SentinelInCallService.CallSnapshot?,
     duration: String?,
-    trustIndicator: CallTrustIndicator.Result
+    trustIndicator: CallTrustIndicator.Result,
+    intelligencePresentation: IntelligenceSnapshotPresentation?
 ) {
     Column(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -393,17 +402,10 @@ private fun CallerHero(
         }
         Text(callerTitle(snapshot), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         snapshot?.handle?.takeIf { it.isNotBlank() }?.let { handle ->
-            Text(
-                handle,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            Text(handle, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             PhoneCountryPrefixCatalog.resolveNumber(handle)?.let { zone ->
                 Text(
-                    listOf(zone.flag, zone.label, zone.prefix)
-                        .filter { it.isNotBlank() }
-                        .joinToString(" · "),
+                    listOf(zone.flag, zone.label, zone.prefix).filter { it.isNotBlank() }.joinToString(" · "),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
@@ -421,15 +423,110 @@ private fun CallerHero(
             Text(trustIndicator.detail, style = MaterialTheme.typography.bodyMedium)
             Text("Analyse locale indicative · aucune garantie de fiabilité du numéro", style = MaterialTheme.typography.labelSmall)
         }
+        InCallIntelligenceCard(intelligencePresentation)
+    }
+}
+
+@Composable
+private fun InCallIntelligenceCard(intelligencePresentation: IntelligenceSnapshotPresentation?) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Données Sentinel", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (intelligencePresentation == null) {
+                Text("Données insuffisantes", fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Aucun snapshot Intelligence local exploitable n’est disponible pour ce numéro.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                return@Column
+            }
+            InCallFact("Score indicatif", intelligencePresentation.riskScore?.let { "$it/100" } ?: "Non mesuré")
+            InCallFact(
+                "Fraîcheur",
+                when (intelligencePresentation.freshness) {
+                    Freshness.FRESH -> "À jour"
+                    Freshness.STALE -> "Expirée"
+                    Freshness.UNKNOWN -> "Non déterminée"
+                }
+            )
+            InCallFact("Preuves actives", intelligencePresentation.activeEvidenceCount.toString())
+            if (intelligencePresentation.staleEvidenceCount > 0) {
+                InCallFact("Preuves expirées", intelligencePresentation.staleEvidenceCount.toString())
+            }
+            if (intelligencePresentation.sources.isNotEmpty()) {
+                InCallFact("Sources", intelligencePresentation.sources.joinToString(" · ") { it.name })
+            }
+            if (intelligencePresentation.communityAggregatePresent) {
+                Text(
+                    "Signaux communautaires présents comme contexte uniquement ; ils n’autorisent pas seuls un blocage.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Text(
+                "Lecture seule · la décision Telecom a déjà été rendue.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun InCallFact(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End)
+    }
+}
+
+@Composable
+private fun EndedCallSummary(
+    snapshot: SentinelInCallService.CallSnapshot,
+    duration: String?,
+    intelligencePresentation: IntelligenceSnapshotPresentation?,
+    onOpenCallerCard: (String) -> Unit,
+    onClose: () -> Unit
+) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp)) {
+        Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Résumé de l’appel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            InCallFact("Type", callDirectionLabel(snapshot.direction))
+            InCallFact("Durée", duration ?: "Non disponible")
+            InCallFact("Identité", callerTitle(snapshot))
+            intelligencePresentation?.let {
+                InCallFact("Score Sentinel", it.riskScore?.let { score -> "$score/100" } ?: "Non mesuré")
+                InCallFact(
+                    "Fraîcheur",
+                    when (it.freshness) {
+                        Freshness.FRESH -> "À jour"
+                        Freshness.STALE -> "Expirée"
+                        Freshness.UNKNOWN -> "Non déterminée"
+                    }
+                )
+            }
+            snapshot.handle?.takeIf { it.isNotBlank() }?.let { number ->
+                Button(onClick = { onOpenCallerCard(number) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Fiche du numéro")
+                }
+            }
+            OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+                Text("Fermer l’écran d’appel")
+            }
+        }
     }
 }
 
 @Composable
 private fun IncomingActions(snapshot: SentinelInCallService.CallSnapshot) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
         CallActionCircle(
             label = "Refuser",
             icon = Icons.Rounded.CallEnd,
@@ -437,7 +534,6 @@ private fun IncomingActions(snapshot: SentinelInCallService.CallSnapshot) {
             contentColor = MaterialTheme.colorScheme.onError,
             size = 78.dp
         ) { SentinelInCallService.reject(snapshot.id) }
-
         CallActionCircle(
             label = stringResource(R.string.phone_core_answer),
             testId = "phone_core_answer",
@@ -463,41 +559,26 @@ private fun OngoingPrimaryControls(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 CallActionCircle(
                     label = if (muted == true) "Réactiver" else "Muet",
                     icon = if (muted == true) Icons.Rounded.MicOff else Icons.Rounded.Mic,
-                    containerColor = if (muted == true) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    },
+                    containerColor = if (muted == true) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     enabled = activeOrHolding && snapshot.canMute && muted != null,
                     selected = muted == true
-                ) {
-                    muted?.let { SentinelInCallService.setMicrophoneMuted(snapshot.id, !it) }
-                }
+                ) { muted?.let { SentinelInCallService.setMicrophoneMuted(snapshot.id, !it) } }
 
                 CallActionCircle(
                     label = "Audio",
                     icon = Icons.Rounded.VolumeUp,
-                    containerColor = if (showAudioRoutes) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    },
+                    containerColor = if (showAudioRoutes) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     enabled = activeOrHolding && snapshot.audioRoutes.isNotEmpty(),
                     selected = showAudioRoutes,
@@ -508,11 +589,7 @@ private fun OngoingPrimaryControls(
                     label = stringResource(R.string.phone_core_keypad),
                     testId = "phone_core_incall_keypad",
                     icon = Icons.Rounded.Dialpad,
-                    containerColor = if (showDialpad) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    },
+                    containerColor = if (showDialpad) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     enabled = snapshot.state == Call.STATE_ACTIVE,
                     selected = showDialpad,
@@ -520,44 +597,28 @@ private fun OngoingPrimaryControls(
                 )
 
                 when {
-                    snapshot.state == Call.STATE_ACTIVE && snapshot.canHold -> {
-                        CallActionCircle(
-                            label = "Attente",
-                            icon = Icons.Rounded.Pause,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ) { SentinelInCallService.hold(snapshot.id) }
-                    }
-                    snapshot.state == Call.STATE_HOLDING && snapshot.canHold -> {
-                        CallActionCircle(
-                            label = "Reprendre",
-                            icon = Icons.Rounded.PlayArrow,
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            selected = true
-                        ) { SentinelInCallService.unhold(snapshot.id) }
-                    }
-                    else -> {
-                        CallActionCircle(
-                            label = "Attente",
-                            icon = Icons.Rounded.Pause,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            enabled = false
-                        ) {}
-                    }
+                    snapshot.state == Call.STATE_ACTIVE && snapshot.canHold -> CallActionCircle(
+                        label = "Attente", icon = Icons.Rounded.Pause,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ) { SentinelInCallService.hold(snapshot.id) }
+                    snapshot.state == Call.STATE_HOLDING && snapshot.canHold -> CallActionCircle(
+                        label = "Reprendre", icon = Icons.Rounded.PlayArrow,
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selected = true
+                    ) { SentinelInCallService.unhold(snapshot.id) }
+                    else -> CallActionCircle(
+                        label = "Attente", icon = Icons.Rounded.Pause,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        enabled = false
+                    ) {}
                 }
             }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 14.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 14.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CallActionCircle(
                     label = stringResource(R.string.phone_core_hangup),
                     testId = "phone_core_hangup",
@@ -576,35 +637,18 @@ private fun AudioRoutePanel(snapshot: SentinelInCallService.CallSnapshot) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
     ) {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                "Sortie audio",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Sortie audio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             snapshot.audioRoutes.forEach { route ->
                 OutlinedButton(
                     onClick = { SentinelInCallService.selectAudioRoute(snapshot.id, route.id) },
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (route.selected) "✓ ${route.label}" else route.label)
-                }
+                ) { Text(if (route.selected) "✓ ${route.label}" else route.label) }
             }
-
             snapshot.audioStatus?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -615,20 +659,14 @@ private fun DialpadPanel(snapshot: SentinelInCallService.CallSnapshot) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
     ) {
         Column(
             Modifier.fillMaxWidth().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                "Clavier",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Text("Clavier", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             DtmfPad(snapshot.id)
         }
     }
@@ -637,34 +675,22 @@ private fun DialpadPanel(snapshot: SentinelInCallService.CallSnapshot) {
 @Composable
 private fun ConferencePanel(snapshot: SentinelInCallService.CallSnapshot) {
     if (!snapshot.canMergeConference && !snapshot.canSwapConference) return
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
     ) {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                "Conférence",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Conférence", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             if (snapshot.canMergeConference) {
-                OutlinedButton(
-                    onClick = { SentinelInCallService.mergeConference(snapshot.id) },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Fusionner les appels") }
+                OutlinedButton(onClick = { SentinelInCallService.mergeConference(snapshot.id) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Fusionner les appels")
+                }
             }
             if (snapshot.canSwapConference) {
-                OutlinedButton(
-                    onClick = { SentinelInCallService.swapConference(snapshot.id) },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Permuter les appels") }
+                OutlinedButton(onClick = { SentinelInCallService.swapConference(snapshot.id) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Permuter les appels")
+                }
             }
         }
     }
@@ -672,13 +698,7 @@ private fun ConferencePanel(snapshot: SentinelInCallService.CallSnapshot) {
 
 @Composable
 private fun ActiveCallsPanel(calls: List<SentinelInCallService.CallSnapshot>) {
-    Text(
-        "Appels en cours",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.fillMaxWidth()
-    )
-
+    Text("Appels en cours", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
     calls.forEach { call ->
         OutlinedCard(Modifier.fillMaxWidth()) {
             Row(
@@ -687,33 +707,14 @@ private fun ActiveCallsPanel(calls: List<SentinelInCallService.CallSnapshot>) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        call.displayName?.takeIf { it.isNotBlank() }
-                            ?: call.handle
-                            ?: "Appel",
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        callStateLabel(call.state),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(call.displayName?.takeIf { it.isNotBlank() } ?: call.handle ?: "Appel", fontWeight = FontWeight.SemiBold)
+                    Text(callStateLabel(call.state), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-
                 when {
-                    call.state == Call.STATE_ACTIVE && call.canHold ->
-                        TextButton(onClick = { SentinelInCallService.hold(call.id) }) {
-                            Text("Attente")
-                        }
-                    call.state == Call.STATE_HOLDING && call.canHold ->
-                        TextButton(onClick = { SentinelInCallService.unhold(call.id) }) {
-                            Text("Reprendre")
-                        }
+                    call.state == Call.STATE_ACTIVE && call.canHold -> TextButton(onClick = { SentinelInCallService.hold(call.id) }) { Text("Attente") }
+                    call.state == Call.STATE_HOLDING && call.canHold -> TextButton(onClick = { SentinelInCallService.unhold(call.id) }) { Text("Reprendre") }
                 }
-
-                TextButton(onClick = { SentinelInCallService.disconnect(call.id) }) {
-                    Text(stringResource(R.string.phone_core_hangup))
-                }
+                TextButton(onClick = { SentinelInCallService.disconnect(call.id) }) { Text(stringResource(R.string.phone_core_hangup)) }
             }
         }
     }
@@ -731,10 +732,7 @@ private fun CallActionCircle(
     size: androidx.compose.ui.unit.Dp = 62.dp,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.widthIn(min = 62.dp)
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.widthIn(min = 62.dp)) {
         FilledTonalButton(
             onClick = onClick,
             enabled = enabled,
@@ -751,22 +749,14 @@ private fun CallActionCircle(
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(if (selected) 30.dp else 28.dp)
-            )
+            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(if (selected) 30.dp else 28.dp))
         }
         Spacer(Modifier.height(6.dp))
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Center,
-            color = if (enabled) {
-                MaterialTheme.colorScheme.onSurface
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-            }
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
         )
     }
 }
@@ -775,10 +765,7 @@ private fun CallActionCircle(
 private fun DtmfPad(callId: String) {
     val scope = rememberCoroutineScope()
     listOf("123", "456", "789", "*0#").forEach { row ->
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             row.forEach { digit ->
                 FilledTonalButton(
                     onClick = {
@@ -789,23 +776,17 @@ private fun DtmfPad(callId: String) {
                             }
                         }
                     },
-                    modifier = Modifier
-                        .size(64.dp)
-                        .semantics {
-                            contentDescription = when (digit) {
-                                '*' -> "Étoile DTMF"
-                                '#' -> "Dièse DTMF"
-                                else -> "Chiffre DTMF $digit"
-                            }
-                        },
+                    modifier = Modifier.size(64.dp).semantics {
+                        contentDescription = when (digit) {
+                            '*' -> "Étoile DTMF"
+                            '#' -> "Dièse DTMF"
+                            else -> "Chiffre DTMF $digit"
+                        }
+                    },
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                    )
-                ) {
-                    Text(digit.toString(), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                }
+                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest)
+                ) { Text(digit.toString(), fontSize = 22.sp, fontWeight = FontWeight.Bold) }
             }
         }
     }
@@ -815,11 +796,7 @@ private fun callerTitle(snapshot: SentinelInCallService.CallSnapshot?): String =
     snapshot?.displayName?.takeIf { it.isNotBlank() } ?: "Numéro non enregistré"
 
 private fun callerInitial(snapshot: SentinelInCallService.CallSnapshot?): String? =
-    snapshot?.displayName
-        ?.trim()
-        ?.takeIf { it.isNotBlank() }
-        ?.firstOrNull()
-        ?.uppercase()
+    snapshot?.displayName?.trim()?.takeIf { it.isNotBlank() }?.firstOrNull()?.uppercase()
 
 private fun callDirectionLabel(direction: String?): String = when (direction) {
     "INCOMING" -> "Appel entrant"
@@ -827,24 +804,19 @@ private fun callDirectionLabel(direction: String?): String = when (direction) {
     else -> "Appel"
 }
 
-private fun callDurationLabel(
-    snapshot: SentinelInCallService.CallSnapshot?,
-    nowMs: Long
-): String? {
+private fun callDurationLabel(snapshot: SentinelInCallService.CallSnapshot?, nowMs: Long): String? {
     if (snapshot?.state != Call.STATE_ACTIVE) return null
-    val connectedAtMs = snapshot.connectedAtMs ?: return null
-    if (connectedAtMs <= 0L || nowMs < connectedAtMs) return null
+    return callSessionDurationLabel(snapshot, nowMs)
+}
 
+private fun callSessionDurationLabel(snapshot: SentinelInCallService.CallSnapshot?, nowMs: Long): String? {
+    val connectedAtMs = snapshot?.connectedAtMs ?: return null
+    if (connectedAtMs <= 0L || nowMs < connectedAtMs) return null
     val totalSeconds = (nowMs - connectedAtMs) / 1_000L
     val hours = totalSeconds / 3_600L
     val minutes = (totalSeconds % 3_600L) / 60L
     val seconds = totalSeconds % 60L
-
-    return if (hours > 0L) {
-        "%d:%02d:%02d".format(hours, minutes, seconds)
-    } else {
-        "%02d:%02d".format(minutes, seconds)
-    }
+    return if (hours > 0L) "%d:%02d:%02d".format(hours, minutes, seconds) else "%02d:%02d".format(minutes, seconds)
 }
 
 private fun callStateLabel(state: Int?): String = when (state) {

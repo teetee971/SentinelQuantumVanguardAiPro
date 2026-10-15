@@ -13,6 +13,10 @@ import org.json.JSONObject
  * - contacts, SMS/MMS content and call history;
  * - exact blocked-number fingerprints, because their HMAC key is device-bound;
  * - logs, credentials, account tokens and remote secrets.
+ *
+ * Remote caller-reputation consent is never reactivated by restore. Older schema-v1 backups may
+ * still contain that field for compatibility, but decode() always returns it disabled so a fresh
+ * explicit opt-in is required on the current installation before any remote enrichment resumes.
  */
 object SentinelPreferencesBackup {
     const val SCHEMA_VERSION = 1
@@ -38,7 +42,7 @@ object SentinelPreferencesBackup {
             .put("theme_mode", snapshot.themeMode.name)
             .put("protection_mode", snapshot.protectionMode.name)
             .put("family_safety_profile", snapshot.familySafetyProfile.name)
-            .put("caller_reputation_enrichment_enabled", snapshot.callerReputationEnrichmentEnabled)
+            .put("caller_reputation_enrichment_enabled", false)
             .put("osint_refresh_interval_hours", SettingsStore.sanitizeInterval(snapshot.osintRefreshIntervalHours))
             .put("osint_notifications_enabled", snapshot.osintNotificationsEnabled)
             .put("sms_notification_preview_enabled", snapshot.smsNotificationPreviewEnabled)
@@ -74,7 +78,7 @@ object SentinelPreferencesBackup {
             themeMode = theme,
             protectionMode = protection,
             familySafetyProfile = familyProfile,
-            callerReputationEnrichmentEnabled = json.optBoolean("caller_reputation_enrichment_enabled", false),
+            callerReputationEnrichmentEnabled = false,
             osintRefreshIntervalHours = interval,
             osintNotificationsEnabled = json.optBoolean("osint_notifications_enabled", true),
             smsNotificationPreviewEnabled = json.optBoolean("sms_notification_preview_enabled", false),

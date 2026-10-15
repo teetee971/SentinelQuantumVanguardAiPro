@@ -18,6 +18,22 @@ enum class SentinelState {
     UNAVAILABLE
 }
 
+/**
+ * Maps the existing Phone Core-specific lifecycle to the universal visual vocabulary.
+ * READY deliberately remains WARN until physical validation exists.
+ */
+fun SentinelState.toStatus(): SentinelStatus = when (this) {
+    SentinelState.VALIDATED -> SentinelStatus.OK
+    SentinelState.READY,
+    SentinelState.TO_TEST,
+    SentinelState.DEGRADED -> SentinelStatus.WARN
+    SentinelState.PARTIAL,
+    SentinelState.UNAVAILABLE -> SentinelStatus.LIMITED
+    SentinelState.TO_CONFIGURE,
+    SentinelState.BLOCKED -> SentinelStatus.LOCKED
+    SentinelState.UNKNOWN -> SentinelStatus.UNKNOWN
+}
+
 object PhoneCoreUiState {
     fun derive(
         softwarePrerequisitesReady: Boolean,

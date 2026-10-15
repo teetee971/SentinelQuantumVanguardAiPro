@@ -2,8 +2,9 @@ package com.sentinel.quantum.ui.screens
 
 import android.content.Intent
 import android.net.Uri
-import android.provider.Settings
 import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -11,30 +12,28 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Radar
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
-import com.sentinel.quantum.ui.design.SentinelTopBar
-import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
-import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.CovertDetectionSupport
+import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.LocalLogger
@@ -42,9 +41,16 @@ import com.sentinel.quantum.security.NetworkRiskLevel
 import com.sentinel.quantum.security.NetworkTrustStore
 import com.sentinel.quantum.security.WifiBand
 import com.sentinel.quantum.security.WifiRiskEvaluator
-import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.security.WifiScanResultTruth
+import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.security.WifiSecurityType
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
+import com.sentinel.quantum.ui.design.SentinelTopBar
 
 private enum class SurveillanceTab(val label: String) {
     WIFI("Wi-Fi"),
@@ -60,6 +66,17 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     val wifiScanner = remember(context) { WifiScanner(context) }
     val bluetoothScanner = remember(context) { BluetoothScanner(context) }
     val trustStore = remember(context) { NetworkTrustStore(context) }
+    val motionLevel = remember(context) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
+    }
 
     var selectedTab by rememberSaveable { mutableStateOf(SurveillanceTab.WIFI) }
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
@@ -68,6 +85,20 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     var covertDeviceAlerted by remember { mutableStateOf(false) }
+
+    val visibleRiskLevels = when (selectedTab) {
+        SurveillanceTab.WIFI -> wifiNetworks.map { it.assessment.riskLevel }
+        SurveillanceTab.BLUETOOTH -> bluetoothDevices.map { it.assessment.riskLevel }
+    }
+    val aggregateStatus = NetworkVpnPresentation.aggregateNetworkStatus(visibleRiskLevels)
+    val hasEvidence = visibleRiskLevels.isNotEmpty()
+    val heroSubtitle = when {
+        isScanning -> "Analyse locale en cours. Sentinel attend des observations Android avant d’établir un état."
+        !hasEvidence -> "Aucune preuve de scan disponible. Lancez une analyse locale pour observer ce qu’Android rend réellement visible."
+        aggregateStatus == SentinelStatus.BAD -> "Au moins un signal à risque élevé a été observé localement. Vérifiez les détails avant toute action."
+        aggregateStatus == SentinelStatus.WARN -> "Des signaux intermédiaires nécessitent une vérification. Ils ne constituent pas à eux seuls une preuve de compromission."
+        else -> "Aucun signal moyen ou élevé n’est présent dans les résultats visibles. Cela ne prouve pas que l’environnement est sûr."
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -151,8 +182,6 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
-        // Re-evaluate the scanner's complete mandatory permission set instead of
-        // treating one granted permission as sufficient.
         val granted = when (selectedTab) {
             SurveillanceTab.WIFI -> wifiScanner.hasPermissions()
             SurveillanceTab.BLUETOOTH -> bluetoothScanner.hasPermissions()
@@ -226,6 +255,40 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
+                    SentinelHeroVisual(
+                        status = aggregateStatus,
+                        title = if (selectedTab == SurveillanceTab.WIFI) "Observation Wi-Fi" else "Observation Bluetooth",
+                        subtitle = heroSubtitle,
+                        modifier = Modifier.testTag("network-command-center"),
+                        motionLevel = motionLevel
+                    )
+                }
+
+                item {
+                    SentinelGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("network-local-evidence")
+                    ) {
+                        SentinelStatusChip(status = aggregateStatus)
+                        Text(
+                            text = if (hasEvidence) {
+                                "${visibleRiskLevels.size} résultat(s) actuellement visibles pour ce canal."
+                            } else {
+                                "Aucun résultat local disponible pour ce canal."
+                            },
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "L’absence d’alerte ou un signal classé LOW reste non concluant : Sentinel ne transforme jamais cela en preuve de sûreté.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                item {
                     SentinelSectionHeader(
                         title = if (selectedTab == SurveillanceTab.WIFI) "Wi-Fi à proximité" else "Appareils Bluetooth",
                         subtitle = "Scannez d’abord. Sentinel affiche ensuite uniquement ce qu’Android rend réellement observable."
@@ -256,24 +319,19 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
                 statusMessage?.let { message ->
                     item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(message, style = MaterialTheme.typography.bodyMedium)
-                                if (permissionDenied) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            val intent = Intent(
-                                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                                Uri.fromParts("package", context.packageName, null)
-                                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            context.startActivity(intent)
-                                        }
-                                    ) {
-                                        Text("Ouvrir les paramètres d'autorisations")
+                        SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                            Text(message, style = MaterialTheme.typography.bodyMedium)
+                            if (permissionDenied) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val intent = Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", context.packageName, null)
+                                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(intent)
                                     }
+                                ) {
+                                    Text("Ouvrir les paramètres d'autorisations")
                                 }
                             }
                         }
@@ -311,6 +369,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         }
                     }
                 }
+
                 item {
                     SentinelSectionHeader(
                         title = "Comprendre les résultats",
@@ -355,59 +414,54 @@ private fun WifiNetworkCard(
     onAllow: () -> Unit,
     onBlock: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = network.ssid,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                RiskBadge(network.assessment.riskLevel, "Risque")
-            }
             Text(
-                text = "${securityLabel(network.assessment.securityType)} · " +
-                    "${bandLabel(network.band)} · ${network.rssiDbm} dBm",
+                text = network.ssid,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            RiskBadge(network.assessment.riskLevel, "Risque")
+        }
+        Text(
+            text = "${securityLabel(network.assessment.securityType)} · " +
+                "${bandLabel(network.band)} · ${network.rssiDbm} dBm",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (network.bssid.isNotBlank()) {
+            Text(
+                text = "BSSID : ${network.bssid}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (network.bssid.isNotBlank()) {
-                Text(
-                    text = "BSSID : ${network.bssid}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        }
+        if (network.assessment.likelyCameraOrRecorder) {
+            Text(
+                text = "Appareil vidéo/enregistreur Wi-Fi potentiel — vérification physique recommandée.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (network.assessment.captivePortalSuspected) {
+            Text(
+                text = "Réseau sans chiffrement avec indice de portail captif.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        network.assessment.reasons.forEach { reason ->
+            Text("• $reason", style = MaterialTheme.typography.bodySmall)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onAllow, enabled = network.bssid.isNotBlank()) {
+                Text("Réseau de confiance")
             }
-            if (network.assessment.likelyCameraOrRecorder) {
-                Text(
-                    text = "⚠️ Appareil vidéo/enregistreur Wi-Fi potentiel — vérification physique recommandée.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (network.assessment.captivePortalSuspected) {
-                Text(
-                    text = "⚠️ Réseau sans chiffrement avec indice de portail captif.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            network.assessment.reasons.forEach { reason ->
-                Text("• $reason", style = MaterialTheme.typography.bodySmall)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onAllow, enabled = network.bssid.isNotBlank()) {
-                    Text("Réseau de confiance")
-                }
-                OutlinedButton(onClick = onBlock, enabled = network.bssid.isNotBlank()) {
-                    Text("Marquer suspect")
-                }
+            OutlinedButton(onClick = onBlock, enabled = network.bssid.isNotBlank()) {
+                Text("Marquer suspect")
             }
         }
     }
@@ -415,96 +469,78 @@ private fun WifiNetworkCard(
 
 @Composable
 private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = device.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                RiskBadge(device.assessment.riskLevel, "Risque")
-            }
             Text(
-                text = "${device.address} · ${device.rssiDbm} dBm · ${kindLabel(device)}",
+                text = device.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            RiskBadge(device.assessment.riskLevel, "Risque")
+        }
+        Text(
+            text = "${device.address} · ${device.rssiDbm} dBm · ${kindLabel(device)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (device.assessment.likelyTracker) {
+            Text("Traceur d’objet potentiel détecté.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (device.assessment.likelyCameraOrRecorder) {
+            Text("Caméra ou enregistreur sans fil potentiel.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (device.assessment.likelyBeacon) {
+            Text("Balise BLE potentielle.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (device.randomizedAddress) {
+            Text(
+                text = "Adresse possiblement aléatoire (BLE) : elle peut changer entre deux scans.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (device.assessment.likelyTracker) {
-                Text("⚠️ Traceur d’objet potentiel détecté.", style = MaterialTheme.typography.bodySmall)
-            }
-            if (device.assessment.likelyCameraOrRecorder) {
-                Text("⚠️ Caméra ou enregistreur sans fil potentiel.", style = MaterialTheme.typography.bodySmall)
-            }
-            if (device.assessment.likelyBeacon) {
-                Text("⚠️ Balise BLE potentielle.", style = MaterialTheme.typography.bodySmall)
-            }
-            if (device.randomizedAddress) {
-                Text(
-                    text = "Adresse possiblement aléatoire (BLE) : elle peut changer entre deux scans.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            device.assessment.reasons.forEach { reason ->
-                Text("• $reason", style = MaterialTheme.typography.bodySmall)
-            }
+        }
+        device.assessment.reasons.forEach { reason ->
+            Text("• $reason", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
 @Composable
 private fun RiskBadge(level: NetworkRiskLevel, prefix: String = "Risque") {
-    val (label, container) = when (level) {
-        NetworkRiskLevel.HIGH -> "ÉLEVÉ" to MaterialTheme.colorScheme.errorContainer
-        NetworkRiskLevel.MEDIUM -> "MOYEN" to MaterialTheme.colorScheme.tertiaryContainer
-        NetworkRiskLevel.LOW -> "FAIBLE" to MaterialTheme.colorScheme.secondaryContainer
+    val label = when (level) {
+        NetworkRiskLevel.HIGH -> "$prefix : élevé"
+        NetworkRiskLevel.MEDIUM -> "$prefix : moyen"
+        NetworkRiskLevel.LOW -> "$prefix : non concluant"
     }
-    Surface(color = container, shape = MaterialTheme.shapes.small) {
-        Text(
-            text = "$prefix : $label",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = contentColorFor(container),
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-        )
-    }
+    SentinelStatusChip(
+        status = NetworkVpnPresentation.networkStatus(level),
+        label = label
+    )
 }
 
 @Composable
 private fun EducationalCard(title: String, bullets: List<String>) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            bullets.forEach { bullet ->
-                Text("• $bullet", style = MaterialTheme.typography.bodySmall)
-            }
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        bullets.forEach { bullet ->
+            Text("• $bullet", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
 @Composable
 private fun EmptyStateCard(message: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        SentinelStatusChip(status = SentinelStatus.UNKNOWN)
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(24.dp)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
