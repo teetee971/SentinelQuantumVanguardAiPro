@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -59,6 +62,7 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.SentinelD1
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private enum class BottomNavTarget {
     HOME,
@@ -108,6 +112,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                (application as SentinelApplication).runNonCriticalStartupMaintenance()
+            }
+        }
         handleShareIntent(intent)
         // Local-only background watch: the notification channel and the periodic worker are
         // (re)synchronised from the user preference on every start. No remote push is involved.
