@@ -29,6 +29,12 @@ const forbiddenPreResponseIo = [
   /\bRoom\s*\.\s*(?:databaseBuilder|inMemoryDatabaseBuilder)\s*\(/,
   /\bSQLiteDatabase\s*\.\s*(?:openDatabase|openOrCreateDatabase)\s*\(/,
   /\bFile(?:InputStream|OutputStream)?\s*\(/,
+  /\bRandomAccessFile\s*\(/,
+  /\bFiles\s*\.\s*(?:readAllBytes|readAllLines|readString|lines|newInputStream|newOutputStream|newByteChannel|write|writeString|walk|list)\s*\(/,
+  /\bopenFile(?:Input|Output)\s*\(/,
+  /\bSocket\s*\(/,
+  /\bFuture\s*\.\s*get\s*\(/,
+  /\bfuture\s*\.\s*get\s*\(/,
   /\bKeyStore\s*\.\s*getInstance\s*\(/,
   /\bKeyGenerator\s*\.\s*getInstance\s*\(/,
   /\bURL\s*\(/,
@@ -50,6 +56,15 @@ const blockingIoMutations = [
   '        KeyStore.getInstance("AndroidKeyStore")',
   '        KeyGenerator.getInstance("HmacSHA256", "AndroidKeyStore")',
   '        startActivity(Intent())'
+];
+
+const uncoveredBlockingIoMutations = [
+  '        RandomAccessFile("screening.tmp", "r")',
+  '        Files.readAllBytes(path)',
+  '        openFileInput("screening.tmp")',
+  '        openFileOutput("screening.tmp", MODE_PRIVATE)',
+  '        Socket("127.0.0.1", 443)',
+  '        future.get()'
 ];
 
 function assertNoForbiddenIo(label, source) {
@@ -160,6 +175,24 @@ test('contract rejects generic blocking or UI I/O before the mandatory call-scre
       () => assertPreResponseIoBoundary(mutated),
       /must stay free of blocking, storage, network, Keystore or UI I\/O/,
       `expected pre-response I/O rejection for: ${mutation}`
+    );
+  }
+});
+
+test('contract rejects additional blocking primitives before the mandatory call-screening response', () => {
+  const source = readFileSync(SERVICE_PATH, 'utf8');
+  assert.ok(source.includes(INSERTION_ANCHOR));
+
+  for (const mutation of uncoveredBlockingIoMutations) {
+    const mutated = source.replace(
+      INSERTION_ANCHOR,
+      `${mutation}\n${INSERTION_ANCHOR}`
+    );
+
+    assert.throws(
+      () => assertPreResponseIoBoundary(mutated),
+      /must stay free of blocking, storage, network, Keystore or UI I\/O/,
+      `expected uncovered pre-response I/O rejection for: ${mutation}`
     );
   }
 });
