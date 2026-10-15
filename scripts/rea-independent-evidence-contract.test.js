@@ -25,6 +25,7 @@ test('REA evidence proves the executed version and validates JSON outputs', () =
   assert.match(workflow, /validate_json adb-client\.json/);
   assert.match(workflow, /validate_json adb-devices\.json/);
   assert.match(workflow, /if-no-files-found: error/);
+  assert.match(workflow, /Report REA evidence status/);
 });
 
 test('REA device evidence keeps the no-device state explicit', () => {

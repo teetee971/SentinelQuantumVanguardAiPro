@@ -179,6 +179,19 @@ jobs:
           done
           printf 'host_validation=passed\ndevice_validation=passed\nserial=%s\n' "$SERIAL" > "$OUT/validation-status.txt"
 
+      - name: Report REA evidence status
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/rea-independent-evidence"
+          for status_file in validation-status.txt device-collection-status.txt sentinel-provenance.json; do
+            if [[ -f "$OUT/$status_file" ]]; then
+              printf '%s\n' "--- $status_file ---"
+              cat "$OUT/$status_file"
+            fi
+          done
+
       - name: Hash collected evidence
         if: always()
         shell: bash
