@@ -79,31 +79,6 @@ fun SentinelTopBar(
 }
 
 @Composable
-fun SentinelSectionHeader(
-    title: String,
-    subtitle: String? = null,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.ExtraBold
-        )
-        subtitle?.takeIf { it.isNotBlank() }?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
 fun SentinelPanel(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit

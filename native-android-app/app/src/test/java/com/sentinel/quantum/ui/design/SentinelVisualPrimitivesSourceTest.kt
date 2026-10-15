@@ -16,6 +16,18 @@ class SentinelVisualPrimitivesSourceTest {
         .substringAfter("fun $name(").substringBefore("\n/**")
 
     @Test
+    fun sectionHeaderHasOneCanonicalD1Contract() {
+        val glassComponents = source("SentinelGlassComponents")
+        val chrome = File(
+            "src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt"
+        ).readText()
+
+        assertTrue("D.1 section headers must support explanatory subtitles", glassComponents.contains("subtitle: String?"))
+        assertTrue("D.1 section headers must support compact trailing context", glassComponents.contains("trailing: String?"))
+        assertFalse("The legacy chrome file must not define a second section-header implementation", chrome.contains("fun SentinelSectionHeader("))
+    }
+
+    @Test
     fun decorativeLayersUseTheMeasuredHeroBounds() {
         val hero = source("SentinelHeroVisual")
         assertEquals("Both background layers must follow the content-sized Box", 2,
