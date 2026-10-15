@@ -534,21 +534,32 @@ fun PhoneSecurityScreen(navController: NavController) {
                                             privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                             explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                         )
-                                        CommunicationReputationWriter(
-                                            CommunicationReputationCache(
-                                                SharedPreferencesCommunicationReputationStorage(context.applicationContext)
-                                            )
-                                        ).persist(candidate, result)
                                         result
                                     }
                                 }
                                 if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 remoteRunning = false
-                                checked.onSuccess {
-                                    remoteResult = it
-                                    remoteStatus = "Réputation distante reçue"
-                                }.onFailure {
+                                checked.onFailure {
                                     remoteStatus = "Réputation distante indisponible"
+                                }
+                                checked.getOrNull()?.let { result ->
+                                    if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                    runCatching {
+                                        withContext(Dispatchers.IO) {
+                                            CommunicationReputationWriter(
+                                                CommunicationReputationCache(
+                                                    SharedPreferencesCommunicationReputationStorage(context.applicationContext)
+                                                )
+                                            ).persist(candidate, result)
+                                        }
+                                    }.onFailure {
+                                        if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                        remoteStatus = "Réputation distante indisponible"
+                                        return@launch
+                                    }
+                                    if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                    remoteResult = result
+                                    remoteStatus = "Réputation distante reçue"
                                 }
                             }
                         }
