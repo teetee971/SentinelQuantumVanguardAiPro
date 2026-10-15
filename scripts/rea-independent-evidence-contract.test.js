@@ -28,6 +28,18 @@ test('REA evidence proves the executed version and validates JSON outputs', () =
   assert.match(workflow, /Report REA evidence status/);
 });
 
+test('REA provenance captures the built commit before invoking node', () => {
+  const builtCommitCapture = workflow.match(/^\s+BUILT_COMMIT="\$\(git rev-parse HEAD\)"\s*$/m);
+  const nodeInvocation = workflow.match(/^\s+BUILT_COMMIT="\$BUILT_COMMIT"\s+REA_VERSION_ACTUAL="\$REA_VERSION_ACTUAL"\s+node\b.*$/m);
+
+  assert.ok(builtCommitCapture, 'built commit must be captured on its own command line');
+  assert.ok(nodeInvocation, 'node must receive the captured commit and executed REA version');
+  assert.ok(
+    builtCommitCapture.index < nodeInvocation.index,
+    'built commit capture must precede the node invocation'
+  );
+});
+
 test('REA device evidence keeps the no-device state explicit', () => {
   assert.match(workflow, /device_validation=pending/);
   assert.match(workflow, /inspect-adb-package/);

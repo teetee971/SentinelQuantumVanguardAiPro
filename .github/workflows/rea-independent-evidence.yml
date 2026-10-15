@@ -93,7 +93,8 @@ jobs:
           validate_json adb-devices.json
           printf 'host_validation=passed\ndevice_validation=pending\n' > "$OUT/validation-status.txt"
 
-          BUILT_COMMIT="$(git rev-parse HEAD)" REA_VERSION_ACTUAL="$REA_VERSION_ACTUAL" node <<'NODE'
+          BUILT_COMMIT="$(git rev-parse HEAD)"
+          BUILT_COMMIT="$BUILT_COMMIT" REA_VERSION_ACTUAL="$REA_VERSION_ACTUAL" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
           const out = path.join(process.env.RUNNER_TEMP, 'rea-independent-evidence');
