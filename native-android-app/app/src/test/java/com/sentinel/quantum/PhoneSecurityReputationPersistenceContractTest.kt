@@ -19,8 +19,8 @@ class PhoneSecurityReputationPersistenceContractTest {
     @Test fun staleLookupIsRejectedBeforeReputationPersistence() {
         val lookupBlockStart = source.indexOf("val checked = withContext(Dispatchers.IO)")
         val lookupBlockEnd = source.indexOf("remoteStatus = \"Réputation distante reçue\"", lookupBlockStart)
-        assertTrue(lookupBlockStart >= 0, "Remote lookup block must remain identifiable")
-        assertTrue(lookupBlockEnd > lookupBlockStart, "Remote lookup must expose its completion state")
+        assertTrue("Remote lookup block must remain identifiable", lookupBlockStart >= 0)
+        assertTrue("Remote lookup must expose its completion state", lookupBlockEnd > lookupBlockStart)
 
         val lookupBlock = source.substring(lookupBlockStart, lookupBlockEnd + "remoteStatus = \"Réputation distante reçue\"".length)
         val guardIndex = lookupBlock.indexOf("if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber))")
@@ -28,16 +28,16 @@ class PhoneSecurityReputationPersistenceContractTest {
         val remoteResultIndex = lookupBlock.indexOf("remoteResult = result")
         val lastGuardIndex = lookupBlock.lastIndexOf("if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber))")
 
-        assertTrue(guardIndex >= 0, "Remote lookup must guard stale generations")
-        assertTrue(persistIndex >= 0, "Remote lookup must persist successful reputation")
-        assertTrue(remoteResultIndex >= 0, "Remote lookup must expose its successful result")
+        assertTrue("Remote lookup must guard stale generations", guardIndex >= 0)
+        assertTrue("Remote lookup must persist successful reputation", persistIndex >= 0)
+        assertTrue("Remote lookup must expose its successful result", remoteResultIndex >= 0)
         assertTrue(
-            guardIndex < persistIndex,
-            "Stale lookup must be rejected before it can persist reputation"
+            "Stale lookup must be rejected before it can persist reputation",
+            guardIndex < persistIndex
         )
         assertTrue(
-            lastGuardIndex < remoteResultIndex,
-            "Stale lookup must be rejected before it can update displayed state"
+            "Stale lookup must be rejected before it can update displayed state",
+            lastGuardIndex < remoteResultIndex
         )
     }
 }
