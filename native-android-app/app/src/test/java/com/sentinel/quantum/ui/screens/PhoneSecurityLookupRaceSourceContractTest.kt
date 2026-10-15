@@ -27,7 +27,10 @@ class PhoneSecurityLookupRaceSourceContractTest {
     @Test
     fun asynchronousLookupWritesVerifyGenerationAndCandidate() {
         assertTrue(source.contains("isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)"))
-        assertTrue(source.contains("lookupGeneration = lookupGeneration + 1"))
+        assertTrue(
+            source.contains("generationSafeReputationPersistence.invalidate()"),
+            "Editing must invalidate the generation through the persistence coordinator"
+        )
         assertTrue(source.contains("candidate == currentPhoneNumber"), "Async writes must verify the displayed candidate")
     }
 }
