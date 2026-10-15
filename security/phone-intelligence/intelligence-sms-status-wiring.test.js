@@ -35,7 +35,7 @@ test('validated SMS callbacks feed Intelligence Core through provider id without
   assert.match(runtime, /runtime\.fingerprinter\.fingerprint\(normalizedNumber\)/);
   assert.match(
     runtime,
-    /"sms-status:\$\{event\.sendToken\}:\$\{event\.stage\.name\}:\$\{event\.partIndex\}:\$\{event\.partCount\}"/
+    /"sms-status:\$\{event\.sendToken\}:\$\{event\.providerMessageId\}:\$\{event\.stage\.name\}:\$\{event\.partIndex\}:\$\{event\.partCount\}"/
   );
 
   const busPublish = receiver.indexOf('SmsDeliveryStatusBus.publish(statusEvent)');
