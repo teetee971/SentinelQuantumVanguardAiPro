@@ -10,6 +10,7 @@ import android.telecom.CallScreeningService
 import android.telecom.Connection
 import android.util.Log
 import com.sentinel.quantum.CallerIdActivity
+import com.sentinel.quantum.SentinelApplication
 import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
 import com.sentinel.quantum.intelligence.PublishResult
 import java.util.concurrent.atomic.AtomicLong
@@ -82,7 +83,12 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
             CallRuleEngine.Action.ALLOW -> Unit
         }
-        respondToCall(callDetails, response.build())
+        val postResponseBoundary = CallScreeningResponseBoundary { task ->
+            POST_RESPONSE_WORKER.execute(task)
+        }
+        postResponseBoundary.deliverResponse {
+            respondToCall(callDetails, response.build())
+        }
 
         // Caller-ID rendering happens only after the mandatory platform response. The profile is
         // computed offline and contains no invented person or company identity.
@@ -138,52 +144,52 @@ class SentinelCallScreeningService : CallScreeningService() {
         // Everything below can touch disk or initialize Room. Keep it outside the screening
         // callback after the mandatory Android response has already been delivered.
         val appContext = applicationContext
-        val submitted = runCatching {
-            POST_RESPONSE_WORKER.execute {
-                val logger = LocalLogger(appContext)
-                logger.log(
-                    LocalLogger.LogLevel.SECURITY,
+        val submitted = postResponseBoundary.submitPostResponse {
+            (applicationContext as? SentinelApplication)?.runPostResponseMaintenance()
+
+            val logger = LocalLogger(appContext)
+            logger.log(
+                LocalLogger.LogLevel.SECURITY,
+                "CallScreening",
+                "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
+            )
+
+            when (IntelligenceCoreRuntime.publishCallDecision(appContext, decision, verificationCode)) {
+                PublishResult.OVERFLOW -> logger.log(
+                    LocalLogger.LogLevel.WARNING,
                     "CallScreening",
-                    "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
+                    "Intelligence Core saturé; la décision Android reste valide"
                 )
-
-                when (IntelligenceCoreRuntime.publishCallDecision(appContext, decision, verificationCode)) {
-                    PublishResult.OVERFLOW -> logger.log(
-                        LocalLogger.LogLevel.WARNING,
-                        "CallScreening",
-                        "Intelligence Core saturé; la décision Android reste valide"
-                    )
-                    PublishResult.REJECTED -> logger.log(
-                        LocalLogger.LogLevel.WARNING,
-                        "CallScreening",
-                        "Intelligence Core indisponible; la décision Android reste valide"
-                    )
-                    PublishResult.ACCEPTED,
-                    PublishResult.DUPLICATE -> Unit
-                }
-
-                runCatching {
-                    CallFilterLogStore.get(appContext).recordAsync(decision)
-                }.onFailure {
-                    logger.log(
-                        LocalLogger.LogLevel.WARNING,
-                        "CallScreening",
-                        "Historique de filtrage indisponible; la décision Android a déjà été rendue"
-                    )
-                }
-
-                // Persist only privacy-bounded call metadata; never the raw or normalized number.
-                runCatching {
-                    PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))
-                }.onFailure {
-                    logger.log(
-                        LocalLogger.LogLevel.WARNING,
-                        "CallScreening",
-                        "Chronologie privée indisponible; la décision de filtrage a déjà été rendue"
-                    )
-                }
+                PublishResult.REJECTED -> logger.log(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallScreening",
+                    "Intelligence Core indisponible; la décision Android reste valide"
+                )
+                PublishResult.ACCEPTED,
+                PublishResult.DUPLICATE -> Unit
             }
-        }.isSuccess
+
+            runCatching {
+                CallFilterLogStore.get(appContext).recordAsync(decision)
+            }.onFailure {
+                logger.log(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallScreening",
+                    "Historique de filtrage indisponible; la décision Android a déjà été rendue"
+                )
+            }
+
+            // Persist only privacy-bounded call metadata; never the raw or normalized number.
+            runCatching {
+                PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))
+            }.onFailure {
+                logger.log(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallScreening",
+                    "Chronologie privée indisponible; la décision de filtrage a déjà été rendue"
+                )
+            }
+        }
 
         if (!submitted) {
             REJECTED_POST_RESPONSE_WORK.incrementAndGet()

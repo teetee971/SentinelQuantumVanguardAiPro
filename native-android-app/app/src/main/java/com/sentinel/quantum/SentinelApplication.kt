@@ -8,7 +8,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -16,10 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * [onCreate] intentionally performs no screening preparation. Android creates the Application
  * before CallScreeningService, so disk, WorkManager and AndroidKeyStore work here would extend the
- * cold-start window before the mandatory Telecom response. The normal visible app lifecycle calls
- * [runNonCriticalStartupMaintenance] later, off the main thread. Until then, exact matching may
- * fail open when the process-local fingerprint cache is cold; prefix and signed-prefix rules
- * remain available.
+ * cold-start window before the mandatory Telecom response. The screening service invokes
+ * [runPostResponseMaintenance] only from its bounded post-response worker. Until that first
+ * response completes, exact, prefix and signed rules may fail open while the process cache is
+ * cold; the same local rules are then available to subsequent callbacks.
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -36,27 +35,22 @@ class SentinelApplication : Application() {
     }
 
     /**
-     * Runs non-critical repair and cache warm-up only while a visible Activity is resumed.
+     * Performs bounded local repair and cache warm-up after Telecom has received its response.
      *
-     * This method is deliberately absent from [onCreate]. The screening service is allowed to
-     * answer from its in-memory cache while this work is unavailable or still pending. Every
-     * operation is bounded to existing local maintenance APIs and executes on Dispatchers.IO.
+     * CallScreeningService owns the only automatic caller. Keeping this synchronous is safe
+     * because the caller is already the bounded post-response worker, never onScreenCall().
      */
-    suspend fun runNonCriticalStartupMaintenance() {
-        if (startupMaintenanceCompleted.get()) return
+    internal fun runPostResponseMaintenance() {
+        if (!startupMaintenanceCompleted.compareAndSet(false, true)) return
 
-        withContext(Dispatchers.IO) {
-            SentinelSmsStatusReceiver.queueProviderRepair(applicationContext)
-            runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(applicationContext) }
-
-            runCatching {
-                val store = CallBlocklistStore(applicationContext)
-                val screeningSnapshot = store.prepareScreeningSnapshot()
-                if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
-                    store.prepareFingerprintKeys()
-                }
+        SentinelSmsStatusReceiver.queueProviderRepair(applicationContext)
+        runCatching { MmsSendCleanupWorker.scheduleStartupRecovery(applicationContext) }
+        runCatching {
+            val store = CallBlocklistStore(applicationContext)
+            val screeningSnapshot = store.prepareScreeningSnapshot()
+            if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
+                store.prepareFingerprintKeys()
             }
         }
-        startupMaintenanceCompleted.set(true)
     }
 }

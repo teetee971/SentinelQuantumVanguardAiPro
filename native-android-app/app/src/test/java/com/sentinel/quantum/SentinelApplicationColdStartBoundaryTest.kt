@@ -27,13 +27,31 @@ class SentinelApplicationColdStartBoundaryTest {
     }
 
     @Test
-    fun non_critical_maintenance_is_started_from_resumed_activity_on_io() {
+    fun maintenance_is_not_started_by_main_activity() {
         val activitySource = source("src/main/java/com/sentinel/quantum/MainActivity.kt")
-        val applicationSource = source("src/main/java/com/sentinel/quantum/SentinelApplication.kt")
 
-        assertTrue(activitySource.contains("repeatOnLifecycle(Lifecycle.State.RESUMED)"))
-        assertTrue(applicationSource.contains("withContext(Dispatchers.IO)"))
-        assertTrue(activitySource.contains("runNonCriticalStartupMaintenance()"))
+        assertFalse(activitySource.contains("runNonCriticalStartupMaintenance()"))
+        assertFalse(activitySource.contains("runPostResponseMaintenance()"))
+    }
+
+    @Test
+    fun maintenance_is_owned_by_post_response_screening_work() {
+        val serviceSource = source(
+            "src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt"
+        )
+        val responseIndex = serviceSource.indexOf("respondToCall(callDetails, response.build())")
+        val submissionIndex = serviceSource.indexOf(
+            "postResponseBoundary.submitPostResponse",
+            responseIndex
+        )
+        val maintenanceIndex = serviceSource.indexOf("runPostResponseMaintenance()", submissionIndex)
+
+        assertTrue("screening response must exist", responseIndex >= 0)
+        assertTrue("post-response submission must follow the response", submissionIndex > responseIndex)
+        assertTrue(
+            "maintenance must run in the post-response worker",
+            maintenanceIndex > submissionIndex
+        )
     }
 
     private fun source(path: String): String {
