@@ -18,9 +18,88 @@ class HomeVisualSourceContractTest {
         ).readText()
         assertFalse(
             "Home instrumentation must not disable Compose clock auto-advance",
-            Regex("\\bmainClock\\s*\\.\\s*autoAdvance\\s*=\\s*false\\b")
-                .containsMatchIn(instrumentationSource)
+            containsDisabledComposeClock(instrumentationSource)
         )
+    }
+
+    @Test
+    fun clockGuardRejectsParenthesizedAndCommentSeparatedFalse() {
+        listOf(
+            "composeRule.mainClock.autoAdvance = false",
+            "composeRule.mainClock.autoAdvance = (false)",
+            "composeRule.mainClock.autoAdvance = ((false))",
+            "composeRule.mainClock\n  . autoAdvance = (\n false \n)",
+            "composeRule.mainClock /* gap */ . autoAdvance = ( /* gap */ false )",
+            "composeRule.mainClock.autoAdvance = /* outer /* inner */ gap */ (false)"
+        ).forEach { assignment ->
+            assertTrue("Must reject: $assignment", containsDisabledComposeClock(assignment))
+        }
+    }
+
+    @Test
+    fun clockGuardIgnoresCommentsAndStringLiterals() {
+        listOf(
+            "// composeRule.mainClock.autoAdvance = false",
+            "/* composeRule.mainClock.autoAdvance = (false) */",
+            "/* outer /* composeRule.mainClock.autoAdvance = false */ end */",
+            "val example = \"composeRule.mainClock.autoAdvance = false\"",
+            "val example = \"\"\"composeRule.mainClock.autoAdvance = (false)\"\"\""
+        ).forEach { nonExecutableText ->
+            assertFalse("Must ignore: $nonExecutableText", containsDisabledComposeClock(nonExecutableText))
+        }
+    }
+
+    private fun containsDisabledComposeClock(text: String): Boolean {
+        var code = maskCommentsAndLiterals(text)
+        val parenthesizedFalse = Regex("""\(\s*false\s*\)""")
+        while (parenthesizedFalse.containsMatchIn(code)) {
+            code = code.replace(parenthesizedFalse, "false")
+        }
+        return Regex("""\bmainClock\s*\.\s*autoAdvance\s*=\s*false\b""")
+            .containsMatchIn(code)
+    }
+
+    private fun maskCommentsAndLiterals(text: String): String {
+        val code = StringBuilder(text.length)
+        var index = 0
+        while (index < text.length) {
+            when {
+                text.startsWith("//", index) -> {
+                    index = text.indexOf('\n', index).let { if (it < 0) text.length else it }
+                    code.append(' ')
+                }
+                text.startsWith("/*", index) -> {
+                    var depth = 1
+                    index += 2
+                    while (index < text.length && depth > 0) {
+                        when {
+                            text.startsWith("/*", index) -> { depth++; index += 2 }
+                            text.startsWith("*/", index) -> { depth--; index += 2 }
+                            else -> index++
+                        }
+                    }
+                    code.append(' ')
+                }
+                text.startsWith("\"\"\"", index) -> {
+                    val end = text.indexOf("\"\"\"", index + 3)
+                    index = if (end < 0) text.length else end + 3
+                    code.append(' ')
+                }
+                text[index] == '"' || text[index] == '\'' -> {
+                    val quote = text[index++]
+                    while (index < text.length) {
+                        when {
+                            text[index] == '\\' -> index = (index + 2).coerceAtMost(text.length)
+                            text[index] == quote -> { index++; break }
+                            else -> index++
+                        }
+                    }
+                    code.append(' ')
+                }
+                else -> code.append(text[index++])
+            }
+        }
+        return code.toString()
     }
 
     @Test
