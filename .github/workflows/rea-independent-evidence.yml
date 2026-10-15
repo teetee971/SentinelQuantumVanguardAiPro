@@ -1,0 +1,136 @@
+name: REA Independent Evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      serial:
+        description: "Existing adb device serial; leave empty to use the only connected device"
+        required: false
+        default: ""
+        type: string
+      package_name:
+        description: "Android package to inspect"
+        required: false
+        default: "com.sentinel.quantum"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rea-independent-evidence-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  collect:
+    name: REA 6.4 read-only Android evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: true
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup pinned Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Setup Android platform tools
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+
+      - name: Collect REA host evidence
+        shell: bash
+        env:
+          REQUESTED_SERIAL: ${{ inputs.serial }}
+          PACKAGE_NAME: ${{ inputs.package_name }}
+        run: |
+          set -u
+          OUT="$RUNNER_TEMP/rea-independent-evidence"
+          mkdir -p "$OUT/screens"
+          REA=(npx -y rea-agents@6.4.0)
+
+          "${REA[@]}" --version > "$OUT/rea-version.txt" 2> "$OUT/rea-version.stderr" || true
+          "${REA[@]}" inspect-adb-client --json > "$OUT/adb-client.json" 2> "$OUT/adb-client.stderr" || true
+          "${REA[@]}" list-adb-devices --json > "$OUT/adb-devices.json" 2> "$OUT/adb-devices.stderr" || true
+
+          BUILT_COMMIT="$(git rev-parse HEAD)" node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const out = path.join(process.env.RUNNER_TEMP, 'rea-independent-evidence');
+          fs.writeFileSync(path.join(out, 'sentinel-provenance.json'), JSON.stringify({
+            evidence_scope: 'independent_observational_poc',
+            rea_version_requested: '6.4.0',
+            built_commit: process.env.BUILT_COMMIT,
+            workflow_commit: process.env.GITHUB_SHA,
+            workflow_run_id: process.env.GITHUB_RUN_ID,
+            workflow_run_attempt: process.env.GITHUB_RUN_ATTEMPT,
+            requested_serial: process.env.REQUESTED_SERIAL || null,
+            package_name: process.env.PACKAGE_NAME,
+            physical_validation: false,
+            commercial_readiness: false,
+            device_mutation_authorized: false
+          }, null, 2) + '\n');
+          NODE
+
+      - name: Collect REA device evidence when one device is available
+        shell: bash
+        env:
+          REQUESTED_SERIAL: ${{ inputs.serial }}
+          PACKAGE_NAME: ${{ inputs.package_name }}
+        run: |
+          set -u
+          OUT="$RUNNER_TEMP/rea-independent-evidence"
+          mkdir -p "$OUT/screens"
+          SERIAL="$REQUESTED_SERIAL"
+
+          if [[ -z "$SERIAL" ]]; then
+            mapfile -t DEVICES < <(adb devices | awk 'NR > 1 && $2 == "device" {print $1}')
+            if [[ ${#DEVICES[@]} -ne 1 ]]; then
+              printf 'device_collection=skipped\nreason=expected_exactly_one_connected_device\nobserved=%s\n' "${#DEVICES[@]}" > "$OUT/device-collection-status.txt"
+              exit 0
+            fi
+            SERIAL="${DEVICES[0]}"
+          fi
+
+          if ! adb -s "$SERIAL" get-state 2>/dev/null | grep -qx device; then
+            printf 'device_collection=skipped\nreason=requested_device_not_ready\n' > "$OUT/device-collection-status.txt"
+            exit 0
+          fi
+
+          printf 'device_collection=attempted\nserial=%s\n' "$SERIAL" > "$OUT/device-collection-status.txt"
+          REA=(npx -y rea-agents@6.4.0)
+
+          "${REA[@]}" inspect-adb-device "$SERIAL" --json > "$OUT/device.json" 2> "$OUT/device.stderr" || true
+          "${REA[@]}" inspect-adb-display "$SERIAL" --json > "$OUT/display.json" 2> "$OUT/display.stderr" || true
+          "${REA[@]}" list-adb-features "$SERIAL" --json > "$OUT/features.json" 2> "$OUT/features.stderr" || true
+          "${REA[@]}" list-adb-services "$SERIAL" --json > "$OUT/services.json" 2> "$OUT/services.stderr" || true
+          "${REA[@]}" inspect-adb-package "$SERIAL" "$PACKAGE_NAME" --json > "$OUT/package.json" 2> "$OUT/package.stderr" || true
+          "${REA[@]}" list-adb-processes "$SERIAL" --json > "$OUT/processes.json" 2> "$OUT/processes.stderr" || true
+          "${REA[@]}" inspect-adb-window "$SERIAL" --json > "$OUT/window.json" 2> "$OUT/window.stderr" || true
+          "${REA[@]}" read-adb-logcat "$SERIAL" --count 500 --json > "$OUT/logcat.json" 2> "$OUT/logcat.stderr" || true
+          "${REA[@]}" capture-adb-screen "$SERIAL" --output-directory "$OUT/screens" --json > "$OUT/screen.json" 2> "$OUT/screen.stderr" || true
+
+      - name: Hash collected evidence
+        if: always()
+        shell: bash
+        run: |
+          set -u
+          OUT="$RUNNER_TEMP/rea-independent-evidence"
+          if [[ -d "$OUT" ]]; then
+            find "$OUT" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$OUT/SHA256SUMS"
+          fi
+
+      - name: Upload REA independent evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: REA-Independent-Evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/rea-independent-evidence/
+          if-no-files-found: warn
+          retention-days: 7
