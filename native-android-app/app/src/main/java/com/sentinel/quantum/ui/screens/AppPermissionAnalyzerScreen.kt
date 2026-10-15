@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -288,6 +289,9 @@ private fun AppPermissionProfileCard(profile: InstalledAppPermissionProfile) {
     SentinelGlassCard(
         modifier = Modifier
             .fillMaxWidth()
+            .semantics {
+                stateDescription = if (expanded) "Développée" else "Réduite"
+            }
             .clickable(role = Role.Button, onClick = { expanded = !expanded })
     ) {
         Row(

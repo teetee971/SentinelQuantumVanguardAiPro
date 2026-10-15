@@ -30,4 +30,16 @@ class AppPermissionVisualSourceContractTest {
             profileCard.contains("contentDescription = null")
         )
     }
+
+    @Test
+    fun expansionStateIsExposedToAccessibilityServices() {
+        assertTrue(
+            "The expansion card must expose an explicit state description",
+            profileCard.contains(".semantics {")
+        )
+        assertTrue(
+            "Expanded and collapsed states must be announced distinctly",
+            profileCard.contains("stateDescription = if (expanded) \"Développée\" else \"Réduite\"")
+        )
+    }
 }
