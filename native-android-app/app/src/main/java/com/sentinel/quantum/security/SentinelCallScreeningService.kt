@@ -67,6 +67,18 @@ class SentinelCallScreeningService : CallScreeningService() {
             return
         }
 
+        // Application.onCreate() already launched the disk/keystore warm-up on a dedicated worker.
+        // The Telecom callback never performs that I/O itself. It may wait only for this explicit
+        // budget so a normal cold start can still honor persisted rules without turning storage
+        // latency into an unbounded call-screening stall.
+        if (!CallScreeningWarmup.awaitReady(COLD_START_WARMUP_WAIT_MS)) {
+            Log.w(LIFECYCLE_TAG, WARMUP_NOT_READY_MARKER)
+            responseBoundary.deliverResponse {
+                respondToCall(callDetails, CallResponse.Builder().build())
+            }
+            return
+        }
+
         val decision = runCatching {
             // Strict screening boundary: process-memory caches only. Do not instantiate
             // CallBlocklistStore here because its constructor obtains SharedPreferences.
@@ -209,6 +221,8 @@ class SentinelCallScreeningService : CallScreeningService() {
     private companion object {
         const val LIFECYCLE_TAG = "SentinelLifecycle"
         const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
+        const val WARMUP_NOT_READY_MARKER = "CallScreeningService:warmup_not_ready_fail_open"
+        const val COLD_START_WARMUP_WAIT_MS = 100L
         val SCREENING_FINGERPRINTER = CallNumberFingerprinter()
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
             threadName = "sentinel-call-screening-post-response"
