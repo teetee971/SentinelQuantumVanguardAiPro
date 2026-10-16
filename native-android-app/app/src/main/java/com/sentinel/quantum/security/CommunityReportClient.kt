@@ -1,5 +1,6 @@
 package com.sentinel.quantum.security
 
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import okhttp3.HttpUrl
@@ -56,10 +57,15 @@ class CommunityReportClient(
         requireEgressAllowed(protectionMode, explicitConsent)
         val normalized = CallRuleEngine.normalizeNumber(callerNumber)
             ?: throw IllegalArgumentException("Invalid caller number")
+        val normalizedRecipientCountry = recipientCountry.trim().uppercase(Locale.ROOT)
+        require(
+            normalizedRecipientCountry.length == 2 &&
+                normalizedRecipientCountry.all { it in 'A'..'Z' }
+        ) { "Invalid recipient country" }
 
         val payload = JSONObject()
             .put("caller_number", normalized)
-            .put("recipient_country", recipientCountry.uppercase().take(2).ifBlank { "FR" })
+            .put("recipient_country", normalizedRecipientCountry)
             .put("category", category.name)
             .put("client_nonce", UUID.randomUUID().toString())
             .toString()
