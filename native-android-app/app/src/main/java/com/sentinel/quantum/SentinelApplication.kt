@@ -56,7 +56,7 @@ class SentinelApplication : Application() {
      */
     internal fun runPostResponseMaintenance() {
         if (!maintenanceStarted.compareAndSet(false, true)) return
-        performMaintenance()
+        if (!performMaintenance()) maintenanceStarted.set(false)
     }
 
     private fun performMaintenance(): Boolean {
