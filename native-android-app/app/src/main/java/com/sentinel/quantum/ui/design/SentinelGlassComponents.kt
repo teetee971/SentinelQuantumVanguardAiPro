@@ -144,25 +144,39 @@ fun SentinelActionTile(
 @Composable
 fun SentinelSectionHeader(
     title: String,
+    subtitle: String? = null,
     modifier: Modifier = Modifier,
-    trailing: String?
+    trailing: String? = null
 ) {
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        if (!trailing.isNullOrBlank()) {
-            Spacer(Modifier.size(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = trailing,
-                color = SentinelD1.Cyan,
-                fontSize = SentinelVisualTokens.BodyTextSp.sp
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            if (!trailing.isNullOrBlank()) {
+                Spacer(Modifier.size(8.dp))
+                Text(
+                    text = trailing,
+                    color = SentinelD1.Cyan,
+                    fontSize = SentinelVisualTokens.BodyTextSp.sp
+                )
+            }
+        }
+        subtitle?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

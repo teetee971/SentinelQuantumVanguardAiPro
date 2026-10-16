@@ -12,8 +12,47 @@ class SentinelVisualPrimitivesSourceTest {
         "src/main/java/com/sentinel/quantum/ui/design/$name.kt"
     ).readText()
 
+    private fun screenSource(name: String) = File(
+        "src/main/java/com/sentinel/quantum/ui/screens/$name.kt"
+    ).readText()
+
     private fun effect(name: String) = source("SentinelVisualEffects")
         .substringAfter("fun $name(").substringBefore("\n/**")
+
+    @Test
+    fun sectionHeaderHasOneCanonicalD1Contract() {
+        val glassComponents = source("SentinelGlassComponents")
+        val chrome = File(
+            "src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt"
+        ).readText()
+
+        assertTrue("D.1 section headers must support explanatory subtitles", glassComponents.contains("subtitle: String?"))
+        assertTrue("D.1 section headers must support compact trailing context", glassComponents.contains("trailing: String?"))
+        assertFalse("The legacy chrome file must not define a second section-header implementation", chrome.contains("fun SentinelSectionHeader("))
+    }
+
+    @Test
+    fun screenMotionPoliciesRefreshWhenTheScreenResumes() {
+        listOf("SecurityAuditScreen", "AppPermissionAnalyzerScreen").forEach { name ->
+            val screen = screenSource(name)
+            assertFalse(
+                "$name must not freeze motion policy for the whole composition",
+                screen.contains("val motionLevel = remember(context) {"),
+            )
+            assertTrue(
+                "$name must observe ON_RESUME to refresh motion policy",
+                screen.contains("Lifecycle.Event.ON_RESUME"),
+            )
+            assertTrue(
+                "$name must dispose its lifecycle observer",
+                screen.contains("onDispose"),
+            )
+            assertTrue(
+                "$name must key the motion policy to its resume epoch",
+                screen.contains("remember(context, motionEpoch)"),
+            )
+        }
+    }
 
     @Test
     fun decorativeLayersUseTheMeasuredHeroBounds() {
@@ -51,6 +90,15 @@ class SentinelVisualPrimitivesSourceTest {
             assertTrue("$name must read the animation inside Canvas",
                 body.substringAfter("Canvas(").contains("phase.value"))
         }
+    }
+
+    @Test
+    fun motionLevelTransitionsUseSeparateComposeMemoryKeys() {
+        val effects = source("SentinelVisualEffects")
+        assertTrue(
+            "Motion branches must be keyed so STATIC/REDUCED and FULL can change safely",
+            effects.contains("key(motionLevel)")
+        )
     }
 
     @Test

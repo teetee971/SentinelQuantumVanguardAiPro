@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -36,15 +37,23 @@ private data class OrbitRing(val radiusFactor: Float, val color: Color, val stro
 
 @Composable
 private fun rememberFieldPhase(motionLevel: MotionLevel, durationMillis: Int): State<Float> {
-    // No transition or frame work is scheduled for static/reduced decoration.
-    if (motionLevel != MotionLevel.FULL) return remember { mutableFloatStateOf(0f) }
-    val transition = rememberInfiniteTransition(label = "sentinel-decoration")
-    return transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(durationMillis, easing = LinearEasing)),
-        label = "decoration-phase"
-    )
+    // Keep the static state and the animated transition in separate composition groups. Motion
+    // policy can change while the screen remains composed (for example after returning from
+    // system settings), so reusing one remember slot for two different state types is unsafe.
+    return key(motionLevel) {
+        // No transition or frame work is scheduled for static/reduced decoration.
+        if (motionLevel != MotionLevel.FULL) {
+            remember { mutableFloatStateOf(0f) }
+        } else {
+            val transition = rememberInfiniteTransition(label = "sentinel-decoration")
+            transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(tween(durationMillis, easing = LinearEasing)),
+                label = "decoration-phase"
+            )
+        }
+    }
 }
 
 /** Decorative, deterministic D.1 particle field. It conveys no product state or evidence. */

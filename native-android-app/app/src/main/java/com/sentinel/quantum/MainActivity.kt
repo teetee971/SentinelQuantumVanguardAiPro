@@ -221,8 +221,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onPostResume() {
         super.onPostResume()
-        // Telecom can cold-start the process without ever creating MainActivity. Keep SMS/MMS
-        // provider recovery out of that path and start it only once the user-facing app is resumed.
+        // Telecom can cold-start the process without creating MainActivity. Keep SMS/MMS repair
+        // out of that path and start it only once the user-facing app is resumed.
         (application as SentinelApplication).launchForegroundMaintenance()
     }
 

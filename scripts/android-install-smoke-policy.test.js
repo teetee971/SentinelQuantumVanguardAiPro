@@ -24,3 +24,11 @@ test('APK install smoke uses Android 10 and verifies install plus launch', () =>
   assert.match(workflow, /GrantPermissionsActivity/);
   assert.match(workflow, /resultTo=.*PhoneCoreActivationActivity/);
 });
+
+test('Android 16 Phone Core qualification disables system animations before Telecom flow', () => {
+  const android16 = workflow.split('name: Phone Core on Android 16')[1];
+  assert.ok(android16);
+  assert.match(android16, /adb shell settings put global window_animation_scale 0/);
+  assert.match(android16, /adb shell settings put global transition_animation_scale 0/);
+  assert.match(android16, /adb shell settings put global animator_duration_scale 0/);
+});

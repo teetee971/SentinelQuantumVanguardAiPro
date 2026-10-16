@@ -26,7 +26,6 @@ jobs:
     name: REA 6.4 read-only Android evidence
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    continue-on-error: true
     permissions:
       contents: read
 
@@ -44,28 +43,65 @@ jobs:
         with:
           packages: platform-tools
 
+      - name: Validate REA evidence workflow contract
+        shell: bash
+        run: node --test scripts/rea-independent-evidence-contract.test.js
+
       - name: Collect REA host evidence
         shell: bash
         env:
           REQUESTED_SERIAL: ${{ inputs.serial }}
           PACKAGE_NAME: ${{ inputs.package_name }}
         run: |
-          set -u
+          set -euo pipefail
           OUT="$RUNNER_TEMP/rea-independent-evidence"
           mkdir -p "$OUT/screens"
           REA=(npx -y rea-agents@6.4.0)
 
-          "${REA[@]}" --version > "$OUT/rea-version.txt" 2> "$OUT/rea-version.stderr" || true
-          "${REA[@]}" inspect-adb-client --json > "$OUT/adb-client.json" 2> "$OUT/adb-client.stderr" || true
-          "${REA[@]}" list-adb-devices --json > "$OUT/adb-devices.json" 2> "$OUT/adb-devices.stderr" || true
+          run_rea() {
+            local stdout_file="$1"
+            local stderr_file="$2"
+            shift 2
+            if "${REA[@]}" "$@" > "$OUT/$stdout_file" 2> "$OUT/$stderr_file"; then
+              return 0
+            else
+              local exit_code=$?
+              printf '%s\n' "$exit_code" > "$OUT/${stdout_file}.exit-code"
+              return "$exit_code"
+            fi
+          }
 
-          BUILT_COMMIT="$(git rev-parse HEAD)" node <<'NODE'
+          validate_json() {
+            node - "$OUT/$1" <<'NODE'
+          const fs = require('node:fs');
+          const file = process.argv[2];
+          const value = fs.readFileSync(file, 'utf8').trim();
+          if (!value) throw new Error(`${file} is empty`);
+          JSON.parse(value);
+          NODE
+          }
+
+          run_rea rea-version.txt rea-version.stderr --version
+          REA_VERSION_ACTUAL="$(tr -d '\r\n' < "$OUT/rea-version.txt")"
+          if [[ "$REA_VERSION_ACTUAL" != "6.4.0" ]]; then
+            printf 'expected=6.4.0\nactual=%s\n' "$REA_VERSION_ACTUAL" > "$OUT/rea-version-mismatch.txt"
+            exit 1
+          fi
+          run_rea adb-client.json adb-client.stderr inspect-adb-client --json
+          run_rea adb-devices.json adb-devices.stderr list-adb-devices --json
+          validate_json adb-client.json
+          validate_json adb-devices.json
+          printf 'host_validation=passed\ndevice_validation=pending\n' > "$OUT/validation-status.txt"
+
+          BUILT_COMMIT="$(git rev-parse HEAD)"
+          BUILT_COMMIT="$BUILT_COMMIT" REA_VERSION_ACTUAL="$REA_VERSION_ACTUAL" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
           const out = path.join(process.env.RUNNER_TEMP, 'rea-independent-evidence');
           fs.writeFileSync(path.join(out, 'sentinel-provenance.json'), JSON.stringify({
             evidence_scope: 'independent_observational_poc',
             rea_version_requested: '6.4.0',
+            rea_version_executed: process.env.REA_VERSION_ACTUAL,
             built_commit: process.env.BUILT_COMMIT,
             workflow_commit: process.env.GITHUB_SHA,
             workflow_run_id: process.env.GITHUB_RUN_ID,
@@ -84,17 +120,24 @@ jobs:
           REQUESTED_SERIAL: ${{ inputs.serial }}
           PACKAGE_NAME: ${{ inputs.package_name }}
         run: |
-          set -u
+          set -euo pipefail
           OUT="$RUNNER_TEMP/rea-independent-evidence"
           mkdir -p "$OUT/screens"
           SERIAL="$REQUESTED_SERIAL"
 
+          adb devices -l > "$OUT/adb-devices-host.txt"
+          mapfile -t DEVICES < <(awk 'NR > 1 && $2 == "device" {print $1}' "$OUT/adb-devices-host.txt")
+          if [[ ${#DEVICES[@]} -ne 1 ]]; then
+            printf 'device_collection=skipped\nreason=expected_exactly_one_connected_device\nobserved=%s\n' "${#DEVICES[@]}" > "$OUT/device-collection-status.txt"
+            exit 0
+          fi
+
+          OBSERVED_SERIAL="${DEVICES[0]}"
+          if [[ -n "$SERIAL" && "$SERIAL" != "$OBSERVED_SERIAL" ]]; then
+            printf 'device_collection=skipped\nreason=requested_serial_not_observed\nobserved=%s\nobserved_serial=%s\nrequested_serial=%s\n' "${#DEVICES[@]}" "$OBSERVED_SERIAL" "$SERIAL" > "$OUT/device-collection-status.txt"
+            exit 0
+          fi
           if [[ -z "$SERIAL" ]]; then
-            mapfile -t DEVICES < <(adb devices | awk 'NR > 1 && $2 == "device" {print $1}')
-            if [[ ${#DEVICES[@]} -ne 1 ]]; then
-              printf 'device_collection=skipped\nreason=expected_exactly_one_connected_device\nobserved=%s\n' "${#DEVICES[@]}" > "$OUT/device-collection-status.txt"
-              exit 0
-            fi
             SERIAL="${DEVICES[0]}"
           fi
 
@@ -106,25 +149,66 @@ jobs:
           printf 'device_collection=attempted\nserial=%s\n' "$SERIAL" > "$OUT/device-collection-status.txt"
           REA=(npx -y rea-agents@6.4.0)
 
-          "${REA[@]}" inspect-adb-device "$SERIAL" --json > "$OUT/device.json" 2> "$OUT/device.stderr" || true
-          "${REA[@]}" inspect-adb-display "$SERIAL" --json > "$OUT/display.json" 2> "$OUT/display.stderr" || true
-          "${REA[@]}" list-adb-features "$SERIAL" --json > "$OUT/features.json" 2> "$OUT/features.stderr" || true
-          "${REA[@]}" list-adb-services "$SERIAL" --json > "$OUT/services.json" 2> "$OUT/services.stderr" || true
-          "${REA[@]}" inspect-adb-package "$SERIAL" "$PACKAGE_NAME" --json > "$OUT/package.json" 2> "$OUT/package.stderr" || true
-          "${REA[@]}" list-adb-processes "$SERIAL" --json > "$OUT/processes.json" 2> "$OUT/processes.stderr" || true
-          "${REA[@]}" inspect-adb-window "$SERIAL" --json > "$OUT/window.json" 2> "$OUT/window.stderr" || true
-          "${REA[@]}" read-adb-logcat "$SERIAL" --count 500 --json > "$OUT/logcat.json" 2> "$OUT/logcat.stderr" || true
-          "${REA[@]}" capture-adb-screen "$SERIAL" --output-directory "$OUT/screens" --json > "$OUT/screen.json" 2> "$OUT/screen.stderr" || true
+          run_rea() {
+            local stdout_file="$1"
+            local stderr_file="$2"
+            shift 2
+            if "${REA[@]}" "$@" > "$OUT/$stdout_file" 2> "$OUT/$stderr_file"; then
+              return 0
+            else
+              local exit_code=$?
+              printf '%s\n' "$exit_code" > "$OUT/${stdout_file}.exit-code"
+              return "$exit_code"
+            fi
+          }
+
+          validate_json() {
+            node - "$OUT/$1" <<'NODE'
+          const fs = require('node:fs');
+          const file = process.argv[2];
+          const value = fs.readFileSync(file, 'utf8').trim();
+          if (!value) throw new Error(`${file} is empty`);
+          JSON.parse(value);
+          NODE
+          }
+
+          run_rea device.json device.stderr inspect-adb-device "$SERIAL" --json
+          run_rea display.json display.stderr inspect-adb-display "$SERIAL" --json
+          run_rea features.json features.stderr list-adb-features "$SERIAL" --json
+          run_rea services.json services.stderr list-adb-services "$SERIAL" --json
+          run_rea package.json package.stderr inspect-adb-package "$SERIAL" "$PACKAGE_NAME" --json
+          run_rea processes.json processes.stderr list-adb-processes "$SERIAL" --json
+          run_rea window.json window.stderr inspect-adb-window "$SERIAL" --json
+          run_rea logcat.json logcat.stderr read-adb-logcat "$SERIAL" --count 500 --json
+          run_rea screen.json screen.stderr capture-adb-screen "$SERIAL" --output-directory "$OUT/screens" --json
+          for json_file in device.json display.json features.json services.json package.json processes.json window.json logcat.json screen.json; do
+            validate_json "$json_file"
+          done
+          printf 'host_validation=passed\ndevice_validation=passed\nserial=%s\n' "$SERIAL" > "$OUT/validation-status.txt"
+
+      - name: Report REA evidence status
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/rea-independent-evidence"
+          for status_file in validation-status.txt device-collection-status.txt sentinel-provenance.json; do
+            if [[ -f "$OUT/$status_file" ]]; then
+              printf '%s\n' "--- $status_file ---"
+              cat "$OUT/$status_file"
+            fi
+          done
 
       - name: Hash collected evidence
         if: always()
         shell: bash
         run: |
-          set -u
+          set -euo pipefail
           OUT="$RUNNER_TEMP/rea-independent-evidence"
-          if [[ -d "$OUT" ]]; then
-            find "$OUT" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$OUT/SHA256SUMS"
-          fi
+          test -d "$OUT"
+          mapfile -t EVIDENCE_FILES < <(find "$OUT" -type f ! -name SHA256SUMS -print | sort)
+          test "${#EVIDENCE_FILES[@]}" -gt 0
+          sha256sum "${EVIDENCE_FILES[@]}" > "$OUT/SHA256SUMS"
 
       - name: Upload REA independent evidence
         if: always()
@@ -132,5 +216,5 @@ jobs:
         with:
           name: REA-Independent-Evidence-${{ github.sha }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/rea-independent-evidence/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7

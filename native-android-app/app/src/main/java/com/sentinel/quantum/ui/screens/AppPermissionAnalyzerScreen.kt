@@ -2,6 +2,7 @@ package com.sentinel.quantum.ui.screens
 
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,9 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.sentinel.quantum.data.AppPermissionAnalyzer
 import com.sentinel.quantum.data.InstalledAppPermissionProfile
@@ -44,8 +50,17 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AppPermissionAnalyzerScreen(navController: NavController) {
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    var motionEpoch by remember { mutableIntStateOf(0) }
+    DisposableEffect(activity) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) motionEpoch++
+        }
+        activity?.lifecycle?.addObserver(observer)
+        onDispose { activity?.lifecycle?.removeObserver(observer) }
+    }
     val analyzer = remember { AppPermissionAnalyzer(context.packageManager) }
-    val motionLevel = remember(context) {
+    val motionLevel = remember(context, motionEpoch) {
         val animatorScale = runCatching {
             Settings.Global.getFloat(
                 context.contentResolver,
@@ -275,7 +290,10 @@ private fun AppPermissionProfileCard(profile: InstalledAppPermissionProfile) {
     SentinelGlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }
+            .semantics {
+                stateDescription = if (expanded) "Développée" else "Réduite"
+            }
+            .clickable(role = Role.Button, onClick = { expanded = !expanded })
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -298,12 +316,10 @@ private fun AppPermissionProfileCard(profile: InstalledAppPermissionProfile) {
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            IconButton(onClick = { expanded = !expanded }) {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Réduire" else "Développer"
-                )
-            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null
+            )
         }
 
         PermissionRiskBadge(profile.overallRisk)

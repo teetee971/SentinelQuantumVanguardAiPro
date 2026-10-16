@@ -851,18 +851,25 @@ if (systemDoctorSource) {
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
-if (chrome) {
-  for (const component of [
-    'SentinelTopBar',
-    'SentinelHero',
-    'SentinelPanel',
-    'SentinelSectionHeader',
-  ]) {
-    if (!chrome.includes(`fun ${component}(`)) {
-      errors.push(`shared UI component missing: ${component}`);
+const glassComponentsPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelGlassComponents.kt';
+const glassComponents = readRequired(glassComponentsPath);
+export function validateSharedComponents(chromeSource, glassComponentsSource, chromeName = chromePath, glassName = glassComponentsPath) {
+  const componentErrors = [];
+  const assertSharedComponent = (source, component, relativePath) => {
+    if (!source || !source.includes(`fun ${component}(`)) {
+      componentErrors.push(`shared UI component missing: ${component} (${relativePath})`);
     }
+  };
+
+  for (const component of ['SentinelTopBar', 'SentinelHero', 'SentinelPanel']) {
+    assertSharedComponent(chromeSource, component, chromeName);
   }
+  assertSharedComponent(glassComponentsSource, 'SentinelSectionHeader', glassName);
+  return componentErrors;
 }
+
+errors.push(...validateSharedComponents(chrome, glassComponents));
 
 if (errors.length) {
   console.error('Android UI consistency check failed:');

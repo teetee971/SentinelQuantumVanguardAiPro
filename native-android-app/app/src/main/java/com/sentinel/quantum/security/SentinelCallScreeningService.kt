@@ -10,6 +10,7 @@ import android.telecom.CallScreeningService
 import android.telecom.Connection
 import android.util.Log
 import com.sentinel.quantum.CallerIdActivity
+import com.sentinel.quantum.SentinelApplication
 import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
 import com.sentinel.quantum.intelligence.PublishResult
 import java.util.concurrent.atomic.AtomicLong
@@ -101,6 +102,8 @@ class SentinelCallScreeningService : CallScreeningService() {
 
         val appContext = applicationContext
         val submitted = responseBoundary.submitPostResponse {
+            (applicationContext as? SentinelApplication)?.runPostResponseMaintenance()
+
             // Caller-ID rendering happens only after the mandatory platform response. The profile
             // is computed offline and contains no invented person or company identity.
             // STIR/SHAKEN verification on Call.Details was added in Android 11, not 10.

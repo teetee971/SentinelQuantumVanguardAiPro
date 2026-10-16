@@ -55,11 +55,11 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
-    /** Loads persisted rules into the process cache before CallScreeningService can run. */
+    /** Loads persisted rules into the process cache from an explicitly post-response path. */
     fun prepareScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
         snapshot(now).also { SCREENING_SNAPSHOT = it }
 
-    /** Screening-critical path: memory-only and fail-open until Application preload completes. */
+    /** Screening-critical path: memory-only and fail-open while the cold-process cache is empty. */
     fun cachedScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
         cachedSnapshotForScreening(now)
 
@@ -310,7 +310,8 @@ class CallBlocklistStore(context: Context) {
         /**
          * CallScreeningService access point. This method reads process memory only: it does not
          * construct a store, open SharedPreferences, initialize Room, access AndroidKeyStore or
-         * perform network I/O. Until preload completes it intentionally returns an empty snapshot.
+         * perform network I/O. Until post-response warm-up completes it intentionally returns an
+         * empty snapshot, so the first cold-process call may fail open.
          */
         internal fun cachedSnapshotForScreening(now: Long = System.currentTimeMillis()): Snapshot =
             SCREENING_SNAPSHOT.activeAt(now)

@@ -61,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -157,7 +158,7 @@ fun HomeScreen(navController: NavController) {
                 phoneCore = HomeComponentFacts(
                     implemented = phoneCapability?.implemented ?: true,
                     customerAvailable = phoneCapability?.availableAt() == true,
-                    evidenceObserved = true,
+                    evidenceObserved = false,
                     condition = if (phoneCoreReady) HomeCondition.HEALTHY else HomeCondition.DEGRADED,
                     locked = !phoneCoreFacts.dialerRoleHeld || !phoneCoreFacts.callScreeningRoleHeld ||
                         !phoneCoreFacts.smsRoleHeld,
@@ -355,7 +356,7 @@ private fun HomeModuleCard(
     SentinelGlassCard(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

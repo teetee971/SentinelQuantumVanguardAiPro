@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.VpnLock
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -68,14 +69,58 @@ import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.Locale
+
+/**
+ * Serializes a reputation write with its stale-generation cleanup.
+ *
+ * Generation invalidation is synchronous and only touches a small in-memory counter, so editing
+ * the field never waits for disk I/O. A persistence operation owns the mutex across the actual
+ * write and the conditional cleanup; a newer generation observed during I/O therefore removes
+ * the old candidate before another queued write can begin.
+ */
+internal class GenerationSafeReputationPersistence<T>(
+    private val persist: suspend (candidate: String, value: T) -> Unit,
+    private val discard: suspend (candidate: String) -> Unit
+) {
+    private val stateLock = Any()
+    private val persistenceLock = Mutex()
+    private var generation = 0
+
+    fun invalidate(): Int = synchronized(stateLock) {
+        generation += 1
+        generation
+    }
+
+    suspend fun persistIfCurrent(
+        expectedGeneration: Int,
+        candidate: String,
+        value: T
+    ): Boolean = persistenceLock.withLock {
+        if (!isCurrent(expectedGeneration)) return@withLock false
+
+        persist(candidate, value)
+
+        if (!isCurrent(expectedGeneration)) {
+            discard(candidate)
+            return@withLock false
+        }
+        true
+    }
+
+    private fun isCurrent(expectedGeneration: Int): Boolean = synchronized(stateLock) {
+        generation == expectedGeneration
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhoneSecurityScreen(navController: NavController) {
     val context = LocalContext.current
-    var phoneNumber by remember { mutableStateOf("") }
+    var phoneNumber by rememberSaveable { mutableStateOf("") }
     var checkResult by remember { mutableStateOf<PhoneMonitor.SpamCheckResult?>(null) }
     var explanation by remember { mutableStateOf<ExplainableAI.Explanation?>(null) }
     var monitorStats by remember { mutableStateOf<PhoneMonitor.MonitorStats?>(null) }
@@ -89,7 +134,31 @@ fun PhoneSecurityScreen(navController: NavController) {
     var pendingBlockConfirmation by remember { mutableStateOf(false) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
     var intelligencePresentation by remember { mutableStateOf<IntelligenceSnapshotPresentation?>(null) }
+    var lookupGeneration by remember { mutableStateOf(0) }
     var postureEpoch by remember { mutableStateOf(0) }
+
+    fun clearLookupResults() {
+        checkResult = null
+        explanation = null
+        monitorStats = null
+        remoteResult = null
+        remoteStatus = null
+        remoteRunning = false
+        arcepResult = null
+        arcepStatus = null
+        directoryRunning = false
+        rtrResult = null
+        intelligencePresentation = null
+        actionStatus = null
+        pendingBlockConfirmation = false
+    }
+
+    fun isCurrentLookup(
+        generation: Int,
+        candidate: String,
+        currentGeneration: Int,
+        currentPhoneNumber: String
+    ): Boolean = generation == currentGeneration && candidate == currentPhoneNumber
     val hostActivity = context as? ComponentActivity
     DisposableEffect(hostActivity) {
         val observer = LifecycleEventObserver { _, event ->
@@ -109,6 +178,23 @@ fun PhoneSecurityScreen(navController: NavController) {
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
     }
     val scope = rememberCoroutineScope()
+    val reputationStorage = remember(context) {
+        SharedPreferencesCommunicationReputationStorage(context.applicationContext)
+    }
+    val reputationCache = remember(reputationStorage) {
+        CommunicationReputationCache(reputationStorage)
+    }
+    val reputationWriter = remember(reputationCache) {
+        CommunicationReputationWriter(reputationCache)
+    }
+    val generationSafeReputationPersistence = remember(reputationWriter, reputationStorage) {
+        GenerationSafeReputationPersistence<CallerReputationClient.Result>(
+            persist = { candidate, result -> reputationWriter.persist(candidate, result) },
+            discard = { candidate ->
+                CommunicationReputationCache.cacheKeyFor(candidate)?.let(reputationStorage::remove)
+            }
+        )
+    }
     val phoneCoreFacts = remember(context, postureEpoch) {
         PhoneCoreRuntimeFacts.read(context.applicationContext)
     }
@@ -282,8 +368,9 @@ fun PhoneSecurityScreen(navController: NavController) {
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = {
+                    lookupGeneration = generationSafeReputationPersistence.invalidate()
                     phoneNumber = it.take(32)
-                    intelligencePresentation = null
+                    clearLookupResults()
                 },
                 label = { Text(stringResource(R.string.phone_security_label)) },
                 placeholder = { Text(stringResource(R.string.phone_security_placeholder)) },
@@ -295,29 +382,34 @@ fun PhoneSecurityScreen(navController: NavController) {
             Button(
                 onClick = {
                     if (phoneNumber.isNotBlank()) {
+                        lookupGeneration = generationSafeReputationPersistence.invalidate()
+                        clearLookupResults()
+                        val generation = lookupGeneration
+                        val candidate = phoneNumber
                         checkResult = phoneMonitor.checkNumber(phoneNumber)
                         explanation = checkResult?.let(explainableAI::explainSpamCheck)
                         monitorStats = phoneMonitor.getStats()
                         directoryRunning = true
-                        arcepResult = null
                         arcepStatus = "Recherche dans l’annuaire officiel…"
-                        val candidate = phoneNumber
                         scope.launch {
-                            intelligencePresentation = withContext(Dispatchers.IO) {
+                            val snapshotPresentation = withContext(Dispatchers.IO) {
                                 IntelligenceCoreRuntime.snapshotForNumber(context.applicationContext, candidate)
                                     ?.let { IntelligenceSnapshotPresentation.from(it) }
                             }
+                            if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                            intelligencePresentation = snapshotPresentation
                             val isAustria = RtrDirectoryClient.normalize(candidate) != null
                             if (isAustria) {
                                 val lookup = withContext(Dispatchers.IO) { runCatching { RtrDirectoryClient().lookup(candidate) } }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     rtrResult = it
                                     arcepStatus = if (it != null && it.matches.isNotEmpty()) "Attribution RTR trouvée" else "Aucune attribution RTR correspondante"
                                 }.onFailure { arcepStatus = "Annuaire RTR temporairement indisponible" }
                             } else {
-                                rtrResult = null
                                 val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     arcepResult = it
@@ -483,8 +575,10 @@ fun PhoneSecurityScreen(navController: NavController) {
                     onClick = {
                         val candidate = phoneNumber
                         if (candidate.isNotBlank()) {
+                            lookupGeneration = generationSafeReputationPersistence.invalidate()
+                            clearLookupResults()
+                            val generation = lookupGeneration
                             remoteRunning = true
-                            remoteResult = null
                             remoteStatus = "Enrichissement Sentinel en cours…"
                             scope.launch {
                                 val checked = withContext(Dispatchers.IO) {
@@ -501,20 +595,32 @@ fun PhoneSecurityScreen(navController: NavController) {
                                             privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                             explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                         )
-                                        CommunicationReputationWriter(
-                                            CommunicationReputationCache(
-                                                SharedPreferencesCommunicationReputationStorage(context.applicationContext)
-                                            )
-                                        ).persist(candidate, result)
                                         result
                                     }
                                 }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 remoteRunning = false
-                                checked.onSuccess {
-                                    remoteResult = it
-                                    remoteStatus = "Réputation distante reçue"
-                                }.onFailure {
+                                checked.onFailure {
                                     remoteStatus = "Réputation distante indisponible"
+                                }
+                                checked.getOrNull()?.let { result ->
+                                    if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                    runCatching {
+                                        withContext(Dispatchers.IO) {
+                                            generationSafeReputationPersistence.persistIfCurrent(
+                                                expectedGeneration = generation,
+                                                candidate = candidate,
+                                                value = result
+                                            )
+                                        }
+                                    }.onFailure {
+                                        if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                        remoteStatus = "Réputation distante indisponible"
+                                        return@launch
+                                    }
+                                    if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                    remoteResult = result
+                                    remoteStatus = "Réputation distante reçue"
                                 }
                             }
                         }

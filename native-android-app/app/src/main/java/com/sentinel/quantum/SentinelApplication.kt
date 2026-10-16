@@ -4,25 +4,21 @@ import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Process-level initialization for call-screening state and bounded app maintenance.
+ * Process-level services and lifecycle-safe maintenance for Sentinel.
  *
- * Existing fingerprint keys are loaded synchronously only when exact blocking rules exist. Android
- * creates the Application before CallScreeningService, so the service can remain strictly
- * cache-only without reintroducing the asynchronous cold-start race for exact-number rules.
- *
- * SMS/MMS provider repair is intentionally not started from [onCreate]. A Telecom-triggered cold
- * process start must not initialize unrelated WorkManager/provider maintenance before screening.
- * That maintenance is kicked only once the user-facing activity reaches RESUMED, on Dispatchers.IO.
- *
- * If AndroidKeyStore itself is unavailable, exact matching still fails open rather than risking a
- * false block; prefix and signed-prefix rules remain available.
+ * [onCreate] intentionally performs no screening preparation. Android creates the Application
+ * before CallScreeningService, so disk, WorkManager and AndroidKeyStore work here would extend the
+ * cold-start window before the mandatory Telecom response. Maintenance starts either when the
+ * user-facing activity resumes or, for a Telecom-only cold start, from the bounded post-response
+ * worker. Until one of those paths completes, exact, prefix and signed rules may fail open while
+ * the process cache is cold.
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -35,37 +31,55 @@ class SentinelApplication : Application() {
         }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+    }
+
     /**
-     * Starts non-screening startup repair only from a resumed foreground activity.
+     * Starts non-screening SMS/MMS repair only after a user-facing activity reaches RESUMED.
      *
-     * The atomic gate prevents repeated onPostResume() callbacks from creating duplicate startup
-     * work. A synchronous scheduling failure reopens the gate so a later resume can retry.
+     * The atomic gate prevents repeated onPostResume callbacks from creating duplicate work. A
+     * failed scheduling attempt reopens the gate so a later resume can retry.
      */
     fun launchForegroundMaintenance() {
         if (!maintenanceStarted.compareAndSet(false, true)) return
         maintenanceScope.launch {
-            var schedulingSucceeded = true
-            runCatching {
-                SentinelSmsStatusReceiver.queueProviderRepair(applicationContext)
-            }.onFailure {
-                schedulingSucceeded = false
-            }
-            runCatching {
-                MmsSendCleanupWorker.scheduleStartupRecovery(applicationContext)
-            }.onFailure {
-                schedulingSucceeded = false
-            }
-            if (!schedulingSucceeded) maintenanceStarted.set(false)
+            if (!performMaintenance()) maintenanceStarted.set(false)
         }
     }
 
-    override fun onCreate() {
-        super.onCreate()
+    /**
+     * Performs bounded local repair and cache warm-up after Telecom has received its response.
+     *
+     * CallScreeningService owns the only automatic caller. Keeping this synchronous is safe
+     * because the caller is already the bounded post-response worker, never onScreenCall().
+     */
+    internal fun runPostResponseMaintenance() {
+        if (!maintenanceStarted.compareAndSet(false, true)) return
+        if (!performMaintenance()) maintenanceStarted.set(false)
+    }
 
-        val store = CallBlocklistStore(this)
-        val screeningSnapshot = store.prepareScreeningSnapshot()
-        if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
-            runCatching { store.prepareFingerprintKeys() }
+    private fun performMaintenance(): Boolean {
+        var succeeded = true
+        runCatching {
+            SentinelSmsStatusReceiver.queueProviderRepair(applicationContext)
+        }.onFailure {
+            succeeded = false
         }
+        runCatching {
+            MmsSendCleanupWorker.scheduleStartupRecovery(applicationContext)
+        }.onFailure {
+            succeeded = false
+        }
+        runCatching {
+            val store = CallBlocklistStore(applicationContext)
+            val screeningSnapshot = store.prepareScreeningSnapshot()
+            if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
+                store.prepareFingerprintKeys()
+            }
+        }.onFailure {
+            succeeded = false
+        }
+        return succeeded
     }
 }

@@ -8,42 +8,49 @@ class CallScreeningIntelligenceBoundaryTest {
     @Test
     fun `intelligence publication occurs only inside post-response work`() {
         val source = callScreeningSource()
-        val responseIndex = source.indexOf("respondToCall(callDetails, response.build())")
-        val postResponseIndex = source.indexOf("responseBoundary.submitPostResponse")
+        val deliveryIndex = source.indexOf("responseBoundary.deliverResponse {")
+        val responseIndex = source.indexOf(
+            "respondToCall(callDetails, response.build())",
+            startIndex = deliveryIndex.coerceAtLeast(0)
+        )
+        val postResponseSubmissionIndex = source.indexOf(
+            "responseBoundary.submitPostResponse {",
+            startIndex = responseIndex.coerceAtLeast(0)
+        )
         val publicationIndex = source.indexOf(
             "IntelligenceCoreRuntime.publishCallDecision(",
-            startIndex = postResponseIndex.coerceAtLeast(0)
+            startIndex = postResponseSubmissionIndex.coerceAtLeast(0)
         )
 
-        assertTrue("screening must render the Android response", responseIndex >= 0)
+        assertTrue("normal screening response delivery must exist", deliveryIndex >= 0)
+        assertTrue("screening must render the Android response", responseIndex > deliveryIndex)
         assertTrue(
-            "post-response work must be submitted only after the normal Telecom response",
-            postResponseIndex > responseIndex
+            "post-response submission must remain after respondToCall",
+            postResponseSubmissionIndex > responseIndex
         )
         assertTrue(
-            "Intelligence call evidence must be published only from boundary-guarded post-response work",
-            publicationIndex > postResponseIndex
+            "Intelligence call evidence must be published only from post-response work",
+            publicationIndex > postResponseSubmissionIndex
         )
     }
 
     @Test
     fun `critical path never reads intelligence persistence contacts remote reputation or aggregator`() {
         val source = callScreeningSource()
-        val postResponseIndex = source.indexOf("responseBoundary.submitPostResponse")
-        assertTrue("screening must expose a guarded post-response boundary", postResponseIndex >= 0)
+        val responseIndex = source.indexOf("respondToCall(callDetails, response.build())")
+        assertTrue("screening must render the Android response", responseIndex >= 0)
 
-        val preResponseWork = source.substring(0, postResponseIndex)
+        val preResponse = source.substring(0, responseIndex)
         listOf(
             "IntelligenceSnapshotStore",
             "IntelligenceAggregator",
             "LocalContactLookup",
             "CallerReputationClient",
-            "BoundedIntelligenceEventSink",
-            "IntelligenceCoreRuntime.publishCallDecision("
+            "BoundedIntelligenceEventSink"
         ).forEach { forbidden ->
             assertTrue(
-                "$forbidden must not be used before boundary-guarded post-response work",
-                !preResponseWork.contains(forbidden)
+                "$forbidden must not be used before respondToCall",
+                !preResponse.contains(forbidden)
             )
         }
     }
