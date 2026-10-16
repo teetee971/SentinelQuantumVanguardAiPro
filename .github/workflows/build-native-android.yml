@@ -190,7 +190,7 @@ jobs:
             exit 1
           fi
 
-          adb install -r "$APK_PATH"
+          timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
           adb shell pm path com.sentinel.quantum | grep -q '^package:'
           # Some hosted Android 10 emulator images deny clearing individual log buffers.
           # Log clearing is diagnostic hygiene, not an installability gate.
@@ -458,7 +458,7 @@ jobs:
           adb shell input keyevent KEYCODE_WAKEUP || true
           adb shell wm dismiss-keyguard || true
 
-          adb install -r "$APK_PATH"
+          timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
           bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"
       - name: Upload Phone Core Android 16 screenshots
         if: always()
