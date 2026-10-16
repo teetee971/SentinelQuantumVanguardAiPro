@@ -121,6 +121,29 @@ test('exact-head selection rejects unrelated SHA and selects newest retry', () =
   assert.equal(selected.id, 4);
 });
 
+test('exact-head selection is scoped to the current pull request', () => {
+  const sha = 'c'.repeat(40);
+  const selected = selectLatestExactHeadRun([
+    {
+      id: 38917958943,
+      head_sha: sha,
+      event: 'pull_request',
+      run_number: 100,
+      run_attempt: 1,
+      pull_requests: [{ number: 1675 }]
+    },
+    {
+      id: 38919795581,
+      head_sha: sha,
+      event: 'pull_request',
+      run_number: 101,
+      run_attempt: 2,
+      pull_requests: [{ number: 1684 }]
+    }
+  ], sha, 1675);
+  assert.equal(selected.id, 38917958943);
+});
+
 test('missing and in-progress evidence waits while non-success completion fails closed', () => {
   assert.deepEqual(evaluateWorkflowRun(null), { state: 'wait', reason: 'MISSING_EXACT_HEAD_RUN' });
   assert.equal(evaluateWorkflowRun({ status: 'in_progress' }).state, 'wait');
