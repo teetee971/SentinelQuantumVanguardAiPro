@@ -2,7 +2,6 @@ package com.sentinel.quantum.security
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 
 /** Coordinates one process-wide warm-up without allowing screening to wait indefinitely. */
 internal class CallScreeningWarmupCoordinator(
@@ -11,41 +10,52 @@ internal class CallScreeningWarmupCoordinator(
 ) {
     enum class State { NOT_STARTED, LOADING, READY, FAILED }
 
-    private val state = AtomicReference(State.NOT_STARTED)
-    private val completion = CountDownLatch(1)
+    private val lock = Any()
+    @Volatile private var state = State.NOT_STARTED
+    @Volatile private var completion = CountDownLatch(0)
 
+    /**
+     * Starts the warm-up once. A transient FAILED state may be retried; READY and LOADING are
+     * stable/idempotent. Dispatch itself is non-blocking and performs no storage work inline.
+     */
     fun start(): Boolean {
-        if (!state.compareAndSet(State.NOT_STARTED, State.LOADING)) return false
+        val attemptCompletion = synchronized(lock) {
+            if (state == State.LOADING || state == State.READY) return false
+            state = State.LOADING
+            CountDownLatch(1).also { completion = it }
+        }
+
         return runCatching {
             dispatch(Runnable {
                 try {
                     loader()
-                    state.set(State.READY)
+                    state = State.READY
                 } catch (_: Throwable) {
-                    state.set(State.FAILED)
+                    state = State.FAILED
                 } finally {
-                    completion.countDown()
+                    attemptCompletion.countDown()
                 }
             })
             true
         }.getOrElse {
-            state.set(State.FAILED)
-            completion.countDown()
+            state = State.FAILED
+            attemptCompletion.countDown()
             false
         }
     }
 
     fun awaitReady(timeoutMs: Long): Boolean {
-        if (state.get() == State.READY) return true
-        if (state.get() == State.FAILED || state.get() == State.NOT_STARTED) return false
+        if (state == State.READY) return true
+        if (state == State.FAILED || state == State.NOT_STARTED) return false
         if (timeoutMs <= 0L) return false
+        val attemptCompletion = completion
         return try {
-            completion.await(timeoutMs, TimeUnit.MILLISECONDS) && state.get() == State.READY
+            attemptCompletion.await(timeoutMs, TimeUnit.MILLISECONDS) && state == State.READY
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
             false
         }
     }
 
-    fun state(): State = state.get()
+    fun state(): State = state
 }
