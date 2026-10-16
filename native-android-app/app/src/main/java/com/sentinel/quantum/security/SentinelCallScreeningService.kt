@@ -67,10 +67,10 @@ class SentinelCallScreeningService : CallScreeningService() {
             return
         }
 
-        // Application.onCreate() already launched the disk/keystore warm-up on a dedicated worker.
-        // The Telecom callback never performs that I/O itself. It may wait only for this explicit
-        // budget so a normal cold start can still honor persisted rules without turning storage
-        // latency into an unbounded call-screening stall.
+        // Application.onCreate() normally launches warm-up first. start() is intentionally cheap:
+        // it only submits work, so a previous transient FAILED attempt can be retried here without
+        // performing SharedPreferences or AndroidKeyStore I/O on the Telecom callback thread.
+        CallScreeningWarmup.start(applicationContext)
         if (!CallScreeningWarmup.awaitReady(COLD_START_WARMUP_WAIT_MS)) {
             Log.w(LIFECYCLE_TAG, WARMUP_NOT_READY_MARKER)
             responseBoundary.deliverResponse {
