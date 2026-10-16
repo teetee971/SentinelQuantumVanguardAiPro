@@ -321,6 +321,7 @@ def run_bridge(
                             response_key="console_gsm_accept_recovery_response",
                             failure_message="emulator console gsm accept recovery failed",
                         )
+                        deadline = time.monotonic() + timeout_s
                         recovery_attempted = True
                         append_line(
                             evidence,
