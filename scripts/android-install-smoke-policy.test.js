@@ -23,6 +23,10 @@ test('APK install smoke uses Android 10 and verifies install plus launch', () =>
   assert.match(workflow, /SECOND_LAUNCH_STATUS=0/);
   assert.match(workflow, /GrantPermissionsActivity/);
   assert.match(workflow, /resultTo=.*PhoneCoreActivationActivity/);
+  assert.match(
+    workflow,
+    /avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64" --device "pixel"/
+  );
 });
 
 test('Android 16 Phone Core qualification disables system animations before Telecom flow', () => {

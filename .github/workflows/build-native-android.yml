@@ -139,7 +139,7 @@ jobs:
 
           test -x "$ANDROID_HOME/emulator/emulator"
           test -f "$ANDROID_HOME/system-images/android-29/google_apis/x86_64/package.xml"
-          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64"'
+          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64" --device "pixel"'
 
           EMULATOR_ACCEL_ARGS=(-no-accel)
           if [[ -e /dev/kvm ]]; then
