@@ -104,7 +104,11 @@ class MmsDownloadCleanupWorker(
                 requestedAtMs + MmsDownloadCoordinator.DOWNLOAD_TTL_MS
             }
             if (nowMs < 0L) return deadlineMs
-            return if (deadlineMs <= nowMs) 0L else deadlineMs - nowMs
+            if (deadlineMs <= nowMs) return 0L
+            return minOf(
+                deadlineMs - nowMs,
+                MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+            )
         }
 
         fun cancel(context: Context, fileName: String) {

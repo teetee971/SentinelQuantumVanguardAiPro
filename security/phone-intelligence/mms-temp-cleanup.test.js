@@ -93,21 +93,25 @@ test('startup recovery retries failures and prunes legacy incoming MMS staging',
   assert.match(sendWorker, /fun scheduleStartupRecovery\([\s\S]*setBackoffCriteria\(BackoffPolicy\.EXPONENTIAL, 30L, TimeUnit\.SECONDS\)/);
 });
 
-test('incoming callback retires cleanup only after provider success or explicit quarantine and confirmed deletion', () => {
+test('incoming callback retires cleanup only after provider success or explicit quarantine and durable replay completion', () => {
   const providerRejectIndex = downloadReceiver.indexOf(
     'providerResult is IncomingMmsConversationStore.ProjectResult.Rejected'
   );
   const temporaryDeleteIndex = downloadReceiver.indexOf(
-    'val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)'
+    'val temporaryDeleted = MmsDownloadCoordinator.finishDownload(context, fileName)'
   );
 
   assert.ok(providerRejectIndex >= 0, 'provider rejection branch must exist');
-  assert.ok(temporaryDeleteIndex > providerRejectIndex, 'staging deletion must happen after provider decision');
+  assert.ok(temporaryDeleteIndex > providerRejectIndex, 'staging retirement must happen after provider decision');
   assert.match(
     downloadReceiver,
     /providerResult is IncomingMmsConversationStore\.ProjectResult\.Rejected\)[\s\S]*copie staged et le journal de reprise restent actifs[\s\S]*return/
   );
-  assert.match(downloadReceiver, /if \(!temporaryDeleted\)[\s\S]*nettoyage durable reste planifié/);
+  assert.match(downloadReceiver, /if \(!temporaryDeleted\)[\s\S]*nettoyage durable restent actifs/);
+  assert.match(
+    downloadCoordinator,
+    /internal fun finishDownload\(context: Context, fileName: String\): Boolean \{[\s\S]*completeNotificationDedup\(context, fileName\)[\s\S]*return delete\(context, fileName\)/
+  );
   assert.match(
     downloadCoordinator,
     /val removed =[\s\S]*if \(!removed\) return false[\s\S]*if \(cancelCleanup\)[\s\S]*MmsDownloadCleanupWorker\.cancel/

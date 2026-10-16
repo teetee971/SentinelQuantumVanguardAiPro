@@ -78,6 +78,24 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             .map { it.timestampMillis }
             .filter { it > 0L }
             .minOrNull()
+        val subscriptionId = sequenceOf(
+            intent.getIntExtra(EXTRA_SUBSCRIPTION_INDEX, SubscriptionManager.INVALID_SUBSCRIPTION_ID),
+            intent.getIntExtra(EXTRA_LEGACY_SUBSCRIPTION, SubscriptionManager.INVALID_SUBSCRIPTION_ID)
+        ).firstOrNull { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID && it >= 0 }
+        val identity = SmsIngressIdentity.from(
+            address = address,
+            body = body,
+            sentAtMillis = sentAt ?: 0L,
+            subscriptionId = subscriptionId
+        )
+        if (identity != null && hasExistingIncomingSms(context, identity)) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.INFO,
+                "DefaultSms",
+                "Replay SMS entrant ignoré : identité provider déjà présente"
+            )
+            return
+        }
         val values = ContentValues().apply {
             put(Telephony.Sms.ADDRESS, address)
             put(Telephony.Sms.BODY, body)
@@ -86,10 +104,6 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
             put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_INBOX)
             put(Telephony.Sms.READ, 0)
             put(Telephony.Sms.SEEN, 0)
-            val subscriptionId = sequenceOf(
-                intent.getIntExtra(EXTRA_SUBSCRIPTION_INDEX, SubscriptionManager.INVALID_SUBSCRIPTION_ID),
-                intent.getIntExtra(EXTRA_LEGACY_SUBSCRIPTION, SubscriptionManager.INVALID_SUBSCRIPTION_ID)
-            ).firstOrNull { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID && it >= 0 }
             subscriptionId?.let { put(Telephony.Sms.SUBSCRIPTION_ID, it) }
         }
 
@@ -185,6 +199,43 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 "DefaultSms",
                 "Échec d'enregistrement d'un SMS entrant"
             )
+        }
+    }
+
+    private fun hasExistingIncomingSms(context: Context, identity: SmsIngressIdentity.Key): Boolean {
+        val selection = buildString {
+            append(Telephony.Sms.ADDRESS).append("=?")
+            append(" AND ").append(Telephony.Sms.BODY).append("=?")
+            append(" AND ").append(Telephony.Sms.DATE_SENT).append("=?")
+            append(" AND ").append(Telephony.Sms.TYPE).append("=?")
+            identity.subscriptionId?.let {
+                append(" AND ").append(Telephony.Sms.SUBSCRIPTION_ID).append("=?")
+            }
+        }
+        val selectionArgs = buildList {
+            add(identity.address)
+            add(identity.body)
+            add(identity.sentAtMillis.toString())
+            add(Telephony.Sms.MESSAGE_TYPE_INBOX.toString())
+            identity.subscriptionId?.let { add(it.toString()) }
+        }.toTypedArray()
+        return try {
+            context.contentResolver.query(
+                Telephony.Sms.CONTENT_URI,
+                arrayOf(Telephony.Sms._ID),
+                selection,
+                selectionArgs,
+                null
+            )?.use { cursor -> cursor.moveToFirst() } ?: true
+        } catch (_: Exception) {
+            // Do not insert when the provider cannot answer the replay check: otherwise a
+            // transient provider failure can turn one delivery into two durable inbox rows.
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "DefaultSms",
+                "Vérification de replay SMS indisponible; insertion bloquée"
+            )
+            true
         }
     }
 

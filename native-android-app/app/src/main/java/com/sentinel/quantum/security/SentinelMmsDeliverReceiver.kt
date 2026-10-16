@@ -85,6 +85,14 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                 return
             }
             is MmsDownloadCoordinator.Result.Rejected -> {
+                if (download.reason == "MMS_NOTIFICATION_DUPLICATE") {
+                    LocalLogger(context).log(
+                        LocalLogger.LogLevel.INFO,
+                        "MmsDeliver",
+                        "Notification.ind MMS replay ignorée : téléchargement déjà réservé"
+                    )
+                    return
+                }
                 LocalLogger(context).log(
                     LocalLogger.LogLevel.WARNING,
                     "DefaultSms",

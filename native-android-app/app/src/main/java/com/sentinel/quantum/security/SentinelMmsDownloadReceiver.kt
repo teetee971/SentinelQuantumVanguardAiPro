@@ -95,7 +95,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             context.readSmsRoleStateFailClosed() !=
                 SmsActivationDiagnostics.SmsRoleState.HELD
         ) {
-            MmsDownloadCoordinator.delete(context, fileName)
+            if (MmsDownloadCoordinator.delete(context, fileName)) {
+                MmsDownloadCoordinator.releaseNotificationDedup(context, fileName)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
@@ -105,7 +107,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         }
 
         if (deliveredResultCode != Activity.RESULT_OK) {
-            MmsDownloadCoordinator.delete(context, fileName)
+            if (MmsDownloadCoordinator.delete(context, fileName)) {
+                MmsDownloadCoordinator.releaseNotificationDedup(context, fileName)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "DefaultSms",
@@ -122,7 +126,9 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
 
         val size = target.length()
         if (size !in 1..MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            MmsDownloadCoordinator.delete(context, fileName)
+            if (MmsDownloadCoordinator.delete(context, fileName)) {
+                MmsDownloadCoordinator.releaseNotificationDedup(context, fileName)
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
@@ -229,15 +235,16 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             }
         }
 
-        // Recovery metadata is retired only after provider success/replay or an explicit quarantine
-        // outcome. A crash before this point leaves the staged PDU+journal available to WorkManager.
-        val temporaryDeleted = MmsDownloadCoordinator.delete(context, fileName)
+        // Persist the completed replay marker before retiring staging/recovery metadata. A failed
+        // marker commit deliberately leaves the durable recovery path intact for a later retry.
+        val temporaryDeleted = MmsDownloadCoordinator.finishDownload(context, fileName)
         if (!temporaryDeleted) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
-                "Échec de suppression du PDU MMS temporaire après traitement; le nettoyage durable reste planifié"
+                "Finalisation du replay MMS impossible; le PDU temporaire et le nettoyage durable restent actifs"
             )
+            return
         }
 
         SmsNotificationHelper.notifyMessage(

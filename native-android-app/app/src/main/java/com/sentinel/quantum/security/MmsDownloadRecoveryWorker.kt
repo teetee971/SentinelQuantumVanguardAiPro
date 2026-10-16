@@ -11,11 +11,6 @@ import androidx.work.workDataOf
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-/**
- * Re-ingests a staged incoming MMS when Android filled the destination file but the callback was
- * lost (for example because the process died). This is deliberately separate from the 24 h cleanup
- * worker: cleanup bounds retention, while this worker restores product state.
- */
 class MmsDownloadRecoveryWorker(
     appContext: Context,
     workerParams: WorkerParameters
@@ -89,7 +84,6 @@ class MmsDownloadRecoveryWorker(
     }
 }
 
-/** Shared recovery engine used by delayed WorkManager recovery and the final cleanup deadline. */
 internal object MmsDownloadRecovery {
     enum class Outcome {
         RECOVERED,
@@ -107,6 +101,13 @@ internal object MmsDownloadRecovery {
         val journal = MmsDownloadRecoveryJournal(appContext)
         val record = journal.read(fileName) ?: return Outcome.TERMINAL
         if (nowMs < 0L || record.requestedAtMs > nowMs) return Outcome.RETRY
+        if (
+            !allowQuarantine &&
+            MmsDownloadRecoveryJournal.isExpired(record.requestedAtMs, nowMs)
+        ) {
+            MmsDownloadCoordinator.expireFromRecovery(appContext, fileName)
+            return Outcome.TERMINAL
+        }
 
         if (
             appContext.readSmsRoleStateFailClosed() !=
@@ -147,9 +148,7 @@ internal object MmsDownloadRecovery {
 
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return Outcome.RETRY
         val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, record.subscriptionId)
-        if (shouldRetryQuarantine(prepared, allowQuarantine)) {
-            return Outcome.RETRY
-        }
+        if (shouldRetryQuarantine(prepared, allowQuarantine)) return Outcome.RETRY
 
         val persistence = IncomingMmsPrivateStore.persist(appContext.filesDir, data)
         val persistedDigest = persistence.digestHex
@@ -174,10 +173,6 @@ internal object MmsDownloadRecovery {
         val providerRejected =
             providerResult is IncomingMmsConversationStore.ProjectResult.Rejected
 
-        // A private PDU is durable, but it is not equivalent to a message visible in the canonical
-        // Android conversation. Keep staged bytes + recovery metadata active on provider failure so
-        // transient provider/process conditions can be retried. At the bounded cleanup deadline,
-        // however, private durability is accepted explicitly and staging is retired as quarantine.
         if (shouldRetryProviderProjection(providerResult, allowQuarantine)) {
             if (persistence.state == IncomingMmsPrivateStore.State.CREATED) {
                 runCatching {
@@ -234,16 +229,15 @@ internal object MmsDownloadRecovery {
             )
         }
 
+        // A lost callback must produce the same durable replay marker as the normal callback path.
+        // If that marker cannot be committed, keep staging/recovery alive and retry.
+        if (!MmsDownloadCoordinator.completeNotificationDedup(appContext, fileName)) {
+            return Outcome.RETRY
+        }
         finish(appContext, fileName, allowQuarantine)
         return Outcome.RECOVERED
     }
 
-    /**
-     * PLAN:* means the envelope, multipart body and safety boundary all succeeded and only the
-     * canonical-provider plan refused projection. The staged file is therefore complete enough for
-     * immediate private quarantine. Earlier ENVELOPE/BODY/SAFETY failures can still represent a
-     * partially written lost-callback file, so they retry until the bounded final deadline.
-     */
     internal fun shouldRetryQuarantine(
         prepared: IncomingMmsProjectionPipeline.Result,
         allowQuarantine: Boolean
