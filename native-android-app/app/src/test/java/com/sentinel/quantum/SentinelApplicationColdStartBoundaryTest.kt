@@ -45,6 +45,19 @@ class SentinelApplicationColdStartBoundaryTest {
     }
 
     @Test
+    fun failed_post_response_maintenance_reopens_gate_for_retry() {
+        val applicationSource = source("src/main/java/com/sentinel/quantum/SentinelApplication.kt")
+        val method = applicationSource.substringAfter("internal fun runPostResponseMaintenance() {")
+            .substringBefore("\n    }")
+
+        assertTrue(method.contains("if (!maintenanceStarted.compareAndSet(false, true)) return"))
+        assertTrue(
+            "post-response scheduling failure must allow the next foreground or call retry",
+            method.contains("if (!performMaintenance()) maintenanceStarted.set(false)")
+        )
+    }
+
+    @Test
     fun maintenance_is_owned_by_post_response_screening_work() {
         val serviceSource = source(
             "src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt"
