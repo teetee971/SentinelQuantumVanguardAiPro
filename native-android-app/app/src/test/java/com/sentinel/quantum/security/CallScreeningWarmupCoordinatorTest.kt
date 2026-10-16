@@ -10,7 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CallScreeningWarmupCoordinatorTest {
-    @Test fun start_is_idempotent_and_loader_runs_once() {
+    @Test fun start_is_idempotent_and_loader_runs_once_when_ready() {
         val executor = Executors.newSingleThreadExecutor()
         val loads = AtomicInteger(0)
         val coordinator = CallScreeningWarmupCoordinator(
@@ -21,6 +21,7 @@ class CallScreeningWarmupCoordinatorTest {
             assertTrue(coordinator.start())
             assertFalse(coordinator.start())
             assertTrue(coordinator.awaitReady(1_000))
+            assertFalse(coordinator.start())
             assertEquals(1, loads.get())
             assertEquals(CallScreeningWarmupCoordinator.State.READY, coordinator.state())
         } finally {
@@ -54,29 +55,46 @@ class CallScreeningWarmupCoordinatorTest {
         }
     }
 
-    @Test fun loader_failure_is_terminal_and_never_reports_ready() {
+    @Test fun transient_loader_failure_can_retry_and_reach_ready() {
         val executor = Executors.newSingleThreadExecutor()
+        val attempts = AtomicInteger(0)
         val coordinator = CallScreeningWarmupCoordinator(
-            loader = { error("storage unavailable") },
+            loader = {
+                if (attempts.incrementAndGet() == 1) error("storage temporarily unavailable")
+            },
             dispatch = executor::execute
         )
         try {
             assertTrue(coordinator.start())
             assertFalse(coordinator.awaitReady(1_000))
             assertEquals(CallScreeningWarmupCoordinator.State.FAILED, coordinator.state())
+
+            assertTrue(coordinator.start())
+            assertTrue(coordinator.awaitReady(1_000))
+            assertEquals(2, attempts.get())
+            assertEquals(CallScreeningWarmupCoordinator.State.READY, coordinator.state())
         } finally {
             executor.shutdownNow()
         }
     }
 
-    @Test fun dispatcher_failure_is_terminal() {
+    @Test fun dispatcher_failure_can_be_retried() {
+        val dispatchAttempts = AtomicInteger(0)
         val coordinator = CallScreeningWarmupCoordinator(
             loader = { Unit },
-            dispatch = { throw IllegalStateException("executor rejected") }
+            dispatch = { command ->
+                if (dispatchAttempts.incrementAndGet() == 1) {
+                    throw IllegalStateException("executor rejected")
+                }
+                command.run()
+            }
         )
 
         assertFalse(coordinator.start())
         assertFalse(coordinator.awaitReady(10))
         assertEquals(CallScreeningWarmupCoordinator.State.FAILED, coordinator.state())
+        assertTrue(coordinator.start())
+        assertTrue(coordinator.awaitReady(10))
+        assertEquals(CallScreeningWarmupCoordinator.State.READY, coordinator.state())
     }
 }
