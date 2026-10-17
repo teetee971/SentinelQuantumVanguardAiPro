@@ -28,13 +28,13 @@ internal fun interface PhoneWearableHandshakeTransport {
 }
 
 internal class PhoneWearableSecureHandshakeRuntime(
-    pairingStore: WearablePairingStore,
+    private val pairingStore: WearablePairingStore,
     private val replayGuard: WearableHandshakeReplayGuard,
     private val sessionAuthority: WearableSessionAuthority,
     private val hpkeFactory: PhoneWearableHpkeFactory,
     private val transport: PhoneWearableHandshakeTransport,
     private val activate: (String, WearableSecureHandshakeResult, WearableAdapterObservation, PhoneWearableHpkeMaterial) -> Boolean,
-    private val clockMs: () -> Long = System.currentTimeMillis,
+    private val clockMs: () -> Long = System::currentTimeMillis,
     private val sessionIdFactory: () -> String = { UUID.randomUUID().toString() },
     private val maxPendingNodes: Int = DEFAULT_MAX_PENDING_NODES
 ) {
@@ -51,7 +51,8 @@ internal class PhoneWearableSecureHandshakeRuntime(
         val context: WearableSecureHandshakeContext,
         val material: PhoneWearableHpkeMaterial,
         var handshake: WearableProtocolV2.HandshakePayload? = null,
-        var candidate: WearableHandshakeCandidate? = null
+        var candidate: WearableHandshakeCandidate? = null,
+        var trustCreatedThisAttempt: Boolean = false
     )
 
     private val coordinator = WearableSecureHandshakeCoordinator.forPairing(
@@ -208,6 +209,11 @@ internal class PhoneWearableSecureHandshakeRuntime(
         } ?: return null
         val handshake = pending.handshake ?: return null
         val candidate = pending.candidate ?: return null
+        val trustExistedBefore = try {
+            pairingStore.load(stableId) != null
+        } catch (_: Exception) {
+            return rejected(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED)
+        }
         val result = try {
             coordinator.acceptPresentedIdentity(
                 context = pending.context,
@@ -223,6 +229,9 @@ internal class PhoneWearableSecureHandshakeRuntime(
             )
         } catch (_: Exception) {
             return rejected(WearableSecureHandshakeRejection.IDENTITY_CONFIRMATION_MISMATCH)
+        }
+        if (result.state == WearableSecureHandshakeState.ACTIVE && !trustExistedBefore) {
+            pending.trustCreatedThisAttempt = true
         }
         return finalizeIfActive(pending, result)
     }
@@ -258,7 +267,16 @@ internal class PhoneWearableSecureHandshakeRuntime(
     ): WearableSecureHandshakeResult {
         if (result.state != WearableSecureHandshakeState.ACTIVE) return result
         if (!activate(pending.nodeId, result, pending.observation, pending.material)) {
-            result.verifiedProof?.stableId?.let(sessionAuthority::revoke)
+            val stableId = result.verifiedProof?.stableId
+            stableId?.let(sessionAuthority::revoke)
+            if (pending.trustCreatedThisAttempt && stableId != null) {
+                try {
+                    pairingStore.remove(stableId)
+                } catch (_: Exception) {
+                    synchronized(this) { pendingByNode.remove(pending.nodeId) }
+                    return rejected(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED)
+                }
+            }
             synchronized(this) { pendingByNode.remove(pending.nodeId) }
             return rejected(WearableSecureHandshakeRejection.AUTHORITY_REJECTED)
         }
