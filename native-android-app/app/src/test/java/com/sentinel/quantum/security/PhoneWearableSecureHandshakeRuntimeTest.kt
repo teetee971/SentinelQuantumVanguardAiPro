@@ -7,6 +7,7 @@ import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.Signature
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -62,6 +63,35 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         assertNull(runtime.pendingConfirmation())
     }
 
+    @Test fun invalidSignatureNeverCreatesConfirmationPrompt() {
+        val transport = CapturingTransport()
+        val runtime = PhoneWearableSecureHandshakeRuntime(
+            pairingStore = WearablePairingStore(MemoryPairingBackend()),
+            replayGuard = WearableHandshakeReplayGuard(clockMs = { 100L }, elapsedClockMs = { 100L }),
+            sessionAuthority = WearableSessionAuthority(),
+            hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
+            transport = transport,
+            activate = { _, _, _ -> error("invalid signature must never activate") },
+            clockMs = { 100L },
+            sessionIdFactory = { "session-1" }
+        )
+
+        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        val challenge = WearableProtocolV2.decodeChallenge(requireNotNull(transport.payload))!!
+        val signed = signedHandshake(challenge)
+        val tamperedSignature = signed.payload.signature.copyOf().also { it[0] = (it[0].toInt() xor 0x01).toByte() }
+        val tampered = signed.payload.copy(signature = tamperedSignature)
+
+        val rejected = runtime.handleHandshake(
+            "node-1",
+            requireNotNull(WearableProtocolV2.decodeFrame(WearableProtocolV2.encodeHandshake(tampered)))
+        )
+
+        assertEquals(WearableSecureHandshakeState.REJECTED, rejected.state)
+        assertNull(runtime.pendingConfirmation())
+        assertEquals("session-1", runtime.pendingForNode("node-1"))
+    }
+
     @Test fun failedChallengeSendRemovesPendingAttempt() {
         val transport = CapturingTransport(failImmediately = true)
         val runtime = PhoneWearableSecureHandshakeRuntime(
@@ -76,6 +106,22 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         )
 
         assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        assertNull(runtime.pendingForNode("node-1"))
+    }
+
+    @Test fun synchronousTransportFailureFailsClosedAndRemovesPendingAttempt() {
+        val runtime = PhoneWearableSecureHandshakeRuntime(
+            pairingStore = WearablePairingStore(MemoryPairingBackend()),
+            replayGuard = WearableHandshakeReplayGuard(clockMs = { 100L }, elapsedClockMs = { 100L }),
+            sessionAuthority = WearableSessionAuthority(),
+            hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
+            transport = PhoneWearableHandshakeTransport { _, _, _, _ -> error("transport unavailable") },
+            activate = { _, _, _ -> true },
+            clockMs = { 100L },
+            sessionIdFactory = { "session-1" }
+        )
+
+        assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
         assertNull(runtime.pendingForNode("node-1"))
     }
 
