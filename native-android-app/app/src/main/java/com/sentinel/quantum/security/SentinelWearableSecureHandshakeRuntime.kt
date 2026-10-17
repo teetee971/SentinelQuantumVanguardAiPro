@@ -28,11 +28,9 @@ internal object SentinelWearableSecureHandshakeRuntime {
 
     @Volatile private var runtime: PhoneWearableSecureHandshakeRuntime? = null
     @Volatile private var livenessRuntime: PhoneWearableLivenessRuntime? = null
-    @Volatile private var installedHandler: WearableSecureFrameHandler? = null
 
     private var livenessJob: Job? = null
     private var activeNodeId: String? = null
-    private var activeSessionId: String? = null
 
     fun start(
         context: Context,
@@ -51,13 +49,13 @@ internal object SentinelWearableSecureHandshakeRuntime {
         runtime?.confirm(stableId, confirmedAtMs)
 
     fun disconnect(nodeId: String) {
+        runtime?.disconnect(nodeId)
         val live = livenessRuntime
         synchronized(lock) {
             if (activeNodeId == nodeId) {
                 livenessJob?.cancel()
                 livenessJob = null
                 activeNodeId = null
-                activeSessionId = null
             }
         }
         live?.disconnect(nodeId)
@@ -116,7 +114,6 @@ internal object SentinelWearableSecureHandshakeRuntime {
                 }
             }
             WearableSecureTransportInbox.install(handler)
-            installedHandler = handler
             runtime = created
             return created
         }
@@ -130,7 +127,6 @@ internal object SentinelWearableSecureHandshakeRuntime {
         synchronized(lock) {
             livenessJob?.cancel()
             activeNodeId = nodeId
-            activeSessionId = sessionId
             livenessJob = scope.launch {
                 while (isActive && liveness.isActive(nodeId, sessionId)) {
                     liveness.sendProbe(nodeId)
