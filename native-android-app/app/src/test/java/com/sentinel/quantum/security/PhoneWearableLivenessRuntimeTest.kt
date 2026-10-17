@@ -96,6 +96,26 @@ class PhoneWearableLivenessRuntimeTest {
         assertEquals(1L, secondPayload.sequenceNumber)
     }
 
+    @Test fun newerNodeSessionSupersedesOldGlobalRuntimeAuthority() {
+        var revokedAt: Long? = null
+        val runtime = PhoneWearableLivenessRuntime(
+            transport = CapturingTransport(),
+            authenticatedTraffic = { _, _ -> true },
+            revokeAuthenticatedChannel = { revokedAt = it },
+            clockMs = { 300L }
+        )
+        val material = IdentityHpkeMaterial("phone-public".toByteArray())
+
+        assertTrue(runtime.activate("node-old", "session-old", "watch-old".toByteArray(), material))
+        assertTrue(runtime.activate("node-new", "session-new", "watch-new".toByteArray(), material))
+
+        assertFalse(runtime.isActive("node-old", "session-old"))
+        assertTrue(runtime.isActive("node-new", "session-new"))
+        runtime.disconnect("node-old")
+        assertEquals(null, revokedAt)
+        assertTrue(runtime.isActive("node-new", "session-new"))
+    }
+
     @Test fun disconnectRevokesSessionAndAuthenticatedTruth() {
         var revokedAt: Long? = null
         val runtime = PhoneWearableLivenessRuntime(
