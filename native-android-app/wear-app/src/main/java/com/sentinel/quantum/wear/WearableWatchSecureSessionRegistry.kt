@@ -93,7 +93,10 @@ internal class WearableWatchSecureSessionRegistry(
 
     companion object {
         private const val DEFAULT_MAX_SESSIONS = 8
-        private const val DEFAULT_TTL_MS = 120_000L
+        // The phone-side first-pairing challenge remains valid for five minutes. The watch must
+        // retain the matching session material for that full explicit-confirmation window or a
+        // legitimate user can approve a challenge whose peer session has already vanished.
+        private const val DEFAULT_TTL_MS = 300_000L
     }
 }
 
