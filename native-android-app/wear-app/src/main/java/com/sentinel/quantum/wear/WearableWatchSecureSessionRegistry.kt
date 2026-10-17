@@ -13,7 +13,7 @@ internal class WearableWatchSecureSessionRegistry(
     private data class Key(val nodeId: String, val sessionId: String)
     private data class Entry(
         val session: WearableHpkeDuplexSession,
-        val expiresAtMs: Long,
+        var expiresAtMs: Long,
         var highestAcceptedLivenessSequence: Long = -1L
     )
 
@@ -67,7 +67,13 @@ internal class WearableWatchSecureSessionRegistry(
         purgeExpired(now)
         val entry = sessions[Key(nodeId, sessionId)] ?: return false
         if (sequenceNumber <= entry.highestAcceptedLivenessSequence) return false
+        val refreshedExpiry = try {
+            Math.addExact(now, ttlMs)
+        } catch (_: ArithmeticException) {
+            return false
+        }
         entry.highestAcceptedLivenessSequence = sequenceNumber
+        entry.expiresAtMs = refreshedExpiry
         return true
     }
 
