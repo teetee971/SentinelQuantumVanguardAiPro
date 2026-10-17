@@ -1,5 +1,8 @@
 package com.sentinel.quantum.intelligence
 
+import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationState
+import com.sentinel.quantum.integration.IntegrationTruthRuntime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
@@ -73,6 +76,22 @@ class IntelligenceEventSinkTest {
         val sink = BoundedIntelligenceEventSink(capacity = 1, consumer = {})
         sink.close()
         assertEquals(PublishResult.REJECTED, sink.publish(event("evt-after-close")))
+    }
+
+    @Test
+    fun successful_consumer_publishes_fresh_runtime_truth() {
+        IntegrationTruthRuntime.clearForTests()
+        val consumed = CountDownLatch(1)
+        BoundedIntelligenceEventSink(capacity = 1, consumer = {
+            consumed.countDown()
+        }).use { sink ->
+            assertEquals(PublishResult.ACCEPTED, sink.publish(event("evt-truth")))
+            assertTrue(consumed.await(1, TimeUnit.SECONDS))
+            assertTrue(waitUntil {
+                IntegrationTruthRuntime.snapshot(nowMs = 1_001L)
+                    .status(IntegrationCapabilityId.CALL_SCREENING).state == IntegrationState.CONNECTED
+            })
+        }
     }
 
     private fun event(id: String): IntelligenceEvent = IntelligenceEvent(
