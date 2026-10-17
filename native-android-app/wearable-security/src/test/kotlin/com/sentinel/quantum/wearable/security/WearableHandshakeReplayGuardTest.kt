@@ -117,4 +117,16 @@ class WearableHandshakeReplayGuardTest {
         elapsed += 5_001L
         guard.issue("watch-3")
     }
+
+    @Test fun explicitRevokeInvalidatesOnlyTargetChallengeAndReleasesCapacity() {
+        val guard = guard(maxPendingChallenges = 2)
+        val first = guard.issue("watch-1")
+        val second = guard.issue("watch-2")
+
+        assertTrue(guard.revoke(first.nonce))
+        assertFalse(guard.revoke(first.nonce))
+        assertFalse(guard.consume(candidate(first)))
+        assertTrue(guard.consume(candidate(second)))
+        guard.issue("watch-3")
+    }
 }
