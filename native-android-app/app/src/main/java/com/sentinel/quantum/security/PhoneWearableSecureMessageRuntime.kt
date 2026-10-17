@@ -10,6 +10,7 @@ import com.sentinel.quantum.wearable.contract.WearableProtocolV2
 internal class PhoneWearableSecureMessageRuntime(
     private val authority: WearableSessionAuthority,
     private val livenessActive: (String, String) -> Boolean,
+    private val freshAuthenticatedProof: (String, Long) -> Boolean = { _, _ -> false },
     private val clockMs: () -> Long = System::currentTimeMillis
 ) {
     private data class Active(
@@ -59,6 +60,8 @@ internal class PhoneWearableSecureMessageRuntime(
             return false
         }
         if (!livenessActive(nodeId, current.session.sessionId)) return false
+        val now = clockMs()
+        if (!freshAuthenticatedProof(current.session.sessionId, now)) return false
         if (WearableCapability.CONNECTION_STATE !in current.session.negotiatedCapabilities) return false
         // Fixed AAD capability until the protocol negotiates an authenticated capability header.
         val result = try {
@@ -66,7 +69,7 @@ internal class PhoneWearableSecureMessageRuntime(
                 frame.payload,
                 expectedCapability = WearableCapability.CONNECTION_STATE,
                 senderRole = WearablePeerRole.WEARABLE,
-                nowMs = clockMs()
+                nowMs = now
             )
         } catch (_: Exception) {
             return false
