@@ -1,5 +1,9 @@
 package com.sentinel.quantum.security
 
+import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationState
+import com.sentinel.quantum.integration.IntegrationTruthRuntime
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -7,6 +11,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ArcepVerifiedPrefixCatalogTest {
+    @After
+    fun clearRuntimeTruth() {
+        IntegrationTruthRuntime.clearForTests()
+    }
+
     @Test
     fun allPublishedPrefixesAreCanonicalAndBounded() {
         assertEquals(22, ArcepVerifiedPrefixCatalog.entries.size)
@@ -15,6 +24,33 @@ class ArcepVerifiedPrefixCatalogTest {
             assertTrue(entry.nationalRoot.startsWith("0"))
             assertEquals(entry.e164Prefix, CallRuleEngine.normalizePrefix(entry.e164Prefix))
         }
+    }
+
+    @Test
+    fun validatedRuntimeUsePublishesFreshRegulatoryTruth() {
+        val observedAt = 10_000L
+        assertTrue(ArcepVerifiedPrefixCatalog.observeValidatedRuntimeUse(observedAt))
+        assertEquals(
+            IntegrationState.CONNECTED,
+            IntegrationTruthRuntime.snapshot(observedAt)
+                .status(IntegrationCapabilityId.REGULATORY_INTELLIGENCE)
+                .state
+        )
+    }
+
+    @Test
+    fun runtimeValidationRejectsMalformedOrDuplicateCatalogEntries() {
+        val malformed = listOf(
+            ArcepVerifiedPrefixCatalog.Entry("Test", "05987", "+5905987"),
+            ArcepVerifiedPrefixCatalog.Entry("Duplicate", "05987", "+5905987")
+        )
+        assertFalse(ArcepVerifiedPrefixCatalog.isValidRuntimeCatalog(malformed))
+        assertEquals(
+            IntegrationState.LOCKED_EXTERNAL_DEPENDENCY,
+            IntegrationTruthRuntime.snapshot(10_000L)
+                .status(IntegrationCapabilityId.REGULATORY_INTELLIGENCE)
+                .state
+        )
     }
 
     @Test
