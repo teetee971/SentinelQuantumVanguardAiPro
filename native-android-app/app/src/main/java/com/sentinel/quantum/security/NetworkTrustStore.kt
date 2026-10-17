@@ -40,14 +40,6 @@ class NetworkTrustStore(context: Context) {
             .apply()
     }
 
-    /**
-     * Returns the device-bound pseudonym used by network history.
-     *
-     * The input is transient and the raw identifier is never returned or persisted. Callers must
-     * keep the returned value local to the bounded network evidence contract.
-     */
-    fun pseudonymousFingerprint(identifier: String): String? = fingerprint(identifier)
-
     private fun move(identifier: String, addTo: String, removeFrom: String) {
         val fingerprint = fingerprint(identifier) ?: return
         prefs.edit()

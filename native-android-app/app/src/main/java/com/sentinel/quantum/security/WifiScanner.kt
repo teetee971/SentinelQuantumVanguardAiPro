@@ -13,11 +13,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 data class DiscoveredWifiNetwork(
     val ssid: String,
@@ -45,8 +40,6 @@ class WifiScanner(context: Context) {
     private val wifiManager =
         appContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
     private val trustStore = NetworkTrustStore(appContext)
-    private val networkTimelineStore = NetworkTimelineStore(appContext)
-    private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var receiver: BroadcastReceiver? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var timeoutRunnable: Runnable? = null
@@ -165,11 +158,6 @@ class WifiScanner(context: Context) {
         receiver = null
     }
 
-    fun close() {
-        release()
-        persistenceScope.cancel()
-    }
-
     // Les autorisations sont vérifiées par hasPermissions() avant tout appel, et une
     // SecurityException reste interceptée pour rester fail-safe.
     @SuppressLint("MissingPermission")
@@ -204,12 +192,6 @@ class WifiScanner(context: Context) {
                         "Chronologie privée indisponible; les résultats Wi-Fi restent valides"
                     )
                 }
-            }
-            persistenceScope.launch {
-                networkTimelineStore.recordObserved(
-                    source = NetworkTimelineSource.ANDROID_WIFI,
-                    rawIdentifiers = results.map { it.bssid }
-                )
             }
             onResults(WifiScanOutcome(results, source))
         } catch (_: SecurityException) {
