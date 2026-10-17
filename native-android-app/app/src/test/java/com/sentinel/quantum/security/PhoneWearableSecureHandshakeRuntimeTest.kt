@@ -34,7 +34,7 @@ class PhoneWearableSecureHandshakeRuntimeTest {
             sessionAuthority = WearableSessionAuthority(),
             hpkeFactory = PhoneWearableHpkeFactory { material },
             transport = transport,
-            activate = { handshake, _, _ ->
+            activate = { _, handshake, _, _ ->
                 activatedStableId = handshake.verifiedProof?.stableId
                 true
             },
@@ -71,7 +71,7 @@ class PhoneWearableSecureHandshakeRuntimeTest {
             sessionAuthority = WearableSessionAuthority(),
             hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
             transport = transport,
-            activate = { _, _, _ -> error("invalid signature must never activate") },
+            activate = { _, _, _, _ -> error("invalid signature must never activate") },
             clockMs = { 100L },
             sessionIdFactory = { "session-1" }
         )
@@ -105,7 +105,7 @@ class PhoneWearableSecureHandshakeRuntimeTest {
             sessionAuthority = WearableSessionAuthority(),
             hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
             transport = transport,
-            activate = { _, _, _ -> true },
+            activate = { _, _, _, _ -> true },
             clockMs = { 100L },
             sessionIdFactory = { "session-${++sessionCounter}" }
         )
@@ -132,7 +132,7 @@ class PhoneWearableSecureHandshakeRuntimeTest {
                 calls++
                 error("transport unavailable")
             },
-            activate = { _, _, _ -> true },
+            activate = { _, _, _, _ -> true },
             clockMs = { 100L },
             sessionIdFactory = { "session-${++sessionCounter}" }
         )
