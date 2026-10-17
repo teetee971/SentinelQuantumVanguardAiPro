@@ -193,6 +193,56 @@ object IntelligenceCoreRuntime {
     }.getOrDefault(PublishResult.REJECTED)
 
     /**
+     * Publishes only the bounded transport result of an incoming MMS provider projection.
+     *
+     * The sender is transient input and is converted to the same device-bound phone fingerprint
+     * used by calls and SMS. The provider row id is an opaque local idempotency key; MMS bytes,
+     * text parts, URLs and attachment payloads never cross this method's event boundary.
+     */
+    fun publishIncomingMmsObservation(
+        context: Context,
+        providerMessageId: Long,
+        rawSender: String?,
+        transportState: SmsMmsEvidenceAdapter.MmsTransportState,
+        categoryCode: String? = null,
+        analysisOutcome: SmsMmsEvidenceAdapter.AnalysisOutcome =
+            SmsMmsEvidenceAdapter.AnalysisOutcome.UNKNOWN,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult = runCatching {
+        if (observedAtMs < 0L || providerMessageId <= 0L) {
+            return@runCatching PublishResult.REJECTED
+        }
+        val normalizedNumber = CallRuleEngine.normalizeNumber(rawSender)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val evidence = SmsMmsEvidenceAdapter.fromMms(
+            direction = IntelligenceEvidence.Direction.INCOMING,
+            transportState = transportState,
+            categoryCode = categoryCode,
+            analysisOutcome = analysisOutcome
+        )
+        val intelligenceEvent = IntelligenceEvent(
+            eventId = "mms-status:$providerMessageId",
+            identityKey = identityKey,
+            evidence = evidence,
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, SMS_EVENT_TTL_MS),
+            source = EvidenceSource.MMS,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.MMS_CORE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.LOCAL_PLATFORM_ASSERTION
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
+        )
+        runtime.sink.publish(intelligenceEvent)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
      * Publishes a bounded, permission-gated Android contact observation after a non-critical UI
      * lookup. Contact display data stays in the existing durable local-identity contract; the raw
      * phone number is used only to derive the device-bound fingerprint.
