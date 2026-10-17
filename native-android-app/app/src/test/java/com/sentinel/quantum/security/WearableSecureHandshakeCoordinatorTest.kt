@@ -4,6 +4,7 @@ import com.sentinel.quantum.wearable.security.VerifiedWearableHandshakeFixture
 import com.sentinel.quantum.wearable.security.WearableHandshakeCandidate
 import com.sentinel.quantum.wearable.security.WearableHandshakeTranscriptCodec
 import com.sentinel.quantum.wearable.security.WearableHandshakeVerifier
+import java.security.GeneralSecurityException
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.Signature
@@ -217,6 +218,43 @@ class WearableSecureHandshakeCoordinatorTest {
         }
     }
 
+    @Test fun checkedPersistenceFailureRevokesActivatedAuthorityAndFailsClosed() {
+        val pairingStore = WearablePairingStore(CheckedFailurePairingBackend())
+        val authority = WearableSessionAuthority()
+        val coordinator = WearableSecureHandshakeCoordinator.forPairing(
+            pairingStore,
+            com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard(),
+            authority
+        )
+        val keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+        val fingerprint = sha256(keyPair.public.encoded)
+        val stableId = "wearable-" + fingerprint.take(32)
+        val context = coordinator.beginFirstPairing(session(), phoneHpke)
+        val c = signedCandidate(context, keyPair, fingerprint, stableId)
+
+        val result = coordinator.acceptPresentedIdentity(
+            context,
+            c,
+            keyPair.public.encoded,
+            watchHpkeBytes,
+            pairingConfirmation(context, stableId, fingerprint)
+        )
+
+        assertEquals(WearableSecureHandshakeState.REJECTED, result.state)
+        assertEquals(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED, result.rejection)
+        assertNull(authority.activeSession(stableId))
+        assertEquals(
+            WearableSecureHandshakeRejection.REPLAY_REJECTED,
+            coordinator.acceptPresentedIdentity(
+                context,
+                c,
+                keyPair.public.encoded,
+                watchHpkeBytes,
+                pairingConfirmation(context, stableId, fingerprint)
+            ).rejection
+        )
+    }
+
     @Test fun existingPairingRejectsKeyReplacementEvenWithConfirmation() {
         val backend = MemoryPairingBackend()
         val pairingStore = WearablePairingStore(backend)
@@ -325,5 +363,13 @@ class WearableSecureHandshakeCoordinatorTest {
 
         fun recordCount(): Int = records.size
         fun singleStableId(): String = records.keys.single()
+    }
+
+    private class CheckedFailurePairingBackend : WearablePairingBackend {
+        override fun load(stableId: String): WearableTrustedIdentity? = null
+        override fun save(record: WearableTrustedIdentity) {
+            throw GeneralSecurityException("simulated keystore failure")
+        }
+        override fun remove(stableId: String) = Unit
     }
 }
