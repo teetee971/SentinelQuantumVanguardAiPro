@@ -44,6 +44,25 @@ class PhoneWearableSecureMessageRuntimeTest {
         assertFalse(gate.activate("node-1", "untrusted-watch", session, byteArrayOf(2), material))
         assertFalse(gate.handleFrame("node-1", WearableProtocolV2.Frame(byteArrayOf(1))))
     }
+    @Test fun oversizedPeerKeyIsRejectedBeforeMaterialIsUsed() {
+        val gate = PhoneWearableSecureMessageRuntime(
+            authority = WearableSessionAuthority(),
+            livenessActive = { _, _ -> true }
+        )
+        val material = object : PhoneWearableHpkeMaterial {
+            override val publicKeyEncoded = byteArrayOf(1)
+            override val fingerprintSha256 = "0".repeat(64)
+            override fun encryptForWearable(
+                wearablePublicKeyEncoded: ByteArray, plaintext: ByteArray, contextInfo: ByteArray
+            ): ByteArray = error("oversized key must not be used")
+            override fun decryptFromWearable(
+                ciphertext: ByteArray, contextInfo: ByteArray
+            ): ByteArray = error("oversized key must not be used")
+        }
+        val session = WearableSession("oversized", 2, setOf(WearableCapability.CONNECTION_STATE), 0L)
+        assertFalse(gate.activate("node", "watch", session, ByteArray(4097), material))
+    }
+
     @Test fun revokedAndAbsentLivenessNeverDecryptsApplicationFrames() {
         val authority = WearableSessionAuthority()
         val session = WearableSession("session-2", 2, setOf(WearableCapability.CONNECTION_STATE), 100L)
