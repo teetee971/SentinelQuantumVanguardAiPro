@@ -114,7 +114,13 @@ internal class PhoneWearableLivenessRuntime(
             transport.send(nodeId, WearableProtocolV2.LIVENESS_PATH, prepared.third) {
                 revokeFailedProbe(nodeId, prepared.first, prepared.second)
             }
-            true
+            // A transport may invoke onFailure synchronously without throwing.
+            // Do not report successful dispatch after that callback revoked the probe.
+            synchronized(this) {
+                val active = activeByNode[nodeId]
+                active != null && active.sessionId == prepared.first &&
+                    active.pending?.sequenceNumber == prepared.second
+            }
         } catch (_: Exception) {
             revokeFailedProbe(nodeId, prepared.first, prepared.second)
             false
