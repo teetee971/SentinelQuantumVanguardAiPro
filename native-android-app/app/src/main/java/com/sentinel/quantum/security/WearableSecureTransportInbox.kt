@@ -19,6 +19,8 @@ internal object WearableSecureTransportInbox {
     }
 
     fun dispatch(sourceNodeId: String, path: String, frame: WearableProtocolV2.Frame): Boolean {
+        if (!WearableProtocolV2.isSecurePath(path) || path == WearableProtocolV2.CHALLENGE_PATH) return false
+        if (sourceNodeId.isBlank() || frame.payload.isEmpty()) return false
         val current = handler ?: return false
         return try {
             current.onFrame(sourceNodeId, path, frame)
