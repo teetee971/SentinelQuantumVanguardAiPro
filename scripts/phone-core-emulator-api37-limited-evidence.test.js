@@ -154,3 +154,14 @@ test('API 37 UID SEND_SMS ignore remains authoritative when package mode is allo
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('Phone Core evidence collection gives a transient offline emulator a bounded recovery window', () => {
+  const evidence = workflow.split('- name: Collect qualification evidence even after failure\n')[1]
+    ?.split('- name: Upload emulator qualification evidence\n')[0] ?? '';
+  assert.match(evidence, /ADB_RECOVERY_READY=0/);
+  assert.match(evidence, /for _ in \$\(seq 1 10\); do/);
+  assert.match(evidence, /timeout 3s adb get-state[^\n]*grep -Fxq ['"]device['"]/);
+  assert.match(evidence, /adb reconnect/);
+  assert.match(evidence, /adb-recovery-status\.txt/);
+  assert.ok(evidence.indexOf('ADB_RECOVERY_READY=0') < evidence.indexOf('adb logcat -d -v time'));
+});
