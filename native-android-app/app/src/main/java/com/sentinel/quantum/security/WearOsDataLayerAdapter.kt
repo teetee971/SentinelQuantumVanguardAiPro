@@ -34,12 +34,15 @@ class WearOsDataLayerAdapter(
                 val observations = nodes
                     .take(MAX_CONNECTED_NODES)
                     .map(::toObservation)
-                observations.forEach { runtimeCoordinator.observePlatform(it) }
+                if (observations.isEmpty()) {
+                    runtimeCoordinator.observePlatform(availableWithoutNodeObservation())
+                } else {
+                    observations.forEach { runtimeCoordinator.observePlatform(it) }
+                }
                 onComplete(Snapshot(observations))
             }
             .addOnFailureListener {
-                val unavailable = unavailableObservation()
-                runtimeCoordinator.observePlatform(unavailable)
+                runtimeCoordinator.observePlatform(unavailableObservation())
                 onComplete(Snapshot(emptyList(), FAILURE_DATA_LAYER_UNAVAILABLE))
             }
     }
@@ -49,6 +52,15 @@ class WearOsDataLayerAdapter(
         displayName = node.displayName?.trim()?.take(MAX_DISPLAY_NAME_CHARS),
         transport = WearableTransport.WEAR_OS,
         platformLinkState = WearablePlatformLinkState.COMPANION_ASSOCIATED,
+        availability = WearableAdapterAvailability.AVAILABLE,
+        observedCapabilities = setOf(WearableCapability.CONNECTION_STATE)
+    )
+
+    private fun availableWithoutNodeObservation(): WearableAdapterObservation = WearableAdapterObservation(
+        stableIdHint = null,
+        displayName = null,
+        transport = WearableTransport.WEAR_OS,
+        platformLinkState = WearablePlatformLinkState.NONE,
         availability = WearableAdapterAvailability.AVAILABLE,
         observedCapabilities = setOf(WearableCapability.CONNECTION_STATE)
     )
