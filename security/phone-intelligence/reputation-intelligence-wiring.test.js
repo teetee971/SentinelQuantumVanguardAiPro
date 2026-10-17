@@ -15,6 +15,7 @@ const ADAPTER_PATH = resolve(
   'intelligence/ReputationEvidenceAdapter.kt'
 );
 const CALLER_ID_PATH = resolve(SOURCE_ROOT, 'CallerIdActivity.kt');
+const SETTINGS_PATH = resolve(SOURCE_ROOT, 'data/SettingsStore.kt');
 
 test('consented caller reputation is published into Intelligence Core after UI enrichment', () => {
   const runtime = readFileSync(RUNTIME_PATH, 'utf8');
@@ -43,44 +44,54 @@ test('consented caller reputation is published into Intelligence Core after UI e
   );
 });
 
-test('caller reputation is published only after local persistence accepts the result', () => {
+test('caller reputation persistence and publication share the settings acceptance transaction', () => {
   const callerId = readFileSync(CALLER_ID_PATH, 'utf8');
-  const guardStart = callerId.indexOf('val reputationPersisted');
+  const settings = readFileSync(SETTINGS_PATH, 'utf8');
+  const guardStart = callerId.indexOf('settingsStore.acceptCallerReputationResult(');
   const persist = callerId.indexOf('.persist(number, result');
   const publish = callerId.indexOf('IntelligenceCoreRuntime.publishRemoteReputation(');
 
-  assert.ok(guardStart >= 0, 'caller reputation must retain a persistence guard');
+  assert.ok(guardStart >= 0, 'Caller ID must enter the shared consent transaction');
   assert.ok(persist >= 0, 'caller reputation must persist the bounded result');
-  assert.ok(publish > persist, 'publication must follow the persistence decision');
+  assert.ok(publish > persist && persist > guardStart, 'publication must follow persistence inside acceptance');
 
-  const publicationWindow = callerId.slice(guardStart, publish + 700);
+  const acceptanceEnd = callerId.indexOf('}.getOrNull()', guardStart);
+  assert.ok(acceptanceEnd > publish, 'acceptance must produce the UI result');
+  const publicationWindow = callerId.slice(guardStart, acceptanceEnd);
   assert.match(
     publicationWindow,
-    /val\s+reputationPersisted\s*=\s*CommunicationReputationWriter[\s\S]*?\.persist\(number,\s*result\s*\)/,
-    'the persistence acceptance boolean must be retained'
+    /result\s*=\s*result[\s\S]*?persist\s*=\s*\{[\s\S]*?\.persist\(number,\s*result\s*\)/,
+    'the transaction must receive the result and bounded persistence operation'
   );
   assert.match(
     publicationWindow,
-    /if\s*\(\s*!reputationPersisted\s*\|\|\s*!consentStillEnabled\s*\)\s*\{\s*null\s*\}\s*else\s*\{\s*IntelligenceCoreRuntime\.publishRemoteReputation\(/,
-    'revoked persistence or consent must prevent Intelligence Core publication'
+    /publish\s*=\s*\{[\s\S]*?IntelligenceCoreRuntime\.publishRemoteReputation\(/,
+    'Intelligence Core publication must run inside the same acceptance transaction'
+  );
+  assert.match(
+    settings,
+    /fun\s*<T\s*:\s*Any>\s+acceptCallerReputationResult\s*\(/,
+    'SettingsStore must own the acceptance boundary'
   );
 });
 
-test('Caller ID discards remote reputation when persistence or current consent rejects it', () => {
+test('caller reputation revocation setters and backup restore share the acceptance lock', () => {
   const callerId = readFileSync(CALLER_ID_PATH, 'utf8');
-  const persist = callerId.indexOf('.persist(number, result');
-  const acceptanceEnd = callerId.indexOf('}.getOrNull()', persist);
+  const settings = readFileSync(SETTINGS_PATH, 'utf8');
 
-  assert.ok(persist >= 0 && acceptanceEnd > persist, 'locate the remote result acceptance path');
-  const acceptance = callerId.slice(persist, acceptanceEnd);
   assert.match(
-    acceptance,
-    /val\s+consentStillEnabled\s*=\s*settingsStore\.callerReputationEnrichmentEnabled\s*&&\s*ProtectionModePolicy\.permitsCallerNumberEnrichment\(settingsStore\.protectionMode\)/,
-    'consent and protection mode must be read again after persistence'
+    callerId,
+    /remoteResult\s*=\s*withContext\(Dispatchers\.IO\)[\s\S]*?settingsStore\.acceptCallerReputationResult\(/,
+    'Caller ID must display only the transaction result'
+  );
+  assert.equal(
+    (settings.match(/set\(value\)\s*\{\s*CALLER_REPUTATION_BOUNDARY\.change\s*\{/g) ?? []).length,
+    2,
+    'consent and protection mode setters must acquire the shared boundary'
   );
   assert.match(
-    acceptance,
-    /if\s*\(\s*!reputationPersisted\s*\|\|\s*!consentStillEnabled\s*\)\s*\{\s*null\s*\}\s*else\s*\{\s*IntelligenceCoreRuntime\.publishRemoteReputation\([\s\S]*?\)\s*result\s*\}/,
-    'rejected results must be absent from both Intelligence Core and Caller ID UI state'
+    settings,
+    /fun\s+applyRestorablePreferences\([\s\S]*?CALLER_REPUTATION_BOUNDARY\.change\s*\{/,
+    'backup restore must not bypass revocation serialization'
   );
 });

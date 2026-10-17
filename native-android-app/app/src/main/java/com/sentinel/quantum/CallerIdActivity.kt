@@ -195,23 +195,23 @@ class CallerIdActivity : ComponentActivity() {
                                     privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                     explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                 )
-                                val reputationPersisted = CommunicationReputationWriter(
-                                    CommunicationReputationCache(
-                                        SharedPreferencesCommunicationReputationStorage(applicationContext)
-                                    )
-                                ).persist(number, result)
-                                val consentStillEnabled = settingsStore.callerReputationEnrichmentEnabled &&
-                                    ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
-                                if (!reputationPersisted || !consentStillEnabled) {
-                                    null
-                                } else {
-                                    IntelligenceCoreRuntime.publishRemoteReputation(
-                                        context = applicationContext,
-                                        rawNumber = number,
-                                        result = result
-                                    )
-                                    result
-                                }
+                                settingsStore.acceptCallerReputationResult(
+                                    result = result,
+                                    persist = {
+                                        CommunicationReputationWriter(
+                                            CommunicationReputationCache(
+                                                SharedPreferencesCommunicationReputationStorage(applicationContext)
+                                            )
+                                        ).persist(number, result)
+                                    },
+                                    publish = {
+                                        IntelligenceCoreRuntime.publishRemoteReputation(
+                                            context = applicationContext,
+                                            rawNumber = number,
+                                            result = result
+                                        )
+                                    }
+                                )
                             }.getOrNull()
                         }
                         remoteStatus = if (remoteResult == null) {
