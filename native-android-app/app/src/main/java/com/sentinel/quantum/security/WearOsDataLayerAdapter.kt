@@ -23,6 +23,7 @@ class WearOsDataLayerAdapter(
 
     private val appContext = context.applicationContext
     private val nodeClient by lazy { Wearable.getNodeClient(appContext) }
+    private val messageClient by lazy { Wearable.getMessageClient(appContext) }
 
     /**
      * Observes currently connected Data Layer nodes. Completion is asynchronous and bounded by
@@ -31,19 +32,27 @@ class WearOsDataLayerAdapter(
     fun observeConnectedNodes(onComplete: (Snapshot) -> Unit) {
         nodeClient.connectedNodes
             .addOnSuccessListener { nodes ->
-                val observations = nodes
-                    .take(MAX_CONNECTED_NODES)
-                    .map(::toObservation)
+                val boundedNodes = nodes.take(MAX_CONNECTED_NODES)
+                val observations = boundedNodes.map(::toObservation)
                 if (observations.isEmpty()) {
                     runtimeCoordinator.observePlatform(availableWithoutNodeObservation())
                 } else {
                     observations.forEach { runtimeCoordinator.observePlatform(it) }
+                    boundedNodes.forEach(::sendPlatformProbe)
                 }
                 onComplete(Snapshot(observations))
             }
             .addOnFailureListener {
                 runtimeCoordinator.observePlatform(unavailableObservation())
                 onComplete(Snapshot(emptyList(), FAILURE_DATA_LAYER_UNAVAILABLE))
+            }
+    }
+
+    private fun sendPlatformProbe(node: Node) {
+        val payload = WearOsPlatformProbeRegistry.issue(node.id) ?: return
+        messageClient.sendMessage(node.id, PLATFORM_PING_PATH, payload)
+            .addOnFailureListener {
+                WearOsPlatformProbeRegistry.cancel(node.id)
             }
     }
 
@@ -76,6 +85,7 @@ class WearOsDataLayerAdapter(
 
     companion object {
         internal const val FAILURE_DATA_LAYER_UNAVAILABLE = "WEAR_OS_DATA_LAYER_UNAVAILABLE"
+        internal const val PLATFORM_PING_PATH = "/sentinel/v1/platform/ping"
         private const val MAX_CONNECTED_NODES = 16
         private const val MAX_DISPLAY_NAME_CHARS = 80
 
