@@ -38,22 +38,46 @@ class WearableHandshakeReplayGuard(
             .also { pending[nonce] = PendingChallenge(it, elapsedNow) }
     }
 
+    /**
+     * Checks that a signed candidate still references a live, matching challenge without consuming
+     * it. First-pairing code uses this before durably storing a user-confirmed trust anchor.
+     */
+    @Synchronized
+    fun validate(candidate: WearableHandshakeCandidate): Boolean {
+        val now = clockMs()
+        val elapsedNow = elapsedClockMs()
+        purgeExpired(now, elapsedNow)
+        return candidateMatchesPending(candidate, now, elapsedNow)
+    }
+
     @Synchronized
     fun consume(candidate: WearableHandshakeCandidate): Boolean {
         val now = clockMs()
-        purgeExpired(now, elapsedClockMs())
-        val challenge = pending[candidate.challengeNonce]?.challenge ?: return false
-        if (challenge.stableId != candidate.stableId ||
-            candidate.issuedAtMs < challenge.issuedAtMs ||
-            candidate.issuedAtMs > challenge.expiresAtMs ||
-            now > challenge.expiresAtMs
-        ) return false
+        val elapsedNow = elapsedClockMs()
+        purgeExpired(now, elapsedNow)
+        if (!candidateMatchesPending(candidate, now, elapsedNow)) return false
         pending.remove(candidate.challengeNonce)
         return true
     }
 
     @Synchronized
     fun revokeAll() = pending.clear()
+
+    private fun candidateMatchesPending(
+        candidate: WearableHandshakeCandidate,
+        now: Long,
+        elapsedNow: Long
+    ): Boolean {
+        val pendingChallenge = pending[candidate.challengeNonce] ?: return false
+        val challenge = pendingChallenge.challenge
+        val elapsedAge = elapsedNow - pendingChallenge.issuedElapsedMs
+        return challenge.stableId == candidate.stableId &&
+            candidate.issuedAtMs >= challenge.issuedAtMs &&
+            candidate.issuedAtMs <= challenge.expiresAtMs &&
+            now >= challenge.issuedAtMs &&
+            now <= challenge.expiresAtMs &&
+            elapsedAge >= 0 && elapsedAge <= ttlMs
+    }
 
     private fun purgeExpired(now: Long, elapsedNow: Long) {
         pending.entries.removeIf {
