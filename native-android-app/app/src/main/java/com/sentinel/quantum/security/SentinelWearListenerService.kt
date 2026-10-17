@@ -23,7 +23,7 @@ class SentinelWearListenerService : WearableListenerService() {
         if (payload.size != WearOsPlatformProbeRegistry.NONCE_BYTES) return
         if (!WearOsPlatformProbeRegistry.acceptPong(messageEvent.sourceNodeId, payload)) return
 
-        WearableRuntimeCoordinator().observePlatform(
+        SentinelWearableRuntime.observePlatform(
             WearableAdapterObservation(
                 stableIdHint = WearOsDataLayerAdapter.pseudonymousStableId(messageEvent.sourceNodeId),
                 displayName = null,
