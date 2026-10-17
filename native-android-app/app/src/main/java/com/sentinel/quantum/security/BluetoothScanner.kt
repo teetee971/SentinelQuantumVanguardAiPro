@@ -13,6 +13,11 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 data class DiscoveredBluetoothDevice(
     val name: String,
@@ -34,6 +39,8 @@ class BluetoothScanner(context: Context) {
     private val appContext = context.applicationContext
     private val adapter = (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
     private val handler = Handler(Looper.getMainLooper())
+    private val networkTimelineStore = NetworkTimelineStore(appContext)
+    private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val discovered = linkedMapOf<String, DiscoveredBluetoothDevice>()
     private var callback: ScanCallback? = null
 
@@ -141,7 +148,14 @@ class BluetoothScanner(context: Context) {
 
         handler.postDelayed({
             stop()
-            onResults(sortedResults())
+            val finalResults = sortedResults()
+            persistenceScope.launch {
+                networkTimelineStore.recordObserved(
+                    source = NetworkTimelineSource.ANDROID_BLE,
+                    rawIdentifiers = finalResults.map { it.address }
+                )
+            }
+            onResults(finalResults)
             onScanFinished()
         }, durationMs)
     }
@@ -152,6 +166,11 @@ class BluetoothScanner(context: Context) {
         callback = null
         handler.removeCallbacksAndMessages(null)
         runCatching { adapter?.bluetoothLeScanner?.stopScan(scanCallback) }
+    }
+
+    fun close() {
+        stop()
+        persistenceScope.cancel()
     }
 
     // Les autorisations sont vérifiées avant le scan ; une révocation concurrente reste tolérée
