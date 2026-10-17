@@ -139,6 +139,32 @@ test('VPN truth reflects a missing privileged gateway host rather than missing c
   }
 });
 
+test('Threat intelligence distinguishes active public sources from credential-gated adapters', () => {
+  const frontend = fs.readFileSync('public/threat-intelligence.js', 'utf8');
+  const continuity = JSON.parse(fs.readFileSync('config/module-continuity-inventory.json', 'utf8'));
+  for (const marker of [
+    'api.github.com/advisories',
+    'services.nvd.nist.gov',
+    'known_exploited_vulnerabilities.json',
+    'api.osv.dev/v1/query'
+  ]) {
+    assert.equal(frontend.includes(marker), true, `missing free public threat-intel source: ${marker}`);
+  }
+  assert.equal(
+    continuity.entries['security/threat-intelligence/malwarebazaar-adapter.js'].status,
+    'DORMANT_LIBRARY'
+  );
+  assert.equal(
+    continuity.entries['security/threat-intelligence/virusshare-adapter.js'].status,
+    'DORMANT_LIBRARY'
+  );
+
+  const threat = readRegistry().capabilities.find((entry) => entry.id === 'threat_intelligence');
+  assert.ok(threat, 'threat_intelligence capability must exist');
+  assert.equal(threat.state, 'LOCKED_EXTERNAL_DEPENDENCY');
+  assert.equal(threat.diagnostic_reason, 'PARTIAL_PUBLIC_SOURCES_ONLY');
+});
+
 test('Voice truth reflects the deployed-but-disabled Render service and readiness health gate', () => {
   const render = fs.readFileSync('render.yaml', 'utf8');
   const voiceService = render.slice(render.indexOf('name: sentinel-voice-api'));
