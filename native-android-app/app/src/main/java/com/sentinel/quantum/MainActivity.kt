@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +30,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +58,8 @@ import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.SharedTextHolder
 import com.sentinel.quantum.navigation.NavGraph
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.security.PhoneWearableSecureHandshakeRuntime
+import com.sentinel.quantum.security.SentinelWearableSecureHandshakeRuntime
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.SentinelD1
 import kotlinx.coroutines.delay
@@ -131,12 +135,24 @@ class MainActivity : ComponentActivity() {
             val settingsStore = remember { SettingsStore(applicationContext) }
             var themeMode by remember { mutableStateOf(settingsStore.getThemeMode()) }
             var showBrandLoading by rememberSaveable { mutableStateOf(true) }
+            var wearablePairing by remember {
+                mutableStateOf<PhoneWearableSecureHandshakeRuntime.PendingConfirmation?>(null)
+            }
 
             LaunchedEffect(Unit) {
                 // Keep the branded surface long enough to avoid a one-frame flash on fast devices.
                 // No network request or artificial application dependency is hidden behind it.
                 delay(900)
                 showBrandLoading = false
+            }
+            LaunchedEffect(Unit) {
+                // A first-contact wearable identity becomes user-visible only after its Ed25519
+                // proof has already passed the secure handshake verifier. Polling reads process-
+                // local state only; it does not create trust and expired challenges disappear.
+                while (true) {
+                    wearablePairing = SentinelWearableSecureHandshakeRuntime.pendingConfirmation()
+                    delay(500)
+                }
             }
 
             SentinelQuantumTheme(themeMode = themeMode) {
@@ -213,6 +229,44 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     if (showBrandLoading) SentinelBrandLoading()
+                    val pairing = wearablePairing
+                    if (!showBrandLoading && pairing != null) {
+                        AlertDialog(
+                            onDismissRequest = { /* Explicit accept or reject is required. */ },
+                            title = { Text(stringResource(R.string.wearable_pairing_title)) },
+                            text = {
+                                Text(
+                                    stringResource(
+                                        R.string.wearable_pairing_body,
+                                        pairing.stableId,
+                                        pairing.identityKeyFingerprintSha256
+                                    )
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        SentinelWearableSecureHandshakeRuntime.confirm(pairing.stableId)
+                                        wearablePairing =
+                                            SentinelWearableSecureHandshakeRuntime.pendingConfirmation()
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.wearable_pairing_accept))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        SentinelWearableSecureHandshakeRuntime.reject(pairing.stableId)
+                                        wearablePairing =
+                                            SentinelWearableSecureHandshakeRuntime.pendingConfirmation()
+                                    }
+                                ) {
+                                    Text(stringResource(R.string.wearable_pairing_reject))
+                                }
+                            }
+                        )
+                    }
                     }
                 }
             }
