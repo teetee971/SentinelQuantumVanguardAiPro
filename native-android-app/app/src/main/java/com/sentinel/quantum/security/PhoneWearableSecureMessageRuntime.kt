@@ -74,8 +74,9 @@ internal class PhoneWearableSecureMessageRuntime(
         } catch (_: Exception) {
             return false
         }
-        // No business consumer is registered yet. Authenticated frames are consumed by the gate,
-        // but must never be interpreted as permission to change product state.
-        return result.state == WearableSecureMessageState.ACCEPTED
+        // Cryptographic acceptance is not business authorization. Until a typed, authenticated
+        // consumer is installed, quarantine even correctly decrypted application frames.
+        // The channel still evaluates the guard so replayed frames cannot obtain a later pass.
+        return false
     }
 }
