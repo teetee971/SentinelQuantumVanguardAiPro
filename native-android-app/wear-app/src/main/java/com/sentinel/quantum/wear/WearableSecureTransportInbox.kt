@@ -10,12 +10,21 @@ internal object WearableSecureTransportInbox {
     @Volatile
     private var handler: WearableSecureFrameHandler? = null
 
+    @Synchronized
     fun install(value: WearableSecureFrameHandler) {
         handler = value
     }
 
+    @Synchronized
     fun clear() {
         handler = null
+    }
+
+    @Synchronized
+    fun clear(expectedOwner: WearableSecureFrameHandler): Boolean {
+        if (handler !== expectedOwner) return false
+        handler = null
+        return true
     }
 
     fun dispatch(sourceNodeId: String, path: String, frame: WearableProtocolV2.Frame): Boolean {
