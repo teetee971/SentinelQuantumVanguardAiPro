@@ -14,8 +14,7 @@ internal class PhoneWearableLivenessRuntime(
     private val revokeAuthenticatedChannel: (Long) -> Unit,
     private val clockMs: () -> Long = System::currentTimeMillis,
     private val random: SecureRandom = SecureRandom(),
-    private val proofTtlMs: Long = DEFAULT_PROOF_TTL_MS,
-    private val maxActiveNodes: Int = DEFAULT_MAX_ACTIVE_NODES
+    private val proofTtlMs: Long = DEFAULT_PROOF_TTL_MS
 ) {
     private data class PendingProbe(
         val sequenceNumber: Long,
@@ -35,9 +34,13 @@ internal class PhoneWearableLivenessRuntime(
 
     init {
         require(proofTtlMs in 1_000L..300_000L)
-        require(maxActiveNodes in 1..64)
     }
 
+    /**
+     * The phone secure-session runtime is currently single-authority. A newer session therefore
+     * atomically supersedes every older Data Layer node instead of allowing stale nodes to revoke
+     * or refresh the new authoritative session later.
+     */
     @Synchronized
     fun activate(
         nodeId: String,
@@ -47,8 +50,8 @@ internal class PhoneWearableLivenessRuntime(
     ): Boolean {
         if (nodeId.isBlank() || sessionId.isBlank()) return false
         if (wearablePublicKeyEncoded.isEmpty() || wearablePublicKeyEncoded.size > MAX_HPKE_PUBLIC_KEY_BYTES) return false
-        if (nodeId !in activeByNode && activeByNode.size >= maxActiveNodes) return false
-        activeByNode.remove(nodeId)?.pending?.nonce?.fill(0)
+        activeByNode.values.forEach { it.pending?.nonce?.fill(0) }
+        activeByNode.clear()
         activeByNode[nodeId] = Active(
             sessionId = sessionId,
             wearablePublicKeyEncoded = wearablePublicKeyEncoded.copyOf(),
@@ -192,7 +195,6 @@ internal class PhoneWearableLivenessRuntime(
 
     companion object {
         private const val DEFAULT_PROOF_TTL_MS = 30_000L
-        private const val DEFAULT_MAX_ACTIVE_NODES = 8
         private const val MAX_HPKE_PUBLIC_KEY_BYTES = 4 * 1024
         private const val LIVENESS_NONCE_BYTES = 16
     }
