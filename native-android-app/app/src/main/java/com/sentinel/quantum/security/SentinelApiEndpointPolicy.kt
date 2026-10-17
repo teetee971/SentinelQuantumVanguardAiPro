@@ -4,10 +4,9 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
 /**
- * Canonical public Sentinel API endpoint policy for distributed Android clients.
- *
- * The configured base origin may change independently of client code. Distributed clients
- * are only allowed to call the explicitly public, credential-free routes declared here.
+ * Canonical Sentinel API endpoint policy for distributed Android clients.
+ * Public and authenticated routes are deliberately separated so a Bearer-only endpoint can never
+ * become credential-free by being added to the public allowlist.
  */
 object SentinelApiEndpointPolicy {
     private val publicPaths = setOf(
@@ -18,14 +17,32 @@ object SentinelApiEndpointPolicy {
         "/v1/intelligence/report-public"
     )
 
+    private val authenticatedPaths = setOf(
+        "/v1/intelligence/exposures/report-user",
+        "/v1/intelligence/exposures/lookup-user"
+    )
+
     fun originHost(baseUrl: String): String = validateOrigin(baseUrl).host.lowercase()
 
     fun build(
         baseUrl: String,
         path: String,
         allowedHosts: Set<String>? = null
+    ): HttpUrl = buildAllowed(baseUrl, path, publicPaths, allowedHosts)
+
+    fun buildAuthenticated(
+        baseUrl: String,
+        path: String,
+        allowedHosts: Set<String>? = null
+    ): HttpUrl = buildAllowed(baseUrl, path, authenticatedPaths, allowedHosts)
+
+    private fun buildAllowed(
+        baseUrl: String,
+        path: String,
+        allowedPaths: Set<String>,
+        allowedHosts: Set<String>?
     ): HttpUrl {
-        if (path !in publicPaths) {
+        if (path !in allowedPaths) {
             throw SecurityException("SENTINEL_API_PATH_NOT_ALLOWED")
         }
 
