@@ -5,8 +5,8 @@
     {"id":"incall","owner":"phone-core","surface":"In-call UI / audio / DTMF","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
     {"id":"call_screening","owner":"phone-core","surface":"CallScreeningService","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
     {"id":"caller_id_local","owner":"phone-intelligence","surface":"Caller ID local identity","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
-    {"id":"caller_reputation_remote","owner":"phone-intelligence","surface":"Remote caller reputation","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
-    {"id":"community_phone_reports","owner":"phone-intelligence","surface":"Community reporting / moderation","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
+    {"id":"caller_reputation_remote","owner":"phone-intelligence","surface":"Remote caller reputation","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"RUNTIME_NOT_OBSERVED"},
+    {"id":"community_phone_reports","owner":"phone-intelligence","surface":"Community reporting / moderation","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"RUNTIME_NOT_OBSERVED"},
     {"id":"sms","owner":"sms-core","surface":"SMS role / send / receive / anti-phishing","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
     {"id":"mms","owner":"mms-core","surface":"MMS receive / download / projection","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
     {"id":"contacts","owner":"contacts","surface":"Android and Sentinel contacts","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
@@ -23,7 +23,7 @@
     {"id":"soc_decision_plane","owner":"decision-plane","surface":"SOC passive pipeline / decision handoff","state":"INTENTIONALLY_DISABLED","diagnostic_reason":"INTENTIONALLY_DISABLED_BY_POLICY"},
     {"id":"osint_analyst_tooling","owner":"osint-intelligence","surface":"OSINT analyst tooling","state":"INTENTIONALLY_DISABLED","diagnostic_reason":"INTENTIONALLY_DISABLED_BY_POLICY"},
     {"id":"device_utilities","owner":"device-utilities","surface":"Storage / cleanup utilities","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
-    {"id":"voice_rtc_ptt","owner":"voice-core","surface":"Voice / RTC / PTT","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
+    {"id":"voice_rtc_ptt","owner":"voice-core","surface":"Voice / RTC / PTT","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"SERVICE_DISABLED_BY_CONFIGURATION"},
     {"id":"first_run_activation","owner":"platform-android","surface":"First-run activation / permissions / roles","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
     {"id":"system_doctor_release_evidence","owner":"platform-android","surface":"System Doctor / release evidence","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"}
   ]
