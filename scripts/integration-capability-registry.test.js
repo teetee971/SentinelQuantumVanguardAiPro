@@ -107,10 +107,11 @@ test('Render-declared phone backends are not diagnosed as undeployed', () => {
   }
 });
 
-test('Voice truth reflects the deployed-but-disabled Render service', () => {
+test('Voice truth reflects the deployed-but-disabled Render service and readiness health gate', () => {
   const render = fs.readFileSync('render.yaml', 'utf8');
-  assert.match(render, /name:\s*sentinel-voice-api/);
-  assert.match(render, /key:\s*VOICE_SERVICE_ENABLED[\s\S]*?value:\s*"false"/);
+  const voiceService = render.slice(render.indexOf('name: sentinel-voice-api'));
+  assert.match(voiceService, /healthCheckPath:\s*\/health\/ready/);
+  assert.match(voiceService, /key:\s*VOICE_SERVICE_ENABLED[\s\S]*?value:\s*"false"/);
 
   const voice = readRegistry().capabilities.find((entry) => entry.id === 'voice_rtc_ptt');
   assert.ok(voice, 'voice_rtc_ptt capability must exist');
