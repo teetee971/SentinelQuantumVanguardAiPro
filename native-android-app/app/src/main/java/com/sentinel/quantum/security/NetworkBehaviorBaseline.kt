@@ -141,8 +141,8 @@ object NetworkBehaviorBaseline {
         if (fingerprint.length != FINGERPRINT_HEX_LENGTH) return null
         if (!fingerprint.all { it in '0'..'9' || it in 'a'..'f' }) return null
 
-        val destination = sample.destination.trim().lowercase().take(253)
-        if (destination.isEmpty()) return null
+        val destination = sample.destination.trim().lowercase()
+        if (destination.isEmpty() || destination.length > 253) return null
         if (sample.remotePort != null && sample.remotePort !in 1..65535) return null
         if (sample.totalBytes < 0L) return null
         if (sample.observedHourUtc !in 0..23) return null
