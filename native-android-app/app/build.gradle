@@ -49,20 +49,11 @@ android {
             if (releaseSigningConfigured) signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-
-        // Unsigned variant used to prove that an Android App Bundle compiles and
-        // packages correctly (e.g. for Play Console dry-runs) before real release
-        // signing secrets are available. It intentionally never applies a
-        // signingConfig, so it must never be treated as a publishable artifact.
         releaseUnsigned {
             initWith release
-            // initWith copies every build-type property, including signingConfig.
-            // Clear it explicitly so this validation-only variant stays unsigned even
-            // on a developer/CI machine where production signing variables are present.
             signingConfig = null
             matchingFallbacks = ['release']
         }
-
         debug {
             minifyEnabled false
         }
@@ -88,10 +79,6 @@ android {
 
 gradle.taskGraph.whenReady { graph ->
     def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
-    // Only tasks for the signed "release" build type (assembleRelease, bundleRelease, ...)
-    // are gated on signing secrets. Tasks for the "releaseUnsigned" build type
-    // (assembleReleaseUnsigned, bundleReleaseUnsigned, ...) are intentionally exempt
-    // because that variant never applies a signingConfig and is not publishable.
     def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
     if (requiresSignedRelease && !releaseSigningConfigured) {
         throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
@@ -100,6 +87,7 @@ gradle.taskGraph.whenReady { graph ->
 
 dependencies {
     implementation project(':wearable-security')
+    implementation project(':wearable-contract')
     implementation 'androidx.core:core-ktx:1.19.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
     implementation 'androidx.activity:activity-compose:1.13.0'
@@ -132,7 +120,6 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation testFixtures(project(':wearable-security'))
-    // JVM implementation used by local unit tests; Android's org.json classes are runtime stubs on the host JVM.
     testImplementation 'org.json:json:20260814'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
@@ -146,9 +133,6 @@ ksp {
     arg('room.schemaLocation', "$projectDir/schemas")
 }
 
-// Release-evidence native dependency graph. This is intentionally generated from
-// the resolved releaseRuntimeClasspath rather than declared dependencies so the
-// evidence reflects the dependency graph actually selected by Gradle.
 tasks.register('exportReleaseDependencyInventory') {
     group = 'verification'
     description = 'Exports the resolved Android release dependency graph for release evidence.'
@@ -175,10 +159,7 @@ tasks.register('exportReleaseDependencyInventory') {
 
         def components = resolution.allComponents.collect { component ->
             def id = component.id
-            def record = [
-                key: componentKey(id),
-                display_name: id.displayName
-            ]
+            def record = [key: componentKey(id), display_name: id.displayName]
             if (id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
                 record.type = 'module'
                 record.group = id.group
@@ -209,46 +190,20 @@ tasks.register('exportReleaseDependencyInventory') {
                 if (!keys.contains(from) || !keys.contains(to)) {
                     throw new GradleException("Dependency edge references an unknown component: ${from} -> ${to}")
                 }
-                relationships << [
-                    from: from,
-                    to: to,
-                    requested: dependency.requested.displayName,
-                    constraint: dependency.constraint
-                ]
+                relationships << [from: from, to: to, requested: dependency.requested.displayName, constraint: dependency.constraint]
             } else if (dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
-                unresolved << [
-                    from: componentKey(dependency.from.id),
-                    requested: dependency.requested.displayName,
-                    failure: (dependency.failure?.message ?: 'resolution failed').take(1024)
-                ]
+                unresolved << [from: componentKey(dependency.from.id), requested: dependency.requested.displayName, failure: (dependency.failure?.message ?: 'resolution failed').take(1024)]
             } else {
-                unresolved << [
-                    from: componentKey(dependency.from.id),
-                    requested: dependency.requested.displayName,
-                    failure: 'unsupported dependency result type'
-                ]
+                unresolved << [from: componentKey(dependency.from.id), requested: dependency.requested.displayName, failure: 'unsupported dependency result type']
             }
         }
         if (!unresolved.isEmpty()) {
-            throw new GradleException(
-                'Unresolved release dependencies: ' +
-                    groovy.json.JsonOutput.toJson(unresolved)
-            )
+            throw new GradleException('Unresolved release dependencies: ' + groovy.json.JsonOutput.toJson(unresolved))
         }
 
         relationships = relationships
-            .unique { relationship ->
-                groovy.json.JsonOutput.toJson([
-                    relationship.from,
-                    relationship.to,
-                    relationship.requested,
-                    relationship.constraint
-                ])
-            }
-            .sort { a, b ->
-                groovy.json.JsonOutput.toJson([a.from, a.to, a.requested, a.constraint]) <=>
-                    groovy.json.JsonOutput.toJson([b.from, b.to, b.requested, b.constraint])
-            }
+            .unique { relationship -> groovy.json.JsonOutput.toJson([relationship.from, relationship.to, relationship.requested, relationship.constraint]) }
+            .sort { a, b -> groovy.json.JsonOutput.toJson([a.from, a.to, a.requested, a.constraint]) <=> groovy.json.JsonOutput.toJson([b.from, b.to, b.requested, b.constraint]) }
 
         def payload = [
             schema_version: 2,
@@ -267,14 +222,9 @@ tasks.register('exportReleaseDependencyInventory') {
         def target = outputFile.get().asFile
         target.parentFile.mkdirs()
         target.setText(
-            groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(payload)) +
-            System.lineSeparator(),
+            groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(payload)) + System.lineSeparator(),
             'UTF-8'
         )
-        logger.lifecycle(
-            "Release dependency graph: ${target} " +
-                "(${payload.component_count} components, ${payload.relationship_count} relationships)"
-        )
+        logger.lifecycle("Release dependency graph: ${target} (${payload.component_count} components, ${payload.relationship_count} relationships)")
     }
 }
-
