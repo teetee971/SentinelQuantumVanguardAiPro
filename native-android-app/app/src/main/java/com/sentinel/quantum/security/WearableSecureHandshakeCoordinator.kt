@@ -209,11 +209,11 @@ class WearableSecureHandshakeCoordinator private constructor(
         }
 
         val current = store.load(candidate.stableId)
-        val trusted = if (current != null) {
+        val (trusted, requiresPersistence) = if (current != null) {
             val matches = constantTimeEquals(current.keyFingerprintSha256, identityFingerprint) &&
                 MessageDigest.isEqual(current.publicKeyX509, identityPublicKeyX509)
             if (!matches) return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
-            current
+            current to false
         } else {
             val userConfirmation = confirmation ?: return pending(proof)
             if (userConfirmation.stableId != candidate.stableId ||
@@ -224,16 +224,12 @@ class WearableSecureHandshakeCoordinator private constructor(
             ) {
                 return rejected(WearableSecureHandshakeRejection.IDENTITY_CONFIRMATION_MISMATCH)
             }
-            try {
-                store.confirm(
-                    candidate.stableId,
-                    identityPublicKeyX509,
-                    identityFingerprint,
-                    userConfirmation.confirmedAtMs
-                )
-            } catch (_: RuntimeException) {
-                return rejected(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED)
-            }
+            WearableTrustedIdentity(
+                stableId = candidate.stableId,
+                publicKeyX509 = identityPublicKeyX509.copyOf(),
+                keyFingerprintSha256 = identityFingerprint,
+                confirmedAtMs = userConfirmation.confirmedAtMs
+            ) to true
         }
 
         val policy = WearableHandshakePolicy.evaluate(
@@ -249,7 +245,32 @@ class WearableSecureHandshakeCoordinator private constructor(
         if (policy != WearableHandshakeDecision.ACCEPT) {
             return rejected(WearableSecureHandshakeRejection.POLICY_REJECTED)
         }
-        return consumeAndActivate(context, candidate, proof, wearableHpkePublicKeyEncoded)
+        if (!replayGuard.consume(candidate)) {
+            return rejected(WearableSecureHandshakeRejection.REPLAY_REJECTED)
+        }
+
+        val activation = activateAfterReplayConsumed(
+            context,
+            candidate,
+            proof,
+            wearableHpkePublicKeyEncoded
+        )
+        if (activation.state != WearableSecureHandshakeState.ACTIVE || !requiresPersistence) {
+            return activation
+        }
+
+        return try {
+            store.confirm(
+                candidate.stableId,
+                identityPublicKeyX509,
+                identityFingerprint,
+                trusted.confirmedAtMs
+            )
+            activation
+        } catch (_: RuntimeException) {
+            sessionAuthority.revoke(candidate.stableId)
+            rejected(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED)
+        }
     }
 
     private fun validateTransportBindings(
@@ -299,6 +320,15 @@ class WearableSecureHandshakeCoordinator private constructor(
         if (!replayGuard.consume(candidate)) {
             return rejected(WearableSecureHandshakeRejection.REPLAY_REJECTED)
         }
+        return activateAfterReplayConsumed(context, candidate, proof, wearableHpkePublicKeyEncoded)
+    }
+
+    private fun activateAfterReplayConsumed(
+        context: WearableSecureHandshakeContext,
+        candidate: WearableHandshakeCandidate,
+        proof: VerifiedWearableHandshake,
+        wearableHpkePublicKeyEncoded: ByteArray
+    ): WearableSecureHandshakeResult {
         val attempt = if (context.unboundIdentity) {
             WearableHandshakeAttempt(
                 stableId = candidate.stableId,
