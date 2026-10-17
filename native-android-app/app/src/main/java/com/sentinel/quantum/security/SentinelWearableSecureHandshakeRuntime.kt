@@ -28,6 +28,7 @@ internal object SentinelWearableSecureHandshakeRuntime {
 
     @Volatile private var runtime: PhoneWearableSecureHandshakeRuntime? = null
     @Volatile private var livenessRuntime: PhoneWearableLivenessRuntime? = null
+    @Volatile private var messageRuntime: PhoneWearableSecureMessageRuntime? = null
 
     private var livenessJob: Job? = null
     private var activeNodeId: String? = null
@@ -51,6 +52,7 @@ internal object SentinelWearableSecureHandshakeRuntime {
     fun reject(stableId: String): Boolean = runtime?.reject(stableId) == true
 
     fun disconnect(nodeId: String) {
+        messageRuntime?.disconnect(nodeId)
         runtime?.disconnect(nodeId)
         val live = livenessRuntime
         synchronized(lock) {
@@ -83,6 +85,11 @@ internal object SentinelWearableSecureHandshakeRuntime {
                 }
             )
             livenessRuntime = liveness
+            val messages = PhoneWearableSecureMessageRuntime(
+                authority = authority,
+                livenessActive = liveness::isActive
+            )
+            messageRuntime = messages
 
             val created = PhoneWearableSecureHandshakeRuntime(
                 pairingStore = WearablePairingStore.forApplicationContext(appContext),
@@ -103,6 +110,16 @@ internal object SentinelWearableSecureHandshakeRuntime {
                     } else if (!liveness.activate(nodeId, session.sessionId, wearablePublic, material)) {
                         SentinelWearableRuntime.authenticationFailure()
                         false
+                    } else if (!messages.activate(
+                            nodeId,
+                            requireNotNull(handshake.verifiedProof).stableId,
+                            session,
+                            wearablePublic,
+                            material
+                        )) {
+                        liveness.disconnect(nodeId)
+                        SentinelWearableRuntime.authenticationFailure()
+                        false
                     } else {
                         startLivenessLoop(nodeId, session.sessionId, liveness)
                         true
@@ -113,6 +130,7 @@ internal object SentinelWearableSecureHandshakeRuntime {
                 when (path) {
                     WearableProtocolV2.HANDSHAKE_PATH -> created.handleHandshake(sourceNodeId, frame)
                     WearableProtocolV2.LIVENESS_PATH -> liveness.handleResponse(sourceNodeId, frame)
+                    WearableProtocolV2.MESSAGE_PATH -> messages.handleFrame(sourceNodeId, frame)
                 }
             }
             WearableSecureTransportInbox.install(handler)
