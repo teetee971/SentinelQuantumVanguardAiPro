@@ -127,6 +127,7 @@ dependencies {
     implementation 'io.livekit:livekit-android:2.29.0'
     implementation 'com.auth0.android:auth0:3.21.1-beta.0'
     implementation 'com.wireguard.android:tunnel:1.0.20260102'
+    implementation 'com.google.android.gms:play-services-wearable:20.0.1'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
     testImplementation 'junit:junit:4.13.2'
@@ -267,7 +268,7 @@ tasks.register('exportReleaseDependencyInventory') {
         target.parentFile.mkdirs()
         target.setText(
             groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(payload)) +
-                System.lineSeparator(),
+            System.lineSeparator(),
             'UTF-8'
         )
         logger.lifecycle(
