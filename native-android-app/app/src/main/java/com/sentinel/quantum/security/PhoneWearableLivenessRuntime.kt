@@ -48,6 +48,7 @@ internal class PhoneWearableLivenessRuntime(
         if (nodeId.isBlank() || sessionId.isBlank()) return false
         if (wearablePublicKeyEncoded.isEmpty() || wearablePublicKeyEncoded.size > MAX_HPKE_PUBLIC_KEY_BYTES) return false
         if (nodeId !in activeByNode && activeByNode.size >= maxActiveNodes) return false
+        activeByNode.remove(nodeId)?.pending?.nonce?.fill(0)
         activeByNode[nodeId] = Active(
             sessionId = sessionId,
             wearablePublicKeyEncoded = wearablePublicKeyEncoded.copyOf(),
@@ -61,7 +62,12 @@ internal class PhoneWearableLivenessRuntime(
         if (now < 0) return false
         val prepared = synchronized(this) {
             val active = activeByNode[nodeId] ?: return false
-            if (active.pending != null) return false
+            val existing = active.pending
+            if (existing != null) {
+                if (now < existing.sentAtMs || now - existing.sentAtMs <= proofTtlMs) return false
+                existing.nonce.fill(0)
+                active.pending = null
+            }
             val sequence = active.nextSequenceNumber
             val next = try {
                 Math.addExact(sequence, 1L)
@@ -87,11 +93,13 @@ internal class PhoneWearableLivenessRuntime(
             val ciphertext = try {
                 active.material.encryptForWearable(active.wearablePublicKeyEncoded, plaintext, context)
             } catch (_: Exception) {
+                nonce.fill(0)
                 return false
             }
             val encoded = try {
                 WearableProtocolV2.encodeFrame(ciphertext)
             } catch (_: IllegalArgumentException) {
+                nonce.fill(0)
                 return false
             }
             active.pending = probe
@@ -148,6 +156,7 @@ internal class PhoneWearableLivenessRuntime(
             if (currentPending.sequenceNumber != pending.sequenceNumber ||
                 !MessageDigest.isEqual(currentPending.nonce, pending.nonce)
             ) return@synchronized false
+            currentPending.nonce.fill(0)
             current.pending = null
             true
         }
