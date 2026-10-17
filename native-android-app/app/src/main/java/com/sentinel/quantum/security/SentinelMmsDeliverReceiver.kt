@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapter
 import java.util.concurrent.Executors
 
 /**
@@ -184,6 +186,17 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
                         providerReplay -> "REPLAY_NO_DUPLICATE"
                         else -> "PRIVATE_ONLY"
                     }
+            )
+        }
+
+        val plan = (prepared as? IncomingMmsProjectionPipeline.Result.Ready)?.plan
+        val projected = providerResult as? IncomingMmsConversationStore.ProjectResult.Ready
+        if (plan != null && projected != null) {
+            IntelligenceCoreRuntime.publishIncomingMmsObservation(
+                context = context,
+                providerMessageId = projected.providerMessageId,
+                rawSender = plan.sender,
+                transportState = SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_READY
             )
         }
 
