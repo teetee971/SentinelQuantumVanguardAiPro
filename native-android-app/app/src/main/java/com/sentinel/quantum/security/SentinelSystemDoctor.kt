@@ -25,7 +25,10 @@ class SentinelSystemDoctor(
             get() = SentinelDeviceDiagnostic.Report(evidence)
     }
 
-    fun scan(vpnState: SentinelVpnController.RuntimeState? = null): Scan {
+    fun scan(
+        vpnState: SentinelVpnController.RuntimeState? =
+            SentinelVpnRuntimeStateRegistry.current()?.state
+    ): Scan {
         val startedAt = clockMillis()
         val today = Instant.ofEpochMilli(startedAt).atZone(ZoneOffset.UTC).toLocalDate()
         val system = SentinelSystemSnapshot.capture(startedAt)
