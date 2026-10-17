@@ -2,6 +2,7 @@ package com.sentinel.quantum.wearable.contract
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -16,9 +17,7 @@ class WearableProtocolV2Test {
             phoneHpkePublicKeyEncoded = byteArrayOf(1, 2, 3),
             phoneHpkePublicKeyFingerprintSha256 = "1".repeat(64)
         )
-        val decoded = requireNotNull(
-            WearableProtocolV2.decodeChallenge(WearableProtocolV2.encodeChallenge(challenge))
-        )
+        val decoded = requireNotNull(WearableProtocolV2.decodeChallenge(WearableProtocolV2.encodeChallenge(challenge)))
         assertEquals(challenge.sessionId, decoded.sessionId)
         assertEquals(challenge.capabilities, decoded.capabilities)
         assertEquals(challenge.challengeNonce, decoded.challengeNonce)
@@ -37,9 +36,7 @@ class WearableProtocolV2Test {
             signedTranscript = byteArrayOf(5, 6),
             signature = byteArrayOf(7, 8)
         )
-        val decoded = requireNotNull(
-            WearableProtocolV2.decodeHandshake(WearableProtocolV2.encodeHandshake(handshake))
-        )
+        val decoded = requireNotNull(WearableProtocolV2.decodeHandshake(WearableProtocolV2.encodeHandshake(handshake)))
         assertEquals(handshake.stableId, decoded.stableId)
         assertArrayEquals(handshake.identityPublicKeyX509, decoded.identityPublicKeyX509)
         assertEquals(handshake.identityKeyFingerprintSha256, decoded.identityKeyFingerprintSha256)
@@ -47,6 +44,30 @@ class WearableProtocolV2Test {
         assertEquals(handshake.wearableHpkePublicKeyFingerprintSha256, decoded.wearableHpkePublicKeyFingerprintSha256)
         assertArrayEquals(handshake.signedTranscript, decoded.signedTranscript)
         assertArrayEquals(handshake.signature, decoded.signature)
+    }
+
+    @Test fun livenessPayloadAndDirectionContextAreDeterministicAndBound() {
+        val value = WearableProtocolV2.LivenessPayload(
+            sessionId = "session-1",
+            sequenceNumber = 7L,
+            sentAtMs = 1234L,
+            nonce = ByteArray(16) { it.toByte() }
+        )
+        val decoded = requireNotNull(WearableProtocolV2.decodeLivenessPlaintext(
+            WearableProtocolV2.encodeLivenessPlaintext(value)
+        ))
+        assertEquals(value.sessionId, decoded.sessionId)
+        assertEquals(value.sequenceNumber, decoded.sequenceNumber)
+        assertEquals(value.sentAtMs, decoded.sentAtMs)
+        assertArrayEquals(value.nonce, decoded.nonce)
+
+        val phoneToWatch = WearableProtocolV2.livenessContextInfo(
+            "session-1", WearableProtocolV2.PeerRole.PHONE, WearableProtocolV2.PeerRole.WEARABLE
+        )
+        val watchToPhone = WearableProtocolV2.livenessContextInfo(
+            "session-1", WearableProtocolV2.PeerRole.WEARABLE, WearableProtocolV2.PeerRole.PHONE
+        )
+        assertFalse(phoneToWatch.contentEquals(watchToPhone))
     }
 
     @Test fun malformedAndOversizedFramesFailClosed() {
@@ -64,5 +85,6 @@ class WearableProtocolV2Test {
                 )
             )
         }
+        assertNull(WearableProtocolV2.decodeLivenessPlaintext(byteArrayOf(1, 2, 3)))
     }
 }
