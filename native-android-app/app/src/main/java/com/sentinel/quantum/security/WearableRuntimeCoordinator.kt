@@ -8,14 +8,8 @@ import com.sentinel.quantum.integration.IntegrationTruthRuntime
 
 /**
  * Vendor-neutral runtime boundary between platform wearable adapters and Sentinel product truth.
- *
- * A platform association is not authentication. CONNECTED is published only while a concrete
- * adapter is available and a fresh Sentinel channel proof is active. Any missing/stale proof
- * immediately replaces the prior observation with a fail-closed identity-binding diagnostic.
- *
- * The internal authenticated entry point is reserved for the security composition layer after the
- * existing cryptographic handshake/session policy has accepted the peer. UI code can only publish
- * untrusted platform observations and therefore cannot manufacture CONNECTED state.
+ * Platform visibility never authenticates Sentinel. Only the security composition layer may call
+ * the internal authenticated entry point; explicit revocation overwrites prior connected evidence.
  */
 class WearableRuntimeCoordinator {
     fun observePlatform(
@@ -62,4 +56,14 @@ class WearableRuntimeCoordinator {
         }
         return truth
     }
+
+    internal fun revokeAuthenticatedChannel(nowMs: Long = System.currentTimeMillis()): Boolean =
+        IntegrationTruthRuntime.publish(
+            capabilityId = IntegrationCapabilityId.WEARABLE_RUNTIME,
+            status = IntegrationStatus(
+                state = IntegrationState.LOCKED_EXTERNAL_DEPENDENCY,
+                diagnosticReason = IntegrationDiagnosticReason.IDENTITY_BINDING_MISSING
+            ),
+            observedAtMs = nowMs
+        )
 }
