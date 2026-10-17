@@ -7,6 +7,7 @@ import com.google.crypto.tink.RegistryConfiguration
 import com.google.crypto.tink.TinkProtoKeysetFormat
 import com.google.crypto.tink.hybrid.HybridConfig
 import java.security.GeneralSecurityException
+import java.security.MessageDigest
 
 object WearableHpkeLimits {
     const val MAX_PUBLIC_KEY_BYTES = 4 * 1024
@@ -18,6 +19,10 @@ object WearableHpkeLimits {
 class WearableHpkePublicKey private constructor(
     private val serializedKeyset: ByteArray
 ) {
+    val fingerprintSha256: String = MessageDigest.getInstance("SHA-256")
+        .digest(serializedKeyset)
+        .joinToString("") { "%02x".format(it) }
+
     fun encoded(): ByteArray = serializedKeyset.copyOf()
 
     internal fun keysetHandle(): KeysetHandle =
