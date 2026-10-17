@@ -21,7 +21,7 @@ adb_transport_ready() {
   local delay="${SENTINEL_ADB_RETRY_DELAY_SECONDS:-0.5}"
   local state=""
   for attempt in $(seq 1 "$attempts"); do
-    if state="$(adb get-state 2>/dev/null)" && [[ "$state" == "device" ]]; then
+    if state="$(timeout --signal=TERM --kill-after=1s 3s adb get-state 2>/dev/null)" && [[ "$state" == "device" ]]; then
       return 0
     fi
     if [[ "$attempt" -lt "$attempts" ]]; then sleep "$delay"; fi
@@ -38,7 +38,7 @@ adb_retry_transport() {
   for attempt in $(seq 1 "$attempts"); do
     : > "$stdout_file"
     : > "$stderr_file"
-    if adb "$@" > "$stdout_file" 2> "$stderr_file"; then
+    if timeout --signal=TERM --kill-after=5s 20s adb "$@" > "$stdout_file" 2> "$stderr_file"; then
       status=0
     else
       status=$?
