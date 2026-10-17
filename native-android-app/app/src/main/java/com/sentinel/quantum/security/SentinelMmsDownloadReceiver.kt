@@ -233,16 +233,19 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
 
         val plan = (prepared as? IncomingMmsProjectionPipeline.Result.Ready)?.plan
         val projected = providerResult as? IncomingMmsConversationStore.ProjectResult.Ready
+        val transportState = when {
+            providerInserted -> SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_READY
+            providerReplay -> SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_REPLAY_NO_DUPLICATE
+            safePreview is MmsDecodePipeline.Result.Accepted ->
+                SmsMmsEvidenceAdapter.MmsTransportState.SAFE_PREVIEW_READY
+            else -> SmsMmsEvidenceAdapter.MmsTransportState.LOCAL_QUARANTINE
+        }
         if (plan != null && projected != null) {
             IntelligenceCoreRuntime.publishIncomingMmsObservation(
                 context = context,
                 providerMessageId = projected.providerMessageId,
                 rawSender = plan.sender,
-                transportState = if (projected.replay) {
-                    SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_REPLAY_NO_DUPLICATE
-                } else {
-                    SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_READY
-                }
+                transportState = transportState
             )
         }
 

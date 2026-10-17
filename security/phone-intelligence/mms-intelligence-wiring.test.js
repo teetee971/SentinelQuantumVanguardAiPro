@@ -46,21 +46,43 @@ test('both incoming MMS ingress paths publish only after bounded processing', ()
   }
 });
 
-test('both incoming MMS ingress paths map provider replay to a replay-safe transport state', () => {
-  for (const source of [downloadReceiver, deliverReceiver]) {
-    const projectionGuard = source.indexOf('if (plan != null && projected != null) {');
-    const publication = source.indexOf('IntelligenceCoreRuntime.publishIncomingMmsObservation(');
-    assert.ok(projectionGuard >= 0, 'MMS publication must retain the provider identity guard');
-    assert.ok(publication > projectionGuard, 'MMS publication must stay inside the identity guard');
-
-    const publicationWindow = source.slice(publication, publication + 650);
-    assert.match(
-      publicationWindow,
-      /transportState\s*=\s*if\s*\(\s*projected\.replay\s*\)\s*\{[\s\S]*?SmsMmsEvidenceAdapter\.MmsTransportState\.PROVIDER_REPLAY_NO_DUPLICATE[\s\S]*?\}\s*else\s*\{[\s\S]*?SmsMmsEvidenceAdapter\.MmsTransportState\.PROVIDER_READY[\s\S]*?\}/,
-      'provider replay must not be published as a fresh provider insertion'
+for (const [name, source] of [
+  ['download', downloadReceiver],
+  ['deliver', deliverReceiver]
+]) {
+  test(`${name} maps the actual bounded MMS outcome before publication`, () => {
+    // These predicates must remain tied to the provider's actual insert/replay result.
+    assert.match(source, /val providerInserted =\s*providerResult is IncomingMmsConversationStore\.ProjectResult\.Ready && !providerResult\.replay/);
+    assert.match(source, /val providerReplay =\s*providerResult is IncomingMmsConversationStore\.ProjectResult\.Ready && providerResult\.replay/);
+    const mapping = source.match(/val transportState = when\s*\{([^}]+)\}/)?.[1];
+    assert.ok(mapping, 'transport state must be derived from the bounded outcome, not hardcoded PROVIDER_READY');
+    assert.equal(
+      mapping.replace(/\s+/g, ' ').trim(),
+      'providerInserted -> SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_READY ' +
+        'providerReplay -> SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_REPLAY_NO_DUPLICATE ' +
+        'safePreview is MmsDecodePipeline.Result.Accepted -> SmsMmsEvidenceAdapter.MmsTransportState.SAFE_PREVIEW_READY ' +
+        'else -> SmsMmsEvidenceAdapter.MmsTransportState.LOCAL_QUARANTINE',
+      'provider success and replay take precedence over safe preview and quarantine'
     );
-  }
-});
+    assert.match(
+      source,
+      /IntelligenceCoreRuntime\.publishIncomingMmsObservation\(\s*context = context,\s*providerMessageId = projected\.providerMessageId,\s*rawSender = plan\.sender,\s*transportState = transportState\s*\)/,
+      'publication must consume the computed state and only bounded identity inputs'
+    );
+    assert.ok(source.indexOf('val transportState = when') < source.indexOf('IntelligenceCoreRuntime.publishIncomingMmsObservation('));
+  });
+
+  test(`${name} keeps private-only MMS outcomes behind the canonical identity boundary`, () => {
+    assert.match(source, /val plan = \(prepared as\? IncomingMmsProjectionPipeline\.Result\.Ready\)\?\.plan/);
+    assert.match(source, /val projected = providerResult as\? IncomingMmsConversationStore\.ProjectResult\.Ready/);
+    assert.match(
+      source,
+      /if \(plan != null && projected != null\)\s*\{\s*IntelligenceCoreRuntime\.publishIncomingMmsObservation\([^)]*\)\s*\}/,
+      'quarantine or safe preview without canonical provider identity must not invent an Intelligence event'
+    );
+    assert.equal((source.match(/IntelligenceCoreRuntime\.publishIncomingMmsObservation\(/g) ?? []).length, 1);
+  });
+}
 
 test('MMS adapter remains bounded and content-free', () => {
   assert.match(adapter, /fun\s+fromMms\s*\(/);
