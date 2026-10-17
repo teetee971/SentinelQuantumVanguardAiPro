@@ -103,6 +103,9 @@ class WearableSecureHandshakeResponder(
 ) {
     @Throws(GeneralSecurityException::class)
     fun respond(request: WearableHandshakeRequest): WearableHandshakeResponderResult {
+        require(request.capabilities.all { it in SUPPORTED_CAPABILITIES }) {
+            "wearable challenge requests unsupported capabilities"
+        }
         val identity = identityStore.snapshot()
         val session = hpkeSessionFactory.create(request.phoneHpkePublicKeyEncoded.copyOf())
         val wearablePublicKey = session.wearablePublicKeyEncoded.copyOf()
@@ -145,5 +148,6 @@ class WearableSecureHandshakeResponder(
     companion object {
         const val SECURE_PROTOCOL_VERSION = 2
         private const val MAX_HPKE_PUBLIC_KEY_BYTES = 4 * 1024
+        val SUPPORTED_CAPABILITIES: Set<String> = setOf("CONNECTION_STATE")
     }
 }
