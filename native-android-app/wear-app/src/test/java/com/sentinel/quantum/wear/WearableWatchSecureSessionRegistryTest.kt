@@ -26,6 +26,20 @@ class WearableWatchSecureSessionRegistryTest {
         assertNull(registry.resolve("node-1", "session-1"))
     }
 
+    @Test fun newerSessionForSameNodeSupersedesOlderSession() {
+        val registry = WearableWatchSecureSessionRegistry(maxSessions = 2, ttlMs = 5_000L, clockMs = { 100L })
+        val oldSession = fakeSession("old")
+        val newSession = fakeSession("new")
+
+        assertTrue(registry.register("node-1", "session-old", oldSession))
+        assertTrue(registry.register("node-1", "session-new", newSession))
+
+        assertNull(registry.resolve("node-1", "session-old"))
+        assertSame(newSession, registry.resolve("node-1", "session-new"))
+        assertSame(newSession, registry.resolveNode("node-1")?.session)
+        assertTrue(registry.resolveNode("node-1")?.sessionId == "session-new")
+    }
+
     @Test fun registryIsBoundedAndDisconnectRevokesAllNodeSessions() {
         val registry = WearableWatchSecureSessionRegistry(maxSessions = 2, ttlMs = 5_000L, clockMs = { 100L })
         assertTrue(registry.register("node-1", "session-1", fakeSession("one")))
