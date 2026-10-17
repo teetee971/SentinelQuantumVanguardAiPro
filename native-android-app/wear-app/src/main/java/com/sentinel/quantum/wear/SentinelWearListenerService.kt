@@ -7,9 +7,10 @@ import com.google.android.gms.wearable.WearableListenerService
 /**
  * Minimal Wear OS companion boundary.
  *
- * This probe proves only that a same-package/same-signature Sentinel app is reachable through the
- * Wear OS Data Layer. It is deliberately not the Sentinel cryptographic handshake and grants no
- * privileged capability.
+ * This probe proves only that a same-package/same-signature Sentinel app can exchange a bounded
+ * Data Layer message. It is deliberately not the Sentinel cryptographic handshake and grants no
+ * privileged capability. The phone must still complete the existing authenticated wearable
+ * handshake/session policy before WEARABLE_RUNTIME may become CONNECTED.
  */
 class SentinelWearListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
