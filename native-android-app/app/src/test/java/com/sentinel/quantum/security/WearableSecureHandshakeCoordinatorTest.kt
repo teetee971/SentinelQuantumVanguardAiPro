@@ -1,6 +1,5 @@
 package com.sentinel.quantum.security
 
-import com.sentinel.quantum.wearable.security.Ed25519WearableHandshakeVerifier
 import com.sentinel.quantum.wearable.security.VerifiedWearableHandshakeFixture
 import com.sentinel.quantum.wearable.security.WearableHandshakeCandidate
 import com.sentinel.quantum.wearable.security.WearableHandshakeTranscriptCodec
@@ -17,8 +16,7 @@ class WearableSecureHandshakeCoordinatorTest {
     private val identityKey = "a".repeat(64)
     private val phoneHpke = "1".repeat(64)
     private val watchHpkeBytes = "watch-public-hpke".toByteArray()
-    private val watchHpke = MessageDigest.getInstance("SHA-256")
-        .digest(watchHpkeBytes).joinToString("") { "%02x".format(it) }
+    private val watchHpke = sha256(watchHpkeBytes)
 
     private fun expected() = WearableIdentityProof(
         "watch-1", WearableIdentitySource.APPLICATION_PUBLIC_KEY, identityKey, 100L
@@ -56,38 +54,31 @@ class WearableSecureHandshakeCoordinatorTest {
                 )
         }
 
-    @Test
-    fun invalidSignatureDoesNotBurnChallenge() {
+    @Test fun invalidSignatureDoesNotBurnChallenge() {
         val guard = com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard()
         val authority = WearableSessionAuthority()
         val invalid = WearableSecureHandshakeCoordinator(verifier(false), guard, authority)
         val context = invalid.begin(expected(), session(), phoneHpke)
         val c = candidate(context)
-
         assertEquals(WearableSecureHandshakeState.REJECTED,
             invalid.accept(context, c, watchHpkeBytes, confirmation(context)).state)
-
         val valid = WearableSecureHandshakeCoordinator(verifier(true), guard, authority)
         assertEquals(WearableSecureHandshakeState.ACTIVE,
             valid.accept(context, c, watchHpkeBytes, confirmation(context)).state)
     }
 
-    @Test
-    fun missingConfirmationStaysPendingWithoutBurningChallenge() {
+    @Test fun missingConfirmationStaysPendingWithoutBurningChallenge() {
         val guard = com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard()
-        val authority = WearableSessionAuthority()
-        val coordinator = WearableSecureHandshakeCoordinator(verifier(true), guard, authority)
+        val coordinator = WearableSecureHandshakeCoordinator(verifier(true), guard, WearableSessionAuthority())
         val context = coordinator.begin(expected(), session(), phoneHpke)
         val c = candidate(context)
-
         assertEquals(WearableSecureHandshakeState.PENDING_CONFIRMATION,
             coordinator.accept(context, c, watchHpkeBytes, null).state)
         assertEquals(WearableSecureHandshakeState.ACTIVE,
             coordinator.accept(context, c, watchHpkeBytes, confirmation(context)).state)
     }
 
-    @Test
-    fun protocolV1AndHpkeBindingSubstitutionFailClosed() {
+    @Test fun protocolV1AndHpkeBindingSubstitutionFailClosed() {
         val coordinator = WearableSecureHandshakeCoordinator(
             verifier(true),
             com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard(),
@@ -96,19 +87,19 @@ class WearableSecureHandshakeCoordinatorTest {
         assertThrows(IllegalArgumentException::class.java) {
             coordinator.begin(expected(), session().copy(protocolVersion = 1), phoneHpke)
         }
-
         val context = coordinator.begin(expected(), session(), phoneHpke)
-        val changedPhone = candidate(context).copy(phoneHpkePublicKeyFingerprintSha256 = "3".repeat(64))
         assertEquals(WearableSecureHandshakeState.REJECTED,
-            coordinator.accept(context, changedPhone, watchHpkeBytes, confirmation(context)).state)
-
-        val changedWatchBytes = "different-watch-key".toByteArray()
+            coordinator.accept(
+                context,
+                candidate(context).copy(phoneHpkePublicKeyFingerprintSha256 = "3".repeat(64)),
+                watchHpkeBytes,
+                confirmation(context)
+            ).state)
         assertEquals(WearableSecureHandshakeState.REJECTED,
-            coordinator.accept(context, candidate(context), changedWatchBytes, confirmation(context)).state)
+            coordinator.accept(context, candidate(context), "different-watch-key".toByteArray(), confirmation(context)).state)
     }
 
-    @Test
-    fun replayFailsAfterSuccessfulActivation() {
+    @Test fun replayFailsAfterSuccessfulActivation() {
         val coordinator = WearableSecureHandshakeCoordinator(
             verifier(true),
             com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard(),
@@ -117,7 +108,6 @@ class WearableSecureHandshakeCoordinatorTest {
         val context = coordinator.begin(expected(), session(), phoneHpke)
         val c = candidate(context)
         val confirmation = confirmation(context)
-
         assertEquals(WearableSecureHandshakeState.ACTIVE,
             coordinator.accept(context, c, watchHpkeBytes, confirmation).state)
         assertEquals(WearableSecureHandshakeState.REJECTED,
@@ -125,23 +115,25 @@ class WearableSecureHandshakeCoordinatorTest {
     }
 
     @Test
-    fun firstPairingRequiresFingerprintBoundUserConfirmationBeforePersistenceAndActivation() {
+    fun firstPairingStartsWithoutPlatformIdentityAndRequiresFingerprintBoundConfirmation() {
         val backend = MemoryPairingBackend()
         val pairingStore = WearablePairingStore(backend)
-        val guard = com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard()
-        val authority = WearableSessionAuthority()
-        val coordinator = WearableSecureHandshakeCoordinator.forPairing(pairingStore, guard, authority)
+        val coordinator = WearableSecureHandshakeCoordinator.forPairing(
+            pairingStore,
+            com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard(),
+            WearableSessionAuthority()
+        )
         val keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
-        val identityFingerprint = MessageDigest.getInstance("SHA-256")
-            .digest(keyPair.public.encoded).joinToString("") { "%02x".format(it) }
-        val context = coordinator.beginUnpaired("watch-1", session(), phoneHpke)
-        val c = signedCandidate(context, keyPair, identityFingerprint)
+        val identityFingerprint = sha256(keyPair.public.encoded)
+        val stableId = "wearable-" + identityFingerprint.take(32)
+        val context = coordinator.beginFirstPairing(session(), phoneHpke)
+        val c = signedCandidate(context, keyPair, identityFingerprint, stableId)
 
         val pending = coordinator.acceptPresentedIdentity(
             context, c, keyPair.public.encoded, watchHpkeBytes, null
         )
         assertEquals(WearableSecureHandshakeState.PENDING_CONFIRMATION, pending.state)
-        assertNull(pairingStore.load("watch-1"))
+        assertNull(pairingStore.load(stableId))
 
         val active = coordinator.acceptPresentedIdentity(
             context,
@@ -149,23 +141,23 @@ class WearableSecureHandshakeCoordinatorTest {
             keyPair.public.encoded,
             watchHpkeBytes,
             WearableIdentityPairingConfirmation(
-                stableId = "watch-1",
+                stableId = stableId,
                 sessionId = context.session.sessionId,
                 identityKeyFingerprintSha256 = identityFingerprint,
                 confirmedAtMs = context.challenge.issuedAtMs
             )
         )
         assertEquals(WearableSecureHandshakeState.ACTIVE, active.state)
-        assertEquals(identityFingerprint, pairingStore.load("watch-1")!!.keyFingerprintSha256)
+        assertEquals(identityFingerprint, pairingStore.load(stableId)!!.keyFingerprintSha256)
     }
 
-    @Test
-    fun existingPairingRejectsKeyReplacementEvenWithNewUserConfirmation() {
+    @Test fun existingPairingRejectsKeyReplacementEvenWithConfirmation() {
         val backend = MemoryPairingBackend()
         val pairingStore = WearablePairingStore(backend)
         val original = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         val originalFp = sha256(original.public.encoded)
-        pairingStore.confirm("watch-1", original.public.encoded, originalFp, 10L)
+        val stableId = "wearable-" + originalFp.take(32)
+        pairingStore.confirm(stableId, original.public.encoded, originalFp, 10L)
 
         val coordinator = WearableSecureHandshakeCoordinator.forPairing(
             pairingStore,
@@ -174,32 +166,34 @@ class WearableSecureHandshakeCoordinatorTest {
         )
         val replacement = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         val replacementFp = sha256(replacement.public.encoded)
-        val context = coordinator.beginUnpaired("watch-1", session(), phoneHpke)
-        val c = signedCandidate(context, replacement, replacementFp)
+        val context = coordinator.beginFirstPairing(session(), phoneHpke)
+        val c = signedCandidate(context, replacement, replacementFp, stableId)
         val result = coordinator.acceptPresentedIdentity(
             context,
             c,
             replacement.public.encoded,
             watchHpkeBytes,
             WearableIdentityPairingConfirmation(
-                "watch-1", context.session.sessionId, replacementFp, 100L
+                stableId, context.session.sessionId, replacementFp, context.challenge.issuedAtMs
             )
         )
         assertEquals(WearableSecureHandshakeState.REJECTED, result.state)
-        assertEquals(originalFp, pairingStore.load("watch-1")!!.keyFingerprintSha256)
+        assertEquals(originalFp, pairingStore.load(stableId)!!.keyFingerprintSha256)
     }
 
     private fun signedCandidate(
         context: WearableSecureHandshakeContext,
         pair: java.security.KeyPair,
-        identityFingerprint: String
+        identityFingerprint: String,
+        stableId: String
     ): WearableHandshakeCandidate {
+        val capabilities = context.session.negotiatedCapabilities.map { it.name }.toSet()
         val transcript = WearableHandshakeTranscriptCodec.encode(
-            stableId = context.attempt.stableId,
+            stableId = stableId,
             keyFingerprintSha256 = identityFingerprint,
             sessionId = context.session.sessionId,
             protocolVersion = 2,
-            capabilities = context.session.negotiatedCapabilities.map { it.name }.toSet(),
+            capabilities = capabilities,
             challengeNonce = context.challenge.nonce,
             issuedAtMs = context.challenge.issuedAtMs,
             phoneHpkePublicKeyFingerprintSha256 = phoneHpke,
@@ -209,11 +203,11 @@ class WearableSecureHandshakeCoordinatorTest {
         signer.initSign(pair.private)
         signer.update(transcript)
         return WearableHandshakeCandidate(
-            stableId = context.attempt.stableId,
+            stableId = stableId,
             keyFingerprintSha256 = identityFingerprint,
             sessionId = context.session.sessionId,
             protocolVersion = 2,
-            capabilities = context.session.negotiatedCapabilities.map { it.name }.toSet(),
+            capabilities = capabilities,
             challengeNonce = context.challenge.nonce,
             issuedAtMs = context.challenge.issuedAtMs,
             signedTranscript = transcript,
