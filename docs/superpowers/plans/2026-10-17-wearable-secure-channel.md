@@ -2,271 +2,171 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a real authenticated and encrypted Sentinel channel between the Android handset and Wear OS companion, without allowing Data Layer reachability or Ed25519 verification alone to publish `WEARABLE_RUNTIME=CONNECTED`.
+**Goal:** Build a real authenticated and encrypted Sentinel channel between Android and Wear OS without allowing Data Layer reachability or Ed25519 verification alone to publish `WEARABLE_RUNTIME=CONNECTED`.
 
-**Architecture:** Keep Wear OS Data Layer as the transport only. Use the existing Ed25519 verifier, replay guard, pairing policy, session authority, and message guard for identity/session authorization, and add Google Tink HPKE for session confidentiality. Protocol v2 binds both HPKE public-key fingerprints into the canonical signed transcript; runtime truth becomes connected only after platform reachability, signature verification, replay acceptance, explicit pairing confirmation, authoritative session activation, and successful secure-channel establishment.
+**Architecture:** Data Layer remains transport only. Existing Ed25519 verification, replay guard, pairing policy, session authority, and message guard remain authoritative for identity/session authorization. Google Tink HPKE supplies confidentiality. Protocol v2 signs both HPKE public-key fingerprints. Runtime truth becomes connected only after platform reachability, signature verification, replay acceptance, explicit pairing confirmation, session activation, secure-channel establishment, and authenticated liveness.
 
-**Tech Stack:** Kotlin 2.4.20, Android Gradle Plugin 9.4.1, Google Play services Wearable 20.0.1, Google Tink 1.23.0, JUnit 4.13.2, Android/Wear OS Data Layer.
+**Tech Stack:** Kotlin 2.4.20, AGP 9.4.1, Google Play services Wearable 20.0.1, Google Tink 1.23.0, JUnit 4.13.2.
 
 **Spec:** `docs/superpowers/specs/2026-10-17-wearable-secure-channel-design.md`
 
 ## Global Constraints
 
-- Pin Tink to `1.23.0`; dynamic dependency versions are forbidden.
-- Use HPKE profile `DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM`.
-- Ed25519 remains the durable peer-authentication anchor; HPKE never replaces identity verification.
-- Protocol v1 must never be silently promoted to a secure privileged session.
-- A Data Layer node, Bluetooth bond, association, `ping`, or `pong` never publishes `CONNECTED`.
-- Replay challenge consumption occurs only after Ed25519 verification and pairing/session policy checks required by the spec.
-- Private HPKE key material must not be logged, surfaced through product truth, stored in preferences, or sent over Data Layer.
-- `WearableMessageGuard` remains mandatory after successful decryption.
-- Wearable work must stay outside `CallScreeningService` and other latency-critical Telecom callbacks.
-- Canonical registry remains `LOCKED_EXTERNAL_DEPENDENCY / IDENTITY_BINDING_MISSING` until physical validation and runtime evidence exist.
-- No paid infrastructure is introduced.
+- Pin Tink `1.23.0`; no dynamic versions.
+- HPKE profile: `DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM`.
+- Ed25519 is the durable trust anchor; HPKE does not authenticate identity by itself.
+- Protocol v1 never upgrades silently to privileged v2.
+- Data Layer association, `ping`, or `pong` never publishes `CONNECTED`.
+- Replay nonce is consumed only after signature and pairing/session policy checks.
+- No raw HPKE private key in logs, preferences, product truth, or Data Layer.
+- `WearableMessageGuard` remains mandatory after decryption.
+- No wearable crypto in CallScreeningService or other Telecom latency-critical callbacks.
+- Canonical registry remains `LOCKED_EXTERNAL_DEPENDENCY / IDENTITY_BINDING_MISSING` until runtime + physical evidence exists.
+- No paid infrastructure.
 
 ## Review Focus
 
-- Malformed or oversized HPKE/public-key/ciphertext material must fail closed without allocation explosions or handler dispatch — covered in Tasks 1, 4, and 6.
-- Signature-valid but replayed/stale challenge material must not activate or refresh a session — covered in Task 3.
-- Context substitution across session, sender role, recipient role, or capability must fail decryption/validation — covered in Task 4.
-- Process death/restart must not resurrect an active channel from stale in-memory state — covered in Tasks 5 and 6.
-- Data Layer disconnect or authenticated-channel TTL expiry must revoke previous `CONNECTED` truth immediately — covered in Task 6.
+- Malformed/oversized public keys or ciphertext fail closed without handler dispatch.
+- Replayed/stale signed handshakes cannot activate or refresh sessions.
+- Session/role/capability context substitution fails.
+- Process restart cannot resurrect an active session.
+- Disconnect or authenticated-liveness expiry immediately revokes previous connected truth.
 
 ---
 
-### Task 1: HPKE crypto boundary in `wearable-security`
+### Task 1: Tink HPKE boundary
 
 **Files:**
 - Modify: `native-android-app/wearable-security/build.gradle`
 - Create: `native-android-app/wearable-security/src/main/kotlin/com/sentinel/quantum/wearable/security/WearableHpke.kt`
 - Create: `native-android-app/wearable-security/src/test/kotlin/com/sentinel/quantum/wearable/security/WearableHpkeTest.kt`
 
-**Interfaces:**
-- Consumes: Google Tink `1.23.0` primitives.
-- Produces: `WearableHpkeKeyPair`, `WearableHpkePublicKey`, `WearableHpkeRecipient`, and `WearableHpkeSender` with bounded public-key import/export and `encrypt(plaintext: ByteArray, contextInfo: ByteArray): ByteArray` / `decrypt(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray`.
+**Interfaces:** Produce encapsulated `WearableHpkeKeyPair`, `WearableHpkePublicKey`, sender/recipient primitives, public-key fingerprinting, and `encrypt/decrypt` with `contextInfo`.
 
-- [ ] **Step 1: Write failing JVM tests**
-  - `encryptDecryptRoundTripUsesRequiredHpkeProfile`
-  - `wrongRecipientKeyFails`
-  - `wrongContextInfoFails`
-  - `oversizedPublicKeyOrCiphertextIsRejected`
-  - `privateKeyMaterialIsNotExposedByPublicApi`
+- [ ] Write failing tests: round trip, wrong key, wrong context, oversized input, no raw private-key API.
+- [ ] Run: `cd native-android-app && ./gradlew :wearable-security:test --tests '*WearableHpkeTest*'` → expected RED.
+- [ ] Add `com.google.crypto.tink:tink:1.23.0`; implement the exact HPKE profile and encapsulate private key handles.
+- [ ] Re-run targeted test → PASS; then `./gradlew :wearable-security:test` → PASS.
+- [ ] Commit: `feat(wearable): add Tink HPKE crypto boundary`.
 
-- [ ] **Step 2: Run RED verification**
-  Run: `cd native-android-app && ./gradlew :wearable-security:test --tests '*WearableHpkeTest*'`
-  Expected: FAIL because the HPKE boundary and Tink dependency do not exist.
-
-- [ ] **Step 3: Pin dependency and implement minimal HPKE boundary**
-  Add `com.google.crypto.tink:tink:1.23.0` to `wearable-security`. Register Tink primitives once inside the crypto boundary. Use the exact HPKE profile from Global Constraints. Keep private-key-bearing Tink handles encapsulated; expose only the public-key representation needed by the peer.
-
-- [ ] **Step 4: Run GREEN verification**
-  Run: `cd native-android-app && ./gradlew :wearable-security:test --tests '*WearableHpkeTest*'`
-  Expected: PASS.
-
-- [ ] **Step 5: Commit**
-  `git commit -m "feat(wearable): add Tink HPKE crypto boundary"`
-
-### Task 2: Protocol-v2 transcript binding
+### Task 2: Protocol-v2 signed transcript
 
 **Files:**
-- Modify: `native-android-app/wearable-security/src/main/kotlin/com/sentinel/quantum/wearable/security/VerifiedWearableHandshake.kt`
-- Modify: `native-android-app/wearable-security/src/main/kotlin/com/sentinel/quantum/wearable/security/Ed25519WearableHandshakeVerifier.kt`
-- Modify: `native-android-app/wearable-security/src/test/kotlin/com/sentinel/quantum/wearable/security/Ed25519WearableHandshakeVerifierTest.kt`
-- Modify: `native-android-app/wearable-security/src/testFixtures/kotlin/com/sentinel/quantum/wearable/security/VerifiedWearableHandshakeFixture.kt`
+- Modify: `wearable-security/.../VerifiedWearableHandshake.kt`
+- Modify: `wearable-security/.../Ed25519WearableHandshakeVerifier.kt`
+- Modify tests + test fixture in `wearable-security`.
 
-**Interfaces:**
-- Consumes: Task 1 public-key fingerprints.
-- Produces: protocol-v2 `WearableHandshakeCandidate` and `VerifiedWearableHandshake` containing `phoneHpkePublicKeyFingerprintSha256` and `wearableHpkePublicKeyFingerprintSha256`.
+**Interfaces:** Add `phoneHpkePublicKeyFingerprintSha256` and `wearableHpkePublicKeyFingerprintSha256` to v2 candidate/proof.
 
-- [ ] **Step 1: Write failing tests**
-  Add tests proving transcript bytes change when either HPKE public-key fingerprint changes, protocol v1 cannot authenticate as v2, delimiter/UTF-8 protections remain intact, and malformed/non-64-hex fingerprints are rejected.
+- [ ] Write failing tests proving either HPKE fingerprint changes transcript bytes, v1 cannot authenticate as v2, malformed fingerprints fail, delimiter/UTF-8 guards remain.
+- [ ] Run verifier tests → expected RED.
+- [ ] Extend candidate, verified proof, fixture, and canonical codec; require secure-session protocol `>= 2`.
+- [ ] Run targeted + full `:wearable-security:test` → PASS.
+- [ ] Commit: `feat(wearable): bind HPKE keys into handshake v2`.
 
-- [ ] **Step 2: Run RED verification**
-  Run: `cd native-android-app && ./gradlew :wearable-security:test --tests '*Ed25519WearableHandshakeVerifierTest*'`
-  Expected: FAIL because protocol-v2 key-binding fields are absent.
-
-- [ ] **Step 3: Extend candidate, verified proof, and canonical transcript**
-  Exact new fields:
-  - `phoneHpkePublicKeyFingerprintSha256: String`
-  - `wearableHpkePublicKeyFingerprintSha256: String`
-  Require protocol version `>= 2` for secure-session candidates. Include both fields in deterministic canonical encoding after `issuedAtMs` with explicit field order documented in the codec.
-
-- [ ] **Step 4: Run GREEN verification**
-  Run the targeted verifier tests and then `cd native-android-app && ./gradlew :wearable-security:test`.
-  Expected: PASS.
-
-- [ ] **Step 5: Commit**
-  `git commit -m "feat(wearable): bind HPKE keys into handshake v2"`
-
-### Task 3: Secure handshake orchestration on handset
+### Task 3: Watch identity and secure key material
 
 **Files:**
-- Create: `native-android-app/app/src/main/java/com/sentinel/quantum/security/WearableSecureHandshakeCoordinator.kt`
-- Create: `native-android-app/app/src/test/java/com/sentinel/quantum/security/WearableSecureHandshakeCoordinatorTest.kt`
-- Reuse: `WearableHandshakeReplayGuard.kt`, `WearableHandshakePolicy.kt`, `WearableSessionAuthority.kt`, `WearableTrustPolicy.kt`
-
-**Interfaces:**
-- Consumes: `WearableHandshakeVerifier.verify(candidate)`, `WearableHandshakeReplayGuard.consume(candidate)`, `WearableHandshakePolicy.evaluate(...)`, `WearableSessionAuthority.activate(...)`.
-- Produces: `WearableSecureHandshakeResult` with states `PENDING_CONFIRMATION`, `ACTIVE`, or a fail-closed rejection reason; on `ACTIVE`, returns authoritative `WearableSession` plus HPKE peer binding metadata, never a fabricated `WearableChannelProof` from UI inputs.
-
-- [ ] **Step 1: Write failing tests**
-  Cover: invalid Ed25519 candidate does not consume challenge; valid signature + missing confirmation stays pending; stale/replayed challenge fails; identity/key/session/capability mismatch fails; successful path activates authority only after all checks; protocol v1 is rejected for secure activation.
-
-- [ ] **Step 2: Run RED verification**
-  Run: `cd native-android-app && ./gradlew :app:testDebugUnitTest --tests '*WearableSecureHandshakeCoordinatorTest*'`
-  Expected: FAIL because coordinator is absent.
-
-- [ ] **Step 3: Implement coordinator with fixed order**
-  Required acceptance order:
-  1. Ed25519 verifier returns proof.
-  2. `WearableHandshakePolicy` accepts expected identity/session/confirmation.
-  3. replay guard consumes the candidate.
-  4. `WearableSessionAuthority.activate(...)` returns `ACTIVATED`.
-  5. coordinator returns `ACTIVE` with immutable session/binding metadata.
-  Never consume the replay challenge before step 1.
-
-- [ ] **Step 4: Run GREEN verification**
-  Run targeted app unit tests, then the complete app unit-test task.
-  Expected: PASS.
-
-- [ ] **Step 5: Commit**
-  `git commit -m "feat(wearable): orchestrate authenticated secure handshake"`
-
-### Task 4: Encrypted wearable message channel and context binding
-
-**Files:**
-- Create: `native-android-app/app/src/main/java/com/sentinel/quantum/security/WearableSecureChannel.kt`
-- Create: `native-android-app/app/src/test/java/com/sentinel/quantum/security/WearableSecureChannelTest.kt`
-- Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/security/WearableMessageGuard.kt` only if a narrowly required decode boundary is missing.
-
-**Interfaces:**
-- Consumes: Task 1 HPKE primitives, Task 3 authoritative `WearableSession`, existing `WearableMessageEnvelope` and `WearableMessageGuard`.
-- Produces: `seal(payload: ByteArray, envelope: WearableMessageEnvelope, senderRole: WearablePeerRole): ByteArray` and `open(ciphertext: ByteArray, expectedCapability: WearableCapability?, senderRole: WearablePeerRole, nowMs: Long): WearableSecureMessageResult`.
-
-- [ ] **Step 1: Write failing tests**
-  Prove round-trip, wrong session context fails, sender/recipient role substitution fails, capability substitution fails, duplicate/out-of-order sequence is rejected after decryption, expired/future timestamp fails, malformed/oversized ciphertext never reaches handler code.
-
-- [ ] **Step 2: Run RED verification**
-  Run: `cd native-android-app && ./gradlew :app:testDebugUnitTest --tests '*WearableSecureChannelTest*'`
-  Expected: FAIL because secure channel is absent.
-
-- [ ] **Step 3: Implement canonical HPKE `contextInfo`**
-  Create enum `WearablePeerRole { PHONE, WEARABLE }`. Canonical context must bind domain `sentinel-wearable-channel-v2`, protocol version, session ID, sender role, recipient role, and capability name or literal `NONE`. Decrypt before message-guard evaluation; dispatch only after `WearableMessageDecision.ACCEPT`.
-
-- [ ] **Step 4: Run GREEN verification**
-  Run targeted test, then full app unit tests.
-  Expected: PASS.
-
-- [ ] **Step 5: Commit**
-  `git commit -m "feat(wearable): add HPKE protected message channel"`
-
-### Task 5: Wear OS protocol transport for handshake and encrypted frames
-
-**Files:**
-- Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelWearListenerService.kt`
-- Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/security/WearOsDataLayerAdapter.kt`
-- Modify: `native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/SentinelWearListenerService.kt`
-- Create: `native-android-app/wearable-contract/src/main/kotlin/com/sentinel/quantum/wearable/contract/WearableProtocolV2.kt`
-- Modify: `native-android-app/app/build.gradle`
 - Modify: `native-android-app/wear-app/build.gradle`
-- Test: `scripts/wearable-roundtrip-wiring.test.js`
-- Create appropriate JVM/unit tests in handset and wear-app modules where supported.
+- Create: `native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/WearableSecureIdentityStore.kt`
+- Create: `native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/WearableSecureHandshakeResponder.kt`
+- Add wear-app tests under its supported unit-test layout.
 
-**Interfaces:**
-- Consumes: Tasks 2–4 protocol/session artifacts.
-- Produces: fixed Data Layer paths and bounded frame codec for challenge, handshake response, secure liveness, and encrypted application messages.
+**Interfaces:** Produce a stable Ed25519 public identity/fingerprint and session-scoped HPKE public key; sign canonical v2 transcripts; never expose private key bytes.
 
-- [ ] **Step 1: Write failing contract/wiring tests**
-  Assert both app modules consume `:wearable-contract`; exact v2 paths are shared constants; frame sizes are bounded; platform `ping/pong` remains separate from secure paths; neither listener can call `publishConnected` directly.
+- [ ] Write failing tests: stable identity across store reload, private key never exported, fresh HPKE session key on new session, transcript signature verifies, identity reset requires re-pairing.
+- [ ] Run wear-app unit tests → expected RED.
+- [ ] Implement Android Keystore-backed Ed25519 identity storage where platform support allows; keep HPKE session material scoped to the active session and use Task 1 abstraction.
+- [ ] Run targeted tests and `:wear-app:assembleDebug` when dependency resolution is available.
+- [ ] Commit: `feat(wearable): add watch secure identity and handshake responder`.
 
-- [ ] **Step 2: Run RED verification**
-  Run: `node --test scripts/wearable-roundtrip-wiring.test.js`
-  Expected: FAIL because shared secure-protocol paths/codecs do not exist.
-
-- [ ] **Step 3: Implement shared protocol contract and transport routing**
-  Define exact paths under `/sentinel/v2/secure/` for `challenge`, `handshake`, `liveness`, and `message`. Use bounded binary/JSON framing with explicit schema version and maximum payload sizes. Keep all crypto decisions outside the listeners; listeners parse bounds/path, then delegate.
-
-- [ ] **Step 4: Run GREEN verification**
-  Run Node wiring test plus targeted Android/Wear module tests/build compilation tasks available locally.
-  Expected: PASS for executable tests; if Gradle cannot resolve due environment/network, report that separately and do not claim green.
-
-- [ ] **Step 5: Commit**
-  `git commit -m "feat(wearable): route secure protocol over Wear OS Data Layer"`
-
-### Task 6: Runtime truth activation, liveness, and revocation
+### Task 4: Handset secure handshake coordinator
 
 **Files:**
-- Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/security/WearableRuntimeCoordinator.kt`
-- Create: `native-android-app/app/src/main/java/com/sentinel/quantum/security/WearableSecureSessionRuntime.kt`
-- Create: `native-android-app/app/src/test/java/com/sentinel/quantum/security/WearableSecureSessionRuntimeTest.kt`
-- Modify: `config/integration-capabilities.json` only if diagnostic wording changes; do not change the capability to `CONNECTED` statically.
+- Create: `app/.../security/WearableSecureHandshakeCoordinator.kt`
+- Create: `app/src/test/.../WearableSecureHandshakeCoordinatorTest.kt`
 
-**Interfaces:**
-- Consumes: active authoritative session from Task 3 and authenticated secure traffic from Task 4/5.
-- Produces: short-lived `WearableChannelProof(ACTIVE, lastProofAtMs, ttlMs)` only after secure establishment/liveness; immediate locked replacement on disconnect/revoke/auth failure/staleness.
+**Interfaces:** Consume Ed25519 verifier, replay guard, pairing policy, session authority, phone/watch HPKE bindings. Produce `PENDING_CONFIRMATION`, `ACTIVE`, or fail-closed rejection.
 
-- [ ] **Step 1: Write failing tests**
-  Cover: platform pong alone stays locked; successful secure handshake + authenticated liveness publishes connected observation; plain pong cannot refresh authenticated TTL; TTL expiry revokes; disconnect revokes immediately; process-new runtime starts locked; identity/key/decryption failure revokes without touching Phone Core.
+- [ ] Write failing tests: invalid signature does not burn nonce; missing confirmation stays pending; replay/stale fails; identity/key/session/capability mismatch fails; v1 fails; valid v2 activates authority.
+- [ ] Run targeted app test → expected RED.
+- [ ] Implement exact acceptance order: verify signature → pairing/session policy → consume replay challenge → activate session authority → return ACTIVE metadata.
+- [ ] Run targeted + full app unit tests → PASS.
+- [ ] Commit: `feat(wearable): orchestrate authenticated secure handshake`.
 
-- [ ] **Step 2: Run RED verification**
-  Run: `cd native-android-app && ./gradlew :app:testDebugUnitTest --tests '*WearableSecureSessionRuntimeTest*'`
-  Expected: FAIL because secure-session runtime is absent.
+### Task 5: Encrypted session messages
 
-- [ ] **Step 3: Implement secure-session runtime**
-  Choose a single short TTL constant in this class (recommended `30_000L` unless an existing product constant already governs wearable liveness). Refresh only from authenticated secure-channel traffic. On every revocation path, overwrite prior truth with `LOCKED_EXTERNAL_DEPENDENCY / IDENTITY_BINDING_MISSING` immediately.
+**Files:**
+- Create: `app/.../security/WearableSecureChannel.kt`
+- Create: `app/src/test/.../WearableSecureChannelTest.kt`
+- Modify `WearableMessageGuard.kt` only if a narrow decode boundary is required.
 
-- [ ] **Step 4: Run GREEN verification**
-  Run targeted and full app unit tests.
-  Expected: PASS.
+**Interfaces:** `seal(payload, envelope, senderRole)` and `open(ciphertext, expectedCapability, senderRole, nowMs)` using Task 1 HPKE and authoritative `WearableSession`.
 
-- [ ] **Step 5: Commit**
-  `git commit -m "feat(wearable): gate runtime truth on authenticated liveness"`
+- [ ] Write failing tests: round trip, wrong session, role substitution, capability substitution, duplicate/out-of-order sequence, stale/future timestamp, malformed/oversized ciphertext.
+- [ ] Run targeted test → expected RED.
+- [ ] Implement canonical context domain `sentinel-wearable-channel-v2` binding protocol, session, sender, recipient, capability/`NONE`; decrypt first, then enforce `WearableMessageGuard`, dispatch only after `ACCEPT`.
+- [ ] Run targeted + full app unit tests → PASS.
+- [ ] Commit: `feat(wearable): add HPKE protected message channel`.
 
-### Task 7: Release gates and end-to-end verification
+### Task 6: Shared Wear OS v2 transport contract
+
+**Files:**
+- Create: `native-android-app/wearable-contract/src/main/kotlin/com/sentinel/quantum/wearable/contract/WearableProtocolV2.kt`
+- Modify: handset `SentinelWearListenerService.kt`, `WearOsDataLayerAdapter.kt`, wear-app `SentinelWearListenerService.kt`
+- Modify app/wear-app Gradle files to consume `:wearable-contract` as needed.
+- Modify: `scripts/wearable-roundtrip-wiring.test.js`
+
+**Interfaces:** Shared paths under `/sentinel/v2/secure/`: `challenge`, `handshake`, `liveness`, `message`; explicit schema version and bounded frame sizes.
+
+- [ ] Extend wiring test first: both apps use shared constants; platform ping/pong stays separate; listeners cannot call `publishConnected`; all frame sizes bounded.
+- [ ] Run Node test → expected RED.
+- [ ] Implement shared codec/routing; listeners only validate path/bounds and delegate security decisions.
+- [ ] Run Node gate + available Android/Wear unit/build tasks → PASS where executable; report environment/network failures separately.
+- [ ] Commit: `feat(wearable): route secure protocol over Wear OS Data Layer`.
+
+### Task 7: Runtime truth, authenticated liveness, revocation
+
+**Files:**
+- Modify: `app/.../security/WearableRuntimeCoordinator.kt`
+- Create: `app/.../security/WearableSecureSessionRuntime.kt`
+- Create: `app/src/test/.../WearableSecureSessionRuntimeTest.kt`
+
+**Interfaces:** Produce short-lived `WearableChannelProof.ACTIVE` only from authoritative secure session + authenticated traffic; revoke immediately on disconnect/stale/auth failure.
+
+- [ ] Write failing tests: pong alone stays locked; secure handshake + authenticated liveness can publish connected observation; pong cannot refresh TTL; TTL expiry revokes; disconnect revokes; new process starts locked; identity/decryption failure revokes.
+- [ ] Run targeted test → expected RED.
+- [ ] Implement one short liveness TTL (use existing product constant if one exists; otherwise `30_000L`); refresh only from authenticated secure traffic; overwrite truth immediately with `LOCKED_EXTERNAL_DEPENDENCY / IDENTITY_BINDING_MISSING` on revocation.
+- [ ] Run targeted + full app unit tests → PASS.
+- [ ] Commit: `feat(wearable): gate runtime truth on authenticated liveness`.
+
+### Task 8: Release gates and end-to-end qualification
 
 **Files:**
 - Modify: `.github/workflows/product-capability-truth.yml`
-- Modify: `.github/workflows/android-instrumentation.yml` or the existing Wear/Android instrumentation workflow selected by repository conventions.
-- Modify: `scripts/wearable-production-wiring.test.js`
-- Modify: `scripts/wearable-roundtrip-wiring.test.js`
-- Add instrumentation tests under the existing Android/Wear test layout for paired emulator validation.
-- Update: `docs/superpowers/specs/2026-10-17-wearable-secure-channel-design.md` only for implementation-confirmed deviations, not status promotion.
+- Modify the existing Android/Wear instrumentation workflow selected by repository conventions.
+- Modify: `scripts/wearable-production-wiring.test.js`, `scripts/wearable-roundtrip-wiring.test.js`
+- Add paired emulator instrumentation tests under existing layouts.
 
-**Interfaces:**
-- Consumes: all previous tasks.
-- Produces: CI gates proving dependency pinning, protocol-v2 key binding, no direct `publishConnected` from Data Layer listeners, secure-channel tests, and paired-emulator qualification when runners are functional.
+**Interfaces:** CI proof for pinned Tink, v2 key binding, secure-session tests, no direct listener truth promotion, paired-emulator qualification.
 
-- [ ] **Step 1: Write failing release-gate assertions**
-  Require Tink `1.23.0`, HPKE profile identifier, v2 transcript key bindings, secure runtime revocation tests, and shared secure Data Layer paths.
-
-- [ ] **Step 2: Run RED verification locally where possible**
-  Run Node gates and targeted Gradle tests. Record any infrastructure failure distinctly from code failures.
-
-- [ ] **Step 3: Wire CI jobs**
-  Add wearable-security JVM tests, app unit tests, wear-app compilation/test task, and paired-emulator test job without removing existing Phone Core qualification. Keep physical-device validation outside automated `CONNECTED` claims.
-
-- [ ] **Step 4: Run complete repository verification**
-  Minimum commands when environment permits:
-  - `node --test scripts/wearable-production-wiring.test.js scripts/wearable-roundtrip-wiring.test.js`
-  - `cd native-android-app && ./gradlew :wearable-security:test :app:testDebugUnitTest :app:assembleDebug :wear-app:assembleDebug`
-  - repository canonical integration/product-truth test command.
-  Expected: all executable checks pass. If GitHub still reports `runner_id=0` / `steps=[]`, leave PR draft and report CI as infrastructure-blocked.
-
-- [ ] **Step 5: Update PR #1699 truthfully and commit**
-  Keep `wearable_runtime` locked until paired emulator plus physical Wear OS validation exists. Document exactly which automated evidence executed and which remains unproven.
-  `git commit -m "test(wearable): gate secure channel release evidence"`
+- [ ] Write failing release-gate assertions first.
+- [ ] Run Node gates + targeted Gradle tests locally where possible and record infrastructure failures separately.
+- [ ] Wire CI: `:wearable-security:test`, `:app:testDebugUnitTest`, `:app:assembleDebug`, `:wear-app:assembleDebug`, paired emulator test; preserve Phone Core gates.
+- [ ] Run full verification when environment permits. If GitHub still shows `runner_id=0` / `steps=[]`, keep PR draft and report CI as infrastructure-blocked.
+- [ ] Update #1699 truthfully; keep static wearable capability locked until paired emulator + physical Wear OS evidence.
+- [ ] Commit: `test(wearable): gate secure channel release evidence`.
 
 ## Completion Criteria
 
-The implementation phase is complete only when:
-
-1. Tink HPKE `1.23.0` is pinned and JVM-tested.
-2. Ed25519 protocol v2 binds both HPKE peer-key fingerprints.
-3. Invalid signatures cannot burn valid replay challenges.
-4. Explicit pairing confirmation is required before authority activation.
-5. Data Layer listeners only transport bounded protocol frames.
-6. Application messages are encrypted and context-bound, then checked by `WearableMessageGuard` before dispatch.
-7. Only authenticated secure liveness can create/refresh `WearableChannelProof.ACTIVE`.
-8. Disconnect/stale/auth failure immediately revokes product truth.
-9. `WEARABLE_RUNTIME` remains statically locked until runtime/physical evidence exists.
-10. Phone Core latency-critical paths remain untouched by wearable crypto work.
+1. Tink HPKE 1.23.0 is pinned and tested.
+2. v2 Ed25519 transcript binds both HPKE peer-key fingerprints.
+3. Watch has a protected Ed25519 identity and session-scoped HPKE material.
+4. Invalid signatures cannot burn valid replay challenges.
+5. Explicit user pairing confirmation precedes authority activation.
+6. Data Layer listeners transport only bounded protocol frames.
+7. Encrypted messages are context-bound and still pass `WearableMessageGuard` before dispatch.
+8. Only authenticated secure liveness can create/refresh `WearableChannelProof.ACTIVE`.
+9. Disconnect/stale/auth failure immediately revokes product truth.
+10. Static registry stays locked until runtime + physical evidence exists.
+11. Phone Core latency-critical paths remain unaffected.
