@@ -20,7 +20,11 @@ internal object WearableSecureTransportInbox {
 
     fun dispatch(sourceNodeId: String, path: String, frame: WearableProtocolV2.Frame): Boolean {
         val current = handler ?: return false
-        current.onFrame(sourceNodeId, path, frame)
-        return true
+        return try {
+            current.onFrame(sourceNodeId, path, frame)
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 }
