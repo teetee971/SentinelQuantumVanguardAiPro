@@ -90,3 +90,30 @@ test('mesh runtime diagnosis reflects the implemented WireGuard transport', () =
     'implemented Mesh WireGuard transport must not be diagnosed as missing transport'
   );
 });
+
+test('Render-declared phone backends are not diagnosed as undeployed', () => {
+  const render = fs.readFileSync('render.yaml', 'utf8');
+  assert.match(render, /name:\s*sentinel-moteur-api/);
+  assert.match(render, /healthCheckPath:\s*\/health\/ready/);
+
+  for (const id of ['caller_reputation_remote', 'community_phone_reports']) {
+    const capability = readRegistry().capabilities.find((entry) => entry.id === id);
+    assert.ok(capability, `${id} capability must exist`);
+    assert.notEqual(
+      capability.diagnostic_reason,
+      'BACKEND_NOT_DEPLOYED',
+      `${id} backend is declared for deployment and must use a runtime/configuration diagnostic instead`
+    );
+  }
+});
+
+test('Voice truth reflects the deployed-but-disabled Render service', () => {
+  const render = fs.readFileSync('render.yaml', 'utf8');
+  assert.match(render, /name:\s*sentinel-voice-api/);
+  assert.match(render, /key:\s*VOICE_SERVICE_ENABLED[\s\S]*?value:\s*"false"/);
+
+  const voice = readRegistry().capabilities.find((entry) => entry.id === 'voice_rtc_ptt');
+  assert.ok(voice, 'voice_rtc_ptt capability must exist');
+  assert.equal(voice.state, 'LOCKED_EXTERNAL_DEPENDENCY');
+  assert.equal(voice.diagnostic_reason, 'SERVICE_DISABLED_BY_CONFIGURATION');
+});
