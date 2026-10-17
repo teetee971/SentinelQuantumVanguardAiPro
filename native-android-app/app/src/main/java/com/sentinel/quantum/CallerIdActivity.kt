@@ -135,7 +135,16 @@ class CallerIdActivity : ComponentActivity() {
                 LaunchedEffect(number) {
                     if (number.isNotBlank() && number.any { it.isDigit() }) {
                         val localIdentity = withContext(Dispatchers.IO) {
-                            LocalContactLookup(applicationContext).find(number)
+                            val lookup = LocalContactLookup(applicationContext)
+                            val identity = lookup.find(number)
+                            IntelligenceCoreRuntime.publishContactObservation(
+                                context = applicationContext,
+                                contactList = lookup.listWithState(limit = 512),
+                                rawNumber = number,
+                                identity = identity,
+                                observedAtMs = System.currentTimeMillis()
+                            )
+                            identity
                         }
                         if (localIdentity != null) {
                             localName = localIdentity.displayName
@@ -186,12 +195,24 @@ class CallerIdActivity : ComponentActivity() {
                                     privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                     explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                 )
-                                CommunicationReputationWriter(
-                                    CommunicationReputationCache(
-                                        SharedPreferencesCommunicationReputationStorage(applicationContext)
-                                    )
-                                ).persist(number, result)
-                                result
+                                val preparedReputation = IntelligenceCoreRuntime.prepareRemoteReputation(
+                                    context = applicationContext,
+                                    rawNumber = number,
+                                    result = result
+                                )
+                                settingsStore.acceptCallerReputationResult(
+                                    result = result,
+                                    persist = {
+                                        CommunicationReputationWriter(
+                                            CommunicationReputationCache(
+                                                SharedPreferencesCommunicationReputationStorage(applicationContext)
+                                            )
+                                        ).persist(number, result)
+                                    },
+                                    publish = {
+                                        IntelligenceCoreRuntime.publishPreparedRemoteReputation(preparedReputation)
+                                    }
+                                )
                             }.getOrNull()
                         }
                         remoteStatus = if (remoteResult == null) {
@@ -251,13 +272,22 @@ class CallerIdActivity : ComponentActivity() {
                                         }
                                     }
                                     reportRunning = false
-                                    submitted.onSuccess { result ->
+                                    val result = submitted.getOrNull()
+                                    if (result != null) {
+                                        withContext(Dispatchers.IO) {
+                                            IntelligenceCoreRuntime.publishCommunityReport(
+                                                context = applicationContext,
+                                                rawNumber = number,
+                                                category = category,
+                                                result = result
+                                            )
+                                        }
                                         reportStatus = when (result.status) {
                                             "pending" -> "Signalement reçu et placé en modération."
                                             "duplicate" -> "Signalement déjà reçu récemment."
                                             else -> "Signalement reçu : " + result.status
                                         }
-                                    }.onFailure {
+                                    } else {
                                         reportStatus = "Signalement indisponible pour le moment."
                                     }
                                 }

@@ -1,6 +1,7 @@
 package com.sentinel.quantum.intelligence
 
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.SmsLinkAnalyzer
 
 /** Pure adapters for already-bounded SMS/MMS transport and analysis outcomes. */
 object SmsMmsEvidenceAdapter {
@@ -27,6 +28,21 @@ object SmsMmsEvidenceAdapter {
         categoryCode = null,
         analysisOutcome = null
     )
+
+    fun fromIncomingAnalysis(
+        analysis: SmsLinkAnalyzer.Analysis
+    ): IntelligenceEvidence.SmsSecurity {
+        require(analysis.accepted) { "Rejected SMS analysis cannot become evidence" }
+        val categoryCode = analysis.findings.asSequence()
+            .map { it.code.uppercase().replace(Regex("[^A-Z0-9_]"), "_").take(32) }
+            .firstOrNull { CATEGORY_CODE.matches(it) }
+        return IntelligenceEvidence.SmsSecurity(
+            direction = IntelligenceEvidence.Direction.INCOMING,
+            transportState = "SMS_RECEIVED",
+            categoryCode = categoryCode,
+            analysisOutcome = "RISK_${analysis.riskLevel.name}"
+        )
+    }
 
     fun fromMms(
         direction: IntelligenceEvidence.Direction,

@@ -3,8 +3,13 @@ package com.sentinel.quantum.intelligence
 import android.content.Context
 import com.sentinel.quantum.security.CallNumberFingerprinter
 import com.sentinel.quantum.security.CallRuleEngine
+import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsProviderIdentityLookup
+import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapter
 import java.io.File
 import java.util.UUID
 
@@ -116,6 +121,215 @@ object IntelligenceCoreRuntime {
         runtime.sink.publish(intelligenceEvent)
     }.getOrDefault(PublishResult.REJECTED)
 
+    /** Contains only bounded evidence and a ready event queue; no raw caller number is retained. */
+    class PreparedRemoteReputation internal constructor(
+        private val sink: IntelligenceEventSink,
+        private val event: IntelligenceEvent
+    ) {
+        internal fun enqueue(): PublishResult = sink.publish(event)
+    }
+
+    /**
+     * Performs fingerprint/key and event preparation before the consent acceptance transaction.
+     * This is post-screening work on an IO dispatcher, never part of the Telecom response path.
+     */
+    fun prepareRemoteReputation(
+        context: Context,
+        rawNumber: String?,
+        result: CallerReputationClient.Result
+    ): PreparedRemoteReputation? = runCatching {
+        val normalizedNumber = CallRuleEngine.normalizeNumber(rawNumber)
+            ?: return@runCatching null
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching null
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching null
+        val intelligenceEvent = ReputationEvidenceAdapter.fromRemoteResult(
+            eventId = reputationEventId(fingerprint, result),
+            identityKey = identityKey,
+            result = result,
+            sourceLabel = REMOTE_REPUTATION_SOURCE
+        )
+        PreparedRemoteReputation(runtime.sink, intelligenceEvent)
+    }.getOrNull()
+
+    /** Bounded queue submission only; safe to call while the local consent lock is held. */
+    fun publishPreparedRemoteReputation(prepared: PreparedRemoteReputation?): PublishResult =
+        runCatching { prepared?.enqueue() ?: PublishResult.REJECTED }
+            .getOrDefault(PublishResult.REJECTED)
+
+    /** Compatibility entry point for callers that do not need a consent transaction. */
+    fun publishRemoteReputation(
+        context: Context,
+        rawNumber: String?,
+        result: CallerReputationClient.Result
+    ): PublishResult = publishPreparedRemoteReputation(
+        prepareRemoteReputation(context, rawNumber, result)
+    )
+
+    /**
+     * Publishes the outcome of an explicit user community report as context only.
+     *
+     * A pending or moderated report never supplies a risk score and is intentionally not read by
+     * [ScreeningProjection]. The raw number is converted to the local fingerprint before event
+     * construction and is not available to the bounded persistence layer.
+     */
+    fun publishCommunityReport(
+        context: Context,
+        rawNumber: String?,
+        category: CommunityReportClient.Category,
+        result: CommunityReportClient.Result,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult = runCatching {
+        if (observedAtMs < 0L) return@runCatching PublishResult.REJECTED
+        val normalizedNumber = CallRuleEngine.normalizeNumber(rawNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val evidence = CommunityReportEvidenceAdapter.from(category, result)
+        val intelligenceEvent = IntelligenceEvent(
+            eventId = "community-report:$fingerprint:${category.name}:${evidence.moderationState.name}",
+            identityKey = identityKey,
+            evidence = evidence,
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, CALL_EVENT_TTL_MS),
+            source = EvidenceSource.COMMUNITY_REPORT,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.COMMUNITY_CORE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.LOCAL_USER_ASSERTION
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
+        )
+        runtime.sink.publish(intelligenceEvent)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes the bounded result of local incoming-SMS analysis.
+     *
+     * The message body and extracted URLs are transient inputs to SmsLinkAnalyzer and never enter
+     * this contract. The provider row id gives replayed delivery callbacks a stable event id.
+     */
+    fun publishIncomingSmsAnalysis(
+        context: Context,
+        providerMessageId: Long,
+        sender: String?,
+        analysis: SmsLinkAnalyzer.Analysis,
+        observedAtMs: Long = analysis.analyzedAt
+    ): PublishResult = runCatching {
+        if (
+            providerMessageId <= 0L ||
+            observedAtMs < 0L ||
+            !analysis.accepted
+        ) return@runCatching PublishResult.REJECTED
+
+        val normalizedNumber = CallRuleEngine.normalizeNumber(sender)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val intelligenceEvent = IntelligenceEvent(
+            eventId = "sms-analysis:$providerMessageId",
+            identityKey = identityKey,
+            evidence = SmsMmsEvidenceAdapter.fromIncomingAnalysis(analysis),
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, SMS_EVENT_TTL_MS),
+            source = EvidenceSource.SMS,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.SMS_CORE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.LOCAL_DERIVED
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
+        )
+        runtime.sink.publish(intelligenceEvent)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes only the bounded transport result of an incoming MMS provider projection.
+     *
+     * The sender is transient input and is converted to the same device-bound phone fingerprint
+     * used by calls and SMS. The provider row id is an opaque local idempotency key; MMS bytes,
+     * text parts, URLs and attachment payloads never cross this method's event boundary.
+     */
+    fun publishIncomingMmsObservation(
+        context: Context,
+        providerMessageId: Long,
+        rawSender: String?,
+        transportState: SmsMmsEvidenceAdapter.MmsTransportState,
+        categoryCode: String? = null,
+        analysisOutcome: SmsMmsEvidenceAdapter.AnalysisOutcome =
+            SmsMmsEvidenceAdapter.AnalysisOutcome.UNKNOWN,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult = runCatching {
+        if (observedAtMs < 0L || providerMessageId <= 0L) {
+            return@runCatching PublishResult.REJECTED
+        }
+        val normalizedNumber = CallRuleEngine.normalizeNumber(rawSender)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val evidence = SmsMmsEvidenceAdapter.fromMms(
+            direction = IntelligenceEvidence.Direction.INCOMING,
+            transportState = transportState,
+            categoryCode = categoryCode,
+            analysisOutcome = analysisOutcome
+        )
+        val intelligenceEvent = IntelligenceEvent(
+            eventId = "mms-status:$providerMessageId",
+            identityKey = identityKey,
+            evidence = evidence,
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, SMS_EVENT_TTL_MS),
+            source = EvidenceSource.MMS,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.MMS_CORE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.LOCAL_PLATFORM_ASSERTION
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
+        )
+        runtime.sink.publish(intelligenceEvent)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes a bounded, permission-gated Android contact observation after a non-critical UI
+     * lookup. Contact display data stays in the existing durable local-identity contract; the raw
+     * phone number is used only to derive the device-bound fingerprint.
+     */
+    fun publishContactObservation(
+        context: Context,
+        contactList: LocalContactLookup.ContactListResult,
+        rawNumber: String,
+        identity: LocalContactLookup.Identity?,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult {
+        if (observedAtMs < 0L) return PublishResult.REJECTED
+        val runtime = runCatching { stateFor(context.applicationContext) }.getOrNull()
+            ?: return PublishResult.REJECTED
+        return runCatching {
+            ContactIntelligenceAdapter(
+                sink = runtime.sink,
+                canonicalize = { value -> CallRuleEngine.normalizeNumber(value).orEmpty() },
+                fingerprint = { canonical -> runtime.fingerprinter.fingerprint(canonical) }
+            ).publish(
+                contactList = contactList,
+                rawNumber = rawNumber,
+                identity = identity,
+                observedAtMs = observedAtMs
+            ).publishResult
+        }.getOrDefault(PublishResult.REJECTED)
+    }
+
     fun snapshotForNumber(
         context: Context,
         rawNumber: String?,
@@ -169,6 +383,20 @@ object IntelligenceCoreRuntime {
     private fun smsStatusEventId(event: SmsDeliveryStatusBus.Event): String =
         "sms-status:${event.sendToken}:${event.providerMessageId}:${event.stage.name}:${event.partIndex}:${event.partCount}"
 
+    private fun reputationEventId(
+        fingerprint: String,
+        result: CallerReputationClient.Result
+    ): String = listOf(
+        "reputation",
+        fingerprint,
+        result.reputationObservedAtMs,
+        result.reputationTtlMs,
+        result.riskScore,
+        result.signals,
+        result.categories.joinToString(",").hashCode(),
+        REMOTE_REPUTATION_SOURCE
+    ).joinToString(":")
+
     private fun networkVerification(code: String): IntelligenceEvidence.NetworkVerification = when (code) {
         "VERIFIED" -> IntelligenceEvidence.NetworkVerification.VERIFIED
         "FAILED" -> IntelligenceEvidence.NetworkVerification.FAILED
@@ -185,4 +413,6 @@ object IntelligenceCoreRuntime {
         val sink: BoundedIntelligenceEventSink,
         val fingerprinter: CallNumberFingerprinter
     )
+
+    private const val REMOTE_REPUTATION_SOURCE = "caller-reputation-api"
 }

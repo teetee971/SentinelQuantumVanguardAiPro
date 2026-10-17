@@ -38,6 +38,25 @@ class IntelligenceSnapshotStoreTest {
         privacyClass = PrivacyClass.BOUNDED_METADATA
     )
 
+    private fun communityReportEvent() = IntelligenceEvent(
+        eventId = "community-report:fp-store-test:BANK_IMPERSONATION:PENDING",
+        identityKey = identity,
+        evidence = IntelligenceEvidence.CommunityReport(
+            categoryCode = "BANK_IMPERSONATION",
+            moderationState = IntelligenceEvidence.CommunityModerationState.PENDING,
+            effectOnReputation = IntelligenceEvidence.CommunityReputationEffect.PENDING
+        ),
+        observedAtMs = 1_000L,
+        expiresAtMs = 10_000L,
+        source = EvidenceSource.COMMUNITY_REPORT,
+        provenance = EvidenceProvenance(
+            producer = EvidenceProvenance.Producer.COMMUNITY_CORE,
+            producerVersion = 1,
+            trust = EvidenceProvenance.TrustClass.LOCAL_USER_ASSERTION
+        ),
+        privacyClass = PrivacyClass.BOUNDED_METADATA
+    )
+
     private fun newDirectory(): File = Files.createTempDirectory("sentinel-intelligence-store").toFile()
 
     @Test
@@ -102,6 +121,20 @@ class IntelligenceSnapshotStoreTest {
         store.append(conflictingDuplicate, nowMs = 2_000L)
 
         assertEquals(listOf(original), store.read(identity, nowMs = 2_000L))
+    }
+
+    @Test
+    fun community_report_roundtrips_without_becoming_reputation() {
+        val directory = newDirectory()
+        val store = IntelligenceSnapshotStore(directory, maxEntries = 10, maxAgeMs = 60_000L)
+        val event = communityReportEvent()
+
+        store.append(event, nowMs = 2_000L)
+
+        val restored = store.read(identity, nowMs = 2_000L).single()
+        assertEquals(event, restored)
+        assertTrue(IntelligenceAggregator().aggregate(identity, listOf(restored), 2_000L)
+            .riskAssessment.numericScore == null)
     }
 
     @Test

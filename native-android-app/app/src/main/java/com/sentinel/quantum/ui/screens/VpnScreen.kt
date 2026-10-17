@@ -20,7 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.sentinel.quantum.security.SentinelVpnController
+import com.sentinel.quantum.security.SentinelVpnRuntimeStateRegistry
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
@@ -39,8 +39,8 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 @Composable
 fun VpnScreen(navController: NavController) {
     val context = LocalContext.current
-    val runtimeState = SentinelVpnController.RuntimeState.READY_NO_GATEWAY
-    val runtimeStatus = NetworkVpnPresentation.vpnStatus(runtimeState)
+    val runtimeState = SentinelVpnRuntimeStateRegistry.current()?.state
+    val runtimeSurface = NetworkVpnPresentation.vpnSurface(runtimeState)
     val motionLevel = remember(context) {
         val animatorScale = runCatching {
             Settings.Global.getFloat(
@@ -71,9 +71,9 @@ fun VpnScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             SentinelHeroVisual(
-                status = runtimeStatus,
-                title = "Passerelle requise",
-                subtitle = "Service VPN public non opérationnel : aucune passerelle Sentinel disponible et validée.",
+                status = runtimeSurface.status,
+                title = runtimeSurface.title,
+                subtitle = runtimeSurface.subtitle,
                 modifier = Modifier.testTag("vpn-command-center"),
                 motionLevel = motionLevel
             )
@@ -88,7 +88,7 @@ fun VpnScreen(navController: NavController) {
                     .fillMaxWidth()
                     .testTag("vpn-runtime-truth")
             ) {
-                SentinelStatusChip(status = runtimeStatus, label = "Passerelle absente")
+                SentinelStatusChip(status = runtimeSurface.status, label = runtimeSurface.badge)
                 Text(
                     text = "Client intégré",
                     style = MaterialTheme.typography.labelLarge,
@@ -111,23 +111,23 @@ fun VpnScreen(navController: NavController) {
             }
 
             SentinelSectionHeader(
-                title = "Pourquoi la connexion est verrouillée",
-                trailing = "Fail-closed"
+                title = runtimeSurface.explanationTitle,
+                trailing = "Vérité runtime"
             )
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Passerelle Sentinel indisponible",
+                    text = runtimeSurface.badge,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = SentinelD1.Warning
                 )
                 Text(
-                    text = "Une connexion ne peut démarrer qu’avec une passerelle marquée AVAILABLE par le catalogue/control plane Sentinel et disposant de DNS épinglés. Les états PLANNED, PROVISIONING, DRAINING, OFFLINE ou REVOKED restent verrouillés.",
+                    text = runtimeSurface.explanation,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Une action de connexion ne sera affichée que lorsque toute la chaîne sera réellement vérifiable.",
+                    text = "Aucune action de connexion n’est affichée sans chaîne runtime vérifiable.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

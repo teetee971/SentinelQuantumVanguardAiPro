@@ -2,6 +2,7 @@ package com.sentinel.quantum.data
 
 import android.content.Context
 import com.sentinel.quantum.security.ProtectionMode
+import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.FamilySafetyPolicy
 
 /** User-facing theme preference. [SYSTEM] follows the device's day/night setting. */
@@ -48,21 +49,18 @@ class SettingsStore(context: Context) {
             ProtectionMode.LOCAL_ONLY
         }
         set(value) {
-            if (value == ProtectionMode.ENHANCED) {
-                preferences.edit().putString(PROTECTION_MODE, value.name).apply()
-            } else {
-                check(
-                    preferences.edit().putString(PROTECTION_MODE, value.name).commit()
-                ) {
-                    "Unable to persist protection mode downgrade"
-                }
-                check(
-                    appContext.getSharedPreferences(
-                        COMMUNICATION_REPUTATION_PREFERENCES,
-                        Context.MODE_PRIVATE
-                    ).edit().clear().commit()
-                ) {
-                    "Unable to purge cached communication reputation"
+            CALLER_REPUTATION_BOUNDARY.change {
+                if (value == ProtectionMode.ENHANCED) {
+                    preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+                } else {
+                    check(
+                        preferences.edit().putString(PROTECTION_MODE, value.name).commit()
+                    ) {
+                        "Unable to persist protection mode downgrade"
+                    }
+                    check(purgeCommunicationReputation()) {
+                        "Unable to purge cached communication reputation"
+                    }
                 }
             }
         }
@@ -80,26 +78,38 @@ class SettingsStore(context: Context) {
     var callerReputationEnrichmentEnabled: Boolean
         get() = preferences.getBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
         set(value) {
-            if (value) {
-                preferences.edit().putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, true).apply()
-            } else {
-                check(
-                    preferences.edit()
-                        .putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
-                        .commit()
-                ) {
-                    "Unable to persist caller reputation consent revocation"
-                }
-                check(
-                    appContext.getSharedPreferences(
-                        COMMUNICATION_REPUTATION_PREFERENCES,
-                        Context.MODE_PRIVATE
-                    ).edit().clear().commit()
-                ) {
-                    "Unable to purge cached communication reputation"
+            CALLER_REPUTATION_BOUNDARY.change {
+                if (value) {
+                    preferences.edit().putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, true).apply()
+                } else {
+                    check(
+                        preferences.edit()
+                            .putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
+                            .commit()
+                    ) {
+                        "Unable to persist caller reputation consent revocation"
+                    }
+                    check(purgeCommunicationReputation()) {
+                        "Unable to purge cached communication reputation"
+                    }
                 }
             }
         }
+
+    /** Call only after network evaluation, on an IO dispatcher; revocation uses the same lock. */
+    fun <T : Any> acceptCallerReputationResult(
+        result: T,
+        persist: () -> Boolean,
+        publish: () -> Unit
+    ): T? = CALLER_REPUTATION_BOUNDARY.accept(
+        isEligible = {
+            callerReputationEnrichmentEnabled &&
+                ProtectionModePolicy.permitsCallerNumberEnrichment(protectionMode)
+        },
+        result = result,
+        persist = persist,
+        publish = publish
+    )
 
     /**
      * Local assisted-calling profile. STANDARD is the fail-open default.
@@ -134,21 +144,33 @@ class SettingsStore(context: Context) {
      * Returns false instead of claiming success when durable persistence fails.
      */
     fun applyRestorablePreferences(value: RestorablePreferences): Boolean =
-        preferences.edit()
-            .putString(THEME_MODE, value.themeMode.name)
-            .putString(PROTECTION_MODE, value.protectionMode.name)
-            .putString(FAMILY_SAFETY_PROFILE, value.familySafetyProfile.name)
-            .putBoolean(
-                CALLER_REPUTATION_ENRICHMENT_ENABLED,
-                value.callerReputationEnrichmentEnabled
-            )
-            .putInt(
-                OSINT_INTERVAL_HOURS,
-                sanitizeInterval(value.osintRefreshIntervalHours)
-            )
-            .putBoolean(OSINT_NOTIFICATIONS_ENABLED, value.osintNotificationsEnabled)
-            .putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value.smsNotificationPreviewEnabled)
-            .commit()
+        CALLER_REPUTATION_BOUNDARY.change {
+            val committed = preferences.edit()
+                .putString(THEME_MODE, value.themeMode.name)
+                .putString(PROTECTION_MODE, value.protectionMode.name)
+                .putString(FAMILY_SAFETY_PROFILE, value.familySafetyProfile.name)
+                .putBoolean(
+                    CALLER_REPUTATION_ENRICHMENT_ENABLED,
+                    value.callerReputationEnrichmentEnabled
+                )
+                .putInt(
+                    OSINT_INTERVAL_HOURS,
+                    sanitizeInterval(value.osintRefreshIntervalHours)
+                )
+                .putBoolean(OSINT_NOTIFICATIONS_ENABLED, value.osintNotificationsEnabled)
+                .putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value.smsNotificationPreviewEnabled)
+                .commit()
+            committed && if (
+                !value.callerReputationEnrichmentEnabled ||
+                !ProtectionModePolicy.permitsCallerNumberEnrichment(value.protectionMode)
+            ) purgeCommunicationReputation() else true
+        }
+
+    private fun purgeCommunicationReputation(): Boolean =
+        appContext.getSharedPreferences(
+            COMMUNICATION_REPUTATION_PREFERENCES,
+            Context.MODE_PRIVATE
+        ).edit().clear().commit()
 
     /**
      * Refresh interval in hours, restricted to the supported values.
@@ -178,6 +200,7 @@ class SettingsStore(context: Context) {
         }
 
     companion object {
+        private val CALLER_REPUTATION_BOUNDARY = CallerReputationAcceptanceBoundary()
         const val INTERVAL_NEVER = 0
 
         /** Supported periodic intervals, in hours. Kept small and explicit on purpose. */

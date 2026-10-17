@@ -36,7 +36,12 @@ class ContactIntelligenceAdapter(
             ?: return Outcome(PublishResult.REJECTED)
         val localFingerprint = fingerprint(canonical)?.takeIf { it.isNotBlank() }
             ?: return Outcome(PublishResult.REJECTED)
-        val identityKey = SentinelIdentityKey.phoneFingerprint(localFingerprint, version = 1)
+        val identityVersion = localFingerprint.substringBefore(':', missingDelimiterValue = "")
+            .removePrefix("v")
+            .toIntOrNull()
+            ?.takeIf { it > 0 }
+            ?: 1
+        val identityKey = SentinelIdentityKey.phoneFingerprint(localFingerprint, identityVersion)
 
         val matchedContact = if (contactList.state == LocalContactLookup.ContactAccessState.READY) {
             contactList.contacts.firstOrNull { contact ->
