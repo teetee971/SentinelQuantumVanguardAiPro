@@ -191,6 +191,11 @@ class CallerIdActivity : ComponentActivity() {
                                         SharedPreferencesCommunicationReputationStorage(applicationContext)
                                     )
                                 ).persist(number, result)
+                                IntelligenceCoreRuntime.publishRemoteReputation(
+                                    context = applicationContext,
+                                    rawNumber = number,
+                                    result = result
+                                )
                                 result
                             }.getOrNull()
                         }
