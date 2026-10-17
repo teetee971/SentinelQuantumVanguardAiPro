@@ -1,6 +1,8 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationTruthRuntime
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -20,27 +22,48 @@ class NetworkTimelineStore(context: Context) {
         source: NetworkTimelineSource,
         rawIdentifiers: List<String>,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean = synchronized(LOCK) {
-        if (nowMs < 0L) return@synchronized false
+    ): Boolean {
+        val recorded = synchronized(LOCK) {
+            if (nowMs < 0L) return@synchronized false
 
-        val current = readInternal()
-        val currentSnapshot = NetworkChangeTimeline.build(current, nowMs)
-        val known = currentSnapshot.acceptedEvents.mapTo(hashSetOf()) { it.subjectFingerprint }
-        val fingerprints = rawIdentifiers
-            .asSequence()
-            .take(MAX_IDENTIFIERS_PER_OBSERVATION)
-            .mapNotNull { trustStore.pseudonymousFingerprint(it) }
-            .distinct()
-            .toList()
-        val events = NetworkObservationTimelineAdapter.events(
-            source = source,
-            fingerprints = fingerprints,
-            knownFingerprints = known,
-            observedAtMs = nowMs
-        )
-        if (events.isEmpty()) return@synchronized true
+            val current = readInternal()
+            val currentSnapshot = NetworkChangeTimeline.build(current, nowMs)
+            val known = currentSnapshot.acceptedEvents.mapTo(hashSetOf()) { it.subjectFingerprint }
+            val fingerprints = rawIdentifiers
+                .asSequence()
+                .take(MAX_IDENTIFIERS_PER_OBSERVATION)
+                .mapNotNull { trustStore.pseudonymousFingerprint(it) }
+                .distinct()
+                .toList()
+            val events = NetworkObservationTimelineAdapter.events(
+                source = source,
+                fingerprints = fingerprints,
+                knownFingerprints = known,
+                observedAtMs = nowMs
+            )
+            if (events.isEmpty()) return@synchronized true
 
-        write(NetworkChangeTimeline.build(current + events, nowMs).acceptedEvents)
+            write(NetworkChangeTimeline.build(current + events, nowMs).acceptedEvents)
+        }
+
+        if (recorded) {
+            when (source) {
+                NetworkTimelineSource.ANDROID_WIFI -> IntegrationTruthRuntime.publishConnected(
+                    IntegrationCapabilityId.WIFI_OBSERVATION,
+                    nowMs
+                )
+                NetworkTimelineSource.ANDROID_BLE -> IntegrationTruthRuntime.publishConnected(
+                    IntegrationCapabilityId.BLUETOOTH_OBSERVATION,
+                    nowMs
+                )
+                else -> Unit
+            }
+            IntegrationTruthRuntime.publishConnected(
+                IntegrationCapabilityId.NETWORK_BEHAVIOR,
+                nowMs
+            )
+        }
+        return recorded
     }
 
     fun read(nowMs: Long = System.currentTimeMillis()): NetworkTimelineSnapshot = synchronized(LOCK) {
