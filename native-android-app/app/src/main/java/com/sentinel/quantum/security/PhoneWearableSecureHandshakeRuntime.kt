@@ -33,8 +33,8 @@ internal class PhoneWearableSecureHandshakeRuntime(
     private val sessionAuthority: WearableSessionAuthority,
     private val hpkeFactory: PhoneWearableHpkeFactory,
     private val transport: PhoneWearableHandshakeTransport,
-    private val activate: (WearableSecureHandshakeResult, WearableAdapterObservation, PhoneWearableHpkeMaterial) -> Boolean,
-    private val clockMs: () -> Long = System::currentTimeMillis,
+    private val activate: (String, WearableSecureHandshakeResult, WearableAdapterObservation, PhoneWearableHpkeMaterial) -> Boolean,
+    private val clockMs: () -> Long = System.currentTimeMillis,
     private val sessionIdFactory: () -> String = { UUID.randomUUID().toString() },
     private val maxPendingNodes: Int = DEFAULT_MAX_PENDING_NODES
 ) {
@@ -238,7 +238,7 @@ internal class PhoneWearableSecureHandshakeRuntime(
         result: WearableSecureHandshakeResult
     ): WearableSecureHandshakeResult {
         if (result.state != WearableSecureHandshakeState.ACTIVE) return result
-        if (!activate(result, pending.observation, pending.material)) {
+        if (!activate(pending.nodeId, result, pending.observation, pending.material)) {
             result.verifiedProof?.stableId?.let(sessionAuthority::revoke)
             synchronized(this) { pendingByNode.remove(pending.nodeId) }
             return rejected(WearableSecureHandshakeRejection.AUTHORITY_REJECTED)
