@@ -115,13 +115,21 @@ internal class PhoneWearableSecureHandshakeRuntime(
             pendingByNode[nodeId] = Pending(nodeId, observation, context, material)
         }
         val attemptId = context.attempt.attemptId
-        transport.send(nodeId, WearableProtocolV2.CHALLENGE_PATH, encoded) {
+        return try {
+            transport.send(nodeId, WearableProtocolV2.CHALLENGE_PATH, encoded) {
+                synchronized(this) {
+                    val current = pendingByNode[nodeId]
+                    if (current?.context?.attempt?.attemptId == attemptId) pendingByNode.remove(nodeId)
+                }
+            }
+            true
+        } catch (_: Exception) {
             synchronized(this) {
                 val current = pendingByNode[nodeId]
                 if (current?.context?.attempt?.attemptId == attemptId) pendingByNode.remove(nodeId)
             }
+            false
         }
-        return true
     }
 
     fun handleHandshake(
@@ -159,11 +167,13 @@ internal class PhoneWearableSecureHandshakeRuntime(
             return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
         }
 
-        synchronized(this) {
-            val current = pendingByNode[nodeId]
-            if (current === pending) {
-                current.handshake = handshake
-                current.candidate = candidate
+        if (result.state == WearableSecureHandshakeState.PENDING_CONFIRMATION) {
+            synchronized(this) {
+                val current = pendingByNode[nodeId]
+                if (current === pending) {
+                    current.handshake = handshake
+                    current.candidate = candidate
+                }
             }
         }
         return finalizeIfActive(pending, result)
