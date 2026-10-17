@@ -9,12 +9,16 @@ object VerifiedWearableHandshakeFixture {
         keyFingerprintSha256: String,
         sessionId: String,
         protocolVersion: Int,
-        capabilities: Set<String>
+        capabilities: Set<String>,
+        phoneHpkePublicKeyFingerprintSha256: String? = null,
+        wearableHpkePublicKeyFingerprintSha256: String? = null
     ): VerifiedWearableHandshake = VerifiedWearableHandshake(
         stableId = stableId,
         keyFingerprintSha256 = keyFingerprintSha256,
         sessionId = sessionId,
         protocolVersion = protocolVersion,
-        capabilities = capabilities
+        capabilities = capabilities,
+        phoneHpkePublicKeyFingerprintSha256 = phoneHpkePublicKeyFingerprintSha256,
+        wearableHpkePublicKeyFingerprintSha256 = wearableHpkePublicKeyFingerprintSha256
     )
 }
