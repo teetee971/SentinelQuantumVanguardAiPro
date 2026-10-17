@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.WearableListenerService
 import com.sentinel.quantum.wearable.contract.WearableProtocolV2
 
@@ -33,6 +34,11 @@ class SentinelWearListenerService : WearableListenerService() {
                 observedCapabilities = setOf(WearableCapability.CONNECTION_STATE)
             )
         )
+    }
+
+    override fun onPeerDisconnected(peer: Node) {
+        WearOsPlatformProbeRegistry.cancel(peer.id)
+        SentinelWearableSecureHandshakeRuntime.disconnect(peer.id)
     }
 
     companion object {
