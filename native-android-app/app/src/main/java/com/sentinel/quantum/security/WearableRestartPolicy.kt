@@ -14,6 +14,9 @@ data class PersistedWearableBinding(
 ) {
     init {
         require(stableId.isNotBlank())
+        require(source == WearableIdentitySource.APPLICATION_PUBLIC_KEY) {
+            "only application public-key identity may survive wearable restart"
+        }
         require(keyFingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))
     }
 }
