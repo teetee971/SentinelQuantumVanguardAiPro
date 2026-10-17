@@ -4,6 +4,7 @@ import android.content.Context
 import com.sentinel.quantum.security.CallNumberFingerprinter
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsProviderIdentityLookup
 import java.io.File
 import java.util.UUID
@@ -110,6 +111,49 @@ object IntelligenceCoreRuntime {
                 producer = EvidenceProvenance.Producer.SMS_CORE,
                 producerVersion = 1,
                 trust = EvidenceProvenance.TrustClass.LOCAL_PLATFORM_ASSERTION
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
+        )
+        runtime.sink.publish(intelligenceEvent)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes the bounded result of local incoming-SMS analysis.
+     *
+     * The message body and extracted URLs are transient inputs to SmsLinkAnalyzer and never enter
+     * this contract. The provider row id gives replayed delivery callbacks a stable event id.
+     */
+    fun publishIncomingSmsAnalysis(
+        context: Context,
+        providerMessageId: Long,
+        sender: String?,
+        analysis: SmsLinkAnalyzer.Analysis,
+        observedAtMs: Long = analysis.analyzedAt
+    ): PublishResult = runCatching {
+        if (
+            providerMessageId <= 0L ||
+            observedAtMs < 0L ||
+            !analysis.accepted
+        ) return@runCatching PublishResult.REJECTED
+
+        val normalizedNumber = CallRuleEngine.normalizeNumber(sender)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val intelligenceEvent = IntelligenceEvent(
+            eventId = "sms-analysis:$providerMessageId",
+            identityKey = identityKey,
+            evidence = SmsMmsEvidenceAdapter.fromIncomingAnalysis(analysis),
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, SMS_EVENT_TTL_MS),
+            source = EvidenceSource.SMS,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.SMS_CORE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.LOCAL_DERIVED
             ),
             privacyClass = PrivacyClass.BOUNDED_METADATA
         )
