@@ -32,7 +32,7 @@ test('phone owns a pong listener and one-shot correlated probe registry', () => 
   assert.match(registry, /pending\.remove/);
 });
 
-test('phone emits the platform ping and manifest wires the pong listener', () => {
+test('phone emits the platform ping and manifest wires Sentinel Data Layer messages', () => {
   const adapter = fs.readFileSync(adapterPath, 'utf8');
   const manifest = fs.readFileSync(phoneManifestPath, 'utf8');
 
@@ -42,7 +42,7 @@ test('phone emits the platform ping and manifest wires the pong listener', () =>
   assert.match(adapter, /sendMessage\(/);
   assert.match(manifest, /\.security\.SentinelWearListenerService/);
   assert.match(manifest, /com\.google\.android\.gms\.wearable\.MESSAGE_RECEIVED/);
-  assert.match(manifest, /\/sentinel\/v1\/platform\/pong/);
+  assert.match(manifest, /android:pathPrefix="\/sentinel\/"/);
 });
 
 test('platform pong remains a non-privileged reachability proof', () => {
