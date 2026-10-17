@@ -18,7 +18,7 @@
     {"id":"mesh_runtime","owner":"network-security","surface":"Private Mesh runtime","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
     {"id":"wearable_runtime","owner":"wearable-core","surface":"Wearable runtime / channel","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"TRANSPORT_NOT_IMPLEMENTED"},
     {"id":"digital_exposure","owner":"security","surface":"Digital exposure / breach intelligence","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"IDENTITY_BINDING_MISSING"},
-    {"id":"threat_intelligence","owner":"security","surface":"Threat intelligence feeds / query gate","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"CREDENTIAL_NOT_PROVISIONED"},
+    {"id":"threat_intelligence","owner":"security","surface":"Threat intelligence feeds / query gate","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"PARTIAL_PUBLIC_SOURCES_ONLY"},
     {"id":"regulatory_intelligence","owner":"security","surface":"ARCEP / FSMA / reviewed regulatory intelligence","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"RUNTIME_NOT_OBSERVED"},
     {"id":"soc_decision_plane","owner":"decision-plane","surface":"SOC passive pipeline / decision handoff","state":"INTENTIONALLY_DISABLED","diagnostic_reason":"INTENTIONALLY_DISABLED_BY_POLICY"},
     {"id":"osint_analyst_tooling","owner":"osint-intelligence","surface":"OSINT analyst tooling","state":"INTENTIONALLY_DISABLED","diagnostic_reason":"INTENTIONALLY_DISABLED_BY_POLICY"},
