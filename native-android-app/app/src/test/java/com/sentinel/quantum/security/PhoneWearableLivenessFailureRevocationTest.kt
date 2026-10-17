@@ -63,6 +63,24 @@ class PhoneWearableLivenessFailureRevocationTest {
         assertFalse(runtime.isActive("node-1", "session-1"))
     }
 
+    @Test fun lateFailureForSupersededSessionCannotRevokeReplacement() {
+        var oldFailure: (() -> Unit)? = null
+        var revoked = false
+        val runtime = PhoneWearableLivenessRuntime(
+            transport = PhoneWearableLivenessTransport { _, _, _, onFailure -> oldFailure = onFailure },
+            authenticatedTraffic = { _, _ -> true },
+            revokeAuthenticatedChannel = { revoked = true },
+            clockMs = { 250L }
+        )
+        val material = IdentityHpkeMaterial("phone-public".toByteArray())
+        assertTrue(runtime.activate("node-1", "session-old", "watch-public".toByteArray(), material))
+        assertTrue(runtime.sendProbe("node-1"))
+        assertTrue(runtime.activate("node-1", "session-new", "watch-public".toByteArray(), material))
+        requireNotNull(oldFailure).invoke()
+        assertTrue(runtime.isActive("node-1", "session-new"))
+        assertFalse(revoked)
+    }
+
     private class IdentityHpkeMaterial(
         override val publicKeyEncoded: ByteArray
     ) : PhoneWearableHpkeMaterial {
