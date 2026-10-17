@@ -19,7 +19,16 @@ class IntegrationRegistry(
             return true
         }
         if (observation.observedAtMs < current.observedAtMs) return false
-        if (observation.observedAtMs == current.observedAtMs) return observation == current
+        if (observation.observedAtMs == current.observedAtMs) {
+            if (observation == current) return true
+            val currentConnected = current.status.state == IntegrationState.CONNECTED
+            val incomingConnected = observation.status.state == IntegrationState.CONNECTED
+            if (currentConnected && !incomingConnected) {
+                observations[observation.capabilityId] = observation
+                return true
+            }
+            return false
+        }
         observations[observation.capabilityId] = observation
         return true
     }
