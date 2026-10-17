@@ -11,7 +11,11 @@ internal class WearableWatchSecureSessionRegistry(
     )
 
     private data class Key(val nodeId: String, val sessionId: String)
-    private data class Entry(val session: WearableHpkeDuplexSession, val expiresAtMs: Long)
+    private data class Entry(
+        val session: WearableHpkeDuplexSession,
+        val expiresAtMs: Long,
+        var highestAcceptedLivenessSequence: Long = -1L
+    )
 
     private val sessions = LinkedHashMap<Key, Entry>()
 
@@ -53,6 +57,18 @@ internal class WearableWatchSecureSessionRegistry(
         purgeExpired(now)
         val match = sessions.entries.firstOrNull { it.key.nodeId == nodeId } ?: return null
         return ResolvedSession(match.key.sessionId, match.value.session)
+    }
+
+    @Synchronized
+    fun acceptLivenessSequence(nodeId: String, sessionId: String, sequenceNumber: Long): Boolean {
+        if (sequenceNumber < 0) return false
+        val now = clockMs()
+        if (now < 0) return false
+        purgeExpired(now)
+        val entry = sessions[Key(nodeId, sessionId)] ?: return false
+        if (sequenceNumber <= entry.highestAcceptedLivenessSequence) return false
+        entry.highestAcceptedLivenessSequence = sequenceNumber
+        return true
     }
 
     @Synchronized
