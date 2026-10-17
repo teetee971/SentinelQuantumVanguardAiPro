@@ -79,6 +79,10 @@ class SentinelVpnController(
 
     @Volatile
     private var runtimeState: RuntimeState = RuntimeState.DISCONNECTED
+        set(value) {
+            field = value
+            SentinelVpnRuntimeStateRegistry.publish(value)
+        }
 
     private val tunnel = object : Tunnel {
         override fun getName(): String = TUNNEL_NAME
