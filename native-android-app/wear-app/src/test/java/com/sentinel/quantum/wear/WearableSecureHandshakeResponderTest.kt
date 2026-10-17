@@ -4,7 +4,6 @@ import com.sentinel.quantum.wearable.security.WearableHandshakeTranscriptCodec
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.Signature
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -25,21 +24,29 @@ class WearableSecureHandshakeResponderTest {
     }
 
     private class FakeHpkeSession(
-        override val publicKeyEncoded: ByteArray
-    ) : WearableHpkeRecipientSession {
-        override val fingerprintSha256: String = MessageDigest.getInstance("SHA-256")
-            .digest(publicKeyEncoded)
-            .joinToString("") { "%02x".format(it) }
+        override val wearablePublicKeyEncoded: ByteArray,
+        override val phonePublicKeyEncoded: ByteArray
+    ) : WearableHpkeDuplexSession {
+        override val wearableFingerprintSha256: String = sha256(wearablePublicKeyEncoded)
+        override val phoneFingerprintSha256: String = sha256(phonePublicKeyEncoded)
+        override fun encryptForPhone(plaintext: ByteArray, contextInfo: ByteArray): ByteArray = plaintext.copyOf()
+        override fun decryptFromPhone(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray = ciphertext.copyOf()
 
-        override fun decrypt(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray =
-            throw UnsupportedOperationException("not needed by handshake test")
+        companion object {
+            private fun sha256(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+                .digest(bytes).joinToString("") { "%02x".format(it) }
+        }
     }
 
     private class CountingHpkeFactory : WearableHpkeSessionFactory {
         var counter = 0
-        override fun create(): WearableHpkeRecipientSession =
-            FakeHpkeSession("watch-hpke-${++counter}".toByteArray())
+        override fun create(phoneHpkePublicKeyEncoded: ByteArray): WearableHpkeDuplexSession =
+            FakeHpkeSession("watch-hpke-${++counter}".toByteArray(), phoneHpkePublicKeyEncoded.copyOf())
     }
+
+    private val phoneHpkePublicKeyEncoded = "phone-public-hpke".toByteArray()
+    private val phoneHpkeFingerprint = MessageDigest.getInstance("SHA-256")
+        .digest(phoneHpkePublicKeyEncoded).joinToString("") { "%02x".format(it) }
 
     @Test
     fun newSessionGetsFreshHpkeBindingAndAuthenticTranscript() {
@@ -52,7 +59,8 @@ class WearableSecureHandshakeResponderTest {
             capabilities = setOf("SENTINEL_ALERTS"),
             challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
             issuedAtMs = 100_000L,
-            phoneHpkePublicKeyFingerprintSha256 = "1".repeat(64)
+            phoneHpkePublicKeyEncoded = phoneHpkePublicKeyEncoded,
+            phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint
         )
 
         val first = responder.respond(request)
@@ -61,6 +69,7 @@ class WearableSecureHandshakeResponderTest {
         assertNotEquals(first.response.wearableHpkePublicKeyFingerprintSha256,
             second.response.wearableHpkePublicKeyFingerprintSha256)
         assertFalse(first.session === second.session)
+        assertTrue(first.session.phonePublicKeyEncoded.contentEquals(phoneHpkePublicKeyEncoded))
 
         val identity = identityStore.snapshot()
         val canonical = WearableHandshakeTranscriptCodec.encode(
@@ -84,20 +93,15 @@ class WearableSecureHandshakeResponderTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun refusesProtocolV1OrMalformedPhoneHpkeBinding() {
-        val responder = WearableSecureHandshakeResponder(
-            WearableSecureIdentityStore(MemoryIdentityBackend()),
-            CountingHpkeFactory()
-        )
-        responder.respond(
-            WearableHandshakeRequest(
-                stableId = "watch-1",
-                sessionId = "session-1",
-                capabilities = setOf("SENTINEL_ALERTS"),
-                challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
-                issuedAtMs = 100_000L,
-                phoneHpkePublicKeyFingerprintSha256 = "invalid"
-            )
+    fun refusesMismatchedPhoneHpkeBinding() {
+        WearableHandshakeRequest(
+            stableId = "watch-1",
+            sessionId = "session-1",
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
+            phoneHpkePublicKeyEncoded = phoneHpkePublicKeyEncoded,
+            phoneHpkePublicKeyFingerprintSha256 = "1".repeat(64)
         )
     }
 
@@ -105,7 +109,7 @@ class WearableSecureHandshakeResponderTest {
     fun responseDoesNotExposePrivateKeyBytes() {
         val fields = WearableHandshakeResponse::class.java.declaredFields.map { it.name.lowercase() }
         assertFalse(fields.any { it.contains("private") || it.contains("secret") })
-        val sessionMethods = WearableHpkeRecipientSession::class.java.methods.map { it.name.lowercase() }
+        val sessionMethods = WearableHpkeDuplexSession::class.java.methods.map { it.name.lowercase() }
         assertFalse(sessionMethods.any { it.contains("private") || it.contains("secret") || it.contains("serialize") })
     }
 }
