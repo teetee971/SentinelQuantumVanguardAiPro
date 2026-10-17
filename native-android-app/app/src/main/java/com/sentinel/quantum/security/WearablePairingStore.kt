@@ -89,6 +89,7 @@ class WearablePairingStore(
     fun remove(stableId: String) {
         require(stableId.isNotBlank())
         backend.remove(stableId)
+        check(backend.load(stableId) == null) { "wearable pairing removal failed" }
     }
 
     private fun WearableTrustedIdentity.validatedCopy(): WearableTrustedIdentity {
