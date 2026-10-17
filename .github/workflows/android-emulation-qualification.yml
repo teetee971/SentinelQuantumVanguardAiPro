@@ -371,11 +371,11 @@ jobs:
             # Role establishment and proof are owned by the runtime scripts. They use the modern
             # get-role-holders shell command when available and a dumpsys-role proof on API 29.
             if [[ "$API_LEVEL" == "37" ]]; then
-              bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-              bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash -x ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash -x ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
             else
-              bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
-              bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash ../scripts/phone-core-emulator-flow.sh "$OUTPUT"
+              timeout --signal=TERM --kill-after=30s 600s bash ../scripts/phone-core-emulator-revocation-flow.sh "$OUTPUT"
             fi
           else
             adb shell am force-stop com.sentinel.quantum
@@ -411,12 +411,22 @@ jobs:
           set -euo pipefail
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
+          ADB_RECOVERY_READY=0
+          for _ in $(seq 1 10); do
+            if timeout 3s adb get-state 2>/dev/null | grep -Fxq 'device'; then
+              ADB_RECOVERY_READY=1
+              break
+            fi
+            timeout --signal=TERM --kill-after=1s 3s adb reconnect >/dev/null 2>&1 || true
+            sleep 2
+          done
+          printf '%s\n' "$ADB_RECOVERY_READY" > "$OUTPUT/adb-recovery-status.txt"
           LOGCAT_STATUS=0
-          adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
+          timeout --signal=TERM --kill-after=5s 20s adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
-          adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
-          adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
-          adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys telecom > "$OUTPUT/telecom.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys role > "$OUTPUT/roles.txt" 2>&1 || true
+          timeout --signal=TERM --kill-after=5s 20s adb shell dumpsys package com.sentinel.quantum > "$OUTPUT/package.txt" 2>&1 || true
 
           if [[ -s app/build/outputs/apk/debug/app-debug.apk ]]; then
             sha256sum app/build/outputs/apk/debug/app-debug.apk > "$OUTPUT/apk.sha256"
@@ -536,10 +546,13 @@ jobs:
           const runtimePermissionDeniedEvidence =
             revocation?.effective_permission_probe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' &&
             /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-runtime-permission-denied-after-launch.txt'));
+          const phoneStatePermissionDeniedEvidence =
+            revocation?.effective_permission_probe === 'READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED' &&
+            /android\.permission\.READ_PHONE_STATE:\s+granted=false/i.test(read('read-phone-state-runtime-permission-denied-after-launch.txt'));
           const revocationSchemaSupported = revocation?.schema_version === 2 || revocation?.schema_version === 3;
           const effectivePermissionEvidenceValid = revocation?.schema_version === 2
             ? appOpDeniedEvidence
-            : appOpDeniedEvidence || runtimePermissionDeniedEvidence;
+            : appOpDeniedEvidence || runtimePermissionDeniedEvidence || phoneStatePermissionDeniedEvidence;
           const effectivePermissionDenied = modernPhoneCore &&
             revocationSchemaSupported &&
             revocation?.effective_permission_denial_fail_closed === true &&
@@ -599,9 +612,7 @@ jobs:
             'cold_install_and_relaunch',
             'no_crash_or_anr'
           ];
-          const incomingRequirement = api === 37 && api37IncomingAnswerEmulatorLimitation
-            ? ['api37_incoming_answer_emulator_limitation']
-            : ['incoming_call_telecom_flow'];
+          const incomingRequirement = ['incoming_call_telecom_flow'];
           const required = api === 24
             ? [...commonRequired, 'min_sdk_cold_launch']
             : [
