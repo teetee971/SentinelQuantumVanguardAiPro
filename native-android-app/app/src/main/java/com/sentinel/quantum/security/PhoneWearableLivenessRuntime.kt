@@ -195,7 +195,7 @@ internal class PhoneWearableLivenessRuntime(
         activeByNode[nodeId]?.sessionId == sessionId
 
     private fun revokeFailedProbe(nodeId: String, sessionId: String, sequenceNumber: Long) {
-        val removed = synchronized(this) {
+        synchronized(this) {
             val active = activeByNode[nodeId] ?: return
             if (active.sessionId != sessionId) return
             val pending = active.pending ?: return
@@ -203,7 +203,6 @@ internal class PhoneWearableLivenessRuntime(
             pending.nonce.fill(0)
             activeByNode.remove(nodeId)
         }
-        removed.pending?.nonce?.fill(0)
         val now = clockMs()
         revokeAuthenticatedChannel(if (now >= 0) now else 0L)
     }
