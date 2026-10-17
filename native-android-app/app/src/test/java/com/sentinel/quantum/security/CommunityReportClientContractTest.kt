@@ -67,7 +67,15 @@ class CommunityReportClientContractTest {
             client = noNetworkClient
         )
 
-        listOf("", "F", "FRA", "9F", "F-").forEach { invalidCountry ->
+        listOf(
+            "", "F", "FRA", "9F", "F-",
+            "f\u0131",       // Unicode dotless i: uppercases to FI
+            "\u017Fe",       // Unicode long s: uppercases to SE
+            "\uFB00",        // Unicode ligature: uppercases to FF
+            "\u00A0FR\u00A0", // Non-ASCII surrounding spaces
+            "F\uFF32",       // Fullwidth R
+            "F\nR"           // Embedded newline
+        ).forEach { invalidCountry ->
             assertThrows(IllegalArgumentException::class.java) {
                 subject.submit(
                     callerNumber = "+33612345678",
