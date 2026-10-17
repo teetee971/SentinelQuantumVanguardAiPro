@@ -99,6 +99,20 @@ function appendText(parent, tag, text, className = '') {
   return node;
 }
 
+function updateSourceTruth(snapshot) {
+  const badge = document.getElementById('fsma-source-badge');
+  const freshness = document.getElementById('fsma-source-freshness');
+  if (badge) {
+    badge.className = snapshot ? 'badge active' : 'badge pending';
+    badge.textContent = snapshot ? 'Disponible' : 'Non chargé';
+  }
+  if (freshness) {
+    freshness.textContent = snapshot
+      ? `Snapshot reviewé chargé · ${snapshot.warnings.length} avertissement(s) · génération ${snapshot.generatedAt || 'inconnue'}`
+      : 'Aucun snapshot FSMA validé n’est actuellement chargé dans cette version.';
+  }
+}
+
 async function renderFsmaAdvisory(message, output, expectedGeneration) {
   const snapshot = await loadSnapshot();
   if (expectedGeneration !== generation || !output?.isConnected) return;
@@ -138,6 +152,7 @@ function initialize() {
   const output = document.getElementById('sms-result');
   if (!form || !input || !output) return;
 
+  loadSnapshot().then(updateSourceTruth);
   form.addEventListener('submit', () => {
     const message = input.value;
     const expectedGeneration = ++generation;
