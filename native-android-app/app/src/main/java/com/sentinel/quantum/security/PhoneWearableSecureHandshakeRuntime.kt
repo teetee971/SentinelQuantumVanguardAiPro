@@ -212,7 +212,10 @@ internal class PhoneWearableSecureHandshakeRuntime(
         val trustExistedBefore = try {
             pairingStore.load(stableId) != null
         } catch (_: Exception) {
-            return rejected(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED)
+            return terminalConfirmationFailure(
+                pending,
+                WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED
+            )
         }
         val result = try {
             coordinator.acceptPresentedIdentity(
@@ -228,12 +231,19 @@ internal class PhoneWearableSecureHandshakeRuntime(
                 )
             )
         } catch (_: Exception) {
-            return rejected(WearableSecureHandshakeRejection.IDENTITY_CONFIRMATION_MISMATCH)
+            return terminalConfirmationFailure(
+                pending,
+                WearableSecureHandshakeRejection.IDENTITY_CONFIRMATION_MISMATCH
+            )
         }
         if (result.state == WearableSecureHandshakeState.ACTIVE && !trustExistedBefore) {
             pending.trustCreatedThisAttempt = true
         }
-        return finalizeIfActive(pending, result)
+        val finalized = finalizeIfActive(pending, result)
+        if (finalized.state == WearableSecureHandshakeState.REJECTED) {
+            removePendingAndRevoke(pending.nodeId, pending.context.attempt.attemptId)
+        }
+        return finalized
     }
 
     fun reject(stableId: String): Boolean {
@@ -282,6 +292,14 @@ internal class PhoneWearableSecureHandshakeRuntime(
         }
         synchronized(this) { pendingByNode.remove(pending.nodeId) }
         return result
+    }
+
+    private fun terminalConfirmationFailure(
+        pending: Pending,
+        reason: WearableSecureHandshakeRejection
+    ): WearableSecureHandshakeResult {
+        removePendingAndRevoke(pending.nodeId, pending.context.attempt.attemptId)
+        return rejected(reason)
     }
 
     private fun removePendingAndRevoke(nodeId: String, attemptId: String) {
