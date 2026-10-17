@@ -27,6 +27,8 @@ test('consented caller reputation is published into Intelligence Core after UI e
     /fun publishRemoteReputation\s*\(/,
     'Intelligence Core needs a bounded reputation publication entry point'
   );
+  assert.match(runtime, /fun prepareRemoteReputation\s*\(/);
+  assert.match(runtime, /fun publishPreparedRemoteReputation\s*\(/);
   assert.match(
     runtime,
     /ReputationEvidenceAdapter\.fromRemoteResult/,
@@ -39,18 +41,20 @@ test('consented caller reputation is published into Intelligence Core after UI e
   );
   assert.match(
     callerId,
-    /IntelligenceCoreRuntime\.publishRemoteReputation/,
-    'Caller ID must publish the consented result into the shared core'
+    /IntelligenceCoreRuntime\.publishPreparedRemoteReputation/,
+    'Caller ID must enqueue only the consented prepared result'
   );
 });
 
 test('caller reputation persistence and publication share the settings acceptance transaction', () => {
   const callerId = readFileSync(CALLER_ID_PATH, 'utf8');
   const settings = readFileSync(SETTINGS_PATH, 'utf8');
+  const prepare = callerId.indexOf('IntelligenceCoreRuntime.prepareRemoteReputation(');
   const guardStart = callerId.indexOf('settingsStore.acceptCallerReputationResult(');
   const persist = callerId.indexOf('.persist(number, result');
-  const publish = callerId.indexOf('IntelligenceCoreRuntime.publishRemoteReputation(');
+  const publish = callerId.indexOf('IntelligenceCoreRuntime.publishPreparedRemoteReputation(');
 
+  assert.ok(prepare >= 0 && prepare < guardStart, 'KeyStore fingerprint preparation must finish before the consent lock');
   assert.ok(guardStart >= 0, 'Caller ID must enter the shared consent transaction');
   assert.ok(persist >= 0, 'caller reputation must persist the bounded result');
   assert.ok(publish > persist && persist > guardStart, 'publication must follow persistence inside acceptance');
@@ -65,13 +69,37 @@ test('caller reputation persistence and publication share the settings acceptanc
   );
   assert.match(
     publicationWindow,
-    /publish\s*=\s*\{[\s\S]*?IntelligenceCoreRuntime\.publishRemoteReputation\(/,
+    /publish\s*=\s*\{[\s\S]*?IntelligenceCoreRuntime\.publishPreparedRemoteReputation\(preparedReputation\)/,
     'Intelligence Core publication must run inside the same acceptance transaction'
   );
   assert.match(
     settings,
     /fun\s*<T\s*:\s*Any>\s+acceptCallerReputationResult\s*\(/,
     'SettingsStore must own the acceptance boundary'
+  );
+});
+
+test('prepared Core publication only enqueues and cannot initialize the Android Keystore under consent lock', () => {
+  const runtime = readFileSync(RUNTIME_PATH, 'utf8');
+  const preparation = runtime.indexOf('fun prepareRemoteReputation(');
+  const publication = runtime.indexOf('fun publishPreparedRemoteReputation(');
+  const nextMember = runtime.indexOf('\n    /**', publication);
+
+  assert.ok(preparation >= 0 && publication > preparation, 'separate preparation and publication APIs are required');
+  assert.match(
+    runtime.slice(preparation, publication),
+    /stateFor\([\s\S]*?fingerprinter\.fingerprint\([\s\S]*?ReputationEvidenceAdapter\.fromRemoteResult/,
+    'Core runtime and fingerprint work belong to preparation'
+  );
+  assert.match(
+    runtime.slice(publication, nextMember > publication ? nextMember : undefined),
+    /prepared\?\.enqueue\(\)/,
+    'publication inside the lock must use the already prepared event'
+  );
+  assert.match(
+    runtime,
+    /fun enqueue\(\): PublishResult = sink\.publish\(event\)/,
+    'prepared publication must be only a bounded sink enqueue'
   );
 });
 

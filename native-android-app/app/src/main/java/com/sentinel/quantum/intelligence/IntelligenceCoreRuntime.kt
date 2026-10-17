@@ -121,34 +121,52 @@ object IntelligenceCoreRuntime {
         runtime.sink.publish(intelligenceEvent)
     }.getOrDefault(PublishResult.REJECTED)
 
+    /** Contains only bounded evidence and a ready event queue; no raw caller number is retained. */
+    class PreparedRemoteReputation internal constructor(
+        private val sink: IntelligenceEventSink,
+        private val event: IntelligenceEvent
+    ) {
+        internal fun enqueue(): PublishResult = sink.publish(event)
+    }
+
     /**
-     * Publishes an explicitly consented post-screening reputation result into the shared core.
-     *
-     * The caller number is transient input only. The persisted event contains the existing
-     * device-bound fingerprint and bounded reputation evidence; remote flags, warning copy and
-     * raw number are not stored. This method must never be called from the Telecom callback before
-     * respondToCall().
+     * Performs fingerprint/key and event preparation before the consent acceptance transaction.
+     * This is post-screening work on an IO dispatcher, never part of the Telecom response path.
      */
-    fun publishRemoteReputation(
+    fun prepareRemoteReputation(
         context: Context,
         rawNumber: String?,
         result: CallerReputationClient.Result
-    ): PublishResult = runCatching {
+    ): PreparedRemoteReputation? = runCatching {
         val normalizedNumber = CallRuleEngine.normalizeNumber(rawNumber)
-            ?: return@runCatching PublishResult.REJECTED
+            ?: return@runCatching null
         val runtime = stateFor(context.applicationContext)
         val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
-            ?: return@runCatching PublishResult.REJECTED
+            ?: return@runCatching null
         val identityKey = identityKeyForFingerprint(fingerprint)
-            ?: return@runCatching PublishResult.REJECTED
+            ?: return@runCatching null
         val intelligenceEvent = ReputationEvidenceAdapter.fromRemoteResult(
             eventId = reputationEventId(fingerprint, result),
             identityKey = identityKey,
             result = result,
             sourceLabel = REMOTE_REPUTATION_SOURCE
         )
-        runtime.sink.publish(intelligenceEvent)
-    }.getOrDefault(PublishResult.REJECTED)
+        PreparedRemoteReputation(runtime.sink, intelligenceEvent)
+    }.getOrNull()
+
+    /** Bounded queue submission only; safe to call while the local consent lock is held. */
+    fun publishPreparedRemoteReputation(prepared: PreparedRemoteReputation?): PublishResult =
+        runCatching { prepared?.enqueue() ?: PublishResult.REJECTED }
+            .getOrDefault(PublishResult.REJECTED)
+
+    /** Compatibility entry point for callers that do not need a consent transaction. */
+    fun publishRemoteReputation(
+        context: Context,
+        rawNumber: String?,
+        result: CallerReputationClient.Result
+    ): PublishResult = publishPreparedRemoteReputation(
+        prepareRemoteReputation(context, rawNumber, result)
+    )
 
     /**
      * Publishes the outcome of an explicit user community report as context only.

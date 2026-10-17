@@ -195,6 +195,11 @@ class CallerIdActivity : ComponentActivity() {
                                     privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                     explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                 )
+                                val preparedReputation = IntelligenceCoreRuntime.prepareRemoteReputation(
+                                    context = applicationContext,
+                                    rawNumber = number,
+                                    result = result
+                                )
                                 settingsStore.acceptCallerReputationResult(
                                     result = result,
                                     persist = {
@@ -205,11 +210,7 @@ class CallerIdActivity : ComponentActivity() {
                                         ).persist(number, result)
                                     },
                                     publish = {
-                                        IntelligenceCoreRuntime.publishRemoteReputation(
-                                            context = applicationContext,
-                                            rawNumber = number,
-                                            result = result
-                                        )
+                                        IntelligenceCoreRuntime.publishPreparedRemoteReputation(preparedReputation)
                                     }
                                 )
                             }.getOrNull()
