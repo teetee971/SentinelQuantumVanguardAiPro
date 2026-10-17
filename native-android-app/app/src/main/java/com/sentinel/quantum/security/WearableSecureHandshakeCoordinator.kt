@@ -14,7 +14,8 @@ data class WearableSecureHandshakeContext(
     val challenge: WearableHandshakeChallenge,
     val expectedIdentity: WearableIdentityProof?,
     val session: WearableSession,
-    val phoneHpkePublicKeyFingerprintSha256: String
+    val phoneHpkePublicKeyFingerprintSha256: String,
+    val unboundIdentity: Boolean = false
 )
 
 data class WearableIdentityPairingConfirmation(
@@ -31,11 +32,7 @@ data class WearableIdentityPairingConfirmation(
     }
 }
 
-enum class WearableSecureHandshakeState {
-    PENDING_CONFIRMATION,
-    ACTIVE,
-    REJECTED
-}
+enum class WearableSecureHandshakeState { PENDING_CONFIRMATION, ACTIVE, REJECTED }
 
 enum class WearableSecureHandshakeRejection {
     INVALID_SIGNATURE,
@@ -82,14 +79,12 @@ class WearableSecureHandshakeCoordinator private constructor(
         session: WearableSession,
         phoneHpkePublicKeyFingerprintSha256: String
     ): WearableSecureHandshakeContext {
-        require(expectedIdentity.cryptographicallyBound) {
-            "secure wearable handshake requires a bound application identity"
-        }
-        return beginInternal(
-            stableId = expectedIdentity.stableId,
-            expectedIdentity = expectedIdentity,
-            session = session,
-            phoneHpkePublicKeyFingerprintSha256 = phoneHpkePublicKeyFingerprintSha256
+        require(expectedIdentity.cryptographicallyBound)
+        return beginBound(
+            expectedIdentity.stableId,
+            expectedIdentity,
+            session,
+            phoneHpkePublicKeyFingerprintSha256
         )
     }
 
@@ -100,84 +95,88 @@ class WearableSecureHandshakeCoordinator private constructor(
     ): WearableSecureHandshakeContext {
         val store = pairingStore ?: throw IllegalStateException("pairing store unavailable")
         val trusted = store.load(stableId)
-        val expected = trusted?.let {
-            WearableIdentityProof(
-                stableId = it.stableId,
-                source = WearableIdentitySource.APPLICATION_PUBLIC_KEY,
-                keyFingerprintSha256 = it.keyFingerprintSha256,
-                verifiedAtMs = it.confirmedAtMs
-            )
-        }
-        return beginInternal(stableId, expected, session, phoneHpkePublicKeyFingerprintSha256)
+        val expected = trusted?.toIdentityProof()
+        return beginBound(stableId, expected, session, phoneHpkePublicKeyFingerprintSha256)
     }
 
-    private fun beginInternal(
+    /** First contact: no Data Layer identifier is promoted to Sentinel identity. */
+    fun beginFirstPairing(
+        session: WearableSession,
+        phoneHpkePublicKeyFingerprintSha256: String
+    ): WearableSecureHandshakeContext {
+        require(pairingStore != null) { "pairing store unavailable" }
+        validateSessionAndPhoneBinding(session, phoneHpkePublicKeyFingerprintSha256)
+        val provisionalId = "unbound-${UUID.randomUUID()}"
+        val attempt = WearableHandshakeAttempt(
+            stableId = provisionalId,
+            attemptId = UUID.randomUUID().toString(),
+            startedAtMs = session.establishedAtMs
+        )
+        val unbound = replayGuard.issueUnbound()
+        return WearableSecureHandshakeContext(
+            attempt = attempt,
+            challenge = WearableHandshakeChallenge(
+                nonce = unbound.nonce,
+                stableId = provisionalId,
+                issuedAtMs = unbound.issuedAtMs,
+                expiresAtMs = unbound.expiresAtMs
+            ),
+            expectedIdentity = null,
+            session = immutableSession(session),
+            phoneHpkePublicKeyFingerprintSha256 = phoneHpkePublicKeyFingerprintSha256,
+            unboundIdentity = true
+        )
+    }
+
+    private fun beginBound(
         stableId: String,
         expectedIdentity: WearableIdentityProof?,
         session: WearableSession,
         phoneHpkePublicKeyFingerprintSha256: String
     ): WearableSecureHandshakeContext {
         require(stableId.isNotBlank())
-        require(session.protocolVersion == SECURE_PROTOCOL_VERSION) {
-            "secure wearable handshake requires protocol v2"
-        }
-        require(phoneHpkePublicKeyFingerprintSha256.matches(SHA256_HEX)) {
-            "phone HPKE fingerprint must be lowercase SHA-256 hex"
-        }
+        validateSessionAndPhoneBinding(session, phoneHpkePublicKeyFingerprintSha256)
         val attempt = WearableHandshakeAttempt(
             stableId = stableId,
             attemptId = UUID.randomUUID().toString(),
             startedAtMs = session.establishedAtMs
         )
         sessionAuthority.beginHandshake(attempt)
-        val challenge = replayGuard.issue(stableId)
         return WearableSecureHandshakeContext(
             attempt = attempt,
-            challenge = challenge,
+            challenge = replayGuard.issue(stableId),
             expectedIdentity = expectedIdentity,
-            session = session.copy(
-                negotiatedCapabilities = java.util.Collections.unmodifiableSet(
-                    LinkedHashSet(session.negotiatedCapabilities)
-                )
-            ),
+            session = immutableSession(session),
             phoneHpkePublicKeyFingerprintSha256 = phoneHpkePublicKeyFingerprintSha256
         )
     }
 
-    /** Known-pair/test path using an already-bound identity and verifier. */
     fun accept(
         context: WearableSecureHandshakeContext,
         candidate: WearableHandshakeCandidate,
         wearableHpkePublicKeyEncoded: ByteArray,
         pairingConfirmation: PairingConfirmation?
     ): WearableSecureHandshakeResult {
+        if (context.unboundIdentity) return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
         val expected = context.expectedIdentity
             ?: return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
         val verifier = fixedVerifier
             ?: return rejected(WearableSecureHandshakeRejection.INVALID_SIGNATURE)
-        val observedWearableFingerprint = validateTransportBindings(
-            context, candidate, wearableHpkePublicKeyEncoded
-        ) ?: return rejected(bindingFailure(context, candidate, wearableHpkePublicKeyEncoded))
+        val observedWearableFingerprint = validateTransportBindings(context, candidate, wearableHpkePublicKeyEncoded)
+            ?: return rejected(bindingFailure(context, candidate))
         val proof = verifier.verify(candidate)
             ?: return rejected(WearableSecureHandshakeRejection.INVALID_SIGNATURE)
         if (!verifiedBindingsMatch(context, proof, observedWearableFingerprint)) {
             return rejected(WearableSecureHandshakeRejection.INSECURE_PROTOCOL)
         }
         val policy = WearableHandshakePolicy.evaluate(expected, context.session, proof, pairingConfirmation)
-        if (policy == WearableHandshakeDecision.USER_CONFIRMATION_REQUIRED) {
-            return pending(proof)
-        }
+        if (policy == WearableHandshakeDecision.USER_CONFIRMATION_REQUIRED) return pending(proof)
         if (policy != WearableHandshakeDecision.ACCEPT) {
             return rejected(WearableSecureHandshakeRejection.POLICY_REJECTED)
         }
         return consumeAndActivate(context, candidate, proof, wearableHpkePublicKeyEncoded)
     }
 
-    /**
-     * Production first-pair/reconnect path. The presented Ed25519 key is first treated only as a
-     * self-consistent signing key. It becomes a trust anchor only after a fingerprint-bound user
-     * confirmation is durably persisted. An existing anchor can never be silently replaced.
-     */
     fun acceptPresentedIdentity(
         context: WearableSecureHandshakeContext,
         candidate: WearableHandshakeCandidate,
@@ -190,14 +189,14 @@ class WearableSecureHandshakeCoordinator private constructor(
             return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
         }
         val identityFingerprint = sha256Hex(identityPublicKeyX509)
-        if (!constantTimeEquals(identityFingerprint, candidate.keyFingerprintSha256) ||
-            candidate.stableId != context.attempt.stableId
-        ) {
+        if (!constantTimeEquals(identityFingerprint, candidate.keyFingerprintSha256)) {
             return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
         }
-        val observedWearableFingerprint = validateTransportBindings(
-            context, candidate, wearableHpkePublicKeyEncoded
-        ) ?: return rejected(bindingFailure(context, candidate, wearableHpkePublicKeyEncoded))
+        if (!context.unboundIdentity && candidate.stableId != context.attempt.stableId) {
+            return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
+        }
+        val observedWearableFingerprint = validateTransportBindings(context, candidate, wearableHpkePublicKeyEncoded)
+            ?: return rejected(bindingFailure(context, candidate))
 
         val proof = runCatching {
             Ed25519WearableHandshakeVerifier(identityPublicKeyX509).verify(candidate)
@@ -219,10 +218,7 @@ class WearableSecureHandshakeCoordinator private constructor(
             val userConfirmation = confirmation ?: return pending(proof)
             if (userConfirmation.stableId != candidate.stableId ||
                 userConfirmation.sessionId != context.session.sessionId ||
-                !constantTimeEquals(
-                    userConfirmation.identityKeyFingerprintSha256,
-                    identityFingerprint
-                ) ||
+                !constantTimeEquals(userConfirmation.identityKeyFingerprintSha256, identityFingerprint) ||
                 userConfirmation.confirmedAtMs < context.challenge.issuedAtMs ||
                 userConfirmation.confirmedAtMs > context.challenge.expiresAtMs
             ) {
@@ -230,32 +226,25 @@ class WearableSecureHandshakeCoordinator private constructor(
             }
             try {
                 store.confirm(
-                    stableId = candidate.stableId,
-                    publicKeyX509 = identityPublicKeyX509,
-                    keyFingerprintSha256 = identityFingerprint,
-                    confirmedAtMs = userConfirmation.confirmedAtMs
+                    candidate.stableId,
+                    identityPublicKeyX509,
+                    identityFingerprint,
+                    userConfirmation.confirmedAtMs
                 )
             } catch (_: RuntimeException) {
                 return rejected(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED)
             }
         }
 
-        val expected = WearableIdentityProof(
-            stableId = trusted.stableId,
-            source = WearableIdentitySource.APPLICATION_PUBLIC_KEY,
-            keyFingerprintSha256 = trusted.keyFingerprintSha256,
-            verifiedAtMs = trusted.confirmedAtMs
-        )
-        val durableConfirmation = PairingConfirmation(
-            stableId = trusted.stableId,
-            sessionId = context.session.sessionId,
-            confirmedAtMs = trusted.confirmedAtMs
-        )
         val policy = WearableHandshakePolicy.evaluate(
-            expected = expected,
+            expected = trusted.toIdentityProof(),
             session = context.session,
             verifiedProof = proof,
-            pairingConfirmation = durableConfirmation
+            pairingConfirmation = PairingConfirmation(
+                stableId = trusted.stableId,
+                sessionId = context.session.sessionId,
+                confirmedAtMs = trusted.confirmedAtMs
+            )
         )
         if (policy != WearableHandshakeDecision.ACCEPT) {
             return rejected(WearableSecureHandshakeRejection.POLICY_REJECTED)
@@ -274,22 +263,18 @@ class WearableSecureHandshakeCoordinator private constructor(
                 candidate.phoneHpkePublicKeyFingerprintSha256
             )
         ) return null
-        if (wearableHpkePublicKeyEncoded.isEmpty() ||
-            wearableHpkePublicKeyEncoded.size > MAX_HPKE_PUBLIC_KEY_BYTES
-        ) return null
-        val observed = sha256Hex(wearableHpkePublicKeyEncoded)
-        return observed.takeIf {
-            constantTimeEquals(it, candidate.wearableHpkePublicKeyFingerprintSha256)
+        if (wearableHpkePublicKeyEncoded.isEmpty() || wearableHpkePublicKeyEncoded.size > MAX_HPKE_PUBLIC_KEY_BYTES) {
+            return null
         }
+        val observed = sha256Hex(wearableHpkePublicKeyEncoded)
+        return observed.takeIf { constantTimeEquals(it, candidate.wearableHpkePublicKeyFingerprintSha256) }
     }
 
     private fun bindingFailure(
         context: WearableSecureHandshakeContext,
-        candidate: WearableHandshakeCandidate,
-        wearableHpkePublicKeyEncoded: ByteArray
+        candidate: WearableHandshakeCandidate
     ): WearableSecureHandshakeRejection = when {
-        candidate.protocolVersion != SECURE_PROTOCOL_VERSION ->
-            WearableSecureHandshakeRejection.INSECURE_PROTOCOL
+        candidate.protocolVersion != SECURE_PROTOCOL_VERSION -> WearableSecureHandshakeRejection.INSECURE_PROTOCOL
         !constantTimeEquals(
             context.phoneHpkePublicKeyFingerprintSha256,
             candidate.phoneHpkePublicKeyFingerprintSha256
@@ -302,10 +287,7 @@ class WearableSecureHandshakeCoordinator private constructor(
         proof: VerifiedWearableHandshake,
         wearableFingerprint: String
     ): Boolean = proof.secureSessionBound &&
-        constantTimeEquals(
-            context.phoneHpkePublicKeyFingerprintSha256,
-            proof.phoneHpkePublicKeyFingerprintSha256
-        ) &&
+        constantTimeEquals(context.phoneHpkePublicKeyFingerprintSha256, proof.phoneHpkePublicKeyFingerprintSha256) &&
         constantTimeEquals(wearableFingerprint, proof.wearableHpkePublicKeyFingerprintSha256)
 
     private fun consumeAndActivate(
@@ -317,7 +299,16 @@ class WearableSecureHandshakeCoordinator private constructor(
         if (!replayGuard.consume(candidate)) {
             return rejected(WearableSecureHandshakeRejection.REPLAY_REJECTED)
         }
-        val activation = sessionAuthority.activate(context.attempt, context.session, proof)
+        val attempt = if (context.unboundIdentity) {
+            WearableHandshakeAttempt(
+                stableId = candidate.stableId,
+                attemptId = context.attempt.attemptId,
+                startedAtMs = context.attempt.startedAtMs
+            ).also(sessionAuthority::beginHandshake)
+        } else {
+            context.attempt
+        }
+        val activation = sessionAuthority.activate(attempt, context.session, proof)
         if (activation != WearableSessionActivationDecision.ACTIVATED) {
             return rejected(WearableSecureHandshakeRejection.AUTHORITY_REJECTED)
         }
@@ -329,23 +320,35 @@ class WearableSecureHandshakeCoordinator private constructor(
         )
     }
 
+    private fun WearableTrustedIdentity.toIdentityProof() = WearableIdentityProof(
+        stableId = stableId,
+        source = WearableIdentitySource.APPLICATION_PUBLIC_KEY,
+        keyFingerprintSha256 = keyFingerprintSha256,
+        verifiedAtMs = confirmedAtMs
+    )
+
+    private fun immutableSession(session: WearableSession): WearableSession = session.copy(
+        negotiatedCapabilities = java.util.Collections.unmodifiableSet(LinkedHashSet(session.negotiatedCapabilities))
+    )
+
+    private fun validateSessionAndPhoneBinding(session: WearableSession, fingerprint: String) {
+        require(session.protocolVersion == SECURE_PROTOCOL_VERSION) { "secure wearable handshake requires protocol v2" }
+        require(fingerprint.matches(SHA256_HEX)) { "phone HPKE fingerprint must be lowercase SHA-256 hex" }
+    }
+
     private fun pending(proof: VerifiedWearableHandshake) = WearableSecureHandshakeResult(
         state = WearableSecureHandshakeState.PENDING_CONFIRMATION,
         verifiedProof = proof
     )
 
-    private fun rejected(reason: WearableSecureHandshakeRejection) =
-        WearableSecureHandshakeResult(
-            state = WearableSecureHandshakeState.REJECTED,
-            rejection = reason
-        )
+    private fun rejected(reason: WearableSecureHandshakeRejection) = WearableSecureHandshakeResult(
+        state = WearableSecureHandshakeState.REJECTED,
+        rejection = reason
+    )
 
     private fun constantTimeEquals(expected: String, actual: String?): Boolean {
         if (actual == null) return false
-        return MessageDigest.isEqual(
-            expected.toByteArray(Charsets.US_ASCII),
-            actual.toByteArray(Charsets.US_ASCII)
-        )
+        return MessageDigest.isEqual(expected.toByteArray(Charsets.US_ASCII), actual.toByteArray(Charsets.US_ASCII))
     }
 
     private fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
