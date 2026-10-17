@@ -25,6 +25,23 @@ class SentinelDeviceUtilitiesOrchestratorTest {
         assertEquals(1, discovery.plan.directlyExecutableCount)
         assertEquals(42L, discovery.plan.knownReclaimableBytes)
         assertEquals(0, executions)
+        assertTrue(discovery.observedSuccessfully)
+    }
+
+    @Test
+    fun failedDiscoveryDoesNotPublishRuntimeObservation() {
+        var observed = 0
+        val orchestrator = SentinelDeviceUtilitiesOrchestrator(
+            discoverCandidates = { error("collector failed") },
+            executeCandidate = { error("must not execute") },
+            publishObserved = { observed++ }
+        )
+
+        val discovery = orchestrator.discover()
+
+        assertEquals(0, observed)
+        assertEquals(0, discovery.plan.candidateCount)
+        assertFalse(discovery.observedSuccessfully)
     }
 
     @Test
