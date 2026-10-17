@@ -46,7 +46,7 @@ class IntegrationRegistryTest {
         )
         assertTrue(registry.publish(first))
         assertTrue(registry.publish(first))
-        assertFalse(
+        assertTrue(
             registry.publish(
                 first.copy(
                     status = IntegrationStatus(
@@ -55,6 +55,39 @@ class IntegrationRegistryTest {
                     )
                 )
             )
+        )
+        assertEquals(
+            IntegrationState.PHYSICAL_REQUIRED,
+            registry.snapshot(nowMs = 5_000L).status(IntegrationCapabilityId.VPN_RUNTIME).state
+        )
+        assertFalse(registry.publish(first))
+    }
+
+    @Test
+    fun conflictingRestrictedStatesAtSameTimestampRemainRejected() {
+        val registry = IntegrationRegistry(baseline)
+        val first = IntegrationObservation(
+            IntegrationCapabilityId.VPN_RUNTIME,
+            IntegrationStatus(
+                IntegrationState.PHYSICAL_REQUIRED,
+                IntegrationDiagnosticReason.PHYSICAL_VALIDATION_REQUIRED
+            ),
+            observedAtMs = 5_000L
+        )
+        assertTrue(registry.publish(first))
+        assertFalse(
+            registry.publish(
+                first.copy(
+                    status = IntegrationStatus(
+                        IntegrationState.LOCKED_EXTERNAL_DEPENDENCY,
+                        IntegrationDiagnosticReason.RUNTIME_NOT_OBSERVED
+                    )
+                )
+            )
+        )
+        assertEquals(
+            IntegrationState.PHYSICAL_REQUIRED,
+            registry.snapshot(nowMs = 5_000L).status(IntegrationCapabilityId.VPN_RUNTIME).state
         )
     }
 
