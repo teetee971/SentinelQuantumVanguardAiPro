@@ -1,6 +1,11 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationDiagnosticReason
+import com.sentinel.quantum.integration.IntegrationState
+import com.sentinel.quantum.integration.IntegrationStatus
+import com.sentinel.quantum.integration.IntegrationTruthRuntime
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -81,6 +86,15 @@ class SentinelSystemDoctor(
             SentinelAppRiskCorrelation.Input(appContext.packageName, confirmedSignals, startedAt)
         )
 
-        return Scan(startedAt, clockMillis(), evidence.toList())
+        val completedAt = clockMillis()
+        IntegrationTruthRuntime.publish(
+            capabilityId = IntegrationCapabilityId.SYSTEM_DOCTOR_RELEASE_EVIDENCE,
+            status = IntegrationStatus(
+                IntegrationState.PHYSICAL_REQUIRED,
+                IntegrationDiagnosticReason.PHYSICAL_VALIDATION_REQUIRED
+            ),
+            observedAtMs = completedAt
+        )
+        return Scan(startedAt, completedAt, evidence.toList())
     }
 }
