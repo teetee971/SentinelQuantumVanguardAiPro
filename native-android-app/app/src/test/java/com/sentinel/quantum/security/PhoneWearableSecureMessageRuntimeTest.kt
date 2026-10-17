@@ -44,6 +44,54 @@ class PhoneWearableSecureMessageRuntimeTest {
         assertFalse(gate.activate("node-1", "untrusted-watch", session, byteArrayOf(2), material))
         assertFalse(gate.handleFrame("node-1", WearableProtocolV2.Frame(byteArrayOf(1))))
     }
+    @Test fun revokedAndAbsentLivenessNeverDecryptsApplicationFrames() {
+        val authority = WearableSessionAuthority()
+        val session = WearableSession("session-2", 2, setOf(WearableCapability.CONNECTION_STATE), 100L)
+        val attempt = WearableHandshakeAttempt("watch-2", "attempt-2", 100L)
+        authority.beginHandshake(attempt)
+        assertEquals(
+            WearableSessionActivationDecision.ACTIVATED,
+            authority.activate(
+                attempt, session,
+                VerifiedWearableHandshakeFixture.create(
+                    "watch-2", "a".repeat(64), "session-2", 2, setOf("CONNECTION_STATE")
+                )
+            )
+        )
+        var decryptions = 0
+        val material = object : PhoneWearableHpkeMaterial {
+            override val publicKeyEncoded = byteArrayOf(1)
+            override val fingerprintSha256 = "0".repeat(64)
+            override fun encryptForWearable(
+                wearablePublicKeyEncoded: ByteArray,
+                plaintext: ByteArray,
+                contextInfo: ByteArray
+            ): ByteArray = plaintext
+            override fun decryptFromWearable(
+                ciphertext: ByteArray,
+                contextInfo: ByteArray
+            ): ByteArray {
+                decryptions++
+                return ciphertext
+            }
+        }
+        var freshProof = false
+        val gate = PhoneWearableSecureMessageRuntime(
+            authority = authority,
+            livenessActive = { _, _ -> true },
+            freshAuthenticatedProof = { _, _ -> freshProof },
+            clockMs = { 500L }
+        )
+        org.junit.Assert.assertTrue(gate.activate("node-2", "watch-2", session, byteArrayOf(2), material))
+        val frame = WearableProtocolV2.Frame(byteArrayOf(1, 2))
+        assertFalse(gate.handleFrame("node-2", frame))
+        freshProof = true
+        assertFalse(gate.handleFrame("wrong-node", frame))
+        authority.revoke("watch-2")
+        assertFalse(gate.handleFrame("node-2", frame))
+        assertEquals(0, decryptions)
+    }
+
     @Test fun activeAuthorityWithFreshLivenessDoesNotAcceptInvalidCiphertext() {
         val authority = WearableSessionAuthority()
         val session = WearableSession(
