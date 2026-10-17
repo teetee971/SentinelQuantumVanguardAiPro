@@ -13,6 +13,37 @@ import com.sentinel.quantum.wearable.contract.WearableProtocolV2
  * truth and never treats Data Layer reachability as Sentinel authentication.
  */
 class SentinelWearListenerService : WearableListenerService() {
+    private var secureFrameHandler: WearableSecureFrameHandler? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        val responder = WearableSecureHandshakeResponder(
+            WearableSecureIdentityStore.forApplicationContext(applicationContext)
+        )
+        val messageClient = Wearable.getMessageClient(this)
+        val handler = WearableSecureChallengeFrameHandler(
+            respond = responder::respond,
+            sender = WearableSecureHandshakeSender { targetNodeId, path, payload, onSuccess ->
+                messageClient.sendMessage(targetNodeId, path, payload)
+                    .addOnSuccessListener { onSuccess() }
+            },
+            onSessionReady = { sourceNodeId, sessionId, session ->
+                SentinelWearSecureSessions.registry.register(sourceNodeId, sessionId, session)
+            }
+        )
+        secureFrameHandler = handler
+        WearableSecureTransportInbox.install(handler)
+    }
+
+    override fun onDestroy() {
+        val handler = secureFrameHandler
+        if (handler != null && WearableSecureTransportInbox.clear(handler)) {
+            SentinelWearSecureSessions.registry.clear()
+        }
+        secureFrameHandler = null
+        super.onDestroy()
+    }
+
     override fun onMessageReceived(messageEvent: MessageEvent) {
         if (WearableProtocolV2.isSecurePath(messageEvent.path)) {
             val frame = WearableProtocolV2.decodeFrame(messageEvent.data) ?: return
