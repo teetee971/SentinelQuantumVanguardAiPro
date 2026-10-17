@@ -34,7 +34,7 @@ internal class PhoneWearableSecureHandshakeRuntime(
     private val hpkeFactory: PhoneWearableHpkeFactory,
     private val transport: PhoneWearableHandshakeTransport,
     private val activate: (String, WearableSecureHandshakeResult, WearableAdapterObservation, PhoneWearableHpkeMaterial) -> Boolean,
-    private val clockMs: () -> Long = System.currentTimeMillis,
+    private val clockMs: () -> Long = System::currentTimeMillis,
     private val sessionIdFactory: () -> String = { UUID.randomUUID().toString() },
     private val maxPendingNodes: Int = DEFAULT_MAX_PENDING_NODES
 ) {
@@ -231,6 +231,13 @@ internal class PhoneWearableSecureHandshakeRuntime(
     internal fun pendingForNode(nodeId: String): String? {
         purgeExpired(clockMs())
         return pendingByNode[nodeId]?.context?.session?.sessionId
+    }
+
+    fun disconnect(nodeId: String) {
+        synchronized(this) {
+            val pending = pendingByNode.remove(nodeId) ?: return
+            replayGuard.revoke(pending.context.challenge.nonce)
+        }
     }
 
     private fun finalizeIfActive(
