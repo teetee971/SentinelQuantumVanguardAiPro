@@ -9,8 +9,9 @@ import java.security.MessageDigest
  * Phone-side Wear OS Data Layer adapter.
  *
  * This adapter reports only untrusted platform reachability. It never turns a connected Wear OS
- * node into Sentinel authentication and never exposes the raw Google Play services node id outside
- * this boundary. The secure Sentinel channel remains owned by the handshake/session layer.
+ * node into Sentinel authentication. The raw Google Play services node id is used only transiently
+ * for Data Layer routing into the secure handshake composition and is never persisted or surfaced
+ * as Sentinel stable identity.
  */
 class WearOsDataLayerAdapter(
     context: Context,
@@ -38,7 +39,10 @@ class WearOsDataLayerAdapter(
                     runtimeCoordinator.observePlatform(availableWithoutNodeObservation())
                 } else {
                     observations.forEach { runtimeCoordinator.observePlatform(it) }
-                    boundedNodes.forEach(::sendPlatformProbe)
+                    boundedNodes.zip(observations).forEach { (node, observation) ->
+                        sendPlatformProbe(node)
+                        SentinelWearableSecureHandshakeRuntime.start(appContext, node.id, observation)
+                    }
                 }
                 onComplete(Snapshot(observations))
             }
