@@ -82,8 +82,20 @@ class WearablePairingStore(
             confirmedAtMs = confirmedAtMs
         )
         backend.save(record)
-        return backend.load(stableId)?.validatedCopy()
-            ?: throw IllegalStateException("wearable pairing persistence failed")
+        return try {
+            backend.load(stableId)?.validatedCopy()
+                ?: throw IllegalStateException("wearable pairing persistence failed")
+        } catch (failure: Exception) {
+            // A durable write followed by an unreadable/corrupt reload must not leave a trust
+            // record behind. This is a newly-created identity (current == null above), so rollback
+            // cannot revoke a previously established pairing from this store transaction.
+            try {
+                backend.remove(stableId)
+            } catch (rollbackFailure: Exception) {
+                failure.addSuppressed(rollbackFailure)
+            }
+            throw failure
+        }
     }
 
     fun remove(stableId: String) {
