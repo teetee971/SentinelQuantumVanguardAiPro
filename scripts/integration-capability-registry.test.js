@@ -120,6 +120,25 @@ test('Digital exposure diagnoses missing user-safe identity binding rather than 
   assert.equal(capability.diagnostic_reason, 'IDENTITY_BINDING_MISSING');
 });
 
+test('VPN truth reflects a missing privileged gateway host rather than missing control-plane code', () => {
+  const provisioningServer = fs.readFileSync('ops/vpn-gateway/provisioning-server.js', 'utf8');
+  const peerRuntime = fs.readFileSync('ops/vpn-gateway/peer-runtime.js', 'utf8');
+  const managePeer = fs.readFileSync('ops/vpn-gateway/manage-peer.sh', 'utf8');
+  assert.match(provisioningServer, /createVpnProvisioningServer/);
+  assert.match(provisioningServer, /VpnGatewayPeerRuntime required/);
+  assert.match(peerRuntime, /manage-peer\.sh/);
+  assert.match(managePeer, /Run as root\./);
+  assert.match(managePeer, /command -v wg/);
+  assert.match(managePeer, /WireGuard interface is not active/);
+
+  for (const id of ['vpn_runtime', 'vpn_control_plane']) {
+    const capability = readRegistry().capabilities.find((entry) => entry.id === id);
+    assert.ok(capability, `${id} capability must exist`);
+    assert.equal(capability.state, 'LOCKED_EXTERNAL_DEPENDENCY');
+    assert.equal(capability.diagnostic_reason, 'GATEWAY_NOT_AVAILABLE');
+  }
+});
+
 test('Voice truth reflects the deployed-but-disabled Render service and readiness health gate', () => {
   const render = fs.readFileSync('render.yaml', 'utf8');
   const voiceService = render.slice(render.indexOf('name: sentinel-voice-api'));
