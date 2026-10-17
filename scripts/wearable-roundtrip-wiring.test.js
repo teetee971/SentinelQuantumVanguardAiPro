@@ -8,6 +8,8 @@ const phoneSecureRuntimePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelWearableSecureHandshakeRuntime.kt';
 const phoneLivenessRuntimePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneWearableLivenessRuntime.kt';
+const mainActivityPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt';
 const probeRegistryPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/WearOsPlatformProbeRegistry.kt';
 const adapterPath =
@@ -142,4 +144,15 @@ test('phone Data Layer disconnect revokes pending and active secure state immedi
   assert.match(listener, /SentinelWearableSecureHandshakeRuntime\.disconnect/);
   assert.match(runtime, /runtime\?\.disconnect\(nodeId\)/);
   assert.match(runtime, /live\?\.disconnect\(nodeId\)/);
+});
+
+test('first pairing requires an explicit in-app accept or reject decision', () => {
+  const activity = fs.readFileSync(mainActivityPath, 'utf8');
+  const runtime = fs.readFileSync(phoneSecureRuntimePath, 'utf8');
+  assert.match(activity, /AlertDialog/);
+  assert.match(activity, /pendingConfirmation\(\)/);
+  assert.match(activity, /SentinelWearableSecureHandshakeRuntime\.confirm/);
+  assert.match(activity, /SentinelWearableSecureHandshakeRuntime\.reject/);
+  assert.match(activity, /identityKeyFingerprintSha256/);
+  assert.match(runtime, /fun reject\(stableId: String\)/);
 });
