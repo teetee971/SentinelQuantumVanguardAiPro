@@ -7,6 +7,8 @@ import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsProviderIdentityLookup
+import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapter
 import java.io.File
 import java.util.UUID
 
@@ -189,6 +191,35 @@ object IntelligenceCoreRuntime {
         )
         runtime.sink.publish(intelligenceEvent)
     }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes a bounded, permission-gated Android contact observation after a non-critical UI
+     * lookup. Contact display data stays in the existing durable local-identity contract; the raw
+     * phone number is used only to derive the device-bound fingerprint.
+     */
+    fun publishContactObservation(
+        context: Context,
+        contactList: LocalContactLookup.ContactListResult,
+        rawNumber: String,
+        identity: LocalContactLookup.Identity?,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult {
+        if (observedAtMs < 0L) return PublishResult.REJECTED
+        val runtime = runCatching { stateFor(context.applicationContext) }.getOrNull()
+            ?: return PublishResult.REJECTED
+        return runCatching {
+            ContactIntelligenceAdapter(
+                sink = runtime.sink,
+                canonicalize = { value -> CallRuleEngine.normalizeNumber(value).orEmpty() },
+                fingerprint = { canonical -> runtime.fingerprinter.fingerprint(canonical) }
+            ).publish(
+                contactList = contactList,
+                rawNumber = rawNumber,
+                identity = identity,
+                observedAtMs = observedAtMs
+            ).publishResult
+        }.getOrDefault(PublishResult.REJECTED)
+    }
 
     fun snapshotForNumber(
         context: Context,
