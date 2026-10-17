@@ -1,12 +1,11 @@
 import os
-from types import SimpleNamespace
 
 os.environ.setdefault("EXPOSURE_HASH_PEPPER", "exposure-test-pepper")
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from collective_exposure import create_collective_exposure_router
+from collective_exposure_user import create_user_exposure_router
 from exposure_identity import ExposureIdentitySettings, derive_subject_token
 
 
@@ -42,7 +41,7 @@ def test_identity_settings_fail_closed_when_oidc_metadata_is_missing(monkeypatch
 def test_user_lookup_requires_bearer_identity_and_never_accepts_subject_token():
     app = FastAPI()
     app.state.redis = None
-    app.include_router(create_collective_exposure_router(identity_verifier=FakeIdentityVerifier()))
+    app.include_router(create_user_exposure_router(identity_verifier=FakeIdentityVerifier()))
 
     with TestClient(app) as client:
         missing = client.post(
@@ -76,7 +75,7 @@ def test_user_lookup_requires_bearer_identity_and_never_accepts_subject_token():
 def test_user_report_route_exists_and_requires_auth_before_runtime_access():
     app = FastAPI()
     app.state.redis = None
-    app.include_router(create_collective_exposure_router(identity_verifier=FakeIdentityVerifier()))
+    app.include_router(create_user_exposure_router(identity_verifier=FakeIdentityVerifier()))
 
     with TestClient(app) as client:
         response = client.post(
