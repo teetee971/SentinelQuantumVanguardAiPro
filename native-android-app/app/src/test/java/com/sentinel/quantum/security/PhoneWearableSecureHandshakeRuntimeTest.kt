@@ -166,6 +166,43 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
     }
 
+    @Test fun explicitPairingRejectionClearsPromptAndReleasesChallenge() {
+        val backend = MemoryPairingBackend()
+        var sessionCounter = 0
+        val transport = CapturingTransport()
+        val runtime = PhoneWearableSecureHandshakeRuntime(
+            pairingStore = WearablePairingStore(backend),
+            replayGuard = WearableHandshakeReplayGuard(
+                clockMs = { 100L },
+                elapsedClockMs = { 100L },
+                maxPendingChallenges = 1
+            ),
+            sessionAuthority = WearableSessionAuthority(),
+            hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
+            transport = transport,
+            activate = { _, _, _, _ -> error("rejected pairing must never activate") },
+            clockMs = { 100L },
+            sessionIdFactory = { "session-${++sessionCounter}" }
+        )
+
+        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        val challenge = WearableProtocolV2.decodeChallenge(requireNotNull(transport.payload))!!
+        val signed = signedHandshake(challenge)
+        assertEquals(
+            WearableSecureHandshakeState.PENDING_CONFIRMATION,
+            runtime.handleHandshake(
+                "node-1",
+                requireNotNull(WearableProtocolV2.decodeFrame(WearableProtocolV2.encodeHandshake(signed.payload)))
+            ).state
+        )
+        assertEquals(signed.stableId, runtime.pendingConfirmation()?.stableId)
+
+        assertTrue(runtime.reject(signed.stableId))
+        assertNull(runtime.pendingConfirmation())
+        assertNull(backend.load(signed.stableId))
+        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+    }
+
     private data class SignedHandshake(
         val stableId: String,
         val payload: WearableProtocolV2.HandshakePayload
