@@ -61,6 +61,7 @@ internal class PhoneWearableSecureHandshakeRuntime(
         sessionAuthority
     )
     private val pendingByNode = LinkedHashMap<String, Pending>()
+    private val activeIdentityByNode = mutableMapOf<String, String>()
 
     init {
         require(maxPendingNodes in 1..64)
@@ -268,10 +269,11 @@ internal class PhoneWearableSecureHandshakeRuntime(
     }
 
     fun disconnect(nodeId: String) {
-        synchronized(this) {
-            val pending = pendingByNode.remove(nodeId) ?: return
-            replayGuard.revoke(pending.context.challenge.nonce)
+        val activeIdentity = synchronized(this) {
+            pendingByNode.remove(nodeId)?.let { replayGuard.revoke(it.context.challenge.nonce) }
+            activeIdentityByNode.remove(nodeId)
         }
+        activeIdentity?.let(sessionAuthority::revoke)
     }
 
     private fun finalizeIfActive(
@@ -293,7 +295,14 @@ internal class PhoneWearableSecureHandshakeRuntime(
             synchronized(this) { pendingByNode.remove(pending.nodeId) }
             return rejected(WearableSecureHandshakeRejection.AUTHORITY_REJECTED)
         }
-        synchronized(this) { pendingByNode.remove(pending.nodeId) }
+        val stableId = requireNotNull(result.verifiedProof).stableId
+        val supersededIdentity = synchronized(this) {
+            pendingByNode.remove(pending.nodeId)
+            activeIdentityByNode.put(pending.nodeId, stableId)
+        }
+        if (supersededIdentity != null && supersededIdentity != stableId) {
+            sessionAuthority.revoke(supersededIdentity)
+        }
         return result
     }
 
