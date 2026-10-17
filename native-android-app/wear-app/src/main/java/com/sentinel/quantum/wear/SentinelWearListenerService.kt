@@ -21,16 +21,27 @@ class SentinelWearListenerService : WearableListenerService() {
             WearableSecureIdentityStore.forApplicationContext(applicationContext)
         )
         val messageClient = Wearable.getMessageClient(this)
-        val handler = WearableSecureChallengeFrameHandler(
+        val sender = WearableSecureHandshakeSender { targetNodeId, path, payload, onSuccess ->
+            messageClient.sendMessage(targetNodeId, path, payload)
+                .addOnSuccessListener { onSuccess() }
+        }
+        val challengeHandler = WearableSecureChallengeFrameHandler(
             respond = responder::respond,
-            sender = WearableSecureHandshakeSender { targetNodeId, path, payload, onSuccess ->
-                messageClient.sendMessage(targetNodeId, path, payload)
-                    .addOnSuccessListener { onSuccess() }
-            },
+            sender = sender,
             onSessionReady = { sourceNodeId, sessionId, session ->
                 SentinelWearSecureSessions.registry.register(sourceNodeId, sessionId, session)
             }
         )
+        val livenessHandler = WearableWatchLivenessFrameHandler(
+            registry = SentinelWearSecureSessions.registry,
+            sender = sender
+        )
+        val handler = WearableSecureFrameHandler { sourceNodeId, path, frame ->
+            when (path) {
+                WearableProtocolV2.CHALLENGE_PATH -> challengeHandler.onFrame(sourceNodeId, path, frame)
+                WearableProtocolV2.LIVENESS_PATH -> livenessHandler.onFrame(sourceNodeId, path, frame)
+            }
+        }
         secureFrameHandler = handler
         WearableSecureTransportInbox.install(handler)
     }
