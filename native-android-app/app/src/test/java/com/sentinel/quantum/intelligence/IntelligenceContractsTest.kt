@@ -116,6 +116,7 @@ class IntelligenceContractsTest {
             IntelligenceEvidence.CallDecision::class.java,
             IntelligenceEvidence.SmsSecurity::class.java,
             IntelligenceEvidence.MmsSecurity::class.java,
+            IntelligenceEvidence.CommunityReport::class.java,
             IntelligenceEvidence.Reputation::class.java
         )
 

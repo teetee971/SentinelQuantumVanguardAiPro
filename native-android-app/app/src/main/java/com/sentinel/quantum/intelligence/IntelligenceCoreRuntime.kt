@@ -4,6 +4,7 @@ import android.content.Context
 import com.sentinel.quantum.security.CallNumberFingerprinter
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsProviderIdentityLookup
@@ -145,6 +146,46 @@ object IntelligenceCoreRuntime {
             identityKey = identityKey,
             result = result,
             sourceLabel = REMOTE_REPUTATION_SOURCE
+        )
+        runtime.sink.publish(intelligenceEvent)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes the outcome of an explicit user community report as context only.
+     *
+     * A pending or moderated report never supplies a risk score and is intentionally not read by
+     * [ScreeningProjection]. The raw number is converted to the local fingerprint before event
+     * construction and is not available to the bounded persistence layer.
+     */
+    fun publishCommunityReport(
+        context: Context,
+        rawNumber: String?,
+        category: CommunityReportClient.Category,
+        result: CommunityReportClient.Result,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult = runCatching {
+        if (observedAtMs < 0L) return@runCatching PublishResult.REJECTED
+        val normalizedNumber = CallRuleEngine.normalizeNumber(rawNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val evidence = CommunityReportEvidenceAdapter.from(category, result)
+        val intelligenceEvent = IntelligenceEvent(
+            eventId = "community-report:$fingerprint:${category.name}:${evidence.moderationState.name}",
+            identityKey = identityKey,
+            evidence = evidence,
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, CALL_EVENT_TTL_MS),
+            source = EvidenceSource.COMMUNITY_REPORT,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.COMMUNITY_CORE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.LOCAL_USER_ASSERTION
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
         )
         runtime.sink.publish(intelligenceEvent)
     }.getOrDefault(PublishResult.REJECTED)
