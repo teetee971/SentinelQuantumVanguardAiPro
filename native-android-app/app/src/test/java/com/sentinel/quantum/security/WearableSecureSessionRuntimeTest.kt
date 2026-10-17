@@ -91,6 +91,18 @@ class WearableSecureSessionRuntimeTest {
         assertLocked(2_000L)
     }
 
+    @Test fun freshProofRequiresCompletedLivenessAndExpiresAtTtlBoundary() {
+        val runtime = WearableSecureSessionRuntime(livenessTtlMs = 30_000L)
+        org.junit.Assert.assertTrue(runtime.activate(activeResult(), observation(), 1_000L))
+        org.junit.Assert.assertFalse(runtime.hasFreshAuthenticatedProof("session-1", 1_500L))
+        org.junit.Assert.assertTrue(runtime.onAuthenticatedTraffic("session-1", 2_000L))
+        org.junit.Assert.assertTrue(runtime.hasFreshAuthenticatedProof("session-1", 31_999L))
+        org.junit.Assert.assertFalse(runtime.hasFreshAuthenticatedProof("session-1", 32_000L))
+        org.junit.Assert.assertFalse(runtime.hasFreshAuthenticatedProof("wrong-session", 2_001L))
+        runtime.disconnect(3_000L)
+        org.junit.Assert.assertFalse(runtime.hasFreshAuthenticatedProof("session-1", 3_001L))
+    }
+
     private fun assertConnected(now: Long) {
         assertEquals(
             IntegrationState.CONNECTED,
