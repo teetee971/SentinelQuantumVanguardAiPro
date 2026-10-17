@@ -172,7 +172,10 @@ internal class PhoneWearableSecureHandshakeRuntime(
                 confirmation = null
             )
         } catch (_: Exception) {
-            return rejected(WearableSecureHandshakeRejection.TRUST_ANCHOR_MISMATCH)
+            return terminalConfirmationFailure(
+                pending,
+                WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED
+            )
         }
 
         if (result.state == WearableSecureHandshakeState.PENDING_CONFIRMATION) {
