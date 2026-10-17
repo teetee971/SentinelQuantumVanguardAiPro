@@ -6,6 +6,8 @@ const phoneListenerPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelWearListenerService.kt';
 const phoneSecureRuntimePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelWearableSecureHandshakeRuntime.kt';
+const phoneLivenessRuntimePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneWearableLivenessRuntime.kt';
 const probeRegistryPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/WearOsPlatformProbeRegistry.kt';
 const adapterPath =
@@ -15,6 +17,8 @@ const watchListenerPath =
   'native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/SentinelWearListenerService.kt';
 const watchChallengeHandlerPath =
   'native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/WearableSecureChallengeFrameHandler.kt';
+const watchLivenessHandlerPath =
+  'native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/WearableWatchLivenessFrameHandler.kt';
 const watchSessionRegistryPath =
   'native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/WearableWatchSecureSessionRegistry.kt';
 const contractPath =
@@ -87,30 +91,55 @@ test('Data Layer listeners route bounded secure frames without promoting product
   }
 });
 
-test('watch installs a real challenge handler and retains HPKE sessions only in memory', () => {
+test('watch installs real challenge and authenticated liveness handlers with memory-only HPKE sessions', () => {
   assert.equal(fs.existsSync(watchChallengeHandlerPath), true, 'watch secure challenge handler is missing');
+  assert.equal(fs.existsSync(watchLivenessHandlerPath), true, 'watch secure liveness handler is missing');
   assert.equal(fs.existsSync(watchSessionRegistryPath), true, 'watch secure session registry is missing');
   const listener = fs.readFileSync(watchListenerPath, 'utf8');
-  const handler = fs.readFileSync(watchChallengeHandlerPath, 'utf8');
+  const challengeHandler = fs.readFileSync(watchChallengeHandlerPath, 'utf8');
+  const livenessHandler = fs.readFileSync(watchLivenessHandlerPath, 'utf8');
   const registry = fs.readFileSync(watchSessionRegistryPath, 'utf8');
 
   assert.match(listener, /WearableSecureChallengeFrameHandler/);
+  assert.match(listener, /WearableWatchLivenessFrameHandler/);
+  assert.match(listener, /WearableProtocolV2\.LIVENESS_PATH/);
   assert.match(listener, /WearableSecureTransportInbox\.install/);
-  assert.match(handler, /decodeChallengeFrame/);
-  assert.match(handler, /HANDSHAKE_PATH/);
-  assert.match(handler, /encodeHandshake/);
+  assert.match(challengeHandler, /decodeChallengeFrame/);
+  assert.match(challengeHandler, /HANDSHAKE_PATH/);
+  assert.match(challengeHandler, /encodeHandshake/);
+  assert.match(livenessHandler, /decryptFromPhone/);
+  assert.match(livenessHandler, /acceptLivenessSequence/);
+  assert.match(livenessHandler, /encryptForPhone/);
   assert.match(registry, /WearableHpkeDuplexSession/);
-  assert.doesNotMatch(registry, /SharedPreferences|File|Room|DataStore/);
+  assert.match(registry, /expiresAtMs\s*=\s*refreshedExpiry/);
+  assert.doesNotMatch(registry, /SharedPreferences|Room|DataStore/);
 });
 
-test('phone installs a secure handshake handler and starts a challenge for connected nodes', () => {
+test('phone installs secure handshake plus HPKE liveness and starts challenge for connected nodes', () => {
   assert.equal(fs.existsSync(phoneSecureRuntimePath), true, 'phone secure handshake composition is missing');
+  assert.equal(fs.existsSync(phoneLivenessRuntimePath), true, 'phone secure liveness runtime is missing');
   const runtime = fs.readFileSync(phoneSecureRuntimePath, 'utf8');
+  const liveness = fs.readFileSync(phoneLivenessRuntimePath, 'utf8');
   const adapter = fs.readFileSync(adapterPath, 'utf8');
 
   assert.match(runtime, /WearableSecureTransportInbox\.install/);
   assert.match(runtime, /WearableProtocolV2\.HANDSHAKE_PATH/);
+  assert.match(runtime, /WearableProtocolV2\.LIVENESS_PATH/);
   assert.match(runtime, /PhoneWearableSecureHandshakeRuntime/);
+  assert.match(runtime, /PhoneWearableLivenessRuntime/);
   assert.match(runtime, /pendingConfirmation/);
+  assert.match(runtime, /authenticatedTraffic/);
+  assert.match(liveness, /decryptFromWearable/);
+  assert.match(liveness, /MessageDigest\.isEqual/);
+  assert.match(liveness, /revokeAuthenticatedChannel/);
   assert.match(adapter, /SentinelWearableSecureHandshakeRuntime\.start/);
+});
+
+test('phone Data Layer disconnect revokes pending and active secure state immediately', () => {
+  const listener = fs.readFileSync(phoneListenerPath, 'utf8');
+  const runtime = fs.readFileSync(phoneSecureRuntimePath, 'utf8');
+  assert.match(listener, /onPeerDisconnected/);
+  assert.match(listener, /SentinelWearableSecureHandshakeRuntime\.disconnect/);
+  assert.match(runtime, /runtime\?\.disconnect\(nodeId\)/);
+  assert.match(runtime, /live\?\.disconnect\(nodeId\)/);
 });
