@@ -10,7 +10,13 @@ fun interface MmsPduDecoder {
     }
 }
 
-/** Fail-closed adapter between a future maintained decoder and the existing safety boundary. */
+/**
+ * Fail-closed validation adapter used by the production MMS receive/download paths.
+ *
+ * The current Android receivers invoke this boundary with [SentinelMmsPduDecoder] whenever the
+ * provider projection cannot already supply bounded safe parts. Decoder output is always passed
+ * through [MmsDecodeBoundary] before a preview/provider projection may consume it.
+ */
 object MmsDecodePipeline {
     sealed class Result {
         data class Accepted(val parts: List<MmsDecodeBoundary.SafePart>) : Result()
