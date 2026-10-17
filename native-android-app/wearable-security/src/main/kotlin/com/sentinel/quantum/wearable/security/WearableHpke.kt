@@ -26,7 +26,7 @@ class WearableHpkePublicKey private constructor(
     companion object {
         @JvmStatic
         @Throws(GeneralSecurityException::class)
-        fun import(serialized: ByteArray): WearableHpkePublicKey {
+        fun fromEncoded(serialized: ByteArray): WearableHpkePublicKey {
             require(serialized.isNotEmpty()) { "HPKE public key must not be empty" }
             require(serialized.size <= WearableHpkeLimits.MAX_PUBLIC_KEY_BYTES) {
                 "HPKE public key exceeds maximum size"
@@ -113,7 +113,7 @@ class WearableHpkeKeyPair private constructor(
             }
             return WearableHpkeKeyPair(
                 privateKeysetHandle = privateHandle,
-                publicKey = WearableHpkePublicKey.import(serializedPublic)
+                publicKey = WearableHpkePublicKey.fromEncoded(serializedPublic)
             )
         }
     }
