@@ -20,8 +20,18 @@ class CallScreeningResponseBoundaryIntegrationContractTest {
         assertTrue(boundaryIndex >= 0)
         assertTrue(roleReadIndex > boundaryIndex)
         assertTrue(postResponseIndex > roleReadIndex)
-        assertEquals(4, Regex("responseBoundary\\.deliverResponse\\s*\\{").findAll(source).count())
-        assertEquals(4, Regex("respondToCall\\(callDetails,").findAll(source).count())
+        // Every platform response, including cold-start fail-open, must pass through the
+        // per-call ordering boundary; do not merely increase the expected response count.
+        val deliveredResponses = Regex("responseBoundary\\.deliverResponse\\s*\\{")
+            .findAll(source).count()
+        val platformResponses = Regex("respondToCall\\(callDetails,")
+            .findAll(source).count()
+        val boundaryWrappedResponses = Regex(
+            "responseBoundary\\.deliverResponse\\s*\\{\\s*respondToCall\\(callDetails,"
+        ).findAll(source).count()
+        assertEquals(5, deliveredResponses)
+        assertEquals(5, platformResponses)
+        assertEquals(platformResponses, boundaryWrappedResponses)
         assertFalse(
             "no direct Telecom response may appear before the per-call boundary is created",
             source.substring(0, boundaryIndex).contains("respondToCall(callDetails,")

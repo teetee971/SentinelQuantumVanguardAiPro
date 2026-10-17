@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallScreeningWarmup
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 import kotlinx.coroutines.CoroutineScope
@@ -13,12 +14,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Process-level services and lifecycle-safe maintenance for Sentinel.
  *
- * [onCreate] intentionally performs no screening preparation. Android creates the Application
- * before CallScreeningService, so disk, WorkManager and AndroidKeyStore work here would extend the
- * cold-start window before the mandatory Telecom response. Maintenance starts either when the
- * user-facing activity resumes or, for a Telecom-only cold start, from the bounded post-response
- * worker. Until one of those paths completes, exact, prefix and signed rules may fail open while
- * the process cache is cold.
+ * Android creates the Application before CallScreeningService. Screening rules therefore begin
+ * warming immediately on a dedicated worker without blocking Application.onCreate(). If Telecom
+ * arrives before warm-up completes, the screening callback may wait only for its own small bounded
+ * budget and otherwise fails open. Heavier SMS/MMS repair remains outside process startup.
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -33,6 +32,7 @@ class SentinelApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CallScreeningWarmup.start(applicationContext)
     }
 
     /**
@@ -49,7 +49,7 @@ class SentinelApplication : Application() {
     }
 
     /**
-     * Performs bounded local repair and cache warm-up after Telecom has received its response.
+     * Performs bounded local repair and cache refresh after Telecom has received its response.
      *
      * CallScreeningService owns the only automatic caller. Keeping this synchronous is safe
      * because the caller is already the bounded post-response worker, never onScreenCall().

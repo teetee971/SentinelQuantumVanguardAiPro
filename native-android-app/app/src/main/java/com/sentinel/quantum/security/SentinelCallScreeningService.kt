@@ -67,6 +67,18 @@ class SentinelCallScreeningService : CallScreeningService() {
             return
         }
 
+        // Application.onCreate() normally launches warm-up first. start() is intentionally cheap:
+        // it only submits work, so a previous transient FAILED attempt can be retried here without
+        // performing SharedPreferences or AndroidKeyStore I/O on the Telecom callback thread.
+        CallScreeningWarmup.start(applicationContext)
+        if (!CallScreeningWarmup.awaitReady(COLD_START_WARMUP_WAIT_MS)) {
+            Log.w(LIFECYCLE_TAG, WARMUP_NOT_READY_MARKER)
+            responseBoundary.deliverResponse {
+                respondToCall(callDetails, CallResponse.Builder().build())
+            }
+            return
+        }
+
         val decision = runCatching {
             // Strict screening boundary: process-memory caches only. Do not instantiate
             // CallBlocklistStore here because its constructor obtains SharedPreferences.
@@ -209,6 +221,8 @@ class SentinelCallScreeningService : CallScreeningService() {
     private companion object {
         const val LIFECYCLE_TAG = "SentinelLifecycle"
         const val CALLBACK_MARKER = "CallScreeningService:onScreenCall"
+        const val WARMUP_NOT_READY_MARKER = "CallScreeningService:warmup_not_ready_fail_open"
+        const val COLD_START_WARMUP_WAIT_MS = 100L
         val SCREENING_FINGERPRINTER = CallNumberFingerprinter()
         val POST_RESPONSE_WORKER = BoundedPostResponseExecutor.create(
             threadName = "sentinel-call-screening-post-response"
