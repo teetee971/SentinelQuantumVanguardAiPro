@@ -11,6 +11,10 @@ const adapterPath =
 const phoneManifestPath = 'native-android-app/app/src/main/AndroidManifest.xml';
 const watchListenerPath =
   'native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/SentinelWearListenerService.kt';
+const watchChallengeHandlerPath =
+  'native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/WearableSecureChallengeFrameHandler.kt';
+const watchSessionRegistryPath =
+  'native-android-app/wear-app/src/main/java/com/sentinel/quantum/wear/WearableWatchSecureSessionRegistry.kt';
 const contractPath =
   'native-android-app/wearable-contract/src/main/kotlin/com/sentinel/quantum/wearable/contract/WearableProtocolV2.kt';
 const phoneGradlePath = 'native-android-app/app/build.gradle';
@@ -79,4 +83,20 @@ test('Data Layer listeners route bounded secure frames without promoting product
     assert.doesNotMatch(listener, /publishConnected/);
     assert.doesNotMatch(listener, /observeAuthenticatedChannel/);
   }
+});
+
+test('watch installs a real challenge handler and retains HPKE sessions only in memory', () => {
+  assert.equal(fs.existsSync(watchChallengeHandlerPath), true, 'watch secure challenge handler is missing');
+  assert.equal(fs.existsSync(watchSessionRegistryPath), true, 'watch secure session registry is missing');
+  const listener = fs.readFileSync(watchListenerPath, 'utf8');
+  const handler = fs.readFileSync(watchChallengeHandlerPath, 'utf8');
+  const registry = fs.readFileSync(watchSessionRegistryPath, 'utf8');
+
+  assert.match(listener, /WearableSecureChallengeFrameHandler/);
+  assert.match(listener, /WearableSecureTransportInbox\.install/);
+  assert.match(handler, /decodeChallengeFrame/);
+  assert.match(handler, /HANDSHAKE_PATH/);
+  assert.match(handler, /encodeHandshake/);
+  assert.match(registry, /WearableHpkeDuplexSession/);
+  assert.doesNotMatch(registry, /SharedPreferences|File|Room|DataStore/);
 });
