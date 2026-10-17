@@ -200,14 +200,18 @@ class CallerIdActivity : ComponentActivity() {
                                         SharedPreferencesCommunicationReputationStorage(applicationContext)
                                     )
                                 ).persist(number, result)
-                                if (reputationPersisted) {
+                                val consentStillEnabled = settingsStore.callerReputationEnrichmentEnabled &&
+                                    ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
+                                if (!reputationPersisted || !consentStillEnabled) {
+                                    null
+                                } else {
                                     IntelligenceCoreRuntime.publishRemoteReputation(
                                         context = applicationContext,
                                         rawNumber = number,
                                         result = result
                                     )
+                                    result
                                 }
-                                result
                             }.getOrNull()
                         }
                         remoteStatus = if (remoteResult == null) {

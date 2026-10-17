@@ -61,7 +61,26 @@ test('caller reputation is published only after local persistence accepts the re
   );
   assert.match(
     publicationWindow,
-    /if\s*\(\s*reputationPersisted\s*\)\s*\{[\s\S]*?IntelligenceCoreRuntime\.publishRemoteReputation\(/,
-    'revoked persistence must prevent Intelligence Core publication'
+    /if\s*\(\s*!reputationPersisted\s*\|\|\s*!consentStillEnabled\s*\)\s*\{\s*null\s*\}\s*else\s*\{\s*IntelligenceCoreRuntime\.publishRemoteReputation\(/,
+    'revoked persistence or consent must prevent Intelligence Core publication'
+  );
+});
+
+test('Caller ID discards remote reputation when persistence or current consent rejects it', () => {
+  const callerId = readFileSync(CALLER_ID_PATH, 'utf8');
+  const persist = callerId.indexOf('.persist(number, result');
+  const acceptanceEnd = callerId.indexOf('}.getOrNull()', persist);
+
+  assert.ok(persist >= 0 && acceptanceEnd > persist, 'locate the remote result acceptance path');
+  const acceptance = callerId.slice(persist, acceptanceEnd);
+  assert.match(
+    acceptance,
+    /val\s+consentStillEnabled\s*=\s*settingsStore\.callerReputationEnrichmentEnabled\s*&&\s*ProtectionModePolicy\.permitsCallerNumberEnrichment\(settingsStore\.protectionMode\)/,
+    'consent and protection mode must be read again after persistence'
+  );
+  assert.match(
+    acceptance,
+    /if\s*\(\s*!reputationPersisted\s*\|\|\s*!consentStillEnabled\s*\)\s*\{\s*null\s*\}\s*else\s*\{\s*IntelligenceCoreRuntime\.publishRemoteReputation\([\s\S]*?\)\s*result\s*\}/,
+    'rejected results must be absent from both Intelligence Core and Caller ID UI state'
   );
 });
