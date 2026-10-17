@@ -267,7 +267,7 @@ class WearableSecureHandshakeCoordinator private constructor(
                 trusted.confirmedAtMs
             )
             activation
-        } catch (_: RuntimeException) {
+        } catch (_: Exception) {
             sessionAuthority.revoke(candidate.stableId)
             rejected(WearableSecureHandshakeRejection.PAIRING_PERSISTENCE_FAILED)
         }
