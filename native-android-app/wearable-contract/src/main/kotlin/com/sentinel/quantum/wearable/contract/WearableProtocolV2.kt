@@ -28,8 +28,11 @@ object WearableProtocolV2 {
     private const val MAX_IDENTITY_PUBLIC_KEY_BYTES = 1024
     private const val MAX_TRANSCRIPT_BYTES = 16 * 1024
     private const val MAX_SIGNATURE_BYTES = 512
+    private const val LIVENESS_NONCE_BYTES = 16
+    private const val LIVENESS_DOMAIN = "sentinel-wearable-liveness-v2"
     private val SHA256_HEX = Regex("^[0-9a-f]{64}$")
 
+    enum class PeerRole { PHONE, WEARABLE }
     data class Frame(val payload: ByteArray)
 
     data class ChallengePayload(
@@ -51,16 +54,27 @@ object WearableProtocolV2 {
         val signature: ByteArray
     )
 
+    data class LivenessPayload(
+        val sessionId: String,
+        val sequenceNumber: Long,
+        val sentAtMs: Long,
+        val nonce: ByteArray
+    ) {
+        init {
+            require(sessionId.isNotBlank())
+            require(sequenceNumber >= 0)
+            require(sentAtMs >= 0)
+            require(nonce.size == LIVENESS_NONCE_BYTES)
+        }
+    }
+
     fun isSecurePath(path: String): Boolean = path == CHALLENGE_PATH ||
         path == HANDSHAKE_PATH || path == LIVENESS_PATH || path == MESSAGE_PATH
 
     fun encodeFrame(payload: ByteArray): ByteArray {
         require(payload.size <= MAX_FRAME_BYTES - HEADER_BYTES) { "wearable secure frame too large" }
         return ByteBuffer.allocate(HEADER_BYTES + payload.size)
-            .putInt(SCHEMA_VERSION)
-            .putInt(payload.size)
-            .put(payload)
-            .array()
+            .putInt(SCHEMA_VERSION).putInt(payload.size).put(payload).array()
     }
 
     fun decodeFrame(payload: ByteArray): Frame? {
@@ -69,107 +83,124 @@ object WearableProtocolV2 {
         if (buffer.int != SCHEMA_VERSION) return null
         val size = buffer.int
         if (size < 0 || size > MAX_FRAME_BYTES - HEADER_BYTES || size != buffer.remaining()) return null
-        val body = ByteArray(size)
-        buffer.get(body)
-        return Frame(body)
+        return Frame(ByteArray(size).also(buffer::get))
     }
 
     fun encodeChallenge(value: ChallengePayload): ByteArray = encodeFrame(
-        ByteArrayOutputStream().use { buffer ->
-            DataOutputStream(buffer).use { out ->
-                writeUtf8(out, value.sessionId, MAX_SESSION_ID_BYTES)
-                require(value.capabilities.isNotEmpty() && value.capabilities.size <= MAX_CAPABILITIES)
-                val capabilities = value.capabilities.toSortedSet()
-                out.writeInt(capabilities.size)
-                capabilities.forEach { capability ->
-                    require(capability.isNotBlank())
-                    writeUtf8(out, capability, MAX_CAPABILITY_BYTES)
-                }
-                writeUtf8(out, value.challengeNonce, MAX_NONCE_BYTES)
-                require(value.issuedAtMs >= 0)
-                out.writeLong(value.issuedAtMs)
-                writeBytes(out, value.phoneHpkePublicKeyEncoded, MAX_HPKE_PUBLIC_KEY_BYTES)
-                require(value.phoneHpkePublicKeyFingerprintSha256.matches(SHA256_HEX))
-                writeUtf8(out, value.phoneHpkePublicKeyFingerprintSha256, 64)
+        binary {
+            writeUtf8(it, value.sessionId, MAX_SESSION_ID_BYTES)
+            require(value.capabilities.isNotEmpty() && value.capabilities.size <= MAX_CAPABILITIES)
+            val capabilities = value.capabilities.toSortedSet()
+            it.writeInt(capabilities.size)
+            capabilities.forEach { capability ->
+                require(capability.isNotBlank())
+                writeUtf8(it, capability, MAX_CAPABILITY_BYTES)
             }
-            buffer.toByteArray()
+            writeUtf8(it, value.challengeNonce, MAX_NONCE_BYTES)
+            require(value.issuedAtMs >= 0)
+            it.writeLong(value.issuedAtMs)
+            writeBytes(it, value.phoneHpkePublicKeyEncoded, MAX_HPKE_PUBLIC_KEY_BYTES)
+            require(value.phoneHpkePublicKeyFingerprintSha256.matches(SHA256_HEX))
+            writeUtf8(it, value.phoneHpkePublicKeyFingerprintSha256, 64)
         }
     )
 
     fun decodeChallenge(encodedFrame: ByteArray): ChallengePayload? =
         decodeFrame(encodedFrame)?.let(::decodeChallengeFrame)
 
-    fun decodeChallengeFrame(frame: Frame): ChallengePayload? = runCatching {
-        DataInputStream(ByteArrayInputStream(frame.payload)).use { input ->
-            val sessionId = readUtf8(input, MAX_SESSION_ID_BYTES)
-            val count = input.readInt()
-            require(count in 1..MAX_CAPABILITIES)
-            val capabilities = LinkedHashSet<String>(count)
-            repeat(count) {
-                val capability = readUtf8(input, MAX_CAPABILITY_BYTES)
-                require(capability.isNotBlank() && capabilities.add(capability))
-            }
-            val nonce = readUtf8(input, MAX_NONCE_BYTES)
-            val issuedAt = input.readLong()
-            require(issuedAt >= 0)
-            val phonePublic = readBytes(input, MAX_HPKE_PUBLIC_KEY_BYTES)
-            val phoneFingerprint = readUtf8(input, 64)
-            require(phoneFingerprint.matches(SHA256_HEX))
-            require(input.available() == 0)
-            ChallengePayload(
-                sessionId,
-                capabilities,
-                nonce,
-                issuedAt,
-                phonePublic,
-                phoneFingerprint
-            )
+    fun decodeChallengeFrame(frame: Frame): ChallengePayload? = parse(frame.payload) { input ->
+        val sessionId = readUtf8(input, MAX_SESSION_ID_BYTES)
+        val count = input.readInt()
+        require(count in 1..MAX_CAPABILITIES)
+        val capabilities = LinkedHashSet<String>(count)
+        repeat(count) {
+            val capability = readUtf8(input, MAX_CAPABILITY_BYTES)
+            require(capability.isNotBlank() && capabilities.add(capability))
         }
-    }.getOrNull()
+        val nonce = readUtf8(input, MAX_NONCE_BYTES)
+        val issuedAt = input.readLong().also { require(it >= 0) }
+        val phonePublic = readBytes(input, MAX_HPKE_PUBLIC_KEY_BYTES)
+        val phoneFingerprint = readUtf8(input, 64).also { require(it.matches(SHA256_HEX)) }
+        ChallengePayload(sessionId, capabilities, nonce, issuedAt, phonePublic, phoneFingerprint)
+    }
 
     fun encodeHandshake(value: HandshakePayload): ByteArray = encodeFrame(
-        ByteArrayOutputStream().use { buffer ->
-            DataOutputStream(buffer).use { out ->
-                require(value.stableId.isNotBlank())
-                writeUtf8(out, value.stableId, MAX_STABLE_ID_BYTES)
-                writeBytes(out, value.identityPublicKeyX509, MAX_IDENTITY_PUBLIC_KEY_BYTES)
-                require(value.identityKeyFingerprintSha256.matches(SHA256_HEX))
-                writeUtf8(out, value.identityKeyFingerprintSha256, 64)
-                writeBytes(out, value.wearableHpkePublicKeyEncoded, MAX_HPKE_PUBLIC_KEY_BYTES)
-                require(value.wearableHpkePublicKeyFingerprintSha256.matches(SHA256_HEX))
-                writeUtf8(out, value.wearableHpkePublicKeyFingerprintSha256, 64)
-                writeBytes(out, value.signedTranscript, MAX_TRANSCRIPT_BYTES)
-                writeBytes(out, value.signature, MAX_SIGNATURE_BYTES)
-            }
-            buffer.toByteArray()
+        binary {
+            require(value.stableId.isNotBlank())
+            writeUtf8(it, value.stableId, MAX_STABLE_ID_BYTES)
+            writeBytes(it, value.identityPublicKeyX509, MAX_IDENTITY_PUBLIC_KEY_BYTES)
+            require(value.identityKeyFingerprintSha256.matches(SHA256_HEX))
+            writeUtf8(it, value.identityKeyFingerprintSha256, 64)
+            writeBytes(it, value.wearableHpkePublicKeyEncoded, MAX_HPKE_PUBLIC_KEY_BYTES)
+            require(value.wearableHpkePublicKeyFingerprintSha256.matches(SHA256_HEX))
+            writeUtf8(it, value.wearableHpkePublicKeyFingerprintSha256, 64)
+            writeBytes(it, value.signedTranscript, MAX_TRANSCRIPT_BYTES)
+            writeBytes(it, value.signature, MAX_SIGNATURE_BYTES)
         }
     )
 
     fun decodeHandshake(encodedFrame: ByteArray): HandshakePayload? =
         decodeFrame(encodedFrame)?.let(::decodeHandshakeFrame)
 
-    fun decodeHandshakeFrame(frame: Frame): HandshakePayload? = runCatching {
-        DataInputStream(ByteArrayInputStream(frame.payload)).use { input ->
-            val stableId = readUtf8(input, MAX_STABLE_ID_BYTES)
-            require(stableId.isNotBlank())
-            val identityPublic = readBytes(input, MAX_IDENTITY_PUBLIC_KEY_BYTES)
-            val identityFingerprint = readUtf8(input, 64)
-            require(identityFingerprint.matches(SHA256_HEX))
-            val wearablePublic = readBytes(input, MAX_HPKE_PUBLIC_KEY_BYTES)
-            val wearableFingerprint = readUtf8(input, 64)
-            require(wearableFingerprint.matches(SHA256_HEX))
-            val transcript = readBytes(input, MAX_TRANSCRIPT_BYTES)
-            val signature = readBytes(input, MAX_SIGNATURE_BYTES)
+    fun decodeHandshakeFrame(frame: Frame): HandshakePayload? = parse(frame.payload) { input ->
+        val stableId = readUtf8(input, MAX_STABLE_ID_BYTES).also { require(it.isNotBlank()) }
+        val identityPublic = readBytes(input, MAX_IDENTITY_PUBLIC_KEY_BYTES)
+        val identityFingerprint = readUtf8(input, 64).also { require(it.matches(SHA256_HEX)) }
+        val wearablePublic = readBytes(input, MAX_HPKE_PUBLIC_KEY_BYTES)
+        val wearableFingerprint = readUtf8(input, 64).also { require(it.matches(SHA256_HEX)) }
+        val transcript = readBytes(input, MAX_TRANSCRIPT_BYTES)
+        val signature = readBytes(input, MAX_SIGNATURE_BYTES)
+        HandshakePayload(
+            stableId, identityPublic, identityFingerprint, wearablePublic,
+            wearableFingerprint, transcript, signature
+        )
+    }
+
+    fun encodeLivenessPlaintext(value: LivenessPayload): ByteArray = binary {
+        writeUtf8(it, value.sessionId, MAX_SESSION_ID_BYTES)
+        it.writeLong(value.sequenceNumber)
+        it.writeLong(value.sentAtMs)
+        writeBytes(it, value.nonce, LIVENESS_NONCE_BYTES)
+    }
+
+    fun decodeLivenessPlaintext(payload: ByteArray): LivenessPayload? {
+        if (payload.isEmpty() || payload.size > 1024) return null
+        return parse(payload) { input ->
+            val sessionId = readUtf8(input, MAX_SESSION_ID_BYTES)
+            val sequence = input.readLong().also { require(it >= 0) }
+            val sentAt = input.readLong().also { require(it >= 0) }
+            val nonce = readBytes(input, LIVENESS_NONCE_BYTES)
+            require(nonce.size == LIVENESS_NONCE_BYTES)
+            LivenessPayload(sessionId, sequence, sentAt, nonce)
+        }
+    }
+
+    fun livenessContextInfo(
+        sessionId: String,
+        sender: PeerRole,
+        recipient: PeerRole
+    ): ByteArray {
+        require(sender != recipient)
+        return binary {
+            writeUtf8(it, LIVENESS_DOMAIN, 64)
+            it.writeInt(SCHEMA_VERSION)
+            writeUtf8(it, sessionId, MAX_SESSION_ID_BYTES)
+            writeUtf8(it, sender.name, 16)
+            writeUtf8(it, recipient.name, 16)
+        }
+    }
+
+    private inline fun binary(block: (DataOutputStream) -> Unit): ByteArray =
+        ByteArrayOutputStream().use { buffer ->
+            DataOutputStream(buffer).use(block)
+            buffer.toByteArray()
+        }
+
+    private inline fun <T> parse(bytes: ByteArray, block: (DataInputStream) -> T): T? = runCatching {
+        DataInputStream(ByteArrayInputStream(bytes)).use { input ->
+            val value = block(input)
             require(input.available() == 0)
-            HandshakePayload(
-                stableId,
-                identityPublic,
-                identityFingerprint,
-                wearablePublic,
-                wearableFingerprint,
-                transcript,
-                signature
-            )
+            value
         }
     }.getOrNull()
 
@@ -200,8 +231,7 @@ object WearableProtocolV2 {
         return StandardCharsets.UTF_8.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT)
-            .decode(ByteBuffer.wrap(bytes))
-            .toString()
+            .decode(ByteBuffer.wrap(bytes)).toString()
     }
 
     private fun strictUtf8(value: String): ByteArray {
