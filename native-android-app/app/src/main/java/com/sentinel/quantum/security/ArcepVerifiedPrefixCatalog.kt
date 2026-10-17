@@ -65,7 +65,7 @@ object ArcepVerifiedPrefixCatalog {
             entry.territory.isNotBlank() &&
                 entry.nationalRoot.startsWith("0") &&
                 entry.nationalRoot.length in 4..8 &&
-                entry.nationalRoot.all(Char::isDigit) &&
+                entry.nationalRoot.all { character -> character.isDigit() } &&
                 entry.e164Prefix == CallRuleEngine.normalizePrefix(entry.e164Prefix) &&
                 seenNationalRoots.add(entry.nationalRoot) &&
                 seenE164Prefixes.add(entry.e164Prefix)
