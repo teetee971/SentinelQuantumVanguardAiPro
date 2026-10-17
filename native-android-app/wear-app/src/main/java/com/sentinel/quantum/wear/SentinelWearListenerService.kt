@@ -41,6 +41,9 @@ class SentinelWearListenerService : WearableListenerService() {
             when (path) {
                 WearableProtocolV2.CHALLENGE_PATH -> challengeHandler.onFrame(sourceNodeId, path, frame)
                 WearableProtocolV2.LIVENESS_PATH -> livenessHandler.onFrame(sourceNodeId, path, frame)
+                // The watch has no authorized application-message decoder or consumer yet.
+                // Explicitly reject rather than treating secure transport dispatch as acceptance.
+                WearableProtocolV2.MESSAGE_PATH -> Unit
             }
         }
         secureFrameHandler = handler
