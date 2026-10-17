@@ -281,7 +281,12 @@ internal class PhoneWearableSecureHandshakeRuntime(
         result: WearableSecureHandshakeResult
     ): WearableSecureHandshakeResult {
         if (result.state != WearableSecureHandshakeState.ACTIVE) return result
-        if (!activate(pending.nodeId, result, pending.observation, pending.material)) {
+        val activated = try {
+            activate(pending.nodeId, result, pending.observation, pending.material)
+        } catch (_: Exception) {
+            false
+        }
+        if (!activated) {
             val stableId = result.verifiedProof?.stableId
             stableId?.let(sessionAuthority::revoke)
             if (pending.trustCreatedThisAttempt && stableId != null) {
