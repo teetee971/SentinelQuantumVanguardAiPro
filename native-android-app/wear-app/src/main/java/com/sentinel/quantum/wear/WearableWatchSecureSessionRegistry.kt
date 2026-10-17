@@ -5,6 +5,11 @@ internal class WearableWatchSecureSessionRegistry(
     private val ttlMs: Long = DEFAULT_TTL_MS,
     private val clockMs: () -> Long = System::currentTimeMillis
 ) {
+    data class ResolvedSession(
+        val sessionId: String,
+        val session: WearableHpkeDuplexSession
+    )
+
     private data class Key(val nodeId: String, val sessionId: String)
     private data class Entry(val session: WearableHpkeDuplexSession, val expiresAtMs: Long)
 
@@ -20,15 +25,16 @@ internal class WearableWatchSecureSessionRegistry(
         if (nodeId.isBlank() || sessionId.isBlank()) return false
         val now = clockMs()
         if (now < 0) return false
-        purgeExpired(now)
-        val key = Key(nodeId, sessionId)
-        if (key !in sessions && sessions.size >= maxSessions) return false
         val expiresAt = try {
             Math.addExact(now, ttlMs)
         } catch (_: ArithmeticException) {
             return false
         }
-        sessions[key] = Entry(session, expiresAt)
+        purgeExpired(now)
+        val existingForNode = sessions.keys.any { it.nodeId == nodeId }
+        if (!existingForNode && sessions.size >= maxSessions) return false
+        sessions.keys.removeAll { it.nodeId == nodeId }
+        sessions[Key(nodeId, sessionId)] = Entry(session, expiresAt)
         return true
     }
 
@@ -38,6 +44,15 @@ internal class WearableWatchSecureSessionRegistry(
         if (now < 0) return null
         purgeExpired(now)
         return sessions[Key(nodeId, sessionId)]?.session
+    }
+
+    @Synchronized
+    fun resolveNode(nodeId: String): ResolvedSession? {
+        val now = clockMs()
+        if (now < 0) return null
+        purgeExpired(now)
+        val match = sessions.entries.firstOrNull { it.key.nodeId == nodeId } ?: return null
+        return ResolvedSession(match.key.sessionId, match.value.session)
     }
 
     @Synchronized
