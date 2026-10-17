@@ -41,4 +41,25 @@ class WearableWatchApplicationMessageQuarantineTest {
             WearableSecureTransportInbox.clear(handler)
         }
     }
+    @Test fun unknownPathAndEmptyPeerFramesNeverReachHandler() {
+        var invoked = false
+        val handler = WearableSecureFrameHandler { _, _, _ -> invoked = true }
+        WearableSecureTransportInbox.install(handler)
+        try {
+            val frame = WearableProtocolV2.Frame(byteArrayOf(1))
+            assertFalse(WearableSecureTransportInbox.dispatch("node", "/sentinel/v2/secure/unknown", frame))
+            assertFalse(WearableSecureTransportInbox.dispatch("", WearableProtocolV2.LIVENESS_PATH, frame))
+            assertFalse(
+                WearableSecureTransportInbox.dispatch(
+                    "node",
+                    WearableProtocolV2.LIVENESS_PATH,
+                    WearableProtocolV2.Frame(byteArrayOf())
+                )
+            )
+            assertFalse(invoked)
+        } finally {
+            WearableSecureTransportInbox.clear(handler)
+        }
+    }
+
 }
