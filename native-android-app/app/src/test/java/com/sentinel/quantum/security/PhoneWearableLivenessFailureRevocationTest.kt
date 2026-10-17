@@ -18,7 +18,7 @@ class PhoneWearableLivenessFailureRevocationTest {
         val material = IdentityHpkeMaterial("phone-public".toByteArray())
 
         assertTrue(runtime.activate("node-1", "session-1", "watch-public".toByteArray(), material))
-        runtime.sendProbe("node-1")
+        assertFalse("inline send failure must not report successful dispatch", runtime.sendProbe("node-1"))
 
         assertEquals(250L, revokedAt)
         assertFalse(runtime.isActive("node-1", "session-1"))
