@@ -15,7 +15,7 @@
     {"id":"network_behavior","owner":"network-security","surface":"Network trust / history / behavior baseline","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
     {"id":"vpn_runtime","owner":"network-security","surface":"VPN client runtime","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"GATEWAY_NOT_AVAILABLE"},
     {"id":"vpn_control_plane","owner":"network-security","surface":"VPN gateway / catalog / provisioning","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
-    {"id":"mesh_runtime","owner":"network-security","surface":"Private Mesh runtime","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"TRANSPORT_NOT_IMPLEMENTED"},
+    {"id":"mesh_runtime","owner":"network-security","surface":"Private Mesh runtime","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
     {"id":"wearable_runtime","owner":"wearable-core","surface":"Wearable runtime / channel","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"TRANSPORT_NOT_IMPLEMENTED"},
     {"id":"digital_exposure","owner":"security","surface":"Digital exposure / breach intelligence","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
     {"id":"threat_intelligence","owner":"security","surface":"Threat intelligence feeds / query gate","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"CREDENTIAL_NOT_PROVISIONED"},
