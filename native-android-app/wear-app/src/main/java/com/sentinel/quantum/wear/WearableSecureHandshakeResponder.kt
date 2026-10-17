@@ -2,31 +2,46 @@ package com.sentinel.quantum.wear
 
 import com.sentinel.quantum.wearable.security.WearableHandshakeTranscriptCodec
 import com.sentinel.quantum.wearable.security.WearableHpkeKeyPair
+import com.sentinel.quantum.wearable.security.WearableHpkePublicKey
+import com.sentinel.quantum.wearable.security.WearableHpkeSender
 import java.security.GeneralSecurityException
 import java.security.MessageDigest
 
-interface WearableHpkeRecipientSession {
-    val publicKeyEncoded: ByteArray
-    val fingerprintSha256: String
+interface WearableHpkeDuplexSession {
+    val wearablePublicKeyEncoded: ByteArray
+    val wearableFingerprintSha256: String
+    val phonePublicKeyEncoded: ByteArray
+    val phoneFingerprintSha256: String
 
     @Throws(GeneralSecurityException::class)
-    fun decrypt(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray
+    fun encryptForPhone(plaintext: ByteArray, contextInfo: ByteArray): ByteArray
+
+    @Throws(GeneralSecurityException::class)
+    fun decryptFromPhone(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray
 }
 
 interface WearableHpkeSessionFactory {
     @Throws(GeneralSecurityException::class)
-    fun create(): WearableHpkeRecipientSession
+    fun create(phoneHpkePublicKeyEncoded: ByteArray): WearableHpkeDuplexSession
 }
 
 internal class TinkWearableHpkeSessionFactory : WearableHpkeSessionFactory {
-    override fun create(): WearableHpkeRecipientSession {
+    override fun create(phoneHpkePublicKeyEncoded: ByteArray): WearableHpkeDuplexSession {
         val pair = WearableHpkeKeyPair.generate()
-        return object : WearableHpkeRecipientSession {
-            override val publicKeyEncoded: ByteArray
+        val phonePublic = WearableHpkePublicKey.fromEncoded(phoneHpkePublicKeyEncoded)
+        val sender = WearableHpkeSender.fromPublicKey(phonePublic)
+        return object : WearableHpkeDuplexSession {
+            override val wearablePublicKeyEncoded: ByteArray
                 get() = pair.publicKey.encoded()
-            override val fingerprintSha256: String
+            override val wearableFingerprintSha256: String
                 get() = pair.publicKey.fingerprintSha256
-            override fun decrypt(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray =
+            override val phonePublicKeyEncoded: ByteArray
+                get() = phonePublic.encoded()
+            override val phoneFingerprintSha256: String
+                get() = phonePublic.fingerprintSha256
+            override fun encryptForPhone(plaintext: ByteArray, contextInfo: ByteArray): ByteArray =
+                sender.encrypt(plaintext, contextInfo)
+            override fun decryptFromPhone(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray =
                 pair.decrypt(ciphertext, contextInfo)
         }
     }
@@ -38,6 +53,7 @@ data class WearableHandshakeRequest(
     val capabilities: Set<String>,
     val challengeNonce: String,
     val issuedAtMs: Long,
+    val phoneHpkePublicKeyEncoded: ByteArray,
     val phoneHpkePublicKeyFingerprintSha256: String
 ) {
     init {
@@ -47,7 +63,21 @@ data class WearableHandshakeRequest(
         require(capabilities.none { it.isBlank() })
         require(challengeNonce.matches(Regex("^[A-Za-z0-9_-]{22,128}$")))
         require(issuedAtMs >= 0)
+        require(phoneHpkePublicKeyEncoded.isNotEmpty() && phoneHpkePublicKeyEncoded.size <= MAX_HPKE_PUBLIC_KEY_BYTES)
         require(phoneHpkePublicKeyFingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))
+        val observed = MessageDigest.getInstance("SHA-256")
+            .digest(phoneHpkePublicKeyEncoded)
+            .joinToString("") { "%02x".format(it) }
+        require(
+            MessageDigest.isEqual(
+                observed.toByteArray(Charsets.US_ASCII),
+                phoneHpkePublicKeyFingerprintSha256.toByteArray(Charsets.US_ASCII)
+            )
+        ) { "phone HPKE public key fingerprint mismatch" }
+    }
+
+    companion object {
+        private const val MAX_HPKE_PUBLIC_KEY_BYTES = 4 * 1024
     }
 }
 
@@ -71,7 +101,7 @@ data class WearableHandshakeResponse(
 
 data class WearableHandshakeResponderResult(
     val response: WearableHandshakeResponse,
-    val session: WearableHpkeRecipientSession
+    val session: WearableHpkeDuplexSession
 )
 
 class WearableSecureHandshakeResponder(
@@ -81,20 +111,20 @@ class WearableSecureHandshakeResponder(
     @Throws(GeneralSecurityException::class)
     fun respond(request: WearableHandshakeRequest): WearableHandshakeResponderResult {
         val identity = identityStore.snapshot()
-        val session = hpkeSessionFactory.create()
-        val publicKeyEncoded = session.publicKeyEncoded.copyOf()
-        require(publicKeyEncoded.isNotEmpty() && publicKeyEncoded.size <= MAX_HPKE_PUBLIC_KEY_BYTES) {
+        val session = hpkeSessionFactory.create(request.phoneHpkePublicKeyEncoded.copyOf())
+        val wearablePublicKey = session.wearablePublicKeyEncoded.copyOf()
+        require(wearablePublicKey.isNotEmpty() && wearablePublicKey.size <= MAX_HPKE_PUBLIC_KEY_BYTES) {
             "wearable HPKE public key is invalid"
         }
-        val expectedHpkeFingerprint = MessageDigest.getInstance("SHA-256")
-            .digest(publicKeyEncoded)
+        val expectedWearableFingerprint = MessageDigest.getInstance("SHA-256")
+            .digest(wearablePublicKey)
             .joinToString("") { "%02x".format(it) }
-        require(
-            MessageDigest.isEqual(
-                expectedHpkeFingerprint.toByteArray(Charsets.US_ASCII),
-                session.fingerprintSha256.toByteArray(Charsets.US_ASCII)
-            )
-        ) { "wearable HPKE public key fingerprint mismatch" }
+        require(constantTimeEquals(expectedWearableFingerprint, session.wearableFingerprintSha256)) {
+            "wearable HPKE public key fingerprint mismatch"
+        }
+        require(constantTimeEquals(request.phoneHpkePublicKeyFingerprintSha256, session.phoneFingerprintSha256)) {
+            "phone HPKE session binding mismatch"
+        }
 
         val transcript = WearableHandshakeTranscriptCodec.encode(
             stableId = request.stableId,
@@ -105,21 +135,27 @@ class WearableSecureHandshakeResponder(
             challengeNonce = request.challengeNonce,
             issuedAtMs = request.issuedAtMs,
             phoneHpkePublicKeyFingerprintSha256 = request.phoneHpkePublicKeyFingerprintSha256,
-            wearableHpkePublicKeyFingerprintSha256 = session.fingerprintSha256
+            wearableHpkePublicKeyFingerprintSha256 = session.wearableFingerprintSha256
         )
         val signature = identityStore.sign(transcript)
         return WearableHandshakeResponderResult(
             response = WearableHandshakeResponse(
                 identityPublicKeyX509 = identity.publicKeyX509.copyOf(),
                 identityKeyFingerprintSha256 = identity.fingerprintSha256,
-                wearableHpkePublicKeyEncoded = publicKeyEncoded,
-                wearableHpkePublicKeyFingerprintSha256 = session.fingerprintSha256,
+                wearableHpkePublicKeyEncoded = wearablePublicKey,
+                wearableHpkePublicKeyFingerprintSha256 = session.wearableFingerprintSha256,
                 signedTranscript = transcript.copyOf(),
                 signature = signature.copyOf()
             ),
             session = session
         )
     }
+
+    private fun constantTimeEquals(expected: String, actual: String): Boolean =
+        MessageDigest.isEqual(
+            expected.toByteArray(Charsets.US_ASCII),
+            actual.toByteArray(Charsets.US_ASCII)
+        )
 
     companion object {
         const val SECURE_PROTOCOL_VERSION = 2
