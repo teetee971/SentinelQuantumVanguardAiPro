@@ -3,14 +3,18 @@ package com.sentinel.quantum.wearable.security
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.Signature
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class Ed25519WearableHandshakeVerifierTest {
     private val pair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
     private val fingerprint = MessageDigest.getInstance("SHA-256")
         .digest(pair.public.encoded).joinToString("") { "%02x".format(it) }
+    private val phoneHpkeFingerprint = "1".repeat(64)
+    private val wearableHpkeFingerprint = "2".repeat(64)
 
     private fun candidate(
         stableId: String = "watch-1",
@@ -127,5 +131,76 @@ class Ed25519WearableHandshakeVerifierTest {
             "watch-1", fingerprint, "session-1", 1, linkedSetOf("SENTINEL_ALERTS", "QUICK_ACTIONS"), "AAAAAAAAAAAAAAAAAAAAAA", 100_000L
         )
         org.junit.Assert.assertArrayEquals(a, b)
+    }
+
+    @Test fun protocolV2TranscriptBindsBothHpkePublicKeyFingerprints() {
+        val baseline = WearableHandshakeTranscriptCodec.encode(
+            stableId = "watch-1",
+            keyFingerprintSha256 = fingerprint,
+            sessionId = "session-2",
+            protocolVersion = 2,
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
+            phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint,
+            wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+        )
+        val changedPhone = WearableHandshakeTranscriptCodec.encode(
+            stableId = "watch-1",
+            keyFingerprintSha256 = fingerprint,
+            sessionId = "session-2",
+            protocolVersion = 2,
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
+            phoneHpkePublicKeyFingerprintSha256 = "3".repeat(64),
+            wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+        )
+        val changedWearable = WearableHandshakeTranscriptCodec.encode(
+            stableId = "watch-1",
+            keyFingerprintSha256 = fingerprint,
+            sessionId = "session-2",
+            protocolVersion = 2,
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
+            phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint,
+            wearableHpkePublicKeyFingerprintSha256 = "4".repeat(64)
+        )
+
+        assertFalse(baseline.contentEquals(changedPhone))
+        assertFalse(baseline.contentEquals(changedWearable))
+    }
+
+    @Test fun protocolV1CannotCarrySecureHpkeBindings() {
+        assertThrows(IllegalArgumentException::class.java) {
+            WearableHandshakeTranscriptCodec.encode(
+                stableId = "watch-1",
+                keyFingerprintSha256 = fingerprint,
+                sessionId = "session-1",
+                protocolVersion = 1,
+                capabilities = setOf("SENTINEL_ALERTS"),
+                challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+                issuedAtMs = 100_000L,
+                phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint,
+                wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+            )
+        }
+    }
+
+    @Test fun protocolV2RejectsMalformedHpkeFingerprint() {
+        assertThrows(IllegalArgumentException::class.java) {
+            WearableHandshakeTranscriptCodec.encode(
+                stableId = "watch-1",
+                keyFingerprintSha256 = fingerprint,
+                sessionId = "session-2",
+                protocolVersion = 2,
+                capabilities = setOf("SENTINEL_ALERTS"),
+                challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+                issuedAtMs = 100_000L,
+                phoneHpkePublicKeyFingerprintSha256 = "not-a-sha256",
+                wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+            )
+        }
     }
 }
