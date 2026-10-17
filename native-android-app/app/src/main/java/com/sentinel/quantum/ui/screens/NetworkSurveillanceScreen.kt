@@ -102,8 +102,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     DisposableEffect(Unit) {
         onDispose {
-            wifiScanner.release()
-            bluetoothScanner.stop()
+            wifiScanner.close()
+            bluetoothScanner.close()
         }
     }
 
