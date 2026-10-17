@@ -106,6 +106,12 @@ class WearableHandshakeReplayGuard(
     }
 
     @Synchronized
+    fun revoke(nonce: String): Boolean {
+        if (nonce.isBlank()) return false
+        return pending.remove(nonce) != null
+    }
+
+    @Synchronized
     fun revokeAll() = pending.clear()
 
     private fun candidateMatchesPending(
