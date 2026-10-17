@@ -36,7 +36,8 @@ class SentinelDeviceUtilitiesOrchestrator(
 
     data class Discovery(
         val candidates: List<SentinelCleanupPolicy.Candidate>,
-        val plan: SentinelCleanupPlan.Summary
+        val plan: SentinelCleanupPlan.Summary,
+        val observedSuccessfully: Boolean
     )
 
     data class CleanupRun(
@@ -45,15 +46,23 @@ class SentinelDeviceUtilitiesOrchestrator(
     )
 
     fun discover(): Discovery {
-        val candidates = runCatching { discoverCandidates() }.getOrDefault(emptyList())
-        publishObserved()
+        val result = runCatching { discoverCandidates() }
+        val candidates = result.getOrDefault(emptyList())
+        if (result.isSuccess) publishObserved()
         return Discovery(
             candidates = candidates,
-            plan = SentinelCleanupPlan.summarize(candidates)
+            plan = SentinelCleanupPlan.summarize(candidates),
+            observedSuccessfully = result.isSuccess
         )
     }
 
     fun cleanup(discovery: Discovery): CleanupRun {
+        if (!discovery.observedSuccessfully) {
+            return CleanupRun(
+                results = emptyList(),
+                summary = SentinelCleanupBatch.summarize(emptyList())
+            )
+        }
         val executable = discovery.candidates.filter(SentinelCleanupPolicy::canExecuteDirectly)
         val results = executable.map { candidate ->
             runCatching { executeCandidate(candidate) }
