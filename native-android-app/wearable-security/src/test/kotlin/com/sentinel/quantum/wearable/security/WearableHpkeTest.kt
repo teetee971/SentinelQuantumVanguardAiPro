@@ -2,8 +2,10 @@ package com.sentinel.quantum.wearable.security
 
 import java.security.GeneralSecurityException
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -20,6 +22,15 @@ class WearableHpkeTest {
         assertNotEquals(plaintext.toList(), ciphertext.toList())
         assertArrayEquals(plaintext, recipient.decrypt(ciphertext, context))
         assertEqualsRequiredProfile(recipient.profileName)
+    }
+
+    @Test
+    fun publicKeyFingerprintIsStableAcrossExportImport() {
+        val original = WearableHpkeKeyPair.generate().publicKey
+        val restored = WearableHpkePublicKey.fromEncoded(original.encoded())
+
+        assertTrue(original.fingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))
+        assertEquals(original.fingerprintSha256, restored.fingerprintSha256)
     }
 
     @Test
@@ -68,7 +79,7 @@ class WearableHpkeTest {
     }
 
     private fun assertEqualsRequiredProfile(actual: String) {
-        org.junit.Assert.assertEquals(
+        assertEquals(
             "DHKEM_X25519_HKDF_SHA256_HKDF_SHA256_AES_256_GCM",
             actual
         )
