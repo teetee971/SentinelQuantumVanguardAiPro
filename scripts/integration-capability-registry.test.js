@@ -131,12 +131,36 @@ test('Render-declared phone backends are not diagnosed as undeployed', () => {
   }
 });
 
-test('Digital exposure diagnoses missing user-safe identity binding rather than an absent backend', () => {
-  const exposureBackend = fs.readFileSync('backend/wangiri-api/collective_exposure.py', 'utf8');
-  const app = fs.readFileSync('backend/wangiri-api/app_redis.py', 'utf8');
-  assert.match(exposureBackend, /prefix="\/v1\/intelligence\/exposures"/);
-  assert.match(exposureBackend, /X-Exposure-Key|x_exposure_key/);
-  assert.match(app, /create_collective_exposure_router\(\)/);
+test('Digital exposure has a user-safe OIDC bridge but remains locked until identity metadata is provisioned', () => {
+  const serverRouter = fs.readFileSync('backend/wangiri-api/collective_exposure_user.py', 'utf8');
+  const identity = fs.readFileSync('backend/wangiri-api/exposure_identity.py', 'utf8');
+  const androidClient = fs.readFileSync(
+    'native-android-app/app/src/main/java/com/sentinel/quantum/security/DigitalExposureClient.kt',
+    'utf8'
+  );
+  const endpointPolicy = fs.readFileSync(
+    'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelApiEndpointPolicy.kt',
+    'utf8'
+  );
+  const render = fs.readFileSync('render.yaml', 'utf8');
+
+  assert.match(serverRouter, /\/report-user/);
+  assert.match(serverRouter, /\/lookup-user/);
+  assert.match(serverRouter, /Authorization|authorization/);
+  assert.doesNotMatch(serverRouter, /X-Exposure-Key|x_exposure_key/);
+  assert.match(identity, /PyJWKClient/);
+  assert.match(identity, /derive_subject_token/);
+  assert.match(identity, /EXPOSURE_AUTH_JWKS_URL/);
+  assert.match(identity, /EXPOSURE_AUTH_ISSUER/);
+  assert.match(identity, /EXPOSURE_AUTH_AUDIENCE/);
+  assert.match(androidClient, /Authorization/);
+  assert.match(androidClient, /buildAuthenticated/);
+  assert.match(androidClient, /IntegrationCapabilityId\.DIGITAL_EXPOSURE/);
+  assert.doesNotMatch(androidClient, /X-Exposure-Key|EXPOSURE_API_KEY/);
+  assert.match(endpointPolicy, /authenticatedPaths/);
+  assert.match(render, /key:\s*EXPOSURE_AUTH_JWKS_URL[\s\S]*?sync:\s*false/);
+  assert.match(render, /key:\s*EXPOSURE_AUTH_ISSUER[\s\S]*?sync:\s*false/);
+  assert.match(render, /key:\s*EXPOSURE_AUTH_AUDIENCE[\s\S]*?sync:\s*false/);
 
   const capability = readRegistry().capabilities.find((entry) => entry.id === 'digital_exposure');
   assert.ok(capability, 'digital_exposure capability must exist');
