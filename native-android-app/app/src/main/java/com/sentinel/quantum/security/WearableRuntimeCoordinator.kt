@@ -13,9 +13,9 @@ import com.sentinel.quantum.integration.IntegrationTruthRuntime
  * adapter is available and a fresh Sentinel channel proof is active. Any missing/stale proof
  * immediately replaces the prior observation with a fail-closed identity-binding diagnostic.
  *
- * The caller that supplies [channelProof] is responsible for obtaining it only after the existing
- * wearable cryptographic handshake/session policy has accepted the peer. This coordinator does not
- * manufacture or infer cryptographic trust from Bluetooth/Wear OS platform state.
+ * The internal authenticated entry point is reserved for the security composition layer after the
+ * existing cryptographic handshake/session policy has accepted the peer. UI code can only publish
+ * untrusted platform observations and therefore cannot manufacture CONNECTED state.
  */
 class WearableRuntimeCoordinator {
     fun observePlatform(
@@ -28,7 +28,7 @@ class WearableRuntimeCoordinator {
         nowMs = nowMs
     )
 
-    fun observeAuthenticatedChannel(
+    internal fun observeAuthenticatedChannel(
         observation: WearableAdapterObservation,
         channelProof: WearableChannelProof?,
         negotiatedCapabilities: Set<WearableCapability>,
