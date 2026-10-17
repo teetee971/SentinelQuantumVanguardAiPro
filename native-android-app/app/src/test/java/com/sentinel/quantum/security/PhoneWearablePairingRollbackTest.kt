@@ -44,6 +44,38 @@ class PhoneWearablePairingRollbackTest {
         )
     }
 
+    @Test fun firstPairingTrustIsRolledBackWhenRuntimeActivationThrows() {
+        val backend = MemoryPairingBackend()
+        val transport = CapturingTransport()
+        val runtime = PhoneWearableSecureHandshakeRuntime(
+            pairingStore = WearablePairingStore(backend),
+            replayGuard = WearableHandshakeReplayGuard(clockMs = { 100L }, elapsedClockMs = { 100L }),
+            sessionAuthority = WearableSessionAuthority(),
+            hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
+            transport = transport,
+            activate = { _, _, _, _ -> throw IllegalStateException("runtime activation crashed") },
+            clockMs = { 100L },
+            sessionIdFactory = { "session-rollback" }
+        )
+
+        assertTrue(runtime.start("node-1", observation(), setOf(WearableCapability.CONNECTION_STATE)))
+        val challenge = WearableProtocolV2.decodeChallenge(requireNotNull(transport.payload))!!
+        val signed = signedHandshake(challenge)
+        val pending = runtime.handleHandshake(
+            "node-1",
+            requireNotNull(WearableProtocolV2.decodeFrame(WearableProtocolV2.encodeHandshake(signed.payload)))
+        )
+        assertEquals(WearableSecureHandshakeState.PENDING_CONFIRMATION, pending.state)
+
+        val rejected = requireNotNull(runtime.confirm(signed.stableId, confirmedAtMs = 100L))
+        assertEquals(WearableSecureHandshakeState.REJECTED, rejected.state)
+        assertEquals(WearableSecureHandshakeRejection.AUTHORITY_REJECTED, rejected.rejection)
+        assertNull(
+            "a failed runtime activation must not leave a new durable trust anchor behind",
+            backend.load(signed.stableId)
+        )
+    }
+
     private fun observation() = WearableAdapterObservation(
         stableIdHint = "wearos-hint",
         displayName = "Watch",
