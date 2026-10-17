@@ -197,6 +197,12 @@ class IntelligenceSnapshotStore(
             nullable(evidence.categoryCode),
             nullable(evidence.analysisOutcome)
         )
+        is IntelligenceEvidence.CommunityReport -> listOf(
+            "COMMUNITY_REPORT",
+            enc(evidence.categoryCode),
+            evidence.moderationState.name,
+            evidence.effectOnReputation.name
+        )
         is IntelligenceEvidence.Reputation -> listOf(
             "REPUTATION",
             evidence.riskScore?.toString() ?: NULL,
@@ -244,6 +250,14 @@ class IntelligenceSnapshotStore(
                     transportState = dec(fields[2]),
                     categoryCode = decodeNullable(fields[3]),
                     analysisOutcome = decodeNullable(fields[4])
+                )
+            }
+            "COMMUNITY_REPORT" -> {
+                require(fields.size == 4)
+                IntelligenceEvidence.CommunityReport(
+                    categoryCode = dec(fields[1]),
+                    moderationState = IntelligenceEvidence.CommunityModerationState.valueOf(fields[2]),
+                    effectOnReputation = IntelligenceEvidence.CommunityReputationEffect.valueOf(fields[3])
                 )
             }
             "REPUTATION" -> {
