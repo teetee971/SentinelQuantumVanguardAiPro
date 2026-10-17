@@ -7,6 +7,7 @@ import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SubscriptionManager
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
 import java.util.concurrent.Executors
 
 /**
@@ -115,6 +116,17 @@ class SentinelSmsDeliverReceiver : BroadcastReceiver() {
                 runCatching {
                     SmsTimelineMapper.toEvent(analysis)?.let { event ->
                         PhonePrivateTimelineStore(context).append(event)
+                    }
+                }
+                runCatching {
+                    inserted.lastPathSegment?.toLongOrNull()?.let { providerMessageId ->
+                        IntelligenceCoreRuntime.publishIncomingSmsAnalysis(
+                            context = context,
+                            providerMessageId = providerMessageId,
+                            sender = address,
+                            analysis = analysis,
+                            observedAtMs = receivedAt
+                        )
                     }
                 }
             }
