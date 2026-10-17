@@ -106,28 +106,27 @@ internal class PhoneWearableSecureHandshakeRuntime(
                 )
             )
         } catch (_: Exception) {
+            replayGuard.revoke(context.challenge.nonce)
             return false
         }
 
         synchronized(this) {
             purgeExpired(now)
-            if (nodeId !in pendingByNode && pendingByNode.size >= maxPendingNodes) return false
+            if (nodeId !in pendingByNode && pendingByNode.size >= maxPendingNodes) {
+                replayGuard.revoke(context.challenge.nonce)
+                return false
+            }
+            pendingByNode.remove(nodeId)?.let { replayGuard.revoke(it.context.challenge.nonce) }
             pendingByNode[nodeId] = Pending(nodeId, observation, context, material)
         }
         val attemptId = context.attempt.attemptId
         return try {
             transport.send(nodeId, WearableProtocolV2.CHALLENGE_PATH, encoded) {
-                synchronized(this) {
-                    val current = pendingByNode[nodeId]
-                    if (current?.context?.attempt?.attemptId == attemptId) pendingByNode.remove(nodeId)
-                }
+                removePendingAndRevoke(nodeId, attemptId)
             }
             true
         } catch (_: Exception) {
-            synchronized(this) {
-                val current = pendingByNode[nodeId]
-                if (current?.context?.attempt?.attemptId == attemptId) pendingByNode.remove(nodeId)
-            }
+            removePendingAndRevoke(nodeId, attemptId)
             false
         }
     }
@@ -240,13 +239,26 @@ internal class PhoneWearableSecureHandshakeRuntime(
         return result
     }
 
+    private fun removePendingAndRevoke(nodeId: String, attemptId: String) {
+        synchronized(this) {
+            val current = pendingByNode[nodeId]
+            if (current?.context?.attempt?.attemptId != attemptId) return
+            pendingByNode.remove(nodeId)
+            replayGuard.revoke(current.context.challenge.nonce)
+        }
+    }
+
     private fun purgeExpired(nowMs: Long) {
         if (nowMs < 0) {
             pendingByNode.clear()
             replayGuard.revokeAll()
             return
         }
-        pendingByNode.entries.removeAll { nowMs > it.value.context.challenge.expiresAtMs }
+        val expired = pendingByNode.values.filter { nowMs > it.context.challenge.expiresAtMs }
+        expired.forEach {
+            pendingByNode.remove(it.nodeId)
+            replayGuard.revoke(it.context.challenge.nonce)
+        }
     }
 
     private fun rejected(reason: WearableSecureHandshakeRejection) = WearableSecureHandshakeResult(
