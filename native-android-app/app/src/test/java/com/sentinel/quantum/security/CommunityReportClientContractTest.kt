@@ -1,5 +1,6 @@
 package com.sentinel.quantum.security
 
+import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -50,6 +51,40 @@ class CommunityReportClientContractTest {
                 "https://evil.example.test",
                 setOf("api.example.test")
             )
+        }
+    }
+
+    @Test fun invalidRecipientCountryFailsBeforeAnyRemoteEgress() {
+        val noNetworkClient = OkHttpClient.Builder()
+            .addInterceptor {
+                throw AssertionError("invalid recipient country reached remote egress")
+            }
+            .build()
+        val subject = CommunityReportClient(
+            baseUrl = "https://api.example.test",
+            allowedHosts = setOf("api.example.test"),
+            egressGate = { true },
+            client = noNetworkClient
+        )
+
+        listOf(
+            "", "F", "FRA", "9F", "F-",
+            "f\u0131",       // Unicode dotless i: uppercases to FI
+            "\u017Fe",       // Unicode long s: uppercases to SE
+            "\uFB00",        // Unicode ligature: uppercases to FF
+            "\u00A0FR\u00A0", // Non-ASCII surrounding spaces
+            "F\uFF32",       // Fullwidth R
+            "F\nR"           // Embedded newline
+        ).forEach { invalidCountry ->
+            assertThrows(IllegalArgumentException::class.java) {
+                subject.submit(
+                    callerNumber = "+33612345678",
+                    recipientCountry = invalidCountry,
+                    category = CommunityReportClient.Category.WANGIRI,
+                    protectionMode = ProtectionMode.ENHANCED,
+                    explicitConsent = true
+                )
+            }
         }
     }
 }
