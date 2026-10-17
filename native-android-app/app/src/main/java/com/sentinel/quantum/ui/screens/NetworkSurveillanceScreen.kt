@@ -28,6 +28,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
@@ -38,6 +40,9 @@ import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.NetworkRiskLevel
+import com.sentinel.quantum.security.NetworkTimelineEventKind
+import com.sentinel.quantum.security.NetworkTimelineSnapshot
+import com.sentinel.quantum.security.NetworkTimelineStore
 import com.sentinel.quantum.security.NetworkTrustStore
 import com.sentinel.quantum.security.WifiBand
 import com.sentinel.quantum.security.WifiRiskEvaluator
@@ -65,6 +70,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     val logger = remember(context) { LocalLogger(context) }
     val wifiScanner = remember(context) { WifiScanner(context) }
     val bluetoothScanner = remember(context) { BluetoothScanner(context) }
+    val networkTimelineStore = remember(context) { NetworkTimelineStore(context) }
     val trustStore = remember(context) { NetworkTrustStore(context) }
     val motionLevel = remember(context) {
         val animatorScale = runCatching {
@@ -85,6 +91,19 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     var covertDeviceAlerted by remember { mutableStateOf(false) }
+    var timelineSnapshot by remember {
+        mutableStateOf(
+            NetworkTimelineSnapshot(
+                acceptedEvents = emptyList(),
+                rejectedEvents = 0,
+                prunedEvents = 0,
+                firstObservedAtMs = null,
+                lastObservedAtMs = null,
+                highSeverityCount = 0,
+                warningCount = 0
+            )
+        )
+    }
 
     val visibleRiskLevels = when (selectedTab) {
         SurveillanceTab.WIFI -> wifiNetworks.map { it.assessment.riskLevel }
@@ -98,6 +117,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         aggregateStatus == SentinelStatus.BAD -> "Au moins un signal à risque élevé a été observé localement. Vérifiez les détails avant toute action."
         aggregateStatus == SentinelStatus.WARN -> "Des signaux intermédiaires nécessitent une vérification. Ils ne constituent pas à eux seuls une preuve de compromission."
         else -> "Aucun signal moyen ou élevé n’est présent dans les résultats visibles. Cela ne prouve pas que l’environnement est sûr."
+    }
+
+    LaunchedEffect(networkTimelineStore) {
+        timelineSnapshot = withContext(Dispatchers.IO) { networkTimelineStore.read() }
     }
 
     DisposableEffect(Unit) {
@@ -144,6 +167,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         " à risque élevé."
                 )
             },
+            onTimelineUpdated = { snapshot -> timelineSnapshot = snapshot },
             onError = { message ->
                 isScanning = false
                 statusMessage = message
@@ -175,7 +199,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     "Scan Bluetooth local terminé : ${bluetoothDevices.size} appareil(s), " +
                         "${bluetoothDevices.count { it.assessment.likelyTracker }} traceur(s) potentiel(s)."
                 )
-            }
+            },
+            onTimelineUpdated = { snapshot -> timelineSnapshot = snapshot }
         )
     }
 
@@ -285,6 +310,40 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+
+                item {
+                    SentinelSectionHeader(
+                        title = "Historique réseau local",
+                        subtitle = "Chronologie bornée des observations Wi‑Fi/Bluetooth, sans MAC ni BSSID en clair."
+                    )
+                    SentinelGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("network-timeline")
+                    ) {
+                        if (timelineSnapshot.acceptedEvents.isEmpty()) {
+                            Text("Aucune observation réseau persistée.")
+                        } else {
+                            Text(
+                                "${timelineSnapshot.acceptedEvents.size} observation(s) conservée(s) localement.",
+                                fontWeight = FontWeight.Bold
+                            )
+                            timelineSnapshot.acceptedEvents.take(MAX_VISIBLE_TIMELINE_EVENTS).forEach { event ->
+                                Text(
+                                    "${networkTimelineKindLabel(event.kind)} · ${event.summary}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        if (timelineSnapshot.rejectedEvents > 0 || timelineSnapshot.prunedEvents > 0) {
+                            Text(
+                                "${timelineSnapshot.rejectedEvents} rejetée(s), ${timelineSnapshot.prunedEvents} expirée(s) — la chronologie reste bornée.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -406,6 +465,20 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             }
         }
     }
+}
+
+private const val MAX_VISIBLE_TIMELINE_EVENTS = 5
+
+private fun networkTimelineKindLabel(kind: NetworkTimelineEventKind): String = when (kind) {
+    NetworkTimelineEventKind.FIRST_SEEN -> "Première observation"
+    NetworkTimelineEventKind.RETURNED -> "Observation renouvelée"
+    NetworkTimelineEventKind.DISAPPEARED -> "Disparition observée"
+    NetworkTimelineEventKind.IDENTITY_CHANGE -> "Identité modifiée"
+    NetworkTimelineEventKind.TOPOLOGY_CHANGE -> "Topologie modifiée"
+    NetworkTimelineEventKind.COVERT_DEVICE_HINT -> "Indice local"
+    NetworkTimelineEventKind.FLOW_ANOMALY -> "Anomalie de flux"
+    NetworkTimelineEventKind.BEHAVIOR_ANOMALY -> "Anomalie comportementale"
+    NetworkTimelineEventKind.RISK_SCORE_CHANGED -> "Risque modifié"
 }
 
 @Composable

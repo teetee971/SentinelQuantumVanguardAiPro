@@ -79,7 +79,8 @@ class BluetoothScanner(context: Context) {
         durationMs: Long = DEFAULT_SCAN_DURATION_MS,
         onResults: (List<DiscoveredBluetoothDevice>) -> Unit,
         onError: (String) -> Unit,
-        onScanFinished: () -> Unit = {}
+        onScanFinished: () -> Unit = {},
+        onTimelineUpdated: (NetworkTimelineSnapshot) -> Unit = {}
     ) {
         val currentAdapter = adapter
         if (currentAdapter == null) {
@@ -154,6 +155,8 @@ class BluetoothScanner(context: Context) {
                     source = NetworkTimelineSource.ANDROID_BLE,
                     rawIdentifiers = finalResults.map { it.address }
                 )
+                val snapshot = networkTimelineStore.read()
+                handler.post { onTimelineUpdated(snapshot) }
             }
             onResults(finalResults)
             onScanFinished()
