@@ -135,7 +135,16 @@ class CallerIdActivity : ComponentActivity() {
                 LaunchedEffect(number) {
                     if (number.isNotBlank() && number.any { it.isDigit() }) {
                         val localIdentity = withContext(Dispatchers.IO) {
-                            LocalContactLookup(applicationContext).find(number)
+                            val lookup = LocalContactLookup(applicationContext)
+                            val identity = lookup.find(number)
+                            IntelligenceCoreRuntime.publishContactObservation(
+                                context = applicationContext,
+                                contactList = lookup.listWithState(limit = 512),
+                                rawNumber = number,
+                                identity = identity,
+                                observedAtMs = System.currentTimeMillis()
+                            )
+                            identity
                         }
                         if (localIdentity != null) {
                             localName = localIdentity.displayName
