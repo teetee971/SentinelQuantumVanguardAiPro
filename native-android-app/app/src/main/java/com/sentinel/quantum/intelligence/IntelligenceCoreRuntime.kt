@@ -3,6 +3,7 @@ package com.sentinel.quantum.intelligence
 import android.content.Context
 import com.sentinel.quantum.security.CallNumberFingerprinter
 import com.sentinel.quantum.security.CallRuleEngine
+import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsProviderIdentityLookup
 import java.io.File
@@ -116,6 +117,35 @@ object IntelligenceCoreRuntime {
         runtime.sink.publish(intelligenceEvent)
     }.getOrDefault(PublishResult.REJECTED)
 
+    /**
+     * Publishes an explicitly consented post-screening reputation result into the shared core.
+     *
+     * The caller number is transient input only. The persisted event contains the existing
+     * device-bound fingerprint and bounded reputation evidence; remote flags, warning copy and
+     * raw number are not stored. This method must never be called from the Telecom callback before
+     * respondToCall().
+     */
+    fun publishRemoteReputation(
+        context: Context,
+        rawNumber: String?,
+        result: CallerReputationClient.Result
+    ): PublishResult = runCatching {
+        val normalizedNumber = CallRuleEngine.normalizeNumber(rawNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val intelligenceEvent = ReputationEvidenceAdapter.fromRemoteResult(
+            eventId = reputationEventId(fingerprint, result),
+            identityKey = identityKey,
+            result = result,
+            sourceLabel = REMOTE_REPUTATION_SOURCE
+        )
+        runtime.sink.publish(intelligenceEvent)
+    }.getOrDefault(PublishResult.REJECTED)
+
     fun snapshotForNumber(
         context: Context,
         rawNumber: String?,
@@ -169,6 +199,20 @@ object IntelligenceCoreRuntime {
     private fun smsStatusEventId(event: SmsDeliveryStatusBus.Event): String =
         "sms-status:${event.sendToken}:${event.providerMessageId}:${event.stage.name}:${event.partIndex}:${event.partCount}"
 
+    private fun reputationEventId(
+        fingerprint: String,
+        result: CallerReputationClient.Result
+    ): String = listOf(
+        "reputation",
+        fingerprint,
+        result.reputationObservedAtMs,
+        result.reputationTtlMs,
+        result.riskScore,
+        result.signals,
+        result.categories.joinToString(",").hashCode(),
+        REMOTE_REPUTATION_SOURCE
+    ).joinToString(":")
+
     private fun networkVerification(code: String): IntelligenceEvidence.NetworkVerification = when (code) {
         "VERIFIED" -> IntelligenceEvidence.NetworkVerification.VERIFIED
         "FAILED" -> IntelligenceEvidence.NetworkVerification.FAILED
@@ -185,4 +229,6 @@ object IntelligenceCoreRuntime {
         val sink: BoundedIntelligenceEventSink,
         val fingerprinter: CallNumberFingerprinter
     )
+
+    private const val REMOTE_REPUTATION_SOURCE = "caller-reputation-api"
 }
