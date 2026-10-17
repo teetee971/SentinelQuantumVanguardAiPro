@@ -4,6 +4,7 @@ import com.sentinel.quantum.wearable.security.WearableHandshakeTranscriptCodec
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.Signature
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -49,12 +50,11 @@ class WearableSecureHandshakeResponderTest {
         .digest(phoneHpkePublicKeyEncoded).joinToString("") { "%02x".format(it) }
 
     @Test
-    fun newSessionGetsFreshHpkeBindingAndAuthenticTranscript() {
+    fun newSessionGetsFreshHpkeBindingAndAuthenticIdentityDerivedStableId() {
         val identityStore = WearableSecureIdentityStore(MemoryIdentityBackend())
         val hpkeFactory = CountingHpkeFactory()
         val responder = WearableSecureHandshakeResponder(identityStore, hpkeFactory)
         val request = WearableHandshakeRequest(
-            stableId = "watch-1",
             sessionId = "session-1",
             capabilities = setOf("SENTINEL_ALERTS"),
             challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
@@ -72,8 +72,10 @@ class WearableSecureHandshakeResponderTest {
         assertTrue(first.session.phonePublicKeyEncoded.contentEquals(phoneHpkePublicKeyEncoded))
 
         val identity = identityStore.snapshot()
+        assertEquals(identity.stableId, first.response.stableId)
+        assertEquals("wearable-" + identity.fingerprintSha256.take(32), first.response.stableId)
         val canonical = WearableHandshakeTranscriptCodec.encode(
-            stableId = request.stableId,
+            stableId = identity.stableId,
             keyFingerprintSha256 = identity.fingerprintSha256,
             sessionId = request.sessionId,
             protocolVersion = 2,
@@ -95,7 +97,6 @@ class WearableSecureHandshakeResponderTest {
     @Test(expected = IllegalArgumentException::class)
     fun refusesMismatchedPhoneHpkeBinding() {
         WearableHandshakeRequest(
-            stableId = "watch-1",
             sessionId = "session-1",
             capabilities = setOf("SENTINEL_ALERTS"),
             challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
