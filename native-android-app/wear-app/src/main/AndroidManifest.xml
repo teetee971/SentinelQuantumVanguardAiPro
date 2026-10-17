@@ -14,7 +14,7 @@
                 <data
                     android:scheme="wear"
                     android:host="*"
-                    android:pathPrefix="/sentinel/v1/platform/" />
+                    android:pathPrefix="/sentinel/" />
             </intent-filter>
         </service>
     </application>
