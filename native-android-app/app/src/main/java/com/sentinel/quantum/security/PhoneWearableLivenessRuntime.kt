@@ -164,10 +164,22 @@ internal class PhoneWearableLivenessRuntime(
             true
         }
         if (!consumed) return false
-        if (authenticatedTraffic(sessionId, now)) return true
+        val accepted = try {
+            authenticatedTraffic(sessionId, now)
+        } catch (_: Exception) {
+            false
+        }
+        if (accepted) return true
 
-        synchronized(this) { activeByNode.remove(nodeId) }
-        revokeAuthenticatedChannel(now)
+        // A slow/throwing callback from an old session must not revoke a replacement.
+        val removed = synchronized(this) {
+            if (activeByNode[nodeId] !== active) false
+            else {
+                activeByNode.remove(nodeId)
+                true
+            }
+        }
+        if (removed) revokeAuthenticatedChannel(now)
         return false
     }
 
