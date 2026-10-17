@@ -56,7 +56,7 @@ class WearableSecureHandshakeResponderTest {
         val responder = WearableSecureHandshakeResponder(identityStore, hpkeFactory)
         val request = WearableHandshakeRequest(
             sessionId = "session-1",
-            capabilities = setOf("SENTINEL_ALERTS"),
+            capabilities = setOf("CONNECTION_STATE"),
             challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
             issuedAtMs = 100_000L,
             phoneHpkePublicKeyEncoded = phoneHpkePublicKeyEncoded,
@@ -95,10 +95,28 @@ class WearableSecureHandshakeResponderTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun refusesUnsupportedCapabilityClaims() {
+        val responder = WearableSecureHandshakeResponder(
+            WearableSecureIdentityStore(MemoryIdentityBackend()),
+            CountingHpkeFactory()
+        )
+        responder.respond(
+            WearableHandshakeRequest(
+                sessionId = "session-1",
+                capabilities = setOf("SENTINEL_ALERTS"),
+                challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+                issuedAtMs = 100_000L,
+                phoneHpkePublicKeyEncoded = phoneHpkePublicKeyEncoded,
+                phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint
+            )
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun refusesMismatchedPhoneHpkeBinding() {
         WearableHandshakeRequest(
             sessionId = "session-1",
-            capabilities = setOf("SENTINEL_ALERTS"),
+            capabilities = setOf("CONNECTION_STATE"),
             challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
             issuedAtMs = 100_000L,
             phoneHpkePublicKeyEncoded = phoneHpkePublicKeyEncoded,
