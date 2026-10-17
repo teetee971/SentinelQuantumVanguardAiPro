@@ -3,6 +3,8 @@ package com.sentinel.quantum.security
 import com.sentinel.quantum.wearable.contract.WearableProtocolV2
 import org.junit.Assert.assertFalse
 import org.junit.Test
+import org.junit.Assert.assertEquals
+import com.sentinel.quantum.wearable.security.VerifiedWearableHandshakeFixture
 
 class PhoneWearableSecureMessageRuntimeTest {
     @Test fun messageIsRejectedWithoutAuthenticatedSession() {
@@ -42,4 +44,49 @@ class PhoneWearableSecureMessageRuntimeTest {
         assertFalse(gate.activate("node-1", "untrusted-watch", session, byteArrayOf(2), material))
         assertFalse(gate.handleFrame("node-1", WearableProtocolV2.Frame(byteArrayOf(1))))
     }
+    @Test fun activeAuthorityWithFreshLivenessDoesNotAcceptInvalidCiphertext() {
+        val authority = WearableSessionAuthority()
+        val session = WearableSession(
+            sessionId = "session-1",
+            protocolVersion = 2,
+            negotiatedCapabilities = setOf(WearableCapability.CONNECTION_STATE),
+            establishedAtMs = 100L
+        )
+        val attempt = WearableHandshakeAttempt("watch-1", "attempt-1", 100L)
+        authority.beginHandshake(attempt)
+        assertEquals(
+            WearableSessionActivationDecision.ACTIVATED,
+            authority.activate(
+                attempt,
+                session,
+                VerifiedWearableHandshakeFixture.create(
+                    "watch-1", "a".repeat(64), "session-1", 2, setOf("CONNECTION_STATE")
+                )
+            )
+        )
+        val material = object : PhoneWearableHpkeMaterial {
+            override val publicKeyEncoded = byteArrayOf(1)
+            override val fingerprintSha256 = "0".repeat(64)
+            override fun encryptForWearable(
+                wearablePublicKeyEncoded: ByteArray,
+                plaintext: ByteArray,
+                contextInfo: ByteArray
+            ): ByteArray = plaintext.copyOf()
+            override fun decryptFromWearable(
+                ciphertext: ByteArray,
+                contextInfo: ByteArray
+            ): ByteArray = throw java.security.GeneralSecurityException("invalid ciphertext")
+        }
+        val gate = PhoneWearableSecureMessageRuntime(
+            authority = authority,
+            livenessActive = { _, _ -> true },
+            freshAuthenticatedProof = { _, _ -> true },
+            clockMs = { 500L }
+        )
+        org.junit.Assert.assertTrue(gate.activate("node-1", "watch-1", session, byteArrayOf(2), material))
+        assertFalse(gate.handleFrame("node-1", WearableProtocolV2.Frame(byteArrayOf(1, 2))))
+        authority.revoke("watch-1")
+        assertFalse(gate.handleFrame("node-1", WearableProtocolV2.Frame(byteArrayOf(1, 2))))
+    }
+
 }
