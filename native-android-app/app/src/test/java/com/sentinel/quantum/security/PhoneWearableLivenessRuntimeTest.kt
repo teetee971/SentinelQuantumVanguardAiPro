@@ -68,6 +68,34 @@ class PhoneWearableLivenessRuntimeTest {
         assertEquals(0, authenticated)
     }
 
+    @Test fun stalePendingProbeIsDiscardedSoFreshProbeCanRecover() {
+        var now = 100L
+        val transport = CapturingTransport()
+        val runtime = PhoneWearableLivenessRuntime(
+            transport = transport,
+            authenticatedTraffic = { _, _ -> true },
+            revokeAuthenticatedChannel = { },
+            clockMs = { now },
+            proofTtlMs = 1_000L
+        )
+        assertTrue(runtime.activate(
+            "node-1",
+            "session-1",
+            "watch-public".toByteArray(),
+            IdentityHpkeMaterial("phone-public".toByteArray())
+        ))
+        assertTrue(runtime.sendProbe("node-1"))
+        val first = WearableProtocolV2.decodeFrame(requireNotNull(transport.payload))!!
+        val firstPayload = WearableProtocolV2.decodeLivenessPlaintext(first.payload)!!
+        assertEquals(0L, firstPayload.sequenceNumber)
+
+        now = 1_101L
+        assertTrue(runtime.sendProbe("node-1"))
+        val second = WearableProtocolV2.decodeFrame(requireNotNull(transport.payload))!!
+        val secondPayload = WearableProtocolV2.decodeLivenessPlaintext(second.payload)!!
+        assertEquals(1L, secondPayload.sequenceNumber)
+    }
+
     @Test fun disconnectRevokesSessionAndAuthenticatedTruth() {
         var revokedAt: Long? = null
         val runtime = PhoneWearableLivenessRuntime(
