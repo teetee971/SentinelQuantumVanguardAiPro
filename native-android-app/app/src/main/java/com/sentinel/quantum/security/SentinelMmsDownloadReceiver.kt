@@ -238,7 +238,11 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 context = context,
                 providerMessageId = projected.providerMessageId,
                 rawSender = plan.sender,
-                transportState = SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_READY
+                transportState = if (projected.replay) {
+                    SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_REPLAY_NO_DUPLICATE
+                } else {
+                    SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_READY
+                }
             )
         }
 

@@ -195,16 +195,18 @@ class CallerIdActivity : ComponentActivity() {
                                     privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                     explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                 )
-                                CommunicationReputationWriter(
+                                val reputationPersisted = CommunicationReputationWriter(
                                     CommunicationReputationCache(
                                         SharedPreferencesCommunicationReputationStorage(applicationContext)
                                     )
                                 ).persist(number, result)
-                                IntelligenceCoreRuntime.publishRemoteReputation(
-                                    context = applicationContext,
-                                    rawNumber = number,
-                                    result = result
-                                )
+                                if (reputationPersisted) {
+                                    IntelligenceCoreRuntime.publishRemoteReputation(
+                                        context = applicationContext,
+                                        rawNumber = number,
+                                        result = result
+                                    )
+                                }
                                 result
                             }.getOrNull()
                         }

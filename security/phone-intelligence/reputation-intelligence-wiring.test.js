@@ -42,3 +42,26 @@ test('consented caller reputation is published into Intelligence Core after UI e
     'Caller ID must publish the consented result into the shared core'
   );
 });
+
+test('caller reputation is published only after local persistence accepts the result', () => {
+  const callerId = readFileSync(CALLER_ID_PATH, 'utf8');
+  const guardStart = callerId.indexOf('val reputationPersisted');
+  const persist = callerId.indexOf('.persist(number, result');
+  const publish = callerId.indexOf('IntelligenceCoreRuntime.publishRemoteReputation(');
+
+  assert.ok(guardStart >= 0, 'caller reputation must retain a persistence guard');
+  assert.ok(persist >= 0, 'caller reputation must persist the bounded result');
+  assert.ok(publish > persist, 'publication must follow the persistence decision');
+
+  const publicationWindow = callerId.slice(guardStart, publish + 700);
+  assert.match(
+    publicationWindow,
+    /val\s+reputationPersisted\s*=\s*CommunicationReputationWriter[\s\S]*?\.persist\(number,\s*result\s*\)/,
+    'the persistence acceptance boolean must be retained'
+  );
+  assert.match(
+    publicationWindow,
+    /if\s*\(\s*reputationPersisted\s*\)\s*\{[\s\S]*?IntelligenceCoreRuntime\.publishRemoteReputation\(/,
+    'revoked persistence must prevent Intelligence Core publication'
+  );
+});

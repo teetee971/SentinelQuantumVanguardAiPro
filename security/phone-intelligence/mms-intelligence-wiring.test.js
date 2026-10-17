@@ -46,6 +46,22 @@ test('both incoming MMS ingress paths publish only after bounded processing', ()
   }
 });
 
+test('both incoming MMS ingress paths map provider replay to a replay-safe transport state', () => {
+  for (const source of [downloadReceiver, deliverReceiver]) {
+    const projectionGuard = source.indexOf('if (plan != null && projected != null) {');
+    const publication = source.indexOf('IntelligenceCoreRuntime.publishIncomingMmsObservation(');
+    assert.ok(projectionGuard >= 0, 'MMS publication must retain the provider identity guard');
+    assert.ok(publication > projectionGuard, 'MMS publication must stay inside the identity guard');
+
+    const publicationWindow = source.slice(publication, publication + 650);
+    assert.match(
+      publicationWindow,
+      /transportState\s*=\s*if\s*\(\s*projected\.replay\s*\)\s*\{[\s\S]*?SmsMmsEvidenceAdapter\.MmsTransportState\.PROVIDER_REPLAY_NO_DUPLICATE[\s\S]*?\}\s*else\s*\{[\s\S]*?SmsMmsEvidenceAdapter\.MmsTransportState\.PROVIDER_READY[\s\S]*?\}/,
+      'provider replay must not be published as a fresh provider insertion'
+    );
+  }
+});
+
 test('MMS adapter remains bounded and content-free', () => {
   assert.match(adapter, /fun\s+fromMms\s*\(/);
   assert.match(adapter, /categoryCode\s*:\s*String\?\s*=\s*null/);
