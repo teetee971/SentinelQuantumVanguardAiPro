@@ -65,4 +65,21 @@ class WearablePairingStoreTest {
         store.remove("watch-1")
         assertNull(store.load("watch-1"))
     }
+
+    @Test fun failedRemovalCannotBeReportedAsSuccessful() {
+        val (publicKey, fingerprint) = identity()
+        var record: WearableTrustedIdentity? = null
+        val backend = object : WearablePairingBackend {
+            override fun load(stableId: String): WearableTrustedIdentity? = record
+            override fun save(value: WearableTrustedIdentity) { record = value }
+            override fun remove(stableId: String) = Unit
+        }
+        val store = WearablePairingStore(backend)
+        store.confirm("watch-1", publicKey, fingerprint, 123L)
+
+        assertThrows(IllegalStateException::class.java) {
+            store.remove("watch-1")
+        }
+        assertEquals(fingerprint, store.load("watch-1")!!.keyFingerprintSha256)
+    }
 }
