@@ -3,6 +3,7 @@ package com.sentinel.quantum.security
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class WearableRestartPolicyTest {
@@ -24,6 +25,16 @@ class WearableRestartPolicyTest {
         assertEquals("watch-1", recovered.expectedIdentity.stableId)
         assertEquals("a".repeat(64), recovered.expectedIdentity.keyFingerprintSha256)
         assertEquals(0L, recovered.expectedIdentity.verifiedAtMs)
+    }
+
+    @Test fun persistedBindingCannotPromotePlatformNodeIdToDurableTrust() {
+        assertThrows(IllegalArgumentException::class.java) {
+            PersistedWearableBinding(
+                stableId = "platform-node-123",
+                source = WearableIdentitySource.PLATFORM_STABLE_NODE_ID,
+                keyFingerprintSha256 = "a".repeat(64)
+            )
+        }
     }
 
     @Test fun recoveredStateCannotExposeSentinelCapabilitiesWithoutFreshHandshake() {

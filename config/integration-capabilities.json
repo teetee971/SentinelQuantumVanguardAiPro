@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "capabilities": [
+    {"id":"dialer","owner":"phone-core","surface":"Phone / Dialer","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"incall","owner":"phone-core","surface":"In-call UI / audio / DTMF","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"call_screening","owner":"phone-core","surface":"CallScreeningService","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"caller_id_local","owner":"phone-intelligence","surface":"Caller ID local identity","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"caller_reputation_remote","owner":"phone-intelligence","surface":"Remote caller reputation","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"RUNTIME_NOT_OBSERVED"},
+    {"id":"community_phone_reports","owner":"phone-intelligence","surface":"Community reporting / moderation","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"RUNTIME_NOT_OBSERVED"},
+    {"id":"sms","owner":"sms-core","surface":"SMS role / send / receive / anti-phishing","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"mms","owner":"mms-core","surface":"MMS receive / download / projection","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"contacts","owner":"contacts","surface":"Android and Sentinel contacts","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"wifi_observation","owner":"network-security","surface":"Wi-Fi observation","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"bluetooth_observation","owner":"network-security","surface":"Bluetooth/BLE observation","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"network_behavior","owner":"network-security","surface":"Network trust / history / behavior baseline","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"vpn_runtime","owner":"network-security","surface":"VPN client runtime","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"GATEWAY_NOT_AVAILABLE"},
+    {"id":"vpn_control_plane","owner":"network-security","surface":"VPN gateway / catalog / provisioning","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"GATEWAY_NOT_AVAILABLE"},
+    {"id":"mesh_runtime","owner":"network-security","surface":"Private Mesh runtime","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"BACKEND_NOT_DEPLOYED"},
+    {"id":"wearable_runtime","owner":"wearable-core","surface":"Wearable runtime / channel","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"IDENTITY_BINDING_MISSING"},
+    {"id":"digital_exposure","owner":"security","surface":"Digital exposure / breach intelligence","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"IDENTITY_BINDING_MISSING"},
+    {"id":"threat_intelligence","owner":"security","surface":"Threat intelligence feeds / query gate","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"PARTIAL_PUBLIC_SOURCES_ONLY"},
+    {"id":"regulatory_intelligence","owner":"security","surface":"ARCEP / FSMA / reviewed regulatory intelligence","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"PARTIAL_PUBLIC_SOURCES_ONLY"},
+    {"id":"soc_decision_plane","owner":"decision-plane","surface":"SOC passive pipeline / decision handoff","state":"INTENTIONALLY_DISABLED","diagnostic_reason":"INTENTIONALLY_DISABLED_BY_POLICY"},
+    {"id":"osint_analyst_tooling","owner":"osint-intelligence","surface":"OSINT analyst tooling","state":"INTENTIONALLY_DISABLED","diagnostic_reason":"INTENTIONALLY_DISABLED_BY_POLICY"},
+    {"id":"device_utilities","owner":"device-utilities","surface":"Storage / cleanup utilities","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"voice_rtc_ptt","owner":"voice-core","surface":"Voice / RTC / PTT","state":"LOCKED_EXTERNAL_DEPENDENCY","diagnostic_reason":"SERVICE_DISABLED_BY_CONFIGURATION"},
+    {"id":"first_run_activation","owner":"platform-android","surface":"First-run activation / permissions / roles","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"},
+    {"id":"system_doctor_release_evidence","owner":"platform-android","surface":"System Doctor / release evidence","state":"PHYSICAL_REQUIRED","diagnostic_reason":"PHYSICAL_VALIDATION_REQUIRED"}
+  ]
+}

@@ -30,7 +30,10 @@ jobs:
         run: node scripts/check-product-capabilities.js
 
       - name: Run capability truth regression tests
-        run: node --test scripts/check-product-capabilities.test.js scripts/android-distribution-compliance.test.js
+        run: node --test scripts/check-product-capabilities.test.js scripts/android-distribution-compliance.test.js scripts/wearable-production-wiring.test.js
+
+      - name: Validate integration product truth
+        run: npm run test:integration-product-truth
 
       - name: Reject stale generated capability status
         run: node scripts/render-product-capabilities.js --check
@@ -41,6 +44,6 @@ jobs:
           {
             echo '## Product capability truth'
             echo ''
-            echo 'The canonical capability registry, evidence paths, release invariants and generated status document were checked.'
+            echo 'The canonical capability registry, evidence paths, integration truth, wearable transport wiring, release invariants and generated status document were checked.'
             echo 'Customer availability cannot be asserted by this gate unless all declared prerequisites are true and blockers are empty.'
           } >> "$GITHUB_STEP_SUMMARY"

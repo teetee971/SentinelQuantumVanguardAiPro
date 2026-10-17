@@ -1,11 +1,11 @@
 package com.sentinel.quantum.security
 
 /**
- * Privacy boundary for future call-history enrichment.
+ * Privacy boundary for local call-history enrichment.
  *
- * Sentinel may correlate local call metadata for user-facing context, but raw phone numbers
- * and call history must remain on-device unless the user explicitly enables a separate,
- * purpose-specific remote feature.
+ * [SystemCallLogReader] exposes this bounded context without allowing raw history rows to cross the
+ * enrichment boundary. Raw phone numbers and call history remain on-device; this model is never a
+ * network payload.
  */
 object CallHistoryPrivacy {
     const val MAX_RECENT_EVENTS = 50

@@ -9,6 +9,11 @@ import android.provider.Telephony
 import android.telecom.TelecomManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.PermissionChecker
+import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationDiagnosticReason
+import com.sentinel.quantum.integration.IntegrationState
+import com.sentinel.quantum.integration.IntegrationStatus
+import com.sentinel.quantum.integration.IntegrationTruthRuntime
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.SentinelCallNotificationHelper
@@ -36,7 +41,7 @@ internal object PhoneCoreRuntimeFacts {
             Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
                 context.getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
 
-        return PhoneCoreSetupWizardStore.Facts(
+        val facts = PhoneCoreSetupWizardStore.Facts(
             corePermissionsReady =
                 hasEffectivePermission(context, Manifest.permission.CALL_PHONE) &&
                     hasEffectivePermission(context, Manifest.permission.READ_PHONE_STATE),
@@ -63,6 +68,8 @@ internal object PhoneCoreRuntimeFacts {
                     SmsNotificationHelper.isChannelEnabled(context) &&
                     fullScreenIntentReady
         )
+        publishIntegrationTruth(facts)
+        return facts
     }
 
     fun hasOperationalCarrierEnvironment(context: Context): Boolean {
@@ -76,6 +83,37 @@ internal object PhoneCoreRuntimeFacts {
         } catch (_: RuntimeException) {
             false
         }
+    }
+
+    private fun publishIntegrationTruth(facts: PhoneCoreSetupWizardStore.Facts) {
+        val nowMs = System.currentTimeMillis()
+        val dialerReady = facts.dialerRoleHeld && facts.corePermissionsReady
+        IntegrationTruthRuntime.publish(
+            capabilityId = IntegrationCapabilityId.DIALER,
+            status = if (dialerReady) {
+                IntegrationStatus(IntegrationState.CONNECTED)
+            } else {
+                IntegrationStatus(
+                    IntegrationState.PHYSICAL_REQUIRED,
+                    IntegrationDiagnosticReason.PHYSICAL_VALIDATION_REQUIRED
+                )
+            },
+            observedAtMs = nowMs
+        )
+
+        val setupReady = PhoneCoreSetupWizardStore.softwarePrerequisitesReady(facts)
+        IntegrationTruthRuntime.publish(
+            capabilityId = IntegrationCapabilityId.FIRST_RUN_ACTIVATION,
+            status = if (setupReady) {
+                IntegrationStatus(IntegrationState.CONNECTED)
+            } else {
+                IntegrationStatus(
+                    IntegrationState.PHYSICAL_REQUIRED,
+                    IntegrationDiagnosticReason.PHYSICAL_VALIDATION_REQUIRED
+                )
+            },
+            observedAtMs = nowMs
+        )
     }
 
     private fun hasEffectivePermission(context: Context, permission: String): Boolean =

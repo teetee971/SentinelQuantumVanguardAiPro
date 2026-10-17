@@ -17,7 +17,9 @@ class SentinelApplicationColdStartBoundaryTest {
             "scheduleStartupRecovery(",
             "CallBlocklistStore(",
             "prepareScreeningSnapshot(",
-            "prepareFingerprintKeys("
+            "prepareFingerprintKeys(",
+            "WearOsDataLayerAdapter(",
+            "launchWearableObservation("
         ).forEach { forbidden ->
             assertFalse(
                 "Application.onCreate must not invoke $forbidden before CallScreeningService",
@@ -42,6 +44,21 @@ class SentinelApplicationColdStartBoundaryTest {
         assertTrue(activitySource.contains("override fun onPostResume()"))
         assertTrue(activitySource.contains("launchForegroundMaintenance()"))
         assertTrue(applicationSource.contains("fun launchForegroundMaintenance()"))
+    }
+
+    @Test
+    fun wearable_observation_is_foreground_only_and_retries_after_failure() {
+        val applicationSource = source("src/main/java/com/sentinel/quantum/SentinelApplication.kt")
+        val foregroundMethod = applicationSource
+            .substringAfter("fun launchForegroundMaintenance() {")
+            .substringBefore("\n    }")
+        val wearableMethod = applicationSource
+            .substringAfter("private fun launchWearableObservation() {")
+            .substringBefore("\n    }")
+
+        assertTrue(foregroundMethod.contains("launchWearableObservation()"))
+        assertTrue(wearableMethod.contains("WearOsDataLayerAdapter(applicationContext)"))
+        assertTrue(wearableMethod.contains("wearableObservationStarted.set(false)"))
     }
 
     @Test

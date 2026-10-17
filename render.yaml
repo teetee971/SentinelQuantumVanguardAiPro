@@ -21,6 +21,12 @@ services:
         generateValue: true
       - key: EXPOSURE_API_KEY
         generateValue: true
+      - key: EXPOSURE_AUTH_JWKS_URL
+        sync: false
+      - key: EXPOSURE_AUTH_ISSUER
+        sync: false
+      - key: EXPOSURE_AUTH_AUDIENCE
+        sync: false
       - key: REPORT_API_KEY
         generateValue: true
       - key: MODERATION_API_KEY
@@ -67,7 +73,7 @@ services:
     region: frankfurt
     dockerfilePath: ./backend/voice-api/Dockerfile
     dockerContext: ./backend/voice-api
-    healthCheckPath: /health/live
+    healthCheckPath: /health/ready
     autoDeployTrigger: checksPass
     envVars:
       - key: VOICE_SERVICE_ENABLED

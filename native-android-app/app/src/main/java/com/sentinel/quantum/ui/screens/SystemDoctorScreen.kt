@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.sentinel.quantum.security.SentinelDeviceDiagnostic
+import com.sentinel.quantum.security.SentinelDeviceUtilitiesOrchestrator
 import com.sentinel.quantum.security.SentinelSystemDoctor
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
@@ -39,8 +40,16 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 fun SystemDoctorScreen(navController: NavController) {
     val context = LocalContext.current
     val doctor = remember { SentinelSystemDoctor(context) }
+    val deviceUtilities = remember { SentinelDeviceUtilitiesOrchestrator(context) }
     var scan by remember { mutableStateOf<SentinelSystemDoctor.Scan?>(null) }
     var isScanning by remember { mutableStateOf(false) }
+    var cleanupDiscovery by remember {
+        mutableStateOf<SentinelDeviceUtilitiesOrchestrator.Discovery?>(null)
+    }
+    var cleanupRun by remember {
+        mutableStateOf<SentinelDeviceUtilitiesOrchestrator.CleanupRun?>(null)
+    }
+    var isCleanupBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -79,6 +88,81 @@ fun SystemDoctorScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
+            }
+
+            SentinelSectionHeader(
+                title = "Utilitaires de stockage",
+                subtitle = "Uniquement les caches appartenant à Sentinel · suppression vérifiée"
+            )
+            Button(
+                onClick = {
+                    if (!isCleanupBusy) {
+                        isCleanupBusy = true
+                        cleanupRun = null
+                        scope.launch {
+                            cleanupDiscovery = withContext(Dispatchers.IO) { deviceUtilities.discover() }
+                            isCleanupBusy = false
+                        }
+                    }
+                },
+                enabled = !isCleanupBusy,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isCleanupBusy) "Analyse des caches…" else "Analyser les caches Sentinel")
+            }
+
+            cleanupDiscovery?.let { discovery ->
+                Text(
+                    "${discovery.plan.candidateCount} fichier(s) candidat(s) · " +
+                        "${formatBytes(discovery.plan.knownReclaimableBytes)} connus récupérables" +
+                        if (discovery.plan.unknownSizeCount > 0) {
+                            " · ${discovery.plan.unknownSizeCount} taille(s) inconnue(s)"
+                        } else {
+                            ""
+                        },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (discovery.plan.directlyExecutableCount > 0) {
+                    Button(
+                        onClick = {
+                            if (!isCleanupBusy) {
+                                isCleanupBusy = true
+                                scope.launch {
+                                    cleanupRun = withContext(Dispatchers.IO) {
+                                        deviceUtilities.cleanup(discovery)
+                                    }
+                                    cleanupDiscovery = withContext(Dispatchers.IO) {
+                                        deviceUtilities.discover()
+                                    }
+                                    isCleanupBusy = false
+                                }
+                            }
+                        },
+                        enabled = !isCleanupBusy,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Nettoyer les fichiers Sentinel vérifiables")
+                    }
+                }
+            }
+
+            cleanupRun?.let { run ->
+                val summary = run.summary
+                Text(
+                    if (summary.isFullyVerified) {
+                        "Nettoyage vérifié : ${summary.verifiedRemovedCount}/${summary.requestedCount} · " +
+                            "${formatBytes(summary.knownVerifiedFreedBytes)} libérés"
+                    } else {
+                        "Nettoyage partiel : ${summary.verifiedRemovedCount}/${summary.requestedCount} vérifiés · " +
+                            "${summary.unresolvedCount} non résolu(s) · ${summary.failedCount} échec(s)"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (summary.isFullyVerified) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
             }
 
             scan?.let { result ->
@@ -135,6 +219,12 @@ private fun EvidenceCard(evidence: SentinelDeviceDiagnostic.Evidence) {
     }
 }
 
+private fun formatBytes(bytes: Long): String = when {
+    bytes >= 1024L * 1024L * 1024L -> "%.2f Go".format(bytes.toDouble() / (1024L * 1024L * 1024L))
+    bytes >= 1024L * 1024L -> "%.2f Mo".format(bytes.toDouble() / (1024L * 1024L))
+    bytes >= 1024L -> "%.1f Ko".format(bytes.toDouble() / 1024L)
+    else -> "$bytes o"
+}
 
 private fun diagnosticStatusLabel(
     status: SentinelDeviceDiagnostic.Status

@@ -119,6 +119,16 @@ class SystemCallLogReader(private val context: Context) {
         }
     }
 
+    /**
+     * Returns privacy-bounded local context for one number. Raw call-log rows do not escape this
+     * method and a missing role/permission naturally resolves to an empty local context.
+     */
+    fun boundedContext(rawNumber: String?): CallHistoryPrivacy.LocalCallContext =
+        LocalCallHistoryContextResolver.fromEntries(
+            rawNumber = rawNumber,
+            entries = recent(CallHistoryPrivacy.MAX_RECENT_EVENTS)
+        )
+
     private fun holdsDialerRole(): Boolean =
         AndroidRoleReadPolicy.readBoolean {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
