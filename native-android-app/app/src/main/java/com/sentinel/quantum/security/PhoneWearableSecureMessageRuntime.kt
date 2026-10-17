@@ -30,12 +30,14 @@ internal class PhoneWearableSecureMessageRuntime(
         wearablePublicKeyEncoded: ByteArray,
         material: PhoneWearableHpkeMaterial
     ): Boolean {
-        if (nodeId.isBlank() || stableId.isBlank() || wearablePublicKeyEncoded.isEmpty()) return false
+        if (nodeId.isBlank() || stableId.isBlank() || wearablePublicKeyEncoded.size !in 1..4096) return false
         // Only publish the new epoch after its authority is established.
         if (authority.activeSession(stableId) != session) return false
+        // Keep the peer key bound to this epoch even if the caller mutates its buffer later.
+        val wearablePublicKey = wearablePublicKeyEncoded.copyOf()
         val endpoint = object : WearableSecureCryptoEndpoint {
             override fun encrypt(plaintext: ByteArray, contextInfo: ByteArray): ByteArray =
-                material.encryptForWearable(wearablePublicKeyEncoded, plaintext, contextInfo)
+                material.encryptForWearable(wearablePublicKey, plaintext, contextInfo)
             override fun decrypt(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray =
                 material.decryptFromWearable(ciphertext, contextInfo)
         }
@@ -64,7 +66,7 @@ internal class PhoneWearableSecureMessageRuntime(
         if (!freshAuthenticatedProof(current.session.sessionId, now)) return false
         if (WearableCapability.CONNECTION_STATE !in current.session.negotiatedCapabilities) return false
         // Fixed AAD capability until the protocol negotiates an authenticated capability header.
-        val result = try {
+        try {
             current.channel.open(
                 frame.payload,
                 expectedCapability = WearableCapability.CONNECTION_STATE,
