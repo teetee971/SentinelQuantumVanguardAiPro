@@ -41,6 +41,28 @@ class PhoneWearableLivenessFailureRevocationTest {
         assertFalse(runtime.isActive("node-1", "session-1"))
     }
 
+    @Test fun authenticatedTruthCallbackExceptionRevokesActiveSession() {
+        var wireFrame: ByteArray? = null
+        var revokedAt: Long? = null
+        val runtime = PhoneWearableLivenessRuntime(
+            transport = PhoneWearableLivenessTransport { _, _, payload, _ -> wireFrame = payload },
+            authenticatedTraffic = { _, _ -> throw IllegalStateException("truth update unavailable") },
+            revokeAuthenticatedChannel = { revokedAt = it },
+            clockMs = { 250L }
+        )
+        val material = IdentityHpkeMaterial("phone-public".toByteArray())
+        assertTrue(runtime.activate("node-1", "session-1", "watch-public".toByteArray(), material))
+        assertTrue(runtime.sendProbe("node-1"))
+        val frame = requireNotNull(
+            com.sentinel.quantum.wearable.contract.WearableProtocolV2.decodeFrame(
+                requireNotNull(wireFrame)
+            )
+        )
+        assertFalse(runtime.handleResponse("node-1", frame))
+        assertEquals(250L, revokedAt)
+        assertFalse(runtime.isActive("node-1", "session-1"))
+    }
+
     private class IdentityHpkeMaterial(
         override val publicKeyEncoded: ByteArray
     ) : PhoneWearableHpkeMaterial {
