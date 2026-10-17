@@ -26,6 +26,16 @@ class WearableWatchSecureSessionRegistryTest {
         assertNull(registry.resolve("node-1", "session-1"))
     }
 
+    @Test fun defaultSessionLifetimeCoversFiveMinutePairingConfirmationWindow() {
+        var now = 100L
+        val registry = WearableWatchSecureSessionRegistry(clockMs = { now })
+        val session = fakeSession("pairing")
+
+        assertTrue(registry.register("node-1", "session-1", session))
+        now = 299_999L
+        assertSame(session, registry.resolve("node-1", "session-1"))
+    }
+
     @Test fun acceptedLivenessExtendsSessionExpiryWithoutWeakeningReplayGuard() {
         var now = 100L
         val registry = WearableWatchSecureSessionRegistry(
