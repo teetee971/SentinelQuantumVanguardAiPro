@@ -186,6 +186,13 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         override val publicKeyEncoded: ByteArray
     ) : PhoneWearableHpkeMaterial {
         override val fingerprintSha256: String = sha256(publicKeyEncoded)
+        override fun encryptForWearable(
+            wearablePublicKeyEncoded: ByteArray,
+            plaintext: ByteArray,
+            contextInfo: ByteArray
+        ): ByteArray = plaintext.copyOf()
+        override fun decryptFromWearable(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray =
+            ciphertext.copyOf()
     }
 
     private class CapturingTransport(
