@@ -112,11 +112,11 @@ internal class PhoneWearableLivenessRuntime(
 
         return try {
             transport.send(nodeId, WearableProtocolV2.LIVENESS_PATH, prepared.third) {
-                clearPending(nodeId, prepared.first, prepared.second)
+                revokeFailedProbe(nodeId, prepared.first, prepared.second)
             }
             true
         } catch (_: Exception) {
-            clearPending(nodeId, prepared.first, prepared.second)
+            revokeFailedProbe(nodeId, prepared.first, prepared.second)
             false
         }
     }
@@ -181,6 +181,20 @@ internal class PhoneWearableLivenessRuntime(
     @Synchronized
     fun isActive(nodeId: String, sessionId: String): Boolean =
         activeByNode[nodeId]?.sessionId == sessionId
+
+    private fun revokeFailedProbe(nodeId: String, sessionId: String, sequenceNumber: Long) {
+        val removed = synchronized(this) {
+            val active = activeByNode[nodeId] ?: return
+            if (active.sessionId != sessionId) return
+            val pending = active.pending ?: return
+            if (pending.sequenceNumber != sequenceNumber) return
+            pending.nonce.fill(0)
+            activeByNode.remove(nodeId)
+        }
+        removed.pending?.nonce?.fill(0)
+        val now = clockMs()
+        revokeAuthenticatedChannel(if (now >= 0) now else 0L)
+    }
 
     private fun clearPending(nodeId: String, sessionId: String, sequenceNumber: Long) {
         synchronized(this) {
