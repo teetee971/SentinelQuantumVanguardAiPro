@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationDiagnosticReason
 import com.sentinel.quantum.integration.IntegrationState
 import com.sentinel.quantum.integration.IntegrationTruthRuntime
 import org.junit.After
@@ -27,15 +28,13 @@ class ArcepVerifiedPrefixCatalogTest {
     }
 
     @Test
-    fun validatedRuntimeUsePublishesFreshRegulatoryTruth() {
+    fun validatedRuntimeUsePublishesFreshPartialRegulatoryTruth() {
         val observedAt = 10_000L
         assertTrue(ArcepVerifiedPrefixCatalog.observeValidatedRuntimeUse(observedAt))
-        assertEquals(
-            IntegrationState.CONNECTED,
-            IntegrationTruthRuntime.snapshot(observedAt)
-                .status(IntegrationCapabilityId.REGULATORY_INTELLIGENCE)
-                .state
-        )
+        val status = IntegrationTruthRuntime.snapshot(observedAt)
+            .status(IntegrationCapabilityId.REGULATORY_INTELLIGENCE)
+        assertEquals(IntegrationState.LOCKED_EXTERNAL_DEPENDENCY, status.state)
+        assertEquals(IntegrationDiagnosticReason.PARTIAL_PUBLIC_SOURCES_ONLY, status.diagnosticReason)
     }
 
     @Test
@@ -45,12 +44,10 @@ class ArcepVerifiedPrefixCatalogTest {
             ArcepVerifiedPrefixCatalog.Entry("Duplicate", "05987", "+5905987")
         )
         assertFalse(ArcepVerifiedPrefixCatalog.isValidRuntimeCatalog(malformed))
-        assertEquals(
-            IntegrationState.LOCKED_EXTERNAL_DEPENDENCY,
-            IntegrationTruthRuntime.snapshot(10_000L)
-                .status(IntegrationCapabilityId.REGULATORY_INTELLIGENCE)
-                .state
-        )
+        val status = IntegrationTruthRuntime.snapshot(10_000L)
+            .status(IntegrationCapabilityId.REGULATORY_INTELLIGENCE)
+        assertEquals(IntegrationState.LOCKED_EXTERNAL_DEPENDENCY, status.state)
+        assertEquals(IntegrationDiagnosticReason.RUNTIME_NOT_OBSERVED, status.diagnosticReason)
     }
 
     @Test
