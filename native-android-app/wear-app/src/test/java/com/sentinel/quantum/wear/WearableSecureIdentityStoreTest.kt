@@ -93,4 +93,28 @@ class WearableSecureIdentityStoreTest {
         assertEquals(expected, snapshot.fingerprintSha256)
         assertTrue(snapshot.fingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))
     }
+
+    @Test
+    fun persistedIdentityFieldsDistinguishEmptyCompleteAndPartialCorruption() {
+        assertEquals(
+            WearableIdentityPersistenceState.EMPTY,
+            classifyWearableIdentityPersistence(null, null, null)
+        )
+        assertEquals(
+            WearableIdentityPersistenceState.COMPLETE,
+            classifyWearableIdentityPersistence("public", "ciphertext", "iv")
+        )
+        assertEquals(
+            WearableIdentityPersistenceState.CORRUPT,
+            classifyWearableIdentityPersistence("public", null, null)
+        )
+        assertEquals(
+            WearableIdentityPersistenceState.CORRUPT,
+            classifyWearableIdentityPersistence(null, "ciphertext", "iv")
+        )
+        assertEquals(
+            WearableIdentityPersistenceState.CORRUPT,
+            classifyWearableIdentityPersistence("public", "ciphertext", null)
+        )
+    }
 }
