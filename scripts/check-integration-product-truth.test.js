@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { validateIntegrationCapabilities } from './check-integration-product-truth.js';
 
 const base = {
@@ -72,4 +73,12 @@ test('non-CONNECTED state without diagnostic reason fails', () => {
   ]);
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /diagnostic reason/i);
+});
+
+test('package and Product Capability Truth workflow require integration product truth', () => {
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  const workflow = fs.readFileSync('.github/workflows/product-capability-truth.yml', 'utf8');
+  assert.equal(typeof pkg.scripts['test:integration-product-truth'], 'string');
+  assert.match(pkg.scripts['test:integration-product-truth'], /check-integration-product-truth/);
+  assert.match(workflow, /npm run test:integration-product-truth/);
 });
