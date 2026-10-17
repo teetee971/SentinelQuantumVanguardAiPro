@@ -73,3 +73,20 @@ test('registry covers all 25 capability families from the approved design', () =
     assert.equal(ids.has(required), true, `missing capability family: ${required}`);
   }
 });
+
+test('mesh runtime diagnosis reflects the implemented WireGuard transport', () => {
+  const meshController = fs.readFileSync(
+    'native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshTunnelController.kt',
+    'utf8'
+  );
+  assert.match(meshController, /backend\.setState\(tunnel,\s*Tunnel\.State\.UP/);
+  assert.match(meshController, /RuntimeState\.CONNECTED/);
+
+  const mesh = readRegistry().capabilities.find((entry) => entry.id === 'mesh_runtime');
+  assert.ok(mesh, 'mesh_runtime capability must exist');
+  assert.notEqual(
+    mesh.diagnostic_reason,
+    'TRANSPORT_NOT_IMPLEMENTED',
+    'implemented Mesh WireGuard transport must not be diagnosed as missing transport'
+  );
+});
