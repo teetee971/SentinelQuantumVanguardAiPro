@@ -37,6 +37,20 @@ class PhoneRiskCardTest {
         assertTrue(card.reasons.contains("Données de réputation expirées"))
     }
 
+    @Test fun futureDatedReputationIsNotPresentedAsCurrentRisk() {
+        val card = PhoneRiskCard.build(
+            PhoneRiskCard.Input(
+                riskScore = 92,
+                observedAtMs = 11_000L,
+                ttlMs = 5_000L
+            ),
+            nowMs = 10_000L
+        )
+        assertEquals(PhoneRiskCard.Freshness.UNKNOWN, card.freshness)
+        assertEquals(PhoneRiskCard.RiskBand.UNKNOWN, card.riskBand)
+        assertNull(card.riskScore)
+    }
+
     @Test fun freshExplicitScoreMapsToDisplayBandOnly() {
         val card = PhoneRiskCard.build(
             PhoneRiskCard.Input(

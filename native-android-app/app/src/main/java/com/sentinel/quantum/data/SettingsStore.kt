@@ -19,7 +19,8 @@ enum class ThemeMode {
  * constant is `false`, enabling this flag has no effect and no network call is offered.
  */
 class SettingsStore(context: Context) {
-    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 
     fun getThemeMode(): ThemeMode = try {
         ThemeMode.valueOf(preferences.getString(THEME_MODE, null) ?: ThemeMode.DARK.name)
@@ -47,18 +48,57 @@ class SettingsStore(context: Context) {
             ProtectionMode.LOCAL_ONLY
         }
         set(value) {
-            preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+            if (value == ProtectionMode.ENHANCED) {
+                preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+            } else {
+                check(
+                    preferences.edit().putString(PROTECTION_MODE, value.name).commit()
+                ) {
+                    "Unable to persist protection mode downgrade"
+                }
+                check(
+                    appContext.getSharedPreferences(
+                        COMMUNICATION_REPUTATION_PREFERENCES,
+                        Context.MODE_PRIVATE
+                    ).edit().clear().commit()
+                ) {
+                    "Unable to purge cached communication reputation"
+                }
+            }
         }
 
     /**
      * Optional post-screening caller reputation enrichment.
      * Disabled by default because enabling it sends the incoming caller number to the
      * configured Sentinel reputation service after the platform screening decision.
+     *
+     * Revocation is committed synchronously before cached remote-derived reputation is purged.
+     * This ordering prevents an already-authorized in-flight response from repopulating the
+     * cache after the user has withdrawn consent. The install-local HMAC secret is stored in a
+     * separate preferences file and is intentionally retained.
      */
     var callerReputationEnrichmentEnabled: Boolean
         get() = preferences.getBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
         set(value) {
-            preferences.edit().putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, value).apply()
+            if (value) {
+                preferences.edit().putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, true).apply()
+            } else {
+                check(
+                    preferences.edit()
+                        .putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
+                        .commit()
+                ) {
+                    "Unable to persist caller reputation consent revocation"
+                }
+                check(
+                    appContext.getSharedPreferences(
+                        COMMUNICATION_REPUTATION_PREFERENCES,
+                        Context.MODE_PRIVATE
+                    ).edit().clear().commit()
+                ) {
+                    "Unable to purge cached communication reputation"
+                }
+            }
         }
 
     /**
@@ -148,6 +188,8 @@ class SettingsStore(context: Context) {
             if (SUPPORTED_INTERVALS_HOURS.contains(hours)) hours else INTERVAL_NEVER
 
         private const val PREFERENCES = "sentinel_settings"
+        private const val COMMUNICATION_REPUTATION_PREFERENCES =
+            "sentinel_communication_reputation"
         private const val THEME_MODE = "theme_mode"
         private const val RULE_SYNC_ENABLED = "rule_sync_enabled"
         private const val PROTECTION_MODE = "protection_mode"

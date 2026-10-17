@@ -139,7 +139,7 @@ jobs:
 
           test -x "$ANDROID_HOME/emulator/emulator"
           test -f "$ANDROID_HOME/system-images/android-29/google_apis/x86_64/package.xml"
-          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64"'
+          timeout 60s bash -c 'echo "no" | avdmanager create avd --force --name sentinel_phone_core_ci --package "system-images;android-29;google_apis;x86_64" --device "pixel"'
 
           EMULATOR_ACCEL_ARGS=(-no-accel)
           if [[ -e /dev/kvm ]]; then
@@ -449,6 +449,14 @@ jobs:
             cat "$RUNNER_TEMP/sentinel-emulator.log"
             exit 1
           fi
+
+          # Keep the shared Telecom flow deterministic, matching the dedicated emulation gate.
+          # Animations are decorative and must not race the answer tap or state evidence.
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell input keyevent KEYCODE_WAKEUP || true
+          adb shell wm dismiss-keyguard || true
 
           adb install -r "$APK_PATH"
           bash ../scripts/phone-core-emulator-flow.sh "$RUNNER_TEMP/phone-core-ui"

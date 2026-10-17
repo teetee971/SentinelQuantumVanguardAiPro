@@ -219,6 +219,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onPostResume() {
+        super.onPostResume()
+        // Telecom can cold-start the process without creating MainActivity. Keep SMS/MMS repair
+        // out of that path and start it only once the user-facing app is resumed.
+        (application as SentinelApplication).launchForegroundMaintenance()
+    }
+
     private fun maybeOpenPhoneCoreFirstRunSetup() {
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)

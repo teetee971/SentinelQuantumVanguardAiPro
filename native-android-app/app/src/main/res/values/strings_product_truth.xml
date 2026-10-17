@@ -4,4 +4,6 @@
     <string name="product_capability_unverified">Service non validé</string>
     <string name="product_capability_available">Service disponible</string>
     <string name="product_capability_not_implemented">Service prévu</string>
+    <string name="product_capability_preproduction">Service en préproduction</string>
+    <string name="product_capability_unavailable">Service indisponible</string>
 </resources>

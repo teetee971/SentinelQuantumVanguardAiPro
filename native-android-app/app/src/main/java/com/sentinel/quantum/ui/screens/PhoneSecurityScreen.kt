@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.border
@@ -11,15 +13,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.VpnLock
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,7 +43,13 @@ import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.intelligence.Freshness
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentation
 import com.sentinel.quantum.security.CallerReputationClient
+import com.sentinel.quantum.security.CommunicationReputationCache
+import com.sentinel.quantum.security.CommunicationReputationWriter
+import com.sentinel.quantum.security.SharedPreferencesCommunicationReputationStorage
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.RtrDirectoryClient
@@ -47,18 +60,67 @@ import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
+import com.sentinel.quantum.ui.design.SentinelActionTile
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.Locale
+
+/**
+ * Serializes a reputation write with its stale-generation cleanup.
+ *
+ * Generation invalidation is synchronous and only touches a small in-memory counter, so editing
+ * the field never waits for disk I/O. A persistence operation owns the mutex across the actual
+ * write and the conditional cleanup; a newer generation observed during I/O therefore removes
+ * the old candidate before another queued write can begin.
+ */
+internal class GenerationSafeReputationPersistence<T>(
+    private val persist: suspend (candidate: String, value: T) -> Unit,
+    private val discard: suspend (candidate: String) -> Unit
+) {
+    private val stateLock = Any()
+    private val persistenceLock = Mutex()
+    private var generation = 0
+
+    fun invalidate(): Int = synchronized(stateLock) {
+        generation += 1
+        generation
+    }
+
+    suspend fun persistIfCurrent(
+        expectedGeneration: Int,
+        candidate: String,
+        value: T
+    ): Boolean = persistenceLock.withLock {
+        if (!isCurrent(expectedGeneration)) return@withLock false
+
+        persist(candidate, value)
+
+        if (!isCurrent(expectedGeneration)) {
+            discard(candidate)
+            return@withLock false
+        }
+        true
+    }
+
+    private fun isCurrent(expectedGeneration: Int): Boolean = synchronized(stateLock) {
+        generation == expectedGeneration
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhoneSecurityScreen(navController: NavController) {
     val context = LocalContext.current
-    var phoneNumber by remember { mutableStateOf("") }
+    var phoneNumber by rememberSaveable { mutableStateOf("") }
     var checkResult by remember { mutableStateOf<PhoneMonitor.SpamCheckResult?>(null) }
     var explanation by remember { mutableStateOf<ExplainableAI.Explanation?>(null) }
     var monitorStats by remember { mutableStateOf<PhoneMonitor.MonitorStats?>(null) }
@@ -71,7 +133,32 @@ fun PhoneSecurityScreen(navController: NavController) {
     var rtrResult by remember { mutableStateOf<RtrDirectoryClient.Result?>(null) }
     var pendingBlockConfirmation by remember { mutableStateOf(false) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
+    var intelligencePresentation by remember { mutableStateOf<IntelligenceSnapshotPresentation?>(null) }
+    var lookupGeneration by remember { mutableStateOf(0) }
     var postureEpoch by remember { mutableStateOf(0) }
+
+    fun clearLookupResults() {
+        checkResult = null
+        explanation = null
+        monitorStats = null
+        remoteResult = null
+        remoteStatus = null
+        remoteRunning = false
+        arcepResult = null
+        arcepStatus = null
+        directoryRunning = false
+        rtrResult = null
+        intelligencePresentation = null
+        actionStatus = null
+        pendingBlockConfirmation = false
+    }
+
+    fun isCurrentLookup(
+        generation: Int,
+        candidate: String,
+        currentGeneration: Int,
+        currentPhoneNumber: String
+    ): Boolean = generation == currentGeneration && candidate == currentPhoneNumber
     val hostActivity = context as? ComponentActivity
     DisposableEffect(hostActivity) {
         val observer = LifecycleEventObserver { _, event ->
@@ -91,6 +178,23 @@ fun PhoneSecurityScreen(navController: NavController) {
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
     }
     val scope = rememberCoroutineScope()
+    val reputationStorage = remember(context) {
+        SharedPreferencesCommunicationReputationStorage(context.applicationContext)
+    }
+    val reputationCache = remember(reputationStorage) {
+        CommunicationReputationCache(reputationStorage)
+    }
+    val reputationWriter = remember(reputationCache) {
+        CommunicationReputationWriter(reputationCache)
+    }
+    val generationSafeReputationPersistence = remember(reputationWriter, reputationStorage) {
+        GenerationSafeReputationPersistence<CallerReputationClient.Result>(
+            persist = { candidate, result -> reputationWriter.persist(candidate, result) },
+            discard = { candidate ->
+                CommunicationReputationCache.cacheKeyFor(candidate)?.let(reputationStorage::remove)
+            }
+        )
+    }
     val phoneCoreFacts = remember(context, postureEpoch) {
         PhoneCoreRuntimeFacts.read(context.applicationContext)
     }
@@ -107,6 +211,24 @@ fun PhoneSecurityScreen(navController: NavController) {
         phoneCoreFacts.smsRoleHeld &&
             phoneCoreFacts.smsRuntimePermissionsReady &&
             phoneCoreFacts.mmsPermissionsReady
+    }
+    val protectionStatus = remember(phoneCoreReady, callPrerequisitesReady, messagePrerequisitesReady) {
+        ProtectionOverviewPresentation.status(
+            phoneCoreReady = phoneCoreReady,
+            callPrerequisitesReady = callPrerequisitesReady,
+            messagePrerequisitesReady = messagePrerequisitesReady
+        )
+    }
+    val protectionMotion = remember(context, postureEpoch) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
     }
 
     Scaffold(
@@ -126,10 +248,16 @@ fun PhoneSecurityScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ProtectionHero(
-                phoneCoreReady = phoneCoreReady,
-                callReady = callPrerequisitesReady,
-                smsReady = messagePrerequisitesReady
+            SentinelHeroVisual(
+                status = protectionStatus,
+                title = "Protection de l’appareil",
+                subtitle = if (protectionStatus == SentinelStatus.LIMITED) {
+                    "Prérequis logiciels Phone Core prêts · état global partiellement mesuré · validation physique distincte."
+                } else {
+                    "Prérequis Phone Core à finaliser · état global partiellement mesuré · validation physique distincte."
+                },
+                modifier = Modifier.testTag("protection-command-center"),
+                motionLevel = protectionMotion
             )
 
             ElevatedCard(
@@ -188,24 +316,43 @@ fun PhoneSecurityScreen(navController: NavController) {
             }
 
             SentinelSectionHeader(
-                title = "Fonctionnalités de protection",
-                subtitle = "Accès direct aux contrôles locaux sans masquer les prérequis manquants."
+                title = "Centre de contrôle",
+                subtitle = "Analyses locales et protections disponibles, sans transformer une heuristique en détection malware."
             )
+            SentinelActionTile(
+                title = "Audit local",
+                subtitle = "Vérifier l’installation et les autorisations Android avec des résultats observables.",
+                icon = Icons.Default.Security,
+                onClick = { navController.navigate(Screen.SecurityAudit.route) },
+                modifier = Modifier.testTag("protection-analysis-action")
+            )
+            SentinelActionTile(
+                title = "Applications & permissions",
+                subtitle = "Analyser les permissions sensibles. Un niveau de risque élevé n’est pas une preuve de malware.",
+                icon = Icons.Default.Apps,
+                onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                modifier = Modifier.testTag("protection-app-permissions-action")
+            )
+            SentinelActionTile(
+                title = "Réseau local",
+                subtitle = "Ouvrir les observations Wi‑Fi et réseau avec leurs limites Android explicites.",
+                icon = Icons.Default.Wifi,
+                onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                modifier = Modifier.testTag("protection-network-action")
+            )
+            SentinelActionTile(
+                title = "VPN Sentinel",
+                subtitle = "Configurer le tunnel défensif et consulter son état réel avant toute connexion.",
+                icon = Icons.Default.VpnLock,
+                onClick = { navController.navigate(Screen.Vpn.route) },
+                modifier = Modifier.testTag("protection-vpn-action")
+            )
+
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = { navController.navigate(Screen.DigitalExposure.route) },
                     modifier = Modifier.weight(1f)
                 ) { Text("Exposition numérique") }
-                OutlinedButton(
-                    onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
-                    modifier = Modifier.weight(1f)
-                ) { Text("Applications") }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
-                    modifier = Modifier.weight(1f)
-                ) { Text("Réseau local") }
                 OutlinedButton(
                     onClick = { navController.navigate(Screen.SmsScanner.route) },
                     modifier = Modifier.weight(1f)
@@ -220,7 +367,11 @@ fun PhoneSecurityScreen(navController: NavController) {
 
             OutlinedTextField(
                 value = phoneNumber,
-                onValueChange = { phoneNumber = it.take(32) },
+                onValueChange = {
+                    lookupGeneration = generationSafeReputationPersistence.invalidate()
+                    phoneNumber = it.take(32)
+                    clearLookupResults()
+                },
                 label = { Text(stringResource(R.string.phone_security_label)) },
                 placeholder = { Text(stringResource(R.string.phone_security_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -231,25 +382,34 @@ fun PhoneSecurityScreen(navController: NavController) {
             Button(
                 onClick = {
                     if (phoneNumber.isNotBlank()) {
+                        lookupGeneration = generationSafeReputationPersistence.invalidate()
+                        clearLookupResults()
+                        val generation = lookupGeneration
+                        val candidate = phoneNumber
                         checkResult = phoneMonitor.checkNumber(phoneNumber)
                         explanation = checkResult?.let(explainableAI::explainSpamCheck)
                         monitorStats = phoneMonitor.getStats()
                         directoryRunning = true
-                        arcepResult = null
                         arcepStatus = "Recherche dans l’annuaire officiel…"
-                        val candidate = phoneNumber
                         scope.launch {
+                            val snapshotPresentation = withContext(Dispatchers.IO) {
+                                IntelligenceCoreRuntime.snapshotForNumber(context.applicationContext, candidate)
+                                    ?.let { IntelligenceSnapshotPresentation.from(it) }
+                            }
+                            if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                            intelligencePresentation = snapshotPresentation
                             val isAustria = RtrDirectoryClient.normalize(candidate) != null
                             if (isAustria) {
                                 val lookup = withContext(Dispatchers.IO) { runCatching { RtrDirectoryClient().lookup(candidate) } }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     rtrResult = it
                                     arcepStatus = if (it != null && it.matches.isNotEmpty()) "Attribution RTR trouvée" else "Aucune attribution RTR correspondante"
                                 }.onFailure { arcepStatus = "Annuaire RTR temporairement indisponible" }
                             } else {
-                                rtrResult = null
                                 val lookup = withContext(Dispatchers.IO) { runCatching { ArcepDirectoryClient().lookup(candidate) } }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 directoryRunning = false
                                 lookup.onSuccess {
                                     arcepResult = it
@@ -395,10 +555,19 @@ fun PhoneSecurityScreen(navController: NavController) {
                             allocation.area?.let { Text("Zone : $it") }
                             allocation.holderId?.let { Text("Identifiant RTR : $it") }
                         }
-                        Text("Attribution réglementaire uniquement : elle ne prouve ni l’opérateur actuel, ni l’identité de l’appelant, ni une fraude.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Attribution réglementaire uniquement : elle ne prouve ni l’opérateur actuel, ni l’identité de l’appelant, ni une fraude.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+            }
+
+            intelligencePresentation?.let { intelligencePresentation ->
+                IntelligenceDiagnosticCard(
+                    intelligencePresentation = intelligencePresentation
+                )
             }
 
             if (remoteEnrichmentEnabled) {
@@ -406,13 +575,15 @@ fun PhoneSecurityScreen(navController: NavController) {
                     onClick = {
                         val candidate = phoneNumber
                         if (candidate.isNotBlank()) {
+                            lookupGeneration = generationSafeReputationPersistence.invalidate()
+                            clearLookupResults()
+                            val generation = lookupGeneration
                             remoteRunning = true
-                            remoteResult = null
                             remoteStatus = "Enrichissement Sentinel en cours…"
                             scope.launch {
                                 val checked = withContext(Dispatchers.IO) {
                                     runCatching {
-                                        CallerReputationClient(
+                                        val result = CallerReputationClient(
                                             egressGate = {
                                                 settingsStore.callerReputationEnrichmentEnabled &&
                                                     ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
@@ -424,14 +595,32 @@ fun PhoneSecurityScreen(navController: NavController) {
                                             privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                             explicitConsent = settingsStore.callerReputationEnrichmentEnabled
                                         )
+                                        result
                                     }
                                 }
+                                if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
                                 remoteRunning = false
-                                checked.onSuccess {
-                                    remoteResult = it
-                                    remoteStatus = "Réputation distante reçue"
-                                }.onFailure {
+                                checked.onFailure {
                                     remoteStatus = "Réputation distante indisponible"
+                                }
+                                checked.getOrNull()?.let { result ->
+                                    if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                    runCatching {
+                                        withContext(Dispatchers.IO) {
+                                            generationSafeReputationPersistence.persistIfCurrent(
+                                                expectedGeneration = generation,
+                                                candidate = candidate,
+                                                value = result
+                                            )
+                                        }
+                                    }.onFailure {
+                                        if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                        remoteStatus = "Réputation distante indisponible"
+                                        return@launch
+                                    }
+                                    if (!isCurrentLookup(generation, candidate, lookupGeneration, phoneNumber)) return@launch
+                                    remoteResult = result
+                                    remoteStatus = "Réputation distante reçue"
                                 }
                             }
                         }
@@ -519,6 +708,55 @@ fun PhoneSecurityScreen(navController: NavController) {
     }
 }
 
+@Composable
+private fun IntelligenceDiagnosticCard(
+    intelligencePresentation: IntelligenceSnapshotPresentation
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                "Intelligence Sentinel locale",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text("Révision locale : ${intelligencePresentation.revision}")
+            Text(
+                "Score indicatif partagé : " +
+                    (intelligencePresentation.riskScore?.let { "$it/100" } ?: "Non mesuré")
+            )
+            Text(
+                "Fraîcheur : " + when (intelligencePresentation.freshness) {
+                    Freshness.FRESH -> "À jour"
+                    Freshness.STALE -> "Expirée"
+                    Freshness.UNKNOWN -> "Non déterminée"
+                }
+            )
+            Text("Preuves actives : ${intelligencePresentation.activeEvidenceCount}")
+            Text("Preuves expirées : ${intelligencePresentation.staleEvidenceCount}")
+            if (intelligencePresentation.sources.isNotEmpty()) {
+                Text("Sources : " + intelligencePresentation.sources.joinToString(" · ") { it.name })
+            }
+            if (intelligencePresentation.evidenceStates.isNotEmpty()) {
+                Text("États de preuve : " + intelligencePresentation.evidenceStates.joinToString(" · ") { it.name })
+            }
+            if (intelligencePresentation.communityAggregatePresent) {
+                Text(
+                    "Des signaux communautaires sont présents comme contexte uniquement ; ils n’autorisent pas à eux seuls un blocage.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                "Vue diagnostique locale en lecture seule. Ces éléments ne déclenchent aucune action automatique.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 @Composable
 private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady: Boolean) {
@@ -546,18 +784,11 @@ private fun ProtectionHero(phoneCoreReady: Boolean, callReady: Boolean, smsReady
     }
 }
 
-
 @Composable
 private fun ProtectionStatusChip(label: String, ready: Boolean, modifier: Modifier = Modifier) {
-    val container = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
-    val content = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-    Surface(modifier = modifier, shape = MaterialTheme.shapes.large, color = container) {
-        Text(
-            text = "$label · " + if (ready) "Prérequis prêts" else "À configurer",
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            color = content,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold
-        )
-    }
+    com.sentinel.quantum.ui.design.SentinelStatusChip(
+        status = ProtectionOverviewPresentation.prerequisiteStatus(ready),
+        modifier = modifier,
+        label = "$label · " + if (ready) "Prérequis prêts" else "À configurer"
+    )
 }

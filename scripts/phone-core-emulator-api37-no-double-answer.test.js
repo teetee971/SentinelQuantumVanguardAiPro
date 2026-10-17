@@ -158,7 +158,28 @@ test('API 24 instrumentation enforces a hard wall-clock timeout instead of a det
   assert.doesNotMatch(instrumentation, /INSTRUMENTATION_WATCHDOG_PID/);
 });
 
-test('API 24 APK installs are hard-bounded in both instrumentation workflows', () => {
+test('legacy Android instrumentation keeps a bounded 30 minute connected-test watchdog', () => {
+  assert.match(
+    instrumentationWorkflowSource,
+    /timeout --signal=INT --kill-after=30s 1800s \\\n\s+\.\/gradlew connectedDebugAndroidTest --stacktrace --no-daemon/,
+    'legacy instrumentation must allow the cold connected-test lane to finish without removing its hard timeout'
+  );
+});
+
+test('legacy Android instrumentation API 24 keeps a bounded 30 minute adb watchdog', () => {
+  const api24 = blockBetween(
+    instrumentationWorkflowSource,
+    'if [[ "$API_LEVEL" == "24" ]]; then',
+    '          else\n            timeout --signal=INT --kill-after=30s 1800s'
+  );
+  assert.match(
+    api24,
+    /timeout --signal=INT --kill-after=30s 1800s \\\n\s+adb shell am instrument -w -r "\$INSTRUMENTATION_RUNNER"/,
+    'API 24 legacy instrumentation must retain a hard 30 minute adb watchdog'
+  );
+});
+
+test('API 24 APK installs are hard-bounded and use non-streaming transport in both instrumentation workflows', () => {
   for (const [name, source] of [
     ['Phone Core qualification', workflowSource],
     ['Android instrumentation', instrumentationWorkflowSource]
@@ -166,25 +187,25 @@ test('API 24 APK installs are hard-bounded in both instrumentation workflows', (
     const api24 = blockBetween(
       source,
       'if [[ "$API_LEVEL" == "24" ]]; then',
-      '          else\n            timeout --signal=INT --kill-after=30s 900s'
+      `          else\n            timeout --signal=INT --kill-after=30s ${name === 'Android instrumentation' ? 1800 : 900}s`
     );
 
     for (const apkVariable of ['APP_APK', 'TEST_APK']) {
       assert.match(
         api24,
-        new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install -r "\\$${apkVariable}"`),
-        `${name} must hard-bound ${apkVariable} installation`
+        new RegExp(`timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "\\$${apkVariable}"`),
+        `${name} must hard-bound ${apkVariable} installation and disable streamed ADB install on API 24`
       );
       assert.doesNotMatch(
         api24,
-        new RegExp(`\\n\\s*adb install -r "\\$${apkVariable}"`),
+        new RegExp(`\\n\\s*adb install(?: --no-streaming)? -r "\\$${apkVariable}"`),
         `${name} must not leave ${apkVariable} installation unbounded`
       );
     }
   }
 });
 
-test('runtime APK installation is bounded so a wedged ADB transport cannot consume the whole emulator job', () => {
+test('runtime APK installation is bounded and non-streaming on API 24 so a wedged ADB transport cannot consume the whole emulator job', () => {
   const runtime = blockBetween(
     workflowSource,
     '      - name: Run emulator application/runtime qualification',
@@ -193,12 +214,12 @@ test('runtime APK installation is bounded so a wedged ADB transport cannot consu
 
   assert.match(
     runtime,
-    /timeout --signal=TERM --kill-after=30s 120s adb install -r "\$APK_PATH"/,
-    'runtime APK installation must have its own hard foreground timeout'
+    /timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "\$APK_PATH"/,
+    'runtime APK installation must have its own hard foreground timeout and legacy-safe API 24 transport'
   );
   assert.doesNotMatch(
     runtime,
-    /\n\s*adb install -r "\$APK_PATH"/,
+    /\n\s*adb install(?: --no-streaming)? -r "\$APK_PATH"/,
     'runtime APK installation must never run unbounded'
   );
 });

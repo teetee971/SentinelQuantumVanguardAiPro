@@ -10,6 +10,9 @@ import android.telecom.CallScreeningService
 import android.telecom.Connection
 import android.util.Log
 import com.sentinel.quantum.CallerIdActivity
+import com.sentinel.quantum.SentinelApplication
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.PublishResult
 import java.util.concurrent.atomic.AtomicLong
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
@@ -17,6 +20,13 @@ class SentinelCallScreeningService : CallScreeningService() {
     override fun onScreenCall(callDetails: Call.Details) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
+
+        // One ordering boundary per callback. It owns no thread and cannot leak readiness from one
+        // call into another. Optional work is delegated to the existing bounded process worker only
+        // after respondToCall() has returned successfully for this exact invocation.
+        val responseBoundary = CallScreeningResponseBoundary { task ->
+            POST_RESPONSE_WORKER.execute(task)
+        }
 
         // PII-free lifecycle marker used by emulator qualification to prove that Telecom actually
         // invoked Sentinel for an incoming screening callback. Keep it before emergency-number
@@ -32,7 +42,9 @@ class SentinelCallScreeningService : CallScreeningService() {
                 getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
             }
         ) {
-            respondToCall(callDetails, CallResponse.Builder().build())
+            responseBoundary.deliverResponse {
+                respondToCall(callDetails, CallResponse.Builder().build())
+            }
             return
         }
 
@@ -49,7 +61,9 @@ class SentinelCallScreeningService : CallScreeningService() {
         // fail open rather than applying a blocking or silencing rule. The lifecycle marker above
         // may still prove callback invocation, but no CALL_SCREENED:* evidence is manufactured.
         if (emergency != false) {
-            respondToCall(callDetails, CallResponse.Builder().build())
+            responseBoundary.deliverResponse {
+                respondToCall(callDetails, CallResponse.Builder().build())
+            }
             return
         }
 
@@ -65,7 +79,9 @@ class SentinelCallScreeningService : CallScreeningService() {
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
-            respondToCall(callDetails, CallResponse.Builder().build())
+            responseBoundary.deliverResponse {
+                respondToCall(callDetails, CallResponse.Builder().build())
+            }
             return
         }
         val response = CallResponse.Builder()
@@ -80,93 +96,110 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
             CallRuleEngine.Action.ALLOW -> Unit
         }
-        respondToCall(callDetails, response.build())
-
-        // Caller-ID rendering happens only after the mandatory platform response. The profile is
-        // computed offline and contains no invented person or company identity.
-        // STIR/SHAKEN verification on Call.Details was added in Android 11, not 10.
-        // Never call this accessor on API 29 after responding: it would crash the dialer process.
-        val verificationCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            when (callDetails.callerNumberVerificationStatus) {
-                Connection.VERIFICATION_STATUS_PASSED -> "VERIFIED"
-                Connection.VERIFICATION_STATUS_FAILED -> "FAILED"
-                else -> "NOT_VERIFIED"
-            }
-        } else {
-            "UNKNOWN"
-        }
-        val verification = when (verificationCode) {
-            "VERIFIED" -> "Numéro validé par le réseau"
-            "FAILED" -> "Échec de validation réseau"
-            "NOT_VERIFIED" -> "Non vérifié par le réseau"
-            else -> "Statut indisponible sur cette version Android"
-        }
-        val profile = CallerIdentityResolver.resolve(
-            rawNumber = rawCallerNumber,
-            verification = verification,
-            displayName = null,
-            organisation = null,
-            identitySource = null,
-            identityVerified = false
-        )
-        runCatching {
-            startActivity(Intent(this, CallerIdActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
-                putExtra(CallerIdActivity.EXTRA_NUMBER, profile.displayNumber.ifBlank { "Numéro masqué ou indisponible" })
-                putExtra(CallerIdActivity.EXTRA_COUNTRY, profile.countryName)
-                putExtra(CallerIdActivity.EXTRA_FLAG, profile.countryFlag)
-                putExtra(CallerIdActivity.EXTRA_TYPE, profile.callType)
-                putExtra(CallerIdActivity.EXTRA_VERIFICATION, profile.verification)
-                putExtra(CallerIdActivity.EXTRA_VERIFICATION_CODE, verificationCode)
-                putExtra(CallerIdActivity.EXTRA_ACTION, decision.action.name)
-                putExtra(CallerIdActivity.EXTRA_REASON, decision.reason)
-                putExtra(CallerIdActivity.EXTRA_NAME, profile.displayName)
-                putExtra(CallerIdActivity.EXTRA_ORGANISATION, profile.organisation)
-                putExtra(CallerIdActivity.EXTRA_SOURCE, profile.identitySource)
-                putExtra(CallerIdActivity.EXTRA_IDENTITY_VERIFIED, profile.identityVerified)
-            })
-        }.onFailure {
-            LocalLogger(applicationContext).logAsync(
-                LocalLogger.LogLevel.WARNING,
-                "CallerId",
-                "Fiche appelant indisponible; la décision de filtrage a déjà été rendue"
-            )
+        responseBoundary.deliverResponse {
+            respondToCall(callDetails, response.build())
         }
 
-        // Everything below can touch disk or initialize Room. Keep it outside the screening
-        // callback after the mandatory Android response has already been delivered.
         val appContext = applicationContext
-        val submitted = runCatching {
-            POST_RESPONSE_WORKER.execute {
-                val logger = LocalLogger(appContext)
-                logger.log(
-                    LocalLogger.LogLevel.SECURITY,
-                    "CallScreening",
-                    "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
-                )
+        val submitted = responseBoundary.submitPostResponse {
+            (applicationContext as? SentinelApplication)?.runPostResponseMaintenance()
 
-                runCatching {
-                    CallFilterLogStore.get(appContext).recordAsync(decision)
-                }.onFailure {
-                    logger.log(
-                        LocalLogger.LogLevel.WARNING,
-                        "CallScreening",
-                        "Historique de filtrage indisponible; la décision Android a déjà été rendue"
-                    )
+            // Caller-ID rendering happens only after the mandatory platform response. The profile
+            // is computed offline and contains no invented person or company identity.
+            // STIR/SHAKEN verification on Call.Details was added in Android 11, not 10.
+            // Never call this accessor on API 29 before responding: it could crash the dialer process.
+            val verificationCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                when (callDetails.callerNumberVerificationStatus) {
+                    Connection.VERIFICATION_STATUS_PASSED -> "VERIFIED"
+                    Connection.VERIFICATION_STATUS_FAILED -> "FAILED"
+                    else -> "NOT_VERIFIED"
                 }
-
-                // Persist only privacy-bounded call metadata; never the raw or normalized number.
-                runCatching {
-                    PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))
-                }.onFailure {
-                    logger.log(
-                        LocalLogger.LogLevel.WARNING,
-                        "CallScreening",
-                        "Chronologie privée indisponible; la décision de filtrage a déjà été rendue"
-                    )
-                }
+            } else {
+                "UNKNOWN"
             }
-        }.isSuccess
+            val verification = when (verificationCode) {
+                "VERIFIED" -> "Numéro validé par le réseau"
+                "FAILED" -> "Échec de validation réseau"
+                "NOT_VERIFIED" -> "Non vérifié par le réseau"
+                else -> "Statut indisponible sur cette version Android"
+            }
+            val profile = CallerIdentityResolver.resolve(
+                rawNumber = rawCallerNumber,
+                verification = verification,
+                displayName = null,
+                organisation = null,
+                identitySource = null,
+                identityVerified = false
+            )
+            runCatching {
+                startActivity(Intent(this, CallerIdActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
+                    putExtra(CallerIdActivity.EXTRA_NUMBER, profile.displayNumber.ifBlank { "Numéro masqué ou indisponible" })
+                    putExtra(CallerIdActivity.EXTRA_COUNTRY, profile.countryName)
+                    putExtra(CallerIdActivity.EXTRA_FLAG, profile.countryFlag)
+                    putExtra(CallerIdActivity.EXTRA_TYPE, profile.callType)
+                    putExtra(CallerIdActivity.EXTRA_VERIFICATION, profile.verification)
+                    putExtra(CallerIdActivity.EXTRA_VERIFICATION_CODE, verificationCode)
+                    putExtra(CallerIdActivity.EXTRA_ACTION, decision.action.name)
+                    putExtra(CallerIdActivity.EXTRA_REASON, decision.reason)
+                    putExtra(CallerIdActivity.EXTRA_NAME, profile.displayName)
+                    putExtra(CallerIdActivity.EXTRA_ORGANISATION, profile.organisation)
+                    putExtra(CallerIdActivity.EXTRA_SOURCE, profile.identitySource)
+                    putExtra(CallerIdActivity.EXTRA_IDENTITY_VERIFIED, profile.identityVerified)
+                })
+            }.onFailure {
+                LocalLogger(applicationContext).logAsync(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallerId",
+                    "Fiche appelant indisponible; la décision de filtrage a déjà été rendue"
+                )
+            }
+
+            // Everything below can touch disk or initialize Room. The boundary guarantees this
+            // block cannot run until the mandatory Android response has returned successfully.
+            val logger = LocalLogger(appContext)
+            logger.log(
+                LocalLogger.LogLevel.SECURITY,
+                "CallScreening",
+                "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
+            )
+
+            when (IntelligenceCoreRuntime.publishCallDecision(appContext, decision, verificationCode)) {
+                PublishResult.OVERFLOW -> logger.log(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallScreening",
+                    "Intelligence Core saturé; la décision Android reste valide"
+                )
+                PublishResult.REJECTED -> logger.log(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallScreening",
+                    "Intelligence Core indisponible; la décision Android reste valide"
+                )
+                PublishResult.ACCEPTED,
+                PublishResult.DUPLICATE -> Unit
+            }
+
+            runCatching {
+                CallFilterLogStore.get(appContext).recordAsync(decision)
+            }.onFailure {
+                logger.log(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallScreening",
+                    "Historique de filtrage indisponible; la décision Android a déjà été rendue"
+                )
+            }
+
+            // Persist only privacy-bounded call metadata; never the raw or normalized number.
+            runCatching {
+                PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))
+            }.onFailure {
+                logger.log(
+                    LocalLogger.LogLevel.WARNING,
+                    "CallScreening",
+                    "Chronologie privée indisponible; la décision de filtrage a déjà été rendue"
+                )
+            }
+        }
 
         if (!submitted) {
             REJECTED_POST_RESPONSE_WORK.incrementAndGet()

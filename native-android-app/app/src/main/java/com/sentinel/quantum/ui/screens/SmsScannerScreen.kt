@@ -1,7 +1,10 @@
 package com.sentinel.quantum.ui.screens
 
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -9,7 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -19,10 +23,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,12 +35,15 @@ import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SharedTextHolder
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.PhoneCoreFrenchLabels
+import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsTimelineMapper
-import com.sentinel.quantum.security.PhonePrivateTimelineStore
-import com.sentinel.quantum.security.PhoneCoreFrenchLabels
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,6 +59,18 @@ fun SmsScannerScreen(navController: NavController) {
     var result by remember { mutableStateOf<SmsLinkAnalyzer.Analysis?>(null) }
     var isAnalyzing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val motionLevel = remember(context) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
+    }
+    val presentation = result?.let(SmsThreatPresentation::from)
 
     Scaffold(
         topBar = {
@@ -62,23 +82,37 @@ fun SmsScannerScreen(navController: NavController) {
         }
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Messages",
-                title = "Analyser avant d’ouvrir",
-                body = stringResource(R.string.sms_scanner_intro),
-                badges = listOf(
-                    "Local" to SentinelD1.Success,
-                    "Aucun lien auto-ouvert" to SentinelD1.Cyan
-                )
+            SentinelHeroVisual(
+                status = presentation?.status ?: SentinelStatus.UNKNOWN,
+                title = presentation?.label ?: "Analyser avant d’ouvrir",
+                subtitle = presentation?.detail
+                    ?: "Sentinel inspecte localement le texte et les liens partagés. Aucun lien n’est ouvert automatiquement.",
+                modifier = Modifier.testTag("sms-threat-hero"),
+                motionLevel = motionLevel
+            )
+
+            SentinelSectionHeader(
+                title = "Message à examiner",
+                subtitle = "Analyse bornée et locale. L’absence de signal n’est jamais présentée comme une preuve de sécurité."
             )
             OutlinedTextField(
                 value = rawMessage,
-                onValueChange = { rawMessage = it.take(16 * 1024) },
+                onValueChange = {
+                    rawMessage = it.take(16 * 1024)
+                    result = null
+                },
                 label = { Text(stringResource(R.string.sms_scanner_label)) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 160.dp)
+                    .testTag("sms-threat-input"),
                 minLines = 6
             )
             Button(
@@ -97,24 +131,68 @@ fun SmsScannerScreen(navController: NavController) {
                         isAnalyzing = false
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("sms-threat-analyze-action"),
                 enabled = rawMessage.isNotBlank() && !isAnalyzing
             ) {
                 Text(if (isAnalyzing) "Analyse…" else stringResource(R.string.sms_scanner_analyze))
             }
+
             result?.let { analysis ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.sms_scanner_result), fontWeight = FontWeight.Bold)
+                val view = SmsThreatPresentation.from(analysis)
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("sms-threat-result"),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    )
+                ) {
+                    Column(
+                        Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                stringResource(R.string.sms_scanner_result),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            SentinelStatusChip(status = view.status)
+                        }
+                        Text(view.label, fontWeight = FontWeight.Bold)
+                        Text(
+                            view.detail,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         if (!analysis.accepted) {
-                            Text(stringResource(R.string.sms_scanner_rejected, PhoneCoreFrenchLabels.analysisRejection(analysis.reason)))
+                            Text(
+                                stringResource(
+                                    R.string.sms_scanner_rejected,
+                                    PhoneCoreFrenchLabels.analysisRejection(analysis.reason)
+                                )
+                            )
                         } else {
-                            Text(stringResource(R.string.sms_scanner_risk, PhoneCoreFrenchLabels.riskLevel(analysis.riskLevel.name)))
+                            Text(
+                                stringResource(
+                                    R.string.sms_scanner_risk,
+                                    PhoneCoreFrenchLabels.riskLevel(analysis.riskLevel.name)
+                                )
+                            )
                             Text(stringResource(R.string.sms_scanner_score, analysis.score))
                             Text(stringResource(R.string.sms_scanner_links, analysis.linksInspected))
                             if (analysis.findings.isEmpty()) {
                                 Text(stringResource(R.string.sms_scanner_no_findings))
                             } else {
+                                SentinelSectionHeader(
+                                    title = "Signaux observés",
+                                    subtitle = "Chaque élément correspond à une heuristique locale explicable."
+                                )
                                 analysis.findings.forEach { finding ->
                                     Text(
                                         stringResource(
@@ -127,7 +205,8 @@ fun SmsScannerScreen(navController: NavController) {
                             }
                             Text(
                                 stringResource(R.string.sms_scanner_disclaimer),
-                                style = MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

@@ -288,8 +288,8 @@ jobs:
             TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
             test -s "$APP_APK"
             test -s "$TEST_APK"
-            timeout --signal=TERM --kill-after=30s 120s adb install -r "$APP_APK"
-            timeout --signal=TERM --kill-after=30s 120s adb install -r "$TEST_APK"
+            timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APP_APK"
+            timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$TEST_APK"
             INSTRUMENTATION_RUNNER="$(
               adb shell pm list instrumentation | tr -d '\r' |
                 awk '/^instrumentation:com\.sentinel\.quantum\.test\// {
@@ -360,7 +360,9 @@ jobs:
           # A failed reset must not reuse instrumentation events as runtime evidence.
           # UTP removes the app after connected tests on modern API lanes. Install
           # the exact runtime APK before requiring a successful app-data reset.
-          timeout --signal=TERM --kill-after=30s 120s adb install -r "$APK_PATH"
+          # Android 7/API 24 can deadlock on modern ADB streamed installs. Pass
+          # --no-streaming directly because timeout invokes adb without shell functions.
+          timeout --signal=TERM --kill-after=30s 120s adb install --no-streaming -r "$APK_PATH"
           adb shell pm clear com.sentinel.quantum > "$OUTPUT/runtime-app-reset.txt" 2>&1
           grep -Fxq 'Success' "$OUTPUT/runtime-app-reset.txt"
           adb logcat -c > "$OUTPUT/runtime-logcat-reset.txt" 2>&1
