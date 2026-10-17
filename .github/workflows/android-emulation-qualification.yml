@@ -411,6 +411,16 @@ jobs:
           set -euo pipefail
           OUTPUT="$RUNNER_TEMP/phone-core-emulation-api${API_LEVEL}"
           mkdir -p "$OUTPUT"
+          ADB_RECOVERY_READY=0
+          for _ in $(seq 1 10); do
+            if timeout 3s adb get-state 2>/dev/null | grep -Fxq 'device'; then
+              ADB_RECOVERY_READY=1
+              break
+            fi
+            timeout --signal=TERM --kill-after=1s 3s adb reconnect >/dev/null 2>&1 || true
+            sleep 2
+          done
+          printf '%s\n' "$ADB_RECOVERY_READY" > "$OUTPUT/adb-recovery-status.txt"
           LOGCAT_STATUS=0
           adb logcat -d -v time > "$OUTPUT/logcat.txt" 2> "$OUTPUT/logcat-error.txt" || LOGCAT_STATUS=$?
           printf '%s\n' "$LOGCAT_STATUS" > "$OUTPUT/logcat-status.txt"
