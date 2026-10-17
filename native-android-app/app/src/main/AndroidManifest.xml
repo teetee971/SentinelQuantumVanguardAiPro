@@ -2,54 +2,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Keeps the screen off near the ear during an active Sentinel-managed call. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Required on Android 13+ only when the user explicitly enables OSINT notifications. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Incoming-call full-screen intent for the user-selected default dialer. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    <!-- Optional and requested only after an explicit action in the caller-ID settings. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <!-- Dialer role foundation: call placement is used only after ROLE_DIALER is explicitly held. -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    <!-- Call history: runtime access remains fail-closed unless Sentinel holds ROLE_DIALER. -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
-    <!-- Voice Studio local preview only. Requested only after the user taps Record; never used to capture carrier-call audio. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <!-- Declared for the staged default-SMS client. Runtime use remains gated by ROLE_SMS. -->
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
-    <!-- Required to enumerate active subscriptions before an explicit multi-SIM SMS send. -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_MMS" />
     <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
-
-    <!--
-        Surveillance défensive du réseau local et des appareils que l'utilisateur possède
-        ou est autorisé à administrer. La découverte Wi-Fi/Bluetooth est initiée explicitement
-        par l'utilisateur et se limite aux données rendues visibles par les API Android autorisées.
-        Sentinel n'intercepte pas les communications et ne contourne aucun contrôle d'accès.
-        Les résultats restent traités localement. Android peut exiger une autorisation de
-        localisation pour certaines API Wi-Fi.
-    -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <!-- Requise par WifiManager.startScan()/getScanResults() sur les versions Android prises en charge. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission
-        android:name="android.permission.ACCESS_COARSE_LOCATION"
-        android:maxSdkVersion="32" />
-    <uses-permission
-        android:name="android.permission.NEARBY_WIFI_DEVICES"
-        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
@@ -83,8 +57,8 @@
             </intent-filter>
         </service>
 
-        <!-- Same-package/same-signature Wear OS Data Layer pong receiver. This proves only
-             platform reachability; cryptographic Sentinel session authority remains separate. -->
+        <!-- Same-package/same-signature Wear OS Data Layer receiver. Platform pong and secure-v2
+             frames share this transport boundary; authenticated session truth remains separate. -->
         <service
             android:name=".security.SentinelWearListenerService"
             android:exported="true">
@@ -93,14 +67,11 @@
                 <data
                     android:scheme="wear"
                     android:host="*"
-                    android:path="/sentinel/v1/platform/pong" />
+                    android:pathPrefix="/sentinel/" />
             </intent-filter>
         </service>
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.SentinelQuantum">
+        <activity android:name=".MainActivity" android:exported="true" android:theme="@style/Theme.SentinelQuantum">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -112,21 +83,11 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".VoiceStudioActivity"
-            android:exported="false" />
+        <activity android:name=".VoiceStudioActivity" android:exported="false" />
+        <activity android:name=".PhoneCoreActivationActivity" android:exported="false" />
+        <activity android:name=".PhoneCoreDiagnosticActivity" android:exported="false" />
 
-        <activity
-            android:name=".PhoneCoreActivationActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".PhoneCoreDiagnosticActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".SentinelDialerActivity"
-            android:exported="true">
+        <activity android:name=".SentinelDialerActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -142,9 +103,7 @@
             android:name=".security.SentinelInCallService"
             android:exported="true"
             android:permission="android.permission.BIND_INCALL_SERVICE">
-            <meta-data
-                android:name="android.telecom.IN_CALL_SERVICE_UI"
-                android:value="true" />
+            <meta-data android:name="android.telecom.IN_CALL_SERVICE_UI" android:value="true" />
             <intent-filter>
                 <action android:name="android.telecom.InCallService" />
             </intent-filter>
@@ -157,15 +116,8 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
-        <receiver
-            android:name=".security.SentinelCallActionReceiver"
-            android:exported="false" />
+        <receiver android:name=".security.SentinelCallActionReceiver" android:exported="false" />
 
-        <!--
-            Telecom sends this package-targeted system broadcast to the selected default dialer.
-            It must be exported to be reachable cross-process, but the signature-only
-            MODIFY_PHONE_STATE permission restricts callers to trusted telephony/system code.
-        -->
         <receiver
             android:name=".security.SentinelMissedCallReceiver"
             android:exported="true"
@@ -182,9 +134,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
-        <activity
-            android:name=".SmsComposeActivity"
-            android:exported="true">
+        <activity android:name=".SmsComposeActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -214,17 +164,10 @@
             </intent-filter>
         </receiver>
 
-        <receiver
-            android:name=".security.SentinelMmsDownloadReceiver"
-            android:exported="false" />
+        <receiver android:name=".security.SentinelMmsDownloadReceiver" android:exported="false" />
+        <receiver android:name=".security.SentinelMmsSendStatusReceiver" android:exported="false" />
 
-        <receiver
-            android:name=".security.SentinelMmsSendStatusReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name=".security.SentinelSmsStatusReceiver"
-            android:exported="false">
+        <receiver android:name=".security.SentinelSmsStatusReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="com.sentinel.quantum.SMS_SENT" />
                 <action android:name="com.sentinel.quantum.SMS_DELIVERED" />
@@ -250,9 +193,7 @@
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
     </application>
 
