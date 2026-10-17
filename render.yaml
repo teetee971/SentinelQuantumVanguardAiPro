@@ -67,7 +67,7 @@ services:
     region: frankfurt
     dockerfilePath: ./backend/voice-api/Dockerfile
     dockerContext: ./backend/voice-api
-    healthCheckPath: /health/live
+    healthCheckPath: /health/ready
     autoDeployTrigger: checksPass
     envVars:
       - key: VOICE_SERVICE_ENABLED
