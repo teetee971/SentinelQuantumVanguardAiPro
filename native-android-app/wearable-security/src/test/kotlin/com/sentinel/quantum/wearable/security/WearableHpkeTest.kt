@@ -49,7 +49,7 @@ class WearableHpkeTest {
     @Test
     fun oversizedPublicKeyOrCiphertextIsRejected() {
         assertThrows(IllegalArgumentException::class.java) {
-            WearableHpkePublicKey.import(ByteArray(WearableHpkeLimits.MAX_PUBLIC_KEY_BYTES + 1))
+            WearableHpkePublicKey.fromEncoded(ByteArray(WearableHpkeLimits.MAX_PUBLIC_KEY_BYTES + 1))
         }
 
         val recipient = WearableHpkeKeyPair.generate()
