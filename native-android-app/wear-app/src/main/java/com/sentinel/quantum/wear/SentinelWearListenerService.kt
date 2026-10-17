@@ -1,6 +1,7 @@
 package com.sentinel.quantum.wear
 
 import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
 import com.sentinel.quantum.wearable.contract.WearableProtocolV2
@@ -53,6 +54,15 @@ class SentinelWearListenerService : WearableListenerService() {
         }
         secureFrameHandler = null
         super.onDestroy()
+    }
+
+    override fun onPeerDisconnected(peer: Node) {
+        // A Data Layer disconnect is authoritative only for transport reachability, but retaining
+        // the peer's in-memory HPKE material after that event creates an unnecessary replay window.
+        // Revoke the node-scoped secure session immediately; a reconnect must perform a fresh v2
+        // handshake while the durable Ed25519 pairing remains independently persisted.
+        SentinelWearSecureSessions.registry.revokeNode(peer.id)
+        super.onPeerDisconnected(peer)
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
