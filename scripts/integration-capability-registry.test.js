@@ -107,6 +107,19 @@ test('Render-declared phone backends are not diagnosed as undeployed', () => {
   }
 });
 
+test('Digital exposure diagnoses missing user-safe identity binding rather than an absent backend', () => {
+  const exposureBackend = fs.readFileSync('backend/wangiri-api/collective_exposure.py', 'utf8');
+  const app = fs.readFileSync('backend/wangiri-api/app_redis.py', 'utf8');
+  assert.match(exposureBackend, /prefix="\/v1\/intelligence\/exposures"/);
+  assert.match(exposureBackend, /X-Exposure-Key|x_exposure_key/);
+  assert.match(app, /create_collective_exposure_router\(\)/);
+
+  const capability = readRegistry().capabilities.find((entry) => entry.id === 'digital_exposure');
+  assert.ok(capability, 'digital_exposure capability must exist');
+  assert.equal(capability.state, 'LOCKED_EXTERNAL_DEPENDENCY');
+  assert.equal(capability.diagnostic_reason, 'IDENTITY_BINDING_MISSING');
+});
+
 test('Voice truth reflects the deployed-but-disabled Render service and readiness health gate', () => {
   const render = fs.readFileSync('render.yaml', 'utf8');
   const voiceService = render.slice(render.indexOf('name: sentinel-voice-api'));
