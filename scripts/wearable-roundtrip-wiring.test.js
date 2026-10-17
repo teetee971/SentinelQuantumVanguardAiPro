@@ -4,6 +4,8 @@ import fs from 'node:fs';
 
 const phoneListenerPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelWearListenerService.kt';
+const phoneSecureRuntimePath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelWearableSecureHandshakeRuntime.kt';
 const probeRegistryPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/security/WearOsPlatformProbeRegistry.kt';
 const adapterPath =
@@ -99,4 +101,16 @@ test('watch installs a real challenge handler and retains HPKE sessions only in 
   assert.match(handler, /encodeHandshake/);
   assert.match(registry, /WearableHpkeDuplexSession/);
   assert.doesNotMatch(registry, /SharedPreferences|File|Room|DataStore/);
+});
+
+test('phone installs a secure handshake handler and starts a challenge for connected nodes', () => {
+  assert.equal(fs.existsSync(phoneSecureRuntimePath), true, 'phone secure handshake composition is missing');
+  const runtime = fs.readFileSync(phoneSecureRuntimePath, 'utf8');
+  const adapter = fs.readFileSync(adapterPath, 'utf8');
+
+  assert.match(runtime, /WearableSecureTransportInbox\.install/);
+  assert.match(runtime, /WearableProtocolV2\.HANDSHAKE_PATH/);
+  assert.match(runtime, /PhoneWearableSecureHandshakeRuntime/);
+  assert.match(runtime, /pendingConfirmation/);
+  assert.match(adapter, /SentinelWearableSecureHandshakeRuntime\.start/);
 });
