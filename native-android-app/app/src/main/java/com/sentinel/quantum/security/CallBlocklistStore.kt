@@ -17,6 +17,11 @@ class CallBlocklistStore(context: Context) {
             .filter { hash -> metadataByHash[hash]?.isActive(now) ?: true }
             .take(CallRuleEngine.MAX_EXACT_RULES)
             .toSet()
+        val arcepRequested = isArcepVerifiedBlockingEnabled()
+        val arcepCatalogValid = ArcepVerifiedPrefixCatalog.isValidRuntimeCatalog()
+        if (arcepRequested && arcepCatalogValid) {
+            ArcepVerifiedPrefixCatalog.observeValidatedRuntimeUse(now)
+        }
 
         return Snapshot(
             blockedNumberHashes = blockedHashes,
@@ -25,7 +30,7 @@ class CallBlocklistStore(context: Context) {
                 preferences.getStringSet(SIGNED_PREFIXES, emptySet()).orEmpty().toSet()
                     .take(CallRuleEngine.MAX_REPUTATION_RULES).toSet()
             } else emptySet(),
-            arcepVerifiedBlockingEnabled = isArcepVerifiedBlockingEnabled(),
+            arcepVerifiedBlockingEnabled = arcepRequested && arcepCatalogValid,
             blockedNumberExpiresAtMs = metadataByHash.values
                 .filter { it.fingerprint in blockedHashes && it.expiresAtEpochMs != null }
                 .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
