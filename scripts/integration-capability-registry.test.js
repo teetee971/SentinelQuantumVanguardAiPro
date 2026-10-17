@@ -67,6 +67,30 @@ test('capability ids are unique and every entry has owner, surface and valid sta
   }
 });
 
+test('registry diagnostic reasons stay aligned with the Android truth enum', () => {
+  const stateSource = fs.readFileSync(
+    'native-android-app/app/src/main/java/com/sentinel/quantum/integration/IntegrationState.kt',
+    'utf8'
+  );
+  const enumMatch = stateSource.match(/enum class IntegrationDiagnosticReason\s*\{([\s\S]*?)\n\}/);
+  assert.ok(enumMatch, 'IntegrationDiagnosticReason enum must remain parseable');
+  const knownReasons = new Set(
+    enumMatch[1]
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
+
+  for (const capability of readRegistry().capabilities) {
+    if (capability.state === 'CONNECTED') continue;
+    assert.equal(
+      knownReasons.has(capability.diagnostic_reason),
+      true,
+      `${capability.id}: diagnostic reason is missing from IntegrationDiagnosticReason`
+    );
+  }
+});
+
 test('registry covers all 25 capability families from the approved design', () => {
   const ids = new Set(readRegistry().capabilities.map((entry) => entry.id));
   for (const required of REQUIRED_FAMILIES) {
