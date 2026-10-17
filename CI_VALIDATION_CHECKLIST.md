@@ -37,8 +37,8 @@ Configuration exécutable actuelle :
 - `versionName 1.0.9`
 - JDK 17
 - AGP 9.4.1
-- Kotlin 2.4.20
-- Gradle 9.8.0
+- Kotlin 2.4.21
+- Gradle 9.8.1
 
 Preuves requises :
 

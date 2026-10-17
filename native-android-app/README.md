@@ -33,7 +33,7 @@ Application Android native en Kotlin avec Jetpack Compose pour la consultation d
 - Android Studio compatible avec AGP 9.4.1
 - JDK 17
 - Android SDK Platform 37 pour la compilation
-- Gradle 9.8.0 via le wrapper fourni
+- Gradle 9.8.1 via le wrapper fourni
 - Android 7.0 (API 24) minimum pour l'exécution
 
 ## Compatibilité du filtrage d’appels

@@ -5,8 +5,8 @@ Ce document décrit le build de la source Android canonique située dans `native
 ## Environnement de référence
 
 - Android Gradle Plugin : 9.4.1 (déclaré dans `native-android-app/build.gradle`)
-- Gradle Wrapper : 9.8.0 (`gradle/wrapper/gradle-wrapper.properties`)
-- Plugin Compose Kotlin : 2.4.20 (le support Kotlin est intégré à AGP 9, aucun plugin `org.jetbrains.kotlin.android` séparé n'est appliqué)
+- Gradle Wrapper : 9.8.1 (`gradle/wrapper/gradle-wrapper.properties`)
+- Plugin Compose Kotlin : 2.4.21 (le support Kotlin est intégré à AGP 9, aucun plugin `org.jetbrains.kotlin.android` séparé n'est appliqué)
 - JDK : 17
 - compileSdk : 37
 - targetSdk : 36
