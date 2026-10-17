@@ -26,6 +26,28 @@ class WearableWatchSecureSessionRegistryTest {
         assertNull(registry.resolve("node-1", "session-1"))
     }
 
+    @Test fun acceptedLivenessExtendsSessionExpiryWithoutWeakeningReplayGuard() {
+        var now = 100L
+        val registry = WearableWatchSecureSessionRegistry(
+            maxSessions = 2,
+            ttlMs = 1_000L,
+            clockMs = { now }
+        )
+        val session = fakeSession("one")
+        assertTrue(registry.register("node-1", "session-1", session))
+
+        now = 900L
+        assertTrue(registry.acceptLivenessSequence("node-1", "session-1", 1L))
+        assertFalse(registry.acceptLivenessSequence("node-1", "session-1", 1L))
+
+        now = 1_200L
+        assertSame(session, registry.resolve("node-1", "session-1"))
+        assertTrue(registry.acceptLivenessSequence("node-1", "session-1", 2L))
+
+        now = 2_201L
+        assertNull(registry.resolve("node-1", "session-1"))
+    }
+
     @Test fun newerSessionForSameNodeSupersedesOlderSession() {
         val registry = WearableWatchSecureSessionRegistry(maxSessions = 2, ttlMs = 5_000L, clockMs = { 100L })
         val oldSession = fakeSession("old")
