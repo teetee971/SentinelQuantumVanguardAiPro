@@ -251,13 +251,22 @@ class CallerIdActivity : ComponentActivity() {
                                         }
                                     }
                                     reportRunning = false
-                                    submitted.onSuccess { result ->
+                                    val result = submitted.getOrNull()
+                                    if (result != null) {
+                                        withContext(Dispatchers.IO) {
+                                            IntelligenceCoreRuntime.publishCommunityReport(
+                                                context = applicationContext,
+                                                rawNumber = number,
+                                                category = category,
+                                                result = result
+                                            )
+                                        }
                                         reportStatus = when (result.status) {
                                             "pending" -> "Signalement reçu et placé en modération."
                                             "duplicate" -> "Signalement déjà reçu récemment."
                                             else -> "Signalement reçu : " + result.status
                                         }
-                                    }.onFailure {
+                                    } else {
                                         reportStatus = "Signalement indisponible pour le moment."
                                     }
                                 }
