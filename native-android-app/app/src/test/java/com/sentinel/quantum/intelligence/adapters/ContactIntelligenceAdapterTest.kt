@@ -160,4 +160,24 @@ class ContactIntelligenceAdapterTest {
         assertFalse(sink.events.single().toString().contains(raw))
         assertFalse(outcome.toString().contains(raw))
     }
+
+    @Test
+    fun fingerprint_version_is_preserved_in_contact_identity_key() {
+        val sink = RecordingSink()
+        val outcome = ContactIntelligenceAdapter(
+            sink = sink,
+            canonicalize = { value -> value.filter(Char::isDigit) },
+            fingerprint = { "v2:fingerprint" }
+        ).publish(
+            contactList = LocalContactLookup.ContactListResult(
+                LocalContactLookup.ContactAccessState.PROVIDER_UNAVAILABLE
+            ),
+            rawNumber = "33612345678",
+            identity = null,
+            observedAtMs = 1_000L
+        )
+
+        assertEquals(PublishResult.ACCEPTED, outcome.publishResult)
+        assertEquals(2, sink.events.single().identityKey?.version)
+    }
 }
