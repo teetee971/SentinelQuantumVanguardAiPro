@@ -7,6 +7,10 @@ import com.sentinel.quantum.wearable.security.WearableHandshakeVerifier
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.Signature
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -151,6 +155,68 @@ class WearableSecureHandshakeCoordinatorTest {
         assertEquals(identityFingerprint, pairingStore.load(stableId)!!.keyFingerprintSha256)
     }
 
+    @Test fun concurrentFirstPairingCannotPersistReplayLoser() {
+        val backend = RacingPairingBackend()
+        val pairingStore = WearablePairingStore(backend)
+        val coordinator = WearableSecureHandshakeCoordinator.forPairing(
+            pairingStore,
+            com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard(),
+            WearableSessionAuthority()
+        )
+        val context = coordinator.beginFirstPairing(session(), phoneHpke)
+        val firstKey = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+        val secondKey = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+        val firstFingerprint = sha256(firstKey.public.encoded)
+        val secondFingerprint = sha256(secondKey.public.encoded)
+        val firstStableId = "wearable-" + firstFingerprint.take(32)
+        val secondStableId = "wearable-" + secondFingerprint.take(32)
+        val firstCandidate = signedCandidate(context, firstKey, firstFingerprint, firstStableId)
+        val secondCandidate = signedCandidate(context, secondKey, secondFingerprint, secondStableId)
+        val start = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+
+        try {
+            val first = executor.submit<WearableSecureHandshakeResult> {
+                start.await()
+                coordinator.acceptPresentedIdentity(
+                    context,
+                    firstCandidate,
+                    firstKey.public.encoded,
+                    watchHpkeBytes,
+                    pairingConfirmation(context, firstStableId, firstFingerprint)
+                )
+            }
+            val second = executor.submit<WearableSecureHandshakeResult> {
+                start.await()
+                coordinator.acceptPresentedIdentity(
+                    context,
+                    secondCandidate,
+                    secondKey.public.encoded,
+                    watchHpkeBytes,
+                    pairingConfirmation(context, secondStableId, secondFingerprint)
+                )
+            }
+            start.countDown()
+            val results = listOf(first.get(5, TimeUnit.SECONDS), second.get(5, TimeUnit.SECONDS))
+
+            assertEquals(1, results.count { it.state == WearableSecureHandshakeState.ACTIVE })
+            assertEquals(
+                1,
+                results.count {
+                    it.state == WearableSecureHandshakeState.REJECTED &&
+                        it.rejection == WearableSecureHandshakeRejection.REPLAY_REJECTED
+                }
+            )
+            assertEquals(1, backend.recordCount())
+            assertEquals(
+                results.single { it.state == WearableSecureHandshakeState.ACTIVE }.verifiedProof!!.stableId,
+                backend.singleStableId()
+            )
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
     @Test fun existingPairingRejectsKeyReplacementEvenWithConfirmation() {
         val backend = MemoryPairingBackend()
         val pairingStore = WearablePairingStore(backend)
@@ -223,10 +289,41 @@ class WearableSecureHandshakeCoordinatorTest {
     private fun confirmation(context: WearableSecureHandshakeContext) =
         PairingConfirmation("watch-1", context.session.sessionId, context.challenge.issuedAtMs)
 
+    private fun pairingConfirmation(
+        context: WearableSecureHandshakeContext,
+        stableId: String,
+        identityFingerprint: String
+    ) = WearableIdentityPairingConfirmation(
+        stableId = stableId,
+        sessionId = context.session.sessionId,
+        identityKeyFingerprintSha256 = identityFingerprint,
+        confirmedAtMs = context.challenge.issuedAtMs
+    )
+
     private class MemoryPairingBackend : WearablePairingBackend {
         private val records = mutableMapOf<String, WearableTrustedIdentity>()
         override fun load(stableId: String) = records[stableId]
         override fun save(record: WearableTrustedIdentity) { records[record.stableId] = record }
         override fun remove(stableId: String) { records.remove(stableId) }
+    }
+
+    private class RacingPairingBackend : WearablePairingBackend {
+        private val records = ConcurrentHashMap<String, WearableTrustedIdentity>()
+        private val twoSaves = CountDownLatch(2)
+
+        override fun load(stableId: String) = records[stableId]
+
+        override fun save(record: WearableTrustedIdentity) {
+            records[record.stableId] = record
+            twoSaves.countDown()
+            twoSaves.await(2, TimeUnit.SECONDS)
+        }
+
+        override fun remove(stableId: String) {
+            records.remove(stableId)
+        }
+
+        fun recordCount(): Int = records.size
+        fun singleStableId(): String = records.keys.single()
     }
 }
