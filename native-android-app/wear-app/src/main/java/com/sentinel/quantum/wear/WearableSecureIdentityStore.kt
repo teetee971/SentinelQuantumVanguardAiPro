@@ -20,6 +20,21 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
+enum class WearableIdentityPersistenceState { EMPTY, COMPLETE, CORRUPT }
+
+internal fun classifyWearableIdentityPersistence(
+    publicKeyX509: String?,
+    privateCiphertext: String?,
+    privateIv: String?
+): WearableIdentityPersistenceState {
+    val present = listOf(publicKeyX509, privateCiphertext, privateIv).count { it != null }
+    return when (present) {
+        0 -> WearableIdentityPersistenceState.EMPTY
+        3 -> WearableIdentityPersistenceState.COMPLETE
+        else -> WearableIdentityPersistenceState.CORRUPT
+    }
+}
+
 interface WearableSigningIdentity {
     val publicKeyX509: ByteArray
     fun sign(message: ByteArray): ByteArray
@@ -99,19 +114,40 @@ internal class AndroidKeystoreWrappedEd25519Backend(
     }
 
     override fun reset() = synchronized(lock) {
-        preferences.edit().clear().commit()
+        val cleared = preferences.edit().clear().commit()
+        if (!cleared) throw GeneralSecurityException("wearable identity reset persistence failed")
         val keyStore = androidKeyStore()
         if (keyStore.containsAlias(WRAPPING_KEY_ALIAS)) keyStore.deleteEntry(WRAPPING_KEY_ALIAS)
         Unit
     }
 
     private fun readIdentity(): WearableSigningIdentity? {
-        val publicEncoded = preferences.getString(KEY_PUBLIC_X509, null)?.decodeBase64() ?: return null
-        val encryptedPrivate = preferences.getString(KEY_PRIVATE_CIPHERTEXT, null)?.decodeBase64() ?: return null
-        val iv = preferences.getString(KEY_PRIVATE_IV, null)?.decodeBase64() ?: return null
-        require(publicEncoded.isNotEmpty() && publicEncoded.size <= MAX_STORED_KEY_BYTES)
-        require(encryptedPrivate.isNotEmpty() && encryptedPrivate.size <= MAX_STORED_KEY_BYTES)
-        require(iv.size in 12..32)
+        val publicStored = preferences.getString(KEY_PUBLIC_X509, null)
+        val encryptedStored = preferences.getString(KEY_PRIVATE_CIPHERTEXT, null)
+        val ivStored = preferences.getString(KEY_PRIVATE_IV, null)
+        when (classifyWearableIdentityPersistence(publicStored, encryptedStored, ivStored)) {
+            WearableIdentityPersistenceState.EMPTY -> return null
+            WearableIdentityPersistenceState.CORRUPT ->
+                throw GeneralSecurityException("wearable identity persistence is incomplete")
+            WearableIdentityPersistenceState.COMPLETE -> Unit
+        }
+
+        val publicEncoded: ByteArray
+        val encryptedPrivate: ByteArray
+        val iv: ByteArray
+        try {
+            publicEncoded = requireNotNull(publicStored).decodeBase64()
+            encryptedPrivate = requireNotNull(encryptedStored).decodeBase64()
+            iv = requireNotNull(ivStored).decodeBase64()
+        } catch (e: IllegalArgumentException) {
+            throw GeneralSecurityException("wearable identity persistence is malformed", e)
+        }
+        if (publicEncoded.isEmpty() || publicEncoded.size > MAX_STORED_KEY_BYTES ||
+            encryptedPrivate.isEmpty() || encryptedPrivate.size > MAX_STORED_KEY_BYTES ||
+            iv.size !in 12..32
+        ) {
+            throw GeneralSecurityException("wearable identity persistence bounds are invalid")
+        }
 
         val privateEncoded = decryptPrivate(encryptedPrivate, iv)
         return try {
@@ -120,6 +156,8 @@ internal class AndroidKeystoreWrappedEd25519Backend(
             val privateKey = factory.generatePrivate(PKCS8EncodedKeySpec(privateEncoded))
             requireMatchingPair(publicKey, privateKey)
             JcaEd25519Identity(publicKey, privateKey)
+        } catch (e: IllegalArgumentException) {
+            throw GeneralSecurityException("wearable identity persistence is invalid", e)
         } finally {
             privateEncoded.fill(0)
         }
