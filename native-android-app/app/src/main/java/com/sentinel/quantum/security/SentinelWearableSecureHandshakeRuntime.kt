@@ -87,7 +87,8 @@ internal object SentinelWearableSecureHandshakeRuntime {
             livenessRuntime = liveness
             val messages = PhoneWearableSecureMessageRuntime(
                 authority = authority,
-                livenessActive = liveness::isActive
+                livenessActive = liveness::isActive,
+                freshAuthenticatedProof = SentinelWearableRuntime::hasFreshAuthenticatedProof
             )
             messageRuntime = messages
 
