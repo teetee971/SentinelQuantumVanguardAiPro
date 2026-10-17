@@ -546,10 +546,13 @@ jobs:
           const runtimePermissionDeniedEvidence =
             revocation?.effective_permission_probe === 'SEND_SMS_RUNTIME_PERMISSION_REVOKED' &&
             /android\.permission\.SEND_SMS:\s+granted=false/i.test(read('send-sms-runtime-permission-denied-after-launch.txt'));
+          const phoneStatePermissionDeniedEvidence =
+            revocation?.effective_permission_probe === 'READ_PHONE_STATE_RUNTIME_PERMISSION_REVOKED' &&
+            /android\.permission\.READ_PHONE_STATE:\s+granted=false/i.test(read('read-phone-state-runtime-permission-denied-after-launch.txt'));
           const revocationSchemaSupported = revocation?.schema_version === 2 || revocation?.schema_version === 3;
           const effectivePermissionEvidenceValid = revocation?.schema_version === 2
             ? appOpDeniedEvidence
-            : appOpDeniedEvidence || runtimePermissionDeniedEvidence;
+            : appOpDeniedEvidence || runtimePermissionDeniedEvidence || phoneStatePermissionDeniedEvidence;
           const effectivePermissionDenied = modernPhoneCore &&
             revocationSchemaSupported &&
             revocation?.effective_permission_denial_fail_closed === true &&
