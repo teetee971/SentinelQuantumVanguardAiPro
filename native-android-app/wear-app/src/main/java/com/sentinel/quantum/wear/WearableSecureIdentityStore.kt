@@ -6,7 +6,6 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import java.security.GeneralSecurityException
 import java.security.KeyFactory
-import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.MessageDigest
@@ -35,6 +34,7 @@ interface WearableIdentityBackend {
 }
 
 data class WearableIdentitySnapshot(
+    val stableId: String,
     val publicKeyX509: ByteArray,
     val fingerprintSha256: String
 )
@@ -51,7 +51,11 @@ class WearableSecureIdentityStore(
         val fingerprint = MessageDigest.getInstance("SHA-256")
             .digest(publicKey)
             .joinToString("") { "%02x".format(it) }
-        return WearableIdentitySnapshot(publicKey, fingerprint)
+        return WearableIdentitySnapshot(
+            stableId = stableIdForFingerprint(fingerprint),
+            publicKeyX509 = publicKey,
+            fingerprintSha256 = fingerprint
+        )
     }
 
     @Throws(GeneralSecurityException::class)
@@ -67,6 +71,12 @@ class WearableSecureIdentityStore(
     companion object {
         private const val MAX_PUBLIC_KEY_BYTES = 1024
         private const val MAX_SIGNED_MESSAGE_BYTES = 16 * 1024
+        private val SHA256_HEX = Regex("^[0-9a-f]{64}$")
+
+        internal fun stableIdForFingerprint(fingerprintSha256: String): String {
+            require(fingerprintSha256.matches(SHA256_HEX))
+            return "wearable-" + fingerprintSha256.take(32)
+        }
 
         fun forApplicationContext(context: Context): WearableSecureIdentityStore =
             WearableSecureIdentityStore(AndroidKeystoreWrappedEd25519Backend(context.applicationContext))
@@ -91,9 +101,7 @@ internal class AndroidKeystoreWrappedEd25519Backend(
     override fun reset() = synchronized(lock) {
         preferences.edit().clear().commit()
         val keyStore = androidKeyStore()
-        if (keyStore.containsAlias(WRAPPING_KEY_ALIAS)) {
-            keyStore.deleteEntry(WRAPPING_KEY_ALIAS)
-        }
+        if (keyStore.containsAlias(WRAPPING_KEY_ALIAS)) keyStore.deleteEntry(WRAPPING_KEY_ALIAS)
         Unit
     }
 
@@ -160,7 +168,6 @@ internal class AndroidKeystoreWrappedEd25519Backend(
     private fun wrappingKey(): SecretKey {
         val keyStore = androidKeyStore()
         (keyStore.getKey(WRAPPING_KEY_ALIAS, null) as? SecretKey)?.let { return it }
-
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         generator.init(
             KeyGenParameterSpec.Builder(
@@ -195,9 +202,7 @@ internal class AndroidKeystoreWrappedEd25519Backend(
         private val publicKey: PublicKey,
         private val privateKey: PrivateKey
     ) : WearableSigningIdentity {
-        override val publicKeyX509: ByteArray
-            get() = publicKey.encoded.copyOf()
-
+        override val publicKeyX509: ByteArray get() = publicKey.encoded.copyOf()
         override fun sign(message: ByteArray): ByteArray {
             val signer = Signature.getInstance(ED25519)
             signer.initSign(privateKey)
