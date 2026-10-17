@@ -5,9 +5,6 @@ import com.sentinel.quantum.wearable.security.WearableHandshakeCandidate
 import com.sentinel.quantum.wearable.security.WearableHandshakeVerifier
 import java.security.MessageDigest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WearableSecureHandshakeCoordinatorTest {
@@ -39,12 +36,19 @@ class WearableSecureHandshakeCoordinatorTest {
             wearableHpkePublicKeyFingerprintSha256 = watchHpke
         )
 
-    private fun verifier(valid: Boolean): WearableHandshakeVerifier = WearableHandshakeVerifier { c ->
-        if (!valid) null else VerifiedWearableHandshakeFixture.create(
-            c.stableId, c.keyFingerprintSha256, c.sessionId, c.protocolVersion, c.capabilities,
-            c.phoneHpkePublicKeyFingerprintSha256, c.wearableHpkePublicKeyFingerprintSha256
-        )
-    }
+    private fun verifier(valid: Boolean): WearableHandshakeVerifier =
+        object : WearableHandshakeVerifier {
+            override fun verify(c: WearableHandshakeCandidate) =
+                if (!valid) null else VerifiedWearableHandshakeFixture.create(
+                    c.stableId,
+                    c.keyFingerprintSha256,
+                    c.sessionId,
+                    c.protocolVersion,
+                    c.capabilities,
+                    c.phoneHpkePublicKeyFingerprintSha256,
+                    c.wearableHpkePublicKeyFingerprintSha256
+                )
+        }
 
     @Test
     fun invalidSignatureDoesNotBurnChallenge() {
