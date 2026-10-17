@@ -4,11 +4,19 @@ import com.sentinel.quantum.wearable.contract.WearableProtocolV2
 import com.sentinel.quantum.wearable.security.WearableHandshakeCandidate
 import com.sentinel.quantum.wearable.security.WearableHandshakeReplayGuard
 import com.sentinel.quantum.wearable.security.WearableHpkeKeyPair
+import com.sentinel.quantum.wearable.security.WearableHpkePublicKey
+import com.sentinel.quantum.wearable.security.WearableHpkeSender
 import java.util.UUID
 
 internal interface PhoneWearableHpkeMaterial {
     val publicKeyEncoded: ByteArray
     val fingerprintSha256: String
+    fun encryptForWearable(
+        wearablePublicKeyEncoded: ByteArray,
+        plaintext: ByteArray,
+        contextInfo: ByteArray
+    ): ByteArray
+    fun decryptFromWearable(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray
 }
 
 internal fun interface PhoneWearableHpkeFactory {
@@ -279,6 +287,19 @@ internal class PhoneWearableSecureHandshakeRuntime(
             object : PhoneWearableHpkeMaterial {
                 override val publicKeyEncoded: ByteArray = pair.publicKey.encoded()
                 override val fingerprintSha256: String = pair.publicKey.fingerprintSha256
+
+                override fun encryptForWearable(
+                    wearablePublicKeyEncoded: ByteArray,
+                    plaintext: ByteArray,
+                    contextInfo: ByteArray
+                ): ByteArray {
+                    val wearablePublic = WearableHpkePublicKey.fromEncoded(wearablePublicKeyEncoded)
+                    return WearableHpkeSender.fromPublicKey(wearablePublic)
+                        .encrypt(plaintext, contextInfo)
+                }
+
+                override fun decryptFromWearable(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray =
+                    pair.decrypt(ciphertext, contextInfo)
             }
         }
     }
