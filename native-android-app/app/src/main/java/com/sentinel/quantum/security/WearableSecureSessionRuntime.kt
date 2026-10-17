@@ -71,6 +71,13 @@ class WearableSecureSessionRuntime(
         }
     }
 
+    fun hasFreshAuthenticatedProof(sessionId: String, nowMs: Long = System.currentTimeMillis()): Boolean = synchronized(lock) {
+        val state = active ?: return false
+        val lastProof = state.lastAuthenticatedAtMs ?: return false
+        sessionId == state.session.sessionId && nowMs >= lastProof &&
+            nowMs - lastProof < livenessTtlMs
+    }
+
     fun expireIfStale(nowMs: Long = System.currentTimeMillis()): Boolean = synchronized(lock) {
         val state = active ?: return false
         val lastProof = state.lastAuthenticatedAtMs ?: state.activatedAtMs
@@ -120,4 +127,6 @@ internal object SentinelWearableRuntime {
     fun disconnect(nowMs: Long = System.currentTimeMillis()) = secureRuntime.disconnect(nowMs)
     fun authenticationFailure(nowMs: Long = System.currentTimeMillis()) = secureRuntime.authenticationFailure(nowMs)
     fun expireIfStale(nowMs: Long = System.currentTimeMillis()): Boolean = secureRuntime.expireIfStale(nowMs)
+    fun hasFreshAuthenticatedProof(sessionId: String, nowMs: Long = System.currentTimeMillis()): Boolean =
+        secureRuntime.hasFreshAuthenticatedProof(sessionId, nowMs)
 }
