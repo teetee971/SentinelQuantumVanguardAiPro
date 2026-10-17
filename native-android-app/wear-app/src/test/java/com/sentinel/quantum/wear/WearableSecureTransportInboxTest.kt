@@ -52,4 +52,23 @@ class WearableSecureTransportInboxTest {
             WearableSecureTransportInbox.clear()
         }
     }
+
+    @Test fun staleOwnerCannotClearNewerHandler() {
+        var newerCalled = false
+        val older = WearableSecureFrameHandler { _, _, _ -> Unit }
+        val newer = WearableSecureFrameHandler { _, _, _ -> newerCalled = true }
+        WearableSecureTransportInbox.install(older)
+        WearableSecureTransportInbox.install(newer)
+
+        assertFalse(WearableSecureTransportInbox.clear(older))
+        assertTrue(
+            WearableSecureTransportInbox.dispatch(
+                "node-1",
+                WearableProtocolV2.MESSAGE_PATH,
+                WearableProtocolV2.Frame(byteArrayOf(1))
+            )
+        )
+        assertTrue(newerCalled)
+        assertTrue(WearableSecureTransportInbox.clear(newer))
+    }
 }
