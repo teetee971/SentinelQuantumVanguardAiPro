@@ -34,7 +34,7 @@ internal class PhoneWearableSecureHandshakeRuntime(
     private val hpkeFactory: PhoneWearableHpkeFactory,
     private val transport: PhoneWearableHandshakeTransport,
     private val activate: (String, WearableSecureHandshakeResult, WearableAdapterObservation, PhoneWearableHpkeMaterial) -> Boolean,
-    private val clockMs: () -> Long = System::currentTimeMillis,
+    private val clockMs: () -> Long = System.currentTimeMillis,
     private val sessionIdFactory: () -> String = { UUID.randomUUID().toString() },
     private val maxPendingNodes: Int = DEFAULT_MAX_PENDING_NODES
 ) {
@@ -225,6 +225,18 @@ internal class PhoneWearableSecureHandshakeRuntime(
             return rejected(WearableSecureHandshakeRejection.IDENTITY_CONFIRMATION_MISMATCH)
         }
         return finalizeIfActive(pending, result)
+    }
+
+    fun reject(stableId: String): Boolean {
+        if (stableId.isBlank()) return false
+        synchronized(this) {
+            purgeExpired(clockMs())
+            val entry = pendingByNode.entries.firstOrNull { it.value.candidate?.stableId == stableId }
+                ?: return false
+            pendingByNode.remove(entry.key)
+            replayGuard.revoke(entry.value.context.challenge.nonce)
+            return true
+        }
     }
 
     @Synchronized
