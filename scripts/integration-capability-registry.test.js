@@ -1,0 +1,75 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const registryPath = path.resolve('config/integration-capabilities.json');
+const REQUIRED_FAMILIES = [
+  'dialer',
+  'incall',
+  'call_screening',
+  'caller_id_local',
+  'caller_reputation_remote',
+  'community_phone_reports',
+  'sms',
+  'mms',
+  'contacts',
+  'wifi_observation',
+  'bluetooth_observation',
+  'network_behavior',
+  'vpn_runtime',
+  'vpn_control_plane',
+  'mesh_runtime',
+  'wearable_runtime',
+  'digital_exposure',
+  'threat_intelligence',
+  'regulatory_intelligence',
+  'soc_decision_plane',
+  'osint_analyst_tooling',
+  'device_utilities',
+  'voice_rtc_ptt',
+  'first_run_activation',
+  'system_doctor_release_evidence'
+];
+const VALID_STATES = new Set([
+  'CONNECTED',
+  'LOCKED_EXTERNAL_DEPENDENCY',
+  'PHYSICAL_REQUIRED',
+  'INTENTIONALLY_DISABLED',
+  'CI_ONLY'
+]);
+
+function readRegistry() {
+  return JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+}
+
+test('integration capability registry exists with schema version 1', () => {
+  assert.equal(fs.existsSync(registryPath), true, 'config/integration-capabilities.json must exist');
+  assert.equal(readRegistry().schema_version, 1);
+});
+
+test('capability ids are unique and every entry has owner, surface and valid state', () => {
+  const registry = readRegistry();
+  assert.ok(Array.isArray(registry.capabilities));
+  const ids = registry.capabilities.map((entry) => entry.id);
+  assert.equal(new Set(ids).size, ids.length, 'capability ids must be unique');
+  for (const entry of registry.capabilities) {
+    assert.match(entry.id, /^[a-z0-9_]{2,64}$/);
+    assert.equal(typeof entry.owner, 'string');
+    assert.ok(entry.owner.trim().length > 0);
+    assert.equal(typeof entry.surface, 'string');
+    assert.ok(entry.surface.trim().length > 0);
+    assert.equal(VALID_STATES.has(entry.state), true, `invalid state for ${entry.id}`);
+    if (entry.state !== 'CONNECTED') {
+      assert.equal(typeof entry.diagnostic_reason, 'string');
+      assert.ok(entry.diagnostic_reason.trim().length > 0, `${entry.id} needs a diagnostic reason`);
+    }
+  }
+});
+
+test('registry covers all 25 capability families from the approved design', () => {
+  const ids = new Set(readRegistry().capabilities.map((entry) => entry.id));
+  for (const required of REQUIRED_FAMILIES) {
+    assert.equal(ids.has(required), true, `missing capability family: ${required}`);
+  }
+});
