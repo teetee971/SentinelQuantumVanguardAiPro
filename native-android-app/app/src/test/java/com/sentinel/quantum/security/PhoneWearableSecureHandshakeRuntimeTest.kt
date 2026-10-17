@@ -143,6 +143,29 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         assertEquals(2, calls)
     }
 
+    @Test fun peerDisconnectRevokesPendingChallengeAndAllowsImmediateRetry() {
+        var sessionCounter = 0
+        val runtime = PhoneWearableSecureHandshakeRuntime(
+            pairingStore = WearablePairingStore(MemoryPairingBackend()),
+            replayGuard = WearableHandshakeReplayGuard(
+                clockMs = { 100L },
+                elapsedClockMs = { 100L },
+                maxPendingChallenges = 1
+            ),
+            sessionAuthority = WearableSessionAuthority(),
+            hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
+            transport = CapturingTransport(),
+            activate = { _, _, _, _ -> true },
+            clockMs = { 100L },
+            sessionIdFactory = { "session-${++sessionCounter}" }
+        )
+
+        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        runtime.disconnect("node-1")
+        assertNull(runtime.pendingForNode("node-1"))
+        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+    }
+
     private data class SignedHandshake(
         val stableId: String,
         val payload: WearableProtocolV2.HandshakePayload
