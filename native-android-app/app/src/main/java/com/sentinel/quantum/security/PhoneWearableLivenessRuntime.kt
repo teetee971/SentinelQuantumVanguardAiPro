@@ -169,25 +169,24 @@ internal class PhoneWearableLivenessRuntime(
         } catch (_: Exception) {
             false
         }
-        if (accepted) return true
-
-        // A slow/throwing callback from an old session must not revoke a replacement.
-        val removed = synchronized(this) {
-            if (activeByNode[nodeId] !== active) false
-            else {
-                activeByNode.remove(nodeId)
-                true
-            }
+        // Serialize the terminal truth operation against activation of a replacement session.
+        // Otherwise activation can interleave between removing an old session and revocation.
+        return synchronized(this) {
+            if (activeByNode[nodeId] !== active) return@synchronized false
+            if (accepted) return@synchronized true
+            activeByNode.remove(nodeId)
+            revokeAuthenticatedChannel(now)
+            false
         }
-        if (removed) revokeAuthenticatedChannel(now)
-        return false
     }
 
     fun disconnect(nodeId: String) {
-        val removed = synchronized(this) { activeByNode.remove(nodeId) } ?: return
-        removed.pending?.nonce?.fill(0)
-        val now = clockMs()
-        revokeAuthenticatedChannel(if (now >= 0) now else 0L)
+        synchronized(this) {
+            val removed = activeByNode.remove(nodeId) ?: return
+            removed.pending?.nonce?.fill(0)
+            val now = clockMs()
+            revokeAuthenticatedChannel(if (now >= 0) now else 0L)
+        }
     }
 
     @Synchronized
@@ -202,9 +201,9 @@ internal class PhoneWearableLivenessRuntime(
             if (pending.sequenceNumber != sequenceNumber) return
             pending.nonce.fill(0)
             activeByNode.remove(nodeId)
+            val now = clockMs()
+            revokeAuthenticatedChannel(if (now >= 0) now else 0L)
         }
-        val now = clockMs()
-        revokeAuthenticatedChannel(if (now >= 0) now else 0L)
     }
 
     private fun clearPending(nodeId: String, sessionId: String, sequenceNumber: Long) {
