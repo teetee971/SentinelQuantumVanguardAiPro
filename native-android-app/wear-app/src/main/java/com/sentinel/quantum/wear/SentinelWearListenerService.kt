@@ -3,17 +3,22 @@ package com.sentinel.quantum.wear
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
+import com.sentinel.quantum.wearable.contract.WearableProtocolV2
 
 /**
- * Minimal Wear OS companion boundary.
+ * Wear OS Data Layer receiver.
  *
- * This probe proves only that a same-package/same-signature Sentinel app can exchange a bounded
- * Data Layer message. It is deliberately not the Sentinel cryptographic handshake and grants no
- * privileged capability. The phone must still complete the existing authenticated wearable
- * handshake/session policy before WEARABLE_RUNTIME may become CONNECTED.
+ * Platform ping/pong remains a non-privileged reachability probe. Secure v2 frames are decoded and
+ * delegated to the current secure-session inbox; this transport service never promotes product
+ * truth and never treats Data Layer reachability as Sentinel authentication.
  */
 class SentinelWearListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
+        if (WearableProtocolV2.isSecurePath(messageEvent.path)) {
+            val frame = WearableProtocolV2.decodeFrame(messageEvent.data) ?: return
+            WearableSecureTransportInbox.dispatch(messageEvent.sourceNodeId, messageEvent.path, frame)
+            return
+        }
         if (messageEvent.path != PLATFORM_PING_PATH) return
         val payload = messageEvent.data
         if (payload.isEmpty() || payload.size > MAX_PROBE_BYTES) return
