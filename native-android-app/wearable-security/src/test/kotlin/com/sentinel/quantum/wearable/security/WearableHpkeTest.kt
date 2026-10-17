@@ -2,9 +2,9 @@ package com.sentinel.quantum.wearable.security
 
 import java.security.GeneralSecurityException
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertFailsWith
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class WearableHpkeTest {
@@ -30,7 +30,7 @@ class WearableHpkeTest {
         val context = "ctx".toByteArray()
         val ciphertext = sender.encrypt("secret".toByteArray(), context)
 
-        assertFailsWith<GeneralSecurityException> {
+        assertThrows(GeneralSecurityException::class.java) {
             otherRecipient.decrypt(ciphertext, context)
         }
     }
@@ -41,19 +41,19 @@ class WearableHpkeTest {
         val sender = WearableHpkeSender.fromPublicKey(recipient.publicKey)
         val ciphertext = sender.encrypt("secret".toByteArray(), "ctx-a".toByteArray())
 
-        assertFailsWith<GeneralSecurityException> {
+        assertThrows(GeneralSecurityException::class.java) {
             recipient.decrypt(ciphertext, "ctx-b".toByteArray())
         }
     }
 
     @Test
     fun oversizedPublicKeyOrCiphertextIsRejected() {
-        assertFailsWith<IllegalArgumentException> {
+        assertThrows(IllegalArgumentException::class.java) {
             WearableHpkePublicKey.import(ByteArray(WearableHpkeLimits.MAX_PUBLIC_KEY_BYTES + 1))
         }
 
         val recipient = WearableHpkeKeyPair.generate()
-        assertFailsWith<IllegalArgumentException> {
+        assertThrows(IllegalArgumentException::class.java) {
             recipient.decrypt(ByteArray(WearableHpkeLimits.MAX_CIPHERTEXT_BYTES + 1), byteArrayOf())
         }
     }
