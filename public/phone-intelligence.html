@@ -44,7 +44,7 @@
       <h2 data-i18n="sms.title">Analyse assistée d’un SMS</h2>
       <form id="sms-form"><label for="sms-text" data-i18n="sms.label">Collez le texte du SMS</label><textarea id="sms-text" rows="8" maxlength="5000" required></textarea><button type="submit" data-i18n="sms.action">Analyser les signaux</button></form>
       <div id="sms-result" class="result" aria-live="polite"></div>
-      <p class="fine-print" data-i18n="sms.disclaimer">Le moteur repère des indices simples (lien, urgence, demande de paiement ou d’identifiants). Il ne contacte pas le lien et son résultat n’est pas une preuve.</p>
+      <p class="fine-print" data-i18n="sms.disclaimer">Le moteur repère des indices simples (lien, urgence, demande de paiement ou d’identifiants). Il ne contacte pas le lien et son résultat n’est pas une preuve. Les domaines présents dans le message peuvent aussi être comparés localement au dernier snapshot FSMA reviewé, sans blocage automatique.</p>
     </article>
   </section>
 
@@ -87,6 +87,7 @@
     <div class="grid three">
       <article class="card source"><span class="badge active" data-i18n="badge.available">Disponible</span><h3 data-i18n="source.personal.title">Listes personnelles</h3><p data-i18n="source.personal.text">Liste blanche, liste de blocage et signalements conservés sur cet appareil. La liste blanche garde la priorité.</p></article>
       <article class="card source"><span class="badge active" data-i18n="badge.available">Disponible</span><h3 data-i18n="source.arcep.title">ARCEP — numérotation</h3><p data-i18n="source.arcep.text">Ressources attribuées aux opérateurs. Ce n’est ni une liste antifraude ni une preuve de l’opérateur actuel après portabilité.</p><p id="arcep-freshness" class="fine-print" aria-live="polite"></p><a href="https://www.data.gouv.fr/datasets/ressources-en-numerotation-telephonique" rel="noopener noreferrer" data-i18n="source.arcep.link">Source officielle</a></article>
+      <article class="card source"><span class="badge active" data-i18n="badge.available">Disponible</span><h3>FSMA — Belgique</h3><p>Avertissements publics sur des sociétés opérant illégalement en Belgique. Une correspondance de domaine reste une information consultative et ne déclenche aucun blocage automatique.</p><a href="https://www.fsma.be/en/warnings/companies-operating-unlawfully-in-belgium" rel="noopener noreferrer">Source officielle</a></article>
       <article class="card source"><span class="badge active" data-i18n="badge.available">Disponible</span><h3 data-i18n="source.rtr.title">RTR — Autriche</h3><p data-i18n="source.rtr.text">Index local de plages géographiques et de services. Date de publication du lot inconnue ; pas de preuve d’identité, d’opérateur actuel ou de fraude. Codes courts et extensions non couverts.</p><a href="https://www.rtr.at/TKP/service/rufnummernsuche/Rufnummernsuche.de.html" rel="noopener noreferrer" data-i18n="source.arcep.link">Source officielle</a></article>
       <article class="card source"><span class="badge reference" data-i18n="badge.reference">Référence</span><h3 data-i18n="source.network.title">Mon réseau mobile</h3><p data-i18n="source.network.text">Couverture et qualité des réseaux mobiles par zone géographique. Ne fournit pas la réputation d’un numéro.</p><a href="https://www.data.gouv.fr/datasets/mon-reseau-mobile" rel="noopener noreferrer" data-i18n="source.network.link">Source officielle</a></article>
       <article class="card source"><span class="badge external" data-i18n="badge.external">Externe</span><h3 data-i18n="source.33700.title">33700</h3><p data-i18n="source.33700.text">Plateforme française de signalement. Un enregistrement local dans Sentinel ne remplace pas le signalement officiel.</p><a href="https://www.service-public.fr/particuliers/vosdroits/F33267" rel="noopener noreferrer" data-i18n="source.33700.link">Signaler au 33700</a></article>
@@ -99,4 +100,5 @@
   <footer class="phone-page-footer"><a href="terms.html" data-i18n="footer.terms">Modalités d’utilisation</a> · <a href="privacy.html" data-i18n="footer.privacy">Politique de confidentialité</a> · <a href="legal.html" data-i18n="footer.legal">Mentions légales</a></footer>
 </main>
 <script type="module" src="phone-intelligence.js"></script>
+<script type="module" src="fsma-regulatory.js"></script>
 </body></html>
