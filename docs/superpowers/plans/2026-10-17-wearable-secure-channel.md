@@ -81,7 +81,7 @@
 - [x] Add first-pairing bootstrap with self-signed Ed25519 verification, fingerprint-bound confirmation, durable trust persistence and fail-closed rollback.
 - [x] Prevent a concurrent replay loser from persisting a trust record.
 - [x] Revoke activated authority if trust persistence subsequently fails.
-- [ ] Wire explicit first-pairing confirmation into a production UI/runtime composition before enabling automatic first-contact activation.
+- [x] Wire explicit first-pairing confirmation into the production app with fingerprint-bound Accept/Reject actions; rejection revokes the pending replay challenge without persisting trust.
 
 ### Task 5: Encrypted session messages
 
@@ -98,7 +98,7 @@
 - [x] Data Layer listeners decode bounded secure frames and delegate to fail-closed in-process inboxes; they never publish `CONNECTED`.
 - [x] Contain secure handler exceptions at both phone and watch inbox boundaries.
 - [x] Manifest routing accepts only the `/sentinel/` namespace; listeners still reject unknown paths.
-- [x] Source/static gate conditions verified locally (`TASK6_STATIC_GATE_OK`).
+- [x] Source/static gate covers challenge, handshake, liveness, disconnect and explicit pairing confirmation wiring.
 
 ### Task 7: Runtime truth, authenticated liveness, revocation
 
@@ -106,12 +106,14 @@
 - [x] Implement short-lived 30s secure proof and explicit revocation path.
 - [x] Route platform pong through the secure runtime so it cannot refresh authenticated TTL.
 - [x] Persist only application-key identity bindings across restart; never restore active/session/replay state.
-- [ ] Install the production secure transport composition (challenge → handshake → explicit confirmation/trusted reconnect → HPKE liveness) and retain session keys only in memory.
-- [ ] Wire disconnect and authenticated liveness failure from Data Layer/session composition into immediate runtime revocation.
+- [x] Install the source-level production secure transport composition: challenge → signed handshake → explicit first-pair confirmation/trusted reconnect → recurring HPKE liveness. Session keys remain process-memory-only.
+- [x] Wire Data Layer disconnect into pending-challenge revocation, liveness shutdown and immediate authenticated-runtime revocation.
+- [x] Refresh the watch-side secure-session TTL only after authenticated, monotonic liveness; replayed liveness does not extend authority.
+- [ ] Prove the full source composition on a real paired emulator/device before changing customer-facing availability truth.
 
 ### Task 8: Release gates and end-to-end qualification
 
-- [ ] Extend CI gates for Tink pin, v2 binding, first-pairing persistence, secure channel and paired emulator.
+- [ ] Restore executable CI runners and run Tink/v2/pairing/liveness regression gates. Current Actions failures before steps are infrastructure failures, not test verdicts.
 - [ ] Build phone + wear app and execute unit/instrumentation suites.
 - [ ] Paired emulator handshake/replay/disconnect qualification.
 - [ ] Physical S24+/Wear OS qualification.
