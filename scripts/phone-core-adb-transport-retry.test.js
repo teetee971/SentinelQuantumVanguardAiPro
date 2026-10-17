@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -18,50 +18,67 @@ function shellFunction(name) {
 function runRetryFixture(mode) {
   const dir = mkdtempSync(join(tmpdir(), 'sentinel-adb-retry-'));
   try {
+    const binDir = join(dir, 'bin');
+    mkdirSync(binDir);
+    const adbPath = join(binDir, 'adb');
+    writeFileSync(adbPath, `#!/usr/bin/env bash
+set -u
+OUT_DIR="\${SENTINEL_TEST_OUT_DIR:?}"
+MODE="\${SENTINEL_TEST_MODE:?}"
+increment() {
+  local file="$1"
+  local value=0
+  if [[ -f "$file" ]]; then value="$(cat "$file")"; fi
+  value=$((value + 1))
+  printf '%s\\n' "$value" > "$file"
+  printf '%s\\n' "$value"
+}
+if [[ "\${1:-}" == "get-state" ]]; then
+  increment "$OUT_DIR/get-state-attempts.txt" >/dev/null
+  printf 'device\\n'
+  exit 0
+fi
+attempt="$(increment "$OUT_DIR/target-attempts.txt")"
+case "$MODE" in
+  transient)
+    if [[ "$attempt" -eq 1 ]]; then
+      printf 'error: device offline\\n' >&2
+      exit 1
+    fi
+    printf 'role command completed\\n'
+    exit 0
+    ;;
+  semantic)
+    printf 'Security exception: role change rejected\\n' >&2
+    exit 1
+    ;;
+  persistent)
+    printf 'connection terminated: write failed\\n' >&2
+    exit 1
+    ;;
+esac
+`);
+    chmodSync(adbPath, 0o755);
+
     const script = `
 set -u
 OUT_DIR="$1"
-MODE="$2"
-TARGET_ATTEMPTS=0
-GET_STATE_ATTEMPTS=0
-sleep() { :; }
-adb() {
-  if [[ "$1" == "get-state" ]]; then
-    GET_STATE_ATTEMPTS=$((GET_STATE_ATTEMPTS + 1))
-    printf 'device\n'
-    return 0
-  fi
-  TARGET_ATTEMPTS=$((TARGET_ATTEMPTS + 1))
-  case "$MODE" in
-    transient)
-      if [[ "$TARGET_ATTEMPTS" -eq 1 ]]; then
-        printf 'error: device offline\n' >&2
-        return 1
-      fi
-      printf 'role command completed\n'
-      return 0
-      ;;
-    semantic)
-      printf 'Security exception: role change rejected\n' >&2
-      return 1
-      ;;
-    persistent)
-      printf 'connection terminated: write failed\n' >&2
-      return 1
-      ;;
-  esac
-}
 ${shellFunction('adb_transport_ready')}
 ${shellFunction('adb_retry_transport')}
 adb_retry_transport shell cmd role remove-role-holder --user 0 android.app.role.SMS com.sentinel.quantum
 status=$?
+TARGET_ATTEMPTS="$(cat "$OUT_DIR/target-attempts.txt" 2>/dev/null || printf '0')"
+GET_STATE_ATTEMPTS="$(cat "$OUT_DIR/get-state-attempts.txt" 2>/dev/null || printf '0')"
 printf 'status=%s target_attempts=%s get_state_attempts=%s\n' "$status" "$TARGET_ATTEMPTS" "$GET_STATE_ATTEMPTS"
 exit "$status"
 `;
-    return spawnSync('bash', ['-c', script, 'test', dir, mode], {
+    return spawnSync('bash', ['-c', script, 'test', dir], {
       encoding: 'utf8',
       env: {
         ...process.env,
+        PATH: `${binDir}:${process.env.PATH}`,
+        SENTINEL_TEST_OUT_DIR: dir,
+        SENTINEL_TEST_MODE: mode,
         SENTINEL_ADB_RETRY_ATTEMPTS: '3',
         SENTINEL_ADB_READY_ATTEMPTS: '2',
         SENTINEL_ADB_RETRY_DELAY_SECONDS: '0'
