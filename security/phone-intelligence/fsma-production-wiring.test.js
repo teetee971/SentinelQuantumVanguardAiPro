@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { buildFsmaSnapshot } from '../../scripts/update-fsma-warnings.js';
 
 const html = fs.readFileSync('public/phone-intelligence.html', 'utf8');
 const runtime = fs.readFileSync('public/fsma-regulatory.js', 'utf8');
@@ -16,6 +17,19 @@ test('FSMA advisory is wired into the public phone-intelligence surface without 
   assert.match(runtime, /FSMA_SNAPSHOT_URL\s*=\s*'\/public\/data\/fsma-warnings\.json'/);
   assert.match(runtime, /advisoryOnly\s*!==\s*true/);
   assert.match(runtime, /warning\.autoBlock\s*!==\s*false/);
+});
+
+test('FSMA snapshot generation executes inside the normal phone-intelligence gate', () => {
+  const csv = [
+    'Title;Company name;Website;Type of fraud;Date',
+    'Warning A;Example SA;https://fraud.example;Investment fraud;20/08/2026',
+  ].join('\n');
+  const snapshot = buildFsmaSnapshot(csv, { generatedAt: '2026-10-17T00:00:00.000Z' });
+  assert.equal(snapshot.schemaVersion, 1);
+  assert.equal(snapshot.advisoryOnly, true);
+  assert.equal(snapshot.warnings.length, 1);
+  assert.deepEqual(snapshot.warnings[0].domains, ['fraud.example']);
+  assert.equal(snapshot.warnings[0].autoBlock, false);
 });
 
 test('FSMA refresh is bounded and opens a reviewable data PR instead of mutating runtime state', () => {
