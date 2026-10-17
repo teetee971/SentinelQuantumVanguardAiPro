@@ -85,11 +85,7 @@ class WifiScanner(context: Context) {
      * le déclenchement (throttling), les derniers résultats disponibles sont utilisés.
      */
     @Suppress("DEPRECATION")
-    fun scan(
-        onResults: (WifiScanOutcome) -> Unit,
-        onError: (String) -> Unit,
-        onTimelineUpdated: (NetworkTimelineSnapshot) -> Unit = {}
-    ) {
+    fun scan(onResults: (WifiScanOutcome) -> Unit, onError: (String) -> Unit) {
         val manager = wifiManager
         if (manager == null) {
             onError("Service Wi-Fi indisponible sur cet appareil.")
@@ -114,8 +110,7 @@ class WifiScanner(context: Context) {
                     if (updated) WifiScanResultTruth.Source.FRESH
                     else WifiScanResultTruth.Source.CACHED_PLATFORM_STALE,
                     onResults,
-                    onError,
-                    onTimelineUpdated
+                    onError
                 )
             }
         }
@@ -138,8 +133,7 @@ class WifiScanner(context: Context) {
                 manager,
                 WifiScanResultTruth.Source.CACHED_SCAN_REJECTED,
                 onResults,
-                onError,
-                onTimelineUpdated
+                onError
             )
             return
         }
@@ -154,8 +148,7 @@ class WifiScanner(context: Context) {
                     manager,
                     WifiScanResultTruth.Source.CACHED_TIMEOUT,
                     onResults,
-                    onError,
-                    onTimelineUpdated
+                    onError
                 )
             }
         }
@@ -184,8 +177,7 @@ class WifiScanner(context: Context) {
         manager: WifiManager,
         source: WifiScanResultTruth.Source,
         onResults: (WifiScanOutcome) -> Unit,
-        onError: (String) -> Unit,
-        onTimelineUpdated: (NetworkTimelineSnapshot) -> Unit
+        onError: (String) -> Unit
     ) {
         try {
             val results = manager.scanResults
@@ -218,8 +210,6 @@ class WifiScanner(context: Context) {
                     source = NetworkTimelineSource.ANDROID_WIFI,
                     rawIdentifiers = results.map { it.bssid }
                 )
-                val snapshot = networkTimelineStore.read()
-                mainHandler.post { onTimelineUpdated(snapshot) }
             }
             onResults(WifiScanOutcome(results, source))
         } catch (_: SecurityException) {
