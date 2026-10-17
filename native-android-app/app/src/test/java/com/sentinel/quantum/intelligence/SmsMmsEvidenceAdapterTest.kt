@@ -1,6 +1,7 @@
 package com.sentinel.quantum.intelligence
 
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
+import com.sentinel.quantum.security.SmsLinkAnalyzer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -76,5 +77,32 @@ class SmsMmsEvidenceAdapterTest {
                 analysisOutcome = SmsMmsEvidenceAdapter.AnalysisOutcome.SAFE
             )
         }
+    }
+
+    @Test
+    fun incoming_analysis_maps_risk_without_message_content_or_urls() {
+        val analysis = SmsLinkAnalyzer.Analysis(
+            accepted = true,
+            reason = null,
+            riskLevel = SmsLinkAnalyzer.RiskLevel.HIGH,
+            score = 75,
+            findings = listOf(
+                SmsLinkAnalyzer.Finding(
+                    code = "SUSPICIOUS_TLD",
+                    severity = SmsLinkAnalyzer.Severity.MEDIUM,
+                    score = 15
+                )
+            ),
+            analyzedAt = 1234L,
+            linksInspected = 1
+        )
+
+        val evidence = SmsMmsEvidenceAdapter.fromIncomingAnalysis(analysis)
+
+        assertEquals(IntelligenceEvidence.Direction.INCOMING, evidence.direction)
+        assertEquals("SMS_RECEIVED", evidence.transportState)
+        assertEquals("SUSPICIOUS_TLD", evidence.categoryCode)
+        assertEquals("RISK_HIGH", evidence.analysisOutcome)
+        assertFalse(evidence.toString().contains("http"))
     }
 }
