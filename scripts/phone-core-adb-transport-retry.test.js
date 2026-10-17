@@ -98,3 +98,29 @@ test('role and permission transition commands use the bounded transport retry', 
   assert.match(revocation, /adb_retry_transport shell cmd role remove-role-holder --user 0 android\.app\.role\.SMS \"\$PACKAGE\"/);
   assert.match(revocation, /adb_retry_transport shell cmd role remove-role-holder --user 0 android\.app\.role\.DIALER \"\$PACKAGE\"/);
 });
+
+test('ADB transport retry hard-bounds both readiness probes and target commands', () => {
+  const ready = shellFunction('adb_transport_ready');
+  const retry = shellFunction('adb_retry_transport');
+
+  assert.match(
+    ready,
+    /timeout --signal=TERM --kill-after=1s 3s adb get-state/,
+    'adb get-state must have its own hard timeout so one wedged readiness probe cannot consume the whole script watchdog'
+  );
+  assert.match(
+    retry,
+    /timeout --signal=TERM --kill-after=5s 20s adb \"\$@\"/,
+    'each retried ADB command must be individually bounded in addition to the retry-count budget'
+  );
+  assert.doesNotMatch(
+    ready,
+    /\$\(adb get-state/,
+    'readiness checks must not call adb get-state unbounded'
+  );
+  assert.doesNotMatch(
+    retry,
+    /\n\s*if adb \"\$@\"/,
+    'retry attempts must not call the target ADB command unbounded'
+  );
+});
