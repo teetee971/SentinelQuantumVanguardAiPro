@@ -14,10 +14,16 @@ object SentinelDuplicateGroups {
 
     fun confirmed(files: List<SentinelDuplicatePolicy.FileEvidence>): List<Group> =
         files.asSequence()
-            .filter { it.hasFreshHashEvidence }
-            .groupBy { it.sha256!!.lowercase() }
-            .values
-            .mapNotNull { group ->
+            .mapNotNull { evidence ->
+                val sha256 = evidence.sha256
+                if (!evidence.hasFreshHashEvidence || sha256 == null) {
+                    null
+                } else {
+                    sha256.lowercase() to evidence
+                }
+            }
+            .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+            .mapNotNull { (sha256, group) ->
                 val distinct = group
                     .distinctBy { it.stableId }
                     .distinctBy { it.canonicalId ?: "stable:${it.stableId}" }
@@ -34,7 +40,7 @@ object SentinelDuplicateGroups {
                 }
 
                 Group(
-                    sha256 = distinct.first().sha256!!.lowercase(),
+                    sha256 = sha256,
                     files = distinct,
                     reclaimableBytesIfKeepingOne = reclaimable
                 )
