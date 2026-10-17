@@ -48,6 +48,8 @@ internal object SentinelWearableSecureHandshakeRuntime {
     fun confirm(stableId: String, confirmedAtMs: Long = System.currentTimeMillis()): WearableSecureHandshakeResult? =
         runtime?.confirm(stableId, confirmedAtMs)
 
+    fun reject(stableId: String): Boolean = runtime?.reject(stableId) == true
+
     fun disconnect(nodeId: String) {
         runtime?.disconnect(nodeId)
         val live = livenessRuntime
