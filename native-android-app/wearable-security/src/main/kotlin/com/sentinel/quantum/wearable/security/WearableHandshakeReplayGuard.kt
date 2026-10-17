@@ -20,7 +20,8 @@ class WearableHandshakeReplayGuard(
     private val ttlMs: Long = 300_000L,
     private val clockMs: () -> Long = System::currentTimeMillis,
     private val random: SecureRandom = SecureRandom(),
-    private val elapsedClockMs: () -> Long = { System.nanoTime() / 1_000_000L }
+    private val elapsedClockMs: () -> Long = { System.nanoTime() / 1_000_000L },
+    private val maxPendingChallenges: Int = 1_024
 ) {
     private data class PendingChallenge(
         val nonce: String,
@@ -32,7 +33,10 @@ class WearableHandshakeReplayGuard(
 
     private val pending = mutableMapOf<String, PendingChallenge>()
 
-    init { require(ttlMs in 1_000L..900_000L) }
+    init {
+        require(ttlMs in 1_000L..900_000L)
+        require(maxPendingChallenges in 1..10_000)
+    }
 
     @Synchronized
     fun issue(stableId: String): WearableHandshakeChallenge {
@@ -61,9 +65,11 @@ class WearableHandshakeReplayGuard(
         val now = clockMs()
         val elapsedNow = elapsedClockMs()
         purgeExpired(now, elapsedNow)
+        check(pending.size < maxPendingChallenges) {
+            "too many pending wearable handshake challenges"
+        }
         val expiresAt = Math.addExact(now, ttlMs)
-        val bytes = ByteArray(32).also(random::nextBytes)
-        val nonce = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        val nonce = generateUniqueNonce()
         return PendingChallenge(
             nonce = nonce,
             expectedStableId = expectedStableId,
@@ -71,6 +77,14 @@ class WearableHandshakeReplayGuard(
             expiresAtMs = expiresAt,
             issuedElapsedMs = elapsedNow
         ).also { pending[nonce] = it }
+    }
+
+    private fun generateUniqueNonce(): String {
+        while (true) {
+            val bytes = ByteArray(32).also(random::nextBytes)
+            val nonce = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+            if (!pending.containsKey(nonce)) return nonce
+        }
     }
 
     @Synchronized
@@ -102,8 +116,7 @@ class WearableHandshakeReplayGuard(
         val challenge = pending[candidate.challengeNonce] ?: return false
         val elapsedAge = elapsedNow - challenge.issuedElapsedMs
         return (challenge.expectedStableId == null || challenge.expectedStableId == candidate.stableId) &&
-            candidate.issuedAtMs >= challenge.issuedAtMs &&
-            candidate.issuedAtMs <= challenge.expiresAtMs &&
+            candidate.issuedAtMs == challenge.issuedAtMs &&
             now >= challenge.issuedAtMs &&
             now <= challenge.expiresAtMs &&
             elapsedAge >= 0 && elapsedAge <= ttlMs
