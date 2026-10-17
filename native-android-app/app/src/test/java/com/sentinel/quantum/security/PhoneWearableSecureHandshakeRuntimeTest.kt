@@ -92,37 +92,55 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         assertEquals("session-1", runtime.pendingForNode("node-1"))
     }
 
-    @Test fun failedChallengeSendRemovesPendingAttempt() {
+    @Test fun failedChallengeSendRemovesPendingAttemptAndReleasesReplayCapacity() {
         val transport = CapturingTransport(failImmediately = true)
+        var sessionCounter = 0
         val runtime = PhoneWearableSecureHandshakeRuntime(
             pairingStore = WearablePairingStore(MemoryPairingBackend()),
-            replayGuard = WearableHandshakeReplayGuard(clockMs = { 100L }, elapsedClockMs = { 100L }),
+            replayGuard = WearableHandshakeReplayGuard(
+                clockMs = { 100L },
+                elapsedClockMs = { 100L },
+                maxPendingChallenges = 1
+            ),
             sessionAuthority = WearableSessionAuthority(),
             hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
             transport = transport,
             activate = { _, _, _ -> true },
             clockMs = { 100L },
-            sessionIdFactory = { "session-1" }
+            sessionIdFactory = { "session-${++sessionCounter}" }
         )
 
         assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
         assertNull(runtime.pendingForNode("node-1"))
+        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        assertNull(runtime.pendingForNode("node-1"))
     }
 
-    @Test fun synchronousTransportFailureFailsClosedAndRemovesPendingAttempt() {
+    @Test fun synchronousTransportFailureFailsClosedAndReleasesReplayCapacity() {
+        var calls = 0
+        var sessionCounter = 0
         val runtime = PhoneWearableSecureHandshakeRuntime(
             pairingStore = WearablePairingStore(MemoryPairingBackend()),
-            replayGuard = WearableHandshakeReplayGuard(clockMs = { 100L }, elapsedClockMs = { 100L }),
+            replayGuard = WearableHandshakeReplayGuard(
+                clockMs = { 100L },
+                elapsedClockMs = { 100L },
+                maxPendingChallenges = 1
+            ),
             sessionAuthority = WearableSessionAuthority(),
             hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
-            transport = PhoneWearableHandshakeTransport { _, _, _, _ -> error("transport unavailable") },
+            transport = PhoneWearableHandshakeTransport { _, _, _, _ ->
+                calls++
+                error("transport unavailable")
+            },
             activate = { _, _, _ -> true },
             clockMs = { 100L },
-            sessionIdFactory = { "session-1" }
+            sessionIdFactory = { "session-${++sessionCounter}" }
         )
 
         assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
         assertNull(runtime.pendingForNode("node-1"))
+        assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        assertEquals(2, calls)
     }
 
     private data class SignedHandshake(
