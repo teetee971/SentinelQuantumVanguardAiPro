@@ -67,6 +67,8 @@ class SentinelPhase4FidelitySourceContractTest {
         assertTrue(core.contains("drawCoreVolume"))
         assertTrue(core.contains("drawCorePerspectiveGrid"))
         assertTrue(core.contains("drawCoreShield"))
+        assertTrue(core.contains("maxLines = 2"))
+        assertFalse(core.contains("size(width = 98.dp, height = 58.dp)"))
     }
 
     @Test

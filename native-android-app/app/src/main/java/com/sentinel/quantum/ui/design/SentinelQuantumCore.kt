@@ -390,7 +390,7 @@ fun SentinelQuantumCore(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .offset(x = x.dp, y = y.dp)
-                    .size(width = 98.dp, height = 58.dp)
+                    .size(width = 98.dp, height = 64.dp)
                     .clickable(
                         enabled = module.isActionable,
                         role = Role.Button,
@@ -419,7 +419,8 @@ fun SentinelQuantumCore(
                         color = SentinelVisualTokens.TextPrimary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
+                        maxLines = 2,
+                        softWrap = true,
                         textAlign = TextAlign.Center
                     )
                 }
