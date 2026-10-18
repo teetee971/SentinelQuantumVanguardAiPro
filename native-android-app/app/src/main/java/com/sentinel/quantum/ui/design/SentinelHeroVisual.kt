@@ -35,6 +35,8 @@ private fun heroAccent(status: SentinelStatus): Color = when (status) {
     SentinelStatus.UNKNOWN -> SentinelD1.Unknown
     SentinelStatus.LIMITED -> SentinelD1.Warning
     SentinelStatus.LOCKED -> SentinelD1.Unknown
+    SentinelStatus.TEST -> SentinelD1.Violet
+    SentinelStatus.PURP -> SentinelD1.Violet
 }
 
 /**

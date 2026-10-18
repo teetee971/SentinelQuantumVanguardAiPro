@@ -94,6 +94,8 @@ object HomeSecurityPresentation {
                 else -> "Capacité limitée"
             }
             SentinelStatus.LOCKED -> "Action, rôle ou permission requis"
+            SentinelStatus.TEST -> "Contrôle de test explicitement identifié"
+            SentinelStatus.PURP -> "Simulation explicitement identifiée"
         }
         return HomeModulePresentation(id, title, status, detail)
     }
@@ -115,6 +117,8 @@ object HomeSecurityPresentation {
         SentinelStatus.UNKNOWN -> "Protection à vérifier"
         SentinelStatus.LIMITED -> "Protection partielle"
         SentinelStatus.LOCKED -> "Protection verrouillée"
+        SentinelStatus.TEST -> "Contrôle de test"
+        SentinelStatus.PURP -> "Simulation en cours"
     }
 
     private fun summary(status: SentinelStatus): String = when (status) {
@@ -124,6 +128,8 @@ object HomeSecurityPresentation {
         SentinelStatus.UNKNOWN -> "Une ou plusieurs protections n’ont pas encore été mesurées."
         SentinelStatus.LIMITED -> "Certaines protections ne sont pas disponibles ou restent limitées."
         SentinelStatus.LOCKED -> "Une protection nécessite un rôle, une permission ou un consentement."
+        SentinelStatus.TEST -> "Ce résultat appartient à un contrôle de test et ne constitue pas une preuve de production."
+        SentinelStatus.PURP -> "Cette visualisation est une simulation explicitement signalée."
     }
 
     private fun priorityMessage(modules: List<HomeModulePresentation>): String {
