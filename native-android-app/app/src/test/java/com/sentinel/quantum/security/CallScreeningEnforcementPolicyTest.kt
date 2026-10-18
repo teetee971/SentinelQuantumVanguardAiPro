@@ -54,6 +54,19 @@ class CallScreeningEnforcementPolicyTest {
         )
     }
 
+    @Test fun exhaustiveActionAndSourceMatrixNeverAccidentallyRejects() {
+        for (action in CallRuleEngine.Action.values()) {
+            for (source in CallRuleEngine.RuleSource.values()) {
+                val actual = CallScreeningEnforcementPolicy.actionFor(decision(action, source))
+                val expected = if (
+                    action == CallRuleEngine.Action.BLOCK &&
+                    source == CallRuleEngine.RuleSource.USER
+                ) CallRuleEngine.Action.BLOCK else CallRuleEngine.Action.ALLOW
+                assertEquals("action=$action source=$source", expected, actual)
+            }
+        }
+    }
+
     @Test fun allowRemainsAllow() {
         for (source in CallRuleEngine.RuleSource.values()) {
             assertEquals(
