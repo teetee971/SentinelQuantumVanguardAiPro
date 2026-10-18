@@ -214,7 +214,7 @@ fun CallBlockingScreen(navController: NavController) {
             HorizontalDivider()
             Text("Préfixes bloqués par vous", fontWeight = FontWeight.Bold)
             Text(
-                "Ajoutez un indicatif international ou un préfixe plus précis. Ces règles bloquent réellement les appels correspondants sur cet appareil.",
+                "Ajoutez un indicatif international ou un préfixe précis. Un indicatif entier peut bloquer plusieurs pays ou territoires (ex. +1). Le numéro affiché peut être usurpé : ce filtre ne prouve pas l'origine réelle de l'appel.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -357,7 +357,7 @@ fun CallBlockingScreen(navController: NavController) {
                 style = MaterialTheme.typography.bodySmall
             )
             Text(
-                "Ces règles de réputation peuvent seulement mettre un appel en silencieux ; elles ne deviennent jamais un blocage automatique à elles seules.",
+                "Mode de précaution : les règles de réputation signées sont conservées à titre informatif, mais ne mettent plus automatiquement les appels en silencieux tant que le filtrage n'est pas qualifié sur téléphone réel.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
