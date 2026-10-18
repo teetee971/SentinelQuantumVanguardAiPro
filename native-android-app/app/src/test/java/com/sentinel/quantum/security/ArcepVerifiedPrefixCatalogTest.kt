@@ -74,6 +74,31 @@ class ArcepVerifiedPrefixCatalogTest {
     }
 
     @Test
+    fun telecomScreeningDoesNotPromoteArcepCatalogToManualBlockingAuthority() {
+        val snapshot = CallBlocklistStore.Snapshot(
+            blockedNumberHashes = emptySet(),
+            blockedPrefixes = setOf("+33162"),
+            signedSilencePrefixes = emptySet(),
+            arcepVerifiedBlockingEnabled = true
+        )
+        // The Telecom callback now explicitly passes blockedPrefixes (manual rules only).
+        // Passing effectiveBlockedPrefixes here would reproduce the unsafe old behavior.
+        val screening = CallRuleEngine(blockedPrefixes = snapshot.blockedPrefixes)
+        val arcepMatch = screening.evaluate("+5909475123456")
+        assertEquals(CallRuleEngine.Action.ALLOW, arcepMatch.action)
+        assertEquals(
+            CallRuleEngine.Action.ALLOW,
+            CallScreeningEnforcementPolicy.actionFor(arcepMatch)
+        )
+        val userMatch = screening.evaluate("+33162123456")
+        assertEquals(CallRuleEngine.RuleSource.USER, userMatch.source)
+        assertEquals(
+            CallRuleEngine.Action.BLOCK,
+            CallScreeningEnforcementPolicy.actionFor(userMatch)
+        )
+    }
+
+    @Test
     fun snapshotKeepsManualRulesSeparateFromEffectiveArcepRules() {
         val manual = setOf("+33162")
         val disabled = CallBlocklistStore.Snapshot(
