@@ -29,6 +29,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
@@ -149,6 +150,13 @@ fun CallBlockingScreen(navController: NavController) {
                 ) { Text(stringResource(R.string.call_blocking_enable_role)) }
             } else if (screeningState == CallScreeningActivationPolicy.State.UNAVAILABLE) {
                 Text(stringResource(R.string.call_blocking_role_unsupported))
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.GlobalTelecomIntelligence.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Explorer l’intelligence téléphonique mondiale")
             }
 
             HorizontalDivider()

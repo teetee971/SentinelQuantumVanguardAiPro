@@ -211,6 +211,15 @@ class IntelligenceSnapshotStore(
             nullable(evidence.sourceLabel),
             evidence.signedPackageVerified.toString()
         )
+        is IntelligenceEvidence.TelecomNumberEnrichment -> listOf(
+            "TELECOM",
+            enc(evidence.resolutionStatus),
+            nullable(evidence.callingCode),
+            enc(evidence.jurisdictions.joinToString(CATEGORY_SEPARATOR)),
+            enc(evidence.sourceIds.joinToString(CATEGORY_SEPARATOR)),
+            evidence.freshness.name,
+            evidence.authority.name
+        )
     }
 
     private fun decodeEvidence(fields: List<String>): IntelligenceEvidence {
@@ -270,6 +279,21 @@ class IntelligenceSnapshotStore(
                     },
                     sourceLabel = decodeNullable(fields[4]),
                     signedPackageVerified = fields[5].toBooleanStrict()
+                )
+            }
+            "TELECOM" -> {
+                require(fields.size == 7)
+                IntelligenceEvidence.TelecomNumberEnrichment(
+                    resolutionStatus = dec(fields[1]),
+                    callingCode = decodeNullable(fields[2]),
+                    jurisdictions = dec(fields[3]).let { value ->
+                        if (value.isEmpty()) emptyList() else value.split(CATEGORY_SEPARATOR)
+                    },
+                    sourceIds = dec(fields[4]).let { value ->
+                        if (value.isEmpty()) emptyList() else value.split(CATEGORY_SEPARATOR)
+                    },
+                    freshness = IntelligenceEvidence.TelecomFreshness.valueOf(fields[5]),
+                    authority = IntelligenceEvidence.TelecomAuthority.valueOf(fields[6])
                 )
             }
             else -> error("Unsupported evidence type")

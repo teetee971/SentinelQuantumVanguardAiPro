@@ -103,6 +103,7 @@ class BoundedIntelligenceEventSink(
             EvidenceSource.COMMUNITY_REPORT -> IntegrationCapabilityId.COMMUNITY_PHONE_REPORTS
             EvidenceSource.REPUTATION_LOCAL -> IntegrationCapabilityId.CALLER_ID_LOCAL
             EvidenceSource.REPUTATION_REMOTE -> IntegrationCapabilityId.CALLER_REPUTATION_REMOTE
+            EvidenceSource.TELECOM_REGULATORY -> IntegrationCapabilityId.REGULATORY_INTELLIGENCE
         }
         IntegrationTruthRuntime.publishConnected(capabilityId, event.observedAtMs)
     }
