@@ -22,8 +22,9 @@ artifact is emulator evidence, not Galaxy S24+ evidence.
 
 ## Execution record — 2026-10-18
 
-The harness was compiled from commit `8589eb6dc2532965c2d7850de4bd40126eab5559` and exercised
-against real Android emulator processes in the workspace. No valid PNG evidence was retained:
+The harness was compiled from the final delivery branch and exercised against real Android
+emulator processes in the workspace. The exact final build commit is recorded in the delivery
+report. No valid PNG evidence was retained:
 
 | Attempt | Result | Evidence boundary |
 |---|---|---|

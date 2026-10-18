@@ -13,7 +13,7 @@ APK build: `native-android-app/app/build/outputs/apk/debug/app-debug.apk`
 ## Current execution checkpoint
 
 - Branch: `feat/global-telecom-intelligence-d1-phone-core`
-- Commit: `8589eb6dc2532965c2d7850de4bd40126eab5559`
+- Commit: see the exact final delivery commit in the release report
 - APK: `app-debug.apk`, 98,548,972 bytes
 - APK SHA-256: `d785d2b94a02c4989322e829d427af7420b849cdca83d0d9dc144c9af3bd67e2`
 - Automated Android build, unit tests and lint: passed
