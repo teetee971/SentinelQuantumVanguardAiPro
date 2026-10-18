@@ -8,6 +8,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      visual_capture_only:
+        description: 'Run only the reproducible D.1 Android visual capture lane'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -19,6 +25,7 @@ concurrency:
 jobs:
   connected-tests:
     name: Compose instrumentation — ${{ matrix.android-version }} / API ${{ matrix.api-level }}
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.visual_capture_only != true }}
     runs-on: ubuntu-latest
     # API 24 installs a fresh emulator image and builds both app APKs before
     # the explicit instrumentation watchdog starts. Keep enough host time for
@@ -257,3 +264,10 @@ jobs:
             ${{ runner.temp }}/sentinel-instrumentation-api${{ matrix.api-level }}-dependencies.log
           if-no-files-found: warn
           retention-days: 14
+
+  d1-visual-capture:
+    name: Reproducible D.1 visual capture lane
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.visual_capture_only == true }}
+    uses: ./.github/workflows/sentinel-d1-visual-capture.yml
+    permissions:
+      contents: read

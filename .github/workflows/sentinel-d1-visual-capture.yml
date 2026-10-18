@@ -2,6 +2,7 @@ name: Sentinel D1 visual capture
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
