@@ -699,4 +699,26 @@ private fun homeTools(context: Context, navController: NavController): List<Home
         setOf("osint", "veille", "evenement", "événement", "monde", "geopolitique", "géopolitique"),
         HomeDomain.WATCH
     ) { navController.navigate(Screen.OsintFeed.route) }
+    ,
+    HomeTool(
+        "Carte des menaces",
+        "Visualiser uniquement les événements géographiques réellement disponibles",
+        Icons.Default.Public,
+        setOf("carte", "menaces", "monde", "géographie", "geographie"),
+        HomeDomain.WATCH
+    ) { navController.navigate(Screen.ThreatMap.route) },
+    HomeTool(
+        "Quarantaine",
+        "Consulter les mécanismes de confinement effectivement observés",
+        Icons.Default.Security,
+        setOf("quarantaine", "confinement", "mms", "isolement"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.Quarantine.route) },
+    HomeTool(
+        "Détail d’une menace",
+        "Ouvrir un dossier de preuve lorsqu’un contrôle en fournit un",
+        Icons.Default.WarningAmber,
+        setOf("menace", "détail", "preuve", "incident"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.ThreatDetail.route) }
 )
