@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -295,23 +296,29 @@ fun HomeScreen(navController: NavController) {
                     .testTag("home_primary_action")
             )
 
-            SentinelHolographicScene(
-                model = SentinelHolographicSceneModel(
-                    kind = SentinelSceneKind.COMMAND_CENTER,
-                    status = homeState.overallStatus,
-                    title = "SENTINEL COMMAND CENTER",
-                    evidenceLabel = homeState.headline,
-                    evidenceSource = "états runtime Android",
-                    nodes = coreModules.map {
-                        com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
-                            label = it.label,
-                            status = it.status
-                        )
-                    }
-                ),
-                motionLevel = motionLevel,
-                modifier = Modifier.testTag("home_security_hero")
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_security_hero")
+            ) {
+                SentinelHolographicScene(
+                    model = SentinelHolographicSceneModel(
+                        kind = SentinelSceneKind.COMMAND_CENTER,
+                        status = homeState.overallStatus,
+                        title = "SENTINEL COMMAND CENTER",
+                        evidenceLabel = homeState.headline,
+                        evidenceSource = "états runtime Android",
+                        nodes = coreModules.map {
+                            com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                                label = it.label,
+                                status = it.status
+                            )
+                        }
+                    ),
+                    motionLevel = motionLevel,
+                    modifier = Modifier.testTag("sentinel_quantum_core")
+                )
+            }
 
             SentinelReferenceMetricStrip(
                 metrics = listOf(

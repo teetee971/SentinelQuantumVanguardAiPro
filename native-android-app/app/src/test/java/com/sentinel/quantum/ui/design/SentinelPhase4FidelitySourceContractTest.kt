@@ -60,6 +60,16 @@ class SentinelPhase4FidelitySourceContractTest {
     }
 
     @Test
+    fun sharedLegacyCoreAlsoUsesAStatusDrivenVolumetricObject() {
+        val core = source("SentinelQuantumCore")
+
+        assertTrue(core.contains("coreObservedStatus"))
+        assertTrue(core.contains("drawCoreVolume"))
+        assertTrue(core.contains("drawCorePerspectiveGrid"))
+        assertTrue(core.contains("drawCoreShield"))
+    }
+
+    @Test
     fun phoneCoreDoesNotPlaceACommandHeroAboveTheKeypad() {
         val dialer = File("src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt").readText()
 
