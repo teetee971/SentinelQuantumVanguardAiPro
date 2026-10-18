@@ -104,13 +104,11 @@ object NetworkBehaviorBaseline {
         }
 
         val medianBytes = medianBytes(boundedHistory) ?: 0L
-        if (medianBytes > 0L) {
-            val multiplierThreshold = saturatingMultiply(medianBytes, VOLUME_MULTIPLIER)
-            val deltaThreshold = saturatingAdd(medianBytes, MIN_VOLUME_DELTA_BYTES)
-            val threshold = maxOf(multiplierThreshold, deltaThreshold)
-            if (normalizedCurrent.totalBytes >= threshold) {
-                anomalies += NetworkBehaviorAnomaly.VOLUME_SPIKE
-            }
+        val multiplierThreshold = saturatingMultiply(medianBytes, VOLUME_MULTIPLIER)
+        val deltaThreshold = saturatingAdd(medianBytes, MIN_VOLUME_DELTA_BYTES)
+        val threshold = maxOf(multiplierThreshold, deltaThreshold)
+        if (normalizedCurrent.totalBytes >= threshold) {
+            anomalies += NetworkBehaviorAnomaly.VOLUME_SPIKE
         }
 
         val score = anomalies.sumOf {
