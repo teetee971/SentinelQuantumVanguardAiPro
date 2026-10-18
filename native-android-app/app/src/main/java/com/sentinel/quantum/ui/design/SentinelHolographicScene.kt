@@ -35,6 +35,9 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -119,6 +122,7 @@ fun SentinelHolographicScene(
     motionLevel: MotionLevel = MotionLevel.STATIC
 ) {
     val phase = rememberScenePhase(motionLevel)
+    val rotationOffset = remember(model.kind) { mutableFloatStateOf(0f) }
     val accent = sceneAccent(model.status)
     val shape = RoundedCornerShape(SentinelVisualTokens.GlassCornerRadiusDp.dp)
     val accessibleDescription = buildString {
@@ -145,7 +149,17 @@ fun SentinelHolographicScene(
                     )
                 )
             )
-            .semantics { contentDescription = accessibleDescription }
+            .pointerInput(model.kind) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    rotationOffset.floatValue =
+                        (rotationOffset.floatValue + dragAmount.x / 320f).mod(1f)
+                }
+            }
+            .semantics {
+                contentDescription = accessibleDescription
+                stateDescription = "Glissez horizontalement pour faire pivoter la scène"
+            }
     ) {
         Canvas(
             modifier = Modifier
@@ -156,7 +170,7 @@ fun SentinelHolographicScene(
                 MotionLevel.FULL -> phase.value
                 MotionLevel.REDUCED,
                 MotionLevel.STATIC -> 0f
-            }
+            } + rotationOffset.floatValue
             drawSceneBackdrop(accent)
             drawScene(model, accent, normalizedPhase)
         }

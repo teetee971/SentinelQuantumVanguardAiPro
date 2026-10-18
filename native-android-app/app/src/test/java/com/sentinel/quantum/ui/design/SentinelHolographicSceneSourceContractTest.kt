@@ -54,6 +54,13 @@ class SentinelHolographicSceneSourceContractTest {
     }
 
     @Test
+    fun sceneSupportsManualRotationWithoutMakingMotionRequired() {
+        assertTrue(source.contains("detectDragGestures"))
+        assertTrue(source.contains("rotationOffset"))
+        assertTrue(source.contains("pointerInput"))
+    }
+
+    @Test
     fun sceneDoesNotUseReferenceImagesAsRuntimeContent() {
         assertTrue(source.contains("SentinelHolographicScene"))
         assertTrue(!source.contains("painterResource"))
