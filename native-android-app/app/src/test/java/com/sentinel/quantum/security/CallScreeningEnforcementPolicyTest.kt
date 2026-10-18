@@ -67,6 +67,26 @@ class CallScreeningEnforcementPolicyTest {
         }
     }
 
+    @Test fun realRuleEngineReputationMatchDoesNotSilenceIncomingCall() {
+        val decision = CallRuleEngine(
+            reputationSilencePrefixes = setOf("+336")
+        ).evaluate("+33612345678")
+        assertEquals(CallRuleEngine.Action.SILENCE, decision.action)
+        assertEquals(CallRuleEngine.RuleSource.SIGNED_REPUTATION, decision.source)
+        assertEquals(CallRuleEngine.Action.ALLOW, CallScreeningEnforcementPolicy.actionFor(decision))
+    }
+
+    @Test fun realRuleEngineUnknownCallerFailsOpen() {
+        val decision = CallRuleEngine().evaluate(null)
+        assertEquals(CallRuleEngine.Action.ALLOW, CallScreeningEnforcementPolicy.actionFor(decision))
+    }
+
+    @Test fun realRuleEngineExplicitPrefixBlockStillWorks() {
+        val decision = CallRuleEngine(blockedPrefixes = setOf("+336")).evaluate("+33612345678")
+        assertEquals(CallRuleEngine.RuleSource.USER, decision.source)
+        assertEquals(CallRuleEngine.Action.BLOCK, CallScreeningEnforcementPolicy.actionFor(decision))
+    }
+
     @Test fun allowRemainsAllow() {
         for (source in CallRuleEngine.RuleSource.values()) {
             assertEquals(
