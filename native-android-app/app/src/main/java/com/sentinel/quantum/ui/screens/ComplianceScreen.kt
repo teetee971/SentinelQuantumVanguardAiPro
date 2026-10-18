@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -12,8 +14,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,13 +40,14 @@ fun ComplianceScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Conformité",
+            SentinelHeroVisual(
+                status = SentinelStatus.UNKNOWN,
                 title = "Contrôles et engagements publiés",
-                body = "Les éléments ci-dessous décrivent le cadre déclaré de Sentinel. Ils ne remplacent ni une certification externe ni une preuve d’exécution technique.",
-                badges = listOf(
-                    "Transparence" to SentinelD1.Cyan,
-                    "Données locales" to SentinelD1.Success
+                subtitle = "Les éléments ci-dessous décrivent le cadre déclaré de Sentinel. Ils ne remplacent ni une certification externe ni une preuve d’exécution technique.",
+                modules = listOf(
+                    SentinelCoreModule("transparency", "Transparence", SentinelStatus.TEST, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("local", "Données locales", SentinelStatus.UNKNOWN, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("certification", "Certification", SentinelStatus.LOCKED, Icons.Default.Security, enabled = false)
                 )
             )
 
