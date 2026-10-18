@@ -61,7 +61,9 @@ export function auditProductTruth(sources) {
   }
 
   const durablePhysicalEvidence =
-    /val provenance\s*=\s*PhoneCoreCertificationScopeProvider\.current\(appContext\)\s*\?: return@synchronized false/.test(timelineStore) &&
+    // `append` uses a nullable Event inside the synchronized lambda and maps
+    // every rejected write/provenance scope to false at the public boundary.
+    /val provenance\s*=\s*PhoneCoreCertificationScopeProvider\.current\(appContext\)\s*\?: return@synchronized null/.test(timelineStore) &&
     timelineStore.includes('synchronized(LOCK)') &&
     timelineStore.includes('private val LOCK = Any()') &&
     !timelineStore.includes('@Synchronized') &&
