@@ -85,8 +85,14 @@ internal class PhoneWearableSecureHandshakeRuntime(
         } catch (_: Exception) {
             return false
         }
+        // Verify advertised HPKE fingerprint against the exact key material sent to the watch.
         if (material.publicKeyEncoded.isEmpty() ||
-            !material.fingerprintSha256.matches(SHA256_HEX)
+            material.publicKeyEncoded.size > MAX_HPKE_PUBLIC_KEY_BYTES ||
+            !material.fingerprintSha256.matches(SHA256_HEX) ||
+            !WearablePairingStore.constantTimeEquals(
+                WearablePairingStore.sha256Hex(material.publicKeyEncoded),
+                material.fingerprintSha256
+            )
         ) return false
 
         val session = try {
@@ -352,6 +358,7 @@ internal class PhoneWearableSecureHandshakeRuntime(
     companion object {
         private const val SECURE_PROTOCOL_VERSION = 2
         private const val DEFAULT_MAX_PENDING_NODES = 8
+        private const val MAX_HPKE_PUBLIC_KEY_BYTES = 4096
         private const val MAX_NODE_ID_CHARS = 512
         private const val MAX_SESSION_ID_CHARS = 256
         private const val MAX_CAPABILITIES = 32
