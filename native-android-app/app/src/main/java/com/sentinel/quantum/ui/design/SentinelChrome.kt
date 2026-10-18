@@ -16,6 +16,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -23,9 +26,54 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
+data class SentinelBottomNavigationItem(
+    val key: String,
+    val label: String,
+    val icon: ImageVector,
+    val selected: Boolean,
+    val onClick: () -> Unit
+)
+
+@Composable
+fun SentinelBottomNavigation(
+    items: List<SentinelBottomNavigationItem>,
+    modifier: Modifier = Modifier
+) {
+    NavigationBar(
+        modifier = modifier,
+        containerColor = SentinelD1.Panel,
+        tonalElevation = 0.dp
+    ) {
+        items.forEach { item ->
+            NavigationBarItem(
+                selected = item.selected,
+                onClick = item.onClick,
+                modifier = Modifier.semantics {
+                    contentDescription = item.label
+                    role = Role.Tab
+                },
+                icon = { Icon(item.icon, contentDescription = null) },
+                label = { Text(item.label) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = SentinelD1.Cyan,
+                    selectedTextColor = SentinelD1.Cyan,
+                    indicatorColor = SentinelD1.Card,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+    }
+}
 
 /**
  * Shared visual chrome for Android surfaces.
@@ -56,7 +104,7 @@ fun SentinelTopBar(
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        color = Color(0xFFBAC4D8)
+                        color = SentinelVisualTokens.TextSecondary
                     )
                 }
             }
@@ -71,9 +119,9 @@ fun SentinelTopBar(
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = SentinelD1.Panel,
-            titleContentColor = Color(0xFFF4F7FC),
-            navigationIconContentColor = Color(0xFFF4F7FC),
-            actionIconContentColor = Color(0xFFF4F7FC)
+            titleContentColor = SentinelVisualTokens.TextPrimary,
+            navigationIconContentColor = SentinelVisualTokens.TextPrimary,
+            actionIconContentColor = SentinelVisualTokens.TextPrimary
         )
     )
 }

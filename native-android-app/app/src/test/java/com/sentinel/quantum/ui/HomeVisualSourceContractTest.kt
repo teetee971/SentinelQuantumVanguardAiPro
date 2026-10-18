@@ -157,6 +157,7 @@ class HomeVisualSourceContractTest {
         listOf(
             "HomeSecurityPresentation",
             "SentinelHeroVisual",
+            "coreModules",
             "home_security_hero",
             "home_module_phone_core",
             "home_module_vpn",

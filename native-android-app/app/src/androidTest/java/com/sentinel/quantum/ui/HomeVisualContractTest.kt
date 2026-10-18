@@ -41,6 +41,7 @@ class HomeVisualContractTest {
             .assertHasClickAction()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         composeRule.onNodeWithTag("home_security_hero").assertExists()
+        composeRule.onNodeWithTag("sentinel_quantum_core").assertExists()
         listOf(
             "home_module_phone_core",
             "home_module_vpn",
