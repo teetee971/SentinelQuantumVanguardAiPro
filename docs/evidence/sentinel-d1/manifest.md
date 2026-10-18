@@ -1,5 +1,10 @@
 # Sentinel D.1 evidence manifest
 
+> Historical inventory note: the build checkpoint and APK values below predate the dedicated
+> Android capture harness. They are not evidence for the current branch head. Use
+> [`android-capture-harness.md`](android-capture-harness.md) and the workflow artifact for current
+> runtime captures; no capture is accepted until that artifact is downloaded and inspected.
+
 Date: 2026-10-18  
 Branch: `feat/sentinel-d1-3d-total-redesign`  
 Implementation checkpoint: `9b670dc765fd3dec678b260cdd24769195466343`  

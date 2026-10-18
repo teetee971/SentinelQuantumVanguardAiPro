@@ -159,7 +159,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-                    val startDestination = when {
+                    val startDestination = captureStartDestination() ?: when {
                         SharedTextHolder.hasPending() -> Screen.EmailSecurity.route
                         openCollectiveDefense -> Screen.CollectiveDefense.route
                         openOsintFeed -> Screen.OsintFeed.route
@@ -270,6 +270,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun maybeOpenPhoneCoreFirstRunSetup() {
+        if (isD1CaptureIntent()) return
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
         val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
@@ -303,6 +304,37 @@ class MainActivity : ComponentActivity() {
                 putExtra(PhoneCoreActivationActivity.EXTRA_FIRST_RUN_SETUP, true)
             }
         )
+    }
+
+    /**
+     * Debug-only route selection used by the Android screenshot evidence harness.
+     *
+     * This is deliberately not a production deep link: release builds ignore the extras, and
+     * the allowlist prevents an arbitrary external intent from selecting an unqualified route.
+     */
+    private fun captureStartDestination(): String? {
+        if (!isD1CaptureIntent()) return null
+        val route = intent?.getStringExtra(EXTRA_D1_ROUTE) ?: return null
+        return when (route) {
+            Screen.Home.route,
+            Screen.SecurityAudit.route,
+            Screen.SystemDoctor.route,
+            Screen.PhoneSecurity.route,
+            Screen.AppPermissionAnalyzer.route,
+            Screen.ThreatMap.route,
+            Screen.Quarantine.route,
+            Screen.ThreatDetail.route,
+            Screen.Vpn.route -> route
+            else -> null
+        }
+    }
+
+    private fun isD1CaptureIntent(): Boolean =
+        BuildConfig.DEBUG && intent?.getBooleanExtra(EXTRA_D1_CAPTURE, false) == true
+
+    companion object {
+        const val EXTRA_D1_CAPTURE = "com.sentinel.quantum.extra.D1_CAPTURE"
+        const val EXTRA_D1_ROUTE = "com.sentinel.quantum.extra.D1_ROUTE"
     }
 
     /**
