@@ -110,9 +110,9 @@ class PhoneWearableSecureHandshakeRuntimeTest {
             sessionIdFactory = { "session-${++sessionCounter}" }
         )
 
-        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
         assertNull(runtime.pendingForNode("node-1"))
-        assertTrue(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
+        assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
         assertNull(runtime.pendingForNode("node-1"))
     }
 
@@ -141,6 +141,21 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         assertNull(runtime.pendingForNode("node-1"))
         assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.SENTINEL_ALERTS)))
         assertEquals(2, calls)
+    }
+
+    @Test fun inlineFailureCallbackNeverReportsChallengeAsSent() {
+        val runtime = PhoneWearableSecureHandshakeRuntime(
+            pairingStore = WearablePairingStore(MemoryPairingBackend()),
+            replayGuard = WearableHandshakeReplayGuard(clockMs = { 100L }, elapsedClockMs = { 100L }),
+            sessionAuthority = WearableSessionAuthority(),
+            hpkeFactory = PhoneWearableHpkeFactory { FakePhoneHpkeMaterial("phone-hpke".toByteArray()) },
+            transport = PhoneWearableHandshakeTransport { _, _, _, onFailure -> onFailure() },
+            activate = { _, _, _, _ -> true },
+            clockMs = { 100L },
+            sessionIdFactory = { "session-inline" }
+        )
+        assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.CONNECTION_STATE)))
+        assertNull(runtime.pendingForNode("node-1"))
     }
 
     @Test fun peerDisconnectRevokesPendingChallengeAndAllowsImmediateRetry() {
