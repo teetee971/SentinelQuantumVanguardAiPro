@@ -29,8 +29,10 @@ import androidx.compose.material.icons.filled.VpnLock
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelGlassCard
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
@@ -129,13 +131,22 @@ fun VpnScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            SentinelHeroVisual(
-                status = runtimeSurface.status,
-                title = runtimeSurface.title,
-                subtitle = runtimeSurface.subtitle,
+            SentinelHolographicScene(
+                model = SentinelHolographicSceneModel(
+                    kind = SentinelSceneKind.VPN_GLOBE,
+                    status = runtimeSurface.status,
+                    title = "VPN PRIVÉ",
+                    evidenceLabel = runtimeSurface.badge,
+                    evidenceSource = "état du tunnel observé",
+                    nodes = tunnelModules.map {
+                        com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                            label = it.label,
+                            status = it.status
+                        )
+                    }
+                ),
                 modifier = Modifier.testTag("vpn-command-center"),
-                motionLevel = motionLevel,
-                modules = tunnelModules
+                motionLevel = motionLevel
             )
 
             SentinelSectionHeader(

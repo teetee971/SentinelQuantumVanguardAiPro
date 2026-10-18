@@ -38,8 +38,10 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelGlassCard
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -182,12 +184,22 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                SentinelHeroVisual(
-                    status = analysisState.overallStatus,
-                    title = heroTitle,
-                    subtitle = heroSubtitle,
-                    motionLevel = motionLevel,
-                    modules = permissionModules
+                SentinelHolographicScene(
+                    model = SentinelHolographicSceneModel(
+                        kind = SentinelSceneKind.RISK_APPLICATIONS,
+                        status = analysisState.overallStatus,
+                        title = "APPLICATIONS À RISQUE",
+                        evidenceLabel = heroTitle,
+                        evidenceSource = "analyse locale des permissions",
+                        progress = if (isLoading) null else 1f,
+                        nodes = permissionModules.map {
+                            com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                                label = it.label,
+                                status = it.status
+                            )
+                        }
+                    ),
+                    motionLevel = motionLevel
                 )
             }
 

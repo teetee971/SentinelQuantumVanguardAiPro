@@ -37,7 +37,8 @@ class ProtectionVisualSourceContractTest {
 
     @Test
     fun commandCenterUsesTruthfulD1HeroInsteadOfClaimingAntivirus() {
-        assertTrue(source.contains("SentinelHeroVisual("))
+        assertTrue(source.contains("SentinelHolographicScene("))
+        assertTrue(source.contains("SentinelSceneKind.REAL_TIME_PROTECTION"))
         assertTrue(source.contains("SentinelStatus.UNKNOWN") || source.contains("SentinelStatus.LIMITED"))
         assertTrue(!source.contains("100 % protégé"))
         assertTrue(!source.contains("Scan antivirus complet"))

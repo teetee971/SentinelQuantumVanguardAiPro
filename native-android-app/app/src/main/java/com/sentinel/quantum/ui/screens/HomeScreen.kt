@@ -85,8 +85,10 @@ import com.sentinel.quantum.ui.design.SentinelActionTile
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelGlassCard
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
@@ -288,15 +290,21 @@ fun HomeScreen(navController: NavController) {
                     .testTag("home_primary_action")
             )
 
-            SentinelHeroVisual(
-                status = homeState.overallStatus,
-                title = homeState.headline,
-                subtitle = homeState.summary,
+            SentinelHolographicScene(
+                model = SentinelHolographicSceneModel(
+                    kind = SentinelSceneKind.COMMAND_CENTER,
+                    status = homeState.overallStatus,
+                    title = "SENTINEL COMMAND CENTER",
+                    evidenceLabel = homeState.headline,
+                    evidenceSource = "états runtime Android",
+                    nodes = coreModules.map {
+                        com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                            label = it.label,
+                            status = it.status
+                        )
+                    }
+                ),
                 motionLevel = motionLevel,
-                modules = coreModules,
-                onModuleClick = { module ->
-                    navigateCoreModule(module.id, navController, context)
-                },
                 modifier = Modifier.testTag("home_security_hero")
             )
 
