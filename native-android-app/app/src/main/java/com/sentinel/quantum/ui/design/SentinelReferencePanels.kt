@@ -59,16 +59,26 @@ fun SentinelReferenceMetricStrip(
     metrics: List<SentinelReferenceMetric>,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.Top
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        metrics.take(4).forEach { metric ->
-            SentinelReferenceMetricTile(
-                metric = metric,
-                modifier = Modifier.weight(1f)
-            )
+        metrics.take(4).chunked(2).forEach { rowMetrics ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                rowMetrics.forEach { metric ->
+                    SentinelReferenceMetricTile(
+                        metric = metric,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowMetrics.size == 1) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
         }
     }
 }

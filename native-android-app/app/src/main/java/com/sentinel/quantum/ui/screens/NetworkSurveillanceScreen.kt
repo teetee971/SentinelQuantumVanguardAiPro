@@ -52,9 +52,12 @@ import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.security.WifiSecurityType
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelCoreModule
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -170,6 +173,13 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             enabled = false
         )
     )
+    val topologyNodes = topologyModules.map { module ->
+        SentinelHolographicSceneNode(
+            label = module.label,
+            status = module.status,
+            depth = if (module.enabled) 0.8f else 0.35f
+        )
+    }
 
     LaunchedEffect(networkTimelineStore) {
         timelineSnapshot = withContext(Dispatchers.IO) { networkTimelineStore.read() }
@@ -332,19 +342,27 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    SentinelHeroVisual(
-                        status = aggregateStatus,
-                        title = if (selectedTab == SurveillanceTab.WIFI) "Observation Wi-Fi" else "Observation Bluetooth",
-                        subtitle = heroSubtitle,
+                    SentinelHolographicScene(
+                        model = SentinelHolographicSceneModel(
+                            kind = SentinelSceneKind.NETWORK_TOPOLOGY,
+                            status = aggregateStatus,
+                            title = if (selectedTab == SurveillanceTab.WIFI) "TOPOLOGIE WI-FI" else "TOPOLOGIE BLUETOOTH",
+                            evidenceLabel = if (hasEvidence) {
+                                "${visibleRiskLevels.size} observation(s) locale(s)"
+                            } else {
+                                "Aucune observation locale"
+                            },
+                            evidenceSource = "Scanner Android · ${if (selectedTab == SurveillanceTab.WIFI) "Wi-Fi" else "Bluetooth"}",
+                            nodes = topologyNodes
+                        ),
                         modifier = Modifier.testTag("network-command-center"),
-                        motionLevel = motionLevel,
-                        modules = topologyModules,
-                        onModuleClick = { module ->
-                            when (module.id) {
-                                "wifi" -> openWifiConnectionPanel()
-                                "bluetooth" -> openBluetoothConnectionPanel()
-                            }
-                        }
+                        motionLevel = motionLevel
+                    )
+                    Text(
+                        text = heroSubtitle,
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
