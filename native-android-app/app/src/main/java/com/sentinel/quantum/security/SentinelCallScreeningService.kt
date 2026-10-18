@@ -84,8 +84,11 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
             return
         }
+        // Enforce provenance at the Telecom boundary, independently of rule-engine internals.
+        // Unexpected source/action combinations must not reject or silence incoming calls.
+        val enforcedAction = CallScreeningEnforcementPolicy.actionFor(decision)
         val response = CallResponse.Builder()
-        when (decision.action) {
+        when (enforcedAction) {
             CallRuleEngine.Action.BLOCK -> response
                 .setDisallowCall(true)
                 .setRejectCall(true)
