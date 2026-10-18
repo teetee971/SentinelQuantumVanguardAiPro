@@ -1,20 +1,31 @@
 # Sentinel D.1 evidence manifest
 
-> Historical inventory note: the build checkpoint and APK values below predate the dedicated
-> Android capture harness. They are not evidence for the current branch head. Use
-> [`android-capture-harness.md`](android-capture-harness.md) and the workflow artifact for current
-> runtime captures; no capture is accepted until that artifact is downloaded and inspected.
+> Historical inventory note: the original checkpoint and APK values below predate the current
+> capture-harness execution. They are not evidence for the current branch head. The current
+> commit has a reproducible harness, but no valid Android PNG set was produced; see
+> [`android-capture-harness.md`](android-capture-harness.md).
 
 Date: 2026-10-18  
 Branch: `feat/sentinel-d1-3d-total-redesign`  
 Implementation checkpoint: `9b670dc765fd3dec678b260cdd24769195466343`  
 APK build: `native-android-app/app/build/outputs/apk/debug/app-debug.apk`
 
+## Current execution checkpoint
+
+- Branch: `feat/global-telecom-intelligence-d1-phone-core`
+- Commit: `c4c8a87668ac52d9830aff8b2739123c2959b5dc`
+- APK: `app-debug.apk`, 98,548,972 bytes
+- APK SHA-256: `d785d2b94a02c4989322e829d427af7420b849cdca83d0d9dc144c9af3bd67e2`
+- Automated Android build, unit tests and lint: passed
+- Android instrumentation execution: not qualified; no connected device and local TCG emulator ANRs
+- Authentic screenshot comparison: not performed because no valid PNG set exists
+
 ## Runtime evidence boundary
 
-The workspace has no `adb`, emulator, Android system image or connected device. Therefore every
-visual capture is explicitly marked `BLOCKED_NO_ANDROID_RUNTIME`; no mock, generated image or old
-APK is presented as proof of the new UI.
+The workspace has Android SDK/emulator tooling but no stable Android runtime and no connected
+physical device. Therefore every visual capture remains explicitly marked
+`BLOCKED_NO_VALID_ANDROID_CAPTURE`; no mock, generated image or old APK is presented as proof of
+the new UI.
 
 ## Screen inventory
 
