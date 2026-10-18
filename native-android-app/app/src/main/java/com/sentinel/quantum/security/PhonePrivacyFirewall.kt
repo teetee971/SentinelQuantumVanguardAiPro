@@ -6,7 +6,15 @@ package com.sentinel.quantum.security
  */
 object PhonePrivacyFirewall {
     enum class Mode { LOCAL_ONLY, ENHANCED }
-    enum class DataClass { CONTACTS, CALL_HISTORY, SMS_BODY, OTP, PHONE_NUMBER, REPUTATION_QUERY }
+    enum class DataClass {
+        CONTACTS,
+        CALL_HISTORY,
+        SMS_BODY,
+        OTP,
+        PHONE_NUMBER,
+        REPUTATION_QUERY,
+        EXPOSURE_QUERY
+    }
     data class Decision(val mayLeaveDevice: Boolean, val reason: String)
 
     fun decide(mode: Mode, dataClass: DataClass, explicitConsent: Boolean): Decision {

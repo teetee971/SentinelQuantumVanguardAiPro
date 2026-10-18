@@ -1,0 +1,69 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace = 'com.sentinel.quantum.wear'
+    compileSdk 37
+
+    defaultConfig {
+        applicationId "com.sentinel.quantum"
+        minSdk 26
+        targetSdk 36
+        versionCode 10
+        versionName "1.0.9"
+    }
+
+    def releaseKeystoreFile = System.getenv('KEYSTORE_FILE')
+    def releaseKeystorePassword = System.getenv('KEYSTORE_PASSWORD')
+    def releaseKeyAlias = System.getenv('KEY_ALIAS')
+    def releaseKeyPassword = System.getenv('KEY_PASSWORD')
+    def releaseSigningConfigured = [releaseKeystoreFile, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
+
+    if (releaseSigningConfigured) {
+        signingConfigs {
+            release {
+                storeFile file(releaseKeystoreFile)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            if (releaseSigningConfigured) signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        releaseUnsigned {
+            initWith release
+            signingConfig = null
+            matchingFallbacks = ['release']
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
+    def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
+    if (requiresSignedRelease && !releaseSigningConfigured) {
+        throw new GradleException('Wear release signing requires the same KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD as the handheld app.')
+    }
+}
+
+dependencies {
+    implementation project(':wearable-security')
+    implementation project(':wearable-contract')
+    implementation 'com.google.android.gms:play-services-wearable:20.0.1'
+    testImplementation 'junit:junit:4.13.2'
+}

@@ -243,7 +243,7 @@ test('rejects asynchronous persistence for physical Phone Core evidence', () => 
 test('rejects unscoped physical evidence when certification provenance is unavailable', () => {
   const s = source();
   s.timelineStore = s.timelineStore.replace(
-    '?: return@synchronized false',
+    '?: return@synchronized null',
     '?: null'
   );
   assert.ok(auditProductTruth(s).some((e) => e.includes('durably committed')));

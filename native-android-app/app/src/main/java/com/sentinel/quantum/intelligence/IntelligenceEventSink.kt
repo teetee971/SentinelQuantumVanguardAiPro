@@ -1,5 +1,7 @@
 package com.sentinel.quantum.intelligence
 
+import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationTruthRuntime
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
@@ -64,6 +66,7 @@ class BoundedIntelligenceEventSink(
             executor.execute {
                 try {
                     consumer(event)
+                    publishIntegrationTruth(event)
                 } catch (_: Throwable) {
                     consumerFailures.incrementAndGet()
                 } finally {
@@ -89,5 +92,18 @@ class BoundedIntelligenceEventSink(
         if (!closed.compareAndSet(false, true)) return
         executor.shutdownNow()
         pendingEventIds.clear()
+    }
+
+    private fun publishIntegrationTruth(event: IntelligenceEvent) {
+        val capabilityId = when (event.source) {
+            EvidenceSource.ANDROID_CONTACT_PROVIDER -> IntegrationCapabilityId.CONTACTS
+            EvidenceSource.CALL_SCREENING -> IntegrationCapabilityId.CALL_SCREENING
+            EvidenceSource.SMS -> IntegrationCapabilityId.SMS
+            EvidenceSource.MMS -> IntegrationCapabilityId.MMS
+            EvidenceSource.COMMUNITY_REPORT -> IntegrationCapabilityId.COMMUNITY_PHONE_REPORTS
+            EvidenceSource.REPUTATION_LOCAL -> IntegrationCapabilityId.CALLER_ID_LOCAL
+            EvidenceSource.REPUTATION_REMOTE -> IntegrationCapabilityId.CALLER_REPUTATION_REMOTE
+        }
+        IntegrationTruthRuntime.publishConnected(capabilityId, event.observedAtMs)
     }
 }

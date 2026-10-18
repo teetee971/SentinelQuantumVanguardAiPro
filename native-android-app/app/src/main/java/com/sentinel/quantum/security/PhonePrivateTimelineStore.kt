@@ -1,6 +1,8 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import com.sentinel.quantum.integration.IntegrationCapabilityId
+import com.sentinel.quantum.integration.IntegrationTruthRuntime
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -21,15 +23,21 @@ class PhonePrivateTimelineStore(context: Context) {
     fun append(
         event: PhonePrivateTimeline.Event,
         nowMs: Long = System.currentTimeMillis()
-    ): Boolean = synchronized(LOCK) {
-        val provenance = PhoneCoreCertificationScopeProvider.current(appContext)
-            ?: return@synchronized false
-        val clean = PhonePrivateTimeline.sanitize(
-            event.copy(provenance = provenance),
-            nowMs
-        ) ?: return@synchronized false
-        val next = PhonePrivateTimeline.summarize(readInternal() + clean, nowMs).events
-        write(next)
+    ): Boolean {
+        val clean = synchronized(LOCK) {
+            val provenance = PhoneCoreCertificationScopeProvider.current(appContext)
+                ?: return@synchronized null
+            val sanitized = PhonePrivateTimeline.sanitize(
+                event.copy(provenance = provenance),
+                nowMs
+            ) ?: return@synchronized null
+            val next = PhonePrivateTimeline.summarize(readInternal() + sanitized, nowMs).events
+            if (!write(next)) return@synchronized null
+            sanitized
+        } ?: return false
+
+        publishIntegrationTruth(clean)
+        return true
     }
 
     fun read(nowMs: Long = System.currentTimeMillis()): PhonePrivateTimeline.Summary =
@@ -42,6 +50,48 @@ class PhonePrivateTimelineStore(context: Context) {
 
     fun clear(): Boolean = synchronized(LOCK) {
         prefs.edit().remove(KEY).commit()
+    }
+
+    private fun publishIntegrationTruth(event: PhonePrivateTimeline.Event) {
+        when (event.kind) {
+            PhonePrivateTimeline.Kind.CALL -> {
+                when {
+                    event.signal == PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE ->
+                        IntegrationTruthRuntime.publishConnected(
+                            IntegrationCapabilityId.INCALL,
+                            event.timestampMs
+                        )
+                    event.signal?.startsWith(PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX) == true ->
+                        IntegrationTruthRuntime.publishConnected(
+                            IntegrationCapabilityId.CALL_SCREENING,
+                            event.timestampMs
+                        )
+                    event.signal == PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN ->
+                        IntegrationTruthRuntime.publishConnected(
+                            IntegrationCapabilityId.CALLER_ID_LOCAL,
+                            event.timestampMs
+                        )
+                    event.signal == PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN ->
+                        IntegrationTruthRuntime.publishConnected(
+                            IntegrationCapabilityId.INCALL,
+                            event.timestampMs
+                        )
+                }
+            }
+            PhonePrivateTimeline.Kind.SMS ->
+                IntegrationTruthRuntime.publishConnected(
+                    IntegrationCapabilityId.SMS,
+                    event.timestampMs
+                )
+            PhonePrivateTimeline.Kind.MMS ->
+                IntegrationTruthRuntime.publishConnected(
+                    IntegrationCapabilityId.MMS,
+                    event.timestampMs
+                )
+            // Wi-Fi observations publish their integration truth through NetworkTimelineStore.
+            // Keep the private evidence append-only here without duplicating that signal.
+            PhonePrivateTimeline.Kind.WIFI -> Unit
+        }
     }
 
     private fun readInternal(): List<PhonePrivateTimeline.Event> = runCatching {
@@ -101,4 +151,3 @@ class PhonePrivateTimelineStore(context: Context) {
         private const val KEY = "events"
     }
 }
-

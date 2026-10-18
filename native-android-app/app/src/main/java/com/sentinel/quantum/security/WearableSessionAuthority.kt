@@ -59,9 +59,11 @@ class WearableSessionAuthority {
         if (verifiedProof.protocolVersion != session.protocolVersion) {
             return WearableSessionActivationDecision.PROTOCOL_MISMATCH
         }
-        // Authenticate the same immutable capability snapshot that becomes session authority.
+        // Authenticate exactly the same immutable capability snapshot that becomes session authority.
         val capabilities = java.util.Collections.unmodifiableSet(LinkedHashSet(session.negotiatedCapabilities))
-        if (!verifiedProof.capabilities.containsAll(capabilities.map { it.name })) {
+        val signedCapabilities = verifiedProof.capabilities
+        val authoritativeCapabilities = capabilities.map { it.name }.toSet()
+        if (signedCapabilities != authoritativeCapabilities) {
             return WearableSessionActivationDecision.CAPABILITY_MISMATCH
         }
         activeByIdentity[attempt.stableId] = session.copy(negotiatedCapabilities = capabilities)

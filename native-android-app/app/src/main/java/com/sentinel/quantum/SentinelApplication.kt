@@ -4,6 +4,7 @@ import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
+import com.sentinel.quantum.security.WearOsDataLayerAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,16 +15,17 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Process-level services and lifecycle-safe maintenance for Sentinel.
  *
  * [onCreate] intentionally performs no screening preparation. Android creates the Application
- * before CallScreeningService, so disk, WorkManager and AndroidKeyStore work here would extend the
- * cold-start window before the mandatory Telecom response. Maintenance starts either when the
- * user-facing activity resumes or, for a Telecom-only cold start, from the bounded post-response
- * worker. Until one of those paths completes, exact, prefix and signed rules may fail open while
- * the process cache is cold.
+ * before CallScreeningService, so disk, WorkManager, AndroidKeyStore and wearable platform work
+ * here would extend the cold-start window before the mandatory Telecom response. Maintenance and
+ * Wear OS observation start only after a user-facing activity resumes or from the bounded
+ * post-response worker. Until one of those paths completes, screening caches may fail open while
+ * the process is cold and wearable truth remains unobserved.
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val maintenanceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val maintenanceStarted = AtomicBoolean(false)
+    private val wearableObservationStarted = AtomicBoolean(false)
 
     fun launchVoiceTeardown(block: suspend () -> Unit) {
         voiceTeardownScope.launch {
@@ -42,6 +44,7 @@ class SentinelApplication : Application() {
      * failed scheduling attempt reopens the gate so a later resume can retry.
      */
     fun launchForegroundMaintenance() {
+        launchWearableObservation()
         if (!maintenanceStarted.compareAndSet(false, true)) return
         maintenanceScope.launch {
             if (!performMaintenance()) maintenanceStarted.set(false)
@@ -57,6 +60,19 @@ class SentinelApplication : Application() {
     internal fun runPostResponseMaintenance() {
         if (!maintenanceStarted.compareAndSet(false, true)) return
         if (!performMaintenance()) maintenanceStarted.set(false)
+    }
+
+    private fun launchWearableObservation() {
+        if (!wearableObservationStarted.compareAndSet(false, true)) return
+        runCatching {
+            WearOsDataLayerAdapter(applicationContext).observeConnectedNodes {
+                // Runtime truth is published by the adapter/coordinator. A failed observation may
+                // be retried after a later foreground resume without blocking the UI.
+                if (it.failureReason != null) wearableObservationStarted.set(false)
+            }
+        }.onFailure {
+            wearableObservationStarted.set(false)
+        }
     }
 
     private fun performMaintenance(): Boolean {

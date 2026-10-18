@@ -5,6 +5,7 @@ enum class EvidenceSource {
     CALL_SCREENING,
     SMS,
     MMS,
+    COMMUNITY_REPORT,
     REPUTATION_LOCAL,
     REPUTATION_REMOTE
 }
@@ -23,7 +24,14 @@ data class EvidenceProvenance(
 ) {
     init { require(producerVersion > 0) }
 
-    enum class Producer { PHONE_CORE, CONTACT_PROVIDER, SMS_CORE, MMS_CORE, REPUTATION_CORE }
+    enum class Producer {
+        PHONE_CORE,
+        CONTACT_PROVIDER,
+        SMS_CORE,
+        MMS_CORE,
+        COMMUNITY_CORE,
+        REPUTATION_CORE
+    }
 
     enum class TrustClass {
         LOCAL_PLATFORM_ASSERTION,
@@ -64,6 +72,21 @@ sealed interface IntelligenceEvidence {
         val analysisOutcome: String?
     ) : IntelligenceEvidence
 
+    /** A user-submitted report is context only until the remote moderation contract says more. */
+    data class CommunityReport(
+        val categoryCode: String,
+        val moderationState: CommunityModerationState,
+        val effectOnReputation: CommunityReputationEffect
+    ) : IntelligenceEvidence {
+        init {
+            require(CATEGORY_CODE.matches(categoryCode))
+        }
+
+        private companion object {
+            val CATEGORY_CODE = Regex("[A-Z0-9_]{1,32}")
+        }
+    }
+
     data class Reputation(
         val riskScore: Int?,
         val communitySignals: Int,
@@ -81,4 +104,6 @@ sealed interface IntelligenceEvidence {
     enum class CallAction { ALLOW, SILENCE, BLOCK }
     enum class NetworkVerification { VERIFIED, FAILED, NOT_VERIFIED, UNKNOWN }
     enum class Direction { INCOMING, OUTGOING, UNKNOWN }
+    enum class CommunityModerationState { PENDING, DUPLICATE, ACCEPTED, REJECTED, UNKNOWN }
+    enum class CommunityReputationEffect { UNCHANGED, PENDING, UPDATED, UNKNOWN }
 }

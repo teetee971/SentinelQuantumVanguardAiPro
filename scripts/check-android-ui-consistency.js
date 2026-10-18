@@ -230,22 +230,26 @@ if (smartHomeSource) {
 const vpnPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/VpnScreen.kt';
 const vpnSource = readRequired(vpnPath);
-if (vpnSource) {
+const vpnPresentationPath =
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkVpnPresentation.kt';
+const vpnPresentationSource = readRequired(vpnPresentationPath);
+const vpnTruthSource = [vpnSource, vpnPresentationSource].filter(Boolean).join('\n');
+if (vpnTruthSource) {
   for (const marker of [
     '"Client intégré"',
     '"Passerelle absente"',
-    'aucune passerelle Sentinel disponible et validée',
+    'Aucune passerelle Sentinel disponible et validée n’est exposée.',
     'handshake WireGuard réellement établi',
-    'Une action de connexion ne sera affichée que lorsque toute la chaîne sera réellement vérifiable.',
+    'Aucune action de connexion n’est affichée sans chaîne runtime vérifiable.',
   ]) {
-    if (!vpnSource.includes(marker)) {
+    if (!vpnTruthSource.includes(marker)) {
       errors.push(`vpn truth marker missing (${marker}): ${vpnPath}`);
     }
   }
-  if (vpnSource.includes('"Client prêt"') || vpnSource.includes('Sentinel AVAILABLE')) {
+  if (vpnTruthSource.includes('"Client prêt"') || vpnTruthSource.includes('Sentinel AVAILABLE')) {
     errors.push(`vpn reintroduced misleading/technical public copy: ${vpnPath}`);
   }
-  if (/onClick\s*=\s*\{\s*\}/.test(vpnSource)) {
+  if (vpnSource && /onClick\s*=\s*\{\s*\}/.test(vpnSource)) {
     errors.push(`vpn reintroduced an empty click handler / dead control: ${vpnPath}`);
   }
 }
@@ -384,11 +388,17 @@ if (callerIdSource) {
   if (/val stored\s*=\s*PhonePrivateTimelineStore\(applicationContext\)\.append\(/.test(callerIdSource)) {
     errors.push(`Caller ID evidence persistence moved back onto onResume main thread: ${callerIdPath}`);
   }
-  for (const marker of [
-    'LocalContactLookup(applicationContext).find(number)',
-    'var localName by remember(number)',
-    'name = localName',
-  ]) {
+  const directLocalContactLookup = callerIdSource.includes(
+    'LocalContactLookup(applicationContext).find(number)'
+  );
+  const splitLocalContactLookup =
+    /val\s+lookup\s*=\s*LocalContactLookup\(applicationContext\)[\s\S]*?val\s+identity\s*=\s*lookup\.find\(number\)/.test(
+      callerIdSource
+    );
+  if (!directLocalContactLookup && !splitLocalContactLookup) {
+    errors.push(`Caller ID asynchronous local-contact lookup missing: ${callerIdPath}`);
+  }
+  for (const marker of ['var localName by remember(number)', 'name = localName']) {
     if (!callerIdSource.includes(marker)) {
       errors.push(`Caller ID asynchronous local-contact marker missing (${marker}): ${callerIdPath}`);
     }

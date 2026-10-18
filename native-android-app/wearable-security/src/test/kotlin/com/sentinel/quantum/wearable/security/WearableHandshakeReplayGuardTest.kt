@@ -2,17 +2,19 @@ package com.sentinel.quantum.wearable.security
 
 import java.security.SecureRandom
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WearableHandshakeReplayGuardTest {
     private var now = 100_000L
     private var elapsed = 10_000L
-    private fun guard() = WearableHandshakeReplayGuard(
+    private fun guard(maxPendingChallenges: Int = 1_024) = WearableHandshakeReplayGuard(
         ttlMs = 5_000L,
         clockMs = { now },
         random = SecureRandom(),
-        elapsedClockMs = { elapsed }
+        elapsedClockMs = { elapsed },
+        maxPendingChallenges = maxPendingChallenges
     )
 
     private fun candidate(challenge: WearableHandshakeChallenge, stableId: String = challenge.stableId, issuedAtMs: Long = challenge.issuedAtMs) =
@@ -95,11 +97,36 @@ class WearableHandshakeReplayGuardTest {
         assertFalse(guard.consume(unknown))
     }
 
-    @Test fun rejectsTimestampOutsideIssuedChallengeWindow() {
+    @Test fun rejectsTimestampThatDoesNotExactlyMatchChallengeIssuance() {
         val guard = guard()
         val challenge = guard.issue("watch-1")
         assertFalse(guard.consume(candidate(challenge, issuedAtMs = challenge.issuedAtMs - 1)))
-        assertFalse(guard.consume(candidate(challenge, issuedAtMs = challenge.expiresAtMs + 1)))
+        assertFalse(guard.consume(candidate(challenge, issuedAtMs = challenge.issuedAtMs + 1)))
         assertTrue(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun boundsPendingChallengeStateAndRecoversAfterExpiry() {
+        val guard = guard(maxPendingChallenges = 2)
+        guard.issue("watch-1")
+        guard.issue("watch-2")
+        assertThrows(IllegalStateException::class.java) {
+            guard.issue("watch-3")
+        }
+
+        now += 5_001L
+        elapsed += 5_001L
+        guard.issue("watch-3")
+    }
+
+    @Test fun explicitRevokeInvalidatesOnlyTargetChallengeAndReleasesCapacity() {
+        val guard = guard(maxPendingChallenges = 2)
+        val first = guard.issue("watch-1")
+        val second = guard.issue("watch-2")
+
+        assertTrue(guard.revoke(first.nonce))
+        assertFalse(guard.revoke(first.nonce))
+        assertFalse(guard.consume(candidate(first)))
+        assertTrue(guard.consume(candidate(second)))
+        guard.issue("watch-3")
     }
 }

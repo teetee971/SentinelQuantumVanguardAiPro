@@ -46,7 +46,7 @@ jobs:
           python -m pip install --disable-pip-version-check --no-cache-dir pip-audit==2.10.1
           python -m pip_audit --requirement requirements.txt --strict --progress-spinner off
       - run: python -m pytest -q
-      - run: python -m compileall -q app_redis.py collective_intel.py collective_exposure.py
+      - run: python -m compileall -q app_redis.py app_exposure_bridge.py collective_intel.py collective_exposure.py collective_exposure_user.py exposure_identity.py
 
   container:
     runs-on: ubuntu-latest
@@ -55,6 +55,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: docker build --tag sentinel-wangiri-api:test backend/wangiri-api
       - name: Verify container imports production app
-        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; assert app_redis.app is not None"
+        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_exposure_bridge; assert app_exposure_bridge.app is not None"
       - name: Verify Collective Defense routes are packaged
-        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_redis; paths=set(app_redis.app.openapi()['paths']); assert {'/v1/intelligence/lookup', '/v1/intelligence/lookup-fingerprint', '/v1/intelligence/report-public', '/v1/intelligence/relationships/report', '/v1/intelligence/graph/lookup', '/v1/intelligence/exposures/report', '/v1/intelligence/exposures/lookup'} <= paths"
+        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_exposure_bridge; paths=set(app_exposure_bridge.app.openapi()['paths']); assert {'/v1/intelligence/lookup', '/v1/intelligence/lookup-fingerprint', '/v1/intelligence/report-public', '/v1/intelligence/relationships/report', '/v1/intelligence/graph/lookup', '/v1/intelligence/exposures/report', '/v1/intelligence/exposures/lookup', '/v1/intelligence/exposures/report-user', '/v1/intelligence/exposures/lookup-user'} <= paths"

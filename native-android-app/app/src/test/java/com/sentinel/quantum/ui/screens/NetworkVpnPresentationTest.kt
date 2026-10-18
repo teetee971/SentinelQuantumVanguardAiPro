@@ -78,4 +78,23 @@ class NetworkVpnPresentationTest {
             NetworkVpnPresentation.gatewayStatus(SentinelVpnController.GatewayStatus.AVAILABLE)
         )
     }
+
+    @Test
+    fun `missing or stale runtime observation never presents a protected tunnel`() {
+        val surface = NetworkVpnPresentation.vpnSurface(null)
+
+        assertEquals(SentinelStatus.UNKNOWN, surface.status)
+        assertEquals("Observation manquante", surface.badge)
+        assertEquals("État runtime non observé", surface.title)
+    }
+
+    @Test
+    fun `protected surface is reserved for the controller protected state`() {
+        val surface = NetworkVpnPresentation.vpnSurface(
+            SentinelVpnController.RuntimeState.PROTECTED
+        )
+
+        assertEquals(SentinelStatus.OK, surface.status)
+        assertEquals("Tunnel actif", surface.badge)
+    }
 }

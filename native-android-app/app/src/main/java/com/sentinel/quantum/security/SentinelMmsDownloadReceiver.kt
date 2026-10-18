@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapter
 import java.util.concurrent.Executors
 
 /**
@@ -227,6 +229,24 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                     "Chronologie privée indisponible; le traitement MMS téléchargé continue"
                 )
             }
+        }
+
+        val plan = (prepared as? IncomingMmsProjectionPipeline.Result.Ready)?.plan
+        val projected = providerResult as? IncomingMmsConversationStore.ProjectResult.Ready
+        val transportState = when {
+            providerInserted -> SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_READY
+            providerReplay -> SmsMmsEvidenceAdapter.MmsTransportState.PROVIDER_REPLAY_NO_DUPLICATE
+            safePreview is MmsDecodePipeline.Result.Accepted ->
+                SmsMmsEvidenceAdapter.MmsTransportState.SAFE_PREVIEW_READY
+            else -> SmsMmsEvidenceAdapter.MmsTransportState.LOCAL_QUARANTINE
+        }
+        if (plan != null && projected != null) {
+            IntelligenceCoreRuntime.publishIncomingMmsObservation(
+                context = context,
+                providerMessageId = projected.providerMessageId,
+                rawSender = plan.sender,
+                transportState = transportState
+            )
         }
 
         // Recovery metadata is retired only after provider success/replay or an explicit quarantine

@@ -44,7 +44,9 @@ class Ed25519WearableHandshakeVerifier(
             protocolVersion = candidate.protocolVersion,
             capabilities = capabilities,
             challengeNonce = candidate.challengeNonce,
-            issuedAtMs = candidate.issuedAtMs
+            issuedAtMs = candidate.issuedAtMs,
+            phoneHpkePublicKeyFingerprintSha256 = candidate.phoneHpkePublicKeyFingerprintSha256,
+            wearableHpkePublicKeyFingerprintSha256 = candidate.wearableHpkePublicKeyFingerprintSha256
         )
         if (!MessageDigest.isEqual(canonical, candidate.signedTranscript)) return null
 
@@ -58,7 +60,9 @@ class Ed25519WearableHandshakeVerifier(
             keyFingerprintSha256 = candidate.keyFingerprintSha256,
             sessionId = candidate.sessionId,
             protocolVersion = candidate.protocolVersion,
-            capabilities = capabilities
+            capabilities = capabilities,
+            phoneHpkePublicKeyFingerprintSha256 = candidate.phoneHpkePublicKeyFingerprintSha256,
+            wearableHpkePublicKeyFingerprintSha256 = candidate.wearableHpkePublicKeyFingerprintSha256
         )
     }
 
@@ -67,7 +71,9 @@ class Ed25519WearableHandshakeVerifier(
 }
 
 object WearableHandshakeTranscriptCodec {
-    private const val DOMAIN = "sentinel-wearable-handshake-v1"
+    private const val DOMAIN_V1 = "sentinel-wearable-handshake-v1"
+    private const val DOMAIN_V2 = "sentinel-wearable-handshake-v2"
+    private val SHA256_HEX = Regex("^[0-9a-f]{64}$")
 
     fun encode(
         stableId: String,
@@ -76,24 +82,45 @@ object WearableHandshakeTranscriptCodec {
         protocolVersion: Int,
         capabilities: Set<String>,
         challengeNonce: String,
-        issuedAtMs: Long
+        issuedAtMs: Long,
+        phoneHpkePublicKeyFingerprintSha256: String? = null,
+        wearableHpkePublicKeyFingerprintSha256: String? = null
     ): ByteArray {
         require(stableId.isNotBlank())
-        require(keyFingerprintSha256.matches(Regex("^[0-9a-f]{64}$")))
+        require(keyFingerprintSha256.matches(SHA256_HEX))
         require(sessionId.isNotBlank())
-        require(protocolVersion > 0)
         require(capabilities.isNotEmpty())
-        // Commas delimit capabilities in protocol v1. Reject embedded delimiters so
-        // {"A,B"} cannot authenticate as {"A", "B"} with the same signed bytes.
+        // Commas delimit capabilities. Reject embedded delimiters so {"A,B"} cannot authenticate
+        // as {"A", "B"} with the same signed bytes.
         require(capabilities.none { it.isBlank() || ',' in it || '\n' in it || '\r' in it })
         require('\n' !in stableId && '\r' !in stableId)
         require('\n' !in sessionId && '\r' !in sessionId)
         require(challengeNonce.matches(Regex("^[A-Za-z0-9_-]{22,128}$")))
         require(issuedAtMs >= 0)
 
+        val domain = when (protocolVersion) {
+            1 -> {
+                require(
+                    phoneHpkePublicKeyFingerprintSha256 == null &&
+                        wearableHpkePublicKeyFingerprintSha256 == null
+                ) { "protocol v1 cannot carry secure HPKE bindings" }
+                DOMAIN_V1
+            }
+            2 -> {
+                require(phoneHpkePublicKeyFingerprintSha256?.matches(SHA256_HEX) == true) {
+                    "protocol v2 requires a lowercase SHA-256 phone HPKE fingerprint"
+                }
+                require(wearableHpkePublicKeyFingerprintSha256?.matches(SHA256_HEX) == true) {
+                    "protocol v2 requires a lowercase SHA-256 wearable HPKE fingerprint"
+                }
+                DOMAIN_V2
+            }
+            else -> throw IllegalArgumentException("unsupported wearable handshake protocol version")
+        }
+
         val sortedCapabilities = capabilities.toSortedSet().joinToString(",")
         val transcript = buildString {
-            append(DOMAIN).append('\n')
+            append(domain).append('\n')
             append(stableId).append('\n')
             append(keyFingerprintSha256).append('\n')
             append(sessionId).append('\n')
@@ -101,6 +128,10 @@ object WearableHandshakeTranscriptCodec {
             append(sortedCapabilities).append('\n')
             append(challengeNonce).append('\n')
             append(issuedAtMs).append('\n')
+            if (protocolVersion == 2) {
+                append(phoneHpkePublicKeyFingerprintSha256).append('\n')
+                append(wearableHpkePublicKeyFingerprintSha256).append('\n')
+            }
         }
         // String.toByteArray replaces malformed UTF-16 with '?', allowing two different
         // identity/session/capability strings to share signed bytes. Refuse lossy encoding.
