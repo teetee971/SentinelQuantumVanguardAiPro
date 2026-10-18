@@ -143,6 +143,30 @@ class PhoneWearableSecureHandshakeRuntimeTest {
         assertEquals(2, calls)
     }
 
+    @Test fun incorrectPhoneHpkeFingerprintCannotStartPairing() {
+        val runtime = PhoneWearableSecureHandshakeRuntime(
+            pairingStore = WearablePairingStore(MemoryPairingBackend()),
+            replayGuard = WearableHandshakeReplayGuard(clockMs = { 100L }, elapsedClockMs = { 100L }),
+            sessionAuthority = WearableSessionAuthority(),
+            hpkeFactory = PhoneWearableHpkeFactory {
+                object : PhoneWearableHpkeMaterial {
+                    override val publicKeyEncoded = "phone-key".toByteArray()
+                    override val fingerprintSha256 = "0".repeat(64)
+                    override fun encryptForWearable(
+                        wearablePublicKeyEncoded: ByteArray, plaintext: ByteArray, contextInfo: ByteArray
+                    ): ByteArray = error("not authorized")
+                    override fun decryptFromWearable(ciphertext: ByteArray, contextInfo: ByteArray): ByteArray =
+                        error("not authorized")
+                }
+            },
+            transport = PhoneWearableHandshakeTransport { _, _, _, _ -> error("must not send") },
+            activate = { _, _, _, _ -> error("must not activate") },
+            clockMs = { 100L }
+        )
+        assertFalse(runtime.start("node-1", observation, setOf(WearableCapability.CONNECTION_STATE)))
+        assertNull(runtime.pendingForNode("node-1"))
+    }
+
     @Test fun inlineFailureCallbackNeverReportsChallengeAsSent() {
         val runtime = PhoneWearableSecureHandshakeRuntime(
             pairingStore = WearablePairingStore(MemoryPairingBackend()),
