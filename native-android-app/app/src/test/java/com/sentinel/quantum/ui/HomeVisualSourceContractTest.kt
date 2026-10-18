@@ -108,9 +108,9 @@ class HomeVisualSourceContractTest {
     }
 
     @Test
-    fun primaryActivationActionPrecedesTheTallHeroAndModuleList() {
+    fun primaryActivationActionPrecedesTheTallCommandSceneAndModuleList() {
         val action = source.indexOf("SentinelActionTile(")
-        val hero = source.indexOf("SentinelHeroVisual(")
+        val hero = source.indexOf("SentinelHolographicScene(")
         val modules = source.indexOf("homeState.modules.forEach")
         assertTrue("Activation must be the first content in the hero/priority region",
             action >= 0 && action < hero && hero < modules)
@@ -156,7 +156,8 @@ class HomeVisualSourceContractTest {
     fun homeWiresPremiumCommandCenterAndStableSemantics() {
         listOf(
             "HomeSecurityPresentation",
-            "SentinelHeroVisual",
+            "SentinelHolographicScene",
+            "SentinelSceneKind.COMMAND_CENTER",
             "coreModules",
             "home_security_hero",
             "home_module_phone_core",
