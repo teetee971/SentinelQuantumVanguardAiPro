@@ -103,9 +103,12 @@ class D1VisualScreenshotInstrumentationTest {
         }
         val scenario = ActivityScenario.launch<T>(intent)
         try {
-            instrumentation.waitForIdleSync()
             SystemClock.sleep(2_000)
-            instrumentation.waitForIdleSync()
+            // Several D.1 scenes intentionally keep a bounded holographic animation active.
+            // waitForIdleSync() would wait forever on those frames, so use a bounded delay and
+            // a main-thread barrier that does not require the choreographer to become idle.
+            instrumentation.runOnMainSync { }
+            SystemClock.sleep(250)
             writeDisplayCapture(name)
         } finally {
             scenario.close()
