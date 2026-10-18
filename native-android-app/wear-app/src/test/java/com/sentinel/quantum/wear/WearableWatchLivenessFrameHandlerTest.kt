@@ -32,8 +32,8 @@ class WearableWatchLivenessFrameHandlerTest {
         handler.onFrame("node-1", WearableProtocolV2.LIVENESS_PATH, WearableProtocolV2.Frame(plaintext))
 
         assertEquals(1, sent.size)
-        val responseFrame = assertNotNull(WearableProtocolV2.decodeFrame(sent.single()))
-        val echoed = assertNotNull(WearableProtocolV2.decodeLivenessPlaintext(responseFrame.payload))
+        val responseFrame = requireNotNull(WearableProtocolV2.decodeFrame(sent.single()))
+        val echoed = requireNotNull(WearableProtocolV2.decodeLivenessPlaintext(responseFrame.payload))
         assertEquals(request.sessionId, echoed.sessionId)
         assertEquals(request.sequenceNumber, echoed.sequenceNumber)
         assertEquals(request.sentAtMs, echoed.sentAtMs)

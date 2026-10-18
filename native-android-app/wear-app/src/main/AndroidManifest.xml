@@ -6,6 +6,9 @@
         android:allowBackup="false"
         android:label="Sentinel"
         android:supportsRtl="true">
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="false" />
         <service
             android:name=".SentinelWearListenerService"
             android:exported="true">

@@ -73,7 +73,8 @@ class PhoneWearableSecureMessageRuntimeTest {
             authority.activate(
                 attempt, session,
                 VerifiedWearableHandshakeFixture.create(
-                    "watch-2", "a".repeat(64), "session-2", 2, setOf("CONNECTION_STATE")
+                    "watch-2", "a".repeat(64), "session-2", 2, setOf("CONNECTION_STATE"),
+                    "b".repeat(64), "c".repeat(64)
                 )
             )
         )
@@ -127,7 +128,8 @@ class PhoneWearableSecureMessageRuntimeTest {
                 attempt,
                 session,
                 VerifiedWearableHandshakeFixture.create(
-                    "watch-1", "a".repeat(64), "session-1", 2, setOf("CONNECTION_STATE")
+                    "watch-1", "a".repeat(64), "session-1", 2, setOf("CONNECTION_STATE"),
+                    "b".repeat(64), "c".repeat(64)
                 )
             )
         )

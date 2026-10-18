@@ -88,6 +88,9 @@ class PhonePrivateTimelineStore(context: Context) {
                     IntegrationCapabilityId.MMS,
                     event.timestampMs
                 )
+            // Wi-Fi observations publish their integration truth through NetworkTimelineStore.
+            // Keep the private evidence append-only here without duplicating that signal.
+            PhonePrivateTimeline.Kind.WIFI -> Unit
         }
     }
 

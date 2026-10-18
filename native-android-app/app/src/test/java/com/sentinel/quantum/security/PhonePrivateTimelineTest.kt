@@ -37,4 +37,18 @@ class PhonePrivateTimelineTest {
         assertNull(PhonePrivateTimeline.sanitize(event.copy(signal = "A".repeat(161)), 100L))
         assertNull(PhonePrivateTimeline.sanitize(event.copy(timestampMs = 101L), 100L))
     }
+
+    @Test fun wifiEvidenceRemainsBoundedPrivateEvidence() {
+        val event = PhonePrivateTimeline.Event(
+            PhonePrivateTimeline.Kind.WIFI,
+            timestampMs = 100L,
+            direction = "LOCAL",
+            signal = "WIFI_SCAN_FRESH"
+        )
+
+        val summary = PhonePrivateTimeline.summarize(listOf(event), nowMs = 100L)
+
+        assertEquals(listOf(event), summary.events)
+        assertFalse(summary.coordinatedCallSms)
+    }
 }

@@ -45,7 +45,10 @@ class LocalCallHistoryContextResolverTest {
 
         assertEquals(
             setOf("recentCalls", "missedCalls", "lastInteractionEpochMillis"),
-            context::class.java.declaredFields.map { it.name }.toSet()
+            context::class.java.declaredFields
+                .map { it.name }
+                .filterNot { it.startsWith("$") }
+                .toSet()
         )
     }
 

@@ -34,6 +34,25 @@ class WearableSecureTransportInboxTest {
         }
     }
 
+    @Test fun applicationMessageIsRejectedEvenWhenHandlerIsInstalled() {
+        var called = false
+        WearableSecureTransportInbox.install(
+            WearableSecureFrameHandler { _, _, _ -> called = true }
+        )
+        try {
+            assertFalse(
+                WearableSecureTransportInbox.dispatch(
+                    "node-1",
+                    WearableProtocolV2.MESSAGE_PATH,
+                    WearableProtocolV2.Frame(byteArrayOf(1))
+                )
+            )
+            assertFalse(called)
+        } finally {
+            WearableSecureTransportInbox.clear()
+        }
+    }
+
     @Test fun successfulHandlerIsReportedAsDispatched() {
         var called = false
         WearableSecureTransportInbox.install(
@@ -43,7 +62,7 @@ class WearableSecureTransportInboxTest {
             assertTrue(
                 WearableSecureTransportInbox.dispatch(
                     "node-1",
-                    WearableProtocolV2.MESSAGE_PATH,
+                    WearableProtocolV2.LIVENESS_PATH,
                     WearableProtocolV2.Frame(byteArrayOf(1))
                 )
             )
@@ -64,7 +83,7 @@ class WearableSecureTransportInboxTest {
         assertTrue(
             WearableSecureTransportInbox.dispatch(
                 "node-1",
-                WearableProtocolV2.MESSAGE_PATH,
+                WearableProtocolV2.LIVENESS_PATH,
                 WearableProtocolV2.Frame(byteArrayOf(1))
             )
         )

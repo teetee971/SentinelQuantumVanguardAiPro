@@ -6,6 +6,6 @@ plugins {
 kotlin { jvmToolchain(17) }
 
 dependencies {
-    implementation 'com.google.crypto.tink:tink:1.23.0'
+    implementation 'com.google.crypto.tink:tink-android:1.23.0'
     testImplementation 'junit:junit:4.13.2'
 }
