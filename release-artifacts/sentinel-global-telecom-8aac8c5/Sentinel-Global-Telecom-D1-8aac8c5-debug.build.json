@@ -1,0 +1,24 @@
+{
+  "artifact": "Sentinel-Global-Telecom-D1-8aac8c5-debug.apk",
+  "source_commit": "8aac8c5fb57b9d6d1cbb3521005676b00eeaa94f",
+  "source_branch": "feat/global-telecom-intelligence-d1-phone-core",
+  "package": "com.sentinel.quantum",
+  "version_name": "1.0.9",
+  "version_code": 10,
+  "bytes": 100536849,
+  "sha256": "1594504f6c9e8d2551a72e3882a6b43428c6d07ae41f1173bdddea46559a5ddf",
+  "signing": {
+    "type": "debug",
+    "scheme": "v2",
+    "certificate_sha256": "5e0cc6795d7bce9a3eb3e69c845ecfd71511abc2c680fb086d6d0d7878698bff"
+  },
+  "build_task": ":app:assembleDebug",
+  "test_tasks": [
+    ":app:testDebugUnitTest",
+    ":app:compileDebugAndroidTestKotlin",
+    ":app:lintDebug"
+  ],
+  "device_validation": false,
+  "visual_capture_validation": false,
+  "note": "Debug test artifact; no physical Galaxy S24+ or Android emulator was available."
+}
