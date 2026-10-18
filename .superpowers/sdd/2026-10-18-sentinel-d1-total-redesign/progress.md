@@ -20,3 +20,12 @@ Ruling: Use the existing Compose Canvas visual foundation instead of adding a he
 - Preserved existing visual-token tests and added coverage for palette/status semantics and core evidence models.
 - Verification: targeted unit tests pass; `:app:lintDebug` passes.
 
+## Tasks 2–7 — implementation checkpoint
+
+- Connected `SentinelBottomNavigation`, `SentinelHeroVisual` and the native `SentinelQuantumCore` to the Home command center while preserving existing routes, test tags and standalone intents.
+- Extended the D.1 core to Phone Core dialer, active call, number identity, SMS/MMS, activation/diagnostic and Voice Studio surfaces. Existing Telecom, SMS/MMS, VPN and voice boundaries remain the source of truth.
+- Harmonized Phone Security, Network Center, VPN, Digital Exposure, Security Audit, System Doctor, permissions, SMS/e-mail analysis, community, settings, call filtering, OSINT and local logs with runtime-driven nodes, evidence/provenance labels and explicit unknown/limited/locked states.
+- Added the Assistant Sentinel route and deterministic local prompt policy that is explicitly advice rather than technical proof.
+- Corrected Canvas `dp`/`px` coordinate handling for high-density Android devices and made evidence edges render only for proof-backed references.
+- Verification checkpoint: `:app:compileDebugKotlin`, `:app:compileDebugAndroidTestKotlin`, `:app:testDebugUnitTest` (1,405 tests), and `:app:lintDebug` pass. No Android runtime is available for install, screenshots or instrumentation execution.
+
