@@ -1,0 +1,24 @@
+{
+  "artifact": "Sentinel-Global-Telecom-D1-38a6749-debug.apk",
+  "source_commit": "38a674912367f858e28f01766b8f50af480b34fa",
+  "package": "com.sentinel.quantum",
+  "version_name": "1.0.9",
+  "version_code": 10,
+  "size_bytes": 98548972,
+  "sha256": "d785d2b94a02c4989322e829d427af7420b849cdca83d0d9dc144c9af3bd67e2",
+  "signature": {
+    "type": "Android Debug",
+    "apk_signature_scheme_v2": true,
+    "certificate_sha256": "5e0cc6795d7bce9a3eb3e69c845ecfd71511abc2c680fb086d6d0d7878698bff"
+  },
+  "qualification": {
+    "host_build": true,
+    "unit_tests": true,
+    "lint": true,
+    "android_instrumentation": false,
+    "visual_capture_set": false,
+    "galaxy_s24_plus": false,
+    "release": false,
+    "debug_only_test_artifact": true
+  }
+}
