@@ -87,6 +87,39 @@ class CallScreeningEnforcementPolicyTest {
         assertEquals(CallRuleEngine.Action.BLOCK, CallScreeningEnforcementPolicy.actionFor(decision))
     }
 
+    @Test fun internationalCountryPrefixBlocksOnlyOnExplicitUserRule() {
+        val candidates = listOf(
+            "+1" to "+12025550123",
+            "+44" to "+442079460123",
+            "+590" to "+590690123456",
+            "+850" to "+85012345678",
+            "+7" to "+74951234567"
+        )
+        candidates.forEach { (prefix, number) ->
+            val noManualRule = CallRuleEngine().evaluate(number)
+            assertEquals(
+                "Unlisted $prefix must be allowed",
+                CallRuleEngine.Action.ALLOW,
+                CallScreeningEnforcementPolicy.actionFor(noManualRule)
+            )
+            val explicitRule = CallRuleEngine(blockedPrefixes = setOf(prefix)).evaluate(number)
+            assertEquals(
+                "User-configured $prefix must remain enforceable",
+                CallRuleEngine.Action.BLOCK,
+                CallScreeningEnforcementPolicy.actionFor(explicitRule)
+            )
+        }
+    }
+
+    @Test fun unknownOrWithheldInternationalNumberIsAllowed() {
+        listOf(null, "", "anonymous", "+").forEach { raw ->
+            assertEquals(
+                CallRuleEngine.Action.ALLOW,
+                CallScreeningEnforcementPolicy.actionFor(CallRuleEngine().evaluate(raw))
+            )
+        }
+    }
+
     @Test fun allowRemainsAllow() {
         for (source in CallRuleEngine.RuleSource.values()) {
             assertEquals(
