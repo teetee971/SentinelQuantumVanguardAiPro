@@ -54,6 +54,7 @@ fun CallBlockingScreen(navController: NavController) {
     var snapshot by remember { mutableStateOf(store.snapshot()) }
     var number by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
+    var pendingBroadPrefix by remember { mutableStateOf<String?>(null) }
     var prefixMenuExpanded by remember { mutableStateOf(false) }
     var prefixSearch by remember { mutableStateOf("") }
     var status by remember { mutableStateOf<String?>(null) }
@@ -298,13 +299,43 @@ fun CallBlockingScreen(navController: NavController) {
             )
             Button(
                 onClick = {
-                    status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
-                    snapshot = store.snapshot()
-                    prefix = ""
+                    val normalized = com.sentinel.quantum.security.CallRuleEngine.normalizePrefix(prefix)
+                    if (normalized != null && PhoneCountryPrefixCatalog.find(normalized) != null) {
+                        pendingBroadPrefix = normalized
+                    } else {
+                        status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
+                        snapshot = store.snapshot()
+                        prefix = ""
+                    }
                 },
                 enabled = prefix.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.call_blocking_add_prefix)) }
+
+            pendingBroadPrefix?.let { broad ->
+                AlertDialog(
+                    onDismissRequest = { pendingBroadPrefix = null },
+                    title = { Text("Confirmer un blocage international") },
+                    text = {
+                        Text(
+                            "Le préfixe $broad peut couvrir plusieurs pays ou territoires. " +
+                                "Tous les appels présentant ce préfixe pourraient être bloqués, " +
+                                "même s'ils sont légitimes. Le pays réel de l'appelant n'est pas vérifié."
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            status = if (store.addBlockedPrefix(broad)) prefixAddedText else prefixInvalidText
+                            snapshot = store.snapshot()
+                            prefix = ""
+                            pendingBroadPrefix = null
+                        }) { Text("Confirmer le blocage") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { pendingBroadPrefix = null }) { Text("Annuler") }
+                    }
+                )
+            }
 
             val manualPrefixes = store.manualBlockedPrefixes()
             Text(
