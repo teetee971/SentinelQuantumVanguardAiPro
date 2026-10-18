@@ -99,7 +99,8 @@ fun SentinelHeroVisual(
                         text = title,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1
+                        maxLines = 2,
+                        softWrap = true
                     )
                     SentinelStatusChip(status = status)
                 }

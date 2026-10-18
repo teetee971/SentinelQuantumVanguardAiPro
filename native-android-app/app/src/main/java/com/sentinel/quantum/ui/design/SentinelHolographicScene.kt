@@ -60,7 +60,8 @@ enum class SentinelSceneKind {
     VPN_GLOBE,
     CONTACT_ORBIT,
     SECURE_MESSAGES,
-    NUMBER_IDENTITY
+    NUMBER_IDENTITY,
+    NETWORK_TOPOLOGY
 }
 
 data class SentinelHolographicSceneNode(
@@ -81,6 +82,21 @@ data class SentinelHolographicSceneModel(
     val evidenceSource: String,
     val progress: Float? = null,
     val nodes: List<SentinelHolographicSceneNode> = emptyList()
+)
+
+/** Material recipe shared by the scenes while keeping each scene's geometry distinct. */
+private data class SentinelSceneMaterial(
+    val primary: Color,
+    val secondary: Color,
+    val highlight: Color,
+    val shadow: Color
+)
+
+private fun sceneMaterial(accent: Color): SentinelSceneMaterial = SentinelSceneMaterial(
+    primary = accent,
+    secondary = if (accent == SentinelD1.Danger) SentinelD1.Warning else SentinelD1.ElectricBlue,
+    highlight = Color.White,
+    shadow = SentinelD1.Background
 )
 
 private fun sceneAccent(status: SentinelStatus): Color = when (status) {
@@ -259,7 +275,393 @@ private fun DrawScope.drawScene(
         SentinelSceneKind.CONTACT_ORBIT -> drawContactOrbit(accent, phase)
         SentinelSceneKind.SECURE_MESSAGES -> drawMessageIdentity(accent, phase)
         SentinelSceneKind.NUMBER_IDENTITY -> drawNumberIdentity(accent, phase)
+        SentinelSceneKind.NETWORK_TOPOLOGY -> drawNetworkTopology(accent, phase, model.nodes)
     }
+}
+
+private fun DrawScope.drawSceneMaterial(
+    center: Offset,
+    radius: Float,
+    material: SentinelSceneMaterial
+) {
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                material.highlight.copy(alpha = 0.18f),
+                material.primary.copy(alpha = 0.16f),
+                material.secondary.copy(alpha = 0.08f),
+                Color.Transparent
+            ),
+            center = Offset(center.x - radius * 0.28f, center.y - radius * 0.34f),
+            radius = radius * 1.55f
+        ),
+        radius = radius * 1.55f,
+        center = center
+    )
+    drawCircle(
+        color = material.shadow.copy(alpha = 0.32f),
+        radius = radius * 1.06f,
+        center = Offset(center.x, center.y + radius * 0.08f)
+    )
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                material.highlight.copy(alpha = 0.20f),
+                material.primary.copy(alpha = 0.18f),
+                material.secondary.copy(alpha = 0.10f),
+                material.shadow.copy(alpha = 0.28f)
+            ),
+            center = Offset(center.x - radius * 0.24f, center.y - radius * 0.28f),
+            radius = radius * 1.02f
+        ),
+        radius = radius,
+        center = center
+    )
+    drawCircle(
+        color = material.primary.copy(alpha = 0.64f),
+        radius = radius,
+        center = center,
+        style = Stroke(width = 2.4f)
+    )
+    drawCircle(
+        color = material.highlight.copy(alpha = 0.34f),
+        radius = radius * 0.94f,
+        center = Offset(center.x - radius * 0.02f, center.y - radius * 0.02f),
+        style = Stroke(width = 1.2f)
+    )
+}
+
+private fun DrawScope.drawDepthRings(
+    center: Offset,
+    radius: Float,
+    material: SentinelSceneMaterial,
+    phase: Float
+) {
+    repeat(4) { index ->
+        val factor = 0.68f + index * 0.13f
+        val y = center.y + (index - 1.5f) * radius * 0.10f
+        drawOval(
+            color = material.primary.copy(alpha = 0.22f + index * 0.035f),
+            topLeft = Offset(center.x - radius * factor, y - radius * 0.12f),
+            size = Size(radius * factor * 2f, radius * 0.24f),
+            style = Stroke(width = 1.6f + index * 0.35f)
+        )
+    }
+    drawOrbit(center, radius * 1.18f, material.primary, 0.23f, phase)
+    drawOrbit(center, radius * 1.42f, material.secondary, -0.16f, phase * 0.72f)
+}
+
+private fun DrawScope.drawSpecularHighlight(
+    center: Offset,
+    radius: Float,
+    material: SentinelSceneMaterial,
+    phase: Float
+) {
+    drawArc(
+        color = material.highlight.copy(alpha = 0.82f),
+        startAngle = 202f + phase * 12f,
+        sweepAngle = 48f,
+        useCenter = false,
+        topLeft = Offset(center.x - radius * 0.86f, center.y - radius * 0.86f),
+        size = Size(radius * 1.72f, radius * 1.72f),
+        style = Stroke(width = 3.2f, cap = StrokeCap.Round)
+    )
+    drawCircle(
+        color = material.highlight.copy(alpha = 0.92f),
+        radius = 3.4f,
+        center = Offset(center.x - radius * 0.48f, center.y - radius * 0.57f)
+    )
+}
+
+private fun DrawScope.drawParticleField(
+    center: Offset,
+    radius: Float,
+    color: Color,
+    phase: Float,
+    count: Int = 18
+) {
+    repeat(count) { index ->
+        val angle = index * (2f * PI.toFloat() / count) + phase * (0.18f + index % 3 * 0.03f)
+        val distance = radius * (1.12f + (index % 5) * 0.095f)
+        val point = Offset(
+            x = center.x + cos(angle) * distance,
+            y = center.y + sin(angle) * distance * 0.56f
+        )
+        drawCircle(
+            color = color.copy(alpha = 0.22f + (index % 4) * 0.12f),
+            radius = 1.4f + (index % 3) * 0.9f,
+            center = point
+        )
+    }
+}
+
+private fun DrawScope.drawPerspectiveGrid(accent: Color) {
+    val horizon = size.height * 0.68f
+    repeat(5) { index ->
+        val progress = (index + 1) / 5f
+        val y = horizon + (size.height - horizon) * progress
+        drawLine(
+            color = accent.copy(alpha = 0.10f - index * 0.012f),
+            start = Offset(size.width * 0.04f, y),
+            end = Offset(size.width * 0.96f, y),
+            strokeWidth = 1f
+        )
+    }
+    repeat(9) { index ->
+        val x = size.width * (0.04f + index / 8f * 0.92f)
+        drawLine(
+            color = accent.copy(alpha = 0.08f),
+            start = Offset(size.width / 2f, horizon),
+            end = Offset(x, size.height),
+            strokeWidth = 1f
+        )
+    }
+}
+
+private fun DrawScope.drawVolumetricSphere(
+    center: Offset,
+    radius: Float,
+    accent: Color,
+    phase: Float,
+    grid: Boolean = true
+) {
+    val material = sceneMaterial(accent)
+    drawSceneMaterial(center, radius, material)
+    drawDepthRings(center, radius, material, phase)
+    if (grid) {
+        listOf(0.28f, 0.54f, 0.78f).forEach { factor ->
+            drawOval(
+                color = material.highlight.copy(alpha = 0.22f),
+                topLeft = Offset(center.x - radius * factor, center.y - radius),
+                size = Size(radius * factor * 2f, radius * 2f),
+                style = Stroke(width = 1.2f)
+            )
+        }
+        listOf(-0.52f, -0.18f, 0.18f, 0.52f).forEach { latitude ->
+            val latitudeRadius = radius * cos(latitude * PI / 2.0).toFloat()
+            drawOval(
+                color = material.primary.copy(alpha = 0.28f),
+                topLeft = Offset(
+                    center.x - latitudeRadius,
+                    center.y + latitude * radius - radius * 0.10f
+                ),
+                size = Size(latitudeRadius * 2f, radius * 0.20f),
+                style = Stroke(width = 1.1f)
+            )
+        }
+    }
+    drawSpecularHighlight(center, radius, material, phase)
+    drawParticleField(center, radius, material.primary, phase)
+}
+
+private fun shieldPath(center: Offset, radius: Float): Path = Path().apply {
+    moveTo(center.x, center.y - radius)
+    lineTo(center.x + radius * 0.78f, center.y - radius * 0.58f)
+    lineTo(center.x + radius * 0.62f, center.y + radius * 0.50f)
+    quadraticTo(center.x, center.y + radius * 1.14f, center.x - radius * 0.62f, center.y + radius * 0.50f)
+    lineTo(center.x - radius * 0.78f, center.y - radius * 0.58f)
+    close()
+}
+
+private fun DrawScope.drawExtrudedShield(
+    center: Offset,
+    radius: Float,
+    accent: Color
+) {
+    val material = sceneMaterial(accent)
+    drawPath(
+        shieldPath(Offset(center.x, center.y + radius * 0.18f), radius),
+        color = material.shadow.copy(alpha = 0.55f)
+    )
+    drawPath(
+        shieldPath(Offset(center.x - radius * 0.06f, center.y + radius * 0.08f), radius * 1.06f),
+        color = material.secondary.copy(alpha = 0.18f)
+    )
+    drawPath(shieldPath(center, radius), color = material.primary.copy(alpha = 0.22f))
+    drawPath(
+        shieldPath(center, radius),
+        color = material.highlight.copy(alpha = 0.96f),
+        style = Stroke(width = 2.8f, join = StrokeJoin.Round)
+    )
+    drawLine(
+        color = material.highlight.copy(alpha = 0.94f),
+        start = Offset(center.x - radius * 0.30f, center.y),
+        end = Offset(center.x - radius * 0.05f, center.y + radius * 0.25f),
+        strokeWidth = 3f,
+        cap = StrokeCap.Round
+    )
+    drawLine(
+        color = material.highlight.copy(alpha = 0.94f),
+        start = Offset(center.x - radius * 0.05f, center.y + radius * 0.25f),
+        end = Offset(center.x + radius * 0.38f, center.y - radius * 0.30f),
+        strokeWidth = 3f,
+        cap = StrokeCap.Round
+    )
+}
+
+private fun DrawScope.drawPerspectivePhone(
+    center: Offset,
+    width: Float,
+    height: Float,
+    accent: Color,
+    phase: Float
+) {
+    val material = sceneMaterial(accent)
+    withTransform({ rotate(-7f + sin(phase * 2f * PI.toFloat()) * 1.5f, center) }) {
+        repeat(4) { layer ->
+            val depth = layer * 12f
+            drawRoundRect(
+                color = material.secondary.copy(alpha = 0.12f + layer * 0.025f),
+                topLeft = Offset(center.x - width / 2f - depth * 0.45f, center.y - height / 2f + depth),
+                size = Size(width + depth, height),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(22f, 22f),
+                style = Stroke(width = 1.6f)
+            )
+        }
+        drawRoundRect(
+            color = material.primary.copy(alpha = 0.13f),
+            topLeft = Offset(center.x - width / 2f, center.y - height / 2f),
+            size = Size(width, height),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(22f, 22f)
+        )
+        drawRoundRect(
+            color = material.highlight.copy(alpha = 0.88f),
+            topLeft = Offset(center.x - width / 2f, center.y - height / 2f),
+            size = Size(width, height),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(22f, 22f),
+            style = Stroke(width = 2.6f)
+        )
+        drawRoundRect(
+            color = material.shadow.copy(alpha = 0.58f),
+            topLeft = Offset(center.x - width * 0.40f, center.y - height * 0.37f),
+            size = Size(width * 0.80f, height * 0.70f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(15f, 15f)
+        )
+        drawRoundRect(
+            color = material.secondary.copy(alpha = 0.42f),
+            topLeft = Offset(center.x - width * 0.40f, center.y - height * 0.37f),
+            size = Size(width * 0.80f, height * 0.70f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(15f, 15f),
+            style = Stroke(width = 1.2f)
+        )
+        drawCircle(material.highlight.copy(alpha = 0.88f), 4f, Offset(center.x, center.y - height * 0.30f))
+        drawLine(
+            color = material.primary.copy(alpha = 0.70f),
+            start = Offset(center.x - width * 0.30f, center.y + height * 0.12f),
+            end = Offset(center.x + width * 0.30f, center.y + height * 0.12f),
+            strokeWidth = 2f
+        )
+    }
+}
+
+private fun DrawScope.drawHolographicCube(
+    center: Offset,
+    cubeSize: Float,
+    accent: Color,
+    phase: Float
+) {
+    val material = sceneMaterial(accent)
+    drawSceneMaterial(center, cubeSize * 1.14f, material)
+    drawDepthRings(center, cubeSize * 0.92f, material, phase)
+    drawCube(center, cubeSize, accent, phase)
+    drawParticleField(center, cubeSize * 1.08f, material.primary, phase, count = 14)
+}
+
+private fun DrawScope.drawContainmentCylinder(
+    centerX: Float,
+    top: Float,
+    bottom: Float,
+    radius: Float,
+    accent: Color,
+    phase: Float
+) {
+    val material = sceneMaterial(accent)
+    drawRoundRect(
+        color = material.primary.copy(alpha = 0.08f),
+        topLeft = Offset(centerX - radius, top),
+        size = Size(radius * 2f, bottom - top),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(22f, 22f)
+    )
+    drawOval(
+        color = material.highlight.copy(alpha = 0.68f),
+        topLeft = Offset(centerX - radius, top - radius * 0.30f),
+        size = Size(radius * 2f, radius * 0.60f),
+        style = Stroke(width = 2.8f)
+    )
+    drawOval(
+        color = material.primary.copy(alpha = 0.42f),
+        topLeft = Offset(centerX - radius, bottom - radius * 0.30f),
+        size = Size(radius * 2f, radius * 0.60f),
+        style = Stroke(width = 2.8f)
+    )
+    listOf(-0.72f, 0f, 0.72f).forEach { offset ->
+        drawLine(
+            color = material.primary.copy(alpha = 0.36f),
+            start = Offset(centerX + radius * offset, top),
+            end = Offset(centerX + radius * offset, bottom),
+            strokeWidth = if (offset == 0f) 2.2f else 1.1f
+        )
+    }
+    repeat(4) { index ->
+        val y = top + (index + 1) * (bottom - top) / 5f
+        drawOval(
+            color = material.secondary.copy(alpha = 0.22f),
+            topLeft = Offset(centerX - radius * 0.90f, y - radius * 0.08f),
+            size = Size(radius * 1.80f, radius * 0.16f),
+            style = Stroke(width = 1f)
+        )
+    }
+    drawParticleField(Offset(centerX, (top + bottom) / 2f), radius * 0.82f, accent, phase, count = 10)
+}
+
+private fun DrawScope.drawThreatCoreVolume(
+    center: Offset,
+    radius: Float,
+    accent: Color,
+    phase: Float
+) {
+    val material = sceneMaterial(accent)
+    drawSceneMaterial(center, radius, material)
+    repeat(20) { index ->
+        val angle = index * 2f * PI.toFloat() / 20f + phase * 0.16f
+        val inner = Offset(center.x + cos(angle) * radius * 0.76f, center.y + sin(angle) * radius * 0.76f)
+        val outer = Offset(center.x + cos(angle) * radius * (1.12f + (index % 3) * 0.08f), center.y + sin(angle) * radius * (1.12f + (index % 3) * 0.08f))
+        drawLine(material.primary.copy(alpha = 0.74f), inner, outer, strokeWidth = 3.4f, cap = StrokeCap.Round)
+    }
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(material.highlight.copy(alpha = 0.62f), material.primary.copy(alpha = 0.28f), Color.Transparent),
+            center = Offset(center.x - radius * 0.18f, center.y - radius * 0.22f),
+            radius = radius * 1.3f
+        ),
+        radius = radius * 1.3f,
+        center = center
+    )
+    drawCircle(material.primary.copy(alpha = 0.32f), radius * 0.88f, center)
+    drawCircle(material.highlight.copy(alpha = 0.92f), radius, center, style = Stroke(width = 2.8f))
+    drawSpecularHighlight(center, radius, material, phase)
+    drawTriangleAlert(center, radius * 0.38f, accent)
+}
+
+private fun DrawScope.drawNetworkTopology(
+    accent: Color,
+    phase: Float,
+    nodes: List<SentinelHolographicSceneNode>
+) {
+    drawPerspectiveGrid(accent)
+    val center = Offset(size.width / 2f, size.height * 0.48f)
+    drawVolumetricSphere(center, min(size.width, size.height) * 0.17f, accent, phase, grid = false)
+    drawPerspectivePhone(center, min(size.width, size.height) * 0.18f, min(size.width, size.height) * 0.28f, accent, phase)
+    val observedNodes = nodes.ifEmpty {
+        listOf(
+            SentinelHolographicSceneNode("Wi-Fi · Inconnu", SentinelStatus.UNKNOWN),
+            SentinelHolographicSceneNode("Bluetooth · Inconnu", SentinelStatus.UNKNOWN),
+            SentinelHolographicSceneNode("Appareil · Inconnu", SentinelStatus.UNKNOWN),
+            SentinelHolographicSceneNode("Connexion · Inconnu", SentinelStatus.UNKNOWN)
+        )
+    }
+    drawSceneNodes(center, observedNodes, accent, phase, min(size.width, size.height) * 0.34f)
+    drawParticleField(center, min(size.width, size.height) * 0.40f, accent, phase, count = 16)
 }
 
 private fun DrawScope.drawCommandCenter(
@@ -267,16 +669,18 @@ private fun DrawScope.drawCommandCenter(
     phase: Float,
     nodes: List<SentinelHolographicSceneNode>
 ) {
-    drawOrbitalSphere(accent, phase, radiusFactor = 0.26f, grid = true)
+    drawPerspectiveGrid(accent)
     val center = Offset(size.width / 2f, size.height * 0.50f)
-    drawShield(center, min(size.width, size.height) * 0.11f, accent)
+    drawVolumetricSphere(center, min(size.width, size.height) * 0.27f, accent, phase)
+    drawExtrudedShield(center, min(size.width, size.height) * 0.11f, accent)
     drawSceneNodes(center, nodes, accent, phase, radius = min(size.width, size.height) * 0.34f)
 }
 
 private fun DrawScope.drawProtectionSphere(accent: Color, phase: Float) {
-    drawOrbitalSphere(accent, phase, radiusFactor = 0.29f, grid = true)
+    drawPerspectiveGrid(accent)
     val center = Offset(size.width / 2f, size.height * 0.49f)
-    drawShield(center, min(size.width, size.height) * 0.13f, accent)
+    drawVolumetricSphere(center, min(size.width, size.height) * 0.29f, accent, phase)
+    drawExtrudedShield(center, min(size.width, size.height) * 0.13f, accent)
     drawRing(center, min(size.width, size.height) * 0.19f, accent.copy(alpha = 0.65f), 3.2f)
 }
 
@@ -285,9 +689,10 @@ private fun DrawScope.drawVpnGlobe(
     phase: Float,
     nodes: List<SentinelHolographicSceneNode>
 ) {
-    drawOrbitalSphere(accent, phase, radiusFactor = 0.31f, grid = true)
+    drawPerspectiveGrid(accent)
     val center = Offset(size.width / 2f, size.height * 0.48f)
-    drawShield(center, min(size.width, size.height) * 0.105f, accent)
+    drawVolumetricSphere(center, min(size.width, size.height) * 0.31f, accent, phase)
+    drawExtrudedShield(center, min(size.width, size.height) * 0.105f, accent)
     drawSceneNodes(center, nodes, accent, phase, radius = min(size.width, size.height) * 0.37f)
     drawLine(
         color = accent.copy(alpha = 0.82f),
@@ -303,9 +708,10 @@ private fun DrawScope.drawThreatGlobe(
     phase: Float,
     nodes: List<SentinelHolographicSceneNode>
 ) {
-    drawOrbitalSphere(accent, phase, radiusFactor = 0.33f, grid = true)
+    drawPerspectiveGrid(accent)
     val center = Offset(size.width / 2f, size.height * 0.49f)
     val radius = min(size.width, size.height) * 0.33f
+    drawVolumetricSphere(center, radius, accent, phase)
     val pointCount = nodes.take(12).ifEmpty {
         listOf(
             SentinelHolographicSceneNode("Observation inconnue", SentinelStatus.UNKNOWN),
@@ -338,43 +744,7 @@ private fun DrawScope.drawOrbitalSphere(
 ) {
     val center = Offset(size.width / 2f, size.height * 0.48f)
     val radius = min(size.width, size.height) * radiusFactor
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(
-                accent.copy(alpha = 0.30f),
-                SentinelD1.ElectricBlue.copy(alpha = 0.10f),
-                Color.Transparent
-            ),
-            center = center,
-            radius = radius * 1.55f
-        ),
-        radius = radius * 1.55f,
-        center = center
-    )
-    drawCircle(accent.copy(alpha = 0.15f), radius, center)
-    drawCircle(accent.copy(alpha = 0.72f), radius, center, style = Stroke(width = 2.5f))
-    if (grid) {
-        listOf(0.34f, 0.62f, 0.86f).forEach { factor ->
-            drawOval(
-                color = accent.copy(alpha = 0.34f),
-                topLeft = Offset(center.x - radius * factor, center.y - radius),
-                size = Size(radius * factor * 2f, radius * 2f),
-                style = Stroke(width = 1.2f)
-            )
-        }
-        listOf(-0.52f, -0.18f, 0.18f, 0.52f).forEach { latitude ->
-            val latitudeRadius = radius * cos(latitude * PI / 2.0).toFloat()
-            drawOval(
-                color = accent.copy(alpha = 0.25f),
-                topLeft = Offset(center.x - latitudeRadius, center.y + latitude * radius - radius * 0.12f),
-                size = Size(latitudeRadius * 2f, radius * 0.24f),
-                style = Stroke(width = 1f)
-            )
-        }
-    }
-    drawOrbit(center, radius * 1.22f, accent, tilt = 0.26f, phase = phase)
-    drawOrbit(center, radius * 1.42f, SentinelD1.ElectricBlue, tilt = -0.18f, phase = phase * 0.8f)
-    drawCircle(accent.copy(alpha = 0.85f), 4f, Offset(center.x + radius * 1.22f, center.y))
+    drawVolumetricSphere(center, radius, accent, phase, grid)
 }
 
 private fun DrawScope.drawOrbit(
@@ -429,6 +799,14 @@ private fun DrawScope.drawLayeredDevice(accent: Color, phase: Float, report: Boo
     val baseY = size.height * 0.58f
     val width = min(size.width, size.height) * if (report) 0.54f else 0.46f
     val layerCount = if (report) 5 else 4
+    drawPerspectiveGrid(accent)
+    drawPerspectivePhone(
+        center = Offset(centerX, baseY - size.height * 0.08f),
+        width = width * 0.72f,
+        height = size.height * 0.38f,
+        accent = accent,
+        phase = phase
+    )
     repeat(layerCount) { index ->
         val depth = index.toFloat() / layerCount
         val layerWidth = width * (1f - depth * 0.12f)
@@ -457,7 +835,7 @@ private fun DrawScope.drawLayeredDevice(accent: Color, phase: Float, report: Boo
         }
     }
     val shieldCenter = Offset(centerX, baseY - size.height * 0.18f)
-    drawShield(shieldCenter, min(size.width, size.height) * 0.075f, accent)
+    drawExtrudedShield(shieldCenter, min(size.width, size.height) * 0.075f, accent)
     drawOrbit(shieldCenter, min(size.width, size.height) * 0.22f, accent, 0.18f, phase)
 }
 
@@ -468,7 +846,8 @@ private fun DrawScope.drawRiskApplications(
 ) {
     val center = Offset(size.width / 2f, size.height * 0.51f)
     val cubeSize = min(size.width, size.height) * 0.22f
-    drawCube(center, cubeSize, accent, phase)
+    drawPerspectiveGrid(accent)
+    drawHolographicCube(center, cubeSize, accent, phase)
     val apps = nodes.take(8).ifEmpty {
         listOf(
             SentinelHolographicSceneNode("Applications", SentinelStatus.UNKNOWN),
@@ -516,12 +895,30 @@ private fun DrawScope.drawCube(center: Offset, cubeSize: Float, accent: Color, p
         lineTo(leftBack.x, leftBack.y)
         close()
     }
+    val rightFace = Path().apply {
+        moveTo(top.x, top.y)
+        lineTo(right.x, right.y)
+        lineTo(rightBack.x, rightBack.y)
+        lineTo(topBack.x, topBack.y)
+        close()
+    }
+    val leftFace = Path().apply {
+        moveTo(left.x, left.y)
+        lineTo(top.x, top.y)
+        lineTo(topBack.x, topBack.y)
+        lineTo(leftBack.x, leftBack.y)
+        close()
+    }
+    drawPath(back, color = SentinelD1.ElectricBlue.copy(alpha = 0.20f))
+    drawPath(rightFace, color = accent.copy(alpha = 0.12f))
+    drawPath(leftFace, color = SentinelD1.Cyan.copy(alpha = 0.10f))
+    drawPath(front, color = accent.copy(alpha = 0.13f))
     drawPath(back, color = SentinelD1.ElectricBlue.copy(alpha = 0.18f), style = Stroke(width = 2f))
     drawPath(front, color = accent.copy(alpha = 0.34f), style = Stroke(width = 2.8f))
     listOf(top to topBack, right to rightBack, bottom to bottomBack, left to leftBack).forEach { (from, to) ->
         drawLine(accent.copy(alpha = 0.52f), from, to, strokeWidth = 1.6f)
     }
-    drawShield(Offset(center.x, center.y - cubeSize * 0.06f), cubeSize * 0.18f, accent)
+    drawExtrudedShield(Offset(center.x, center.y - cubeSize * 0.06f), cubeSize * 0.18f, accent)
 }
 
 private fun DrawScope.drawQuarantineChamber(
@@ -533,6 +930,8 @@ private fun DrawScope.drawQuarantineChamber(
     val top = size.height * 0.28f
     val bottom = size.height * 0.70f
     val radius = min(size.width, size.height) * 0.25f
+    drawPerspectiveGrid(accent)
+    drawContainmentCylinder(centerX, top, bottom, radius, accent, phase)
     drawOval(
         color = accent.copy(alpha = 0.54f),
         topLeft = Offset(centerX - radius, top - radius * 0.30f),
@@ -558,12 +957,14 @@ private fun DrawScope.drawQuarantineChamber(
             center = Offset(x, y)
         )
     }
-    drawShield(Offset(centerX, bottom + radius * 0.30f), radius * 0.23f, accent)
+    drawExtrudedShield(Offset(centerX, bottom + radius * 0.30f), radius * 0.23f, accent)
 }
 
 private fun DrawScope.drawThreatCore(accent: Color, phase: Float) {
     val center = Offset(size.width / 2f, size.height * 0.48f)
     val radius = min(size.width, size.height) * 0.27f
+    drawPerspectiveGrid(accent)
+    drawThreatCoreVolume(center, radius, accent, phase)
     repeat(18) { index ->
         val angle = index * 2f * PI.toFloat() / 18f + phase * 0.16f
         val inner = Offset(center.x + cos(angle) * radius * 0.82f, center.y + sin(angle) * radius * 0.82f)
@@ -583,7 +984,8 @@ private fun DrawScope.drawThreatCore(accent: Color, phase: Float) {
 private fun DrawScope.drawContactOrbit(accent: Color, phase: Float) {
     val center = Offset(size.width / 2f, size.height * 0.49f)
     val radius = min(size.width, size.height) * 0.23f
-    drawOrbitalSphere(accent, phase, radiusFactor = 0.28f, grid = false)
+    drawPerspectiveGrid(accent)
+    drawVolumetricSphere(center, radius * 1.22f, accent, phase, grid = false)
     drawCircle(accent.copy(alpha = 0.22f), radius, center)
     drawCircle(accent.copy(alpha = 0.76f), radius, center, style = Stroke(width = 2.8f))
     drawCircle(accent.copy(alpha = 0.65f), radius * 0.25f, Offset(center.x, center.y - radius * 0.22f))
@@ -597,7 +999,14 @@ private fun DrawScope.drawContactOrbit(accent: Color, phase: Float) {
 }
 
 private fun DrawScope.drawMessageIdentity(accent: Color, phase: Float) {
-    drawOrbitalSphere(accent, phase, radiusFactor = 0.25f, grid = true)
+    drawPerspectiveGrid(accent)
+    drawVolumetricSphere(
+        Offset(size.width * 0.30f, size.height * 0.46f),
+        min(size.width, size.height) * 0.25f,
+        accent,
+        phase,
+        grid = true
+    )
     val center = Offset(size.width * 0.28f, size.height * 0.46f)
     drawCircle(accent.copy(alpha = 0.18f), min(size.width, size.height) * 0.16f, center)
     drawCircle(accent.copy(alpha = 0.74f), min(size.width, size.height) * 0.16f, center, style = Stroke(width = 2f))
@@ -615,18 +1024,7 @@ private fun DrawScope.drawNumberIdentity(accent: Color, phase: Float) {
 }
 
 private fun DrawScope.drawShield(center: Offset, radius: Float, accent: Color) {
-    val path = Path().apply {
-        moveTo(center.x, center.y - radius)
-        lineTo(center.x + radius * 0.78f, center.y - radius * 0.58f)
-        lineTo(center.x + radius * 0.62f, center.y + radius * 0.50f)
-        quadraticTo(center.x, center.y + radius * 1.14f, center.x - radius * 0.62f, center.y + radius * 0.50f)
-        lineTo(center.x - radius * 0.78f, center.y - radius * 0.58f)
-        close()
-    }
-    drawPath(path, color = accent.copy(alpha = 0.20f))
-    drawPath(path, color = accent.copy(alpha = 0.94f), style = Stroke(width = 2.8f, join = StrokeJoin.Round))
-    drawLine(accent.copy(alpha = 0.82f), Offset(center.x - radius * 0.30f, center.y), Offset(center.x - radius * 0.05f, center.y + radius * 0.25f), strokeWidth = 3f, cap = StrokeCap.Round)
-    drawLine(accent.copy(alpha = 0.82f), Offset(center.x - radius * 0.05f, center.y + radius * 0.25f), Offset(center.x + radius * 0.38f, center.y - radius * 0.30f), strokeWidth = 3f, cap = StrokeCap.Round)
+    drawExtrudedShield(center, radius, accent)
 }
 
 private fun DrawScope.drawTriangleAlert(center: Offset, radius: Float, accent: Color) {

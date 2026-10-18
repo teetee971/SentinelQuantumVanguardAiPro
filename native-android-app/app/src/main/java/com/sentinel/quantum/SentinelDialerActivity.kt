@@ -94,8 +94,6 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.PhoneCoreNumberPad
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
-import com.sentinel.quantum.ui.design.SentinelCoreModule
-import com.sentinel.quantum.ui.design.SentinelQuantumCore
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
@@ -1049,73 +1047,55 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
                         if (phoneTab == 0) {
-                            SentinelQuantumCore(
-                                modules = listOf(
-                                    SentinelCoreModule(
-                                        id = "phone",
-                                        label = "Téléphone",
-                                        status = protectionState.toStatus(),
-                                        icon = Icons.Default.Phone,
-                                        enabled = false
-                                    ),
-                                    SentinelCoreModule(
-                                        id = "calls",
-                                        label = "Lignes",
-                                        status = if (callLines.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK,
-                                        icon = Icons.Default.Phone,
-                                        enabled = true
-                                    ),
-                                    SentinelCoreModule(
-                                        id = "contacts",
-                                        label = "Contacts",
-                                        status = if (contactsPermissionGranted) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
-                                        icon = Icons.Default.Contacts,
-                                        enabled = true
-                                    ),
-                                    SentinelCoreModule(
-                                        id = "messages",
-                                        label = "SMS/MMS",
-                                        status = if (smsMmsPrerequisitesReady) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
-                                        icon = Icons.Default.Message,
-                                        enabled = true
-                                    ),
-                                    SentinelCoreModule(
-                                        id = "reputation",
-                                        label = "Réputation",
-                                        status = SentinelStatus.UNKNOWN,
-                                        icon = Icons.Default.Shield,
-                                        enabled = false
-                                    ),
-                                    SentinelCoreModule(
-                                        id = "core",
-                                        label = "Contrôles",
-                                        status = protectionState.toStatus(),
-                                        icon = Icons.Default.Security,
-                                        enabled = true
-                                    )
-                                ),
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .testTag("phone-core-command-center"),
-                                onModuleClick = { module ->
-                                    when (module.id) {
-                                        "calls" -> {
-                                            phoneTab = 1
-                                            if (!holdsDialerRole()) requestDialerRoleForRecents()
-                                            else if (!callLogPermissionGranted) {
-                                                callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
-                                            } else refreshRecents()
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Security,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Column(Modifier.weight(1f)) {
+                                        val smsStatus = if (smsMmsPrerequisitesReady) "prêts" else "à activer"
+                                        Text(
+                                            "Phone Core · ${PhoneCoreUiState.phoneCoreHeadline(protectionState)}",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            "Lignes ${if (callLines.isEmpty()) "inconnues" else "observées"} · " +
+                                                "Contacts ${if (contactsPermissionGranted) "autorisés" else "verrouillés"} · SMS $smsStatus",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    TextButton(
+                                        onClick = {
+                                            startActivity(
+                                                Intent(
+                                                    this@SentinelDialerActivity,
+                                                    PhoneCoreActivationActivity::class.java
+                                                )
+                                            )
                                         }
-                                        "contacts" -> {
-                                            phoneTab = 2
-                                            if (contactsPermissionGranted) refreshContacts()
-                                            else contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-                                        }
-                                        "messages" -> startActivity(Intent(context, SmsComposeActivity::class.java))
-                                        "core" -> startActivity(Intent(context, PhoneCoreDiagnosticActivity::class.java))
+                                    ) {
+                                        Text("Configurer")
                                     }
                                 }
-                            )
+                            }
                         }
                         if (phoneTab == 3) {
                             Card(

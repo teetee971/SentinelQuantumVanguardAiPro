@@ -57,9 +57,6 @@ import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
-import com.sentinel.quantum.ui.design.SentinelCoreModule
-import com.sentinel.quantum.ui.design.SentinelQuantumCore
-import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
@@ -414,17 +411,40 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
-                        SentinelQuantumCore(
-                            modules = setupChecks.map { (step, granted) ->
-                                SentinelCoreModule(
-                                    id = step.name,
-                                    label = PhoneCoreSetupWizardStore.stepLabel(step),
-                                    status = if (granted) SentinelStatus.OK else SentinelStatus.LOCKED,
-                                    enabled = false
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics {
+                                    stateDescription = "${setupChecks.count { it.second }} sur ${setupChecks.size} prérequis Android relus"
+                                },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("Progression réelle", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "${setupChecks.count { it.second }}/${setupChecks.size} prérequis relus auprès d’Android. Une étape reste verrouillée tant que son état n’est pas confirmé.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    setupChecks.forEach { (step, granted) ->
+                                        StatusChip(
+                                            label = PhoneCoreSetupWizardStore.stepLabel(step),
+                                            ready = granted
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         if (firstRunSetup) {
                             Card(
                                 Modifier.fillMaxWidth(),
