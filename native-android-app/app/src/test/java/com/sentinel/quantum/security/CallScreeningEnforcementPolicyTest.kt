@@ -36,9 +36,9 @@ class CallScreeningEnforcementPolicyTest {
         )
     }
 
-    @Test fun signedReputationMayOnlySilence() {
+    @Test fun signedReputationSilenceFailsOpenPendingQualification() {
         assertEquals(
-            CallRuleEngine.Action.SILENCE,
+            CallRuleEngine.Action.ALLOW,
             CallScreeningEnforcementPolicy.actionFor(
                 decision(CallRuleEngine.Action.SILENCE, CallRuleEngine.RuleSource.SIGNED_REPUTATION)
             )
