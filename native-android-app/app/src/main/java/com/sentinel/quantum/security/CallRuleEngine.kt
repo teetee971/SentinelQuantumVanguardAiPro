@@ -7,7 +7,8 @@ class CallRuleEngine(
     blockedNumberHashes: Set<String> = emptySet(),
     blockedPrefixes: Set<String> = emptySet(),
     reputationSilencePrefixes: Set<String> = emptySet(),
-    private val fingerprintsForNumber: (String) -> Set<String> = { setOf(sha256(it)) }
+    private val fingerprintsForNumber: (String) -> Set<String> = { setOf(sha256(it)) },
+    private val defaultCallingCode: String? = null
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
@@ -15,9 +16,9 @@ class CallRuleEngine(
         .take(MAX_REPUTATION_RULES).toSet()
 
     fun evaluate(rawNumber: String?): Decision {
-        val normalized = normalizeNumber(rawNumber)
+        val normalized = normalizeNumber(rawNumber, defaultCallingCode)
             ?: return Decision(Action.ALLOW, "INVALID_OR_UNAVAILABLE_NUMBER", null, RuleSource.NONE)
-        if (matchingRepresentations(rawNumber).any { candidate ->
+        if (matchingRepresentations(rawNumber, defaultCallingCode).any { candidate ->
                 fingerprintsForNumber(candidate).any(exactHashes::contains)
             }) {
             return Decision(Action.BLOCK, "USER_EXACT_BLOCK", normalized, RuleSource.USER)
@@ -41,20 +42,14 @@ class CallRuleEngine(
         const val MAX_REPUTATION_RULES = 500
         private val HASH_PATTERN = Regex("(?:v[1-9][0-9]*:)?[a-f0-9]{64}")
 
-        /** National 0xxxxxxxxx input is scoped to France; other regions require explicit E.164. */
-        fun normalizeNumber(raw: String?): String? {
-            val input = raw?.trim()?.takeIf { it.isNotBlank() && it.length <= 64 } ?: return null
-            if (!input.all { it.isDigit() || it in setOf('+', ' ', '-', '(', ')', '.') }) return null
-            if (input.count { it == '+' } > 1 || (input.contains('+') && !input.startsWith('+'))) return null
-            val digits = input.filter(Char::isDigit)
-            if (digits.length !in 7..15) return null
-            return when {
-                input.startsWith('+') -> "+$digits"
-                digits.startsWith("00") && digits.length >= 9 -> "+${digits.drop(2)}"
-                digits.length == 10 && digits.startsWith('0') -> "+33${digits.drop(1)}"
-                else -> digits
-            }
-        }
+        /** Normalizes E.164/00 input; national input requires an explicit calling-code context. */
+        fun normalizeNumber(raw: String?): String? =
+            normalizeNumber(raw, defaultCallingCode = null)
+
+        fun normalizeNumber(raw: String?, defaultCallingCode: String?): String? =
+            InternationalNumberResolver()
+                .resolve(raw, InternationalNumberResolver.Context(defaultCallingCode))
+                .canonicalE164
 
         fun normalizePrefix(raw: String): String? {
             val input = raw.trim()
@@ -66,14 +61,12 @@ class CallRuleEngine(
             return when {
                 input.startsWith('+') -> "+$digits"
                 digits.startsWith("00") && digits.length >= 3 -> "+${digits.drop(2)}"
-                digits.startsWith('0') && digits.length >= 3 -> "+33${digits.drop(1)}"
-                digits.length >= 3 -> digits
                 else -> null
             }
         }
 
-        fun matchingRepresentations(raw: String?): Set<String> {
-            val canonical = normalizeNumber(raw) ?: return emptySet()
+        fun matchingRepresentations(raw: String?, defaultCallingCode: String? = null): Set<String> {
+            val canonical = normalizeNumber(raw, defaultCallingCode) ?: return emptySet()
             val values = linkedSetOf(canonical)
             if (canonical.startsWith("+33") && canonical.length == 12) {
                 values += "0${canonical.drop(3)}"

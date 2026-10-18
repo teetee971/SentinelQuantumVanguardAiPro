@@ -8,7 +8,9 @@ import org.junit.Test
 class CommunicationReputationWriterTest {
     @Test fun validCallerResultIsPersistedUnderOpaqueIdentity() {
         val storage = FakeStorage()
-        val writer = CommunicationReputationWriter(CommunicationReputationCache(storage))
+        val writer = CommunicationReputationWriter(
+            CommunicationReputationCache(storage, defaultCallingCode = "+33")
+        )
 
         assertTrue(writer.persist("06 12 34 56 78", validResult(), nowMs = 1_100L))
         assertTrue(storage.values.keys.single().startsWith("rep:"))
@@ -20,7 +22,9 @@ class CommunicationReputationWriterTest {
 
     @Test fun incompleteCallerResultNeverTouchesStorage() {
         val storage = FakeStorage()
-        val writer = CommunicationReputationWriter(CommunicationReputationCache(storage))
+        val writer = CommunicationReputationWriter(
+            CommunicationReputationCache(storage, defaultCallingCode = "+33")
+        )
 
         assertFalse(
             writer.persist(
@@ -34,7 +38,9 @@ class CommunicationReputationWriterTest {
 
     @Test fun invalidPhoneNumberNeverTouchesStorage() {
         val storage = FakeStorage()
-        val writer = CommunicationReputationWriter(CommunicationReputationCache(storage))
+        val writer = CommunicationReputationWriter(
+            CommunicationReputationCache(storage, defaultCallingCode = "+33")
+        )
 
         assertFalse(writer.persist("123", validResult(), nowMs = 1_100L))
         assertTrue(storage.values.isEmpty())

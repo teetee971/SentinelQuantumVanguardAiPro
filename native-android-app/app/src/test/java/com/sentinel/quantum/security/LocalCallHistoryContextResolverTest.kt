@@ -16,7 +16,8 @@ class LocalCallHistoryContextResolverTest {
 
         val context = LocalCallHistoryContextResolver.fromEntries(
             rawNumber = "+33 6 12 34 56 78",
-            entries = rows
+            entries = rows,
+            defaultCallingCode = "+33"
         )
 
         assertEquals(2, context.recentCalls)
@@ -28,7 +29,8 @@ class LocalCallHistoryContextResolverTest {
     fun invalidTargetProducesEmptyLocalContext() {
         val context = LocalCallHistoryContextResolver.fromEntries(
             rawNumber = "not-a-number",
-            entries = listOf(entry("0612345678", CallLog.Calls.MISSED_TYPE, 2_000L))
+            entries = listOf(entry("0612345678", CallLog.Calls.MISSED_TYPE, 2_000L)),
+            defaultCallingCode = "+33"
         )
 
         assertEquals(0, context.recentCalls)
@@ -40,7 +42,8 @@ class LocalCallHistoryContextResolverTest {
     fun contextNeverExposesRawNumbers() {
         val context = LocalCallHistoryContextResolver.fromEntries(
             rawNumber = "+33612345678",
-            entries = listOf(entry("+33612345678", CallLog.Calls.OUTGOING_TYPE, 4_000L))
+            entries = listOf(entry("+33612345678", CallLog.Calls.OUTGOING_TYPE, 4_000L)),
+            defaultCallingCode = "+33"
         )
 
         assertEquals(

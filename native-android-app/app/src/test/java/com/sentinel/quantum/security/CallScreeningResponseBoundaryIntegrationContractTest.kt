@@ -41,7 +41,7 @@ class CallScreeningResponseBoundaryIntegrationContractTest {
 
         assertTrue(boundaryCreation.contains("POST_RESPONSE_WORKER.execute(task)"))
         assertFalse(postResponseBlock.contains("POST_RESPONSE_WORKER.execute"))
-        assertTrue(postResponseBlock.contains("CallFilterLogStore.get(appContext).recordAsync(decision)"))
+        assertTrue(postResponseBlock.contains("CallFilterLogStore.get(appContext).recordAsync(effectiveDecision)"))
         assertTrue(postResponseBlock.contains("PhonePrivateTimelineStore(appContext).append"))
     }
 }

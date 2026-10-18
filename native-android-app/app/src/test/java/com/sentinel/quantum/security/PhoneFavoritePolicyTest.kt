@@ -9,7 +9,7 @@ class PhoneFavoritePolicyTest {
     @Test
     fun canonicalRepresentationsCollapseToOneFavorite() {
         val values = listOf("06 12 34 56 78", "+33612345678", "0033612345678")
-            .mapNotNull(CallRuleEngine::normalizeNumber)
+            .mapNotNull { CallRuleEngine.normalizeNumber(it, defaultCallingCode = "+33") }
             .toSet()
         assertEquals(setOf("+33612345678"), values)
     }
@@ -22,5 +22,5 @@ class PhoneFavoritePolicyTest {
     }
 
     private fun isValidFavorite(raw: String?): Boolean =
-        CallRuleEngine.normalizeNumber(raw) != null
+        CallRuleEngine.normalizeNumber(raw, defaultCallingCode = "+33") != null
 }

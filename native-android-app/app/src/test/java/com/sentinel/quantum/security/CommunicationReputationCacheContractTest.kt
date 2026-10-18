@@ -8,7 +8,7 @@ import org.junit.Test
 
 class CommunicationReputationCacheContractTest {
     @Test fun equivalentFrenchNumbersUseTheSameOpaqueCacheKey() {
-        val national = CommunicationReputationCache.cacheKeyFor("06 12 34 56 78")
+        val national = CommunicationReputationCache.cacheKeyFor("06 12 34 56 78", defaultCallingCode = "+33")
         val international = CommunicationReputationCache.cacheKeyFor("+33 6 12 34 56 78")
 
         assertEquals(national, international)
@@ -19,7 +19,7 @@ class CommunicationReputationCacheContractTest {
 
     @Test fun invalidNumberCannotCreateOrPersistAnEntry() {
         val storage = FakeStorage()
-        val cache = CommunicationReputationCache(storage)
+        val cache = CommunicationReputationCache(storage, defaultCallingCode = "+33")
 
         assertFalse(cache.put("123", freshEntry(), nowMs = 1_100L))
         assertTrue(storage.values.isEmpty())
@@ -28,7 +28,7 @@ class CommunicationReputationCacheContractTest {
 
     @Test fun persistedPayloadNeverContainsRawOrCanonicalPhoneNumber() {
         val storage = FakeStorage()
-        val cache = CommunicationReputationCache(storage)
+        val cache = CommunicationReputationCache(storage, defaultCallingCode = "+33")
         val raw = "06 12 34 56 78"
         val canonical = "+33612345678"
 
@@ -42,7 +42,7 @@ class CommunicationReputationCacheContractTest {
 
     @Test fun freshEntryRoundTripsWithBoundedMetadata() {
         val storage = FakeStorage()
-        val cache = CommunicationReputationCache(storage)
+        val cache = CommunicationReputationCache(storage, defaultCallingCode = "+33")
         val entry = freshEntry(categories = listOf("SPOOFING", "ROBOCALL"), signals = 7, riskScore = 88)
 
         assertTrue(cache.put("+33612345678", entry, nowMs = 1_100L))
@@ -51,7 +51,7 @@ class CommunicationReputationCacheContractTest {
 
     @Test fun expiredEntryIsNotUsableAndIsRemoved() {
         val storage = FakeStorage()
-        val cache = CommunicationReputationCache(storage)
+        val cache = CommunicationReputationCache(storage, defaultCallingCode = "+33")
 
         assertTrue(cache.put("+33612345678", freshEntry(observedAtMs = 1_000L, ttlMs = 100L), nowMs = 1_000L))
         assertNull(cache.get("+33612345678", nowMs = 1_101L))

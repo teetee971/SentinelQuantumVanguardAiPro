@@ -12,13 +12,13 @@ object PhoneNumberRiskRules {
         "+33899"
     )
 
-    fun isKnownPremiumRatePrefix(rawNumber: String): Boolean {
-        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
+    fun isKnownPremiumRatePrefix(rawNumber: String, defaultCallingCode: String? = null): Boolean {
+        val normalized = CallRuleEngine.normalizeNumber(rawNumber, defaultCallingCode) ?: return false
         return premiumRatePrefixes.any(normalized::startsWith)
     }
 
-    fun assistedRisk(rawNumber: String): FamilySafetyPolicy.Risk =
-        if (isKnownPremiumRatePrefix(rawNumber)) {
+    fun assistedRisk(rawNumber: String, defaultCallingCode: String? = null): FamilySafetyPolicy.Risk =
+        if (isKnownPremiumRatePrefix(rawNumber, defaultCallingCode)) {
             FamilySafetyPolicy.Risk.PREMIUM_RATE_CALLBACK
         } else {
             FamilySafetyPolicy.Risk.NONE
