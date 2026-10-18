@@ -97,6 +97,8 @@ import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import androidx.compose.material3.Tab
@@ -556,6 +558,35 @@ class SmsComposeActivity : ComponentActivity() {
                                         if (mmsItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
                                     ),
                                     SentinelHolographicSceneNode("Anti‑phishing · TEST", SentinelStatus.TEST)
+                                )
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        SentinelReferenceMetricStrip(
+                            metrics = listOf(
+                                SentinelReferenceMetric(
+                                    label = "Rôle SMS",
+                                    value = if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) "PRÊT" else "VERROUILLÉ",
+                                    detail = "statut Android",
+                                    status = if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) SentinelStatus.OK else SentinelStatus.LOCKED
+                                ),
+                                SentinelReferenceMetric(
+                                    label = "Conversations",
+                                    value = visibleThreads.size.toString(),
+                                    detail = "observées localement",
+                                    status = if (conversations.canRead()) SentinelStatus.TEST else SentinelStatus.LOCKED
+                                ),
+                                SentinelReferenceMetric(
+                                    label = "MMS",
+                                    value = if (mmsItems.isEmpty()) "INCONNU" else mmsItems.size.toString(),
+                                    detail = "inbox locale",
+                                    status = if (mmsItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                                ),
+                                SentinelReferenceMetric(
+                                    label = "Anti-phishing",
+                                    value = "TEST",
+                                    detail = "analyse de liens",
+                                    status = SentinelStatus.TEST
                                 )
                             ),
                             modifier = Modifier.fillMaxWidth()

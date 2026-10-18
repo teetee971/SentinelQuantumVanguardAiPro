@@ -78,6 +78,8 @@ import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.ui.design.SentinelStateChip
@@ -472,6 +474,35 @@ private fun CallerCard(
                         if (timelineSummary.events.isEmpty()) "Historique · INCONNU" else "Historique · OBSERVÉ",
                         if (timelineSummary.events.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
                     )
+                )
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        SentinelReferenceMetricStrip(
+            metrics = listOf(
+                SentinelReferenceMetric(
+                    label = "Identité",
+                    value = if (verified) "VÉRIFIÉE" else "INCONNUE",
+                    detail = "source déclarée",
+                    status = if (verified) SentinelStatus.OK else SentinelStatus.UNKNOWN
+                ),
+                SentinelReferenceMetric(
+                    label = "Origine",
+                    value = if (officialAllocation == null) "INCONNUE" else "OBSERVÉE",
+                    detail = "attribution ARCEP",
+                    status = if (officialAllocation == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                ),
+                SentinelReferenceMetric(
+                    label = "Réputation",
+                    value = if (remoteResult == null) "INCONNUE" else "OBSERVÉE",
+                    detail = "enrichissement autorisé",
+                    status = if (remoteResult == null) SentinelStatus.UNKNOWN else SentinelStatus.WARN
+                ),
+                SentinelReferenceMetric(
+                    label = "Historique",
+                    value = if (timelineSummary.events.isEmpty()) "INCONNU" else "OBSERVÉ",
+                    detail = "journal privé local",
+                    status = if (timelineSummary.events.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
                 )
             ),
             modifier = Modifier.fillMaxWidth()

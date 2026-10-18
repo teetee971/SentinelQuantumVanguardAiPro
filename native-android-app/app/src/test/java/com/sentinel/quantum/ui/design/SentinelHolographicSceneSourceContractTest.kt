@@ -61,6 +61,13 @@ class SentinelHolographicSceneSourceContractTest {
     }
 
     @Test
+    fun sceneSurfacesTruthfulStateInsideTheVisualHierarchy() {
+        assertTrue(source.contains("SentinelStatusChip"))
+        assertTrue(source.contains("model.status.visual().label"))
+        assertTrue(source.contains("fillMaxWidth(0.68f)"))
+    }
+
+    @Test
     fun sceneDoesNotUseReferenceImagesAsRuntimeContent() {
         assertTrue(source.contains("SentinelHolographicScene"))
         assertTrue(!source.contains("painterResource"))

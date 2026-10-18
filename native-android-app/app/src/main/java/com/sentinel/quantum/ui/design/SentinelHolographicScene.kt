@@ -178,12 +178,33 @@ fun SentinelHolographicScene(
             text = model.title,
             modifier = Modifier
                 .align(Alignment.TopStart)
+                .fillMaxWidth(0.68f)
                 .padding(horizontal = 18.dp, vertical = 14.dp),
             color = SentinelVisualTokens.TextPrimary,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 16.sp,
             letterSpacing = 0.7.sp,
-            maxLines = 1
+            softWrap = true
+        )
+        SentinelStatusChip(
+            status = model.status,
+            label = model.status.visual().label,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+        )
+        Text(
+            text = model.status.visual().label,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .semantics {
+                    contentDescription = "État observé : ${model.status.visual().label}"
+                },
+            color = accent,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 24.sp,
+            textAlign = TextAlign.Center,
+            softWrap = true
         )
         Text(
             text = "${model.evidenceLabel} · ${model.evidenceSource}",
@@ -193,7 +214,7 @@ fun SentinelHolographicScene(
             color = SentinelVisualTokens.TextSecondary,
             fontSize = 11.sp,
             textAlign = TextAlign.Center,
-            maxLines = 2
+            softWrap = true
         )
     }
 }

@@ -18,6 +18,8 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelEmptyState
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -56,6 +58,14 @@ fun ThreatDetailScreen(navController: NavController) {
                 ),
                 motionLevel = com.sentinel.quantum.ui.design.MotionLevel.STATIC,
                 modifier = Modifier.fillMaxWidth()
+            )
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric("Preuve", if (evidenceAvailable) "OBSERVÉE" else "INCONNUE", "dossier sélectionné", threatStatus),
+                    SentinelReferenceMetric("Source", if (evidenceAvailable) "PRÉSENTE" else "ABSENTE", "provenance requise", threatStatus),
+                    SentinelReferenceMetric("Verdict", if (evidenceAvailable) "CRITIQUE" else "UNKNOWN", "pas d’inférence", threatStatus),
+                    SentinelReferenceMetric("Action", "VERROUILLÉE", "aucune menace ciblée", SentinelStatus.LOCKED)
+                )
             )
             SentinelStatusChip(
                 status = threatStatus,

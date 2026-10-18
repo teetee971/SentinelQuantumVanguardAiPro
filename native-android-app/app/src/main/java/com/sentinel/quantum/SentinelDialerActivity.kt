@@ -99,6 +99,8 @@ import com.sentinel.quantum.ui.design.SentinelQuantumCore
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.toStatus
@@ -1507,6 +1509,36 @@ class SentinelDialerActivity : ComponentActivity() {
                                             if (phoneCount == 0) SentinelStatus.UNKNOWN else SentinelStatus.TEST
                                         ),
                                         SentinelHolographicSceneNode("Provenance locale", SentinelStatus.OK)
+                                    )
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            SentinelReferenceMetricStrip(
+                                metrics = listOf(
+                                    SentinelReferenceMetric(
+                                        label = "Contacts",
+                                        value = contactItems.size.toString(),
+                                        detail = "observés localement",
+                                        status = SentinelStatus.TEST
+                                    ),
+                                    SentinelReferenceMetric(
+                                        label = "Appelables",
+                                        value = callableCount.toString(),
+                                        detail = "numéros présents",
+                                        status = if (callableCount == 0) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                                    ),
+                                    SentinelReferenceMetric(
+                                        label = "Numéros",
+                                        value = phoneCount.toString(),
+                                        detail = "répertoire Android",
+                                        status = if (phoneCount == 0) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                                    ),
+                                    SentinelReferenceMetric(
+                                        label = "Synchronisation",
+                                        value = "LOCALE",
+                                        detail = "aucun envoi implicite",
+                                        status = SentinelStatus.OK
                                     )
                                 ),
                                 modifier = Modifier.fillMaxWidth()

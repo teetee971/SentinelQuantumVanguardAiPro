@@ -65,6 +65,8 @@ import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.visual
@@ -313,6 +315,36 @@ fun PhoneSecurityScreen(navController: NavController) {
                 ),
                 modifier = Modifier.testTag("protection-command-center"),
                 motionLevel = protectionMotion
+            )
+
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Appels",
+                        value = if (callPrerequisitesReady) "PRÊT" else "LIMITÉ",
+                        detail = "rôles et permissions",
+                        status = if (callPrerequisitesReady) SentinelStatus.OK else SentinelStatus.LIMITED
+                    ),
+                    SentinelReferenceMetric(
+                        label = "SMS / MMS",
+                        value = if (messagePrerequisitesReady) "PRÊT" else "LIMITÉ",
+                        detail = "chaîne Android",
+                        status = if (messagePrerequisitesReady) SentinelStatus.OK else SentinelStatus.LIMITED
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Réseau",
+                        value = "INCONNU",
+                        detail = "observation séparée",
+                        status = SentinelStatus.UNKNOWN
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Réputation",
+                        value = if (remoteEnrichmentEnabled) "LIMITÉE" else "VERROUILLÉE",
+                        detail = "consentement requis",
+                        status = if (remoteEnrichmentEnabled) SentinelStatus.LIMITED else SentinelStatus.LOCKED
+                    )
+                ),
+                modifier = Modifier.testTag("protection_reference_metrics")
             )
 
             ElevatedCard(

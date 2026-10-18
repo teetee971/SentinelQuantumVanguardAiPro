@@ -87,12 +87,17 @@ import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelReferenceAction
+import com.sentinel.quantum.ui.design.SentinelReferenceActionGrid
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.visual
 import com.sentinel.quantum.ui.presentation.HomeComponentFacts
 import com.sentinel.quantum.ui.presentation.HomeCondition
 import com.sentinel.quantum.ui.presentation.HomeModuleId
@@ -308,6 +313,36 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.testTag("home_security_hero")
             )
 
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Phone Core",
+                        value = phoneCoreModule.status.visual().label,
+                        detail = "$readyCount/8 prérequis observés",
+                        status = phoneCoreModule.status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "VPN",
+                        value = vpnModule.status.visual().label,
+                        detail = "Tunnel non présumé",
+                        status = vpnModule.status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Réseau",
+                        value = networkModule.status.visual().label,
+                        detail = "État local observé",
+                        status = networkModule.status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Défense collective",
+                        value = communityModule.status.visual().label,
+                        detail = "Signalements volontaires",
+                        status = communityModule.status
+                    )
+                ),
+                modifier = Modifier.testTag("home_reference_metrics")
+            )
+
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text("Priorité", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
                 Text(homeState.priorityMessage, fontWeight = FontWeight.Bold)
@@ -365,23 +400,18 @@ fun HomeScreen(navController: NavController) {
                     )
                 }
             } else if (normalizedQuery.isBlank() && !showAllTools) {
-                matchingTools.chunked(2).forEach { rowTools ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rowTools.forEach { tool ->
-                            QuickToolCard(
-                                title = tool.title,
-                                subtitle = capabilitySubtitle(tool),
-                                icon = tool.icon,
-                                onClick = tool.onClick,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (rowTools.size == 1) Spacer(Modifier.weight(1f))
-                    }
-                }
+                SentinelReferenceActionGrid(
+                    actions = matchingTools.take(4).map { tool ->
+                        SentinelReferenceAction(
+                            label = tool.title,
+                            detail = capabilitySubtitle(tool),
+                            icon = tool.icon,
+                            onClick = tool.onClick,
+                            status = SentinelStatus.UNKNOWN
+                        )
+                    },
+                    modifier = Modifier.testTag("home_reference_actions")
+                )
             } else if (normalizedQuery.isNotBlank()) {
                 matchingTools.forEach { tool -> HomeToolTile(tool) }
             } else {

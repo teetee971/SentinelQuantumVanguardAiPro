@@ -18,6 +18,8 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.SentinelEmptyState
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -53,6 +55,14 @@ fun QuarantineScreen(navController: NavController) {
                 ),
                 motionLevel = com.sentinel.quantum.ui.design.MotionLevel.STATIC,
                 modifier = Modifier.fillMaxWidth()
+            )
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric("Confinement", "VERROUILLÉ", "aucune isolation globale", SentinelStatus.LOCKED),
+                    SentinelReferenceMetric("MMS", "LIMITÉ", "pipeline privé local", SentinelStatus.LIMITED),
+                    SentinelReferenceMetric("Système", "NON", "pas de quarantaine antivirus", SentinelStatus.UNKNOWN),
+                    SentinelReferenceMetric("Actions", "INACTIVES", "preuve absente", SentinelStatus.LOCKED)
+                )
             )
             SentinelStatusChip(
                 status = SentinelStatus.LOCKED,

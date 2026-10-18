@@ -26,6 +26,8 @@ import com.sentinel.quantum.ui.design.MotionLevel
 import com.sentinel.quantum.ui.design.SentinelEmptyState
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -71,6 +73,14 @@ fun ThreatMapScreen(navController: NavController) {
                 ),
                 motionLevel = motionLevel,
                 modifier = Modifier.fillMaxWidth()
+            )
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric("Événements", "INCONNU", "aucune source", SentinelStatus.UNKNOWN),
+                    SentinelReferenceMetric("Coordonnées", "ABSENTES", "pas de géolocalisation", SentinelStatus.UNKNOWN),
+                    SentinelReferenceMetric("Fraîcheur", "INCONNUE", "aucun flux chargé", SentinelStatus.UNKNOWN),
+                    SentinelReferenceMetric("Production", "NEUTRE", "pas de menace fictive", SentinelStatus.LOCKED)
+                )
             )
             SentinelStatusChip(
                 status = SentinelStatus.UNKNOWN,

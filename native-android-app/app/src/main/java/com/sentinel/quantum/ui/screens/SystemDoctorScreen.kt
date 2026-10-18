@@ -41,9 +41,12 @@ import com.sentinel.quantum.ui.design.MotionLevel
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelSceneKind
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.visual
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,6 +134,35 @@ fun SystemDoctorScreen(navController: NavController) {
                 ),
                 motionLevel = MotionLevel.STATIC,
                 modifier = Modifier.testTag("system-doctor-command-center")
+            )
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Permissions",
+                        value = doctorModules[0].status.visual().label,
+                        detail = "diagnostic Android",
+                        status = doctorModules[0].status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Rôles",
+                        value = "INCONNU",
+                        detail = "gérés par Android",
+                        status = SentinelStatus.UNKNOWN
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Stockage",
+                        value = doctorModules[2].status.visual().label,
+                        detail = "caches Sentinel",
+                        status = doctorModules[2].status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Batterie",
+                        value = "INCONNU",
+                        detail = "aucune inférence",
+                        status = SentinelStatus.UNKNOWN
+                    )
+                ),
+                modifier = Modifier.testTag("system_doctor_reference_metrics")
             )
             Button(
                 onClick = {

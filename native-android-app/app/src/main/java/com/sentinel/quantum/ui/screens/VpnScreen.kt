@@ -32,6 +32,8 @@ import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHolographicScene
 import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -147,6 +149,36 @@ fun VpnScreen(navController: NavController) {
                 ),
                 modifier = Modifier.testTag("vpn-command-center"),
                 motionLevel = motionLevel
+            )
+
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Tunnel",
+                        value = runtimeSurface.badge,
+                        detail = "état runtime",
+                        status = runtimeSurface.status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Passerelle",
+                        value = if (runtimeState == SentinelVpnController.RuntimeState.PROTECTED) "OBSERVÉE" else "INCONNUE",
+                        detail = "aucune déduction",
+                        status = if (runtimeState == SentinelVpnController.RuntimeState.PROTECTED) SentinelStatus.OK else SentinelStatus.UNKNOWN
+                    ),
+                    SentinelReferenceMetric(
+                        label = "DNS",
+                        value = "INCONNU",
+                        detail = "sans handshake confirmé",
+                        status = SentinelStatus.UNKNOWN
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Handshake",
+                        value = "NON OBSERVÉ",
+                        detail = "preuve requise",
+                        status = SentinelStatus.UNKNOWN
+                    )
+                ),
+                modifier = Modifier.testTag("vpn_reference_metrics")
             )
 
             SentinelSectionHeader(
