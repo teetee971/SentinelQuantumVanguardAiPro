@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "mode": "REFERENCE_ONLY",
+  "enforcement_eligibility": "NONE",
+  "sources": [
+    {
+      "id": "ITU",
+      "jurisdiction": "INT",
+      "publisher": "International Telecommunication Union",
+      "official_url": "https://www.itu.int",
+      "category": "REGULATOR_DIRECTORY",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "BEREC",
+      "jurisdiction": "EU",
+      "publisher": "Body of European Regulators for Electronic Communications",
+      "official_url": "https://www.berec.europa.eu",
+      "category": "REGULATOR_NETWORK",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "ARCEP",
+      "jurisdiction": "FR",
+      "publisher": "ARCEP",
+      "official_url": "https://www.arcep.fr",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "OFCOM",
+      "jurisdiction": "GB",
+      "publisher": "Ofcom",
+      "official_url": "https://www.ofcom.org.uk",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "FCC",
+      "jurisdiction": "US",
+      "publisher": "Federal Communications Commission",
+      "official_url": "https://www.fcc.gov",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "CRTC",
+      "jurisdiction": "CA",
+      "publisher": "Canadian Radio-television and Telecommunications Commission",
+      "official_url": "https://crtc.gc.ca",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "ANATEL",
+      "jurisdiction": "BR",
+      "publisher": "Anatel",
+      "official_url": "https://www.gov.br/anatel",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "ACMA",
+      "jurisdiction": "AU",
+      "publisher": "Australian Communications and Media Authority",
+      "official_url": "https://www.acma.gov.au",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "TRAI",
+      "jurisdiction": "IN",
+      "publisher": "Telecom Regulatory Authority of India",
+      "official_url": "https://www.trai.gov.in",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    },
+    {
+      "id": "IMDA",
+      "jurisdiction": "SG",
+      "publisher": "Infocomm Media Development Authority",
+      "official_url": "https://www.imda.gov.sg",
+      "category": "NUMBERING_REGULATOR",
+      "connector_status": "NOT_IMPLEMENTED",
+      "last_successful_sync": null,
+      "license_review": "PENDING",
+      "enforcement_eligibility": "NONE"
+    }
+  ]
+}
