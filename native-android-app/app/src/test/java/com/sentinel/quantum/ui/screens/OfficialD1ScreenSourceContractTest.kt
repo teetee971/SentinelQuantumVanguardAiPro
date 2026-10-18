@@ -1,6 +1,7 @@
 package com.sentinel.quantum.ui.screens
 
 import java.io.File
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -46,5 +47,13 @@ class OfficialD1ScreenSourceContractTest {
         val source = screen("VpnScreen")
         assertTrue(source.contains("SentinelHolographicScene("))
         assertTrue(source.contains("SentinelSceneKind.VPN_GLOBE"))
+    }
+
+    @Test
+    fun messageAnalysisUsesTheDedicatedSecureMessagesScene() {
+        val source = screen("SmsScannerScreen")
+        assertTrue(source.contains("SentinelHolographicScene("))
+        assertTrue(source.contains("SentinelSceneKind.SECURE_MESSAGES"))
+        assertFalse(source.contains("SentinelHeroVisual"))
     }
 }

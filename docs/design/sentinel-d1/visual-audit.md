@@ -27,3 +27,16 @@ La phase 3 ajoute un moteur Canvas Compose procédural, léger et réutilisable,
 aucune image de maquette dans l’application. Les scènes lisent `SentinelStatus`, la politique de
 mouvement et les données runtime déjà présentes ; le mode statique conserve la hiérarchie sans
 planifier de frames.
+
+## État après le lot phase 3
+
+- Les 13 références sont conservées et indexées ; la planche multi-écrans sert de contrôle de
+  cohérence, pas de ressource d’exécution.
+- Les surfaces officielles utilisent maintenant les scènes `COMMAND_CENTER`, `REAL_TIME_PROTECTION`,
+  `RISK_APPLICATIONS`, `ANALYSIS_REPORT`, `DEVICE_ANALYSIS`, `VPN_GLOBE`, `CONTACT_ORBIT`,
+  `SECURE_MESSAGES`, `NUMBER_IDENTITY`, `THREAT_GLOBE`, `QUARANTINE_CHAMBER` et `THREAT_DETAIL`.
+- Les bandes `SentinelReferenceMetricStrip` remplacent une partie des longues cartes de synthèse et
+  conservent la chaîne de preuve dans chaque valeur.
+- La capture réelle reste bloquée tant qu’aucun émulateur ou appareil Android n’est attaché. Les
+  écarts de pixel, de GPU, de TalkBack réel et de non-chevauchement ne sont donc pas déclarés
+  validés ; voir `validation-matrix.md`.

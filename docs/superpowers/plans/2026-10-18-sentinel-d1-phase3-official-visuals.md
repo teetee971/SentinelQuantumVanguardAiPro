@@ -37,7 +37,7 @@
 
 - [x] Import the archive without changing the 13 original names.
 - [x] Record archive/image hashes, dimensions and the initial screen mapping.
-- [ ] Commit the immutable reference baseline.
+- [x] Commit the immutable reference baseline.
 
 ### Task 2: Specialized holographic scene engine
 
@@ -46,12 +46,12 @@
 - Modify: `native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelVisualTokens.kt`
 - Test: `native-android-app/app/src/test/java/com/sentinel/quantum/ui/design/SentinelHolographicSceneSourceContractTest.kt`
 
-- [ ] Add scene models and the `SentinelSceneKind` enum.
-- [ ] Implement globe, sphere, layers, cube, chamber, threat and portrait projections in Canvas.
-- [ ] Drive colors and labels from status/proof data; keep decorative layers semantics-free.
-- [ ] Add reduced-motion and static rendering paths.
-- [ ] Compile and run focused source contracts.
-- [ ] Commit the scene engine.
+- [x] Add scene models and the `SentinelSceneKind` enum.
+- [x] Implement globe, sphere, layers, cube, chamber, threat and portrait projections in Canvas.
+- [x] Drive colors and labels from status/proof data; keep decorative layers semantics-free.
+- [x] Add reduced-motion and static rendering paths.
+- [x] Compile and run focused source contracts.
+- [x] Commit the scene engine.
 
 ### Task 3: Rebuild official screen compositions
 
@@ -60,11 +60,11 @@
 - Create: specialized screen adapters for threat map, threat detail and quarantine where no route exists
 - Test: screen source contracts and navigation tests
 
-- [ ] Replace generic hero calls with the matching official scene and compact evidence panels.
-- [ ] Keep real runtime adapters and disable unsupported actions.
-- [ ] Preserve dialer/SMS layout priority and emergency-call behavior.
-- [ ] Add new routes only for the unmapped official surfaces and wire back navigation.
-- [ ] Commit each independently testable screen lot.
+- [x] Replace generic hero calls with the matching official scene and compact evidence panels.
+- [x] Keep real runtime adapters and disable unsupported actions.
+- [x] Preserve dialer/SMS layout priority and emergency-call behavior.
+- [x] Add new routes only for the unmapped official surfaces and wire back navigation.
+- [x] Commit each independently testable screen lot.
 
 ### Task 4: Visual and accessibility qualification
 
@@ -73,10 +73,10 @@
 - Create: `docs/design/sentinel-d1/validation-matrix.md`
 - Test: Compose/source contracts and available Android tests
 
-- [ ] Verify no legacy generic hero remains on the 13 mapped surfaces.
+- [x] Verify no legacy generic hero remains on the 13 mapped surfaces.
 - [ ] Run build, unit tests, Android-test compilation and lint.
-- [ ] Capture only from a real Android runtime; otherwise mark capture blocked.
-- [ ] Record overlaps, truncation, touch targets, TalkBack and reduced-motion status.
+- [x] Capture only from a real Android runtime; otherwise mark capture blocked.
+- [x] Record overlaps, truncation, touch targets, TalkBack and reduced-motion status.
 - [ ] Commit the validation evidence.
 
 ### Task 5: APK qualification and delivery
