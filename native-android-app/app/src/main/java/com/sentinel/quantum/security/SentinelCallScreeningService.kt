@@ -87,6 +87,11 @@ class SentinelCallScreeningService : CallScreeningService() {
         // Enforce provenance at the Telecom boundary, independently of rule-engine internals.
         // Unexpected source/action combinations must not reject or silence incoming calls.
         val enforcedAction = CallScreeningEnforcementPolicy.actionFor(decision)
+        val effectiveDecision = if (enforcedAction == decision.action) decision else decision.copy(
+            action = enforcedAction,
+            reason = "ENFORCEMENT_FAIL_OPEN",
+            source = CallRuleEngine.RuleSource.NONE
+        )
         val response = CallResponse.Builder()
         when (enforcedAction) {
             CallRuleEngine.Action.BLOCK -> response
@@ -143,8 +148,8 @@ class SentinelCallScreeningService : CallScreeningService() {
                     putExtra(CallerIdActivity.EXTRA_TYPE, profile.callType)
                     putExtra(CallerIdActivity.EXTRA_VERIFICATION, profile.verification)
                     putExtra(CallerIdActivity.EXTRA_VERIFICATION_CODE, verificationCode)
-                    putExtra(CallerIdActivity.EXTRA_ACTION, decision.action.name)
-                    putExtra(CallerIdActivity.EXTRA_REASON, decision.reason)
+                    putExtra(CallerIdActivity.EXTRA_ACTION, effectiveDecision.action.name)
+                    putExtra(CallerIdActivity.EXTRA_REASON, effectiveDecision.reason)
                     putExtra(CallerIdActivity.EXTRA_NAME, profile.displayName)
                     putExtra(CallerIdActivity.EXTRA_ORGANISATION, profile.organisation)
                     putExtra(CallerIdActivity.EXTRA_SOURCE, profile.identitySource)
@@ -164,10 +169,10 @@ class SentinelCallScreeningService : CallScreeningService() {
             logger.log(
                 LocalLogger.LogLevel.SECURITY,
                 "CallScreening",
-                "Décision=${decision.action} source=${decision.source} motif=${decision.reason}"
+                "Décision=${effectiveDecision.action} source=${effectiveDecision.source} motif=${effectiveDecision.reason}"
             )
 
-            when (IntelligenceCoreRuntime.publishCallDecision(appContext, decision, verificationCode)) {
+            when (IntelligenceCoreRuntime.publishCallDecision(appContext, effectiveDecision, verificationCode)) {
                 PublishResult.OVERFLOW -> logger.log(
                     LocalLogger.LogLevel.WARNING,
                     "CallScreening",
@@ -183,7 +188,7 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
 
             runCatching {
-                CallFilterLogStore.get(appContext).recordAsync(decision)
+                CallFilterLogStore.get(appContext).recordAsync(effectiveDecision)
             }.onFailure {
                 logger.log(
                     LocalLogger.LogLevel.WARNING,
@@ -194,7 +199,7 @@ class SentinelCallScreeningService : CallScreeningService() {
 
             // Persist only privacy-bounded call metadata; never the raw or normalized number.
             runCatching {
-                PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))
+                PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(effectiveDecision))
             }.onFailure {
                 logger.log(
                     LocalLogger.LogLevel.WARNING,
