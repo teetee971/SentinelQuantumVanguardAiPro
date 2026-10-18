@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +27,10 @@ import com.sentinel.quantum.data.OsintRepository
 import com.sentinel.quantum.data.OsintSource
 import com.sentinel.quantum.data.OsintTransientItemStore
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -171,6 +175,24 @@ fun OsintFeedScreen(navController: NavController) {
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            SentinelHeroVisual(
+                status = when {
+                    isLoading -> SentinelStatus.LIMITED
+                    errorMessage != null -> SentinelStatus.BAD
+                    displayedSnapshot == OsintDisplayedSnapshot.PARTIAL -> SentinelStatus.WARN
+                    feedItems.isNotEmpty() -> SentinelStatus.OK
+                    else -> SentinelStatus.UNKNOWN
+                },
+                title = "Veille OSINT Sentinel",
+                subtitle = "Sources publiques, couverture affichée et cache local sans transformer un flux en certification.",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modules = listOf(
+                    SentinelCoreModule("sources", "Sources", if (feedItems.isEmpty()) SentinelStatus.UNKNOWN else if (displayedSnapshot == OsintDisplayedSnapshot.PARTIAL) SentinelStatus.WARN else SentinelStatus.OK, Icons.Default.Refresh, enabled = false),
+                    SentinelCoreModule("coverage", "Couverture", if (displayedSnapshot == OsintDisplayedSnapshot.PARTIAL) SentinelStatus.WARN else if (feedItems.isNotEmpty()) SentinelStatus.OK else SentinelStatus.UNKNOWN, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("cache", "Cache local", if (cachedAtMs != null || feedItems.isNotEmpty()) SentinelStatus.OK else SentinelStatus.UNKNOWN, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("alerts", "Alertes", if (feedItems.isNotEmpty()) SentinelStatus.OK else SentinelStatus.UNKNOWN, Icons.Default.Security, enabled = false)
+                )
+            )
             cachedAtMs?.let { fetchedAtMs ->
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE)
                 Text(

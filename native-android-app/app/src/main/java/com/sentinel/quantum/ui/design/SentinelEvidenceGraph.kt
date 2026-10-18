@@ -19,9 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -61,6 +60,7 @@ fun SentinelEvidenceGraph(
     val rowHeight = 92f
     val horizontalPadding = 10f
     val gap = 8f
+    val density = LocalDensity.current.density
 
     BoxWithConstraints(
         modifier = modifier
@@ -88,8 +88,14 @@ fun SentinelEvidenceGraph(
                         val to = positions[toIndex]
                         drawLine(
                             color = SentinelD1.Cyan.copy(alpha = 0.62f),
-                            start = Offset(from.x + nodeWidth / 2f, from.y + 36f),
-                            end = Offset(to.x + nodeWidth / 2f, to.y + 36f),
+                            start = Offset(
+                                (from.x + nodeWidth / 2f) * density,
+                                (from.y + 36f) * density
+                            ),
+                            end = Offset(
+                                (to.x + nodeWidth / 2f) * density,
+                                (to.y + 36f) * density
+                            ),
                             strokeWidth = 2f,
                             cap = StrokeCap.Round
                         )

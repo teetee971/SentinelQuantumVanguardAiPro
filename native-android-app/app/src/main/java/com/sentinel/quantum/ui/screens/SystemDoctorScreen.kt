@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
@@ -30,8 +36,9 @@ import kotlinx.coroutines.withContext
 import com.sentinel.quantum.security.SentinelDeviceDiagnostic
 import com.sentinel.quantum.security.SentinelDeviceUtilitiesOrchestrator
 import com.sentinel.quantum.security.SentinelSystemDoctor
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
 
@@ -51,6 +58,45 @@ fun SystemDoctorScreen(navController: NavController) {
     }
     var isCleanupBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val doctorStatus = scan?.let { result ->
+        when (result.report.highestObservedRisk) {
+            SentinelDeviceDiagnostic.Status.CRITICAL -> SentinelStatus.BAD
+            SentinelDeviceDiagnostic.Status.WARNING -> SentinelStatus.WARN
+            SentinelDeviceDiagnostic.Status.OK -> SentinelStatus.OK
+            SentinelDeviceDiagnostic.Status.UNKNOWN,
+            SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE -> SentinelStatus.UNKNOWN
+        }
+    } ?: SentinelStatus.UNKNOWN
+    val doctorModules = listOf(
+        SentinelCoreModule(
+            id = "permissions",
+            label = "Permissions · ${if (scan == null) "INCONNU" else "OBSERVÉ"}",
+            status = doctorStatus,
+            icon = Icons.Default.Key,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "roles",
+            label = "Rôles Android · INCONNU",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Security,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "storage",
+            label = if (cleanupDiscovery == null) "Stockage · INCONNU" else "Stockage · OBSERVÉ",
+            status = if (cleanupDiscovery == null) SentinelStatus.UNKNOWN else SentinelStatus.OK,
+            icon = Icons.Default.Storage,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "battery",
+            label = "Batterie · INCONNU",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.BatteryChargingFull,
+            enabled = false
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -65,14 +111,12 @@ fun SystemDoctorScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Diagnostic",
-                title = "Observer ce qu’Android expose réellement",
-                body = "Analyse locale des signaux accessibles. Une zone non observable reste explicitement inconnue.",
-                badges = listOf(
-                    "Local" to SentinelD1.Success,
-                    "Fail-closed" to SentinelD1.Cyan
-                )
+            SentinelHeroVisual(
+                status = doctorStatus,
+                title = "Diagnostic système",
+                subtitle = "Analyse locale des signaux accessibles. Une zone non observable reste explicitement inconnue.",
+                modules = doctorModules,
+                modifier = Modifier.testTag("system-doctor-command-center")
             )
             Button(
                 onClick = {

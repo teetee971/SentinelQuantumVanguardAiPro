@@ -8,6 +8,8 @@ import android.media.MediaRecorder
 import android.media.PlaybackParams
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.telecom.TelecomManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,6 +48,12 @@ import com.sentinel.quantum.auth.Auth0SessionController
 import com.sentinel.quantum.security.SentinelDeviceIdentity
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelErrorState
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelVoiceVisualizer
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.voice.LiveKitVoiceAudioProcessor
@@ -107,8 +115,63 @@ class VoiceStudioActivity : ComponentActivity() {
             mutableStateOf("Testez votre voix localement avant son utilisation dans un appel Sentinel compatible.")
         }
         val commercialState = remember { VoiceAddonPolicy.currentState() }
+        val motionLevel = remember {
+            val animatorScale = runCatching {
+                Settings.Global.getFloat(
+                    contentResolver,
+                    Settings.Global.ANIMATOR_DURATION_SCALE,
+                    1f
+                )
+            }.getOrDefault(1f)
+            val powerSave = getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+            SentinelMotionPolicy.resolve(animatorScale, powerSave)
+        }
         val pttGestureScope = rememberCoroutineScope()
         val pttEnabled = sessionConnected && !sessionBusy
+        val voiceError = sessionStatus.contains("VOICE_SESSION_HTTP_503") ||
+            sessionStatus.contains("503")
+        val voiceModules = listOf(
+            SentinelCoreModule(
+                id = "recording",
+                label = if (recording) "Enregistrement · ACTIF" else "Enregistrement · INACTIF",
+                status = if (recording) SentinelStatus.TEST else SentinelStatus.UNKNOWN,
+                icon = Icons.Default.Mic,
+                enabled = false
+            ),
+            SentinelCoreModule(
+                id = "effect",
+                label = "Effet · ${selectedEffect.label}",
+                status = SentinelStatus.TEST,
+                icon = Icons.Default.GraphicEq,
+                enabled = false
+            ),
+            SentinelCoreModule(
+                id = "server",
+                label = if (sessionConnected) "Serveur · OBSERVÉ" else "Serveur · INCONNU",
+                status = when {
+                    sessionConnected -> SentinelStatus.OK
+                    voiceError -> SentinelStatus.BAD
+                    sessionBusy -> SentinelStatus.WARN
+                    else -> SentinelStatus.UNKNOWN
+                },
+                icon = Icons.Default.Lock,
+                enabled = false
+            ),
+            SentinelCoreModule(
+                id = "ptt",
+                label = if (sessionConnected) "PTT · PRÊT" else "PTT · VERROUILLÉ",
+                status = if (sessionConnected) SentinelStatus.OK else SentinelStatus.LOCKED,
+                icon = Icons.Default.Mic,
+                enabled = false
+            ),
+            SentinelCoreModule(
+                id = "pstn",
+                label = "VoIP/PSTN · INDISPONIBLE",
+                status = SentinelStatus.LOCKED,
+                icon = Icons.Default.Lock,
+                enabled = false
+            )
+        )
 
         LaunchedEffect(pttEnabled) {
             if (!pttEnabled) {
@@ -216,6 +279,29 @@ class VoiceStudioActivity : ComponentActivity() {
                     status = commercialState.customerLabel,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                SentinelQuantumCore(
+                    modules = voiceModules,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                SentinelVoiceVisualizer(
+                    active = recording || playing || transmitting,
+                    motionLevel = motionLevel,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (voiceError) {
+                    SentinelErrorState(
+                        title = "Serveur vocal indisponible",
+                        detail = "Le serveur a renvoyé VOICE_SESSION_HTTP_503. La session PTT n’est pas connectée ; réessayez quand le service sera disponible.",
+                        retryLabel = "Réessayer la session",
+                        onRetry = {
+                            if (!sessionBusy && !sessionConnected) connectVoiceSession()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),

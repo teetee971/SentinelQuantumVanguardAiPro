@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,6 +51,7 @@ import com.sentinel.quantum.security.WifiScanResultTruth
 import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.security.WifiSecurityType
 import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
@@ -110,6 +112,9 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         SurveillanceTab.BLUETOOTH -> bluetoothDevices.map { it.assessment.riskLevel }
     }
     val aggregateStatus = NetworkVpnPresentation.aggregateNetworkStatus(visibleRiskLevels)
+    val bluetoothStatus = NetworkVpnPresentation.aggregateNetworkStatus(
+        bluetoothDevices.map { it.assessment.riskLevel }
+    )
     val hasEvidence = visibleRiskLevels.isNotEmpty()
     val heroSubtitle = when {
         isScanning -> "Analyse locale en cours. Sentinel attend des observations Android avant d’établir un état."
@@ -118,6 +123,53 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         aggregateStatus == SentinelStatus.WARN -> "Des signaux intermédiaires nécessitent une vérification. Ils ne constituent pas à eux seuls une preuve de compromission."
         else -> "Aucun signal moyen ou élevé n’est présent dans les résultats visibles. Cela ne prouve pas que l’environnement est sûr."
     }
+    val topologyModules = listOf(
+        SentinelCoreModule(
+            id = "phone",
+            label = "Téléphone · LOCAL",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Security,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "wifi",
+            label = if (wifiNetworks.isEmpty()) "Wi‑Fi · INCONNU" else "Wi‑Fi · OBSERVÉ",
+            status = NetworkVpnPresentation.aggregateNetworkStatus(
+                wifiNetworks.map { it.assessment.riskLevel }
+            ),
+            icon = Icons.Default.Wifi
+        ),
+        SentinelCoreModule(
+            id = "bluetooth",
+            label = if (bluetoothDevices.isEmpty()) "Bluetooth · INCONNU" else "Bluetooth · OBSERVÉ",
+            status = bluetoothStatus,
+            icon = Icons.Default.Bluetooth
+        ),
+        SentinelCoreModule(
+            id = "probable",
+            label = if (bluetoothDevices.any {
+                    it.assessment.likelyTracker ||
+                        it.assessment.likelyBeacon ||
+                        it.assessment.likelyCameraOrRecorder
+                }
+            ) "Appareil · PROBABLE" else "Appareils · INCONNU",
+            status = if (bluetoothDevices.any {
+                    it.assessment.likelyTracker ||
+                        it.assessment.likelyBeacon ||
+                        it.assessment.likelyCameraOrRecorder
+                }
+            ) SentinelStatus.WARN else SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Radar,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "connections",
+            label = "Connexions · INCONNU",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Security,
+            enabled = false
+        )
+    )
 
     LaunchedEffect(networkTimelineStore) {
         timelineSnapshot = withContext(Dispatchers.IO) { networkTimelineStore.read() }
@@ -285,7 +337,14 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         title = if (selectedTab == SurveillanceTab.WIFI) "Observation Wi-Fi" else "Observation Bluetooth",
                         subtitle = heroSubtitle,
                         modifier = Modifier.testTag("network-command-center"),
-                        motionLevel = motionLevel
+                        motionLevel = motionLevel,
+                        modules = topologyModules,
+                        onModuleClick = { module ->
+                            when (module.id) {
+                                "wifi" -> openWifiConnectionPanel()
+                                "bluetooth" -> openBluetoothConnectionPanel()
+                            }
+                        }
                     )
                 }
 

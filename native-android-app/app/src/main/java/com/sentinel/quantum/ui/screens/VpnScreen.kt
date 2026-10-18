@@ -21,11 +21,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.SentinelVpnRuntimeStateRegistry
+import com.sentinel.quantum.security.SentinelVpnController
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.VpnLock
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 
@@ -52,6 +59,58 @@ fun VpnScreen(navController: NavController) {
         val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
         SentinelMotionPolicy.resolve(animatorScale, powerSave)
     }
+    val tunnelModules = listOf(
+        SentinelCoreModule(
+            id = "device",
+            label = "Téléphone · LOCAL",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Security,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "tunnel",
+            label = "Tunnel · ${runtimeSurface.badge}",
+            status = runtimeSurface.status,
+            icon = Icons.Default.VpnLock,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "gateway",
+            label = if (runtimeState == SentinelVpnController.RuntimeState.PROTECTED) {
+                "Passerelle · OBSERVÉE"
+            } else {
+                "Passerelle · INCONNUE"
+            },
+            status = if (runtimeState == SentinelVpnController.RuntimeState.PROTECTED) {
+                SentinelStatus.OK
+            } else {
+                SentinelStatus.UNKNOWN
+            },
+            icon = Icons.Default.Security,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "dns",
+            label = "DNS · INCONNU",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Dns,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "ipv4",
+            label = "IPv4 · INCONNU",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Security,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "ipv6",
+            label = "IPv6 · INCONNU",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Security,
+            enabled = false
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -75,7 +134,8 @@ fun VpnScreen(navController: NavController) {
                 title = runtimeSurface.title,
                 subtitle = runtimeSurface.subtitle,
                 modifier = Modifier.testTag("vpn-command-center"),
-                motionLevel = motionLevel
+                motionLevel = motionLevel,
+                modules = tunnelModules
             )
 
             SentinelSectionHeader(

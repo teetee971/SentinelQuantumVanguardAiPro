@@ -68,6 +68,9 @@ fun NavGraph(
         composable(Screen.DigitalExposure.route) {
             DigitalExposureScreen(navController = navController)
         }
+        composable(Screen.Assistant.route) {
+            AssistantScreen(navController = navController)
+        }
         composable(Screen.CollectiveDefense.route) {
             CollectiveDefenseScreen(navController = navController)
         }

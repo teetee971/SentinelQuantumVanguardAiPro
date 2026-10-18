@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,8 +24,9 @@ import com.sentinel.quantum.security.HeaderAnomaly
 import com.sentinel.quantum.security.LookalikeLevel
 import com.sentinel.quantum.security.LookalikeReason
 import com.sentinel.quantum.security.LocalLogger
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,6 +42,14 @@ fun EmailSecurityScreen(navController: NavController) {
     var result by remember { mutableStateOf<EmailSecurityAnalyzer.Analysis?>(null) }
     var isAnalyzing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val screenStatus = when {
+        result == null -> SentinelStatus.UNKNOWN
+        result?.accepted != true -> SentinelStatus.BAD
+        result?.riskLevel == EmailSecurityAnalyzer.RiskLevel.HIGH -> SentinelStatus.BAD
+        result?.riskLevel == EmailSecurityAnalyzer.RiskLevel.MEDIUM -> SentinelStatus.WARN
+        result?.riskLevel == EmailSecurityAnalyzer.RiskLevel.LOW -> SentinelStatus.OK
+        else -> SentinelStatus.UNKNOWN
+    }
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -49,13 +61,15 @@ fun EmailSecurityScreen(navController: NavController) {
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            SentinelHero(
-                eyebrow = "E-mail",
+            SentinelHeroVisual(
+                status = screenStatus,
                 title = "Inspecter le message avant d’agir",
-                body = stringResource(R.string.email_security_intro),
-                badges = listOf(
-                    "Analyse locale" to SentinelD1.Success,
-                    "IOC explicites" to SentinelD1.Cyan
+                subtitle = stringResource(R.string.email_security_intro),
+                modules = listOf(
+                    SentinelCoreModule("message", "E-mail", screenStatus, Icons.Default.Email, enabled = false),
+                    SentinelCoreModule("links", "Liens", if (result == null) SentinelStatus.UNKNOWN else screenStatus, Icons.Default.Link, enabled = false),
+                    SentinelCoreModule("ioc", "IOC", if (result == null) SentinelStatus.UNKNOWN else screenStatus, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("proof", "Preuves", SentinelStatus.TEST, Icons.Default.Security, enabled = false)
                 )
             )
             OutlinedTextField(rawMessage, { rawMessage = it.take(256 * 1024) },

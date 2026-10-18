@@ -19,6 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +44,7 @@ import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsTimelineMapper
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -95,7 +100,30 @@ fun SmsScannerScreen(navController: NavController) {
                 subtitle = presentation?.detail
                     ?: "Sentinel inspecte localement le texte et les liens partagés. Aucun lien n’est ouvert automatiquement.",
                 modifier = Modifier.testTag("sms-threat-hero"),
-                motionLevel = motionLevel
+                motionLevel = motionLevel,
+                modules = listOf(
+                    SentinelCoreModule(
+                        id = "message",
+                        label = "Message",
+                        status = presentation?.status ?: SentinelStatus.UNKNOWN,
+                        icon = Icons.Default.Message,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "links",
+                        label = "Liens",
+                        status = if (result == null) SentinelStatus.UNKNOWN else presentation?.status ?: SentinelStatus.UNKNOWN,
+                        icon = Icons.Default.Link,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "anti-phishing",
+                        label = "Anti-phishing",
+                        status = if (result == null) SentinelStatus.TEST else presentation?.status ?: SentinelStatus.UNKNOWN,
+                        icon = Icons.Default.Security,
+                        enabled = false
+                    )
+                )
             )
 
             SentinelSectionHeader(

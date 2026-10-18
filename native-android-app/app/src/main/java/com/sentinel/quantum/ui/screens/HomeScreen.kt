@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
@@ -572,6 +573,14 @@ private fun homeTools(context: Context, navController: NavController): List<Home
         HomeDomain.COMMUNICATIONS,
         featured = true
     ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+    HomeTool(
+        "Assistant Sentinel",
+        "Comprendre un risque avec une réponse locale explicitement non probante",
+        Icons.Default.AutoAwesome,
+        setOf("assistant", "ia", "risque", "alerte", "conseil"),
+        HomeDomain.ANALYSIS,
+        featured = true
+    ) { navController.navigate(Screen.Assistant.route) },
     HomeTool(
         "Bloquer un appel",
         "Gérer les règles locales de blocage et d’identification",

@@ -45,6 +45,9 @@ import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.SentinelDeviceIdentity
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -262,6 +265,51 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SentinelQuantumCore(
+                modules = listOf(
+                    SentinelCoreModule(
+                        id = "account",
+                        label = "Compte",
+                        status = when {
+                            authLoading -> SentinelStatus.WARN
+                            authUser != null -> SentinelStatus.OK
+                            else -> SentinelStatus.LOCKED
+                        },
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "appearance",
+                        label = "Apparence",
+                        status = SentinelStatus.OK,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "notifications",
+                        label = "Notifications",
+                        status = if (notificationsEnabled) SentinelStatus.OK else SentinelStatus.LIMITED,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "privacy",
+                        label = "Confidentialité",
+                        status = SentinelStatus.OK,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "voice",
+                        label = "Studio voix · TEST",
+                        status = SentinelStatus.TEST,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "diagnostic",
+                        label = "Diagnostic · INCONNU",
+                        status = SentinelStatus.UNKNOWN,
+                        enabled = false
+                    )
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
             SentinelSectionHeader(
                 title = stringResource(R.string.settings_auth_title),
                 subtitle = stringResource(R.string.settings_auth_description)

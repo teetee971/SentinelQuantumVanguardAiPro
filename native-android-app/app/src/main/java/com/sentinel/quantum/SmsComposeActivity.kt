@@ -93,6 +93,9 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import com.sentinel.quantum.ui.design.PhoneCoreConversationRow
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelStatus
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.ui.semantics.semantics
@@ -519,6 +522,45 @@ class SmsComposeActivity : ComponentActivity() {
                         PhoneCoreBrand(
                             context = "Messages",
                             status = activationModel.title,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        SentinelQuantumCore(
+                            modules = listOf(
+                                SentinelCoreModule(
+                                    id = "role",
+                                    label = "Rôle SMS",
+                                    status = if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) {
+                                        SentinelStatus.OK
+                                    } else {
+                                        SentinelStatus.LOCKED
+                                    },
+                                    enabled = false
+                                ),
+                                SentinelCoreModule(
+                                    id = "conversations",
+                                    label = "Conversations",
+                                    status = if (conversations.canRead()) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
+                                    enabled = false
+                                ),
+                                SentinelCoreModule(
+                                    id = "send",
+                                    label = "Envoi",
+                                    status = if (activationSnapshot.canSend) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
+                                    enabled = false
+                                ),
+                                SentinelCoreModule(
+                                    id = "mms",
+                                    label = if (mmsItems.isEmpty()) "MMS · INCONNU" else "MMS · OBSERVÉS",
+                                    status = if (mmsItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST,
+                                    enabled = false
+                                ),
+                                SentinelCoreModule(
+                                    id = "phishing",
+                                    label = "Anti‑phishing · TEST",
+                                    status = SentinelStatus.TEST,
+                                    enabled = false
+                                )
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         )
                         TabRow(selectedTabIndex = if (showComposer) 1 else 0) {

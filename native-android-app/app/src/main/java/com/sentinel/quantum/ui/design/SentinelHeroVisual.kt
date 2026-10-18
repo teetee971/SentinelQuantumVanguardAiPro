@@ -59,7 +59,7 @@ fun SentinelHeroVisual(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = if (modules.isEmpty()) 230.dp else 360.dp)
+            .heightIn(min = if (modules.isEmpty()) 230.dp else 320.dp)
             .clip(shape)
             .background(
                 brush = Brush.radialGradient(
@@ -67,13 +67,19 @@ fun SentinelHeroVisual(
                 ),
                 shape = shape
             )
-            .semantics(mergeDescendants = true) { },
+            // The scalar hero keeps the reviewed `semantics(mergeDescendants = true)` contract;
+            // module mode leaves each actionable node individually discoverable.
+            .semantics(mergeDescendants = modules.isEmpty()) { },
         contentAlignment = Alignment.Center
     ) {
         if (modules.isNotEmpty()) {
             SentinelQuantumCore(
                 modules = modules,
-                modifier = Modifier.matchParentSize().testTag("sentinel_quantum_core"),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .heightIn(min = 280.dp)
+                    .testTag("sentinel_quantum_core"),
                 motionLevel = motionLevel,
                 onModuleClick = onModuleClick
             )

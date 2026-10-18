@@ -155,52 +155,38 @@ fun SentinelHero(
     badges: List<Pair<String, Color>>,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.dp, SentinelD1.BorderStrong, RoundedCornerShape(26.dp)),
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = SentinelD1.Cyan
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (badges.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    badges.forEach { (label, color) ->
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = color.copy(alpha = 0.14f)
-                        ) {
-                            Text(
-                                text = label.uppercase(),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = color
-                            )
-                        }
-                    }
-                }
-            }
-        }
+    // Keep the historical API used by secondary destinations, but route it through the same
+    // native command-centre visual as the newer screens. Badge colors remain semantic: no
+    // synthetic green state is introduced when an older caller only supplied a neutral badge.
+    val modules = badges.mapIndexed { index, (label, color) ->
+        SentinelCoreModule(
+            id = "${eyebrow.lowercase()}-$index",
+            label = label.take(22),
+            status = statusFromBadgeColor(color),
+            enabled = false
+        )
     }
+    val overallStatus = when {
+        modules.any { it.status == SentinelStatus.BAD } -> SentinelStatus.BAD
+        modules.any { it.status == SentinelStatus.WARN } -> SentinelStatus.WARN
+        modules.any { it.status == SentinelStatus.TEST || it.status == SentinelStatus.PURP } -> SentinelStatus.TEST
+        else -> SentinelStatus.UNKNOWN
+    }
+    SentinelHeroVisual(
+        status = overallStatus,
+        title = title,
+        subtitle = "$eyebrow · $body",
+        modifier = modifier,
+        modules = modules
+    )
+}
+
+private fun statusFromBadgeColor(color: Color): SentinelStatus = when {
+    color == SentinelD1.Success -> SentinelStatus.OK
+    color == SentinelD1.Warning -> SentinelStatus.WARN
+    color == SentinelD1.Danger -> SentinelStatus.BAD
+    color == SentinelD1.Violet -> SentinelStatus.TEST
+    color == SentinelD1.Unknown -> SentinelStatus.UNKNOWN
+    else -> SentinelStatus.UNKNOWN
 }
 

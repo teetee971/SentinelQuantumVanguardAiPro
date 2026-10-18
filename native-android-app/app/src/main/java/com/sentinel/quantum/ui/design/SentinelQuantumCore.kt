@@ -131,11 +131,14 @@ fun SentinelQuantumCore(
             )
             .semantics(mergeDescendants = false) { }
     ) {
-        val center = Offset(maxWidth.value / 2f, maxHeight.value / 2f)
-        val orbitRadius = min(maxWidth.value, maxHeight.value) * 0.30f
+        // BoxWithConstraints exposes dp while Canvas draws in px. Keep the two coordinate spaces
+        // separate so the core remains centered on high-density phones such as the S24+.
+        val orbitRadiusDp = min(maxWidth.value, maxHeight.value) * 0.30f
         val count = visibleModules.size.coerceAtLeast(1)
 
         Canvas(modifier = Modifier.fillMaxSize()) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val orbitRadius = min(size.width, size.height) * 0.30f
             val rotation = if (motionLevel == MotionLevel.FULL) {
                 phase.value * 2f * PI.toFloat()
             } else {
@@ -231,8 +234,8 @@ fun SentinelQuantumCore(
 
         visibleModules.forEachIndexed { index, module ->
             val angle = -PI / 2f + (index.toFloat() / count) * 2f * PI
-            val x = cos(angle).toFloat() * orbitRadius
-            val y = sin(angle).toFloat() * orbitRadius
+            val x = cos(angle).toFloat() * orbitRadiusDp
+            val y = sin(angle).toFloat() * orbitRadiusDp
             Surface(
                 modifier = Modifier
                     .align(Alignment.Center)
