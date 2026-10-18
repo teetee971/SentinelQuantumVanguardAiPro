@@ -1,0 +1,84 @@
+{
+  "count": 13,
+  "design": "Sentinel D.1",
+  "images": [
+    {
+      "file": "1000415621.png",
+      "screen": "Applications à risque",
+      "sha256": "7d1558b2fb21a0f43e55221eb535a4619c20b89c300f30db87886053fca11e47",
+      "bytes": 357673
+    },
+    {
+      "file": "1000415622.png",
+      "screen": "Carte mondiale des menaces",
+      "sha256": "02f5e8ea54fb2e10cf8c5924ccdbc449ccd93e61b6b4f63f63243baf2a672dad",
+      "bytes": 398833
+    },
+    {
+      "file": "1000415623.png",
+      "screen": "Rapport analyse",
+      "sha256": "8c3730276886a86254e397e06fb0b26ca769bb6daea4aea798630e8bccdb3284",
+      "bytes": 358287
+    },
+    {
+      "file": "1000415624.png",
+      "screen": "Quarantaine sécurisée",
+      "sha256": "c66d5440d8612531ad9e615c34010c65e4ffb30c8da0d692f61625daf9da48b6",
+      "bytes": 347487
+    },
+    {
+      "file": "1000415625.png",
+      "screen": "Protection temps réel",
+      "sha256": "318bd5a956168bb4d0495a6ae90aa07db2dab0da4076ac47b066e33e6817ee96",
+      "bytes": 349605
+    },
+    {
+      "file": "1000415626.png",
+      "screen": "Détail menace",
+      "sha256": "2ec17827f5edfe1755d226f59d3c0d5f5cf421d0655882c8a807325378f3c34f",
+      "bytes": 328272
+    },
+    {
+      "file": "1000415627.png",
+      "screen": "Analyse appareil",
+      "sha256": "59ce27489eca5fa9990ed2c1e588cc173e5f2a6e5dcedb63416e5cb7012c32a0",
+      "bytes": 326305
+    },
+    {
+      "file": "1000415628.png",
+      "screen": "Accueil Command Center",
+      "sha256": "3fdcb4cee989c2bbc756cb53f8e2f60cfecb4d3eaf49753a7d9fe2cde076aaac",
+      "bytes": 288684
+    },
+    {
+      "file": "1000415629.png",
+      "screen": "Planche multi-écrans",
+      "sha256": "6138e068a69d591317e191dfbaa3e5212c1f90054c42889a01e6ddfcff6da358",
+      "bytes": 375004
+    },
+    {
+      "file": "1000415630.png",
+      "screen": "VPN privé",
+      "sha256": "e881e8f49a96979d2d8c79a61dae233b27980e447002cd4f2cf1cbf4d007033c",
+      "bytes": 290217
+    },
+    {
+      "file": "1000415631.png",
+      "screen": "Contacts Sentinel",
+      "sha256": "02631e2b9ec5121f97b6bfb6db36247b178ef888dd14410b97880459678b2c4f",
+      "bytes": 267575
+    },
+    {
+      "file": "1000415632.png",
+      "screen": "SMS sécurisés et phishing",
+      "sha256": "eb85c230bccf11b7e79582ae6386c88e81f8b39aecf4cf07727ed83247bdb4ff",
+      "bytes": 281680
+    },
+    {
+      "file": "1000415633.png",
+      "screen": "Fiche numéro",
+      "sha256": "2afa7692ef93882f219fc182fbb1f0af8ff399252e2dd5a1460f13583e536143",
+      "bytes": 280733
+    }
+  ]
+}
