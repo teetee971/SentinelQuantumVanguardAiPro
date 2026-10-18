@@ -19,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -38,8 +39,12 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelGlassCard
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -182,12 +187,56 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                SentinelHeroVisual(
-                    status = analysisState.overallStatus,
-                    title = heroTitle,
-                    subtitle = heroSubtitle,
-                    motionLevel = motionLevel,
-                    modules = permissionModules
+                SentinelHolographicScene(
+                    model = SentinelHolographicSceneModel(
+                        kind = SentinelSceneKind.RISK_APPLICATIONS,
+                        status = analysisState.overallStatus,
+                        title = "APPLICATIONS À RISQUE",
+                        evidenceLabel = heroTitle,
+                        evidenceSource = "analyse locale des permissions",
+                        progress = if (isLoading) null else 1f,
+                        nodes = permissionModules.map {
+                            com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                                label = it.label,
+                                status = it.status
+                            )
+                        }
+                    ),
+                    motionLevel = motionLevel
+                )
+            }
+
+            item {
+                SentinelReferenceMetricStrip(
+                    metrics = listOf(
+                        SentinelReferenceMetric(
+                            label = "Applications",
+                            value = profiles.size.toString(),
+                            detail = if (isLoading) "analyse en cours" else "visibles",
+                            status = if (isLoading) SentinelStatus.LIMITED else if (profiles.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK
+                        ),
+                        SentinelReferenceMetric(
+                            label = "Permissions sensibles",
+                            value = sensitiveApps.toString(),
+                            detail = "déclarées",
+                            status = if (sensitiveApps == 0 && profiles.isNotEmpty()) SentinelStatus.OK else SentinelStatus.UNKNOWN
+                        ),
+                        SentinelReferenceMetric(
+                            label = "Heuristiques élevées",
+                            value = highRiskApps.toString(),
+                            detail = "pas un malware",
+                            status = if (highRiskApps > 0) SentinelStatus.WARN else if (profiles.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK
+                        ),
+                        SentinelReferenceMetric(
+                            label = "Malware",
+                            value = "INCONNU",
+                            detail = "hors portée du contrôle",
+                            status = SentinelStatus.UNKNOWN
+                        )
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("risk_apps_reference_metrics")
                 )
             }
 

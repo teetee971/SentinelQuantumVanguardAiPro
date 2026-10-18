@@ -42,7 +42,11 @@ import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.security.readTelecomInCall
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelCoreModule
-import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
+import com.sentinel.quantum.ui.design.SentinelSceneKind
+import com.sentinel.quantum.ui.design.MotionLevel
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
@@ -174,15 +178,21 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        SentinelQuantumCore(
-                            modules = setupChecks.map { (step, granted) ->
-                                SentinelCoreModule(
-                                    id = step.name,
-                                    label = PhoneCoreSetupWizardStore.stepLabel(step),
-                                    status = if (granted) SentinelStatus.OK else SentinelStatus.LOCKED,
-                                    enabled = false
-                                )
-                            },
+                        SentinelHolographicScene(
+                            model = SentinelHolographicSceneModel(
+                                kind = SentinelSceneKind.DEVICE_ANALYSIS,
+                                status = if (softwarePrerequisitesReady) SentinelStatus.LIMITED else SentinelStatus.LOCKED,
+                                title = "ANALYSE DE L’APPAREIL",
+                                evidenceLabel = "$readyStepCount/8 prérequis observés",
+                                evidenceSource = "diagnostic Phone Core local",
+                                nodes = setupChecks.map { (step, granted) ->
+                                    SentinelHolographicSceneNode(
+                                        label = PhoneCoreSetupWizardStore.stepLabel(step),
+                                        status = if (granted) SentinelStatus.OK else SentinelStatus.LOCKED
+                                    )
+                                }
+                            ),
+                            motionLevel = MotionLevel.STATIC,
                             modifier = Modifier.fillMaxWidth()
                         )
                         DiagnosticCard("État Phone Core") {

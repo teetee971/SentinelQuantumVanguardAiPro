@@ -94,7 +94,12 @@ import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import com.sentinel.quantum.ui.design.PhoneCoreConversationRow
 import com.sentinel.quantum.ui.design.SentinelCoreModule
-import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -524,41 +529,64 @@ class SmsComposeActivity : ComponentActivity() {
                             status = activationModel.title,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        SentinelQuantumCore(
-                            modules = listOf(
-                                SentinelCoreModule(
-                                    id = "role",
+                        SentinelHolographicScene(
+                            model = SentinelHolographicSceneModel(
+                                kind = SentinelSceneKind.SECURE_MESSAGES,
+                                status = if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) {
+                                    SentinelStatus.UNKNOWN
+                                } else {
+                                    SentinelStatus.LOCKED
+                                },
+                                title = "MESSAGES SÉCURISÉS",
+                                evidenceLabel = "Transport et analyse locaux",
+                                evidenceSource = "rôles SMS/MMS et pipeline Android",
+                                nodes = listOf(
+                                    SentinelHolographicSceneNode(
+                                        "Rôle SMS",
+                                        if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) SentinelStatus.OK else SentinelStatus.LOCKED
+                                    ),
+                                    SentinelHolographicSceneNode(
+                                        "Conversations",
+                                        if (conversations.canRead()) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED
+                                    ),
+                                    SentinelHolographicSceneNode(
+                                        "Envoi",
+                                        if (activationSnapshot.canSend) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED
+                                    ),
+                                    SentinelHolographicSceneNode(
+                                        if (mmsItems.isEmpty()) "MMS · INCONNU" else "MMS · OBSERVÉS",
+                                        if (mmsItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                                    ),
+                                    SentinelHolographicSceneNode("Anti‑phishing · TEST", SentinelStatus.TEST)
+                                )
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        SentinelReferenceMetricStrip(
+                            metrics = listOf(
+                                SentinelReferenceMetric(
                                     label = "Rôle SMS",
-                                    status = if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) {
-                                        SentinelStatus.OK
-                                    } else {
-                                        SentinelStatus.LOCKED
-                                    },
-                                    enabled = false
+                                    value = if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) "PRÊT" else "VERROUILLÉ",
+                                    detail = "statut Android",
+                                    status = if (activationSnapshot.state == SmsActivationDiagnostics.State.READY) SentinelStatus.OK else SentinelStatus.LOCKED
                                 ),
-                                SentinelCoreModule(
-                                    id = "conversations",
+                                SentinelReferenceMetric(
                                     label = "Conversations",
-                                    status = if (conversations.canRead()) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
-                                    enabled = false
+                                    value = visibleThreads.size.toString(),
+                                    detail = "observées localement",
+                                    status = if (conversations.canRead()) SentinelStatus.TEST else SentinelStatus.LOCKED
                                 ),
-                                SentinelCoreModule(
-                                    id = "send",
-                                    label = "Envoi",
-                                    status = if (activationSnapshot.canSend) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
-                                    enabled = false
+                                SentinelReferenceMetric(
+                                    label = "MMS",
+                                    value = if (mmsItems.isEmpty()) "INCONNU" else mmsItems.size.toString(),
+                                    detail = "inbox locale",
+                                    status = if (mmsItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
                                 ),
-                                SentinelCoreModule(
-                                    id = "mms",
-                                    label = if (mmsItems.isEmpty()) "MMS · INCONNU" else "MMS · OBSERVÉS",
-                                    status = if (mmsItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST,
-                                    enabled = false
-                                ),
-                                SentinelCoreModule(
-                                    id = "phishing",
-                                    label = "Anti‑phishing · TEST",
-                                    status = SentinelStatus.TEST,
-                                    enabled = false
+                                SentinelReferenceMetric(
+                                    label = "Anti-phishing",
+                                    value = "TEST",
+                                    detail = "analyse de liens",
+                                    status = SentinelStatus.TEST
                                 )
                             ),
                             modifier = Modifier.fillMaxWidth()

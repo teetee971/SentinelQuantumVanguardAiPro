@@ -65,6 +65,15 @@ fun NavGraph(
         composable(Screen.NetworkSurveillance.route) {
             NetworkSurveillanceScreen(navController = navController)
         }
+        composable(Screen.ThreatMap.route) {
+            ThreatMapScreen(navController = navController)
+        }
+        composable(Screen.Quarantine.route) {
+            QuarantineScreen(navController = navController)
+        }
+        composable(Screen.ThreatDetail.route) {
+            ThreatDetailScreen(navController = navController)
+        }
         composable(Screen.DigitalExposure.route) {
             DigitalExposureScreen(navController = navController)
         }

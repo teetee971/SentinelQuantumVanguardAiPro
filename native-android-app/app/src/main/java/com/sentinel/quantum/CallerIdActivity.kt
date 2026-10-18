@@ -75,7 +75,12 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.ui.design.SentinelStateChip
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -441,37 +446,63 @@ private fun CallerCard(
             status = decisionLabel,
             modifier = Modifier.fillMaxWidth()
         )
-        SentinelQuantumCore(
-            modules = listOf(
-                SentinelCoreModule(
-                    id = "number",
-                    label = "Numéro",
-                    status = decisionState.toStatus(),
-                    enabled = false
+        SentinelHolographicScene(
+            model = SentinelHolographicSceneModel(
+                kind = SentinelSceneKind.NUMBER_IDENTITY,
+                status = decisionState.toStatus(),
+                title = "FICHE NUMÉRO",
+                evidenceLabel = decisionLabel,
+                evidenceSource = "répertoire, indicatif et sources autorisées",
+                nodes = listOf(
+                    SentinelHolographicSceneNode(
+                        "Numéro",
+                        decisionState.toStatus()
+                    ),
+                    SentinelHolographicSceneNode(
+                        if (officialAllocation == null) "Origine · INCONNUE" else "Origine · OBSERVÉE",
+                        if (officialAllocation == null) SentinelStatus.UNKNOWN else SentinelStatus.OK
+                    ),
+                    SentinelHolographicSceneNode(
+                        if (localEvidence == null) "Local · INCONNU" else "Local · INDICATIF",
+                        if (localEvidence == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                    ),
+                    SentinelHolographicSceneNode(
+                        if (remoteResult == null) "Réputation · INCONNUE" else "Réputation · OBSERVÉE",
+                        if (remoteResult == null) SentinelStatus.UNKNOWN else SentinelStatus.WARN
+                    ),
+                    SentinelHolographicSceneNode(
+                        if (timelineSummary.events.isEmpty()) "Historique · INCONNU" else "Historique · OBSERVÉ",
+                        if (timelineSummary.events.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                    )
+                )
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+        SentinelReferenceMetricStrip(
+            metrics = listOf(
+                SentinelReferenceMetric(
+                    label = "Identité",
+                    value = if (verified) "VÉRIFIÉE" else "INCONNUE",
+                    detail = "source déclarée",
+                    status = if (verified) SentinelStatus.OK else SentinelStatus.UNKNOWN
                 ),
-                SentinelCoreModule(
-                    id = "origin",
-                    label = if (officialAllocation == null) "Origine · INCONNUE" else "Origine · OBSERVÉE",
-                    status = if (officialAllocation == null) SentinelStatus.UNKNOWN else SentinelStatus.OK,
-                    enabled = false
+                SentinelReferenceMetric(
+                    label = "Origine",
+                    value = if (officialAllocation == null) "INCONNUE" else "OBSERVÉE",
+                    detail = "attribution ARCEP",
+                    status = if (officialAllocation == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST
                 ),
-                SentinelCoreModule(
-                    id = "local",
-                    label = if (localEvidence == null) "Local · INCONNU" else "Local · INDICATIF",
-                    status = if (localEvidence == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST,
-                    enabled = false
+                SentinelReferenceMetric(
+                    label = "Réputation",
+                    value = if (remoteResult == null) "INCONNUE" else "OBSERVÉE",
+                    detail = "enrichissement autorisé",
+                    status = if (remoteResult == null) SentinelStatus.UNKNOWN else SentinelStatus.WARN
                 ),
-                SentinelCoreModule(
-                    id = "community",
-                    label = if (remoteResult == null) "Réputation · INCONNUE" else "Réputation · OBSERVÉE",
-                    status = if (remoteResult == null) SentinelStatus.UNKNOWN else SentinelStatus.WARN,
-                    enabled = false
-                ),
-                SentinelCoreModule(
-                    id = "history",
-                    label = if (timelineSummary.events.isEmpty()) "Historique · INCONNU" else "Historique · OBSERVÉ",
-                    status = SentinelStatus.UNKNOWN,
-                    enabled = false
+                SentinelReferenceMetric(
+                    label = "Historique",
+                    value = if (timelineSummary.events.isEmpty()) "INCONNU" else "OBSERVÉ",
+                    detail = "journal privé local",
+                    status = if (timelineSummary.events.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST
                 )
             ),
             modifier = Modifier.fillMaxWidth()

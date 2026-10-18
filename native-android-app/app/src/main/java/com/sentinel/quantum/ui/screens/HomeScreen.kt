@@ -85,12 +85,19 @@ import com.sentinel.quantum.ui.design.SentinelActionTile
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelGlassCard
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelReferenceAction
+import com.sentinel.quantum.ui.design.SentinelReferenceActionGrid
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.visual
 import com.sentinel.quantum.ui.presentation.HomeComponentFacts
 import com.sentinel.quantum.ui.presentation.HomeCondition
 import com.sentinel.quantum.ui.presentation.HomeModuleId
@@ -288,16 +295,52 @@ fun HomeScreen(navController: NavController) {
                     .testTag("home_primary_action")
             )
 
-            SentinelHeroVisual(
-                status = homeState.overallStatus,
-                title = homeState.headline,
-                subtitle = homeState.summary,
+            SentinelHolographicScene(
+                model = SentinelHolographicSceneModel(
+                    kind = SentinelSceneKind.COMMAND_CENTER,
+                    status = homeState.overallStatus,
+                    title = "SENTINEL COMMAND CENTER",
+                    evidenceLabel = homeState.headline,
+                    evidenceSource = "états runtime Android",
+                    nodes = coreModules.map {
+                        com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                            label = it.label,
+                            status = it.status
+                        )
+                    }
+                ),
                 motionLevel = motionLevel,
-                modules = coreModules,
-                onModuleClick = { module ->
-                    navigateCoreModule(module.id, navController, context)
-                },
                 modifier = Modifier.testTag("home_security_hero")
+            )
+
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Phone Core",
+                        value = phoneCoreModule.status.visual().label,
+                        detail = "$readyCount/8 prérequis observés",
+                        status = phoneCoreModule.status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "VPN",
+                        value = vpnModule.status.visual().label,
+                        detail = "Tunnel non présumé",
+                        status = vpnModule.status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Réseau",
+                        value = networkModule.status.visual().label,
+                        detail = "État local observé",
+                        status = networkModule.status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Défense collective",
+                        value = communityModule.status.visual().label,
+                        detail = "Signalements volontaires",
+                        status = communityModule.status
+                    )
+                ),
+                modifier = Modifier.testTag("home_reference_metrics")
             )
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -357,23 +400,18 @@ fun HomeScreen(navController: NavController) {
                     )
                 }
             } else if (normalizedQuery.isBlank() && !showAllTools) {
-                matchingTools.chunked(2).forEach { rowTools ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rowTools.forEach { tool ->
-                            QuickToolCard(
-                                title = tool.title,
-                                subtitle = capabilitySubtitle(tool),
-                                icon = tool.icon,
-                                onClick = tool.onClick,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (rowTools.size == 1) Spacer(Modifier.weight(1f))
-                    }
-                }
+                SentinelReferenceActionGrid(
+                    actions = matchingTools.take(4).map { tool ->
+                        SentinelReferenceAction(
+                            label = tool.title,
+                            detail = capabilitySubtitle(tool),
+                            icon = tool.icon,
+                            onClick = tool.onClick,
+                            status = SentinelStatus.UNKNOWN
+                        )
+                    },
+                    modifier = Modifier.testTag("home_reference_actions")
+                )
             } else if (normalizedQuery.isNotBlank()) {
                 matchingTools.forEach { tool -> HomeToolTile(tool) }
             } else {
@@ -691,4 +729,26 @@ private fun homeTools(context: Context, navController: NavController): List<Home
         setOf("osint", "veille", "evenement", "événement", "monde", "geopolitique", "géopolitique"),
         HomeDomain.WATCH
     ) { navController.navigate(Screen.OsintFeed.route) }
+    ,
+    HomeTool(
+        "Carte des menaces",
+        "Visualiser uniquement les événements géographiques réellement disponibles",
+        Icons.Default.Public,
+        setOf("carte", "menaces", "monde", "géographie", "geographie"),
+        HomeDomain.WATCH
+    ) { navController.navigate(Screen.ThreatMap.route) },
+    HomeTool(
+        "Quarantaine",
+        "Consulter les mécanismes de confinement effectivement observés",
+        Icons.Default.Security,
+        setOf("quarantaine", "confinement", "mms", "isolement"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.Quarantine.route) },
+    HomeTool(
+        "Détail d’une menace",
+        "Ouvrir un dossier de preuve lorsqu’un contrôle en fournit un",
+        Icons.Default.WarningAmber,
+        setOf("menace", "détail", "preuve", "incident"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.ThreatDetail.route) }
 )

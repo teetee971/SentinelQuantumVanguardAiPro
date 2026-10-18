@@ -62,9 +62,14 @@ import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.ui.design.SentinelActionTile
 import com.sentinel.quantum.ui.design.SentinelCoreModule
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.visual
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentation
@@ -294,27 +299,52 @@ fun PhoneSecurityScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelHeroVisual(
-                status = protectionStatus,
-                title = "Protection de l’appareil",
-                subtitle = if (protectionStatus == SentinelStatus.LIMITED) {
-                    "Prérequis logiciels Phone Core prêts · état global partiellement mesuré · validation physique distincte."
-                } else {
-                    "Prérequis Phone Core à finaliser · état global partiellement mesuré · validation physique distincte."
-                },
-                modifier = Modifier.testTag("protection-command-center"),
-                motionLevel = protectionMotion,
-                modules = protectionModules,
-                onModuleClick = { module ->
-                    when (module.id) {
-                        "phone-core" -> context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
-                        "calls" -> navController.navigate(Screen.CallBlocking.route)
-                        "messages" -> navController.navigate(Screen.SmsScanner.route)
-                        "network" -> navController.navigate(Screen.NetworkSurveillance.route)
-                        "vpn" -> navController.navigate(Screen.Vpn.route)
-                        "reputation" -> navController.navigate(Screen.CallBlocking.route)
+            SentinelHolographicScene(
+                model = SentinelHolographicSceneModel(
+                    kind = SentinelSceneKind.REAL_TIME_PROTECTION,
+                    status = protectionStatus,
+                    title = "PROTECTION TEMPS RÉEL",
+                    evidenceLabel = protectionStatus.visual().label,
+                    evidenceSource = "prérequis et contrôles Android observés",
+                    nodes = protectionModules.map {
+                        com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                            label = it.label,
+                            status = it.status
+                        )
                     }
-                }
+                ),
+                modifier = Modifier.testTag("protection-command-center"),
+                motionLevel = protectionMotion
+            )
+
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Appels",
+                        value = if (callPrerequisitesReady) "PRÊT" else "LIMITÉ",
+                        detail = "rôles et permissions",
+                        status = if (callPrerequisitesReady) SentinelStatus.OK else SentinelStatus.LIMITED
+                    ),
+                    SentinelReferenceMetric(
+                        label = "SMS / MMS",
+                        value = if (messagePrerequisitesReady) "PRÊT" else "LIMITÉ",
+                        detail = "chaîne Android",
+                        status = if (messagePrerequisitesReady) SentinelStatus.OK else SentinelStatus.LIMITED
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Réseau",
+                        value = "INCONNU",
+                        detail = "observation séparée",
+                        status = SentinelStatus.UNKNOWN
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Réputation",
+                        value = if (remoteEnrichmentEnabled) "LIMITÉE" else "VERROUILLÉE",
+                        detail = "consentement requis",
+                        status = if (remoteEnrichmentEnabled) SentinelStatus.LIMITED else SentinelStatus.LOCKED
+                    )
+                ),
+                modifier = Modifier.testTag("protection_reference_metrics")
             )
 
             ElevatedCard(

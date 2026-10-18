@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,8 +28,12 @@ import com.sentinel.quantum.security.SecurityAudit
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelGlassCard
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -158,12 +163,52 @@ fun SecurityAuditScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelHeroVisual(
-                status = analysisState.overallStatus,
-                title = heroTitle,
-                subtitle = heroSubtitle,
-                motionLevel = motionLevel,
-                modules = auditModules
+            SentinelHolographicScene(
+                model = SentinelHolographicSceneModel(
+                    kind = SentinelSceneKind.ANALYSIS_REPORT,
+                    status = analysisState.overallStatus,
+                    title = "RAPPORT D’ANALYSE",
+                    evidenceLabel = heroTitle,
+                    evidenceSource = "contrôles SecurityAudit exécutés",
+                    progress = if (isLoading) 0.5f else if (auditResult == null) null else 1f,
+                    nodes = auditModules.map {
+                        com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                            label = it.label,
+                            status = it.status
+                        )
+                    }
+                ),
+                motionLevel = motionLevel
+            )
+
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Contrôles",
+                        value = if (isLoading) "EN COURS" else if (auditResult == null) "INCONNUS" else "OBSERVÉS",
+                        detail = "audit local",
+                        status = if (isLoading) SentinelStatus.LIMITED else if (auditResult == null) SentinelStatus.UNKNOWN else SentinelStatus.OK
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Permissions",
+                        value = auditResult?.permissions?.size?.toString() ?: "INCONNU",
+                        detail = "inventaire Android",
+                        status = if (auditResult == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Historique",
+                        value = if (auditResult == null) "INCONNU" else "OBSERVÉ",
+                        detail = "résultat local",
+                        status = if (auditResult == null) SentinelStatus.UNKNOWN else SentinelStatus.OK
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Antivirus",
+                        value = "NON REVENDIQUÉ",
+                        detail = "hors portée",
+                        status = SentinelStatus.LOCKED
+                    )
+                ),
+                modifier = Modifier.fillMaxWidth().testTag("audit_reference_metrics")
             )
 
             DeviceAnalysisStatusPanel(

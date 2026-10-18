@@ -37,10 +37,16 @@ import com.sentinel.quantum.security.SentinelDeviceDiagnostic
 import com.sentinel.quantum.security.SentinelDeviceUtilitiesOrchestrator
 import com.sentinel.quantum.security.SentinelSystemDoctor
 import com.sentinel.quantum.ui.design.SentinelCoreModule
-import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.MotionLevel
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelSceneKind
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.visual
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,12 +117,52 @@ fun SystemDoctorScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SentinelHeroVisual(
-                status = doctorStatus,
-                title = "Diagnostic système",
-                subtitle = "Analyse locale des signaux accessibles. Une zone non observable reste explicitement inconnue.",
-                modules = doctorModules,
+            SentinelHolographicScene(
+                model = SentinelHolographicSceneModel(
+                    kind = SentinelSceneKind.DEVICE_ANALYSIS,
+                    status = doctorStatus,
+                    title = "ANALYSE DE L’APPAREIL",
+                    evidenceLabel = "Diagnostic système",
+                    evidenceSource = "signaux Android accessibles",
+                    progress = if (scan == null) null else 1f,
+                    nodes = doctorModules.map {
+                        com.sentinel.quantum.ui.design.SentinelHolographicSceneNode(
+                            label = it.label,
+                            status = it.status
+                        )
+                    }
+                ),
+                motionLevel = MotionLevel.STATIC,
                 modifier = Modifier.testTag("system-doctor-command-center")
+            )
+            SentinelReferenceMetricStrip(
+                metrics = listOf(
+                    SentinelReferenceMetric(
+                        label = "Permissions",
+                        value = doctorModules[0].status.visual().label,
+                        detail = "diagnostic Android",
+                        status = doctorModules[0].status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Rôles",
+                        value = "INCONNU",
+                        detail = "gérés par Android",
+                        status = SentinelStatus.UNKNOWN
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Stockage",
+                        value = doctorModules[2].status.visual().label,
+                        detail = "caches Sentinel",
+                        status = doctorModules[2].status
+                    ),
+                    SentinelReferenceMetric(
+                        label = "Batterie",
+                        value = "INCONNU",
+                        detail = "aucune inférence",
+                        status = SentinelStatus.UNKNOWN
+                    )
+                ),
+                modifier = Modifier.testTag("system_doctor_reference_metrics")
             )
             Button(
                 onClick = {

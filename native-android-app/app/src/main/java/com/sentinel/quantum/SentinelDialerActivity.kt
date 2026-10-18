@@ -96,6 +96,12 @@ import com.sentinel.quantum.ui.design.PhoneCoreNumberPad
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelHolographicScene
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneModel
+import com.sentinel.quantum.ui.design.SentinelHolographicSceneNode
+import com.sentinel.quantum.ui.design.SentinelReferenceMetric
+import com.sentinel.quantum.ui.design.SentinelReferenceMetricStrip
+import com.sentinel.quantum.ui.design.SentinelSceneKind
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.toStatus
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -1488,6 +1494,55 @@ class SentinelDialerActivity : ComponentActivity() {
                             val phoneCount = remember(contactItems) {
                                 contactItems.sumOf { ContactPresentationPolicy.displayNumbers(it.phoneNumbers).size }
                             }
+
+                            SentinelHolographicScene(
+                                model = SentinelHolographicSceneModel(
+                                    kind = SentinelSceneKind.CONTACT_ORBIT,
+                                    status = if (contactItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK,
+                                    title = "CONTACTS SENTINEL",
+                                    evidenceLabel = if (contactItems.isEmpty()) "Répertoire vide ou non observable" else "$callableCount contact(s) observé(s)",
+                                    evidenceSource = "ContactsContract Android",
+                                    nodes = listOf(
+                                        SentinelHolographicSceneNode("Répertoire", SentinelStatus.OK),
+                                        SentinelHolographicSceneNode(
+                                            "Numéros",
+                                            if (phoneCount == 0) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                                        ),
+                                        SentinelHolographicSceneNode("Provenance locale", SentinelStatus.OK)
+                                    )
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            SentinelReferenceMetricStrip(
+                                metrics = listOf(
+                                    SentinelReferenceMetric(
+                                        label = "Contacts",
+                                        value = contactItems.size.toString(),
+                                        detail = "observés localement",
+                                        status = SentinelStatus.TEST
+                                    ),
+                                    SentinelReferenceMetric(
+                                        label = "Appelables",
+                                        value = callableCount.toString(),
+                                        detail = "numéros présents",
+                                        status = if (callableCount == 0) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                                    ),
+                                    SentinelReferenceMetric(
+                                        label = "Numéros",
+                                        value = phoneCount.toString(),
+                                        detail = "répertoire Android",
+                                        status = if (phoneCount == 0) SentinelStatus.UNKNOWN else SentinelStatus.TEST
+                                    ),
+                                    SentinelReferenceMetric(
+                                        label = "Synchronisation",
+                                        value = "LOCALE",
+                                        detail = "aucun envoi implicite",
+                                        status = SentinelStatus.OK
+                                    )
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
 
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
