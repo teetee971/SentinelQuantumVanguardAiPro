@@ -87,10 +87,10 @@ export function auditProductTruth(sources) {
   const screeningPostResponseOffMain =
     callScreening.includes('respondToCall(callDetails, response.build())') &&
     callScreening.includes('POST_RESPONSE_WORKER.execute') &&
-    callScreening.includes('CallFilterLogStore.get(appContext).recordAsync(decision)') &&
-    callScreening.includes('PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))') &&
+    callScreening.includes('CallFilterLogStore.get(appContext).recordAsync(effectiveDecision)') &&
+    callScreening.includes('PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(effectiveDecision))') &&
     callScreening.includes('LocalLogger(applicationContext).logAsync(') &&
-    !callScreening.includes('CallFilterLogStore.get(this).recordAsync(decision)') &&
+    !callScreening.includes('CallFilterLogStore.get(this).recordAsync(effectiveDecision)') &&
     !callScreening.includes('PhonePrivateTimelineStore(this).append(') &&
     !callScreening.includes('LocalLogger(this).log(');
   if (!screeningPostResponseOffMain) {
