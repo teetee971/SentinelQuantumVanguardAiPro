@@ -2,7 +2,7 @@
 
 Date: 2026-10-18  
 Branch: `feat/sentinel-d1-3d-total-redesign`  
-Implementation checkpoint: `4576722`  
+Implementation checkpoint: `9b670dc765fd3dec678b260cdd24769195466343`  
 APK build: `native-android-app/app/build/outputs/apk/debug/app-debug.apk`
 
 ## Runtime evidence boundary
@@ -42,5 +42,8 @@ APK is presented as proof of the new UI.
 - `:app:testDebugUnitTest`: passed, 1,405 tests.
 - `:app:lintDebug`: passed.
 - `:app:assembleDebug`: passed.
+- Final APK: `app-debug.apk`, 98,946,595 bytes, SHA-256 `849aab489fe08637fe64d0e659430db5c7b9d1e2c3004f7a2864f7d1193350c7`.
+- Package: `com.sentinel.quantum` (`versionCode 10`, `versionName 1.0.9`).
+- Signature: Android debug certificate, APK Signature Scheme v2 verified.
 - Instrumentation execution: blocked because no Android runtime is present.
 - Visual screenshot comparison: blocked for the same reason.

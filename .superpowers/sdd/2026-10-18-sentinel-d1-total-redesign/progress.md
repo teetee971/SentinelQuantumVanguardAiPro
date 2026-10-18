@@ -28,4 +28,5 @@ Ruling: Use the existing Compose Canvas visual foundation instead of adding a he
 - Added the Assistant Sentinel route and deterministic local prompt policy that is explicitly advice rather than technical proof.
 - Corrected Canvas `dp`/`px` coordinate handling for high-density Android devices and made evidence edges render only for proof-backed references.
 - Verification checkpoint: `:app:compileDebugKotlin`, `:app:compileDebugAndroidTestKotlin`, `:app:testDebugUnitTest` (1,405 tests), and `:app:lintDebug` pass. No Android runtime is available for install, screenshots or instrumentation execution.
+- Final secondary-surface checkpoint: `9b670dc765fd3dec678b260cdd24769195466343`; final debug APK SHA-256 is `849aab489fe08637fe64d0e659430db5c7b9d1e2c3004f7a2864f7d1193350c7`.
 
