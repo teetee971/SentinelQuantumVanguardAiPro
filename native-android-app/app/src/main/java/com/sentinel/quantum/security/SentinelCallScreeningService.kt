@@ -73,7 +73,9 @@ class SentinelCallScreeningService : CallScreeningService() {
             val snapshot = CallBlocklistStore.cachedSnapshotForScreening()
             CallRuleEngine(
                 snapshot.blockedNumberHashes,
-                snapshot.effectiveBlockedPrefixes,
+                // Until physical call qualification, only explicitly stored manual prefixes
+                // may reject. ARCEP catalog prefixes must not inherit RuleSource.USER.
+                snapshot.blockedPrefixes,
                 reputationSilencePrefixes = snapshot.signedSilencePrefixes,
                 fingerprintsForNumber = SCREENING_FINGERPRINTER::cachedCandidates
             ).evaluate(rawCallerNumber)
