@@ -134,7 +134,10 @@ internal class PhoneWearableSecureHandshakeRuntime(
             transport.send(nodeId, WearableProtocolV2.CHALLENGE_PATH, encoded) {
                 removePendingAndRevoke(nodeId, attemptId)
             }
-            true
+            // A transport may report an immediate failure through its callback.
+            synchronized(this) {
+                pendingByNode[nodeId]?.context?.attempt?.attemptId == attemptId
+            }
         } catch (_: Exception) {
             removePendingAndRevoke(nodeId, attemptId)
             false
