@@ -120,6 +120,25 @@ class CallScreeningEnforcementPolicyTest {
         }
     }
 
+    @Test fun sharedCallingCodesCannotDistinguishCountries() {
+        // +1 covers multiple NANP countries; +7 covers Russia and Kazakhstan.
+        // A broad code must not be represented as a verified caller country.
+        val northAmerican = CallRuleEngine(blockedPrefixes = setOf("+1"))
+        assertEquals(CallRuleEngine.Action.BLOCK, northAmerican.evaluate("+12025550123").action)
+        assertEquals(CallRuleEngine.Action.BLOCK, northAmerican.evaluate("+14165550123").action)
+        val sharedSeven = CallRuleEngine(blockedPrefixes = setOf("+7"))
+        assertEquals(CallRuleEngine.Action.BLOCK, sharedSeven.evaluate("+74951234567").action)
+        assertEquals(CallRuleEngine.Action.BLOCK, sharedSeven.evaluate("+77011234567").action)
+    }
+
+    @Test fun internationalPrefixDoesNotMatchUnrelatedCallingCode() {
+        val engine = CallRuleEngine(blockedPrefixes = setOf("+850"))
+        listOf("+33612345678", "+590690123456", "+442079460123").forEach { number ->
+            val decision = engine.evaluate(number)
+            assertEquals(CallRuleEngine.Action.ALLOW, CallScreeningEnforcementPolicy.actionFor(decision))
+        }
+    }
+
     @Test fun allowRemainsAllow() {
         for (source in CallRuleEngine.RuleSource.values()) {
             assertEquals(
