@@ -18,14 +18,19 @@ Depuis `native-android-app/` avec Temurin 17 :
 
 Résultat observé : `BUILD SUCCESSFUL`.
 
-- Tests unitaires JVM : 1434 exécutés, 0 échec, 0 erreur.
-- Contrats Phase 4 : 6 tests exécutés, 0 échec, 0 erreur.
+- Tests unitaires JVM : 1435 exécutés, 0 échec, 0 erreur.
+- Contrats Phase 4 : 7 tests exécutés, 0 échec, 0 erreur.
 - Compilation des tests Android : réussie.
 - Lint debug : 0 erreur, 217 avertissements préexistants ou non bloquants, 17 hints.
-- Scanner d’isolation : 1315 fichiers, 1786 entrées, 0 violation.
+- Scanner d’isolation : 1315 fichiers, 1787 entrées, 0 violation.
 
 Les avertissements lint sont conservés et ne sont pas masqués par cette refonte. Ils incluent des
 API Android conditionnelles, des dépréciations de bibliothèques et des conseils de ressources.
+
+Le composant partagé `SentinelQuantumCore`, encore utilisé par plusieurs destinations secondaires,
+utilise également désormais un volume holographique à statut observé, une grille de perspective,
+des particules et un bouclier extrudé. Le contrat source Phase 4 correspondant complète les
+contrats des treize surfaces officielles.
 
 ## Preuve visuelle
 
