@@ -20,8 +20,10 @@ import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.PhoneCoreActivationActivity
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,13 +101,35 @@ fun CommunicationsHubScreen(navController: NavController) {
             Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Communications",
+            SentinelHeroVisual(
+                status = if (readySteps == phoneSteps.size) SentinelStatus.WARN else SentinelStatus.LIMITED,
                 title = "Canaux Sentinel",
-                body = "Téléphonie et messagerie locales, avec connexions externes séparées et état explicite. Un canal non raccordé reste affiché comme non raccordé.",
-                badges = listOf(
-                    "Local" to SentinelD1.Success,
-                    "État explicite" to SentinelD1.Cyan
+                subtitle = "Téléphonie et messagerie locales, avec connexions externes séparées et état explicite.",
+                modules = listOf(
+                    SentinelCoreModule(
+                        id = "phone",
+                        label = "Téléphone",
+                        status = if (phoneFacts.dialerRoleHeld) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "calls",
+                        label = "Appels",
+                        status = if (phoneFacts.dialerRoleHeld) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "sms",
+                        label = "SMS/MMS",
+                        status = if (smsSnapshot.smsRoleState == SmsActivationDiagnostics.SmsRoleState.HELD) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "external",
+                        label = "Canaux externes",
+                        status = SentinelStatus.LOCKED,
+                        enabled = false
+                    )
                 )
             )
             SentinelSectionHeader(

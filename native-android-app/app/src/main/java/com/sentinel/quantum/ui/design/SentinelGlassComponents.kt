@@ -33,6 +33,8 @@ private fun VisualRole.accentColor(): Color = when (this) {
     VisualRole.NEUTRAL -> SentinelD1.Unknown
     VisualRole.LIMITED -> SentinelD1.Warning
     VisualRole.LOCKED -> SentinelD1.Unknown
+    VisualRole.TEST -> SentinelD1.Violet
+    VisualRole.PURP -> SentinelD1.Violet
 }
 
 @Composable

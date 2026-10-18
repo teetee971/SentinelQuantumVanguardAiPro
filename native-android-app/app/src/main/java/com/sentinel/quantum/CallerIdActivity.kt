@@ -73,9 +73,13 @@ import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.CommunityReportClient
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
 import com.sentinel.quantum.ui.design.SentinelState
 import com.sentinel.quantum.ui.design.SentinelStateChip
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.toStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -435,6 +439,41 @@ private fun CallerCard(
         PhoneCoreBrand(
             context = "Identification d’appel",
             status = decisionLabel,
+            modifier = Modifier.fillMaxWidth()
+        )
+        SentinelQuantumCore(
+            modules = listOf(
+                SentinelCoreModule(
+                    id = "number",
+                    label = "Numéro",
+                    status = decisionState.toStatus(),
+                    enabled = false
+                ),
+                SentinelCoreModule(
+                    id = "origin",
+                    label = if (officialAllocation == null) "Origine · INCONNUE" else "Origine · OBSERVÉE",
+                    status = if (officialAllocation == null) SentinelStatus.UNKNOWN else SentinelStatus.OK,
+                    enabled = false
+                ),
+                SentinelCoreModule(
+                    id = "local",
+                    label = if (localEvidence == null) "Local · INCONNU" else "Local · INDICATIF",
+                    status = if (localEvidence == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST,
+                    enabled = false
+                ),
+                SentinelCoreModule(
+                    id = "community",
+                    label = if (remoteResult == null) "Réputation · INCONNUE" else "Réputation · OBSERVÉE",
+                    status = if (remoteResult == null) SentinelStatus.UNKNOWN else SentinelStatus.WARN,
+                    enabled = false
+                ),
+                SentinelCoreModule(
+                    id = "history",
+                    label = if (timelineSummary.events.isEmpty()) "Historique · INCONNU" else "Historique · OBSERVÉ",
+                    status = SentinelStatus.UNKNOWN,
+                    enabled = false
+                )
+            ),
             modifier = Modifier.fillMaxWidth()
         )
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {

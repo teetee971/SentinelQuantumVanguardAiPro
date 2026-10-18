@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,6 +23,9 @@ import com.sentinel.quantum.data.OsintFeedItem
 import com.sentinel.quantum.data.OsintLinkPolicy
 import com.sentinel.quantum.data.OsintPublicationTime
 import com.sentinel.quantum.data.OsintTransientItemStore
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 
@@ -86,6 +90,18 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            val openable = OsintLinkPolicy.isSafeHttpsUrl(item.link)
+            SentinelHeroVisual(
+                status = SentinelStatus.UNKNOWN,
+                title = "Preuve OSINT consultée",
+                subtitle = "Article provenant du cache local : la source est affichée séparément de toute validation de sécurité.",
+                modules = listOf(
+                    SentinelCoreModule("source", "Source", SentinelStatus.OK, Icons.Default.OpenInBrowser, enabled = false),
+                    SentinelCoreModule("article", "Article", SentinelStatus.OK, Icons.Default.OpenInBrowser, enabled = false),
+                    SentinelCoreModule("link", "Lien HTTPS", if (openable) SentinelStatus.OK else SentinelStatus.LOCKED, Icons.Default.OpenInBrowser, enabled = false),
+                    SentinelCoreModule("verdict", "Verdict", SentinelStatus.UNKNOWN, Icons.Default.Security, enabled = false)
+                )
+            )
             Text(
                 text = stringResource(R.string.osint_detail_source_value, item.source),
                 style = MaterialTheme.typography.labelMedium,
@@ -139,7 +155,6 @@ fun OsintDetailScreen(navController: NavController, itemId: String) {
                 )
             }
 
-            val openable = OsintLinkPolicy.isSafeHttpsUrl(item.link)
             var openFailed by remember { mutableStateOf(false) }
 
             Button(

@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,8 +49,9 @@ import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.PhoneProtectionListTruth
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 import java.util.Date
@@ -120,13 +123,39 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Phone Core",
+            SentinelHeroVisual(
+                status = protectionListStatusToSentinel(arcepStatus),
                 title = stringResource(R.string.phone_lists_hero_title),
-                body = stringResource(R.string.phone_lists_hero_body),
-                badges = listOf(
-                    stringResource(R.string.phone_lists_badge_truth) to SentinelD1.Cyan,
-                    stringResource(R.string.phone_lists_badge_local) to SentinelD1.Success
+                subtitle = stringResource(R.string.phone_lists_hero_body),
+                modules = listOf(
+                    SentinelCoreModule(
+                        "local",
+                        "Règles locales",
+                        if (snapshot.blockedNumberHashes.isEmpty() && manualPrefixes.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK,
+                        Icons.Default.Security,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        "arcep",
+                        "Préfixes vérifiés",
+                        protectionListStatusToSentinel(arcepStatus),
+                        Icons.Default.Security,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        "signed",
+                        "Paquet signé",
+                        protectionListStatusToSentinel(signedStatus),
+                        Icons.Default.Security,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        "contacts",
+                        "Contacts",
+                        if (contactsReady) SentinelStatus.OK else SentinelStatus.LOCKED,
+                        Icons.Default.Security,
+                        enabled = false
+                    )
                 )
             )
 
@@ -311,6 +340,15 @@ fun PhoneProtectionListsScreen(navController: NavController) {
             Spacer(Modifier.height(8.dp))
         }
     }
+}
+
+private fun protectionListStatusToSentinel(
+    status: PhoneProtectionListTruth.ListStatus
+): SentinelStatus = when (status) {
+    PhoneProtectionListTruth.ListStatus.ACTIVE -> SentinelStatus.OK
+    PhoneProtectionListTruth.ListStatus.DISABLED -> SentinelStatus.LOCKED
+    PhoneProtectionListTruth.ListStatus.EXPIRED -> SentinelStatus.BAD
+    PhoneProtectionListTruth.ListStatus.UNAVAILABLE -> SentinelStatus.UNKNOWN
 }
 
 @Composable

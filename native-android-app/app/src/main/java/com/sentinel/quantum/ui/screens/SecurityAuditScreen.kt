@@ -14,6 +14,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Security
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
@@ -21,6 +25,7 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SecurityAudit
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
@@ -105,6 +110,36 @@ fun SecurityAuditScreen(navController: NavController) {
         auditResult?.warnings?.isNotEmpty() == true -> "Des avertissements de configuration ont été observés. Ils ne constituent pas, à eux seuls, une détection de malware."
         else -> "Les contrôles exécutés n’ont pas produit d’avertissement de configuration. Cela ne prouve pas l’absence de malware."
     }
+    val auditModules = listOf(
+        SentinelCoreModule(
+            id = "installation",
+            label = "Installation",
+            status = auditLayerStatus(analysisState.installation),
+            icon = Icons.Default.Security,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "permissions",
+            label = "Permissions",
+            status = auditLayerStatus(analysisState.permissions),
+            icon = Icons.Default.Key,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "applications",
+            label = "Applications",
+            status = auditLayerStatus(analysisState.applications),
+            icon = Icons.Default.Apps,
+            enabled = false
+        ),
+        SentinelCoreModule(
+            id = "history",
+            label = if (auditResult == null) "Historique · INCONNU" else "Résultats · OBSERVÉS",
+            status = if (auditResult == null) SentinelStatus.UNKNOWN else analysisState.overallStatus,
+            icon = Icons.Default.Security,
+            enabled = false
+        )
+    )
 
     Scaffold(
         topBar = {
@@ -127,7 +162,8 @@ fun SecurityAuditScreen(navController: NavController) {
                 status = analysisState.overallStatus,
                 title = heroTitle,
                 subtitle = heroSubtitle,
-                motionLevel = motionLevel
+                motionLevel = motionLevel,
+                modules = auditModules
             )
 
             DeviceAnalysisStatusPanel(
@@ -235,6 +271,16 @@ fun SecurityAuditScreen(navController: NavController) {
             }
         }
     }
+}
+
+private fun auditLayerStatus(layer: com.sentinel.quantum.ui.presentation.DeviceAnalysisLayerUiState): SentinelStatus = when {
+    layer.state == com.sentinel.quantum.ui.presentation.AnalysisLayerState.FAILED -> SentinelStatus.BAD
+    layer.state == com.sentinel.quantum.ui.presentation.AnalysisLayerState.RUNNING -> SentinelStatus.WARN
+    layer.state == com.sentinel.quantum.ui.presentation.AnalysisLayerState.UNAVAILABLE -> SentinelStatus.LIMITED
+    layer.state == com.sentinel.quantum.ui.presentation.AnalysisLayerState.NOT_EXECUTED -> SentinelStatus.UNKNOWN
+    layer.healthyEvidence == true && layer.findingCount == 0 -> SentinelStatus.OK
+    layer.healthyEvidence == false || (layer.findingCount ?: 0) > 0 -> SentinelStatus.WARN
+    else -> SentinelStatus.UNKNOWN
 }
 
 @Composable

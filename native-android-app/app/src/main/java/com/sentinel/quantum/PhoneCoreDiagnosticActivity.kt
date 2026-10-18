@@ -41,6 +41,9 @@ import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.security.readTelecomInCall
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -171,6 +174,17 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        SentinelQuantumCore(
+                            modules = setupChecks.map { (step, granted) ->
+                                SentinelCoreModule(
+                                    id = step.name,
+                                    label = PhoneCoreSetupWizardStore.stepLabel(step),
+                                    status = if (granted) SentinelStatus.OK else SentinelStatus.LOCKED,
+                                    enabled = false
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                         DiagnosticCard("État Phone Core") {
                             Fact(
                                 "Prérequis logiciels",

@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -34,9 +36,11 @@ import com.sentinel.quantum.data.PermissionRiskLabel
 import com.sentinel.quantum.data.PermissionRiskLevel
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import com.sentinel.quantum.ui.presentation.DeviceAnalysisFacts
@@ -145,6 +149,20 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
         highRiskApps > 0 -> "$highRiskApps application(s) présentent une heuristique de permissions élevée. Cela ne prouve pas la présence d’un malware."
         else -> "Le contrôle local n’observe pas d’heuristique élevée parmi les applications visibles. Cela ne constitue pas un scan antivirus."
     }
+    val permissionModules = remember(analysisState, profiles, isLoading, errorMessage) {
+        val applicationStatus = when {
+            isLoading -> SentinelStatus.LIMITED
+            errorMessage != null -> SentinelStatus.BAD
+            profiles.isEmpty() -> SentinelStatus.UNKNOWN
+            else -> SentinelStatus.OK
+        }
+        listOf(
+            SentinelCoreModule("applications", "Applications", applicationStatus, Icons.Default.Apps, enabled = false),
+            SentinelCoreModule("permissions", "Permissions", analysisState.overallStatus, Icons.Default.Security, enabled = false),
+            SentinelCoreModule("heuristics", "Heuristiques", if (highRiskApps > 0) SentinelStatus.WARN else applicationStatus, Icons.Default.Security, enabled = false),
+            SentinelCoreModule("malware", "Malware", SentinelStatus.UNKNOWN, Icons.Default.Security, enabled = false)
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -168,7 +186,8 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
                     status = analysisState.overallStatus,
                     title = heroTitle,
                     subtitle = heroSubtitle,
-                    motionLevel = motionLevel
+                    motionLevel = motionLevel,
+                    modules = permissionModules
                 )
             }
 

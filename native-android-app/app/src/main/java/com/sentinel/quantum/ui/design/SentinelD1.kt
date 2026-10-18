@@ -38,16 +38,18 @@ import com.sentinel.quantum.R
 import androidx.compose.ui.unit.dp
 
 object SentinelD1 {
-    val Background = Color(0xFF080B10)
-    val Panel = Color(0xFF0E131C)
-    val Card = Color(0xFF111826)
-    val Border = Color(0xFF1C2740)
-    val BorderStrong = Color(0xFF2E3F63)
-    val Cyan = Color(0xFF3FC7FF)
-    val Success = Color(0xFF28D99A)
-    val Warning = Color(0xFFFFB020)
-    val Danger = Color(0xFFFF5470)
-    val Unknown = Color(0xFF8B97B3)
+    val Background = SentinelVisualTokens.Background
+    val Panel = SentinelVisualTokens.SurfaceElevated
+    val Card = SentinelVisualTokens.Surface
+    val Border = SentinelVisualTokens.Border
+    val BorderStrong = SentinelVisualTokens.BorderStrong
+    val Cyan = SentinelVisualTokens.Cyan
+    val ElectricBlue = SentinelVisualTokens.ElectricBlue
+    val Success = SentinelVisualTokens.Success
+    val Warning = SentinelVisualTokens.Warning
+    val Danger = SentinelVisualTokens.Danger
+    val Violet = SentinelVisualTokens.Violet
+    val Unknown = SentinelVisualTokens.Unknown
 }
 
 private data class StateVisual(val color: Color, val icon: ImageVector)
@@ -59,6 +61,8 @@ private fun visualRoleColor(role: VisualRole): Color = when (role) {
     VisualRole.NEUTRAL -> SentinelD1.Unknown
     VisualRole.LIMITED -> SentinelD1.Warning
     VisualRole.LOCKED -> SentinelD1.Unknown
+    VisualRole.TEST -> SentinelD1.Violet
+    VisualRole.PURP -> SentinelD1.Violet
 }
 
 @Composable

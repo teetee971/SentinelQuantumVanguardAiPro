@@ -17,6 +17,7 @@ public/product-truth.generated.json
 native-android-app/.gradle/
 native-android-app/build/
 native-android-app/app/build/
+native-android-app/app/schemas/
 native-android-app/local.properties
 
 # Signing material

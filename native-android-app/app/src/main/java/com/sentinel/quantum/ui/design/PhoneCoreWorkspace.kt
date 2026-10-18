@@ -2,6 +2,7 @@
 
 package com.sentinel.quantum.ui.design
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +21,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PhoneCoreDisclosure(title: String, initiallyExpanded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(8.dp)) {
             TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -48,8 +49,8 @@ fun PhoneCoreNumberPad(number: String, onChange: (String) -> Unit) {
                         modifier = Modifier.weight(1f).heightIn(min = 64.dp),
                         shape = RoundedCornerShape(20.dp),
                         colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            contentColor = MaterialTheme.colorScheme.primary
+                            containerColor = SentinelD1.Card,
+                            contentColor = SentinelD1.Cyan
                         )
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -111,7 +112,14 @@ fun PhoneCoreConversationRow(
             }
         }
     ) {
-        Card(onClick = onOpen, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+        Surface(
+            onClick = onOpen,
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, SentinelD1.BorderStrong, RoundedCornerShape(22.dp)),
+            shape = RoundedCornerShape(22.dp),
+            color = SentinelD1.Card
+        ) {
             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(Modifier.size(44.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), contentColor = MaterialTheme.colorScheme.primary) {
                     Box(contentAlignment = Alignment.Center) {

@@ -30,6 +30,9 @@ import com.sentinel.quantum.background.CollectiveDefenseWorkScheduler
 import com.sentinel.quantum.security.CollectiveDefenseClient
 import com.sentinel.quantum.security.CollectiveDefenseWatchStore
 import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +105,46 @@ fun CollectiveDefenseScreen(navController: NavController) {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SentinelQuantumCore(
+                modules = listOf(
+                    SentinelCoreModule(
+                        id = "campaigns",
+                        label = if (watchItems.isEmpty()) "Campagnes · INCONNU" else "Campagnes · OBSERVÉES",
+                        status = if (watchItems.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.TEST,
+                        icon = Icons.Default.Campaign,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "alerts",
+                        label = if (result == null) "Alertes · INCONNU" else "Alertes · OBSERVÉES",
+                        status = if (busy) SentinelStatus.WARN else SentinelStatus.UNKNOWN,
+                        icon = Icons.Default.Warning,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "reputation",
+                        label = "Réputation · INDICATIVE",
+                        status = SentinelStatus.UNKNOWN,
+                        icon = Icons.Default.Groups,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "report",
+                        label = if (status == null) "Signalement · INACTIF" else "Signalement · OBSERVÉ",
+                        status = if (status == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST,
+                        icon = Icons.Default.Flag,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        id = "privacy",
+                        label = "Confidentialité · LOCAL",
+                        status = SentinelStatus.OK,
+                        icon = Icons.Default.Lock,
+                        enabled = false
+                    )
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
             ElevatedCard(
                 colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card),
                 shape = RoundedCornerShape(22.dp)

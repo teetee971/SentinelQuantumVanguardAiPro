@@ -35,6 +35,7 @@ class AllStaticNavigationSurfacesInstrumentationTest {
     @Test fun appPermissionAnalyzerRenders() = render(Screen.AppPermissionAnalyzer.route)
     @Test fun networkSurveillanceRenders() = render(Screen.NetworkSurveillance.route)
     @Test fun digitalExposureRenders() = render(Screen.DigitalExposure.route)
+    @Test fun assistantRenders() = render(Screen.Assistant.route)
     @Test fun collectiveDefenseRenders() = render(Screen.CollectiveDefense.route)
     @Test fun smartHomeRenders() = render(Screen.SmartHome.route)
     @Test fun vpnRenders() = render(Screen.Vpn.route)

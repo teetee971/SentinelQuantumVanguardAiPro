@@ -72,12 +72,12 @@ fun PhoneCoreBrand(
                     text = context,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = androidx.compose.ui.graphics.Color(0xFFF4F7FC)
+                    color = SentinelVisualTokens.TextPrimary
                 )
                 Text(
                     text = status,
                     style = MaterialTheme.typography.bodySmall,
-                    color = androidx.compose.ui.graphics.Color(0xFFBAC4D8)
+                    color = SentinelVisualTokens.TextSecondary
                 )
             }
         }

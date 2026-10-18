@@ -61,6 +61,7 @@ import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.ui.design.SentinelActionTile
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -230,6 +231,51 @@ fun PhoneSecurityScreen(navController: NavController) {
         val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
         SentinelMotionPolicy.resolve(animatorScale, powerSave)
     }
+    val protectionModules = remember(
+        protectionStatus,
+        callPrerequisitesReady,
+        messagePrerequisitesReady,
+        remoteEnrichmentEnabled
+    ) {
+        listOf(
+            SentinelCoreModule(
+                id = "phone-core",
+                label = "Téléphone",
+                status = protectionStatus,
+                icon = Icons.Default.Security
+            ),
+            SentinelCoreModule(
+                id = "calls",
+                label = "Appels",
+                status = if (callPrerequisitesReady) SentinelStatus.OK else SentinelStatus.LOCKED,
+                icon = Icons.Default.Phone
+            ),
+            SentinelCoreModule(
+                id = "messages",
+                label = "SMS/MMS",
+                status = if (messagePrerequisitesReady) SentinelStatus.OK else SentinelStatus.LOCKED,
+                icon = Icons.Default.Message
+            ),
+            SentinelCoreModule(
+                id = "network",
+                label = "Réseau",
+                status = SentinelStatus.UNKNOWN,
+                icon = Icons.Default.Wifi
+            ),
+            SentinelCoreModule(
+                id = "vpn",
+                label = "VPN",
+                status = SentinelStatus.UNKNOWN,
+                icon = Icons.Default.VpnLock
+            ),
+            SentinelCoreModule(
+                id = "reputation",
+                label = "Réputation",
+                status = if (remoteEnrichmentEnabled) SentinelStatus.LIMITED else SentinelStatus.LOCKED,
+                icon = Icons.Default.Security
+            )
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -257,7 +303,18 @@ fun PhoneSecurityScreen(navController: NavController) {
                     "Prérequis Phone Core à finaliser · état global partiellement mesuré · validation physique distincte."
                 },
                 modifier = Modifier.testTag("protection-command-center"),
-                motionLevel = protectionMotion
+                motionLevel = protectionMotion,
+                modules = protectionModules,
+                onModuleClick = { module ->
+                    when (module.id) {
+                        "phone-core" -> context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java))
+                        "calls" -> navController.navigate(Screen.CallBlocking.route)
+                        "messages" -> navController.navigate(Screen.SmsScanner.route)
+                        "network" -> navController.navigate(Screen.NetworkSurveillance.route)
+                        "vpn" -> navController.navigate(Screen.Vpn.route)
+                        "reputation" -> navController.navigate(Screen.CallBlocking.route)
+                    }
+                }
             )
 
             ElevatedCard(

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -18,7 +19,10 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
@@ -84,13 +88,27 @@ fun LocalLogsScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            SentinelHeroVisual(
+                status = when {
+                    loading -> SentinelStatus.LIMITED
+                    logs.isEmpty() -> SentinelStatus.UNKNOWN
+                    else -> SentinelStatus.OK
+                },
+                title = "Journal de preuve local",
+                subtitle = "Événements observés par Sentinel, exportables après assainissement.",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modules = listOf(
+                    SentinelCoreModule("logs", "Événements", if (logs.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("search", "Recherche", if (logs.isEmpty()) SentinelStatus.LOCKED else SentinelStatus.OK, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("export", "Export", SentinelStatus.OK, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("privacy", "Assaini", SentinelStatus.OK, Icons.Default.Security, enabled = false)
+                )
+            )
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = SentinelD1.Card
-                )
+                colors = CardDefaults.cardColors(containerColor = SentinelD1.Card)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(

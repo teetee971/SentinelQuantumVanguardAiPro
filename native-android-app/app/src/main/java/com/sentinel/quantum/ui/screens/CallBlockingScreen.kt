@@ -14,6 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -34,8 +37,9 @@ import com.sentinel.quantum.security.CallScreeningActivationPolicy
 import com.sentinel.quantum.security.OkHttpCallRulePackageTransport
 import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.SignedCallRulePackageVerifier
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -95,14 +99,39 @@ fun CallBlockingScreen(navController: NavController) {
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Appels",
+            SentinelHeroVisual(
+                status = if (roleHeld) SentinelStatus.OK else SentinelStatus.LOCKED,
                 title = "Protégez vos appels",
-                body = stringResource(R.string.call_blocking_intro),
-                badges = listOf(
-                    (if (roleHeld) "Protection active" else "Protection à activer") to
-                        (if (roleHeld) SentinelD1.Success else SentinelD1.Warning),
-                    "Règles privées" to SentinelD1.Cyan
+                subtitle = stringResource(R.string.call_blocking_intro),
+                modules = listOf(
+                    SentinelCoreModule(
+                        "screening-role",
+                        "Filtrage",
+                        if (roleHeld) SentinelStatus.OK else SentinelStatus.LOCKED,
+                        Icons.Default.Phone,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        "contacts",
+                        "Contacts",
+                        if (contactsAllowed) SentinelStatus.OK else SentinelStatus.LOCKED,
+                        Icons.Default.Security,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        "rules",
+                        "Règles locales",
+                        SentinelStatus.OK,
+                        Icons.Default.Security,
+                        enabled = false
+                    ),
+                    SentinelCoreModule(
+                        "remote",
+                        "Enrichissement",
+                        if (remoteEnrichmentEnabled) SentinelStatus.LIMITED else SentinelStatus.LOCKED,
+                        Icons.Default.Wifi,
+                        enabled = false
+                    )
                 )
             )
             Text(

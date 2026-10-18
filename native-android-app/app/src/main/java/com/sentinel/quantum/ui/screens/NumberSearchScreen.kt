@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -20,10 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.SentinelDialerActivity
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelPanel
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 
 @Composable
@@ -46,13 +49,14 @@ fun NumberSearchScreen() {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            SentinelHero(
-                eyebrow = "Phone Core",
+            SentinelHeroVisual(
+                status = SentinelStatus.UNKNOWN,
                 title = "Identifier un numéro",
-                body = "La recherche de numéro ouvre le moteur Phone Core. Sentinel affiche uniquement les informations réellement disponibles et conserve les champs inconnus comme inconnus.",
-                badges = listOf(
-                    "Gratuit" to SentinelD1.Success,
-                    "État explicite" to SentinelD1.Cyan
+                subtitle = "La recherche de numéro ouvre le moteur Phone Core. Sentinel affiche uniquement les informations réellement disponibles et conserve les champs inconnus comme inconnus.",
+                modules = listOf(
+                    SentinelCoreModule("number", "Numéro", SentinelStatus.UNKNOWN, Icons.Default.PhoneInTalk, enabled = false),
+                    SentinelCoreModule("origin", "Origine", SentinelStatus.UNKNOWN, Icons.Default.Search, enabled = false),
+                    SentinelCoreModule("reputation", "Réputation", SentinelStatus.UNKNOWN, Icons.Default.Security, enabled = false)
                 )
             )
 

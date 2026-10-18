@@ -57,6 +57,9 @@ import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
@@ -245,6 +248,18 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val setupFacts = remember(epoch) {
                     PhoneCoreRuntimeFacts.read(applicationContext)
                 }
+                val setupChecks = remember(setupFacts) {
+                    listOf(
+                        PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS to setupFacts.corePermissionsReady,
+                        PhoneCoreSetupWizardStore.Step.DIALER_ROLE to setupFacts.dialerRoleHeld,
+                        PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE to setupFacts.callScreeningRoleHeld,
+                        PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION to setupFacts.callLogPermissionGranted,
+                        PhoneCoreSetupWizardStore.Step.SMS_ROLE to setupFacts.smsRoleHeld,
+                        PhoneCoreSetupWizardStore.Step.SMS_PERMISSIONS to setupFacts.smsRuntimePermissionsReady,
+                        PhoneCoreSetupWizardStore.Step.MMS_PERMISSIONS to setupFacts.mmsPermissionsReady,
+                        PhoneCoreSetupWizardStore.Step.NOTIFICATION_CHANNELS to setupFacts.notificationChannelsReady
+                    )
+                }
                 val setupStep = remember(setupFacts) {
                     PhoneCoreSetupWizardStore.nextConfigurableStep(setupFacts)
                 }
@@ -396,6 +411,17 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 "Prérequis appels et SMS prêts"
                             } else {
                                 "Configuration Android incomplète"
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        SentinelQuantumCore(
+                            modules = setupChecks.map { (step, granted) ->
+                                SentinelCoreModule(
+                                    id = step.name,
+                                    label = PhoneCoreSetupWizardStore.stepLabel(step),
+                                    status = if (granted) SentinelStatus.OK else SentinelStatus.LOCKED,
+                                    enabled = false
+                                )
                             },
                             modifier = Modifier.fillMaxWidth()
                         )

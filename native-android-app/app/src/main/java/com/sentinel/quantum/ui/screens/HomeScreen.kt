@@ -21,11 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Groups
@@ -40,6 +42,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.VpnLock
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -79,6 +82,7 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.GeneratedProductCapabilities
 import com.sentinel.quantum.ui.design.MotionLevel
 import com.sentinel.quantum.ui.design.SentinelActionTile
+import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
@@ -184,6 +188,59 @@ fun HomeScreen(navController: NavController) {
         )
     }
     val phoneCoreModule = homeState.modules.first { it.id == HomeModuleId.PHONE_CORE }
+    val vpnModule = homeState.modules.first { it.id == HomeModuleId.VPN }
+    val networkModule = homeState.modules.first { it.id == HomeModuleId.NETWORK }
+    val communityModule = homeState.modules.first { it.id == HomeModuleId.COLLECTIVE_DEFENSE }
+    val coreModules = listOf(
+        SentinelCoreModule(
+            id = "phone",
+            label = "Téléphone",
+            status = phoneCoreModule.status,
+            icon = Icons.Default.Phone
+        ),
+        SentinelCoreModule(
+            id = "messages",
+            label = "SMS/MMS",
+            status = if (phoneCoreFacts.smsRoleHeld) SentinelStatus.UNKNOWN else SentinelStatus.LOCKED,
+            icon = Icons.Default.Sms
+        ),
+        SentinelCoreModule(
+            id = "network",
+            label = "Réseau",
+            status = networkModule.status,
+            icon = Icons.Default.Wifi
+        ),
+        SentinelCoreModule(
+            id = "vpn",
+            label = "VPN",
+            status = vpnModule.status,
+            icon = Icons.Default.VpnLock
+        ),
+        SentinelCoreModule(
+            id = "exposure",
+            label = "Empreinte",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Fingerprint
+        ),
+        SentinelCoreModule(
+            id = "threats",
+            label = "Menaces",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.WarningAmber
+        ),
+        SentinelCoreModule(
+            id = "community",
+            label = "Communauté",
+            status = communityModule.status,
+            icon = Icons.Default.Groups
+        ),
+        SentinelCoreModule(
+            id = "system",
+            label = "Système",
+            status = SentinelStatus.UNKNOWN,
+            icon = Icons.Default.Security
+        )
+    )
 
     val tools = homeTools(context, navController)
     val normalizedQuery = toolQuery.trim().lowercase(Locale.FRENCH)
@@ -236,6 +293,10 @@ fun HomeScreen(navController: NavController) {
                 title = homeState.headline,
                 subtitle = homeState.summary,
                 motionLevel = motionLevel,
+                modules = coreModules,
+                onModuleClick = { module ->
+                    navigateCoreModule(module.id, navController, context)
+                },
                 modifier = Modifier.testTag("home_security_hero")
             )
 
@@ -436,6 +497,19 @@ private fun navigateHomeModule(id: HomeModuleId, navController: NavController, c
     }
 }
 
+private fun navigateCoreModule(id: String, navController: NavController, context: Context) {
+    when (id) {
+        "phone" -> context.startActivity(Intent(context, SentinelDialerActivity::class.java))
+        "messages" -> context.startActivity(Intent(context, SmsComposeActivity::class.java))
+        "network" -> navController.navigate(Screen.NetworkSurveillance.route)
+        "vpn" -> navController.navigate(Screen.Vpn.route)
+        "exposure" -> navController.navigate(Screen.DigitalExposure.route)
+        "threats" -> navController.navigate(Screen.SecurityAudit.route)
+        "community" -> navController.navigate(Screen.CollectiveDefense.route)
+        "system" -> navController.navigate(Screen.SystemDoctor.route)
+    }
+}
+
 private fun resolveHomeMotion(context: Context): MotionLevel {
     val animatorScale = runCatching {
         Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
@@ -499,6 +573,14 @@ private fun homeTools(context: Context, navController: NavController): List<Home
         HomeDomain.COMMUNICATIONS,
         featured = true
     ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+    HomeTool(
+        "Assistant Sentinel",
+        "Comprendre un risque avec une réponse locale explicitement non probante",
+        Icons.Default.AutoAwesome,
+        setOf("assistant", "ia", "risque", "alerte", "conseil"),
+        HomeDomain.ANALYSIS,
+        featured = true
+    ) { navController.navigate(Screen.Assistant.route) },
     HomeTool(
         "Bloquer un appel",
         "Gérer les règles locales de blocage et d’identification",

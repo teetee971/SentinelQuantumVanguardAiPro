@@ -61,6 +61,9 @@ import com.sentinel.quantum.security.PhonePrivateTimeline
 import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelQuantumCore
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -281,6 +284,54 @@ private fun InCallScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (snapshot != null) {
+                SentinelQuantumCore(
+                    modules = listOf(
+                        SentinelCoreModule(
+                            id = "caller",
+                            label = "Appelant",
+                            status = trustIndicator.toSentinelStatus(),
+                            icon = Icons.Rounded.Person,
+                            enabled = false
+                        ),
+                        SentinelCoreModule(
+                            id = "call",
+                            label = callStateLabel(snapshot.state),
+                            status = SentinelStatus.UNKNOWN,
+                            icon = Icons.Rounded.Call,
+                            enabled = false
+                        ),
+                        SentinelCoreModule(
+                            id = "audio",
+                            label = "Route audio",
+                            status = SentinelStatus.UNKNOWN,
+                            icon = Icons.Rounded.VolumeUp,
+                            enabled = true
+                        ),
+                        SentinelCoreModule(
+                            id = "dialpad",
+                            label = "Clavier",
+                            status = if (snapshot.state == Call.STATE_ACTIVE) SentinelStatus.LIMITED else SentinelStatus.LOCKED,
+                            icon = Icons.Rounded.Dialpad,
+                            enabled = snapshot.state == Call.STATE_ACTIVE
+                        )
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    onModuleClick = { module ->
+                        when (module.id) {
+                            "audio" -> {
+                                showAudioRoutes = !showAudioRoutes
+                                if (showAudioRoutes) showDialpad = false
+                            }
+                            "dialpad" -> {
+                                showDialpad = !showDialpad
+                                if (showDialpad) showAudioRoutes = false
+                            }
+                        }
+                    }
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -343,6 +394,13 @@ private fun InCallScreen(
             }
         }
     }
+}
+
+private fun CallTrustIndicator.Result.toSentinelStatus(): SentinelStatus = when (level) {
+    CallTrustIndicator.Level.HIGH_RISK -> SentinelStatus.BAD
+    CallTrustIndicator.Level.CAUTION -> SentinelStatus.WARN
+    CallTrustIndicator.Level.INDICATIVE,
+    CallTrustIndicator.Level.UNKNOWN -> SentinelStatus.UNKNOWN
 }
 
 @Composable

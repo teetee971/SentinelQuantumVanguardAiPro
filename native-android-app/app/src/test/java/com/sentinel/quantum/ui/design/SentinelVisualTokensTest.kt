@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import androidx.compose.ui.graphics.Color
 
 class SentinelVisualTokensTest {
     @Test
@@ -31,5 +32,22 @@ class SentinelVisualTokensTest {
     fun userFacingTextTokensRemainReadable() {
         assertTrue(SentinelVisualTokens.BodyTextSp >= 12f)
         assertTrue(SentinelVisualTokens.CriticalTextSp >= 12f)
+    }
+
+    @Test
+    fun d1TokensKeepReadableMinimumsAndDistinctStatusRoles() {
+        assertTrue(SentinelVisualTokens.CriticalTextSp >= 16f)
+        assertEquals(Color(0xFF070B14), SentinelVisualTokens.Background)
+        assertEquals(Color(0xFF39C9F4), SentinelVisualTokens.Cyan)
+        assertEquals(Color(0xFF25D8A2), SentinelVisualTokens.Success)
+        assertNotEquals(SentinelStatus.UNKNOWN.visual().role, SentinelStatus.OK.visual().role)
+    }
+
+    @Test
+    fun testAndSimulationStatusesAreExplicit() {
+        assertEquals("Test", SentinelStatus.TEST.visual().label)
+        assertEquals(VisualRole.TEST, SentinelStatus.TEST.visual().role)
+        assertEquals("Simulation", SentinelStatus.PURP.visual().label)
+        assertEquals(VisualRole.PURP, SentinelStatus.PURP.visual().role)
     }
 }

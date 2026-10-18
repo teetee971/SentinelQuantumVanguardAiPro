@@ -32,7 +32,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.PwnedPasswordClient
-import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelEvidenceEdge
+import com.sentinel.quantum.ui.design.SentinelEvidenceGraph
+import com.sentinel.quantum.ui.design.SentinelEvidenceNode
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
@@ -215,62 +217,65 @@ private fun ExposureCapabilityGraph(result: PwnedPasswordClient.Result?) {
     val passwordStatus = when {
         result?.exposed == true -> SentinelStatus.BAD
         result != null -> SentinelStatus.UNKNOWN
-        else -> SentinelStatus.UNKNOWN
+        else -> SentinelStatus.LIMITED
     }
-    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+    val nodes = listOf(
+        SentinelEvidenceNode(
+            id = "identity",
+            label = "Identité locale",
+            detail = "Point de convergence local",
+            status = SentinelStatus.LIMITED,
+            source = "appareil",
+            freshness = "session"
+        ),
+        SentinelEvidenceNode(
+            id = "password",
+            label = "Mot de passe compromis",
+            detail = if (result == null) "Contrôle k-anonyme disponible" else "Résultat observé ci-dessous",
+            status = passwordStatus,
+            source = "Pwned Passwords",
+            freshness = if (result == null) "non exécuté" else "session"
+        ),
+        SentinelEvidenceNode(
+            id = "email",
+            label = "E-mail / domaine",
+            detail = "Fournisseur autorisé requis",
+            status = SentinelStatus.LOCKED,
+            source = "aucune",
+            freshness = "non configuré"
+        ),
+        SentinelEvidenceNode(
+            id = "profiles",
+            label = "Téléphone / profils publics",
+            detail = "Capacité non raccordée sur cet écran",
+            status = SentinelStatus.UNKNOWN,
+            source = "aucune",
+            freshness = "non analysé"
+        )
+    )
+    val edges = listOf(
+        SentinelEvidenceEdge(
+            from = "identity",
+            to = "password",
+            proofReference = result?.let { "pwned-password-result" }
+        ),
+        SentinelEvidenceEdge(from = "identity", to = "email"),
+        SentinelEvidenceEdge(from = "identity", to = "profiles")
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            "Carte des preuves",
+            "Graphe des preuves",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
         Text(
-            "Une connexion visuelle indique une capacité ou une preuve disponible, jamais une exposition supposée.",
+            "Une liaison cyan n’apparaît que lorsqu’une référence de preuve existe. Une capacité verrouillée reste séparée de toute exposition supposée.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        ExposureNode(
-            title = "Identité numérique",
-            detail = "Point de convergence local",
-            status = SentinelStatus.LIMITED
+        SentinelEvidenceGraph(
+            nodes = nodes,
+            edges = edges,
+            modifier = Modifier.fillMaxWidth()
         )
-        Text("│", color = SentinelD1.Cyan)
-        ExposureNode(
-            title = "Mot de passe compromis",
-            detail = if (result == null) "Contrôle k-anonyme disponible" else "Dernier contrôle affiché ci-dessous",
-            status = passwordStatus
-        )
-        Text("├────────", color = SentinelD1.Cyan)
-        ExposureNode(
-            title = "E-mail / domaine",
-            detail = "Backend fournisseur autorisé requis",
-            status = SentinelStatus.LOCKED
-        )
-        Text("└────────", color = SentinelD1.Cyan)
-        ExposureNode(
-            title = "Téléphone / profils publics",
-            detail = "Non analysés dans cet écran",
-            status = SentinelStatus.UNKNOWN
-        )
-    }
-}
-
-@Composable
-private fun ExposureNode(
-    title: String,
-    detail: String,
-    status: SentinelStatus
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold)
-            Text(
-                detail,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-        SentinelStatusChip(status = status)
     }
 }

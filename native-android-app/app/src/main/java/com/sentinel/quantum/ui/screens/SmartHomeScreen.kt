@@ -7,9 +7,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Router
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,8 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.smarthome.SmartHomeIntegrationRegistry
-import com.sentinel.quantum.ui.design.SentinelD1
-import com.sentinel.quantum.ui.design.SentinelHero
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
 
@@ -57,13 +58,15 @@ fun SmartHomeScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                SentinelHero(
-                    eyebrow = "Smart Home",
+                SentinelHeroVisual(
+                    status = SentinelStatus.UNKNOWN,
                     title = "Voir les appareils réellement observés",
-                    body = "Sentinel ne fabrique pas de topologie. Commencez par un scan local Wi-Fi/Bluetooth ; une relation n’est dite vérifiée qu’après observation ou confirmation explicite.",
-                    badges = listOf(
-                        "Local" to SentinelD1.Success,
-                        "Zéro topologie supposée" to SentinelD1.Cyan
+                    subtitle = "Sentinel ne fabrique pas de topologie. Commencez par un scan local Wi-Fi/Bluetooth ; une relation n’est dite vérifiée qu’après observation ou confirmation explicite.",
+                    modules = listOf(
+                        SentinelCoreModule("wifi", "Wi‑Fi", SentinelStatus.UNKNOWN, Icons.Default.Router, enabled = false),
+                        SentinelCoreModule("bluetooth", "Bluetooth", SentinelStatus.UNKNOWN, Icons.Default.Bluetooth, enabled = false),
+                        SentinelCoreModule("observed", "Observations", SentinelStatus.UNKNOWN, Icons.Default.Radar, enabled = false),
+                        SentinelCoreModule("catalog", "Catalogue", SentinelStatus.TEST, Icons.Default.Security, enabled = false)
                     )
                 )
             }

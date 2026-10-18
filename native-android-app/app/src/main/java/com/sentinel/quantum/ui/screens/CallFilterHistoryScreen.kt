@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +34,9 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.security.CallHistoryPresentation
 import com.sentinel.quantum.security.CallHistoryPresentationMapper
 import com.sentinel.quantum.security.CallFilterLogStore
+import com.sentinel.quantum.ui.design.SentinelCoreModule
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -61,6 +67,17 @@ fun CallFilterHistoryScreen(navController: NavController) {
         }
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
+            SentinelHeroVisual(
+                status = if (history.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK,
+                title = "Historique de filtrage",
+                subtitle = "Décisions observées localement, sans identité personnelle ni verdict inventé.",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modules = listOf(
+                    SentinelCoreModule("events", "Événements", if (history.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK, Icons.Default.History, enabled = false),
+                    SentinelCoreModule("decisions", "Décisions", if (history.isEmpty()) SentinelStatus.UNKNOWN else SentinelStatus.OK, Icons.Default.Security, enabled = false),
+                    SentinelCoreModule("privacy", "Privé local", SentinelStatus.OK, Icons.Default.Security, enabled = false)
+                )
+            )
             Text(
                 stringResource(R.string.call_history_privacy),
                 Modifier.padding(16.dp),

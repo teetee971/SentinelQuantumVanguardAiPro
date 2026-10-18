@@ -24,9 +24,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,7 +58,8 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.PhoneWearableSecureHandshakeRuntime
 import com.sentinel.quantum.security.SentinelWearableSecureHandshakeRuntime
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
-import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelBottomNavigation
+import com.sentinel.quantum.ui.design.SentinelBottomNavigationItem
 import kotlinx.coroutines.delay
 
 private enum class BottomNavTarget {
@@ -173,18 +171,18 @@ class MainActivity : ComponentActivity() {
                     Box(Modifier.fillMaxSize()) {
                     Scaffold(
                         bottomBar = {
-                            NavigationBar(
-                                containerColor = SentinelD1.Panel,
-                                tonalElevation = 0.dp
-                            ) {
-                                bottomNavEntries.forEach { entry ->
+                            SentinelBottomNavigation(
+                                items = bottomNavEntries.map { entry ->
                                     val selected = when (entry.target) {
                                         BottomNavTarget.HOME -> currentRoute == Screen.Home.route
                                         BottomNavTarget.PROTECTION -> currentRoute == Screen.PhoneSecurity.route
                                         BottomNavTarget.MORE -> currentRoute == Screen.Settings.route
                                         BottomNavTarget.COMMUNICATIONS -> currentRoute == Screen.CommunicationsHub.route
                                     }
-                                    NavigationBarItem(
+                                    SentinelBottomNavigationItem(
+                                        key = entry.target.name,
+                                        label = stringResource(entry.labelRes),
+                                        icon = entry.icon,
                                         selected = selected,
                                         onClick = {
                                             when (entry.target) {
@@ -197,19 +195,10 @@ class MainActivity : ComponentActivity() {
                                                 BottomNavTarget.MORE ->
                                                     navController.navigateBottomDestination(Screen.Settings)
                                             }
-                                        },
-                                        icon = { Icon(entry.icon, contentDescription = null) },
-                                        label = { Text(stringResource(entry.labelRes)) },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = SentinelD1.Cyan,
-                                            selectedTextColor = SentinelD1.Cyan,
-                                            indicatorColor = SentinelD1.Card,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        }
                                     )
                                 }
-                            }
+                            )
                         }
                     ) { paddingValues ->
                         Box(
