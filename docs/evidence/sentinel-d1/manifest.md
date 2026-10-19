@@ -13,12 +13,18 @@ APK build: `native-android-app/app/build/outputs/apk/debug/app-debug.apk`
 ## Current execution checkpoint
 
 - Branch: `feat/global-telecom-intelligence-d1-phone-core`
-- Commit: see the exact final delivery commit in the release report
+- Reported source commit: `bbf78ef9df24a360384ec48329f4d339ce7a179c` (branch head verified before this documentation correction)
 - APK: `app-debug.apk`, 98,548,972 bytes
-- APK SHA-256: `d785d2b94a02c4989322e829d427af7420b849cdca83d0d9dc144c9af3bd67e2`
-- Automated Android build, unit tests and lint: passed
+- APK SHA-256 in earlier manifest: `d785d2b94a02c4989322e829d427af7420b849cdca83d0d9dc144c9af3bd67e2` (64 hex characters, **not independently rehashed here**; unverified claim)
+- Automated Android build, unit tests and lint: passed as reported for the delivery; emulator evidence still absent
 - Android instrumentation execution: not qualified; no connected device and local TCG emulator ANRs
 - Authentic screenshot comparison: not performed because no valid PNG set exists
+
+## Integrity discrepancy — blocking
+
+The delivery summary supplies `d785d2b94a02c4989322e829d427af7420b849cdca83cda9f3bd67e2`, which has **56** hexadecimal characters, not the **64** required for a SHA-256 digest. It cannot certify an APK. The earlier manifest value is 64 characters but differs and has not been independently verified against the published artifact in this checkpoint. Accordingly, neither value may be used as a validated digest until the **exact downloadable APK** is retrieved and its full SHA-256, byte count, package/version, signature and download URL are recorded together. Do not infer the missing eight characters or report a matching hash.
+
+The build evidence section below is a **historical checkpoint** (including a different APK size/hash and test count), not proof for the current delivery commit. No emulator or Galaxy S24+ acceptance is asserted.
 
 ## Runtime evidence boundary
 
@@ -51,7 +57,7 @@ the new UI.
 | Journaux locaux | `LocalLogsScreen.kt` | Local evidence, search, sanitized export and privacy modules | `BLOCKED_NO_ANDROID_RUNTIME` | `BLOCKED_NO_ANDROID_RUNTIME` | Unit tests; Kotlin/lint |
 | E-mail / call blocking / history / lists / search / smart home / about / compliance | Corresponding `ui/screens/*.kt` | Legacy hero API now renders through the shared native D.1 quantum core; existing actions remain below | `BLOCKED_NO_ANDROID_RUNTIME` | `BLOCKED_NO_ANDROID_RUNTIME` | Full unit suite; lint; Android-test compilation |
 
-## Build evidence
+## Build evidence — historical checkpoint only
 
 - `:app:compileDebugKotlin`: passed.
 - `:app:compileDebugAndroidTestKotlin`: passed.
