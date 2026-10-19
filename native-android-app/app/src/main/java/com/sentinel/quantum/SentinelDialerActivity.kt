@@ -775,10 +775,14 @@ class SentinelDialerActivity : ComponentActivity() {
                                         }
                                         else -> "RTR : " + r.status
                                     }
-                                } else {
+                                } else if (ArcepDirectoryClient.toFrenchNational(lookupNumber) != null) {
                                     val a = arcep.lookup(lookupNumber)
-                                    if (a == null) "ARCEP : aucune attribution correspondante"
-                                    else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) + (a.territory?.let { " · $it" } ?: "")
+                                    if (a == null) "ARCEP : aucune attribution correspondante dans le répertoire consulté"
+                                    else "ARCEP : titulaire du bloc " + (a.attributedOperator ?: a.operatorCode) +
+                                        (a.territory?.let { " · $it" } ?: "")
+                                } else {
+                                    "Répertoire national non connecté pour ce numéro. " +
+                                        "Aucune attribution d’opérateur ni identité de titulaire vérifiée."
                                 }
                             }.getOrElse { "Répertoire officiel temporairement indisponible" }
                         }
