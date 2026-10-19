@@ -47,7 +47,19 @@ workflows:
           set -euo pipefail
           REPORT="$CM_BUILD_DIR/native-android-app/app/build/test-results/testDebugUnitTest/TEST-com.sentinel.quantum.security.PttTransmissionPolicyTest.xml"
           test -s "$REPORT" || { echo "BLOCKED: PTT unit-test XML evidence missing" >&2; exit 6; }
-          echo "PASS: PTT unit-test XML report exists"
+          python3 - "$REPORT" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          root = ET.parse(sys.argv[1]).getroot()
+          cases = root.findall(".//testcase")
+          failures = root.findall(".//failure")
+          errors = root.findall(".//error")
+          skipped = root.findall(".//skipped")
+          if len(cases) < 6 or failures or errors or skipped:
+              print(f"BLOCKED: PTT test evidence invalid: cases={len(cases)} failures={len(failures)} errors={len(errors)} skipped={len(skipped)}", file=sys.stderr)
+              sys.exit(6)
+          print(f"PASS: {len(cases)} PTT test cases with no failures, errors or skips")
+          PY
       - name: Provision persistent D.1 signing material
         script: |
           set -euo pipefail
