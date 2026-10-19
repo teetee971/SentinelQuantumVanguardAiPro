@@ -38,7 +38,7 @@ workflows:
       - name: Provision persistent D.1 signing material
         script: |
           set -euo pipefail
-          for variable in SENTINEL_D1_KEYSTORE_B64 SENTINEL_D1_KEYSTORE_PASSWORD SENTINEL_D1_KEY_ALIAS SENTINEL_D1_KEY_PASSWORD; do
+          for variable in SENTINEL_D1_KEYSTORE_B64 SENTINEL_D1_KEYSTORE_PASSWORD SENTINEL_D1_KEY_ALIAS SENTINEL_D1_KEY_PASSWORD SENTINEL_D1_EXPECTED_CERT_SHA256; do
             if [[ -z "${!variable:-}" ]]; then
               echo "BLOCKED: missing protected D.1 signing variable: $variable" >&2
               exit 3
@@ -50,7 +50,7 @@ workflows:
             exit 3
           }
           chmod 600 "$SENTINEL_D1_KEYSTORE_FILE"
-          keytool -list -keystore "$SENTINEL_D1_KEYSTORE_FILE" -storepass "$SENTINEL_D1_KEYSTORE_PASSWORD" -alias "$SENTINEL_D1_KEY_ALIAS" > /dev/null
+          keytool -list -keystore "$SENTINEL_D1_KEYSTORE_FILE" -storepass:env SENTINEL_D1_KEYSTORE_PASSWORD -alias "$SENTINEL_D1_KEY_ALIAS" > /dev/null
           echo "SENTINEL_D1_KEYSTORE_FILE=$SENTINEL_D1_KEYSTORE_FILE" >> "$CM_ENV"
           echo "D.1 persistent signing keystore validated; private material not logged."
       - name: Build and validate debug APK
@@ -70,7 +70,15 @@ workflows:
             echo "BLOCKED: attempted to publish an APK using the installed Sentinel package ID" >&2
             exit 4
           fi
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
+          SIGNER_OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          printf '%s\n' "$SIGNER_OUTPUT"
+          ACTUAL_CERT="$(printf '%s\n' "$SIGNER_OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED_CERT="$(printf '%s' "$SENTINEL_D1_EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED_CERT" =~ ^[a-f0-9]{64}$ || "$ACTUAL_CERT" != "$EXPECTED_CERT" ]]; then
+            echo "BLOCKED: D.1 APK signing certificate differs from the pinned qualification certificate" >&2
+            exit 5
+          fi
+          echo "PASS: D.1 APK certificate matches pinned SHA-256"
           (cd app/build/outputs/apk/debug && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
           printf 'source_commit=%s\npackage_id=%s\nqualification=%s\n' "$(git rev-parse HEAD)" "com.sentinel.quantum.d1test" "ISOLATED_DEBUG_ONLY_NOT_EMULATOR_OR_DEVICE_VALIDATED" > app/build/outputs/apk/debug/build-provenance.txt
     artifacts:
