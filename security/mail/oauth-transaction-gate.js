@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 /**
  * Server-side OAuth transaction guard. Not a deployed broker or token exchange.
@@ -53,9 +53,6 @@ export class MailOAuthTransactionGate {
     if (transaction.accountId !== accountId ||
         transaction.provider !== provider ||
         transaction.callbackUri !== callbackUri) return null;
-    const incomingHash = Buffer.from(key, 'hex');
-    const storedHash = Buffer.from(createHash('sha256').update(state).digest());
-    if (!timingSafeEqual(incomingHash, storedHash)) return null;
     return {
       codeVerifier: transaction.codeVerifier,
       expectedScopes: [...transaction.expectedScopes]
