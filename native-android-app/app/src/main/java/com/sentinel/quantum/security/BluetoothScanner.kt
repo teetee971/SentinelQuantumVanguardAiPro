@@ -79,7 +79,17 @@ class BluetoothScanner(context: Context) {
     @SuppressLint("MissingPermission")
     fun pairedDevices(): List<PairedBluetoothDevice> {
         val currentAdapter = adapter ?: return emptyList()
-        if (!hasPermissions()) return emptyList()
+        // Reading bonded devices needs BLUETOOTH_CONNECT on Android 12+,
+        // independently of the BLUETOOTH_SCAN permission required for BLE discovery.
+        // Do not hide an associated watch just because scanning is not authorized.
+        val associationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Manifest.permission.BLUETOOTH_CONNECT
+        } else {
+            Manifest.permission.BLUETOOTH
+        }
+        if (ContextCompat.checkSelfPermission(appContext, associationPermission) != PackageManager.PERMISSION_GRANTED) {
+            return emptyList()
+        }
         return try {
             currentAdapter.bondedDevices.orEmpty().mapNotNull { device ->
                 val address = runCatching { device.address }.getOrNull()?.trim().orEmpty()
