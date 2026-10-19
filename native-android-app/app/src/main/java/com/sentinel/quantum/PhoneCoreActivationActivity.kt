@@ -738,10 +738,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
 
                         SectionTitle("Messages")
-                        ElevatedCard(
-                            Modifier.fillMaxWidth().semantics {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().semantics {
                                 stateDescription = if (smsModel.state == SmsActivationDiagnostics.State.READY) "SMS prêt" else "SMS à activer"
-                            }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -749,9 +752,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Column(Modifier.weight(1f)) {
                                         Text("SMS par défaut", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         Text(smsModel.title, style = MaterialTheme.typography.labelMedium,
-                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant)
+                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) SentinelD1.Success else SentinelVisualTokens.TextSecondary)
                                     }
-                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
+                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = SentinelD1.Success)
                                 }
                                 Text(smsModel.detail, style = MaterialTheme.typography.bodySmall)
                                 if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in smsModel.actions) {
