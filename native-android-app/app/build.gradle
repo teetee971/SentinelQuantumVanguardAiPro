@@ -17,7 +17,8 @@ android {
         buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'
         manifestPlaceholders = [
             auth0Domain: "@string/com_auth0_domain",
-            auth0Scheme: "@string/com_auth0_scheme"
+            auth0Scheme: "@string/com_auth0_scheme",
+            sentinelAppLabel: "Sentinel Quantum Vanguard"
         ]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -61,6 +62,7 @@ android {
             if (providers.gradleProperty('sentinelIsolatedDebug').orNull == 'true') {
                 applicationIdSuffix '.d1test'
                 versionNameSuffix '-d1test'
+                manifestPlaceholders['sentinelAppLabel'] = 'Sentinel D.1 Test'
             }
         }
     }
