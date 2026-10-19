@@ -58,4 +58,19 @@ for (const [marker, reason] of [
 ]) {
   assert.ok(source.includes(marker), 'D1 activation missing: ' + reason);
 }
+// Isolated APK must exit to a read-only diagnostic before any role/permission UI.
+const isolatedGuard = source.indexOf('if (packageName == "com.sentinel.quantum.d1test") {');
+const normalPhoneSetup = source.indexOf('SentinelCallNotificationHelper.ensureChannel(applicationContext)');
+assert.ok(isolatedGuard >= 0 && normalPhoneSetup > isolatedGuard,
+  'Isolated D1 guard must precede normal Phone Core initialization');
+const isolatedBranch = source.slice(isolatedGuard, normalPhoneSetup);
+for (const expected of ['setContent {', 'return', 'Phone Core non activable dans cette version de test']) {
+  assert.ok(isolatedBranch.includes(expected), 'D1 isolated read-only contract missing: ' + expected);
+}
+for (const forbidden of ['roleLauncher.launch', 'permissionsLauncher.launch', 'setupPermissionLauncher.launch',
+  'createRequestRoleIntent(', 'requestPermissions(']) {
+  assert.ok(!isolatedBranch.includes(forbidden),
+    'Isolated D1 path must not request protected Android roles/permissions: ' + forbidden);
+}
+console.log('D1 isolated Phone Core guard PASS (static only; runtime not verified)');
 console.log('D1 activation source contract PASS (static only; APK and visual tests pending)');
