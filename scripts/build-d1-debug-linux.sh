@@ -43,6 +43,15 @@ APK="$ANDROID/app/build/outputs/apk/debug/app-debug.apk"
 rm -f -- "$APK"
 "${GRADLE_CMD[@]}" --no-daemon --stacktrace :app:assembleDebug
 [[ -s "$APK" ]] || { echo "BLOCKED: APK missing or empty" >&2; exit 3; }
+POST_BUILD_SHA="$(git -C "$ROOT" rev-parse --verify HEAD)"
+if [[ "$POST_BUILD_SHA" != "$SOURCE_SHA" ]]; then
+  echo "BLOCKED: HEAD changed during compilation" >&2
+  exit 3
+fi
+if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; then
+  echo "BLOCKED: tracked source or untracked files changed during compilation" >&2
+  exit 3
+fi
 echo "BUILD_OK: $APK"
 echo "COMMIT: $SOURCE_SHA"
 echo "SOURCE_REF: ${SOURCE_REF:-DETACHED_HEAD}"
