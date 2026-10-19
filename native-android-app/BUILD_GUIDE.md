@@ -99,7 +99,7 @@ Vérifier également que JDK 17 et les composants SDK requis sont disponibles. N
 com.android.application:com.android.application.gradle.plugin:9.4.1 not found
 ```
 
-Ce message signifie que le dépôt Maven de Google (`google()`, servi par `dl.google.com`) n'est pas joignable depuis l'environnement de build. Il ne signifie pas que la version d'AGP est invalide : la même configuration est construite avec succès par `.github/workflows/build-native-android.yml` sur des runners GitHub Actions standards.
+Ce message signifie que le dépôt Maven de Google (`google()`, servi par `dl.google.com`) n'est pas joignable depuis l'environnement de build. Il ne prouve pas à lui seul que la version d'AGP est invalide. Le workflow `.github/workflows/build-native-android.yml` définit une tentative de compilation sur runner GitHub ; son existence ne constitue pas une preuve de réussite. Exiger un journal de build réussi et un artefact rattaché au commit avant de conclure.
 
 Causes typiques :
 
