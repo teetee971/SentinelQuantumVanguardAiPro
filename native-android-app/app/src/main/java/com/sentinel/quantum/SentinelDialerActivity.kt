@@ -1279,6 +1279,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                         contactStatus?.let { Text(it, fontWeight = FontWeight.Bold) }
+                                        Text(
+                                            "Sources disponibles : contacts locaux, ARCEP (France/DOM), " +
+                                                "RTR (Autriche), réputation Sentinel si autorisée.",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            if (lookupRunning) "Recherche en cours…" else "Recherche terminée · résultats disponibles ci-dessous",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = SentinelD1.Cyan
+                                        )
                                         Text("Attribution officielle / source :", fontWeight = FontWeight.SemiBold)
                                         Text(directoryStatus, style = MaterialTheme.typography.bodySmall)
                                         Text(
