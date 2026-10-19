@@ -24,8 +24,8 @@ workflows:
           fi
           # API 37 may be distributed through a preview SDK channel.
           # Do not silently downgrade the compile SDK.
-          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --channel=3 "platforms;android-37" "build-tools;36.0.0" "platform-tools"
-          test -s "$ANDROID_SDK_ROOT/platforms/android-37/android.jar"
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --channel=3 "platforms;android-37.0" "build-tools;36.0.0" "platform-tools"
+          test -s "$ANDROID_SDK_ROOT/platforms/android-37.0/android.jar"
           echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
           git rev-parse HEAD
       - name: D.1 Android source gates
