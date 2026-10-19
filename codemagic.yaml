@@ -13,7 +13,16 @@ workflows:
           java -version
           node --version
           test -n "${ANDROID_SDK_ROOT:-}"
-          sdkmanager "platforms;android-37" "build-tools;36.0.0" "platform-tools"
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            SDKMANAGER="/usr/local/share/android-sdk/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            echo "BLOCKED: sdkmanager missing from Android SDK command-line tools"
+            find "$ANDROID_SDK_ROOT/cmdline-tools" -maxdepth 3 -name sdkmanager -print 2>/dev/null || true
+            exit 2
+          fi
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platforms;android-37" "build-tools;36.0.0" "platform-tools"
           echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
           git rev-parse HEAD
       - name: D.1 Android source gates
