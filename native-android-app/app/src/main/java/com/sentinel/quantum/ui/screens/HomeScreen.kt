@@ -393,7 +393,7 @@ fun HomeScreen(navController: NavController) {
             )
 
             SentinelSectionHeader(
-                title = if (normalizedQuery.isBlank()) "Accès directs" else "Résultats",
+                title = if (normalizedQuery.isBlank()) "Actions rapides" else "Résultats",
                 trailing = if (normalizedQuery.isBlank()) null else "${matchingTools.size}"
             )
 
