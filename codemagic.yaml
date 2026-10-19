@@ -213,6 +213,17 @@ workflows:
             echo "BLOCKED: production keystore certificate does not match the pinned fingerprint" >&2
             exit 5
           fi
+      - name: Run targeted Android unit tests before APK packaging
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest -PsentinelCleanInstallDebug=true \
+            --tests 'com.sentinel.quantum.security.BluetoothRiskEvaluatorTest' \
+            --tests 'com.sentinel.quantum.security.MailConnectorContractTest' \
+            --tests 'com.sentinel.quantum.security.MailOAuthHandshakeTest' \
+            --tests 'com.sentinel.quantum.ui.screens.OsintFeedSourceContractTest' \
+            --no-daemon --stacktrace
       - name: Build single-app clean-install candidate
         script: |
           set -euo pipefail
