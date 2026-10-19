@@ -942,8 +942,11 @@ private fun CapabilityCard(
     actionLabel: String?,
     onAction: () -> Unit
 ) {
-    ElevatedCard(
-        Modifier.fillMaxWidth().semantics { stateDescription = status }
+    Card(
+        modifier = Modifier.fillMaxWidth().semantics { stateDescription = status },
+        shape = RoundedCornerShape(20.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+        colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
