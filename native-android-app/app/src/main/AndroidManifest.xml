@@ -50,6 +50,7 @@
 
         <service
             android:name=".security.SentinelCallScreeningService"
+            android:enabled="${sentinelTelephonyEnabled}"
             android:exported="true"
             android:permission="android.permission.BIND_SCREENING_SERVICE">
             <intent-filter>
@@ -87,7 +88,8 @@
         <activity android:name=".PhoneCoreActivationActivity" android:exported="false" />
         <activity android:name=".PhoneCoreDiagnosticActivity" android:exported="false" />
 
-        <activity android:name=".SentinelDialerActivity" android:exported="true">
+        <activity android:name=".SentinelDialerActivity" android:enabled="${sentinelTelephonyEnabled}"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -101,6 +103,7 @@
 
         <service
             android:name=".security.SentinelInCallService"
+            android:enabled="${sentinelTelephonyEnabled}"
             android:exported="true"
             android:permission="android.permission.BIND_INCALL_SERVICE">
             <meta-data android:name="android.telecom.IN_CALL_SERVICE_UI" android:value="true" />
@@ -134,7 +137,8 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
 
-        <activity android:name=".SmsComposeActivity" android:exported="true">
+        <activity android:name=".SmsComposeActivity" android:enabled="${sentinelTelephonyEnabled}"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -147,6 +151,7 @@
 
         <receiver
             android:name=".security.SentinelSmsDeliverReceiver"
+            android:enabled="${sentinelTelephonyEnabled}"
             android:exported="true"
             android:permission="android.permission.BROADCAST_SMS">
             <intent-filter>
@@ -156,6 +161,7 @@
 
         <receiver
             android:name=".security.SentinelMmsDeliverReceiver"
+            android:enabled="${sentinelTelephonyEnabled}"
             android:exported="true"
             android:permission="android.permission.BROADCAST_WAP_PUSH">
             <intent-filter>
@@ -176,6 +182,7 @@
 
         <service
             android:name=".security.SentinelRespondViaMessageService"
+            android:enabled="${sentinelTelephonyEnabled}"
             android:exported="true"
             android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
             <intent-filter>
