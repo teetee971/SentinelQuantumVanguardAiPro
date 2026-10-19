@@ -265,8 +265,8 @@ fun HomeScreen(navController: NavController) {
     Scaffold(
         topBar = {
             SentinelTopBar(
-                title = "SENTINEL",
-                subtitle = "Protection · état observé"
+                title = "Sentinel",
+                subtitle = "QUANTUM VANGUARD AI PRO · état observé"
             )
         }
     ) { padding ->
@@ -370,7 +370,7 @@ fun HomeScreen(navController: NavController) {
             }
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("home_activity_summary")) {
-                Text("Activité récente", style = MaterialTheme.typography.titleMedium)
+                Text("Activité système", style = MaterialTheme.typography.titleMedium)
                 Text(homeState.activitySummary, style = MaterialTheme.typography.bodySmall)
             }
 
@@ -494,7 +494,7 @@ private fun QuickToolCard(
     ElevatedCard(
         onClick = onClick,
         modifier = modifier
-            .heightIn(min = 142.dp)
+            .heightIn(min = 120.dp)
             .border(1.dp, SentinelD1.BorderStrong.copy(alpha = 0.72f), RoundedCornerShape(22.dp)),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card.copy(alpha = 0.92f))
