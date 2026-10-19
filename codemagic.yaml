@@ -178,6 +178,231 @@ workflows:
           # Java's PKCS12 provider is authoritative for Gradle signing.
           # macOS /usr/bin/openssl may use LibreSSL and reject valid modern OpenSSL PKCS12 files.
           echo "CHECK: validating PKCS12 using Java keytool"
+          # Diagnose accidental clipboard newlines/CR without printing or modifying secrets.
+          if [[ "$KEYSTORE_PASSWORD" == *
+          # Test password validity independently using OpenSSL 3 when available.
+          if command -v brew >/dev/null 2>&1 && [[ -x "$(brew --prefix openssl@3 2>/dev/null)/bin/openssl" ]]; then
+            OPENSSL3="$(brew --prefix openssl@3)/bin/openssl"
+            if "$OPENSSL3" pkcs12 -in "$KEYSTORE_FILE" -info -noout -passin env:KEYSTORE_PASSWORD >/dev/null 2>&1; then
+              echo "PASS: OpenSSL 3 accepts stored PKCS12 password"
+            else
+              echo "BLOCKED: OpenSSL 3 rejects stored PKCS12 password or format" >&2
+              exit 4
+            fi
+          else
+            echo "INFO: independent OpenSSL 3 password check unavailable"
+          fi
+          if ! keytool -list -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
+            echo "BLOCKED: Java cannot open PKCS12 after transport integrity check; check password or Java compatibility" >&2
+            exit 4
+          fi
+          echo "PASS: Java can open protected PKCS12"
+          if ! DETAILS="$(keytool -list -v -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" 2>/dev/null)"; then
+            echo "BLOCKED: Java can open PKCS12 but KEY_ALIAS was not found or is invalid" >&2
+            exit 4
+          fi
+          ACTUAL="$(printf '%s\n' "$DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED" =~ ^[0-9a-f]{64}$ || "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "BLOCKED: production keystore certificate does not match the pinned fingerprint" >&2
+            exit 5
+          fi
+      - name: Build single-app clean-install candidate
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PsentinelCleanInstallDebug=true --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum' "
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum.d1test'"; then
+            echo "BLOCKED: isolated D.1 test package produced in main candidate" >&2
+            exit 4
+          fi
+          OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          ACTUAL="$(printf '%s\n' "$OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then echo "BLOCKED: unexpected APK signer" >&2; exit 5; fi
+          OUT=app/build/outputs/apk/debug
+          (cd "$OUT" && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf 'source_commit=%s\npackage_id=com.sentinel.quantum\nsigner_certificate_sha256=%s\nstatus=BUILD_ONLY_NOT_DEVICE_VERIFIED\nphone_sms=NOT_PHYSICALLY_QUALIFIED\nd1_visuals=NOT_VERIFIED\nptt=NOT_FUNCTIONAL\n' "$(git rev-parse HEAD)" "$ACTUAL" > "$OUT/build-provenance.txt"
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
+\\r'* || "$KEYSTORE_PASSWORD" == *
+          # Test password validity independently using OpenSSL 3 when available.
+          if command -v brew >/dev/null 2>&1 && [[ -x "$(brew --prefix openssl@3 2>/dev/null)/bin/openssl" ]]; then
+            OPENSSL3="$(brew --prefix openssl@3)/bin/openssl"
+            if "$OPENSSL3" pkcs12 -in "$KEYSTORE_FILE" -info -noout -passin env:KEYSTORE_PASSWORD >/dev/null 2>&1; then
+              echo "PASS: OpenSSL 3 accepts stored PKCS12 password"
+            else
+              echo "BLOCKED: OpenSSL 3 rejects stored PKCS12 password or format" >&2
+              exit 4
+            fi
+          else
+            echo "INFO: independent OpenSSL 3 password check unavailable"
+          fi
+          if ! keytool -list -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
+            echo "BLOCKED: Java cannot open PKCS12 after transport integrity check; check password or Java compatibility" >&2
+            exit 4
+          fi
+          echo "PASS: Java can open protected PKCS12"
+          if ! DETAILS="$(keytool -list -v -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" 2>/dev/null)"; then
+            echo "BLOCKED: Java can open PKCS12 but KEY_ALIAS was not found or is invalid" >&2
+            exit 4
+          fi
+          ACTUAL="$(printf '%s\n' "$DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED" =~ ^[0-9a-f]{64}$ || "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "BLOCKED: production keystore certificate does not match the pinned fingerprint" >&2
+            exit 5
+          fi
+      - name: Build single-app clean-install candidate
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PsentinelCleanInstallDebug=true --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum' "
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum.d1test'"; then
+            echo "BLOCKED: isolated D.1 test package produced in main candidate" >&2
+            exit 4
+          fi
+          OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          ACTUAL="$(printf '%s\n' "$OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then echo "BLOCKED: unexpected APK signer" >&2; exit 5; fi
+          OUT=app/build/outputs/apk/debug
+          (cd "$OUT" && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf 'source_commit=%s\npackage_id=com.sentinel.quantum\nsigner_certificate_sha256=%s\nstatus=BUILD_ONLY_NOT_DEVICE_VERIFIED\nphone_sms=NOT_PHYSICALLY_QUALIFIED\nd1_visuals=NOT_VERIFIED\nptt=NOT_FUNCTIONAL\n' "$(git rev-parse HEAD)" "$ACTUAL" > "$OUT/build-provenance.txt"
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
+\\n'* ]]; then
+            echo "BLOCKED: KEYSTORE_PASSWORD contains a carriage return or newline (copy/paste artifact)" >&2
+            exit 4
+          fi
+          if [[ "$KEY_ALIAS" == *
+          # Test password validity independently using OpenSSL 3 when available.
+          if command -v brew >/dev/null 2>&1 && [[ -x "$(brew --prefix openssl@3 2>/dev/null)/bin/openssl" ]]; then
+            OPENSSL3="$(brew --prefix openssl@3)/bin/openssl"
+            if "$OPENSSL3" pkcs12 -in "$KEYSTORE_FILE" -info -noout -passin env:KEYSTORE_PASSWORD >/dev/null 2>&1; then
+              echo "PASS: OpenSSL 3 accepts stored PKCS12 password"
+            else
+              echo "BLOCKED: OpenSSL 3 rejects stored PKCS12 password or format" >&2
+              exit 4
+            fi
+          else
+            echo "INFO: independent OpenSSL 3 password check unavailable"
+          fi
+          if ! keytool -list -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
+            echo "BLOCKED: Java cannot open PKCS12 after transport integrity check; check password or Java compatibility" >&2
+            exit 4
+          fi
+          echo "PASS: Java can open protected PKCS12"
+          if ! DETAILS="$(keytool -list -v -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" 2>/dev/null)"; then
+            echo "BLOCKED: Java can open PKCS12 but KEY_ALIAS was not found or is invalid" >&2
+            exit 4
+          fi
+          ACTUAL="$(printf '%s\n' "$DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED" =~ ^[0-9a-f]{64}$ || "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "BLOCKED: production keystore certificate does not match the pinned fingerprint" >&2
+            exit 5
+          fi
+      - name: Build single-app clean-install candidate
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PsentinelCleanInstallDebug=true --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum' "
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum.d1test'"; then
+            echo "BLOCKED: isolated D.1 test package produced in main candidate" >&2
+            exit 4
+          fi
+          OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          ACTUAL="$(printf '%s\n' "$OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then echo "BLOCKED: unexpected APK signer" >&2; exit 5; fi
+          OUT=app/build/outputs/apk/debug
+          (cd "$OUT" && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf 'source_commit=%s\npackage_id=com.sentinel.quantum\nsigner_certificate_sha256=%s\nstatus=BUILD_ONLY_NOT_DEVICE_VERIFIED\nphone_sms=NOT_PHYSICALLY_QUALIFIED\nd1_visuals=NOT_VERIFIED\nptt=NOT_FUNCTIONAL\n' "$(git rev-parse HEAD)" "$ACTUAL" > "$OUT/build-provenance.txt"
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
+\\r'* || "$KEY_ALIAS" == *
+          # Test password validity independently using OpenSSL 3 when available.
+          if command -v brew >/dev/null 2>&1 && [[ -x "$(brew --prefix openssl@3 2>/dev/null)/bin/openssl" ]]; then
+            OPENSSL3="$(brew --prefix openssl@3)/bin/openssl"
+            if "$OPENSSL3" pkcs12 -in "$KEYSTORE_FILE" -info -noout -passin env:KEYSTORE_PASSWORD >/dev/null 2>&1; then
+              echo "PASS: OpenSSL 3 accepts stored PKCS12 password"
+            else
+              echo "BLOCKED: OpenSSL 3 rejects stored PKCS12 password or format" >&2
+              exit 4
+            fi
+          else
+            echo "INFO: independent OpenSSL 3 password check unavailable"
+          fi
+          if ! keytool -list -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
+            echo "BLOCKED: Java cannot open PKCS12 after transport integrity check; check password or Java compatibility" >&2
+            exit 4
+          fi
+          echo "PASS: Java can open protected PKCS12"
+          if ! DETAILS="$(keytool -list -v -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" 2>/dev/null)"; then
+            echo "BLOCKED: Java can open PKCS12 but KEY_ALIAS was not found or is invalid" >&2
+            exit 4
+          fi
+          ACTUAL="$(printf '%s\n' "$DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED" =~ ^[0-9a-f]{64}$ || "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "BLOCKED: production keystore certificate does not match the pinned fingerprint" >&2
+            exit 5
+          fi
+      - name: Build single-app clean-install candidate
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PsentinelCleanInstallDebug=true --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum' "
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum.d1test'"; then
+            echo "BLOCKED: isolated D.1 test package produced in main candidate" >&2
+            exit 4
+          fi
+          OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          ACTUAL="$(printf '%s\n' "$OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then echo "BLOCKED: unexpected APK signer" >&2; exit 5; fi
+          OUT=app/build/outputs/apk/debug
+          (cd "$OUT" && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf 'source_commit=%s\npackage_id=com.sentinel.quantum\nsigner_certificate_sha256=%s\nstatus=BUILD_ONLY_NOT_DEVICE_VERIFIED\nphone_sms=NOT_PHYSICALLY_QUALIFIED\nd1_visuals=NOT_VERIFIED\nptt=NOT_FUNCTIONAL\n' "$(git rev-parse HEAD)" "$ACTUAL" > "$OUT/build-provenance.txt"
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
+\\n'* ]]; then
+            echo "BLOCKED: KEY_ALIAS contains a carriage return or newline" >&2
+            exit 4
+          fi
           # Never expose the password or verbose keytool diagnostics in public logs.
           # Test password validity independently using OpenSSL 3 when available.
           if command -v brew >/dev/null 2>&1 && [[ -x "$(brew --prefix openssl@3 2>/dev/null)/bin/openssl" ]]; then
