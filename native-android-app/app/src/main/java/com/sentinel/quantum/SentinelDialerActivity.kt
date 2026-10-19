@@ -808,7 +808,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                             SharedPreferencesCommunicationReputationStorage(applicationContext)
                                         )
                                     ).persist(lookupNumber, r)
-                                    "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
+                                    "Réputation Sentinel : " +
+                                        (r.riskScore?.let { "risque $it/100" } ?: "score de risque indisponible") +
+                                        " · ${r.action}" +
                                         if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
