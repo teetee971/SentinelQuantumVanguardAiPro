@@ -50,7 +50,14 @@ workflows:
             exit 3
           }
           chmod 600 "$SENTINEL_D1_KEYSTORE_FILE"
-          keytool -list -keystore "$SENTINEL_D1_KEYSTORE_FILE" -storepass:env SENTINEL_D1_KEYSTORE_PASSWORD -alias "$SENTINEL_D1_KEY_ALIAS" > /dev/null
+          CERT_DETAILS="$(keytool -list -v -keystore "$SENTINEL_D1_KEYSTORE_FILE" -storepass:env SENTINEL_D1_KEYSTORE_PASSWORD -alias "$SENTINEL_D1_KEY_ALIAS")"
+          EXPECTED_CERT="$(printf '%s' "$SENTINEL_D1_EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          KEYSTORE_CERT="$(printf '%s\n' "$CERT_DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED_CERT" =~ ^[a-f0-9]{64}$ || "$KEYSTORE_CERT" != "$EXPECTED_CERT" ]]; then
+            echo "BLOCKED: protected D.1 keystore does not match pinned SHA-256 certificate" >&2
+            exit 5
+          fi
+          echo "PASS: D.1 keystore certificate matches pinned SHA-256"
           echo "SENTINEL_D1_KEYSTORE_FILE=$SENTINEL_D1_KEYSTORE_FILE" >> "$CM_ENV"
           echo "D.1 persistent signing keystore validated; private material not logged."
       - name: Build and validate debug APK
