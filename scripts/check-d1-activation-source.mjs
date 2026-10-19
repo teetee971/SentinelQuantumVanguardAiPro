@@ -18,5 +18,5 @@ for (const marker of [
 ]) {
   assert.ok(source.includes(marker), 'D1 activation contract missing: ' + marker);
 }
-assert.doesNotMatch(source, /Color\\(0x[0-9a-fA-F]{8}\\)/, 'Use shared D1 color tokens, not hardcoded ARGB colors');
+assert.doesNotMatch(source, /Color\(0x[0-9a-fA-F]{8}\)/, 'Use shared D1 color tokens, not hardcoded ARGB colors');
 console.log('D1 activation source contract PASS (static; not compiled or visually qualified)');
