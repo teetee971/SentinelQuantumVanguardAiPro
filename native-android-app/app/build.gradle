@@ -18,7 +18,8 @@ android {
         manifestPlaceholders = [
             auth0Domain: "@string/com_auth0_domain",
             auth0Scheme: "@string/com_auth0_scheme",
-            sentinelAppLabel: "Sentinel Quantum Vanguard"
+            sentinelAppLabel: "Sentinel Quantum Vanguard",
+            sentinelTelephonyEnabled: "true"
         ]
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -63,6 +64,7 @@ android {
                 applicationIdSuffix '.d1test'
                 versionNameSuffix '-d1test'
                 manifestPlaceholders['sentinelAppLabel'] = 'Sentinel D.1 Test'
+                manifestPlaceholders['sentinelTelephonyEnabled'] = 'false'
             }
         }
     }
