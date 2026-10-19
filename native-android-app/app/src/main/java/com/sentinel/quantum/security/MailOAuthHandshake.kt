@@ -1,5 +1,6 @@
 package com.sentinel.quantum.security
 
+import java.net.URI
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
@@ -14,7 +15,8 @@ import java.util.Base64
  */
 class MailOAuthHandshake(
     private val nowEpochMs: () -> Long = System::currentTimeMillis,
-    private val random: SecureRandom = SecureRandom()
+    private val random: SecureRandom = SecureRandom(),
+    private val approvedRedirects: Map<MailConnectorContract.Provider, Set<String>> = emptyMap()
 ) {
     data class Pending internal constructor(
         val provider: MailConnectorContract.Provider,
@@ -34,11 +36,15 @@ class MailOAuthHandshake(
         require(provider != MailConnectorContract.Provider.IMAP) {
             "IMAP requires an explicit provider-specific OAuth implementation"
         }
-        require(redirectUri.startsWith("https://") && redirectUri.length <= 2048) {
-            "Use an explicitly configured HTTPS callback URL"
+        require(redirectUri.length in 1..2048) { "Invalid callback URI" }
+        val uri = runCatching { URI(redirectUri) }.getOrNull()
+        require(uri != null && uri.scheme.equals("https", ignoreCase = false) &&
+            uri.host != null && uri.rawUserInfo == null && uri.rawFragment == null &&
+            uri.port == -1 && uri.rawQuery == null && uri.toASCIIString() == redirectUri) {
+            "Only canonical HTTPS callback URIs are allowed"
         }
-        require(redirectUri.none { it == '#' || it == '@' }) {
-            "Callback must not contain fragment or userinfo"
+        require(redirectUri in approvedRedirects[provider].orEmpty()) {
+            "Callback must be explicitly registered for this provider"
         }
         val state = randomBase64Url(32)
         val verifier = randomBase64Url(32)
