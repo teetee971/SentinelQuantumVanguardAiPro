@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ANDROID="$ROOT/native-android-app"
-for tool in java node git sha256sum; do
+for tool in java node git sha256sum unzip; do
   command -v "$tool" >/dev/null || { echo "BLOCKED: missing $tool" >&2; exit 2; }
 done
 if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; then
@@ -43,6 +43,18 @@ APK="$ANDROID/app/build/outputs/apk/debug/app-debug.apk"
 rm -f -- "$APK"
 "${GRADLE_CMD[@]}" --no-daemon --stacktrace :app:assembleDebug
 [[ -s "$APK" ]] || { echo "BLOCKED: APK missing or empty" >&2; exit 3; }
+if ! unzip -tqq "$APK"; then
+  echo "BLOCKED: generated APK is not a valid ZIP archive" >&2
+  exit 3
+fi
+if ! unzip -Z -1 "$APK" | grep -qx 'AndroidManifest.xml'; then
+  echo "BLOCKED: APK missing compiled AndroidManifest.xml" >&2
+  exit 3
+fi
+if ! unzip -Z -1 "$APK" | grep -qx 'classes.dex'; then
+  echo "BLOCKED: APK missing primary DEX code" >&2
+  exit 3
+fi
 POST_BUILD_SHA="$(git -C "$ROOT" rev-parse --verify HEAD)"
 if [[ "$POST_BUILD_SHA" != "$SOURCE_SHA" ]]; then
   echo "BLOCKED: HEAD changed during compilation" >&2
