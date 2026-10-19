@@ -235,6 +235,7 @@ workflows:
           unzip -tqq "$APK"
           BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
           printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum' "
+          printf '%s\n' "$BADGING" | grep -F "versionCode='11' versionName='1.0.10'"
           if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum.d1test'"; then
             echo "BLOCKED: isolated D.1 test package produced in main candidate" >&2
             exit 4
