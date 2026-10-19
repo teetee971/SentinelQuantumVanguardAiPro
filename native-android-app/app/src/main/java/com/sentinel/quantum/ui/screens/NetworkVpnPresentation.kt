@@ -26,6 +26,7 @@ object NetworkVpnPresentation {
         NetworkRiskLevel.HIGH -> SentinelStatus.BAD
         NetworkRiskLevel.MEDIUM -> SentinelStatus.WARN
         NetworkRiskLevel.LOW -> SentinelStatus.UNKNOWN
+        NetworkRiskLevel.UNKNOWN -> SentinelStatus.UNKNOWN
     }
 
     fun aggregateNetworkStatus(levels: List<NetworkRiskLevel>): SentinelStatus {
