@@ -117,6 +117,22 @@ fun SystemDoctorScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Button(
+                onClick = {
+                    if (!isScanning) {
+                        isScanning = true
+                        scope.launch {
+                            scan = withContext(Dispatchers.IO) { doctor.scan() }
+                            isScanning = false
+                        }
+                    }
+                },
+                enabled = !isScanning,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
+            }
+
             SentinelHolographicScene(
                 model = SentinelHolographicSceneModel(
                     kind = SentinelSceneKind.DEVICE_ANALYSIS,
@@ -164,22 +180,6 @@ fun SystemDoctorScreen(navController: NavController) {
                 ),
                 modifier = Modifier.testTag("system_doctor_reference_metrics")
             )
-            Button(
-                onClick = {
-                    if (!isScanning) {
-                        isScanning = true
-                        scope.launch {
-                            scan = withContext(Dispatchers.IO) { doctor.scan() }
-                            isScanning = false
-                        }
-                    }
-                },
-                enabled = !isScanning,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
-            }
-
             SentinelSectionHeader(
                 title = "Utilitaires de stockage",
                 subtitle = "Uniquement les caches appartenant à Sentinel · suppression vérifiée"
