@@ -49,7 +49,7 @@ test('only least privilege read scopes are allowed', () => {
   const gate = new MailOAuthTransactionGate(options);
   assert.throws(() => gate.start({ ...input, scopes: ['https://mail.google.com/'] }), /SCOPE_UNAUTHORIZED/);
   assert.throws(() => gate.start({ ...input, scopes: ['Mail.Send'] }), /SCOPE_UNAUTHORIZED/);
-  assert.throws(() => gate.start({ ...input, callbackUri: 'http://sentinel.example' }), /CALLBACK_NOT_ALLOWLISTED/);
+  assert.throws(() => gate.start({ ...input, callbackUri: 'http://sentinel.example' }), /CALLBACK_INVALID/);
   assert.throws(() => gate.start({ ...input, provider: 'imap' }), /PROVIDER_UNSUPPORTED/);
 });
 
