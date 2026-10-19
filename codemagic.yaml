@@ -165,6 +165,14 @@ workflows:
             exit 4
           fi
           echo "PASS: decoded PKCS12 file size matches local reference (3586 bytes)"
+          # Compare SHA-256 of encrypted container only, without printing any secret.
+          FILE_SHA256="$(shasum -a 256 "$KEYSTORE_FILE" | awk '{print $1}')"
+          EXPECTED_FILE_SHA256="ca88111db6a8e4db9965d51c59d1b793bc85ae1c75d29a13046742c5827a07d7"
+          if [[ "$FILE_SHA256" != "$EXPECTED_FILE_SHA256" ]]; then
+            echo "BLOCKED: production PKCS12 bytes differ from locally verified file despite matching length" >&2
+            exit 4
+          fi
+          echo "PASS: production PKCS12 SHA-256 matches locally verified encrypted file"
           test -s "$KEYSTORE_FILE" || { echo "BLOCKED: production keystore file missing" >&2; exit 3; }
           echo "KEYSTORE_FILE=$KEYSTORE_FILE" >> "$CM_ENV"
           echo "CHECK: encoded signing file decoded; validating PKCS12 structure"
