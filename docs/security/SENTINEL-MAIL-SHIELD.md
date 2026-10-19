@@ -63,3 +63,24 @@ Recommended next adapters after email: Google Calendar / Microsoft Calendar
 (read-only events), Contacts with privacy controls, Google Drive / OneDrive
 (file metadata only by default), and opt-in threat intelligence feeds.
 Each requires its own consent, scope boundary and product-specific tests.
+
+## OAuth protocol gate implemented (not live)
+
+`MailOAuthHandshake.kt` generates cryptographically random authorization state
+and RFC 7636 S256 PKCE material, checks same-provider and exact callback
+matching, enforces five-minute expiry, and consumes each pending flow only
+once. It intentionally does not open Google login, exchange tokens, or grant
+access. The JVM unit test `MailOAuthHandshakeTest.kt` covers random state,
+one-time use, mismatch, expiry, redirect URI and rejection of generic IMAP.
+
+**Deployment dependency:** provision a dedicated mailbox OAuth backend with
+exactly registered provider client identifiers and HTTPS callbacks. The backend
+must store hashed short-lived state transaction identifiers, enforce PKCE,
+session ownership, redirect and nonce verification, verify Google's granted
+scopes, encrypt refresh tokens at rest, rotate secrets and record account-bound
+consent. It must never accept a client-supplied redirect destination or
+trust `MailOAuthHandshake` as a server-side authorization decision.
+
+The Android UI currently renders provider status as NOT_CONFIGURED. Enable
+connect actions only after live backend connectivity and end-to-end tests.
+Do not import credentials or pre-existing Gmail permissions from ChatGPT.
