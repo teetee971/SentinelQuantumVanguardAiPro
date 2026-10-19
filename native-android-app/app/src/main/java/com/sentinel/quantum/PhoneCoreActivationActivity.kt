@@ -955,11 +955,11 @@ private fun CapabilityCard(
                     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
                         status,
-                        color = if (ready) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (ready) SentinelD1.Success else SentinelVisualTokens.TextSecondary,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
-                if (ready) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
+                if (ready) Icon(Icons.Default.CheckCircle, null, tint = SentinelD1.Success)
             }
             Text(detail, style = MaterialTheme.typography.bodySmall)
             if (actionLabel != null) {
