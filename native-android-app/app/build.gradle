@@ -87,10 +87,10 @@ android {
                 // One-app migration candidate: same ID as the principal Sentinel app.
                 // Requires removing a differently signed old installation only AFTER
                 // candidate artifact verification and an explicit user decision.
-                if (!d1SigningReady || !file(d1KeyFile).isFile()) {
-                    throw new GradleException('Clean-install D1 candidate requires persistent protected signing.')
+                if (!releaseSigningConfigured || !file(releaseKeystoreFile).isFile()) {
+                    throw new GradleException('Clean-install candidate requires the permanent production signing keystore.')
                 }
-                signingConfig signingConfigs.d1Qualification
+                signingConfig signingConfigs.release
                 manifestPlaceholders['sentinelAppLabel'] = 'Sentinel Quantum Vanguard'
             }
             if (isolatedD1) {
