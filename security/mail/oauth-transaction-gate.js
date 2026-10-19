@@ -8,15 +8,23 @@ import { createHash, randomBytes } from 'node:crypto';
 export class MailOAuthTransactionGate {
   #transactions = new Map();
   #now;
-  constructor({ now = () => Date.now() } = {}) {
+  #approvedCallbacks;
+  #maxPending;
+  constructor({ now = () => Date.now(), approvedCallbacks = {}, maxPending = 1000 } = {}) {
     this.#now = now;
+    this.#approvedCallbacks = approvedCallbacks;
+    this.#maxPending = maxPending;
   }
 
   start({ accountId, provider, callbackUri, scopes }) {
     if (typeof accountId !== 'string' || !accountId.trim()) throw new Error('ACCOUNT_REQUIRED');
     if (!['gmail', 'microsoft'].includes(provider)) throw new Error('PROVIDER_UNSUPPORTED');
-    if (typeof callbackUri !== 'string' || !/^https:\/\/[^/?#@]+(?:\/[^?#]*)?$/.test(callbackUri))
-      throw new Error('CALLBACK_INVALID');
+    // Enforce an exact per-provider allowlist. Callers cannot provide an arbitrary
+    // HTTPS callback (which would permit redirecting authorization codes).
+    if (typeof callbackUri !== 'string' ||
+        !Array.isArray(this.#approvedCallbacks[provider]) ||
+        !this.#approvedCallbacks[provider].includes(callbackUri))
+      throw new Error('CALLBACK_NOT_ALLOWLISTED');
     // Scopes are server-assigned. The caller may not request mutation scopes.
     const expectedScopes = provider === 'gmail'
       ? ['https://www.googleapis.com/auth/gmail.readonly']
@@ -25,6 +33,8 @@ export class MailOAuthTransactionGate {
         !scopes.every((scope, i) => scope === expectedScopes[i]))
       throw new Error('SCOPE_UNAUTHORIZED');
 
+    this.pruneExpired();
+    if (this.#transactions.size >= this.#maxPending) throw new Error('PENDING_LIMIT');
     const state = randomBytes(32).toString('base64url');
     const codeVerifier = randomBytes(32).toString('base64url');
     const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
