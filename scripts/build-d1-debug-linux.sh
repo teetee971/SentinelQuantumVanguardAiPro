@@ -47,11 +47,11 @@ if ! unzip -tqq "$APK"; then
   echo "BLOCKED: generated APK is not a valid ZIP archive" >&2
   exit 3
 fi
-if ! unzip -Z -1 "$APK" | grep -qx 'AndroidManifest.xml'; then
+if ! unzip -Z -1 "$APK" | grep -x 'AndroidManifest.xml' >/dev/null; then
   echo "BLOCKED: APK missing compiled AndroidManifest.xml" >&2
   exit 3
 fi
-if ! unzip -Z -1 "$APK" | grep -qx 'classes.dex'; then
+if ! unzip -Z -1 "$APK" | grep -x 'classes.dex' >/dev/null; then
   echo "BLOCKED: APK missing primary DEX code" >&2
   exit 3
 fi
