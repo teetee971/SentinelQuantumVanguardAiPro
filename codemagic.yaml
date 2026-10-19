@@ -131,6 +131,8 @@ workflows:
     max_build_duration: 60
     environment:
       java: 17
+      groups:
+        - sentinel_production
     scripts:
       - name: Verify SDK and source
         script: |
