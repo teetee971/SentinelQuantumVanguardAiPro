@@ -60,6 +60,7 @@ import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
 import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
+import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CommunicationReputationCache
