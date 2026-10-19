@@ -32,8 +32,10 @@ cd "$ROOT"
 node scripts/check-android-ui-consistency.js
 node scripts/check-d1-activation-source.mjs
 cd "$ANDROID"
-"${GRADLE_CMD[@]}" --no-daemon --stacktrace :app:assembleDebug
+# Prevent an earlier APK from being mistaken for an output of this run.
 APK="$ANDROID/app/build/outputs/apk/debug/app-debug.apk"
+rm -f -- "$APK"
+"${GRADLE_CMD[@]}" --no-daemon --stacktrace :app:assembleDebug
 [[ -s "$APK" ]] || { echo "BLOCKED: APK missing or empty" >&2; exit 3; }
 echo "BUILD_OK: $APK"
 echo "COMMIT: $(git -C "$ROOT" rev-parse HEAD)"
