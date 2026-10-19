@@ -371,14 +371,14 @@ fun SentinelQuantumCore(
             Text(
                 text = "SENTINEL CORE",
                 color = SentinelVisualTokens.TextPrimary,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.3.sp
             )
             Text(
                 text = coreStatus.visual().label,
                 color = coreAccent,
-                fontSize = 11.sp
+                fontSize = 12.sp
             )
         }
 
