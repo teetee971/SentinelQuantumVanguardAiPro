@@ -5,6 +5,7 @@ import com.sentinel.quantum.security.CallNumberFingerprinter
 import com.sentinel.quantum.security.CallRuleEngine
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CommunityReportClient
+import com.sentinel.quantum.security.InternationalNumberResolver
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsProviderIdentityLookup
@@ -60,6 +61,47 @@ object IntelligenceCoreRuntime {
                 producer = EvidenceProvenance.Producer.PHONE_CORE,
                 producerVersion = 1,
                 trust = EvidenceProvenance.TrustClass.LOCAL_DERIVED
+            ),
+            privacyClass = PrivacyClass.BOUNDED_METADATA
+        )
+        runtime.sink.publish(event)
+    }.getOrDefault(PublishResult.REJECTED)
+
+    /**
+     * Publishes bounded numbering/regulatory context after a local lookup or worker sync.
+     *
+     * This method intentionally carries no authority to block, silence or identify a caller.
+     * It is not called from [com.sentinel.quantum.security.SentinelCallScreeningService]; the
+     * Telecom callback remains local and response-first.
+     */
+    fun publishTelecomEnrichment(
+        context: Context,
+        resolution: InternationalNumberResolver.Resolution,
+        sourceIds: List<String>,
+        freshness: IntelligenceEvidence.TelecomFreshness = IntelligenceEvidence.TelecomFreshness.UNKNOWN,
+        observedAtMs: Long = System.currentTimeMillis()
+    ): PublishResult = runCatching {
+        if (observedAtMs < 0L || resolution.canonicalE164 == null) {
+            return@runCatching PublishResult.REJECTED
+        }
+        val normalizedNumber = resolution.canonicalE164
+        val runtime = stateFor(context.applicationContext)
+        val fingerprint = runtime.fingerprinter.fingerprint(normalizedNumber)
+            ?: return@runCatching PublishResult.REJECTED
+        val identityKey = identityKeyForFingerprint(fingerprint)
+            ?: return@runCatching PublishResult.REJECTED
+        val evidence = TelecomIntelligenceEvidenceAdapter.from(resolution, sourceIds, freshness)
+        val event = IntelligenceEvent(
+            eventId = "telecom:$fingerprint:${resolution.status.name}:${sourceIds.sorted().joinToString(",").hashCode()}",
+            identityKey = identityKey,
+            evidence = evidence,
+            observedAtMs = observedAtMs,
+            expiresAtMs = safeExpiry(observedAtMs, CALL_EVENT_TTL_MS),
+            source = EvidenceSource.TELECOM_REGULATORY,
+            provenance = EvidenceProvenance(
+                producer = EvidenceProvenance.Producer.TELECOM_INTELLIGENCE,
+                producerVersion = 1,
+                trust = EvidenceProvenance.TrustClass.UNVERIFIED_REMOTE
             ),
             privacyClass = PrivacyClass.BOUNDED_METADATA
         )

@@ -1,5 +1,14 @@
 package com.sentinel.quantum.ui.screens
 
+import android.app.role.RoleManager
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import android.os.Build
+
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -56,6 +66,9 @@ fun SystemDoctorScreen(navController: NavController) {
     val deviceUtilities = remember { SentinelDeviceUtilitiesOrchestrator(context) }
     var scan by remember { mutableStateOf<SentinelSystemDoctor.Scan?>(null) }
     var isScanning by remember { mutableStateOf(false) }
+    var scanError by remember { mutableStateOf<String?>(null) }
+    var observedRole by remember { mutableStateOf<String?>(null) }
+    var observedBattery by remember { mutableStateOf<Int?>(null) }
     var cleanupDiscovery by remember {
         mutableStateOf<SentinelDeviceUtilitiesOrchestrator.Discovery?>(null)
     }
@@ -63,6 +76,7 @@ fun SystemDoctorScreen(navController: NavController) {
         mutableStateOf<SentinelDeviceUtilitiesOrchestrator.CleanupRun?>(null)
     }
     var isCleanupBusy by remember { mutableStateOf(false) }
+    var cleanupError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val doctorStatus = scan?.let { result ->
         when (result.report.highestObservedRisk) {
@@ -73,6 +87,19 @@ fun SystemDoctorScreen(navController: NavController) {
             SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE -> SentinelStatus.UNKNOWN
         }
     } ?: SentinelStatus.UNKNOWN
+    // The storage metric must use the actual storage evidence collected by the
+    // system scan, not a separate cache-cleanup discovery action.
+    val storageEvidence = scan?.evidence?.firstOrNull { it.id == "storage.primary_free" }
+    val storageStatus = when (storageEvidence?.status) {
+        SentinelDeviceDiagnostic.Status.OK -> SentinelStatus.OK
+        SentinelDeviceDiagnostic.Status.WARNING -> SentinelStatus.WARN
+        SentinelDeviceDiagnostic.Status.CRITICAL -> SentinelStatus.BAD
+        SentinelDeviceDiagnostic.Status.UNKNOWN,
+        SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE,
+        null -> SentinelStatus.UNKNOWN
+    }
+    val rolesStatus = if (observedRole == null || observedRole == "Aucun rôle détenu") SentinelStatus.UNKNOWN else SentinelStatus.TEST
+    val batteryStatus = if (observedBattery == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST
     val doctorModules = listOf(
         SentinelCoreModule(
             id = "permissions",
@@ -83,22 +110,22 @@ fun SystemDoctorScreen(navController: NavController) {
         ),
         SentinelCoreModule(
             id = "roles",
-            label = "Rôles Android · INCONNU",
-            status = SentinelStatus.UNKNOWN,
+            label = "Rôles Android · ${observedRole ?: "INCONNU"}",
+            status = rolesStatus,
             icon = Icons.Default.Security,
             enabled = false
         ),
         SentinelCoreModule(
             id = "storage",
-            label = if (cleanupDiscovery == null) "Stockage · INCONNU" else "Stockage · OBSERVÉ",
-            status = if (cleanupDiscovery == null) SentinelStatus.UNKNOWN else SentinelStatus.OK,
+            label = if (storageEvidence == null) "Stockage · INCONNU" else "Stockage · ${storageStatus.visual().label}",
+            status = storageStatus,
             icon = Icons.Default.Storage,
             enabled = false
         ),
         SentinelCoreModule(
             id = "battery",
-            label = "Batterie · INCONNU",
-            status = SentinelStatus.UNKNOWN,
+            label = "Batterie · ${observedBattery?.let { "$it %" } ?: "INCONNU"}",
+            status = batteryStatus,
             icon = Icons.Default.BatteryChargingFull,
             enabled = false
         )
@@ -114,9 +141,47 @@ fun SystemDoctorScreen(navController: NavController) {
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Button(
+                onClick = {
+                    if (!isScanning) {
+                        isScanning = true
+                        scanError = null
+                        scan = null
+                        observedRole = null
+                        observedBattery = null
+                        scope.launch {
+                            try {
+                                val newScan = withContext(Dispatchers.IO) { doctor.scan() }
+                                scan = newScan
+                                observedRole = runCatching { readOwnAndroidRoles(context) }.getOrNull()
+                                observedBattery = runCatching { readBatteryPercentage(context) }.getOrNull()
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                scanError = "Analyse Android indisponible. Réessayez ; aucun résultat non vérifié n’est affiché."
+                            } finally {
+                                isScanning = false
+                            }
+                        }
+                    }
+                },
+                enabled = !isScanning,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
+            }
+
+            scanError?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error)
+            }
+
+            cleanupError?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error)
+            }
+
             SentinelHolographicScene(
                 model = SentinelHolographicSceneModel(
                     kind = SentinelSceneKind.DEVICE_ANALYSIS,
@@ -145,41 +210,25 @@ fun SystemDoctorScreen(navController: NavController) {
                     ),
                     SentinelReferenceMetric(
                         label = "Rôles",
-                        value = "INCONNU",
-                        detail = "gérés par Android",
-                        status = SentinelStatus.UNKNOWN
+                        value = observedRole ?: "INCONNU",
+                        detail = "rôles détenus par Sentinel uniquement",
+                        status = rolesStatus
                     ),
                     SentinelReferenceMetric(
                         label = "Stockage",
                         value = doctorModules[2].status.visual().label,
-                        detail = "caches Sentinel",
+                        detail = "espace de stockage Android mesuré",
                         status = doctorModules[2].status
                     ),
                     SentinelReferenceMetric(
                         label = "Batterie",
-                        value = "INCONNU",
-                        detail = "aucune inférence",
-                        status = SentinelStatus.UNKNOWN
+                        value = observedBattery?.let { "$it %" } ?: "INCONNU",
+                        detail = "niveau de batterie Android mesuré",
+                        status = batteryStatus
                     )
                 ),
                 modifier = Modifier.testTag("system_doctor_reference_metrics")
             )
-            Button(
-                onClick = {
-                    if (!isScanning) {
-                        isScanning = true
-                        scope.launch {
-                            scan = withContext(Dispatchers.IO) { doctor.scan() }
-                            isScanning = false
-                        }
-                    }
-                },
-                enabled = !isScanning,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
-            }
-
             SentinelSectionHeader(
                 title = "Utilitaires de stockage",
                 subtitle = "Uniquement les caches appartenant à Sentinel · suppression vérifiée"
@@ -189,9 +238,19 @@ fun SystemDoctorScreen(navController: NavController) {
                     if (!isCleanupBusy) {
                         isCleanupBusy = true
                         cleanupRun = null
+                        cleanupError = null
+                        cleanupDiscovery = null
                         scope.launch {
-                            cleanupDiscovery = withContext(Dispatchers.IO) { deviceUtilities.discover() }
-                            isCleanupBusy = false
+                            try {
+                                cleanupDiscovery = withContext(Dispatchers.IO) { deviceUtilities.discover() }
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                cleanupDiscovery = null
+                                cleanupError = "Impossible d’analyser les caches Sentinel pour le moment."
+                            } finally {
+                                isCleanupBusy = false
+                            }
                         }
                     }
                 },
@@ -217,14 +276,35 @@ fun SystemDoctorScreen(navController: NavController) {
                         onClick = {
                             if (!isCleanupBusy) {
                                 isCleanupBusy = true
+                                cleanupError = null
+                                cleanupRun = null
                                 scope.launch {
-                                    cleanupRun = withContext(Dispatchers.IO) {
-                                        deviceUtilities.cleanup(discovery)
+                                    try {
+                                        // Record the cleanup outcome only after cleanup itself returns.
+                                        // A post-cleanup refresh is independent and cannot erase a
+                                        // verified deletion result if discovery subsequently fails.
+                                        val completedRun = withContext(Dispatchers.IO) {
+                                            deviceUtilities.cleanup(discovery)
+                                        }
+                                        cleanupRun = completedRun
+                                        cleanupDiscovery = null
+                                        try {
+                                            cleanupDiscovery = withContext(Dispatchers.IO) {
+                                                deviceUtilities.discover()
+                                            }
+                                        } catch (cancelled: CancellationException) {
+                                            throw cancelled
+                                        } catch (_: Exception) {
+                                            cleanupError = "Nettoyage effectué ; nouvel inventaire indisponible. Réanalysez les caches."
+                                        }
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (_: Exception) {
+                                        cleanupDiscovery = null
+                                        cleanupError = "Nettoyage interrompu ou vérification indisponible. Aucun succès n’est présumé."
+                                    } finally {
+                                        isCleanupBusy = false
                                     }
-                                    cleanupDiscovery = withContext(Dispatchers.IO) {
-                                        deviceUtilities.discover()
-                                    }
-                                    isCleanupBusy = false
                                 }
                             }
                         },
@@ -273,11 +353,8 @@ fun SystemDoctorScreen(navController: NavController) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
-                LazyColumn(
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(result.evidence, key = { it.id }) { evidence ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    result.evidence.forEach { evidence ->
                         EvidenceCard(evidence)
                     }
                 }
@@ -341,4 +418,30 @@ private fun diagnosticObservedValueLabel(value: String): String = when (value) {
     "CONSENT_REQUIRED" -> "Consentement VPN Android requis"
     "UNKNOWN" -> "Inconnu"
     else -> value
+}
+
+/** An observed percentage is not a battery-health or security verdict. */
+private fun readBatteryPercentage(context: Context): Int? {
+    val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        ?: return null
+    val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+    val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+    if (level < 0 || scale <= 0 || level > scale) return null
+    return (level * 100 / scale).coerceIn(0, 100)
+}
+
+/** Holds are checked without requesting privileged roles or changing user defaults. */
+private fun readOwnAndroidRoles(context: Context): String? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+    val manager = context.getSystemService(RoleManager::class.java) ?: return null
+    return runCatching {
+        val phone = manager.isRoleHeld(RoleManager.ROLE_DIALER)
+        val sms = manager.isRoleHeld(RoleManager.ROLE_SMS)
+        when {
+            phone && sms -> "Téléphone + SMS"
+            phone -> "Téléphone"
+            sms -> "SMS"
+            else -> "Aucun rôle détenu"
+        }
+    }.getOrNull()
 }

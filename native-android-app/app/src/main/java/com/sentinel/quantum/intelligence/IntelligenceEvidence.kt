@@ -7,7 +7,8 @@ enum class EvidenceSource {
     MMS,
     COMMUNITY_REPORT,
     REPUTATION_LOCAL,
-    REPUTATION_REMOTE
+    REPUTATION_REMOTE,
+    TELECOM_REGULATORY
 }
 
 enum class PrivacyClass {
@@ -30,7 +31,8 @@ data class EvidenceProvenance(
         SMS_CORE,
         MMS_CORE,
         COMMUNITY_CORE,
-        REPUTATION_CORE
+        REPUTATION_CORE,
+        TELECOM_INTELLIGENCE
     }
 
     enum class TrustClass {
@@ -100,10 +102,38 @@ sealed interface IntelligenceEvidence {
         }
     }
 
+    /**
+     * Numbering/regulatory context is an annotation for UI and explanation only. It is never
+     * interpreted as a block, silence, identity or fraud decision.
+     */
+    data class TelecomNumberEnrichment(
+        val resolutionStatus: String,
+        val callingCode: String?,
+        val jurisdictions: List<String>,
+        val sourceIds: List<String>,
+        val freshness: TelecomFreshness,
+        val authority: TelecomAuthority = TelecomAuthority.ANNOTATION_ONLY
+    ) : IntelligenceEvidence {
+        init {
+            require(resolutionStatus.matches(STATUS_PATTERN))
+            require(jurisdictions.size <= 8)
+            require(sourceIds.size <= 8)
+            require(sourceIds.all { it.matches(SOURCE_PATTERN) })
+            require(authority == TelecomAuthority.ANNOTATION_ONLY)
+        }
+
+        private companion object {
+            val STATUS_PATTERN = Regex("[A-Z_]{2,48}")
+            val SOURCE_PATTERN = Regex("[A-Z0-9_-]{2,32}")
+        }
+    }
+
     enum class ContactState { KNOWN, UNKNOWN, UNAVAILABLE }
     enum class CallAction { ALLOW, SILENCE, BLOCK }
     enum class NetworkVerification { VERIFIED, FAILED, NOT_VERIFIED, UNKNOWN }
     enum class Direction { INCOMING, OUTGOING, UNKNOWN }
     enum class CommunityModerationState { PENDING, DUPLICATE, ACCEPTED, REJECTED, UNKNOWN }
     enum class CommunityReputationEffect { UNCHANGED, PENDING, UPDATED, UNKNOWN }
+    enum class TelecomFreshness { FRESH, STALE, UNKNOWN }
+    enum class TelecomAuthority { ANNOTATION_ONLY }
 }

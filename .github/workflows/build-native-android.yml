@@ -36,6 +36,9 @@ jobs:
       - name: Validate Android UI consistency
         run: node scripts/check-android-ui-consistency.js
 
+      - name: Validate D.1 activation source contract
+        run: node scripts/check-d1-activation-source.mjs
+
       - name: Setup Java 17
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -109,6 +112,49 @@ jobs:
           APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" -type f -print -quit)
           test -n "$APK_PATH"
           node ../scripts/check-android-apk-secrets.js "$APK_PATH"
+
+      - name: Record unqualified APK checksum and provenance
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          (cd "$(dirname "$APK")" && sha256sum "$(basename "$APK")" > app-debug.apk.sha256)
+          (cd "$(dirname "$APK")" && sha256sum --check app-debug.apk.sha256)
+          APK="$APK" node <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const apk = process.env.APK;
+          const bytes = fs.readFileSync(apk);
+          const metadata = {
+            schema_version: 1,
+            qualification: 'UNQUALIFIED_DEBUG_BUILD_ONLY',
+            physical_validation: 'not-executed',
+            emulator_validation: 'not-executed',
+            build_commit: process.env.GITHUB_SHA,
+            source_head_commit: process.env.SOURCE_HEAD_SHA,
+            repository: process.env.GITHUB_REPOSITORY,
+            run_id: process.env.GITHUB_RUN_ID,
+            apk_name: 'app-debug.apk',
+            apk_size_bytes: bytes.length,
+            apk_sha256: crypto.createHash('sha256').update(bytes).digest('hex')
+          };
+          fs.writeFileSync(apk + '.build.json', JSON.stringify(metadata, null, 2) + '\n');
+          NODE
+
+      - name: Preserve build-only APK before emulator qualification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Sentinel-UNQUALIFIED-DEBUG-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            native-android-app/app/build/outputs/apk/debug/app-debug.apk
+            native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+            native-android-app/app/build/outputs/apk/debug/app-debug.apk.build.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Install and launch APK on Android 10 emulator
         timeout-minutes: 30

@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.content.pm.PackageManager
+import java.security.MessageDigest
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -677,6 +678,48 @@ fun SettingsScreen(
             Text(
                 text = stringResource(R.string.settings_version, versionName),
                 style = MaterialTheme.typography.bodyMedium
+            )
+
+            val isIsolatedQualification = context.packageName == "com.sentinel.quantum.d1test"
+            Text(
+                text = if (isIsolatedQualification) {
+                    "ÉDITION DE TEST D.1 — qualification visuelle uniquement"
+                } else {
+                    "Édition principale Sentinel"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isIsolatedQualification) MaterialTheme.colorScheme.tertiary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Identifiant Android : ${context.packageName}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            val installedSignerSha256 = remember(context) {
+                runCatching {
+                    val pm = context.packageManager
+                    val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        pm.getPackageInfo(
+                            context.packageName,
+                            PackageManager.GET_SIGNING_CERTIFICATES
+                        ).signingInfo?.apkContentsSigners
+                    } else {
+                        @Suppress("DEPRECATION")
+                        pm.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES).signatures
+                    }
+                    signatures?.firstOrNull()?.toByteArray()?.let { certificate ->
+                        MessageDigest.getInstance("SHA-256").digest(certificate)
+                            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+                    }
+                }.getOrNull()
+            }
+            Text(
+                text = "Certificat APK installé (SHA-256) : " +
+                    (installedSignerSha256 ?: "indisponible"),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Text(

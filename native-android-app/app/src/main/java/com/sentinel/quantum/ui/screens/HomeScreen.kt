@@ -265,8 +265,8 @@ fun HomeScreen(navController: NavController) {
     Scaffold(
         topBar = {
             SentinelTopBar(
-                title = "SENTINEL",
-                subtitle = "Protection · état observé"
+                title = "Sentinel",
+                subtitle = "QUANTUM VANGUARD AI PRO · état observé"
             )
         }
     ) { padding ->
@@ -278,24 +278,6 @@ fun HomeScreen(navController: NavController) {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelActionTile(
-                title = when {
-                    phoneCoreModule.status == SentinelStatus.LIMITED -> "Examiner Phone Core"
-                    phoneCoreReady -> "Vérifier Phone Core"
-                    else -> "Continuer l’activation"
-                },
-                subtitle = when {
-                    phoneCoreModule.status == SentinelStatus.LIMITED -> phoneCoreModule.detail
-                    phoneCoreReady -> "$readyCount/8 étapes prêtes · validation physique distincte."
-                    else -> "$readyCount/8 étapes d’activation Android prêtes · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
-                },
-                icon = Icons.Default.Shield,
-                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_primary_action")
-            )
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -350,8 +332,26 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.testTag("home_reference_metrics")
             )
 
+            SentinelActionTile(
+                title = when {
+                    phoneCoreModule.status == SentinelStatus.LIMITED -> "Examiner Phone Core"
+                    phoneCoreReady -> "Vérifier Phone Core"
+                    else -> "Continuer l’activation"
+                },
+                subtitle = when {
+                    phoneCoreModule.status == SentinelStatus.LIMITED -> phoneCoreModule.detail
+                    phoneCoreReady -> "$readyCount/8 étapes prêtes · validation physique distincte."
+                    else -> "$readyCount/8 étapes d’activation Android prêtes · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
+                },
+                icon = Icons.Default.Shield,
+                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_primary_action")
+            )
+
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text("Priorité", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
+                Text("État de protection", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
                 Text(homeState.priorityMessage, fontWeight = FontWeight.Bold)
                 Text(
                     "Les états inconnus, limités ou verrouillés restent visibles : Sentinel ne les transforme pas en protection confirmée.",
@@ -370,7 +370,7 @@ fun HomeScreen(navController: NavController) {
             }
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("home_activity_summary")) {
-                Text("Activité récente", style = MaterialTheme.typography.titleMedium)
+                Text("Activité système", style = MaterialTheme.typography.titleMedium)
                 Text(homeState.activitySummary, style = MaterialTheme.typography.bodySmall)
             }
 
@@ -393,7 +393,7 @@ fun HomeScreen(navController: NavController) {
             )
 
             SentinelSectionHeader(
-                title = if (normalizedQuery.isBlank()) "Accès directs" else "Résultats",
+                title = if (normalizedQuery.isBlank()) "Actions rapides" else "Résultats",
                 trailing = if (normalizedQuery.isBlank()) null else "${matchingTools.size}"
             )
 
@@ -494,7 +494,7 @@ private fun QuickToolCard(
     ElevatedCard(
         onClick = onClick,
         modifier = modifier
-            .heightIn(min = 142.dp)
+            .heightIn(min = 120.dp)
             .border(1.dp, SentinelD1.BorderStrong.copy(alpha = 0.72f), RoundedCornerShape(22.dp)),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card.copy(alpha = 0.92f))

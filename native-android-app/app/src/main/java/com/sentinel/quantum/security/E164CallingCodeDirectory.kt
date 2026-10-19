@@ -103,8 +103,10 @@ object E164CallingCodeDirectory {
         e("+979","GLOBAL","Service international surtaxé","🌐",true), e("+991","GLOBAL","Essais internationaux","🌐",true)
     ).sortedByDescending { it.prefix.length }
 
-    fun resolve(number: String): Entry? =
-        entries.firstOrNull { number.startsWith(it.prefix) }
+    fun matches(number: String): List<Entry> =
+        entries.filter { number.startsWith(it.prefix) }
+
+    fun resolve(number: String): Entry? = matches(number).firstOrNull()
 
     fun all(): List<Entry> = entries.toList()
 }

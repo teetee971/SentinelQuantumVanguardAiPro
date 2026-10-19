@@ -40,6 +40,7 @@ import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.PairedBluetoothDevice
 import com.sentinel.quantum.security.NetworkRiskLevel
 import com.sentinel.quantum.security.NetworkTimelineEventKind
 import com.sentinel.quantum.security.NetworkTimelineSnapshot
@@ -92,6 +93,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var selectedTab by rememberSaveable { mutableStateOf(SurveillanceTab.WIFI) }
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
+    var pairedBluetoothDevices by remember { mutableStateOf<List<PairedBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
@@ -185,6 +187,14 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         timelineSnapshot = withContext(Dispatchers.IO) { networkTimelineStore.read() }
     }
 
+    // Paired devices must be visible without waiting for a new BLE advertisement.
+    // This observation does not establish an active radio connection.
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == SurveillanceTab.BLUETOOTH) {
+            pairedBluetoothDevices = bluetoothScanner.pairedDevices()
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             wifiScanner.close()
@@ -238,6 +248,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     }
 
     fun runBluetoothScan() {
+        pairedBluetoothDevices = bluetoothScanner.pairedDevices()
         isScanning = true
         covertDeviceAlerted = false
         bluetoothScanner.scan(
@@ -264,6 +275,17 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             },
             onTimelineUpdated = { snapshot -> timelineSnapshot = snapshot }
         )
+    }
+
+    // Access to Android-paired devices is independent of BLE scanning.
+    val pairedPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted && bluetoothScanner.hasPairedDevicePermission()) {
+            pairedBluetoothDevices = bluetoothScanner.pairedDevices()
+        } else {
+            statusMessage = "Accès aux appareils Bluetooth associés non accordé."
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -311,13 +333,6 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 subtitle = "Wi-Fi, Bluetooth & détection locale",
                 onBack = { navController.popBackStack() }
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { if (!isScanning) startScan() },
-                icon = { Icon(Icons.Default.Radar, contentDescription = null) },
-                text = { Text(if (isScanning) "Scan en cours…" else "Scanner") }
-            )
         }
     ) { paddingValues ->
         Column(
@@ -334,6 +349,34 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         text = { Text(tab.label) }
                     )
                 }
+            }
+
+            if (selectedTab == SurveillanceTab.BLUETOOTH &&
+                !bluetoothScanner.hasPairedDevicePermission()
+            ) {
+                FilledTonalButton(
+                    onClick = {
+                        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            android.Manifest.permission.BLUETOOTH_CONNECT
+                        } else {
+                            android.Manifest.permission.BLUETOOTH
+                        }
+                        pairedPermissionLauncher.launch(permission)
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text("Autoriser les appareils Bluetooth associés (montres)")
+                }
+            }
+
+            FilledTonalButton(
+                onClick = { if (!isScanning) startScan() },
+                enabled = !isScanning,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Icon(Icons.Default.Radar, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (isScanning) "Scan en cours…" else "Scanner les appareils visibles")
             }
 
             LazyColumn(
@@ -496,6 +539,24 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     }
 
                     SurveillanceTab.BLUETOOTH -> {
+                        if (pairedBluetoothDevices.isNotEmpty()) {
+                            item {
+                                SentinelSectionHeader(
+                                    title = "Appareils associés à Android",
+                                    subtitle = "Association confirmée · connexion actuelle non vérifiée · indépendants du scan BLE."
+                                )
+                            }
+                            items(pairedBluetoothDevices, key = { "paired:" + it.address }) { device ->
+                                SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                                    Text(device.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "Associé à Android · connexion non confirmée par ce contrôle",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                         if (bluetoothDevices.isEmpty()) {
                             item { EmptyStateCard("Lancez un scan pour lister les appareils Bluetooth environnants.") }
                         } else {
@@ -666,6 +727,7 @@ private fun RiskBadge(level: NetworkRiskLevel, prefix: String = "Risque") {
         NetworkRiskLevel.HIGH -> "$prefix : élevé"
         NetworkRiskLevel.MEDIUM -> "$prefix : moyen"
         NetworkRiskLevel.LOW -> "$prefix : non concluant"
+        NetworkRiskLevel.UNKNOWN -> "$prefix : non déterminé"
     }
     SentinelStatusChip(
         status = NetworkVpnPresentation.networkStatus(level),

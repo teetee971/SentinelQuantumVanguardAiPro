@@ -111,15 +111,15 @@ object BluetoothRiskEvaluator {
         val riskLevel = when {
             likelyTracker -> NetworkRiskLevel.HIGH
             likelyCameraOrRecorder || likelyBeacon -> NetworkRiskLevel.MEDIUM
-            kind == BluetoothDeviceKind.UNKNOWN -> NetworkRiskLevel.MEDIUM
-            !namedDevice -> NetworkRiskLevel.MEDIUM
+            kind == BluetoothDeviceKind.UNKNOWN -> NetworkRiskLevel.UNKNOWN
+            !namedDevice -> NetworkRiskLevel.UNKNOWN
             else -> NetworkRiskLevel.LOW
         }
 
-        if (riskLevel == NetworkRiskLevel.MEDIUM && !likelyTracker) {
-            reasons += "Type d'appareil inconnu à proximité : à surveiller s'il vous suit dans plusieurs lieux."
+        if (riskLevel == NetworkRiskLevel.UNKNOWN) {
+            reasons += "Identification insuffisante : un type inconnu ou une adresse aléatoire ne démontre pas un risque."
         }
-        if (riskLevel == NetworkRiskLevel.LOW) {
+        if (riskLevel == NetworkRiskLevel.LOW && kind != BluetoothDeviceKind.UNKNOWN) {
             reasons += "Type d'appareil courant (téléphone, audio, ordinateur ou montre)."
         }
 

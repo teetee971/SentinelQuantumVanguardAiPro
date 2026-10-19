@@ -29,6 +29,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleSyncClient
@@ -149,6 +150,13 @@ fun CallBlockingScreen(navController: NavController) {
                 ) { Text(stringResource(R.string.call_blocking_enable_role)) }
             } else if (screeningState == CallScreeningActivationPolicy.State.UNAVAILABLE) {
                 Text(stringResource(R.string.call_blocking_role_unsupported))
+            }
+
+            Button(
+                onClick = { navController.navigate(Screen.GlobalTelecomIntelligence.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Explorer l’intelligence téléphonique mondiale")
             }
 
             HorizontalDivider()
@@ -380,6 +388,31 @@ fun CallBlockingScreen(navController: NavController) {
                 snapshot = updatedSnapshot
                 status = message
             }
+
+            HorizontalDivider()
+            Text("Protection internationale des appels", fontWeight = FontWeight.Bold)
+            Text(
+                "Les préfixes internationaux personnalisés sont disponibles ci-dessus. " +
+                    "Il n’existe pas de registre mondial unique des centres d’appels. " +
+                    "Les listes nationales de démarchage et les registres de numérotation " +
+                    "n’identifient pas systématiquement les appelants frauduleux.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                "Sources réglementaires à intégrer : Royaume-Uni (Ofcom), " +
+                    "États-Unis (FCC), Canada (CRTC), Australie (ACMA), " +
+                    "puis régulateurs européens et autres pays.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "État : catalogues internationaux de réputation NON CONNECTÉS. " +
+                    "Aucun blocage mondial automatique n’est actuellement revendiqué. " +
+                    "Utilisez les règles personnelles pour les numéros déjà identifiés ; " +
+                    "ne bloquez pas un indicatif national entier sans vérifier sa portée.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             HorizontalDivider()
             Text("Règles Sentinel signées", fontWeight = FontWeight.Bold)

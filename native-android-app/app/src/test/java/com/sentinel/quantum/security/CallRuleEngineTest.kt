@@ -31,8 +31,8 @@ class CallRuleEngineTest {
     }
 
     @Test fun signedReputationRuleSilencesButDoesNotBlock() {
-        val result = CallRuleEngine(reputationSilencePrefixes = setOf("0899"))
-            .evaluate("08 99 12 34 56")
+        val result = CallRuleEngine(reputationSilencePrefixes = setOf("+33899"))
+            .evaluate("+33 899 12 34 56")
         assertEquals(CallRuleEngine.Action.SILENCE, result.action)
         assertEquals(CallRuleEngine.RuleSource.SIGNED_REPUTATION, result.source)
     }
@@ -42,9 +42,13 @@ class CallRuleEngineTest {
     }
 
     @Test fun frenchAndInternationalPrefixesCanonicalizeConsistently() {
-        assertEquals("+33899", CallRuleEngine.normalizePrefix("0899"))
+        assertNull(CallRuleEngine.normalizePrefix("0899"))
         assertEquals("+33899", CallRuleEngine.normalizePrefix("0033 899"))
-        assertEquals("+33612345678", CallRuleEngine.normalizeNumber("06 12 34 56 78"))
+        assertNull(CallRuleEngine.normalizeNumber("06 12 34 56 78"))
+        assertEquals(
+            "+33612345678",
+            CallRuleEngine.normalizeNumber("06 12 34 56 78", defaultCallingCode = "+33")
+        )
     }
 
     @Test fun internationalCountryCallingCodeCanBeBlockedExplicitly() {

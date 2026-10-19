@@ -59,6 +59,9 @@ import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CommunicationReputationCache
 import com.sentinel.quantum.security.CommunicationReputationWriter
@@ -574,6 +577,8 @@ class SentinelDialerActivity : ComponentActivity() {
                 var number by rememberSaveable { mutableStateOf(initialDialNumber()) }
                 var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
                 var lookupRunning by remember { mutableStateOf(false) }
+                var lookupAttempted by remember { mutableStateOf(false) }
+                var lookupGeneration by remember { mutableIntStateOf(0) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
                 var phoneTab by rememberSaveable { mutableStateOf(
@@ -745,16 +750,45 @@ class SentinelDialerActivity : ComponentActivity() {
                 fun lookup() {
                     if (number.isBlank() || lookupRunning) return
                     val lookupNumber = number
+                    val selectedLineKeyAtLookup = selectedCallAccount?.let(::callAccountKey)
+                    val requestGeneration = ++lookupGeneration
                     lookupRunning = true
+                    lookupAttempted = true
                     directoryStatus = "Recherche officielle…"
                     contactStatus = null
-                    val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
+                    // Country of the receiving line, not the caller's E.164 prefix.
+                    // A missing SIM country must never silently become France.
+                    val recipientCountry = runCatching {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
+                            ContextCompat.checkSelfPermission(
+                                applicationContext, Manifest.permission.READ_PHONE_STATE
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) return@runCatching null
+                        val selected = selectedCallAccount ?: return@runCatching null
+                        val activeLineKeys = callLines.map { it.key }
+                        if (callAccountKey(selected) !in activeLineKeys) return@runCatching null
+                        val telephony = getSystemService(TelephonyManager::class.java)
+                            ?: return@runCatching null
+                        val subId = telephony.getSubscriptionId(selected)
+                        if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return@runCatching null
+                        telephony.createForSubscriptionId(subId).simCountryIso
+                            ?.uppercase(java.util.Locale.ROOT)
+                            ?.takeIf { it.length == 2 && it.all(Char::isLetter) }
+                    }.getOrNull()
+                    val remoteReputationAllowed = recipientCountry != null &&
+                        settings.callerReputationEnrichmentEnabled &&
                         ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
-                    reputationStatus = if (remoteReputationAllowed) "Réputation Sentinel : analyse…" else null
+                    reputationStatus = when {
+                        remoteReputationAllowed -> "Réputation Sentinel : analyse…"
+                        recipientCountry == null -> "Réputation distante indisponible : pays de la ligne SIM non déterminé."
+                        else -> null
+                    }
                     scope.launch {
                         val localIdentity = withContext(Dispatchers.IO) {
-                            contacts.find(lookupNumber)
+                            runCatching { contacts.find(lookupNumber) }.getOrNull()
                         }
+                        if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
                         contactStatus = localIdentity?.let { identity ->
                             "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
                         }
@@ -772,20 +806,26 @@ class SentinelDialerActivity : ComponentActivity() {
                                         }
                                         else -> "RTR : " + r.status
                                     }
-                                } else {
+                                } else if (ArcepDirectoryClient.toFrenchNational(lookupNumber) != null) {
                                     val a = arcep.lookup(lookupNumber)
-                                    if (a == null) "ARCEP : aucune attribution correspondante"
-                                    else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) + (a.territory?.let { " · $it" } ?: "")
+                                    if (a == null) "ARCEP : aucune attribution correspondante dans le répertoire consulté"
+                                    else "ARCEP : titulaire du bloc " + (a.attributedOperator ?: a.operatorCode) +
+                                        (a.territory?.let { " · $it" } ?: "")
+                                } else {
+                                    "Répertoire national non connecté pour ce numéro. " +
+                                        "Aucune attribution d’opérateur ni identité de titulaire vérifiée."
                                 }
                             }.getOrElse { "Répertoire officiel temporairement indisponible" }
                         }
+                        if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
                         directoryStatus = result
                         if (remoteReputationAllowed) {
-                            reputationStatus = withContext(Dispatchers.IO) {
+                            val updatedReputationStatus = withContext(Dispatchers.IO) {
                                 runCatching {
                                     val r = reputation.evaluate(
                                         callerNumber = lookupNumber,
-                                        recipientCountry = "FR",
+                                        recipientCountry = requireNotNull(recipientCountry),
                                         verificationStatus = "outgoing_user_lookup",
                                         privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                         explicitConsent = settings.callerReputationEnrichmentEnabled
@@ -795,11 +835,18 @@ class SentinelDialerActivity : ComponentActivity() {
                                             SharedPreferencesCommunicationReputationStorage(applicationContext)
                                         )
                                     ).persist(lookupNumber, r)
-                                    "Réputation Sentinel : risque ${r.riskScore}/100 · ${r.action}" +
+                                    "Réputation Sentinel : " +
+                                        (r.riskScore?.let { "risque $it/100" } ?: "score de risque indisponible") +
+                                        " · ${r.action}" +
                                         if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
+                            if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
+                            reputationStatus = updatedReputationStatus
                         }
+                        if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
                         lookupRunning = false
                     }
                 }
@@ -1177,6 +1224,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                     onValueChange = {
                                         number = it.take(32)
                                         directoryStatus = "Saisissez un numéro puis lancez la vérification."
+                                lookupAttempted = false
                                         contactStatus = null
                                         reputationStatus = null
                                     },
@@ -1205,7 +1253,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                         callLines.isEmpty() -> Text("Aucune ligne active détectée.", color = MaterialTheme.colorScheme.error)
                                         callLines.size == 1 -> Text(callLines.first().label + " · ligne unique active", style = MaterialTheme.typography.bodySmall)
                                         else -> callLines.forEach { line ->
-                                            TextButton(onClick = { selectedCallAccount = line.handle }) {
+                                            TextButton(onClick = {
+                                                if (selectedCallAccount?.let(::callAccountKey) != line.key) {
+                                                    lookupGeneration++
+                                                    lookupRunning = false
+                                                    lookupAttempted = false
+                                                    contactStatus = null
+                                                    reputationStatus = null
+                                                    directoryStatus = "Ligne modifiée : relancez la vérification."
+                                                }
+                                                selectedCallAccount = line.handle
+                                            }) {
                                                 Text(if (selectedCallAccount?.let(::callAccountKey) == line.key) "✓ " + line.label else line.label)
                                             }
                                         }
@@ -1214,17 +1272,82 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
 
                             PhoneCoreNumberPad(number = number, onChange = {
+                                lookupGeneration++
+                                lookupRunning = false
+                                lookupAttempted = false
                                 number = it
                                 directoryStatus = "Saisissez un numéro puis lancez la vérification."
                                 contactStatus = null
                                 reputationStatus = null
                             })
-                            if (contactStatus != null || reputationStatus != null || lookupRunning) {
+                            if (lookupAttempted || lookupRunning) {
                                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
                                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text("Résultat Sentinel", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            "Numéro recherché : $number",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        val indicative = PhoneCountryPrefixCatalog.resolveNumber(number)
+                                        Text(
+                                            "Pays / zone d’indicatif : " +
+                                                (indicative?.let { "${it.flag} ${it.label} (${it.prefix})" }
+                                                    ?: "non déterminé"),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Text(
+                                            "Pays déduit de l’indicatif uniquement : ni position réelle, " +
+                                                "ni identité, ni opérateur actuel ne sont confirmés.",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        val normalizedForRegulatory = CallRuleEngine.normalizeNumber(number)
+                                        val commercialRange = normalizedForRegulatory?.let { normalized ->
+                                            ArcepVerifiedPrefixCatalog.entries
+                                                .firstOrNull { normalized.startsWith(it.e164Prefix) }
+                                        }
+                                        if (commercialRange != null) {
+                                            Text(
+                                                "Plage ARCEP de numéros polyvalents vérifiés : " +
+                                                    commercialRange.nationalRoot + " · " + commercialRange.territory,
+                                                color = SentinelD1.Warning,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                            Text(
+                                                "Cette plage peut servir aux systèmes automatisés d’appels. " +
+                                                    "Ce n’est pas une preuve de démarchage, de fraude " +
+                                                    "ou d’identité de l’appelant. Aucun blocage automatique " +
+                                                    "n’est déduit de cette seule correspondance.",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Text(
+                                            "Identité du titulaire : " +
+                                                (if (contactStatus != null) "contact local identifié" else "non vérifiée"),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
                                         contactStatus?.let { Text(it, fontWeight = FontWeight.Bold) }
+                                        Text(
+                                            "Sources disponibles : contacts locaux, ARCEP (France/DOM), " +
+                                                "RTR (Autriche), réputation Sentinel si autorisée.",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            if (lookupRunning) "Recherche en cours…" else "Recherche terminée · résultats disponibles ci-dessous",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = SentinelD1.Cyan
+                                        )
+                                        Text("Attribution officielle / source :", fontWeight = FontWeight.SemiBold)
                                         Text(directoryStatus, style = MaterialTheme.typography.bodySmall)
+                                        Text(
+                                            "L’opérateur attributaire peut différer de l’opérateur actuel (portabilité).",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                         reputationStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                                         if (!settings.callerReputationEnrichmentEnabled ||
                                             !ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)) {

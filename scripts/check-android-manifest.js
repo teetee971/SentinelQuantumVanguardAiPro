@@ -476,6 +476,26 @@ if (!cachedCandidatesMatch || /getKey\(|AndroidKeyStore|KeyStore\./.test(cachedC
   errors.push('cachedCandidates must remain free of AndroidKeyStore access.');
 }
 
+// The isolated qualification APK must not register as a Phone/SMS default-app candidate.
+const buildGradle = fs.readFileSync(path.resolve('native-android-app/app/build.gradle'), 'utf8');
+for (const marker of ["sentinelTelephonyEnabled: \"true\"", "manifestPlaceholders['sentinelTelephonyEnabled'] = 'false'"]) {
+  if (!buildGradle.includes(marker)) errors.push('D1 telecom variant configuration missing: ' + marker);
+}
+for (const component of [
+  '.SentinelDialerActivity',
+  '.security.SentinelInCallService',
+  '.security.SentinelCallScreeningService',
+  '.SmsComposeActivity',
+  '.security.SentinelSmsDeliverReceiver',
+  '.security.SentinelMmsDeliverReceiver',
+  '.security.SentinelRespondViaMessageService'
+]) {
+  const declaration = manifest.match(new RegExp('<(?:activity|service|receiver)\\b[^>]*android:name="' + component.replaceAll('.', '\\.') + '"[^>]*>', 's'))?.[0] || '';
+  if (!declaration.includes('android:enabled="${sentinelTelephonyEnabled}"')) {
+    errors.push('D1 isolated telecom component is not role-gated: ' + component);
+  }
+}
+
 if (errors.length > 0) {
   for (const error of errors) {
     console.error(error);

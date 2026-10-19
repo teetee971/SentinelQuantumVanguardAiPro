@@ -1,0 +1,343 @@
+name: Sentinel D1 visual capture
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentinel-d1-visual-capture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    name: Capture D.1 screens on Android 16 emulator
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+
+    steps:
+      - name: Checkout the requested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify D.1 attestation script without emulator
+        run: node scripts/d1-visual-attestation-contract.test.js
+
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+
+      - name: Verify source provenance
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git status --short --branch
+
+      - name: Install Android 16 emulator packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          packages=("emulator" "platforms;android-36" "system-images;android-36;google_apis;x86_64")
+          ready=0
+          for attempt in 1 2; do
+            if timeout 300s sdkmanager "${packages[@]}"; then
+              ready=1
+              break
+            fi
+            echo "SDK installation failed on attempt ${attempt}; retrying with only the owned payloads cleaned."
+            rm -rf "$ANDROID_HOME/emulator" "$ANDROID_HOME/system-images/android-36/google_apis/x86_64"
+            sleep "$((attempt * 5))"
+          done
+          test "$ready" = "1"
+          test -x "$ANDROID_HOME/emulator/emulator"
+          test -f "$ANDROID_HOME/system-images/android-36/google_apis/x86_64/package.xml"
+
+      - name: Create and boot isolated Android 16 AVD
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "no" | timeout 60s avdmanager create avd --force \
+            --name sentinel_d1_visual_api36 \
+            --package "system-images;android-36;google_apis;x86_64" \
+            --device "pixel_2"
+
+          # Android 16 without hardware virtualization repeatedly stalls under TCG.
+          # Fail explicitly rather than burn the job budget and mislabel infrastructure as an app ANR.
+          if [[ ! -c /dev/kvm ]]; then
+            echo "INFRA_BLOCKED_NO_KVM: host does not expose /dev/kvm; Android D.1 capture requires acceleration." >&2
+            exit 1
+          fi
+          sudo chmod 666 /dev/kvm
+          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            echo "INFRA_BLOCKED_KVM_ACCESS: /dev/kvm is not accessible to the runner." >&2
+            exit 1
+          fi
+          emulator_accel=(-accel on)
+
+          mkdir -p "$RUNNER_TEMP/sentinel-d1-visual"
+          "$ANDROID_HOME/emulator/emulator" \
+            -avd sentinel_d1_visual_api36 \
+            -no-window -no-audio -no-boot-anim \
+            -no-snapshot-load -no-snapshot-save \
+            "${emulator_accel[@]}" \
+            -gpu swiftshader_indirect \
+            -no-metrics \
+            > "$RUNNER_TEMP/sentinel-d1-visual/emulator.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/sentinel-d1-visual/emulator.pid"
+
+          device_ready=0
+          for _ in $(seq 1 60); do
+            if timeout 10s adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+              device_ready=1
+              break
+            fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/sentinel-d1-visual/emulator.pid")" >/dev/null 2>&1; then
+              cat "$RUNNER_TEMP/sentinel-d1-visual/emulator.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          test "$device_ready" = "1"
+
+          booted=0
+          for _ in $(seq 1 90); do
+            if [[ "$(timeout 10s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+              booted=1
+              break
+            fi
+            sleep 2
+          done
+          if [[ "$booted" != "1" ]]; then
+            cat "$RUNNER_TEMP/sentinel-d1-visual/emulator.log"
+            exit 1
+          fi
+
+          timeout 15s adb shell settings put global window_animation_scale 0
+          timeout 15s adb shell settings put global transition_animation_scale 0
+          timeout 15s adb shell settings put global animator_duration_scale 0
+          timeout 15s adb shell input keyevent KEYCODE_WAKEUP || true
+          timeout 15s adb shell wm dismiss-keyguard || true
+
+      - name: Build the exact commit and run D.1 capture instrumentation
+        working-directory: ./native-android-app
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=30s 900s ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
+          timeout --signal=TERM --kill-after=30s 600s ./gradlew :app:connectedDebugAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.class=com.sentinel.quantum.ui.D1VisualScreenshotInstrumentationTest \
+            --stacktrace --no-daemon
+
+      - name: Pull and attest Android display captures
+        if: always()
+        working-directory: ./native-android-app
+        shell: bash
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/sentinel-d1-visual"
+          captures=(
+            01-fiche-numero
+            02-messages-securises
+            03-contacts-sentinel
+            04-vpn-prive
+            05-planche-coherence-shell
+            06-command-center
+            07-analyse-appareil
+            08-detail-menace
+            09-protection-temps-reel
+            10-quarantaine-securisee
+            11-applications-a-risque
+            12-carte-menaces
+            13-rapport-analyse
+          )
+          mkdir -p "$output/captures"
+          for name in "${captures[@]}"; do
+            timeout --signal=TERM --kill-after=5s 30s adb exec-out run-as com.sentinel.quantum cat "files/d1-captures/${name}.png" > "$output/captures/${name}.png"
+            test -s "$output/captures/${name}.png"
+            file "$output/captures/${name}.png" | grep -Eiq 'PNG image data'
+          done
+          sha256sum "$output/captures"/*.png > "$output/captures.sha256"
+          sha256sum app/build/outputs/apk/debug/app-debug.apk > "$output/apk.sha256"
+          git -C .. rev-parse HEAD > "$output/source-commit.txt"
+          timeout 15s adb shell getprop ro.build.version.release | tr -d '\r' > "$output/android-release.txt"
+          timeout 15s adb shell getprop ro.build.version.sdk | tr -d '\r' > "$output/android-api.txt"
+          timeout 15s adb shell getprop ro.product.model | tr -d '\r' > "$output/android-model.txt"
+          SOURCE_COMMIT="$SOURCE_COMMIT" OUTPUT="$output" node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const zlib = require('node:zlib');
+          const crcTable = Array.from({ length: 256 }, (_, n) => {
+            let c = n;
+            for (let i = 0; i < 8; i++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+            return c >>> 0;
+          });
+          const crc32 = (bytes) => {
+            let c = 0xffffffff;
+            for (const byte of bytes) c = crcTable[(c ^ byte) & 255] ^ (c >>> 8);
+            return (c ^ 0xffffffff) >>> 0;
+          };
+          const validatePng = (bytes, file) => {
+            if (bytes.length < 1024 || !bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))) {
+              throw new Error('Invalid PNG signature/size: ' + file);
+            }
+            let offset = 8, ihdr = null, ended = false;
+            const idat = [];
+            while (offset + 12 <= bytes.length) {
+              const size = bytes.readUInt32BE(offset);
+              const end = offset + 12 + size;
+              if (end > bytes.length) throw new Error('Truncated PNG chunk: ' + file);
+              const chunk = bytes.subarray(offset + 4, offset + 8);
+              const name = chunk.toString('ascii');
+              const data = bytes.subarray(offset + 8, offset + 8 + size);
+              const crc = bytes.readUInt32BE(end - 4);
+              if (crc32(bytes.subarray(offset + 4, end - 4)) !== crc) throw new Error('PNG CRC mismatch: ' + file);
+              if (offset === 8 && (name !== 'IHDR' || size !== 13)) throw new Error('PNG IHDR missing: ' + file);
+              if (name === 'IHDR') {
+                if (ihdr) throw new Error('Duplicate IHDR: ' + file);
+                ihdr = data;
+              }
+              if (name === 'IDAT') idat.push(data);
+              offset = end;
+              if (name === 'IEND') {
+                if (size !== 0 || offset !== bytes.length) throw new Error('Invalid PNG ending: ' + file);
+                ended = true;
+                break;
+              }
+            }
+            if (!ihdr || !ended || idat.length === 0) throw new Error('Incomplete PNG chunks: ' + file);
+            const width = ihdr.readUInt32BE(0), height = ihdr.readUInt32BE(4);
+            if (width < 320 || height < 480 || width > 8192 || height > 8192) {
+              throw new Error('Implausible PNG dimensions: ' + file);
+            }
+            const bitDepth = ihdr[8], colorType = ihdr[9], interlace = ihdr[12];
+            const channels = ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 })[colorType];
+            if (!channels || ![1, 2, 4, 8, 16].includes(bitDepth) || interlace !== 0) {
+              throw new Error('Unsupported PNG format: ' + file);
+            }
+            const rowBytes = Math.ceil(width * channels * bitDepth / 8);
+            const expectedRawSize = height * (rowBytes + 1);
+            if (expectedRawSize > 512 * 1024 * 1024) throw new Error('Excessive decompressed PNG size: ' + file);
+            const raw = zlib.inflateSync(Buffer.concat(idat), { maxOutputLength: expectedRawSize + 1 });
+            if (raw.length !== expectedRawSize) throw new Error('PNG scanline size mismatch: ' + file);
+            for (let row = 0; row < height; row++) {
+              if (raw[row * (rowBytes + 1)] > 4) throw new Error('Invalid PNG scanline filter: ' + file);
+            }
+            return { width, height };
+          };
+          const output = process.env.OUTPUT;
+          const captureDir = path.join(output, 'captures');
+          const files = fs.readdirSync(captureDir).filter((name) => name.endsWith('.png')).sort();
+          const read = (name) => fs.readFileSync(path.join(output, name), 'utf8').trim();
+          const expected = [
+            '01-fiche-numero.png', '02-messages-securises.png',
+            '03-contacts-sentinel.png', '04-vpn-prive.png',
+            '05-planche-coherence-shell.png', '06-command-center.png',
+            '07-analyse-appareil.png', '08-detail-menace.png',
+            '09-protection-temps-reel.png', '10-quarantaine-securisee.png',
+            '11-applications-a-risque.png', '12-carte-menaces.png',
+            '13-rapport-analyse.png'
+          ];
+          if (JSON.stringify(files) !== JSON.stringify(expected.slice().sort())) {
+            throw new Error('Unexpected, missing or duplicate capture filenames');
+          }
+          const seen = new Map();
+          // Reference 05 is a representative shell capture of the same HomeScreen as 06.
+          // Only this explicitly documented pair may share exact screenshot bytes.
+          const allowedIdenticalPair = new Set(['05-planche-coherence-shell.png', '06-command-center.png']);
+          const captureEvidence = files.map((file) => {
+            const bytes = fs.readFileSync(path.join(captureDir, file));
+            const { width, height } = validatePng(bytes, file);
+            const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+            if (seen.has(sha256)) {
+              const previous = seen.get(sha256);
+              if (!(allowedIdenticalPair.has(previous) && allowedIdenticalPair.has(file))) {
+                throw new Error('Duplicate screenshot bytes: ' + previous + ' and ' + file);
+              }
+            } else {
+              seen.set(sha256, file);
+            }
+            return { file, reference: file.replace(/\.png$/, ''), sha256, bytes: bytes.length, width, height };
+          });
+          const apkLine = read('apk.sha256');
+          const apkHash = apkLine.split(/\s+/)[0];
+          if (!/^[a-f0-9]{64}$/.test(apkHash)) throw new Error('Invalid APK SHA-256');
+          const apkBytes = fs.statSync('app/build/outputs/apk/debug/app-debug.apk').size;
+          const manifest = {
+            schema_version: 1,
+            evidence_type: 'ANDROID_RUNTIME_DISPLAY_CAPTURE',
+            source_commit: process.env.SOURCE_COMMIT,
+            built_commit: read('source-commit.txt'),
+            android_release: read('android-release.txt'),
+            android_api: Number(read('android-api.txt')),
+            device_model: read('android-model.txt'),
+            capture_count: files.length,
+            apk_sha256: apkHash,
+            apk_bytes: apkBytes,
+            captures: captureEvidence,
+            planche_capture: 'representative D.1 shell; the official planche is cross-screen and has no one-to-one Activity',
+            physical_device_validation: false,
+            galaxy_s24_plus_validation: false,
+            comparison_status: 'CAPTURES_READY_FOR_MANUAL_REFERENCE_COMPARISON'
+          };
+          if (manifest.built_commit !== manifest.source_commit || files.length !== 13) {
+            throw new Error('Capture provenance or count is invalid');
+          }
+          fs.writeFileSync(path.join(output, 'capture-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+          NODE
+
+      - name: Collect Android runtime diagnostics on every outcome
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          output="$RUNNER_TEMP/sentinel-d1-visual"
+          mkdir -p "$output/diagnostics"
+          diag="$output/diagnostics"
+          date -u +%Y-%m-%dT%H:%M:%SZ > "$diag/collected-at-utc.txt"
+          command -v adb > "$diag/adb-path.txt" 2>&1
+          timeout 10s adb devices -l > "$diag/adb-devices.txt" 2>&1
+          timeout 10s adb get-state > "$diag/adb-state.txt" 2>&1
+          timeout 20s adb shell getprop sys.boot_completed > "$diag/boot-completed.txt" 2>&1
+          timeout 20s adb shell getprop ro.build.version.sdk > "$diag/device-api.txt" 2>&1
+          timeout 30s adb logcat -d -v threadtime > "$diag/logcat.txt" 2>&1
+          timeout 20s adb shell dumpsys activity activities > "$diag/activities.txt" 2>&1
+          timeout 20s adb shell dumpsys activity processes > "$diag/processes.txt" 2>&1
+          timeout 20s adb shell dumpsys window > "$diag/window.txt" 2>&1
+          timeout 20s adb shell dumpsys dropbox --print data_app_anr > "$diag/app-anr.txt" 2>&1
+          timeout 20s adb shell dumpsys dropbox --print system_app_anr > "$diag/system-anr.txt" 2>&1
+          timeout 20s adb shell dumpsys dropbox --print system_server_anr > "$diag/system-server-anr.txt" 2>&1
+          if [[ -f "$output/emulator.pid" ]]; then
+            cat "$output/emulator.pid" > "$diag/emulator.pid"
+            ps -p "$(cat "$output/emulator.pid")" -o pid,etime,stat,args > "$diag/emulator-process.txt" 2>&1
+          fi
+          # Diagnostics are forensic artifacts only. They do not satisfy the 13-PNG gate.
+          printf '%s\n' 'diagnostics_collected_not_a_qualification=1' > "$diag/STATUS.txt"
+
+      - name: Upload D.1 Android capture evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Sentinel-D1-Android-Captures-${{ github.sha }}
+          path: ${{ runner.temp }}/sentinel-d1-visual/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Stop emulator
+        if: always()
+        shell: bash
+        run: |
+          adb emu kill >/dev/null 2>&1 || true
+          if [[ -f "$RUNNER_TEMP/sentinel-d1-visual/emulator.pid" ]]; then
+            kill "$(cat "$RUNNER_TEMP/sentinel-d1-visual/emulator.pid")" >/dev/null 2>&1 || true
+          fi

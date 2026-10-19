@@ -10,7 +10,8 @@ import java.security.MessageDigest
  * lookup key. Neither the raw nor canonical number is persisted in the cache payload.
  */
 class CommunicationReputationCache(
-    private val storage: Storage
+    private val storage: Storage,
+    private val defaultCallingCode: String? = null
 ) {
     interface Storage {
         fun get(key: String): String?
@@ -31,7 +32,7 @@ class CommunicationReputationCache(
         entry: Entry,
         nowMs: Long = System.currentTimeMillis()
     ): Boolean {
-        val key = cacheKeyFor(rawNumber) ?: return false
+        val key = cacheKeyFor(rawNumber, defaultCallingCode) ?: return false
         if (!isValid(entry, nowMs)) return false
         return runCatching {
             storage.put(key, encode(entry))
@@ -43,7 +44,7 @@ class CommunicationReputationCache(
         rawNumber: String,
         nowMs: Long = System.currentTimeMillis()
     ): Entry? {
-        val key = cacheKeyFor(rawNumber) ?: return null
+        val key = cacheKeyFor(rawNumber, defaultCallingCode) ?: return null
         val encoded = runCatching { storage.get(key) }.getOrNull() ?: return null
         val entry = decode(encoded)
         if (entry == null || !isValid(entry, nowMs) || isExpired(entry, nowMs)) {
@@ -102,8 +103,8 @@ class CommunicationReputationCache(
         private const val MAX_TTL_MS = 30L * 24L * 60L * 60L * 1_000L
         private val CATEGORY_PATTERN = Regex("[A-Z0-9_:-]{1,64}")
 
-        fun cacheKeyFor(rawNumber: String): String? {
-            val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return null
+        fun cacheKeyFor(rawNumber: String, defaultCallingCode: String? = null): String? {
+            val normalized = CallRuleEngine.normalizeNumber(rawNumber, defaultCallingCode) ?: return null
             val digest = MessageDigest.getInstance("SHA-256")
                 .digest(normalized.toByteArray(StandardCharsets.UTF_8))
             return "rep:" + digest.joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }

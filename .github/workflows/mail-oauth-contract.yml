@@ -1,0 +1,34 @@
+name: Mail OAuth Contract
+
+on:
+  pull_request:
+    paths:
+      - "security/mail/**"
+      - "package.json"
+      - ".github/workflows/mail-oauth-contract.yml"
+  push:
+    branches: [main, feat/global-telecom-intelligence-d1-phone-core]
+    paths:
+      - "security/mail/**"
+      - "package.json"
+      - ".github/workflows/mail-oauth-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - name: Verify mail OAuth contract syntax
+        run: |
+          node --check security/mail/oauth-transaction-gate.js
+          node --check security/mail/oauth-transaction-gate.test.js
+      - name: Execute fail-closed OAuth security tests
+        run: npm run test:mail-oauth

@@ -1,0 +1,255 @@
+# Free individual Codemagic M2 build for PR #1707. Isolated D1 debug; no store publishing.
+workflows:
+  sentinel-d1-debug:
+    name: Sentinel D.1 - Android debug qualification
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 17
+    scripts:
+      - name: Verify source and install Android 37 platform
+        script: |
+          set -euo pipefail
+          java -version
+          node --version
+          test -n "${ANDROID_SDK_ROOT:-}"
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            SDKMANAGER="/usr/local/share/android-sdk/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            echo "BLOCKED: sdkmanager missing from Android SDK command-line tools"
+            find "$ANDROID_SDK_ROOT/cmdline-tools" -maxdepth 3 -name sdkmanager -print 2>/dev/null || true
+            exit 2
+          fi
+          # API 37 may be distributed through a preview SDK channel.
+          # Do not silently downgrade the compile SDK.
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --channel=3 "platforms;android-37.0" "build-tools;36.0.0" "platform-tools"
+          test -s "$ANDROID_SDK_ROOT/platforms/android-37.0/android.jar"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+          git rev-parse HEAD
+      - name: D.1 Android source gates
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          node scripts/check-android-ui-consistency.js
+          node scripts/check-d1-activation-source.mjs
+          node scripts/check-android-manifest.js
+      - name: Verify talkie-walkie transmission policy
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          # Unit tests do not need APK signing credentials; run them before provisioning.
+          ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.PttTransmissionPolicyTest' --no-daemon --stacktrace
+      - name: Preserve PTT unit-test evidence
+        script: |
+          set -euo pipefail
+          REPORT="$CM_BUILD_DIR/native-android-app/app/build/test-results/testDebugUnitTest/TEST-com.sentinel.quantum.security.PttTransmissionPolicyTest.xml"
+          test -s "$REPORT" || { echo "BLOCKED: PTT unit-test XML evidence missing" >&2; exit 6; }
+          python3 - "$REPORT" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          root = ET.parse(sys.argv[1]).getroot()
+          cases = root.findall(".//testcase")
+          failures = root.findall(".//failure")
+          errors = root.findall(".//error")
+          skipped = root.findall(".//skipped")
+          if len(cases) < 6 or failures or errors or skipped:
+              print(f"BLOCKED: PTT test evidence invalid: cases={len(cases)} failures={len(failures)} errors={len(errors)} skipped={len(skipped)}", file=sys.stderr)
+              sys.exit(6)
+          print(f"PASS: {len(cases)} PTT test cases with no failures, errors or skips")
+          PY
+      - name: Provision persistent D.1 signing material
+        script: |
+          set -euo pipefail
+          for variable in SENTINEL_D1_KEYSTORE_B64 SENTINEL_D1_KEYSTORE_PASSWORD SENTINEL_D1_KEY_ALIAS SENTINEL_D1_KEY_PASSWORD SENTINEL_D1_EXPECTED_CERT_SHA256; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "BLOCKED: missing protected D.1 signing variable: $variable" >&2
+              exit 3
+            fi
+          done
+          export SENTINEL_D1_KEYSTORE_FILE="$CM_BUILD_DIR/native-android-app/.sentinel-d1-signing.jks"
+          printf '%s' "$SENTINEL_D1_KEYSTORE_B64" | base64 -D > "$SENTINEL_D1_KEYSTORE_FILE" 2>/dev/null || {
+            echo "BLOCKED: cannot decode protected D.1 keystore" >&2
+            exit 3
+          }
+          chmod 600 "$SENTINEL_D1_KEYSTORE_FILE"
+          CERT_DETAILS="$(keytool -list -v -keystore "$SENTINEL_D1_KEYSTORE_FILE" -storepass:env SENTINEL_D1_KEYSTORE_PASSWORD -alias "$SENTINEL_D1_KEY_ALIAS")"
+          EXPECTED_CERT="$(printf '%s' "$SENTINEL_D1_EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          KEYSTORE_CERT="$(printf '%s\n' "$CERT_DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED_CERT" =~ ^[a-f0-9]{64}$ || "$KEYSTORE_CERT" != "$EXPECTED_CERT" ]]; then
+            echo "BLOCKED: protected D.1 keystore does not match pinned SHA-256 certificate" >&2
+            exit 5
+          fi
+          echo "PASS: D.1 keystore certificate matches pinned SHA-256"
+          echo "SENTINEL_D1_KEYSTORE_FILE=$SENTINEL_D1_KEYSTORE_FILE" >> "$CM_ENV"
+          echo "D.1 persistent signing keystore validated; private material not logged."
+      - name: Build and validate debug APK
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PsentinelIsolatedDebug=true --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum.d1test'"
+          printf '%s\n' "$BADGING" | grep -F "versionName='1.0.9-d1test'"
+          printf '%s\n' "$BADGING" | grep -F "application-label:'Sentinel D.1 Test'"
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum' "; then
+            echo "BLOCKED: attempted to publish an APK using the installed Sentinel package ID" >&2
+            exit 4
+          fi
+          SIGNER_OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          printf '%s\n' "$SIGNER_OUTPUT"
+          ACTUAL_CERT="$(printf '%s\n' "$SIGNER_OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED_CERT="$(printf '%s' "$SENTINEL_D1_EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED_CERT" =~ ^[a-f0-9]{64}$ || "$ACTUAL_CERT" != "$EXPECTED_CERT" ]]; then
+            echo "BLOCKED: D.1 APK signing certificate differs from the pinned qualification certificate" >&2
+            exit 5
+          fi
+          echo "PASS: D.1 APK certificate matches pinned SHA-256"
+          printf 'certificate_sha256=%s\n' "$ACTUAL_CERT" > app/build/outputs/apk/debug/app-debug.signer.sha256.txt
+          (cd app/build/outputs/apk/debug && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf 'source_commit=%s\npackage_id=%s\nsigner_certificate_sha256=%s\nqualification=%s\nptt_unit_tests=%s\ninstallation_on_device=%s\nvisual_d1_review=%s\n' \
+            "$(git rev-parse HEAD)" "com.sentinel.quantum.d1test" "$ACTUAL_CERT" \
+            "ISOLATED_DEBUG_ONLY_NOT_EMULATOR_OR_DEVICE_VALIDATED" \
+            "EXECUTED_PASSING_XML_REPORT_REQUIRED" "NOT_TESTED" "NOT_VERIFIED" \
+            > app/build/outputs/apk/debug/build-provenance.txt
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/app-debug.signer.sha256.txt
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
+      - native-android-app/app/build/test-results/testDebugUnitTest/TEST-com.sentinel.quantum.security.PttTransmissionPolicyTest.xml
+
+  sentinel-clean-install-candidate:
+    name: Sentinel - single app clean-install candidate (manual)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 17
+      groups:
+        - sentinel_production
+    scripts:
+      - name: Verify SDK and source
+        script: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER" || { echo "BLOCKED: sdkmanager unavailable" >&2; exit 2; }
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --channel=3 "platforms;android-37.0" "build-tools;36.0.0" "platform-tools"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+          cd "$CM_BUILD_DIR"
+          node scripts/check-android-ui-consistency.js
+          node scripts/check-d1-activation-source.mjs
+          node scripts/check-android-manifest.js
+      - name: Check permanent production signing
+        script: |
+          set -euo pipefail
+          for variable in SENTINEL_PRODUCTION_KEYSTORE_B64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD SENTINEL_PRODUCTION_CERT_SHA256; do
+            if [[ -z "${!variable:-}" ]]; then echo "BLOCKED: missing protected production signing configuration: $variable" >&2; exit 3; fi
+          done
+          export KEYSTORE_FILE="$CM_BUILD_DIR/native-android-app/.sentinel-production-signing.p12"
+          printf '%s' "$SENTINEL_PRODUCTION_KEYSTORE_B64" | base64 -D > "$KEYSTORE_FILE" || {
+            echo "BLOCKED: unable to decode protected signing file" >&2
+            exit 3
+          }
+          chmod 600 "$KEYSTORE_FILE"
+          # This fixed-size check is specific to the locally verified Sentinel signing file.
+          # Never print or hash private keystore contents in public CI logs.
+          DECODED_BYTES="$(wc -c < "$KEYSTORE_FILE" | tr -d '[:space:]')"
+          if [[ "$DECODED_BYTES" != "3586" ]]; then
+            echo "BLOCKED: decoded PKCS12 size mismatch; expected 3586 bytes, received $DECODED_BYTES" >&2
+            exit 4
+          fi
+          echo "PASS: decoded PKCS12 file size matches local reference (3586 bytes)"
+          # Compare SHA-256 of encrypted container only, without printing any secret.
+          FILE_SHA256="$(shasum -a 256 "$KEYSTORE_FILE" | awk '{print $1}')"
+          EXPECTED_FILE_SHA256="ca88111db6a8e4db9965d51c59d1b793bc85ae1c75d29a13046742c5827a07d7"
+          if [[ "$FILE_SHA256" != "$EXPECTED_FILE_SHA256" ]]; then
+            echo "BLOCKED: production PKCS12 bytes differ from locally verified file despite matching length" >&2
+            exit 4
+          fi
+          echo "PASS: production PKCS12 SHA-256 matches locally verified encrypted file"
+          test -s "$KEYSTORE_FILE" || { echo "BLOCKED: production keystore file missing" >&2; exit 3; }
+          echo "KEYSTORE_FILE=$KEYSTORE_FILE" >> "$CM_ENV"
+          # Java's PKCS12 provider is authoritative for Gradle signing.
+          # macOS /usr/bin/openssl may use LibreSSL and reject valid modern OpenSSL PKCS12 files.
+          echo "CHECK: validating PKCS12 using Java keytool"
+          # Never expose the password or verbose keytool diagnostics in public logs.
+          # Test password validity independently using OpenSSL 3 when available.
+          if command -v brew >/dev/null 2>&1 && [[ -x "$(brew --prefix openssl@3 2>/dev/null)/bin/openssl" ]]; then
+            OPENSSL3="$(brew --prefix openssl@3)/bin/openssl"
+            if "$OPENSSL3" pkcs12 -in "$KEYSTORE_FILE" -info -noout -passin env:KEYSTORE_PASSWORD >/dev/null 2>&1; then
+              echo "PASS: OpenSSL 3 accepts stored PKCS12 password"
+            else
+              echo "BLOCKED: OpenSSL 3 rejects stored PKCS12 password or format" >&2
+              exit 4
+            fi
+          else
+            echo "INFO: independent OpenSSL 3 password check unavailable"
+          fi
+          if ! keytool -list -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
+            echo "BLOCKED: Java cannot open PKCS12 after transport integrity check; check password or Java compatibility" >&2
+            exit 4
+          fi
+          echo "PASS: Java can open protected PKCS12"
+          # OpenSSL export used a single PKCS12 password for the store and private key.
+          # Reject mismatched CI secrets before an expensive Gradle package/sign step.
+          if [[ "$KEY_PASSWORD" != "$KEYSTORE_PASSWORD" ]]; then
+            echo "BLOCKED: KEY_PASSWORD and KEYSTORE_PASSWORD differ for this OpenSSL-exported PKCS12" >&2
+            exit 4
+          fi
+          echo "PASS: PKCS12 key password matches store password"
+          if ! DETAILS="$(keytool -list -v -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" 2>/dev/null)"; then
+            echo "BLOCKED: Java can open PKCS12 but KEY_ALIAS was not found or is invalid" >&2
+            exit 4
+          fi
+          ACTUAL="$(printf '%s\n' "$DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED" =~ ^[0-9a-f]{64}$ || "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "BLOCKED: production keystore certificate does not match the pinned fingerprint" >&2
+            exit 5
+          fi
+      - name: Run targeted Android unit tests before APK packaging
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest -PsentinelCleanInstallDebug=true \
+            --tests 'com.sentinel.quantum.security.BluetoothRiskEvaluatorTest' \
+            --tests 'com.sentinel.quantum.security.MailConnectorContractTest' \
+            --tests 'com.sentinel.quantum.security.MailOAuthHandshakeTest' \
+            --tests 'com.sentinel.quantum.ui.screens.OsintFeedSourceContractTest' \
+            --tests 'com.sentinel.quantum.ui.screens.SystemDoctorScrollContractTest' \
+            --tests 'com.sentinel.quantum.ui.screens.EmailSecuritySourceContractTest' \
+            --no-daemon --stacktrace
+      - name: Build single-app clean-install candidate
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PsentinelCleanInstallDebug=true --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum' "
+          printf '%s\n' "$BADGING" | grep -F "versionCode='11' versionName='1.0.10'"
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum.d1test'"; then
+            echo "BLOCKED: isolated D.1 test package produced in main candidate" >&2
+            exit 4
+          fi
+          OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          ACTUAL="$(printf '%s\n' "$OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then echo "BLOCKED: unexpected APK signer" >&2; exit 5; fi
+          OUT=app/build/outputs/apk/debug
+          (cd "$OUT" && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf 'source_commit=%s\npackage_id=com.sentinel.quantum\nsigner_certificate_sha256=%s\nstatus=BUILD_ONLY_NOT_DEVICE_VERIFIED\nphone_sms=NOT_PHYSICALLY_QUALIFIED\nd1_visuals=NOT_VERIFIED\nptt=NOT_FUNCTIONAL\n' "$(git rev-parse HEAD)" "$ACTUAL" > "$OUT/build-provenance.txt"
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt

@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Authenticated Digital Exposure client. The Auth0 access token remains in memory and is sent only
  * in the Authorization header. The backend derives the opaque subject identity; Android never sends
- * a subject_token or the server-to-server X-Exposure-Key.
+ * a subject token or any server-to-server credential.
  */
 class DigitalExposureClient(
     private val endpointBaseUrl: String = SentinelApiOrigin.baseUrl,

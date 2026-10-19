@@ -3,7 +3,8 @@ package com.sentinel.quantum.security
 /** Local-only indicator screening. It does not intercept or block calls. */
 class PhoneMonitor(
     private val audit: (LocalLogger.LogLevel, String, String) -> Unit,
-    private val now: () -> Long = System::currentTimeMillis
+    private val now: () -> Long = System::currentTimeMillis,
+    private val defaultCallingCode: String? = null
 ) {
     constructor(logger: LocalLogger) : this(logger::log)
 
@@ -23,7 +24,7 @@ class PhoneMonitor(
         }
         val malformed = phoneNumber.length > MAX_INPUT_LENGTH || !validCharacters || !validPlus ||
             digitCount !in MIN_DIGITS..MAX_DIGITS
-        val knownPrefix = !malformed && PhoneNumberRiskRules.isKnownPremiumRatePrefix(input)
+        val knownPrefix = !malformed && PhoneNumberRiskRules.isKnownPremiumRatePrefix(input, defaultCallingCode)
         val risk = when {
             malformed -> RiskLevel.MEDIUM
             knownPrefix -> RiskLevel.HIGH

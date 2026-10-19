@@ -117,11 +117,30 @@ const homePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt';
 const homeSource = readRequired(homePath);
 if (homeSource) {
+  // Approved layout order: holographic state and factual module metrics first,
+  // activation action second. This must not turn LIMITED into a fake green state.
+  const requiredHomeOrder = [
+    'testTag("home_security_hero")',
+    'testTag("home_reference_metrics")',
+    'testTag("home_primary_action")',
+    'Text("État de protection"',
+    'Text("Activité système"',
+    'title = if (normalizedQuery.isBlank()) "Actions rapides"'
+  ];
+  let previous = -1;
+  for (const marker of requiredHomeOrder) {
+    const next = homeSource.indexOf(marker);
+    if (next < 0 || next <= previous) {
+      errors.push('Official Sentinel home hierarchy regressed: ' + marker);
+    }
+    previous = next;
+  }
   for (const marker of [
     'Chercher une fonction',
     'QuickToolCard(',
     'SentinelDialerActivity.EXTRA_OPEN_CONTACTS',
-    'matchingTools.chunked(2)',
+    'SentinelReferenceActionGrid(',
+    'matchingTools.take(4).map { tool ->',
     'Continuer l’activation',
     'étapes prêtes',
     'étapes d’activation Android prêtes',
@@ -334,9 +353,9 @@ if (mainSource.includes('startActivity(Intent(this@MainActivity, SentinelDialerA
 if (mainSource) {
   assertNoLegacyTopBar(mainPath, mainSource);
   for (const marker of [
-    'NavigationBar(',
-    'SentinelD1.Panel',
-    'NavigationBarItemDefaults.colors(',
+    'SentinelBottomNavigation(',
+    'SentinelBottomNavigationItem(',
+    'navController.navigateBottomDestination(Screen.CommunicationsHub)',
     'BottomNavTarget.COMMUNICATIONS',
     'Screen.CommunicationsHub',
     'R.string.nav_communications',
@@ -856,6 +875,89 @@ if (systemDoctorSource) {
     if (!systemDoctorSource.includes(marker)) errors.push(`System Doctor off-main marker missing (${marker}): ${systemDoctorPath}`);
   }
   if (systemDoctorSource.includes('onClick = { scan = doctor.scan() }')) errors.push(`System Doctor scan moved back onto the Compose click thread: ${systemDoctorPath}`);
+}
+
+// Lock the geometry test to actual Compose parameters, not independent JS guesses.
+const coreGeometry = readRequired(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelQuantumCore.kt'
+);
+if (coreGeometry) {
+  for (const marker of [
+    '.size(width = 112.dp, height = 72.dp)',
+    'val railX = ((maxWidth.value - 112f) / 2f - 8f).coerceAtLeast(0f)',
+    'val railStep = ((maxHeight.value - 72f) / 3f).coerceAtLeast(0f)',
+    'val useCompactRails = visibleModules.size > 4',
+    'val (x, y) = nodeDp(index)',
+    'fontSize = 12.sp',
+    'maxLines = 2',
+    'overflow = TextOverflow.Ellipsis',
+    'contentDescription = module.accessibilityLabel()'
+  ]) {
+    if (!coreGeometry.includes(marker)) {
+      errors.push('D1 geometry changed without updating validation: ' + marker);
+    }
+  }
+}
+
+// The eight D.1 orbit cards must fit compact screens without card-to-card collision.
+const d1CardWidth = 112;
+const d1CardHeight = 72;
+for (const [width, height] of [[320,320],[360,320],[360,400],[412,480]]) {
+  const railX = Math.max(0, (width - d1CardWidth) / 2 - 8);
+  const railStep = Math.max(0, (height - d1CardHeight) / 3);
+  const bounds = Array.from({length:8}, (_,i) => ({
+    x: width/2 + (i%2 ? railX : -railX) - d1CardWidth/2,
+    y: height/2 + (Math.floor(i/2)-1.5)*railStep - d1CardHeight/2
+  }));
+  bounds.forEach((p,i) => {
+    if(p.x < 0 || p.y < 0 || p.x+d1CardWidth > width || p.y+d1CardHeight > height)
+      errors.push('D1 core card out of bounds: '+width+'x'+height+' card '+i);
+  });
+  for(let i=0;i<8;i++) for(let j=i+1;j<8;j++)
+    if(Math.abs(bounds[i].x-bounds[j].x)<d1CardWidth &&
+       Math.abs(bounds[i].y-bounds[j].y)<d1CardHeight)
+      errors.push('D1 core cards overlap: '+width+'x'+height+' '+i+'/'+j);
+}
+
+// Dialer verification results must stay visible after the lookup finishes,
+// even without a matching contact or opt-in remote reputation signal.
+const dialerSource = readRequired(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt'
+);
+if (dialerSource) {
+  for (const token of [
+    'var lookupAttempted by remember',
+    'lookupAttempted = true',
+    'lookupAttempted = false',
+    'if (lookupAttempted || lookupRunning) {',
+    'Text(directoryStatus, style = MaterialTheme.typography.bodySmall)',
+    'PhoneCountryPrefixCatalog.resolveNumber(number)',
+    'Pays / zone d’indicatif',
+    'ni identité, ni opérateur actuel',
+    'ArcepDirectoryClient.toFrenchNational(lookupNumber) != null',
+    'Répertoire national non connecté pour ce numéro',
+    'titulaire du bloc',
+    'ArcepVerifiedPrefixCatalog.entries',
+    'Plage ARCEP de numéros polyvalents vérifiés',
+    'Aucun blocage automatique',
+    'Recherche terminée · résultats disponibles ci-dessous',
+    'Sources disponibles : contacts locaux, ARCEP (France/DOM)',
+    'requestGeneration != lookupGeneration',
+    'lookupGeneration++',
+    'reputationStatus = updatedReputationStatus',
+    'runCatching { contacts.find(lookupNumber) }.getOrNull()',
+    'score de risque indisponible',
+    'simCountryIso',
+    'telephony.getSubscriptionId(selected)',
+    'telephony.createForSubscriptionId(subId).simCountryIso',
+    'callAccountKey(selected) !in activeLineKeys',
+    'selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)',
+    'Ligne modifiée : relancez la vérification.',
+    'recipientCountry = requireNotNull(recipientCountry)',
+    'pays de la ligne SIM non déterminé'
+  ]) {
+    if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
+  }
 }
 
 const chromePath =

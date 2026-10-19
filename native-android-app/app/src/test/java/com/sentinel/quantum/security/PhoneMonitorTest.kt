@@ -7,7 +7,7 @@ import org.junit.Test
 
 class PhoneMonitorTest {
     private fun monitor(logs: MutableList<String> = mutableListOf(), time: Long = 42L) =
-        PhoneMonitor({ _, _, message -> logs += message }, { time })
+        PhoneMonitor({ _, _, message -> logs += message }, { time }, defaultCallingCode = "+33")
 
     @Test fun knownPrefixIsElevated() {
         val result = monitor().checkNumber("+33 8 99 12 34 56")

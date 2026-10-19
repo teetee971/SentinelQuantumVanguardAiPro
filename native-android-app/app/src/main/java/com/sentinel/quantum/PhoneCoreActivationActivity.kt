@@ -15,7 +15,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -56,6 +58,8 @@ import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelVisualTokens
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
@@ -133,6 +137,53 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The isolated visual-qualification package must never request Phone/SMS
+        // roles or sensitive runtime permissions. It is intentionally read-only.
+        if (packageName == "com.sentinel.quantum.d1test") {
+            setContent {
+                SentinelQuantumTheme {
+                    Scaffold(
+                        containerColor = SentinelD1.Background,
+                        topBar = {
+                            SentinelTopBar(
+                                title = "Téléphonie",
+                                subtitle = "Qualification D.1 — lecture seule",
+                                onBack = { finish() }
+                            )
+                        }
+                    ) { padding ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                "Phone Core non activable dans cette version de test",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                "Cette édition D.1 sert uniquement à vérifier l’interface. " +
+                                    "Elle ne demande aucun rôle Téléphone, SMS ou filtrage d’appels " +
+                                    "et ne remplace pas votre application par défaut.",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                "Les 8 prérequis téléphoniques ne sont pas qualifiés ici. " +
+                                    "Les tests fonctionnels devront être réalisés sur une " +
+                                    "version principale autorisée et vérifiée.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            OutlinedButton(onClick = { finish() }) {
+                                Text("Retour")
+                            }
+                        }
+                    }
+                }
+            }
+            return
+        }
         SentinelCallNotificationHelper.ensureChannel(applicationContext)
         SentinelMissedCallReceiver.ensureChannel(applicationContext)
         SmsNotificationHelper.ensureChannel(applicationContext)
@@ -149,13 +200,28 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
+                val permissionAttempts = remember {
+                    applicationContext.getSharedPreferences("sentinel_permission_attempts", MODE_PRIVATE)
+                }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+                    val editor = permissionAttempts.edit()
+                    grants.forEach { (permission, granted) ->
+                        val key = "attempt_count:$permission"
+                        editor.putInt(key, if (granted) 0 else (permissionAttempts.getInt(key, 0) + 1).coerceAtMost(3))
+                    }
+                    editor.apply()
                     deniedPermissions = grants.filterValues { !it }.keys
                     epoch++
                 }
-                var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
+                var setupPermissionInFlight by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
                 var allowWizardAutoAdvance by remember { mutableStateOf(false) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                    setupPermissionInFlight?.let { requested ->
+                        val key = "attempt_count:$requested"
+                        permissionAttempts.edit().putInt(
+                            key, if (granted) 0 else (permissionAttempts.getInt(key, 0) + 1).coerceAtMost(3)
+                        ).apply()
+                    }
                     deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
                     setupPermissionInFlight = null
                     allowWizardAutoAdvance = granted
@@ -391,15 +457,22 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(topBar = {
-                    SentinelTopBar(
-                        title = "Téléphonie",
-                        subtitle = "Centre d’activation",
-                        onBack = { finish() }
-                    )
-                }) { padding ->
+                val d1Background = Brush.verticalGradient(
+                    listOf(SentinelD1.Background, SentinelD1.Panel, SentinelD1.Background)
+                )
+                Scaffold(
+                    containerColor = SentinelD1.Background,
+                    topBar = {
+                        SentinelTopBar(
+                            title = "Téléphonie",
+                            subtitle = "Centre d’activation",
+                            onBack = { finish() }
+                        )
+                    }
+                ) { padding ->
                     Column(
-                        Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+                        Modifier.fillMaxSize().background(d1Background).padding(padding)
+                            .verticalScroll(rememberScrollState()).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         PhoneCoreBrand(
@@ -415,22 +488,32 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .semantics {
-                                    stateDescription = "${setupChecks.count { it.second }} sur ${setupChecks.size} prérequis Android relus"
+                                    stateDescription = "${setupChecks.count { it.second }} sur ${setupChecks.size} prérequis Android confirmés"
                                 },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Cyan.copy(alpha = 0.35f)),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                containerColor = SentinelD1.Panel
                             )
                         ) {
                             Column(
                                 modifier = Modifier.padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text("Progression réelle", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text("PRÉREQUIS ANDROID", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = SentinelD1.Cyan)
                                 Text(
-                                    "${setupChecks.count { it.second }}/${setupChecks.size} prérequis relus auprès d’Android. Une étape reste verrouillée tant que son état n’est pas confirmé.",
+                                    "${setupChecks.count { it.second }}/${setupChecks.size} prérequis confirmés par Android. Les étapes restantes ne sont pas encore validées.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = SentinelVisualTokens.TextSecondary
+                                )
+                                LinearProgressIndicator(
+                                    progress = {
+                                        if (setupChecks.isEmpty()) 0f
+                                        else setupChecks.count { it.second }.toFloat() / setupChecks.size
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = SentinelD1.Cyan,
+                                    trackColor = SentinelD1.Card
                                 )
                                 FlowRow(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -448,10 +531,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         if (firstRunSetup) {
                             Card(
                                 Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                                shape = RoundedCornerShape(24.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Cyan.copy(alpha = 0.30f)),
+                                colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("Configuration initiale", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text("CONFIGURATION INITIALE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SentinelVisualTokens.TextPrimary)
                                     Text(
                                         "Sentinel va vous guider dans les autorisations et rôles Android nécessaires. Chaque demande reste affichée et confirmée par Android ; vous pouvez refuser ou reporter un accès.",
                                         style = MaterialTheme.typography.bodySmall
@@ -471,7 +556,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         Text(
                                             "Autorisations de cette étape : $granted/$total accordée(s)",
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            color = SentinelVisualTokens.TextPrimary
                                         )
                                     }
                                     setupAtomicPermission?.let { permission ->
@@ -608,7 +693,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        Card(Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
                                     "État de configuration",
@@ -724,10 +814,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
 
                         SectionTitle("Messages")
-                        ElevatedCard(
-                            Modifier.fillMaxWidth().semantics {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().semantics {
                                 stateDescription = if (smsModel.state == SmsActivationDiagnostics.State.READY) "SMS prêt" else "SMS à activer"
-                            }
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -735,9 +828,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     Column(Modifier.weight(1f)) {
                                         Text("SMS par défaut", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         Text(smsModel.title, style = MaterialTheme.typography.labelMedium,
-                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant)
+                                            color = if (smsModel.state == SmsActivationDiagnostics.State.READY) SentinelD1.Success else SentinelVisualTokens.TextSecondary)
                                     }
-                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
+                                    if (smsModel.state == SmsActivationDiagnostics.State.READY) Icon(Icons.Default.CheckCircle, null, tint = SentinelD1.Success)
                                 }
                                 Text(smsModel.detail, style = MaterialTheme.typography.bodySmall)
                                 if (SmsActivationUiModel.Action.REQUEST_SMS_ROLE in smsModel.actions) {
@@ -797,14 +890,68 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         if (deniedPermissions.isNotEmpty()) Card(
                             Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Danger.copy(alpha = 0.65f)),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Autorisation non accordée", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
+                                Text("Autorisation non accordée", color = SentinelD1.Danger, fontWeight = FontWeight.Bold)
                                 Text(
                                     "Android indique qu’au moins une autorisation demandée n’est pas accordée. Sentinel ne suppose pas la cause du refus. Vous pouvez réessayer ou vérifier les autorisations dans les paramètres Android.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                                Text("Autorisations à vérifier :", fontWeight = FontWeight.SemiBold)
+                                deniedPermissions.sorted().forEach { permission ->
+                                    val explanation = when (permission) {
+                                        Manifest.permission.READ_CONTACTS -> "Contacts — afficher les correspondants enregistrés"
+                                        Manifest.permission.READ_CALL_LOG -> "Historique d’appels — afficher les communications locales (rôle Téléphone requis)"
+                                        Manifest.permission.READ_PHONE_STATE -> "État du téléphone — reconnaître les lignes SIM"
+                                        Manifest.permission.CALL_PHONE -> "Appels — lancer un appel à votre demande"
+                                        Manifest.permission.READ_SMS -> "SMS — lire les messages (rôle SMS requis)"
+                                        Manifest.permission.RECEIVE_MMS -> "MMS — recevoir les messages multimédias"
+                                        Manifest.permission.RECEIVE_WAP_PUSH -> "MMS — recevoir les notifications de téléchargement"
+                                        Manifest.permission.POST_NOTIFICATIONS -> "Notifications — afficher les alertes"
+                                        Manifest.permission.RECORD_AUDIO -> "Microphone — utiliser les fonctions audio explicitement demandées"
+                                        else -> permission.substringAfterLast('.')
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            explanation,
+                                            modifier = Modifier.weight(1f),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        val permanentlyRedirected = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                                            permissionAttempts.getInt("attempt_count:$permission", 0) >= 2 &&
+                                            !shouldShowRequestPermissionRationale(permission) &&
+                                            !hasPermission(permission)
+                                        TextButton(onClick = {
+                                            allowWizardAutoAdvance = false
+                                            if (permanentlyRedirected) {
+                                                settingsLauncher.launch(
+                                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                                                )
+                                            } else {
+                                                setupPermissionInFlight = permission
+                                                setupPermissionLauncher.launch(permission)
+                                            }
+                                        }) { Text(if (permanentlyRedirected) "Paramètres" else "Réessayer") }
+                                    }
+                                }
+                                Text(
+                                    "Dans Android : Autorisations → sélectionnez chaque accès manquant → Autoriser. " +
+                                        "Revenez ensuite dans Sentinel : l’état sera revérifié. " +
+                                        "Les rôles Téléphone et SMS se demandent séparément et ne peuvent pas être accordés silencieusement.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                OutlinedButton(
+                                    onClick = { epoch++ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("Vérifier de nouveau les autorisations") }
                                 OutlinedButton(
                                     onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
                                     modifier = Modifier.fillMaxWidth()
@@ -812,7 +959,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        Card(Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Ouvrir les fonctions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Button(
@@ -928,8 +1080,11 @@ private fun CapabilityCard(
     actionLabel: String?,
     onAction: () -> Unit
 ) {
-    ElevatedCard(
-        Modifier.fillMaxWidth().semantics { stateDescription = status }
+    Card(
+        modifier = Modifier.fillMaxWidth().semantics { stateDescription = status },
+        shape = RoundedCornerShape(20.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+        colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -938,11 +1093,11 @@ private fun CapabilityCard(
                     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
                         status,
-                        color = if (ready) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (ready) SentinelD1.Success else SentinelVisualTokens.TextSecondary,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
-                if (ready) Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.tertiary)
+                if (ready) Icon(Icons.Default.CheckCircle, null, tint = SentinelD1.Success)
             }
             Text(detail, style = MaterialTheme.typography.bodySmall)
             if (actionLabel != null) {
@@ -954,16 +1109,16 @@ private fun CapabilityCard(
 
 @Composable
 private fun StatusChip(label: String, ready: Boolean) {
-    val containerColor = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
-    val contentColor = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    val statusColor = if (ready) SentinelD1.Success else SentinelD1.Unknown
     Surface(
-        modifier = Modifier.semantics { stateDescription = label },
+        modifier = Modifier.semantics { stateDescription = if (ready) "$label : confirmé" else "$label : non confirmé" },
         shape = RoundedCornerShape(50),
-        color = containerColor
+        color = statusColor.copy(alpha = 0.14f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, statusColor.copy(alpha = 0.45f))
     ) {
         Text(
             label,
-            color = contentColor,
+            color = statusColor,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)

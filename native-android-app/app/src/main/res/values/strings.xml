@@ -290,6 +290,7 @@
     <string name="permission_analyzer_title">Analyseur de permissions</string>
     <string name="network_surveillance_title">Surveillance réseau</string>
     <string name="sentinel_threat_map_title">Carte des menaces</string>
+    <string name="global_telecom_intelligence_title">Intelligence téléphonique mondiale</string>
     <string name="sentinel_quarantine_title">Quarantaine sécurisée</string>
     <string name="sentinel_threat_detail_title">Détail de la menace</string>
     <string name="digital_exposure_title">Exposition numérique</string>

@@ -55,7 +55,7 @@ class BluetoothRiskEvaluatorTest {
     }
 
     @Test
-    fun unknownDeviceIsMediumRisk() {
+    fun unknownDeviceIsUndeterminedRisk() {
         val unnamed = BluetoothRiskEvaluator.evaluate(deviceName = null)
         val unknownKind = BluetoothRiskEvaluator.evaluate(
             deviceName = "XZ-4410",
@@ -63,8 +63,8 @@ class BluetoothRiskEvaluatorTest {
             bonded = true
         )
 
-        assertEquals(NetworkRiskLevel.MEDIUM, unnamed.riskLevel)
-        assertEquals(NetworkRiskLevel.MEDIUM, unknownKind.riskLevel)
+        assertEquals(NetworkRiskLevel.UNKNOWN, unnamed.riskLevel)
+        assertEquals(NetworkRiskLevel.UNKNOWN, unknownKind.riskLevel)
         assertFalse(unknownKind.likelyTracker)
     }
 

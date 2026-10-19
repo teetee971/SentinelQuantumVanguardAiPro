@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +51,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -297,11 +299,29 @@ fun SentinelQuantumCore(
     ) {
         // BoxWithConstraints exposes dp while Canvas draws in px. Keep the two coordinate spaces
         // separate so the core remains centered on high-density phones such as the S24+.
-        val widthBound = (maxWidth.value * 0.5f - 52f).coerceAtLeast(48f)
+        val widthBound = (maxWidth.value * 0.5f - 60f).coerceAtLeast(48f)
         val heightBound = (maxHeight.value * 0.5f - 48f).takeIf { it.isFinite() } ?: widthBound
         val orbitRadiusDp = min(widthBound, heightBound).coerceAtLeast(48f)
-        val orbitRadius = with(LocalDensity.current) { orbitRadiusDp.dp.toPx() }
+        val pixelsPerDp = LocalDensity.current.density
+        val orbitRadius = orbitRadiusDp * pixelsPerDp
         val count = visibleModules.size.coerceAtLeast(1)
+        // Eight full-width cards cannot fit around a small circular orbit.
+        // Use two vertical rails with four non-overlapping cards per rail.
+        val useCompactRails = visibleModules.size > 4
+        val railX = ((maxWidth.value - 112f) / 2f - 8f).coerceAtLeast(0f)
+        val railStep = ((maxHeight.value - 72f) / 3f).coerceAtLeast(0f)
+        fun nodeDp(index: Int): Pair<Float, Float> =
+            if (useCompactRails) {
+                val column = index % 2
+                val row = index / 2
+                Pair(if (column == 0) -railX else railX, (row - 1.5f) * railStep)
+            } else {
+                val angle = -PI / 2f + (index.toFloat() / count) * 2f * PI
+                Pair(
+                    cos(angle).toFloat() * orbitRadiusDp,
+                    sin(angle).toFloat() * orbitRadiusDp
+                )
+            }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
@@ -322,10 +342,10 @@ fun SentinelQuantumCore(
             }
             drawCoreVolume(center, volumeRadius, coreAccent, rotation / (2f * PI.toFloat()))
             visibleModules.forEachIndexed { index, module ->
-                val angle = -PI / 2f + (index.toFloat() / count) * 2f * PI
+                val (nodeX, nodeY) = nodeDp(index)
                 val node = Offset(
-                    center.x + cos(angle).toFloat() * orbitRadius,
-                    center.y + sin(angle).toFloat() * orbitRadius
+                    center.x + nodeX * pixelsPerDp,
+                    center.y + nodeY * pixelsPerDp
                 )
                 drawLine(
                     color = module.status.accentColor().copy(alpha = 0.28f),
@@ -371,26 +391,31 @@ fun SentinelQuantumCore(
             Text(
                 text = "SENTINEL CORE",
                 color = SentinelVisualTokens.TextPrimary,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.3.sp
             )
             Text(
                 text = coreStatus.visual().label,
                 color = coreAccent,
-                fontSize = 11.sp
+                fontSize = 12.sp
             )
         }
 
         visibleModules.forEachIndexed { index, module ->
-            val angle = -PI / 2f + (index.toFloat() / count) * 2f * PI
-            val x = cos(angle).toFloat() * orbitRadiusDp
-            val y = sin(angle).toFloat() * orbitRadiusDp
+            val (x, y) = nodeDp(index)
             Surface(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .offset(x = x.dp, y = y.dp)
-                    .size(width = 98.dp, height = 64.dp)
+                    .size(width = 112.dp, height = 72.dp)
+                    .border(
+                        width = 1.dp,
+                        color = module.status.accentColor().copy(
+                            alpha = if (module.enabled) 0.65f else 0.24f
+                        ),
+                        shape = RoundedCornerShape(SentinelVisualTokens.CompactCornerRadiusDp.dp)
+                    )
                     .clickable(
                         enabled = module.isActionable,
                         role = Role.Button,
@@ -417,9 +442,10 @@ fun SentinelQuantumCore(
                     Text(
                         text = module.label,
                         color = SentinelVisualTokens.TextPrimary,
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                         softWrap = true,
                         textAlign = TextAlign.Center
                     )

@@ -40,6 +40,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
@@ -209,19 +210,8 @@ fun SentinelHolographicScene(
                 .align(Alignment.TopEnd)
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         )
-        Text(
-            text = model.status.visual().label,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .semantics {
-                    contentDescription = "État observé : ${model.status.visual().label}"
-                },
-            color = accent,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 24.sp,
-            textAlign = TextAlign.Center,
-            softWrap = true
-        )
+        // The top-right status chip already shows the state. Keep the
+        // holographic shield and rings unobstructed in the central D.1 scene.
         Text(
             text = "${model.evidenceLabel} · ${model.evidenceSource}",
             modifier = Modifier
@@ -230,6 +220,8 @@ fun SentinelHolographicScene(
             color = SentinelVisualTokens.TextSecondary,
             fontSize = 11.sp,
             textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
             softWrap = true
         )
     }
