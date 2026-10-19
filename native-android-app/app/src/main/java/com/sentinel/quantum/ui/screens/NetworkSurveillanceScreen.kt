@@ -277,6 +277,17 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         )
     }
 
+    // Access to Android-paired devices is independent of BLE scanning.
+    val pairedPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted && bluetoothScanner.hasPairedDevicePermission()) {
+            pairedBluetoothDevices = bluetoothScanner.pairedDevices()
+        } else {
+            statusMessage = "Accès aux appareils Bluetooth associés non accordé."
+        }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
@@ -337,6 +348,24 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         onClick = { selectedTab = tab },
                         text = { Text(tab.label) }
                     )
+                }
+            }
+
+            if (selectedTab == SurveillanceTab.BLUETOOTH &&
+                !bluetoothScanner.hasPairedDevicePermission()
+            ) {
+                FilledTonalButton(
+                    onClick = {
+                        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            android.Manifest.permission.BLUETOOTH_CONNECT
+                        } else {
+                            android.Manifest.permission.BLUETOOTH
+                        }
+                        pairedPermissionLauncher.launch(permission)
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                ) {
+                    Text("Autoriser les appareils Bluetooth associés (montres)")
                 }
             }
 
