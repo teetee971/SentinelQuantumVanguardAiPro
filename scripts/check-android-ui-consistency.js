@@ -930,7 +930,10 @@ if (dialerSource) {
     'lookupAttempted = true',
     'lookupAttempted = false',
     'if (lookupAttempted || lookupRunning) {',
-    'Text(directoryStatus, style = MaterialTheme.typography.bodySmall)'
+    'Text(directoryStatus, style = MaterialTheme.typography.bodySmall)',
+    'PhoneCountryPrefixCatalog.resolveNumber(number)',
+    'Pays / zone d’indicatif',
+    'ni position réelle, ni identité'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
