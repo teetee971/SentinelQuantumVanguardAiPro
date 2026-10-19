@@ -96,7 +96,7 @@ jobs:
 
           device_ready=0
           for _ in $(seq 1 60); do
-            if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+            if timeout 10s adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
               device_ready=1
               break
             fi
@@ -110,7 +110,7 @@ jobs:
 
           booted=0
           for _ in $(seq 1 90); do
-            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+            if [[ "$(timeout 10s adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
               booted=1
               break
             fi
@@ -121,11 +121,11 @@ jobs:
             exit 1
           fi
 
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
-          adb shell input keyevent KEYCODE_WAKEUP || true
-          adb shell wm dismiss-keyguard || true
+          timeout 15s adb shell settings put global window_animation_scale 0
+          timeout 15s adb shell settings put global transition_animation_scale 0
+          timeout 15s adb shell settings put global animator_duration_scale 0
+          timeout 15s adb shell input keyevent KEYCODE_WAKEUP || true
+          timeout 15s adb shell wm dismiss-keyguard || true
 
       - name: Build the exact commit and run D.1 capture instrumentation
         working-directory: ./native-android-app
