@@ -64,7 +64,7 @@ APK_BADGING="$("$AAPT" dump badging "$APK")" || {
   echo "BLOCKED: cannot read APK package metadata" >&2
   exit 3
 }
-if ! printf '%s\\n' "$APK_BADGING" | grep -xE "package: name='com\\.sentinel\\.quantum' .*" >/dev/null; then
+if [[ "$APK_BADGING" != *"package: name='com.sentinel.quantum' "* ]]; then
   echo "BLOCKED: generated APK does not declare com.sentinel.quantum" >&2
   exit 3
 fi
