@@ -190,6 +190,34 @@ jobs:
           fs.writeFileSync(path.join(output, 'capture-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
           NODE
 
+      - name: Collect Android runtime diagnostics on every outcome
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          output="$RUNNER_TEMP/sentinel-d1-visual"
+          mkdir -p "$output/diagnostics"
+          diag="$output/diagnostics"
+          date -u +%Y-%m-%dT%H:%M:%SZ > "$diag/collected-at-utc.txt"
+          command -v adb > "$diag/adb-path.txt" 2>&1
+          timeout 10s adb devices -l > "$diag/adb-devices.txt" 2>&1
+          timeout 10s adb get-state > "$diag/adb-state.txt" 2>&1
+          timeout 20s adb shell getprop sys.boot_completed > "$diag/boot-completed.txt" 2>&1
+          timeout 20s adb shell getprop ro.build.version.sdk > "$diag/device-api.txt" 2>&1
+          timeout 30s adb logcat -d -v threadtime > "$diag/logcat.txt" 2>&1
+          timeout 20s adb shell dumpsys activity activities > "$diag/activities.txt" 2>&1
+          timeout 20s adb shell dumpsys activity processes > "$diag/processes.txt" 2>&1
+          timeout 20s adb shell dumpsys window > "$diag/window.txt" 2>&1
+          timeout 20s adb shell dumpsys dropbox --print data_app_anr > "$diag/app-anr.txt" 2>&1
+          timeout 20s adb shell dumpsys dropbox --print system_app_anr > "$diag/system-anr.txt" 2>&1
+          timeout 20s adb shell dumpsys dropbox --print system_server_anr > "$diag/system-server-anr.txt" 2>&1
+          if [[ -f "$output/emulator.pid" ]]; then
+            cat "$output/emulator.pid" > "$diag/emulator.pid"
+            ps -p "$(cat "$output/emulator.pid")" -o pid,etime,stat,args > "$diag/emulator-process.txt" 2>&1
+          fi
+          # Diagnostics are forensic artifacts only. They do not satisfy the 13-PNG gate.
+          printf '%s\n' 'diagnostics_collected_not_a_qualification=1' > "$diag/STATUS.txt"
+
       - name: Upload D.1 Android capture evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
