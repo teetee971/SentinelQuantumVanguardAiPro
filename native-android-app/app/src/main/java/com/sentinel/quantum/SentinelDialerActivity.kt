@@ -758,8 +758,19 @@ class SentinelDialerActivity : ComponentActivity() {
                     // Country of the receiving line, not the caller's E.164 prefix.
                     // A missing SIM country must never silently become France.
                     val recipientCountry = runCatching {
-                        applicationContext.getSystemService(TelephonyManager::class.java)
-                            ?.simCountryIso
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
+                            ContextCompat.checkSelfPermission(
+                                applicationContext, Manifest.permission.READ_PHONE_STATE
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) return@runCatching null
+                        val selected = selectedCallAccount ?: return@runCatching null
+                        val activeLineKeys = callLines.map { it.key }
+                        if (callAccountKey(selected) !in activeLineKeys) return@runCatching null
+                        val telephony = getSystemService(TelephonyManager::class.java)
+                            ?: return@runCatching null
+                        val subId = telephony.getSubscriptionId(selected)
+                        if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return@runCatching null
+                        telephony.createForSubscriptionId(subId).simCountryIso
                             ?.uppercase(java.util.Locale.ROOT)
                             ?.takeIf { it.length == 2 && it.all(Char::isLetter) }
                     }.getOrNull()
