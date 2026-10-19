@@ -55,6 +55,19 @@ if ! unzip -Z -1 "$APK" | grep -x 'classes.dex' >/dev/null; then
   echo "BLOCKED: APK missing primary DEX code" >&2
   exit 3
 fi
+AAPT="$(find "$SDK/build-tools" -mindepth 2 -maxdepth 2 -type f -name aapt 2>/dev/null | sort -V | tail -n 1)"
+if [[ -z "$AAPT" || ! -x "$AAPT" ]]; then
+  echo "BLOCKED: Android SDK aapt is required to verify APK identity" >&2
+  exit 3
+fi
+APK_BADGING="$("$AAPT" dump badging "$APK")" || {
+  echo "BLOCKED: cannot read APK package metadata" >&2
+  exit 3
+}
+if ! printf '%s\\n' "$APK_BADGING" | grep -xE "package: name='com\\.sentinel\\.quantum' .*" >/dev/null; then
+  echo "BLOCKED: generated APK does not declare com.sentinel.quantum" >&2
+  exit 3
+fi
 POST_BUILD_SHA="$(git -C "$ROOT" rev-parse --verify HEAD)"
 if [[ "$POST_BUILD_SHA" != "$SOURCE_SHA" ]]; then
   echo "BLOCKED: HEAD changed during compilation" >&2
