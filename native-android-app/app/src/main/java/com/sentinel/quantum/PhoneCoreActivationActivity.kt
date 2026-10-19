@@ -16,10 +16,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -60,6 +58,8 @@ import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelVisualTokens
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
@@ -396,10 +396,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
 
                 val d1Background = Brush.verticalGradient(
-                    listOf(Color(0xFF050B19), Color(0xFF09192A), Color(0xFF030712))
+                    listOf(SentinelD1.Background, SentinelD1.Panel, SentinelD1.Background)
                 )
                 Scaffold(
-                    containerColor = Color(0xFF050B19),
+                    containerColor = SentinelD1.Background,
                     topBar = {
                         SentinelTopBar(
                             title = "Téléphonie",
@@ -429,9 +429,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     stateDescription = "${setupChecks.count { it.second }} sur ${setupChecks.size} prérequis Android confirmés"
                                 },
                             shape = RoundedCornerShape(24.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26CBE3).copy(alpha = 0.35f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Cyan.copy(alpha = 0.35f)),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF102439)
+                                containerColor = SentinelD1.Panel
                             )
                         ) {
                             Column(
@@ -461,8 +461,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             Card(
                                 Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(24.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26CBE3).copy(alpha = 0.30f)),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFF122C43))
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Cyan.copy(alpha = 0.30f)),
+                                colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text("Configuration initiale", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -485,7 +485,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         Text(
                                             "Autorisations de cette étape : $granted/$total accordée(s)",
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = Color(0xFFD5EAF5)
+                                            color = SentinelVisualTokens.TextPrimary
                                         )
                                     }
                                     setupAtomicPermission?.let { permission ->
