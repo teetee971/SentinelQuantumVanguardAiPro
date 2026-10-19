@@ -1,9 +1,15 @@
 #!/usr/bin/env node
-// Static visual/behavioral regression guard; never claims screenshot or APK qualification.
+// Source-only regression guard. Passing does not establish APK or screenshot conformity.
 import fs from 'node:fs';
+import path from 'node:path';
 import assert from 'node:assert/strict';
-const path = 'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt';
-const source = fs.readFileSync(path, 'utf8');
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const activityPath = path.join(repoRoot,
+  'native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt');
+const source = fs.readFileSync(activityPath, 'utf8');
+
 for (const marker of [
   'SentinelD1.Background',
   'SentinelD1.Panel',
@@ -14,9 +20,12 @@ for (const marker of [
   'PhoneCoreSetupWizardStore',
   'RoleManager.ROLE_SMS',
   'RoleManager.ROLE_DIALER',
-  'pré requis'.replace(' ', ''),
+  'prérequis',
 ]) {
   assert.ok(source.includes(marker), 'D1 activation contract missing: ' + marker);
 }
-assert.doesNotMatch(source, /Color\(0x[0-9a-fA-F]{8}\)/, 'Use shared D1 color tokens, not hardcoded ARGB colors');
-console.log('D1 activation source contract PASS (static; not compiled or visually qualified)');
+assert.doesNotMatch(source, /Color\(0x[0-9a-fA-F]{8}\)/,
+  'Use shared D1 tokens instead of hardcoded ARGB colors');
+assert.match(source, /stateDescription\s*=\s*"\$\{setupChecks\.count/,
+  'Activation prerequisites must retain Android-derived accessibility status');
+console.log('D1 activation source contract PASS (static only; APK and visual tests pending)');
