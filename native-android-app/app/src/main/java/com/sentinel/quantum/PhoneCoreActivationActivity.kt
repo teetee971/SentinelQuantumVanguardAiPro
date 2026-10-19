@@ -15,7 +15,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -391,7 +395,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(topBar = {
+                val d1Background = Brush.verticalGradient(
+                    listOf(Color(0xFF050B19), Color(0xFF09192A), Color(0xFF030712))
+                )
+                Scaffold(
+                    containerColor = Color(0xFF050B19),
+                    topBar = {
                     SentinelTopBar(
                         title = "Téléphonie",
                         subtitle = "Centre d’activation",
@@ -399,7 +408,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     )
                 }) { padding ->
                     Column(
-                        Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+                        Modifier.fillMaxSize().background(d1Background).padding(padding)
+                            .verticalScroll(rememberScrollState()).padding(16.dp),
+
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         PhoneCoreBrand(
@@ -417,9 +428,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 .semantics {
                                     stateDescription = "${setupChecks.count { it.second }} sur ${setupChecks.size} prérequis Android confirmés"
                                 },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26CBE3).copy(alpha = 0.35f)),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                containerColor = Color(0xFF102439)
                             )
                         ) {
                             Column(
@@ -448,7 +460,9 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         if (firstRunSetup) {
                             Card(
                                 Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                                shape = RoundedCornerShape(24.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26CBE3).copy(alpha = 0.30f)),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF122C43))
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text("Configuration initiale", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -471,7 +485,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         Text(
                                             "Autorisations de cette étape : $granted/$total accordée(s)",
                                             style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            color = Color(0xFFD5EAF5)
                                         )
                                     }
                                     setupAtomicPermission?.let { permission ->
