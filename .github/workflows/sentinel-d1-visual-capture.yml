@@ -124,8 +124,8 @@ jobs:
         working-directory: ./native-android-app
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
-          ./gradlew :app:connectedDebugAndroidTest \
+          timeout --signal=TERM --kill-after=30s 1200s ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
+          timeout --signal=TERM --kill-after=30s 900s ./gradlew :app:connectedDebugAndroidTest \
             -Pandroid.testInstrumentationRunnerArguments.class=com.sentinel.quantum.ui.D1VisualScreenshotInstrumentationTest \
             --stacktrace --no-daemon
 
@@ -155,16 +155,16 @@ jobs:
           )
           mkdir -p "$output/captures"
           for name in "${captures[@]}"; do
-            adb exec-out run-as com.sentinel.quantum cat "files/d1-captures/${name}.png" > "$output/captures/${name}.png"
+            timeout --signal=TERM --kill-after=5s 30s adb exec-out run-as com.sentinel.quantum cat "files/d1-captures/${name}.png" > "$output/captures/${name}.png"
             test -s "$output/captures/${name}.png"
             file "$output/captures/${name}.png" | grep -Eiq 'PNG image data'
           done
           sha256sum "$output/captures"/*.png > "$output/captures.sha256"
           sha256sum app/build/outputs/apk/debug/app-debug.apk > "$output/apk.sha256"
           git -C .. rev-parse HEAD > "$output/source-commit.txt"
-          adb shell getprop ro.build.version.release | tr -d '\r' > "$output/android-release.txt"
-          adb shell getprop ro.build.version.sdk | tr -d '\r' > "$output/android-api.txt"
-          adb shell getprop ro.product.model | tr -d '\r' > "$output/android-model.txt"
+          timeout 15s adb shell getprop ro.build.version.release | tr -d '\r' > "$output/android-release.txt"
+          timeout 15s adb shell getprop ro.build.version.sdk | tr -d '\r' > "$output/android-api.txt"
+          timeout 15s adb shell getprop ro.product.model | tr -d '\r' > "$output/android-model.txt"
           SOURCE_COMMIT="$SOURCE_COMMIT" OUTPUT="$output" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
