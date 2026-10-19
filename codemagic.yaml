@@ -42,6 +42,12 @@ workflows:
           chmod +x gradlew
           # Unit tests do not need APK signing credentials; run them before provisioning.
           ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.PttTransmissionPolicyTest' --no-daemon --stacktrace
+      - name: Preserve PTT unit-test evidence
+        script: |
+          set -euo pipefail
+          REPORT="$CM_BUILD_DIR/native-android-app/app/build/test-results/testDebugUnitTest/TEST-com.sentinel.quantum.security.PttTransmissionPolicyTest.xml"
+          test -s "$REPORT" || { echo "BLOCKED: PTT unit-test XML evidence missing" >&2; exit 6; }
+          echo "PASS: PTT unit-test XML report exists"
       - name: Provision persistent D.1 signing material
         script: |
           set -euo pipefail
@@ -101,3 +107,4 @@ workflows:
       - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
       - native-android-app/app/build/outputs/apk/debug/app-debug.signer.sha256.txt
       - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
+      - native-android-app/app/build/test-results/testDebugUnitTest/TEST-com.sentinel.quantum.security.PttTransmissionPolicyTest.xml
