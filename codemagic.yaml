@@ -47,6 +47,7 @@ workflows:
           BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
           printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum.d1test'"
           printf '%s\n' "$BADGING" | grep -F "versionName='1.0.9-d1test'"
+          printf '%s\n' "$BADGING" | grep -F "application-label:'Sentinel D.1 Test'"
           if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum' "; then
             echo "BLOCKED: attempted to publish an APK using the installed Sentinel package ID" >&2
             exit 4
