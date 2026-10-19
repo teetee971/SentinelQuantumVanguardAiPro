@@ -212,7 +212,8 @@ fun SentinelHolographicScene(
         Text(
             text = model.status.visual().label,
             modifier = Modifier
-                .align(Alignment.Center)
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 56.dp)
                 .semantics {
                     contentDescription = "État observé : ${model.status.visual().label}"
                 },
