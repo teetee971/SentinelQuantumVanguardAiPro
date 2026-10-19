@@ -941,7 +941,10 @@ if (dialerSource) {
     'Plage ARCEP de numéros polyvalents vérifiés',
     'Aucun blocage automatique',
     'Recherche terminée · résultats disponibles ci-dessous',
-    'Sources disponibles : contacts locaux, ARCEP (France/DOM)'
+    'Sources disponibles : contacts locaux, ARCEP (France/DOM)',
+    'requestGeneration != lookupGeneration',
+    'lookupGeneration++',
+    'reputationStatus = updatedReputationStatus'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
