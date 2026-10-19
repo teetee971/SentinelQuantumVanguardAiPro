@@ -124,3 +124,62 @@ workflows:
       - native-android-app/app/build/outputs/apk/debug/app-debug.signer.sha256.txt
       - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
       - native-android-app/app/build/test-results/testDebugUnitTest/TEST-com.sentinel.quantum.security.PttTransmissionPolicyTest.xml
+
+  sentinel-clean-install-candidate:
+    name: Sentinel - single app clean-install candidate (manual)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 17
+    scripts:
+      - name: Verify SDK and source
+        script: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER" || { echo "BLOCKED: sdkmanager unavailable" >&2; exit 2; }
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --channel=3 "platforms;android-37.0" "build-tools;36.0.0" "platform-tools"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+          cd "$CM_BUILD_DIR"
+          node scripts/check-android-ui-consistency.js
+          node scripts/check-d1-activation-source.mjs
+          node scripts/check-android-manifest.js
+      - name: Check permanent production signing
+        script: |
+          set -euo pipefail
+          for variable in KEYSTORE_FILE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD SENTINEL_PRODUCTION_CERT_SHA256; do
+            if [[ -z "${!variable:-}" ]]; then echo "BLOCKED: missing protected production signing configuration: $variable" >&2; exit 3; fi
+          done
+          test -s "$KEYSTORE_FILE" || { echo "BLOCKED: production keystore file missing" >&2; exit 3; }
+          DETAILS="$(keytool -list -v -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS")"
+          ACTUAL="$(printf '%s\n' "$DETAILS" | sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1 | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ ! "$EXPECTED" =~ ^[0-9a-f]{64}$ || "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "BLOCKED: production keystore certificate does not match the pinned fingerprint" >&2
+            exit 5
+          fi
+      - name: Build single-app clean-install candidate
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug -PsentinelCleanInstallDebug=true --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum' "
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum.d1test'"; then
+            echo "BLOCKED: isolated D.1 test package produced in main candidate" >&2
+            exit 4
+          fi
+          OUTPUT="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK")"
+          ACTUAL="$(printf '%s\n' "$OUTPUT" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$SENTINEL_PRODUCTION_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then echo "BLOCKED: unexpected APK signer" >&2; exit 5; fi
+          OUT=app/build/outputs/apk/debug
+          (cd "$OUT" && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf 'source_commit=%s\npackage_id=com.sentinel.quantum\nsigner_certificate_sha256=%s\nstatus=BUILD_ONLY_NOT_DEVICE_VERIFIED\nphone_sms=NOT_PHYSICALLY_QUALIFIED\nd1_visuals=NOT_VERIFIED\nptt=NOT_FUNCTIONAL\n' "$(git rev-parse HEAD)" "$ACTUAL" > "$OUT/build-provenance.txt"
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
