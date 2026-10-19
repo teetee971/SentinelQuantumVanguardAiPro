@@ -690,6 +690,7 @@ private fun RiskBadge(level: NetworkRiskLevel, prefix: String = "Risque") {
         NetworkRiskLevel.HIGH -> "$prefix : élevé"
         NetworkRiskLevel.MEDIUM -> "$prefix : moyen"
         NetworkRiskLevel.LOW -> "$prefix : non concluant"
+        NetworkRiskLevel.UNKNOWN -> "$prefix : non déterminé"
     }
     SentinelStatusChip(
         status = NetworkVpnPresentation.networkStatus(level),
