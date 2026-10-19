@@ -622,7 +622,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        Card(Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
                                     "État de configuration",
@@ -829,7 +834,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
-                        Card(Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Border),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
+                        ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("Ouvrir les fonctions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 Button(
