@@ -28,6 +28,8 @@ data class DiscoveredBluetoothDevice(
     val assessment: BluetoothRiskAssessment
 )
 
+data class PairedBluetoothDevice(val name: String, val address: String, val kind: BluetoothDeviceKind)
+
 /**
  * Scanner Bluetooth LE passif et local.
  *
@@ -68,6 +70,31 @@ class BluetoothScanner(context: Context) {
         val currentAdapter = adapter ?: return false
         if (!hasPermissions()) return false
         return runCatching { currentAdapter.isEnabled }.getOrDefault(false)
+    }
+
+    /**
+     * Returns Android-paired Bluetooth devices independently from BLE advertisements.
+     * Pairing is not evidence of current connection or radio proximity.
+     */
+    @SuppressLint("MissingPermission")
+    fun pairedDevices(): List<PairedBluetoothDevice> {
+        val currentAdapter = adapter ?: return emptyList()
+        if (!hasPermissions()) return emptyList()
+        return try {
+            currentAdapter.bondedDevices.orEmpty().mapNotNull { device ->
+                val address = runCatching { device.address }.getOrNull()?.trim().orEmpty()
+                if (address.isBlank()) return@mapNotNull null
+                PairedBluetoothDevice(
+                    name = runCatching { device.name }.getOrNull()?.trim().orEmpty()
+                        .ifEmpty { UNKNOWN_DEVICE_NAME },
+                    address = address,
+                    kind = runCatching { deviceKind(device.bluetoothClass) }
+                        .getOrDefault(BluetoothDeviceKind.UNKNOWN)
+                )
+            }.sortedBy { it.name.lowercase() }
+        } catch (_: SecurityException) {
+            emptyList()
+        }
     }
 
     /**
