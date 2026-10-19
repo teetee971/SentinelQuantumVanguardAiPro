@@ -50,4 +50,12 @@ for (const [marker, reason] of [
 ]) {
   assert.ok(source.includes(marker), 'D1 activation missing: ' + reason);
 }
+for (const [marker, reason] of [
+  ['LinearProgressIndicator(', 'visible setup progress'],
+  ['setupChecks.count { it.second }.toFloat() / setupChecks.size', 'progress linked to Android-confirmed prerequisites'],
+  ['if (setupChecks.isEmpty()) 0f', 'zero-denominator protection'],
+  ['trackColor = SentinelD1.Card', 'D1 progress track'],
+]) {
+  assert.ok(source.includes(marker), 'D1 activation missing: ' + reason);
+}
 console.log('D1 activation source contract PASS (static only; APK and visual tests pending)');
