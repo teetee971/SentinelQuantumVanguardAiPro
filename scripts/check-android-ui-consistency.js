@@ -951,6 +951,8 @@ if (dialerSource) {
     'telephony.getSubscriptionId(selected)',
     'telephony.createForSubscriptionId(subId).simCountryIso',
     'callAccountKey(selected) !in activeLineKeys',
+    'selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)',
+    'Ligne modifiée : relancez la vérification.',
     'recipientCountry = requireNotNull(recipientCountry)',
     'pays de la ligne SIM non déterminé'
   ]) {
