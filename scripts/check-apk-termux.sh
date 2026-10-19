@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Offline APK intake check for Termux or Linux; never grants Android runtime qualification.
 set -euo pipefail
-usage() { echo "Usage: bash check-apk.sh PATH_TO_APK [EXPECTED_FULL_SHA256]" >&2; exit 2; }
+usage() { echo "Usage: bash check-apk-termux.sh PATH_TO_APK [EXPECTED_FULL_SHA256]" >&2; exit 2; }
 [[ $# -ge 1 && $# -le 2 ]] || usage
 apk="$1"
 [[ -f "$apk" && -s "$apk" ]] || { echo 'FAIL: APK missing or empty' >&2; exit 1; }
@@ -15,12 +15,9 @@ actual="$(sha256sum "$apk" | cut -d ' ' -f 1)"
 bytes="$(wc -c < "$apk" | tr -d '[:space:]')"
 magic="$(od -An -tx1 -N4 "$apk" | tr -d '[:space:]')"
 [[ "$magic" == 504b0304 ]] || { echo 'FAIL: not a standard ZIP/APK header' >&2; exit 1; }
-if command -v unzip >/dev/null; then
-  unzip -tqq "$apk" >/dev/null || { echo 'FAIL: ZIP archive failed integrity test' >&2; exit 1; }
-  unzip -Z1 "$apk" | grep -Fx 'AndroidManifest.xml' >/dev/null || { echo 'FAIL: AndroidManifest.xml not found' >&2; exit 1; }
-else
-  echo 'LIMITED: unzip unavailable; ZIP entries not validated' >&2
-fi
+command -v unzip >/dev/null || { echo 'FAIL: unzip required to validate APK archive' >&2; exit 1; }
+unzip -tqq "$apk" >/dev/null || { echo 'FAIL: ZIP archive failed integrity test' >&2; exit 1; }
+unzip -Z1 "$apk" | grep -Fx 'AndroidManifest.xml' >/dev/null || { echo 'FAIL: AndroidManifest.xml not found' >&2; exit 1; }
 if [[ $# -eq 2 && "$actual" != "$expected" ]]; then
   printf 'FAIL: SHA-256 mismatch\nExpected: %s\nActual:   %s\n' "$expected" "$actual" >&2
   exit 1
