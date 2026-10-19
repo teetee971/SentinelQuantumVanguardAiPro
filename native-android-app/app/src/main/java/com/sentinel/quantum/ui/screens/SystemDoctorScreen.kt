@@ -149,6 +149,9 @@ fun SystemDoctorScreen(navController: NavController) {
                     if (!isScanning) {
                         isScanning = true
                         scanError = null
+                        scan = null
+                        observedRole = null
+                        observedBattery = null
                         scope.launch {
                             try {
                                 val newScan = withContext(Dispatchers.IO) { doctor.scan() }
@@ -273,6 +276,7 @@ fun SystemDoctorScreen(navController: NavController) {
                             if (!isCleanupBusy) {
                                 isCleanupBusy = true
                                 cleanupError = null
+                                cleanupRun = null
                                 scope.launch {
                                     try {
                                         cleanupRun = withContext(Dispatchers.IO) {
