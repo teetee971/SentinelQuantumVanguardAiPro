@@ -45,7 +45,7 @@ workflows:
             fi
           done
           export SENTINEL_D1_KEYSTORE_FILE="$CM_BUILD_DIR/native-android-app/.sentinel-d1-signing.jks"
-          printf '%s' "$SENTINEL_D1_KEYSTORE_B64" | base64 --decode > "$SENTINEL_D1_KEYSTORE_FILE" 2>/dev/null || {
+          printf '%s' "$SENTINEL_D1_KEYSTORE_B64" | base64 -D > "$SENTINEL_D1_KEYSTORE_FILE" 2>/dev/null || {
             echo "BLOCKED: cannot decode protected D.1 keystore" >&2
             exit 3
           }
