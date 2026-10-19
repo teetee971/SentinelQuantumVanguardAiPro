@@ -936,7 +936,10 @@ if (dialerSource) {
     'ni position réelle, ni identité',
     'ArcepDirectoryClient.toFrenchNational(lookupNumber) != null',
     'Répertoire national non connecté pour ce numéro',
-    'titulaire du bloc'
+    'titulaire du bloc',
+    'ArcepVerifiedPrefixCatalog.entries',
+    'Plage ARCEP de numéros polyvalents vérifiés',
+    'Aucun blocage automatique'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
