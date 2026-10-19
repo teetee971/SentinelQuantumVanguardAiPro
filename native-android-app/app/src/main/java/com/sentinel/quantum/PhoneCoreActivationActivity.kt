@@ -949,6 +949,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 OutlinedButton(
+                                    onClick = { epoch++ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("Vérifier de nouveau les autorisations") }
+                                OutlinedButton(
                                     onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
                                     modifier = Modifier.fillMaxWidth()
                                 ) { Text("Ouvrir les paramètres de Sentinel") }
