@@ -69,7 +69,27 @@ APK_BADGING="$("$AAPT" dump badging "$APK")" || {
   echo "BLOCKED: cannot read APK package metadata" >&2
   exit 3
 }
-if [[ "$APK_BADGING" != *"package: name='com.sentinel.quantum' "* ]]; then
+PACKAGE_LINE="${APK_BADGING%%
+  echo "BLOCKED: generated APK does not declare com.sentinel.quantum" >&2
+  exit 3
+fi
+POST_BUILD_SHA="$(git -C "$ROOT" rev-parse --verify HEAD)"
+if [[ "$POST_BUILD_SHA" != "$SOURCE_SHA" ]]; then
+  echo "BLOCKED: HEAD changed during compilation" >&2
+  exit 3
+fi
+if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; then
+  echo "BLOCKED: tracked source or untracked files changed during compilation" >&2
+  exit 3
+fi
+echo "BUILD_OK: $APK"
+echo "COMMIT: $SOURCE_SHA"
+echo "SOURCE_REF: ${SOURCE_REF:-DETACHED_HEAD}"
+echo "BYTES: $(wc -c < "$APK" | tr -d ' ')"
+echo "SHA256: $(sha256sum "$APK")"
+echo "STATUS: DEBUG_ONLY_NOT_PHYSICALLY_VALIDATED"
+\\n'*}"
+if [[ ! "$PACKAGE_LINE" =~ ^package:\ name=\'com[.]sentinel[.]quantum\'\  ]]; then
   echo "BLOCKED: generated APK does not declare com.sentinel.quantum" >&2
   exit 3
 fi
