@@ -919,6 +919,23 @@ for (const [width, height] of [[320,320],[360,320],[360,400],[412,480]]) {
       errors.push('D1 core cards overlap: '+width+'x'+height+' '+i+'/'+j);
 }
 
+// Dialer verification results must stay visible after the lookup finishes,
+// even without a matching contact or opt-in remote reputation signal.
+const dialerSource = readRequired(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt'
+);
+if (dialerSource) {
+  for (const token of [
+    'var lookupAttempted by remember',
+    'lookupAttempted = true',
+    'lookupAttempted = false',
+    'if (lookupAttempted || lookupRunning) {',
+    'Text(directoryStatus, style = MaterialTheme.typography.bodySmall)'
+  ]) {
+    if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
+  }
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
