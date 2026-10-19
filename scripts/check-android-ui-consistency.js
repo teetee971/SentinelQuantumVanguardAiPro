@@ -859,6 +859,26 @@ if (systemDoctorSource) {
   if (systemDoctorSource.includes('onClick = { scan = doctor.scan() }')) errors.push(`System Doctor scan moved back onto the Compose click thread: ${systemDoctorPath}`);
 }
 
+// The eight D.1 orbit cards must fit compact screens without card-to-card collision.
+const d1CardWidth = 112;
+const d1CardHeight = 72;
+for (const [width, height] of [[320,320],[360,320],[360,400],[412,480]]) {
+  const railX = Math.max(0, (width - d1CardWidth) / 2 - 8);
+  const railStep = Math.max(0, (height - d1CardHeight) / 3);
+  const bounds = Array.from({length:8}, (_,i) => ({
+    x: width/2 + (i%2 ? railX : -railX) - d1CardWidth/2,
+    y: height/2 + (Math.floor(i/2)-1.5)*railStep - d1CardHeight/2
+  }));
+  bounds.forEach((p,i) => {
+    if(p.x < 0 || p.y < 0 || p.x+d1CardWidth > width || p.y+d1CardHeight > height)
+      errors.push('D1 core card out of bounds: '+width+'x'+height+' card '+i);
+  });
+  for(let i=0;i<8;i++) for(let j=i+1;j<8;j++)
+    if(Math.abs(bounds[i].x-bounds[j].x)<d1CardWidth &&
+       Math.abs(bounds[i].y-bounds[j].y)<d1CardHeight)
+      errors.push('D1 core cards overlap: '+width+'x'+height+' '+i+'/'+j);
+}
+
 const chromePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt';
 const chrome = readRequired(chromePath);
