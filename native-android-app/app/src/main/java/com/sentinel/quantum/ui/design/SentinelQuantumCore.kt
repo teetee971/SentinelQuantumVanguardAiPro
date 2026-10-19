@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -391,6 +392,13 @@ fun SentinelQuantumCore(
                     .align(Alignment.Center)
                     .offset(x = x.dp, y = y.dp)
                     .size(width = 98.dp, height = 64.dp)
+                    .border(
+                        width = 1.dp,
+                        color = module.status.accentColor().copy(
+                            alpha = if (module.enabled) 0.65f else 0.24f
+                        ),
+                        shape = RoundedCornerShape(SentinelVisualTokens.CompactCornerRadiusDp.dp)
+                    )
                     .clickable(
                         enabled = module.isActionable,
                         role = Role.Button,
