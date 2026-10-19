@@ -314,13 +314,6 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 subtitle = "Wi-Fi, Bluetooth & détection locale",
                 onBack = { navController.popBackStack() }
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { if (!isScanning) startScan() },
-                icon = { Icon(Icons.Default.Radar, contentDescription = null) },
-                text = { Text(if (isScanning) "Scan en cours…" else "Scanner") }
-            )
         }
     ) { paddingValues ->
         Column(
@@ -337,6 +330,16 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         text = { Text(tab.label) }
                     )
                 }
+            }
+
+            FilledTonalButton(
+                onClick = { if (!isScanning) startScan() },
+                enabled = !isScanning,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Icon(Icons.Default.Radar, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (isScanning) "Scan en cours…" else "Scanner les appareils visibles")
             }
 
             LazyColumn(
