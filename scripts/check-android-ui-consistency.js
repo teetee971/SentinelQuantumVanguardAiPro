@@ -945,7 +945,8 @@ if (dialerSource) {
     'requestGeneration != lookupGeneration',
     'lookupGeneration++',
     'reputationStatus = updatedReputationStatus',
-    'runCatching { contacts.find(lookupNumber) }.getOrNull()'
+    'runCatching { contacts.find(lookupNumber) }.getOrNull()',
+    'score de risque indisponible'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
