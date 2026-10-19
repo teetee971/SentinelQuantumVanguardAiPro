@@ -55,7 +55,12 @@ if ! unzip -Z -1 "$APK" | grep -x 'classes.dex' >/dev/null; then
   echo "BLOCKED: APK missing primary DEX code" >&2
   exit 3
 fi
-AAPT="$(find "$SDK/build-tools" -mindepth 2 -maxdepth 2 -type f -name aapt 2>/dev/null | sort -V | tail -n 1)"
+AAPT=""
+if [[ -d "$SDK/build-tools" ]]; then
+  while IFS= read -r candidate; do
+    if [[ -x "$candidate" ]]; then AAPT="$candidate"; break; fi
+  done < <(find "$SDK/build-tools" -mindepth 2 -maxdepth 2 -type f -name aapt -print | sort -Vr)
+fi
 if [[ -z "$AAPT" || ! -x "$AAPT" ]]; then
   echo "BLOCKED: Android SDK aapt is required to verify APK identity" >&2
   exit 3
