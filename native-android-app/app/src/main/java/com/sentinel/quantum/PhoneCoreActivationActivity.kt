@@ -415,7 +415,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .semantics {
-                                    stateDescription = "${setupChecks.count { it.second }} sur ${setupChecks.size} prérequis Android relus"
+                                    stateDescription = "${setupChecks.count { it.second }} sur ${setupChecks.size} prérequis Android confirmés"
                                 },
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(
@@ -428,7 +428,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             ) {
                                 Text("Progression réelle", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                 Text(
-                                    "${setupChecks.count { it.second }}/${setupChecks.size} prérequis relus auprès d’Android. Une étape reste verrouillée tant que son état n’est pas confirmé.",
+                                    "${setupChecks.count { it.second }}/${setupChecks.size} prérequis confirmés par Android. Les étapes restantes ne sont pas encore validées.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
