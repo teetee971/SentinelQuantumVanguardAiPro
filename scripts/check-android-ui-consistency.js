@@ -869,7 +869,11 @@ if (coreGeometry) {
     'val railX = ((maxWidth.value - 112f) / 2f - 8f).coerceAtLeast(0f)',
     'val railStep = ((maxHeight.value - 72f) / 3f).coerceAtLeast(0f)',
     'val useCompactRails = visibleModules.size > 4',
-    'val (x, y) = nodeDp(index)'
+    'val (x, y) = nodeDp(index)',
+    'fontSize = 12.sp',
+    'maxLines = 2',
+    'overflow = TextOverflow.Ellipsis',
+    'contentDescription = module.accessibilityLabel()'
   ]) {
     if (!coreGeometry.includes(marker)) {
       errors.push('D1 geometry changed without updating validation: ' + marker);
