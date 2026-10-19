@@ -819,10 +819,12 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
                         if (deniedPermissions.isNotEmpty()) Card(
                             Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                            shape = RoundedCornerShape(20.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SentinelD1.Danger.copy(alpha = 0.65f)),
+                            colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
                         ) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Autorisation non accordée", color = MaterialTheme.colorScheme.onErrorContainer, fontWeight = FontWeight.Bold)
+                                Text("Autorisation non accordée", color = SentinelD1.Danger, fontWeight = FontWeight.Bold)
                                 Text(
                                     "Android indique qu’au moins une autorisation demandée n’est pas accordée. Sentinel ne suppose pas la cause du refus. Vous pouvez réessayer ou vérifier les autorisations dans les paramètres Android.",
                                     style = MaterialTheme.typography.bodySmall
