@@ -223,6 +223,7 @@ workflows:
             --tests 'com.sentinel.quantum.security.MailConnectorContractTest' \
             --tests 'com.sentinel.quantum.security.MailOAuthHandshakeTest' \
             --tests 'com.sentinel.quantum.ui.screens.OsintFeedSourceContractTest' \
+            --tests 'com.sentinel.quantum.ui.screens.SystemDoctorScrollContractTest' \
             --no-daemon --stacktrace
       - name: Build single-app clean-install candidate
         script: |
