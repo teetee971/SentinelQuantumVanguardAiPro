@@ -200,12 +200,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
-                val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-                    deniedPermissions = grants.filterValues { !it }.keys
-                    epoch++
-                }
                 val permissionAttempts = remember {
                     applicationContext.getSharedPreferences("sentinel_permission_attempts", MODE_PRIVATE)
+                }
+                val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+                    val editor = permissionAttempts.edit()
+                    grants.keys.forEach { permission -> editor.putBoolean(permission, true) }
+                    editor.apply()
+                    deniedPermissions = grants.filterValues { !it }.keys
+                    epoch++
                 }
                 var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
                 var allowWizardAutoAdvance by remember { mutableStateOf(false) }
