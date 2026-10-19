@@ -48,8 +48,8 @@ jobs:
           set -euo pipefail
           packages=("emulator" "platforms;android-36" "system-images;android-36;google_apis;x86_64")
           ready=0
-          for attempt in 1 2 3; do
-            if timeout 600s sdkmanager "${packages[@]}"; then
+          for attempt in 1 2; do
+            if timeout 300s sdkmanager "${packages[@]}"; then
               ready=1
               break
             fi
@@ -70,11 +70,18 @@ jobs:
             --package "system-images;android-36;google_apis;x86_64" \
             --device "pixel_2"
 
-          emulator_accel=(-no-accel)
-          if [[ -e /dev/kvm ]]; then
-            sudo chmod 666 /dev/kvm
-            emulator_accel=(-accel on)
+          # Android 16 without hardware virtualization repeatedly stalls under TCG.
+          # Fail explicitly rather than burn the job budget and mislabel infrastructure as an app ANR.
+          if [[ ! -c /dev/kvm ]]; then
+            echo "INFRA_BLOCKED_NO_KVM: host does not expose /dev/kvm; Android D.1 capture requires acceleration." >&2
+            exit 1
           fi
+          sudo chmod 666 /dev/kvm
+          if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            echo "INFRA_BLOCKED_KVM_ACCESS: /dev/kvm is not accessible to the runner." >&2
+            exit 1
+          fi
+          emulator_accel=(-accel on)
 
           mkdir -p "$RUNNER_TEMP/sentinel-d1-visual"
           "$ANDROID_HOME/emulator/emulator" \
@@ -88,7 +95,7 @@ jobs:
           echo $! > "$RUNNER_TEMP/sentinel-d1-visual/emulator.pid"
 
           device_ready=0
-          for _ in $(seq 1 90); do
+          for _ in $(seq 1 60); do
             if adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
               device_ready=1
               break
@@ -102,7 +109,7 @@ jobs:
           test "$device_ready" = "1"
 
           booted=0
-          for _ in $(seq 1 120); do
+          for _ in $(seq 1 90); do
             if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
               booted=1
               break
@@ -124,8 +131,8 @@ jobs:
         working-directory: ./native-android-app
         run: |
           set -euo pipefail
-          timeout --signal=TERM --kill-after=30s 1200s ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
-          timeout --signal=TERM --kill-after=30s 900s ./gradlew :app:connectedDebugAndroidTest \
+          timeout --signal=TERM --kill-after=30s 900s ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
+          timeout --signal=TERM --kill-after=30s 600s ./gradlew :app:connectedDebugAndroidTest \
             -Pandroid.testInstrumentationRunnerArguments.class=com.sentinel.quantum.ui.D1VisualScreenshotInstrumentationTest \
             --stacktrace --no-daemon
 
