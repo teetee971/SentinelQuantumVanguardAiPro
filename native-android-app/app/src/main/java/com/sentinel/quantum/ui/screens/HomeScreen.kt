@@ -351,7 +351,7 @@ fun HomeScreen(navController: NavController) {
             )
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
-                Text("Priorité", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
+                Text("État de protection", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
                 Text(homeState.priorityMessage, fontWeight = FontWeight.Bold)
                 Text(
                     "Les états inconnus, limités ou verrouillés restent visibles : Sentinel ne les transforme pas en protection confirmée.",
