@@ -40,6 +40,7 @@ import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.PairedBluetoothDevice
 import com.sentinel.quantum.security.NetworkRiskLevel
 import com.sentinel.quantum.security.NetworkTimelineEventKind
 import com.sentinel.quantum.security.NetworkTimelineSnapshot
@@ -92,6 +93,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var selectedTab by rememberSaveable { mutableStateOf(SurveillanceTab.WIFI) }
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
+    var pairedBluetoothDevices by remember { mutableStateOf<List<PairedBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
@@ -238,6 +240,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     }
 
     fun runBluetoothScan() {
+        pairedBluetoothDevices = bluetoothScanner.pairedDevices()
         isScanning = true
         covertDeviceAlerted = false
         bluetoothScanner.scan(
@@ -496,6 +499,24 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     }
 
                     SurveillanceTab.BLUETOOTH -> {
+                        if (pairedBluetoothDevices.isNotEmpty()) {
+                            item {
+                                SentinelSectionHeader(
+                                    title = "Appareils associés à Android",
+                                    subtitle = "Association confirmée · connexion actuelle non vérifiée · indépendants du scan BLE."
+                                )
+                            }
+                            items(pairedBluetoothDevices, key = { "paired:" + it.address }) { device ->
+                                SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                                    Text(device.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "Associé à Android · connexion non confirmée par ce contrôle",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                         if (bluetoothDevices.isEmpty()) {
                             item { EmptyStateCard("Lancez un scan pour lister les appareils Bluetooth environnants.") }
                         } else {
