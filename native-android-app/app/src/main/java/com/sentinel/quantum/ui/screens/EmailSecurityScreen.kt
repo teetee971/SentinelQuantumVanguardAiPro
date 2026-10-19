@@ -28,6 +28,7 @@ import com.sentinel.quantum.ui.design.SentinelCoreModule
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,10 +42,12 @@ fun EmailSecurityScreen(navController: NavController) {
     var rawMessage by remember { mutableStateOf(SharedTextHolder.consume().orEmpty()) }
     var result by remember { mutableStateOf<EmailSecurityAnalyzer.Analysis?>(null) }
     var isAnalyzing by remember { mutableStateOf(false) }
+    var analysisError by remember { mutableStateOf<String?>(null) }
+    var editRevision by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val screenStatus = when {
         result == null -> SentinelStatus.UNKNOWN
-        result?.accepted != true -> SentinelStatus.BAD
+        result?.accepted != true -> SentinelStatus.LIMITED
         result?.riskLevel == EmailSecurityAnalyzer.RiskLevel.HIGH -> SentinelStatus.BAD
         result?.riskLevel == EmailSecurityAnalyzer.RiskLevel.MEDIUM -> SentinelStatus.WARN
         result?.riskLevel == EmailSecurityAnalyzer.RiskLevel.LOW -> SentinelStatus.OK
@@ -74,7 +77,7 @@ fun EmailSecurityScreen(navController: NavController) {
             )
             MailConnectorsPanel()
             HorizontalDivider()
-            OutlinedTextField(rawMessage, { rawMessage = it.take(256 * 1024) },
+            OutlinedTextField(rawMessage, { rawMessage = it.take(256 * 1024); editRevision++; result = null; analysisError = null },
                 label = { Text(stringResource(R.string.email_security_label)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 220.dp), minLines = 8)
             Button(
                 onClick = {
