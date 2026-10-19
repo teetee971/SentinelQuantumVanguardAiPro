@@ -899,7 +899,22 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         Manifest.permission.RECORD_AUDIO -> "Microphone — utiliser les fonctions audio explicitement demandées"
                                         else -> permission.substringAfterLast('.')
                                     }
-                                    Text("• $explanation", style = MaterialTheme.typography.bodySmall)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            explanation,
+                                            modifier = Modifier.weight(1f),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        TextButton(onClick = {
+                                            setupPermissionInFlight = permission
+                                            allowWizardAutoAdvance = false
+                                            setupPermissionLauncher.launch(permission)
+                                        }) { Text("Réessayer") }
+                                    }
                                 }
                                 Text(
                                     "Dans Android : Autorisations → sélectionnez chaque accès manquant → Autoriser. " +
