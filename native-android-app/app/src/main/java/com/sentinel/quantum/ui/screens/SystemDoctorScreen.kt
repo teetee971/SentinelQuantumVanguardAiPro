@@ -7,6 +7,8 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -136,7 +138,7 @@ fun SystemDoctorScreen(navController: NavController) {
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
@@ -297,11 +299,8 @@ fun SystemDoctorScreen(navController: NavController) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
-                LazyColumn(
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(result.evidence, key = { it.id }) { evidence ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    result.evidence.forEach { evidence ->
                         EvidenceCard(evidence)
                     }
                 }
