@@ -106,6 +106,9 @@ fun EmailSecurityScreen(navController: NavController) {
             ) {
                 Text(if (isAnalyzing) "Analyse…" else stringResource(R.string.email_security_analyze))
             }
+            analysisError?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error)
+            }
             result?.let { analysis -> Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.email_security_result), fontWeight = FontWeight.Bold)
