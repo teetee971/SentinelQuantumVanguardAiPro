@@ -239,6 +239,7 @@ fun SystemDoctorScreen(navController: NavController) {
                         isCleanupBusy = true
                         cleanupRun = null
                         cleanupError = null
+                        cleanupDiscovery = null
                         scope.launch {
                             try {
                                 cleanupDiscovery = withContext(Dispatchers.IO) { deviceUtilities.discover() }
@@ -279,11 +280,22 @@ fun SystemDoctorScreen(navController: NavController) {
                                 cleanupRun = null
                                 scope.launch {
                                     try {
-                                        cleanupRun = withContext(Dispatchers.IO) {
+                                        // Record the cleanup outcome only after cleanup itself returns.
+                                        // A post-cleanup refresh is independent and cannot erase a
+                                        // verified deletion result if discovery subsequently fails.
+                                        val completedRun = withContext(Dispatchers.IO) {
                                             deviceUtilities.cleanup(discovery)
                                         }
-                                        cleanupDiscovery = withContext(Dispatchers.IO) {
-                                            deviceUtilities.discover()
+                                        cleanupRun = completedRun
+                                        cleanupDiscovery = null
+                                        try {
+                                            cleanupDiscovery = withContext(Dispatchers.IO) {
+                                                deviceUtilities.discover()
+                                            }
+                                        } catch (cancelled: CancellationException) {
+                                            throw cancelled
+                                        } catch (_: Exception) {
+                                            cleanupError = "Nettoyage effectué ; nouvel inventaire indisponible. Réanalysez les caches."
                                         }
                                     } catch (cancelled: CancellationException) {
                                         throw cancelled
