@@ -35,6 +35,13 @@ workflows:
           node scripts/check-android-ui-consistency.js
           node scripts/check-d1-activation-source.mjs
           node scripts/check-android-manifest.js
+      - name: Verify talkie-walkie transmission policy
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          # Unit tests do not need APK signing credentials; run them before provisioning.
+          ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.PttTransmissionPolicyTest' --no-daemon --stacktrace
       - name: Provision persistent D.1 signing material
         script: |
           set -euo pipefail
@@ -60,12 +67,6 @@ workflows:
           echo "PASS: D.1 keystore certificate matches pinned SHA-256"
           echo "SENTINEL_D1_KEYSTORE_FILE=$SENTINEL_D1_KEYSTORE_FILE" >> "$CM_ENV"
           echo "D.1 persistent signing keystore validated; private material not logged."
-      - name: Verify talkie-walkie transmission policy
-        script: |
-          set -euo pipefail
-          cd "$CM_BUILD_DIR/native-android-app"
-          chmod +x gradlew
-          ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.PttTransmissionPolicyTest' -PsentinelIsolatedDebug=true --no-daemon --stacktrace
       - name: Build and validate debug APK
         script: |
           set -euo pipefail
