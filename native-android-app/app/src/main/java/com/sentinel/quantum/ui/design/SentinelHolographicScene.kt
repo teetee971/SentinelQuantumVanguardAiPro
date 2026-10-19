@@ -209,20 +209,8 @@ fun SentinelHolographicScene(
                 .align(Alignment.TopEnd)
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         )
-        Text(
-            text = model.status.visual().label,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 56.dp)
-                .semantics {
-                    contentDescription = "État observé : ${model.status.visual().label}"
-                },
-            color = accent,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 24.sp,
-            textAlign = TextAlign.Center,
-            softWrap = true
-        )
+        // The top-right status chip already shows the state. Keep the
+        // holographic shield and rings unobstructed in the central D.1 scene.
         Text(
             text = "${model.evidenceLabel} · ${model.evidenceSource}",
             modifier = Modifier
