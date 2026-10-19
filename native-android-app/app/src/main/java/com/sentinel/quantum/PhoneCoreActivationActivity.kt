@@ -444,6 +444,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     style = MaterialTheme.typography.bodySmall,
                                     color = SentinelVisualTokens.TextSecondary
                                 )
+                                LinearProgressIndicator(
+                                    progress = {
+                                        if (setupChecks.isEmpty()) 0f
+                                        else setupChecks.count { it.second }.toFloat() / setupChecks.size
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = SentinelD1.Cyan,
+                                    trackColor = SentinelD1.Card
+                                )
                                 FlowRow(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
