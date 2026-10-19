@@ -971,16 +971,16 @@ private fun CapabilityCard(
 
 @Composable
 private fun StatusChip(label: String, ready: Boolean) {
-    val containerColor = if (ready) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
-    val contentColor = if (ready) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    val statusColor = if (ready) SentinelD1.Success else SentinelD1.Unknown
     Surface(
-        modifier = Modifier.semantics { stateDescription = label },
+        modifier = Modifier.semantics { stateDescription = if (ready) "$label : confirmé" else "$label : non confirmé" },
         shape = RoundedCornerShape(50),
-        color = containerColor
+        color = statusColor.copy(alpha = 0.14f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, statusColor.copy(alpha = 0.45f))
     ) {
         Text(
             label,
-            color = contentColor,
+            color = statusColor,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
