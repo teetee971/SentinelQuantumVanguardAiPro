@@ -750,6 +750,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 fun lookup() {
                     if (number.isBlank() || lookupRunning) return
                     val lookupNumber = number
+                    val selectedLineKeyAtLookup = selectedCallAccount?.let(::callAccountKey)
                     val requestGeneration = ++lookupGeneration
                     lookupRunning = true
                     lookupAttempted = true
@@ -786,7 +787,8 @@ class SentinelDialerActivity : ComponentActivity() {
                         val localIdentity = withContext(Dispatchers.IO) {
                             runCatching { contacts.find(lookupNumber) }.getOrNull()
                         }
-                        if (requestGeneration != lookupGeneration) return@launch
+                        if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
                         contactStatus = localIdentity?.let { identity ->
                             "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
                         }
@@ -815,7 +817,8 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }.getOrElse { "Répertoire officiel temporairement indisponible" }
                         }
-                        if (requestGeneration != lookupGeneration) return@launch
+                        if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
                         directoryStatus = result
                         if (remoteReputationAllowed) {
                             val updatedReputationStatus = withContext(Dispatchers.IO) {
@@ -838,10 +841,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                         if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
-                            if (requestGeneration != lookupGeneration) return@launch
+                            if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
                             reputationStatus = updatedReputationStatus
                         }
-                        if (requestGeneration != lookupGeneration) return@launch
+                        if (requestGeneration != lookupGeneration ||
+                            selectedLineKeyAtLookup != selectedCallAccount?.let(::callAccountKey)) return@launch
                         lookupRunning = false
                     }
                 }
@@ -1248,7 +1253,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                         callLines.isEmpty() -> Text("Aucune ligne active détectée.", color = MaterialTheme.colorScheme.error)
                                         callLines.size == 1 -> Text(callLines.first().label + " · ligne unique active", style = MaterialTheme.typography.bodySmall)
                                         else -> callLines.forEach { line ->
-                                            TextButton(onClick = { selectedCallAccount = line.handle }) {
+                                            TextButton(onClick = {
+                                                if (selectedCallAccount?.let(::callAccountKey) != line.key) {
+                                                    lookupGeneration++
+                                                    lookupRunning = false
+                                                    lookupAttempted = false
+                                                    contactStatus = null
+                                                    reputationStatus = null
+                                                    directoryStatus = "Ligne modifiée : relancez la vérification."
+                                                }
+                                                selectedCallAccount = line.handle
+                                            }) {
                                                 Text(if (selectedCallAccount?.let(::callAccountKey) == line.key) "✓ " + line.label else line.label)
                                             }
                                         }
