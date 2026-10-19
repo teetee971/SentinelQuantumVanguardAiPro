@@ -760,7 +760,7 @@ class SentinelDialerActivity : ComponentActivity() {
                     reputationStatus = if (remoteReputationAllowed) "Réputation Sentinel : analyse…" else null
                     scope.launch {
                         val localIdentity = withContext(Dispatchers.IO) {
-                            contacts.find(lookupNumber)
+                            runCatching { contacts.find(lookupNumber) }.getOrNull()
                         }
                         if (requestGeneration != lookupGeneration) return@launch
                         contactStatus = localIdentity?.let { identity ->
