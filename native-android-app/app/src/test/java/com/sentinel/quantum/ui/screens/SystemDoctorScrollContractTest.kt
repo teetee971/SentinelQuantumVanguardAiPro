@@ -37,6 +37,13 @@ class SystemDoctorScrollContractTest {
         assertTrue(source.contains("Aucun succès n’est présumé."))
     }
 
+    @Test fun cleanupAndDiscoveryOutcomesAreIndependent() {
+        assertTrue(source.contains("val completedRun = withContext(Dispatchers.IO)"))
+        assertTrue(source.contains("cleanupRun = completedRun"))
+        assertTrue(source.contains("Nettoyage effectué ; nouvel inventaire indisponible"))
+        assertTrue(source.contains("cleanupDiscovery = null"))
+    }
+
     @Test fun allEvidenceRemainsRenderedWithinScroll() {
         assertTrue(source.contains("result.evidence.forEach { evidence ->"))
         assertTrue(source.contains("EvidenceCard(evidence)"))
