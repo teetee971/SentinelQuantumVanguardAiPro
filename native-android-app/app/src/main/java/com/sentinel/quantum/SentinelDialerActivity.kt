@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CommunicationReputationCache
 import com.sentinel.quantum.security.CommunicationReputationWriter
@@ -1230,6 +1231,19 @@ class SentinelDialerActivity : ComponentActivity() {
                                             "Numéro recherché : $number",
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.SemiBold
+                                        )
+                                        val indicative = PhoneCountryPrefixCatalog.resolveNumber(number)
+                                        Text(
+                                            "Pays / zone d’indicatif : " +
+                                                (indicative?.let { "${it.flag} ${it.label} (${it.prefix})" }
+                                                    ?: "non déterminé"),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Text(
+                                            "Pays déduit de l’indicatif uniquement : ni position réelle, " +
+                                                "ni identité, ni opérateur actuel ne sont confirmés.",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
                                             "Identité du titulaire : " +
