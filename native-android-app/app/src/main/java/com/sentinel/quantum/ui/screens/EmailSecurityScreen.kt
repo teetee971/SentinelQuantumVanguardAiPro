@@ -82,10 +82,23 @@ fun EmailSecurityScreen(navController: NavController) {
             Button(
                 onClick = {
                     val candidate = rawMessage
+                    val revisionAtStart = editRevision
+                    analysisError = null
+                    result = null
                     isAnalyzing = true
                     scope.launch {
-                        result = withContext(Dispatchers.Default) { analyzer.analyze(candidate) }
-                        isAnalyzing = false
+                        try {
+                            val completed = withContext(Dispatchers.Default) { analyzer.analyze(candidate) }
+                            if (revisionAtStart == editRevision) result = completed
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            if (revisionAtStart == editRevision) {
+                                analysisError = "Analyse indisponible. Réessayez avec ce message."
+                            }
+                        } finally {
+                            isAnalyzing = false
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
