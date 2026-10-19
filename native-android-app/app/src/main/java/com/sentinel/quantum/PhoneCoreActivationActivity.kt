@@ -137,6 +137,53 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The isolated visual-qualification package must never request Phone/SMS
+        // roles or sensitive runtime permissions. It is intentionally read-only.
+        if (packageName == "com.sentinel.quantum.d1test") {
+            setContent {
+                SentinelQuantumTheme {
+                    Scaffold(
+                        containerColor = SentinelD1.Background,
+                        topBar = {
+                            SentinelTopBar(
+                                title = "Téléphonie",
+                                subtitle = "Qualification D.1 — lecture seule",
+                                onBack = { finish() }
+                            )
+                        }
+                    ) { padding ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                "Phone Core non activable dans cette version de test",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                "Cette édition D.1 sert uniquement à vérifier l’interface. " +
+                                    "Elle ne demande aucun rôle Téléphone, SMS ou filtrage d’appels " +
+                                    "et ne remplace pas votre application par défaut.",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                "Les 8 prérequis téléphoniques ne sont pas qualifiés ici. " +
+                                    "Les tests fonctionnels devront être réalisés sur une " +
+                                    "version principale autorisée et vérifiée.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            OutlinedButton(onClick = { finish() }) {
+                                Text("Retour")
+                            }
+                        }
+                    }
+                }
+            }
+            return
+        }
         SentinelCallNotificationHelper.ensureChannel(applicationContext)
         SentinelMissedCallReceiver.ensureChannel(applicationContext)
         SmsNotificationHelper.ensureChannel(applicationContext)
