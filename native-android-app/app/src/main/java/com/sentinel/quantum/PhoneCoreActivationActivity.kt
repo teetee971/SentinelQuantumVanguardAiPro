@@ -213,7 +213,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     deniedPermissions = grants.filterValues { !it }.keys
                     epoch++
                 }
-                var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
+                var setupPermissionInFlight by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
                 var allowWizardAutoAdvance by remember { mutableStateOf(false) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     setupPermissionInFlight?.let { requested ->
