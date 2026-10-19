@@ -28,4 +28,12 @@ assert.doesNotMatch(source, /Color\(0x[0-9a-fA-F]{8}\)/,
   'Use shared D1 tokens instead of hardcoded ARGB colors');
 assert.match(source, /stateDescription\s*=\s*"\$\{setupChecks\.count/,
   'Activation prerequisites must retain Android-derived accessibility status');
+assert.match(source, /private fun CapabilityCard\\(/,
+  'Phone Core capability card component missing');
+assert.match(source, /CardDefaults\\.cardColors\\(containerColor = SentinelD1\\.Panel\\)/,
+  'Capability cards must use the shared D1 panel');
+assert.match(source, /val statusColor = if \\(ready\\) SentinelD1\\.Success else SentinelD1\\.Unknown/,
+  'Status chips must distinguish confirmed from unknown states');
+assert.ok(source.includes('stateDescription = if (ready)'),
+  'Status chip accessibility must describe the runtime state');
 console.log('D1 activation source contract PASS (static only; APK and visual tests pending)');
