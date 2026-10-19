@@ -63,6 +63,18 @@ class MailOAuthHandshakeTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun unregisteredHttpsCallbackIsRejected() {
+        MailOAuthHandshake().begin(MailConnectorContract.Provider.GMAIL, callback)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun callbackRegisteredForDifferentProviderIsRejected() {
+        val wrongProvider = mapOf(MailConnectorContract.Provider.MICROSOFT_365 to setOf(callback))
+        MailOAuthHandshake(approvedRedirects = wrongProvider)
+            .begin(MailConnectorContract.Provider.GMAIL, callback)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun imapHasNoGenericOAuthShortcut() {
         MailOAuthHandshake().begin(MailConnectorContract.Provider.IMAP, callback)
     }
