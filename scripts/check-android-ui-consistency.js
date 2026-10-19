@@ -117,6 +117,24 @@ const homePath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt';
 const homeSource = readRequired(homePath);
 if (homeSource) {
+  // Approved layout order: holographic state and factual module metrics first,
+  // activation action second. This must not turn LIMITED into a fake green state.
+  const requiredHomeOrder = [
+    'testTag("home_security_hero")',
+    'testTag("home_reference_metrics")',
+    'testTag("home_primary_action")',
+    'Text("État de protection"',
+    'Text("Activité système"',
+    'title = if (normalizedQuery.isBlank()) "Actions rapides"'
+  ];
+  let previous = -1;
+  for (const marker of requiredHomeOrder) {
+    const next = homeSource.indexOf(marker);
+    if (next < 0 || next <= previous) {
+      errors.push('Official Sentinel home hierarchy regressed: ' + marker);
+    }
+    previous = next;
+  }
   for (const marker of [
     'Chercher une fonction',
     'QuickToolCard(',
