@@ -196,6 +196,13 @@ workflows:
             exit 4
           fi
           echo "PASS: Java can open protected PKCS12"
+          # OpenSSL export used a single PKCS12 password for the store and private key.
+          # Reject mismatched CI secrets before an expensive Gradle package/sign step.
+          if [[ "$KEY_PASSWORD" != "$KEYSTORE_PASSWORD" ]]; then
+            echo "BLOCKED: KEY_PASSWORD and KEYSTORE_PASSWORD differ for this OpenSSL-exported PKCS12" >&2
+            exit 4
+          fi
+          echo "PASS: PKCS12 key password matches store password"
           if ! DETAILS="$(keytool -list -v -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" 2>/dev/null)"; then
             echo "BLOCKED: Java can open PKCS12 but KEY_ALIAS was not found or is invalid" >&2
             exit 4
