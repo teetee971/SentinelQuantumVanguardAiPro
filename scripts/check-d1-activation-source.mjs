@@ -36,4 +36,18 @@ for (const [marker, purpose] of [
 ]) {
   assert.ok(source.includes(marker), 'D1 activation missing ' + purpose);
 }
+for (const [legacy, reason] of [
+  ['ElevatedCard(', 'old Material elevated cards'],
+  ['Card(Modifier.fillMaxWidth())', 'unstyled full-width cards'],
+  ['MaterialTheme.colorScheme.errorContainer', 'legacy error container'],
+]) {
+  assert.ok(!source.includes(legacy), 'D1 activation regressed: ' + reason);
+}
+for (const [marker, reason] of [
+  ['SentinelD1.Danger.copy(alpha = 0.65f)', 'permission-denial alert border'],
+  ['SmsActivationUiModel.Action.REQUEST_SMS_ROLE', 'SMS role action'],
+  ['CallScreeningActivationPolicy.State.AVAILABLE_NOT_HELD', 'call screening state gate'],
+]) {
+  assert.ok(source.includes(marker), 'D1 activation missing: ' + reason);
+}
 console.log('D1 activation source contract PASS (static only; APK and visual tests pending)');
