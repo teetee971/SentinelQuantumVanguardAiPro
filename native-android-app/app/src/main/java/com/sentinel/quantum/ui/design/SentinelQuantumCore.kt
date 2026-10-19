@@ -425,7 +425,7 @@ fun SentinelQuantumCore(
                     Text(
                         text = module.label,
                         color = SentinelVisualTokens.TextPrimary,
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 2,
                         softWrap = true,
