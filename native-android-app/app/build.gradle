@@ -78,7 +78,22 @@ android {
             minifyEnabled false
             // Opt-in isolated qualification APK. A different application ID prevents
             // accidental replacement of the installed production-package Sentinel.
-            if (providers.gradleProperty('sentinelIsolatedDebug').orNull == 'true') {
+            def isolatedD1 = providers.gradleProperty('sentinelIsolatedDebug').orNull == 'true'
+            def cleanInstallD1 = providers.gradleProperty('sentinelCleanInstallDebug').orNull == 'true'
+            if (isolatedD1 && cleanInstallD1) {
+                throw new GradleException('Select either isolated D1 or clean-install candidate, not both.')
+            }
+            if (cleanInstallD1) {
+                // One-app migration candidate: same ID as the principal Sentinel app.
+                // Requires removing a differently signed old installation only AFTER
+                // candidate artifact verification and an explicit user decision.
+                if (!d1SigningReady || !file(d1KeyFile).isFile()) {
+                    throw new GradleException('Clean-install D1 candidate requires persistent protected signing.')
+                }
+                signingConfig signingConfigs.d1Qualification
+                manifestPlaceholders['sentinelAppLabel'] = 'Sentinel Quantum Vanguard'
+            }
+            if (isolatedD1) {
                 applicationIdSuffix '.d1test'
                 versionNameSuffix '-d1test'
                 manifestPlaceholders['sentinelAppLabel'] = 'Sentinel D.1 Test'
