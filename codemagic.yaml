@@ -178,8 +178,21 @@ workflows:
           # Java's PKCS12 provider is authoritative for Gradle signing.
           # macOS /usr/bin/openssl may use LibreSSL and reject valid modern OpenSSL PKCS12 files.
           echo "CHECK: validating PKCS12 using Java keytool"
+          # Never expose the password or verbose keytool diagnostics in public logs.
+          # Test password validity independently using OpenSSL 3 when available.
+          if command -v brew >/dev/null 2>&1 && [[ -x "$(brew --prefix openssl@3 2>/dev/null)/bin/openssl" ]]; then
+            OPENSSL3="$(brew --prefix openssl@3)/bin/openssl"
+            if "$OPENSSL3" pkcs12 -in "$KEYSTORE_FILE" -info -noout -passin env:KEYSTORE_PASSWORD >/dev/null 2>&1; then
+              echo "PASS: OpenSSL 3 accepts stored PKCS12 password"
+            else
+              echo "BLOCKED: OpenSSL 3 rejects stored PKCS12 password or format" >&2
+              exit 4
+            fi
+          else
+            echo "INFO: independent OpenSSL 3 password check unavailable"
+          fi
           if ! keytool -list -storetype PKCS12 -keystore "$KEYSTORE_FILE" -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
-            echo "BLOCKED: Java cannot open PKCS12 (store password or format). Transferred file hash was verified." >&2
+            echo "BLOCKED: Java cannot open PKCS12 after transport integrity check; check password or Java compatibility" >&2
             exit 4
           fi
           echo "PASS: Java can open protected PKCS12"
