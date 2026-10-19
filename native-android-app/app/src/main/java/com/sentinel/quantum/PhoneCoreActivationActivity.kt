@@ -401,16 +401,16 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 Scaffold(
                     containerColor = Color(0xFF050B19),
                     topBar = {
-                    SentinelTopBar(
-                        title = "Téléphonie",
-                        subtitle = "Centre d’activation",
-                        onBack = { finish() }
-                    )
-                }) { padding ->
+                        SentinelTopBar(
+                            title = "Téléphonie",
+                            subtitle = "Centre d’activation",
+                            onBack = { finish() }
+                        )
+                    }
+                ) { padding ->
                     Column(
                         Modifier.fillMaxSize().background(d1Background).padding(padding)
                             .verticalScroll(rememberScrollState()).padding(16.dp),
-
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         PhoneCoreBrand(
