@@ -204,9 +204,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                     deniedPermissions = grants.filterValues { !it }.keys
                     epoch++
                 }
+                val permissionAttempts = remember {
+                    applicationContext.getSharedPreferences("sentinel_permission_attempts", MODE_PRIVATE)
+                }
                 var setupPermissionInFlight by remember { mutableStateOf<String?>(null) }
                 var allowWizardAutoAdvance by remember { mutableStateOf(false) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                    setupPermissionInFlight?.let { requested ->
+                        permissionAttempts.edit().putBoolean(requested, true).apply()
+                    }
                     deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
                     setupPermissionInFlight = null
                     allowWizardAutoAdvance = granted
@@ -910,6 +916,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                         val permanentlyRedirected = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                                            permissionAttempts.getBoolean(permission, false) &&
                                             !shouldShowRequestPermissionRationale(permission) &&
                                             !hasPermission(permission)
                                         TextButton(onClick = {
