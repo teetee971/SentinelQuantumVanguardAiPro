@@ -3,9 +3,13 @@
 set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ANDROID="$ROOT/native-android-app"
-for tool in java node sha256sum; do
+for tool in java node git sha256sum; do
   command -v "$tool" >/dev/null || { echo "BLOCKED: missing $tool" >&2; exit 2; }
 done
+if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; then
+  echo "BLOCKED: source tree contains uncommitted or untracked changes; cannot attest to commit-only provenance" >&2
+  exit 2
+fi
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 if [[ -z "$SDK" || ! -d "$SDK/platforms/android-37" ]]; then
   echo "BLOCKED: Android SDK platform android-37 not available (ANDROID_HOME / ANDROID_SDK_ROOT)" >&2
@@ -15,6 +19,11 @@ if [[ -f "$ANDROID/gradle/wrapper/gradle-wrapper.jar" ]]; then
   GRADLE_CMD=(bash ./gradlew)
 elif command -v gradle >/dev/null 2>&1; then
   GRADLE_CMD=(gradle)
+  GRADLE_VERSION="$(gradle --version | sed -n 's/^Gradle //p' | head -n 1)"
+  if [[ "$GRADLE_VERSION" != "9.8.0" ]]; then
+    echo "BLOCKED: expected Gradle 9.8.0, found ${GRADLE_VERSION:-unknown}" >&2
+    exit 2
+  fi
 else
   echo "BLOCKED: Gradle wrapper unavailable and no system Gradle installed" >&2
   exit 2
