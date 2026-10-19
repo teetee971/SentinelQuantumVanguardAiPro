@@ -948,6 +948,9 @@ if (dialerSource) {
     'runCatching { contacts.find(lookupNumber) }.getOrNull()',
     'score de risque indisponible',
     'simCountryIso',
+    'telephony.getSubscriptionId(selected)',
+    'telephony.createForSubscriptionId(subId).simCountryIso',
+    'callAccountKey(selected) !in activeLineKeys',
     'recipientCountry = requireNotNull(recipientCountry)',
     'pays de la ligne SIM non déterminé'
   ]) {
