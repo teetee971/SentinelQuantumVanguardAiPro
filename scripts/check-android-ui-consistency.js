@@ -939,7 +939,9 @@ if (dialerSource) {
     'titulaire du bloc',
     'ArcepVerifiedPrefixCatalog.entries',
     'Plage ARCEP de numéros polyvalents vérifiés',
-    'Aucun blocage automatique'
+    'Aucun blocage automatique',
+    'Recherche terminée · résultats disponibles ci-dessous',
+    'Sources disponibles : contacts locaux, ARCEP (France/DOM)'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
