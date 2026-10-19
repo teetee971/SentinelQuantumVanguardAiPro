@@ -680,6 +680,23 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
 
+            val isIsolatedQualification = context.packageName == "com.sentinel.quantum.d1test"
+            Text(
+                text = if (isIsolatedQualification) {
+                    "ÉDITION DE TEST D.1 — qualification visuelle uniquement"
+                } else {
+                    "Édition principale Sentinel"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isIsolatedQualification) MaterialTheme.colorScheme.tertiary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Identifiant Android : ${context.packageName}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             val installedSignerSha256 = remember(context) {
                 runCatching {
                     val pm = context.packageManager
