@@ -35,6 +35,24 @@ workflows:
           node scripts/check-android-ui-consistency.js
           node scripts/check-d1-activation-source.mjs
           node scripts/check-android-manifest.js
+      - name: Provision persistent D.1 signing material
+        script: |
+          set -euo pipefail
+          for variable in SENTINEL_D1_KEYSTORE_B64 SENTINEL_D1_KEYSTORE_PASSWORD SENTINEL_D1_KEY_ALIAS SENTINEL_D1_KEY_PASSWORD; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "BLOCKED: missing protected D.1 signing variable: $variable" >&2
+              exit 3
+            fi
+          done
+          export SENTINEL_D1_KEYSTORE_FILE="$CM_BUILD_DIR/native-android-app/.sentinel-d1-signing.jks"
+          printf '%s' "$SENTINEL_D1_KEYSTORE_B64" | base64 --decode > "$SENTINEL_D1_KEYSTORE_FILE" 2>/dev/null || {
+            echo "BLOCKED: cannot decode protected D.1 keystore" >&2
+            exit 3
+          }
+          chmod 600 "$SENTINEL_D1_KEYSTORE_FILE"
+          keytool -list -keystore "$SENTINEL_D1_KEYSTORE_FILE" -storepass "$SENTINEL_D1_KEYSTORE_PASSWORD" -alias "$SENTINEL_D1_KEY_ALIAS" > /dev/null
+          echo "SENTINEL_D1_KEYSTORE_FILE=$SENTINEL_D1_KEYSTORE_FILE" >> "$CM_ENV"
+          echo "D.1 persistent signing keystore validated; private material not logged."
       - name: Build and validate debug APK
         script: |
           set -euo pipefail
