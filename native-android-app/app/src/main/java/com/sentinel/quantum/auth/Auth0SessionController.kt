@@ -84,6 +84,10 @@ class Auth0SessionController(context: Context) {
         onSuccess: (Auth0UserSummary) -> Unit,
         onFailure: (String?) -> Unit
     ) {
+        if (appContext.packageName == "com.sentinel.quantum.d1test") {
+            onFailure("Authentification désactivée dans l’édition D.1 de qualification : callback Auth0 non configuré.")
+            return
+        }
         WebAuthProvider.login(account)
             .withScheme(configuration.scheme)
             .withAudience(configuration.audience)
