@@ -121,7 +121,8 @@ if (homeSource) {
     'Chercher une fonction',
     'QuickToolCard(',
     'SentinelDialerActivity.EXTRA_OPEN_CONTACTS',
-    'matchingTools.chunked(2)',
+    'SentinelReferenceActionGrid(',
+    'matchingTools.take(4).map { tool ->',
     'Continuer l’activation',
     'étapes prêtes',
     'étapes d’activation Android prêtes',
@@ -334,9 +335,9 @@ if (mainSource.includes('startActivity(Intent(this@MainActivity, SentinelDialerA
 if (mainSource) {
   assertNoLegacyTopBar(mainPath, mainSource);
   for (const marker of [
-    'NavigationBar(',
-    'SentinelD1.Panel',
-    'NavigationBarItemDefaults.colors(',
+    'SentinelBottomNavigation(',
+    'SentinelBottomNavigationItem(',
+    'navController.navigateBottomDestination(Screen.CommunicationsHub)',
     'BottomNavTarget.COMMUNICATIONS',
     'Screen.CommunicationsHub',
     'R.string.nav_communications',
