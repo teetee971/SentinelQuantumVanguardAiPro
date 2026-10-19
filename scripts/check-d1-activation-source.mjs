@@ -73,4 +73,15 @@ for (const forbidden of ['roleLauncher.launch', 'permissionsLauncher.launch', 's
     'Isolated D1 path must not request protected Android roles/permissions: ' + forbidden);
 }
 console.log('D1 isolated Phone Core guard PASS (static only; runtime not verified)');
+// Prevent the qualification APK from being visually mistaken for the primary app.
+const settingsSource = fs.readFileSync(path.join(repoRoot,
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt'), 'utf8');
+for (const marker of [
+  'ÉDITION DE TEST D.1 — qualification visuelle uniquement',
+  'Identifiant Android :',
+  'com.sentinel.quantum.d1test',
+]) {
+  assert.ok(settingsSource.includes(marker), 'D1 edition identity missing from Settings: ' + marker);
+}
+console.log('D1 Settings edition identity PASS (static only)');
 console.log('D1 activation source contract PASS (static only; APK and visual tests pending)');
