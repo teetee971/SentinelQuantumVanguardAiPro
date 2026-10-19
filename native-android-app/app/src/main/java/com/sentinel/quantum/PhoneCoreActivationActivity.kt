@@ -205,7 +205,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
                     val editor = permissionAttempts.edit()
-                    grants.keys.forEach { permission -> editor.putBoolean(permission, true) }
+                    grants.forEach { (permission, granted) ->
+                        val key = "attempt_count:$permission"
+                        editor.putInt(key, if (granted) 0 else (permissionAttempts.getInt(key, 0) + 1).coerceAtMost(3))
+                    }
                     editor.apply()
                     deniedPermissions = grants.filterValues { !it }.keys
                     epoch++
@@ -214,7 +217,10 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 var allowWizardAutoAdvance by remember { mutableStateOf(false) }
                 val setupPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                     setupPermissionInFlight?.let { requested ->
-                        permissionAttempts.edit().putBoolean(requested, true).apply()
+                        val key = "attempt_count:$requested"
+                        permissionAttempts.edit().putInt(
+                            key, if (granted) 0 else (permissionAttempts.getInt(key, 0) + 1).coerceAtMost(3)
+                        ).apply()
                     }
                     deniedPermissions = if (granted) emptySet() else setOfNotNull(setupPermissionInFlight)
                     setupPermissionInFlight = null
@@ -919,7 +925,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                         val permanentlyRedirected = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                                            permissionAttempts.getBoolean(permission, false) &&
+                                            permissionAttempts.getInt("attempt_count:$permission", 0) >= 2 &&
                                             !shouldShowRequestPermissionRationale(permission) &&
                                             !hasPermission(permission)
                                         TextButton(onClick = {
