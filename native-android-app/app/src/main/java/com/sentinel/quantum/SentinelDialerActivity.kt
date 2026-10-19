@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
 import com.sentinel.quantum.security.PhoneCountryPrefixCatalog
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CommunicationReputationCache
@@ -1249,6 +1250,28 @@ class SentinelDialerActivity : ComponentActivity() {
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                        val normalizedForRegulatory = CallRuleEngine.normalizeNumber(number)
+                                        val commercialRange = normalizedForRegulatory?.let { normalized ->
+                                            ArcepVerifiedPrefixCatalog.entries
+                                                .firstOrNull { normalized.startsWith(it.e164Prefix) }
+                                        }
+                                        if (commercialRange != null) {
+                                            Text(
+                                                "Plage ARCEP de numéros polyvalents vérifiés : " +
+                                                    commercialRange.nationalRoot + " · " + commercialRange.territory,
+                                                color = SentinelD1.Warning,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                            Text(
+                                                "Cette plage peut servir aux systèmes automatisés d’appels. " +
+                                                    "Ce n’est pas une preuve de démarchage, de fraude " +
+                                                    "ou d’identité de l’appelant. Aucun blocage automatique " +
+                                                    "n’est déduit de cette seule correspondance.",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                         Text(
                                             "Identité du titulaire : " +
                                                 (if (contactStatus != null) "contact local identifié" else "non vérifiée"),
