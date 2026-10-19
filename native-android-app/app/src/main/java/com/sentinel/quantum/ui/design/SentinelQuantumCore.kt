@@ -298,7 +298,7 @@ fun SentinelQuantumCore(
     ) {
         // BoxWithConstraints exposes dp while Canvas draws in px. Keep the two coordinate spaces
         // separate so the core remains centered on high-density phones such as the S24+.
-        val widthBound = (maxWidth.value * 0.5f - 52f).coerceAtLeast(48f)
+        val widthBound = (maxWidth.value * 0.5f - 60f).coerceAtLeast(48f)
         val heightBound = (maxHeight.value * 0.5f - 48f).takeIf { it.isFinite() } ?: widthBound
         val orbitRadiusDp = min(widthBound, heightBound).coerceAtLeast(48f)
         val orbitRadius = with(LocalDensity.current) { orbitRadiusDp.dp.toPx() }
@@ -391,7 +391,7 @@ fun SentinelQuantumCore(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .offset(x = x.dp, y = y.dp)
-                    .size(width = 98.dp, height = 64.dp)
+                    .size(width = 112.dp, height = 72.dp)
                     .border(
                         width = 1.dp,
                         color = module.status.accentColor().copy(
