@@ -859,6 +859,24 @@ if (systemDoctorSource) {
   if (systemDoctorSource.includes('onClick = { scan = doctor.scan() }')) errors.push(`System Doctor scan moved back onto the Compose click thread: ${systemDoctorPath}`);
 }
 
+// Lock the geometry test to actual Compose parameters, not independent JS guesses.
+const coreGeometry = readRequired(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelQuantumCore.kt'
+);
+if (coreGeometry) {
+  for (const marker of [
+    '.size(width = 112.dp, height = 72.dp)',
+    'val railX = ((maxWidth.value - 112f) / 2f - 8f).coerceAtLeast(0f)',
+    'val railStep = ((maxHeight.value - 72f) / 3f).coerceAtLeast(0f)',
+    'val useCompactRails = visibleModules.size > 4',
+    'val (x, y) = nodeDp(index)'
+  ]) {
+    if (!coreGeometry.includes(marker)) {
+      errors.push('D1 geometry changed without updating validation: ' + marker);
+    }
+  }
+}
+
 // The eight D.1 orbit cards must fit compact screens without card-to-card collision.
 const d1CardWidth = 112;
 const d1CardHeight = 72;
