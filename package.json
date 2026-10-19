@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "node scripts/build-for-cloudflare.js",
     "report:frontend-size": "node scripts/frontend-size-report.js",
+    "test:d1-activation-source": "node scripts/check-d1-activation-source.mjs",
     "report:system-evolution": "node scripts/system-evolution-scout.js",
     "test:frontend-size-report": "node --test scripts/frontend-size-report.test.js",
     "test:frontend-accessibility": "node --test scripts/frontend-accessibility.test.js",
