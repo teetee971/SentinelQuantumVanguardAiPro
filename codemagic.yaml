@@ -44,7 +44,13 @@ workflows:
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           unzip -tqq "$APK"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep "^package: name='com.sentinel.quantum.d1test' "
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.sentinel.quantum.d1test'"
+          printf '%s\n' "$BADGING" | grep -F "versionName='1.0.9-d1test'"
+          if printf '%s\n' "$BADGING" | grep -Fq "package: name='com.sentinel.quantum' "; then
+            echo "BLOCKED: attempted to publish an APK using the installed Sentinel package ID" >&2
+            exit 4
+          fi
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
           (cd app/build/outputs/apk/debug && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
           printf "source_commit=%s\\nqualification=ISOLATED_DEBUG_ONLY_NOT_EMULATOR_OR_DEVICE_VALIDATED\\n" "$(git rev-parse HEAD)" > app/build/outputs/apk/debug/build-provenance.txt
