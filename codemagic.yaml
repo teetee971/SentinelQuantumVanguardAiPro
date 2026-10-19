@@ -93,9 +93,11 @@ workflows:
             exit 5
           fi
           echo "PASS: D.1 APK certificate matches pinned SHA-256"
+          printf 'certificate_sha256=%s\n' "$ACTUAL_CERT" > app/build/outputs/apk/debug/app-debug.signer.sha256.txt
           (cd app/build/outputs/apk/debug && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
           printf 'source_commit=%s\npackage_id=%s\nqualification=%s\n' "$(git rev-parse HEAD)" "com.sentinel.quantum.d1test" "ISOLATED_DEBUG_ONLY_NOT_EMULATOR_OR_DEVICE_VALIDATED" > app/build/outputs/apk/debug/build-provenance.txt
     artifacts:
       - native-android-app/app/build/outputs/apk/debug/app-debug.apk
       - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/app-debug.signer.sha256.txt
       - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
