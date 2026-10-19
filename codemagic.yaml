@@ -1,4 +1,4 @@
-# Free individual Codemagic M2 build for PR #1707. Debug-only; no publishing.
+# Free individual Codemagic M2 build for PR #1707. Isolated D1 debug; no store publishing.
 workflows:
   sentinel-d1-debug:
     name: Sentinel D.1 - Android debug qualification
@@ -40,14 +40,14 @@ workflows:
           set -euo pipefail
           cd "$CM_BUILD_DIR/native-android-app"
           chmod +x gradlew
-          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+          ./gradlew :app:assembleDebug -PsentinelIsolatedDebug=true --no-daemon --stacktrace
           APK=app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           unzip -tqq "$APK"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep "^package: name='com.sentinel.quantum' "
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep "^package: name='com.sentinel.quantum.d1test' "
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
           (cd app/build/outputs/apk/debug && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
-          printf "source_commit=%s\\nqualification=DEBUG_ONLY_NOT_EMULATOR_OR_DEVICE_VALIDATED\\n" "$(git rev-parse HEAD)" > app/build/outputs/apk/debug/build-provenance.txt
+          printf "source_commit=%s\\nqualification=ISOLATED_DEBUG_ONLY_NOT_EMULATOR_OR_DEVICE_VALIDATED\\n" "$(git rev-parse HEAD)" > app/build/outputs/apk/debug/build-provenance.txt
     artifacts:
       - native-android-app/app/build/outputs/apk/debug/app-debug.apk
       - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
