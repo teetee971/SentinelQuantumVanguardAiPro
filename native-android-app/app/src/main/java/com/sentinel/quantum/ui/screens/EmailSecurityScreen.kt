@@ -72,6 +72,8 @@ fun EmailSecurityScreen(navController: NavController) {
                     SentinelCoreModule("proof", "Preuves", SentinelStatus.TEST, Icons.Default.Security, enabled = false)
                 )
             )
+            MailConnectorsPanel()
+            HorizontalDivider()
             OutlinedTextField(rawMessage, { rawMessage = it.take(256 * 1024) },
                 label = { Text(stringResource(R.string.email_security_label)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 220.dp), minLines = 8)
             Button(
