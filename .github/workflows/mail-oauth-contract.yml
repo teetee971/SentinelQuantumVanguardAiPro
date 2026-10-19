@@ -7,7 +7,7 @@ on:
       - "package.json"
       - ".github/workflows/mail-oauth-contract.yml"
   push:
-    branches: [main]
+    branches: [main, feat/global-telecom-intelligence-d1-phone-core]
     paths:
       - "security/mail/**"
       - "package.json"
