@@ -45,6 +45,24 @@ android {
         }
     }
 
+    // Persistent qualification signature is separate from release and ordinary debug.
+    // Credentials are injected by the build service; never checked into Git.
+    def d1KeyFile = System.getenv('SENTINEL_D1_KEYSTORE_FILE')
+    def d1StorePassword = System.getenv('SENTINEL_D1_KEYSTORE_PASSWORD')
+    def d1Alias = System.getenv('SENTINEL_D1_KEY_ALIAS')
+    def d1KeyPassword = System.getenv('SENTINEL_D1_KEY_PASSWORD')
+    def d1SigningReady = [d1KeyFile, d1StorePassword, d1Alias, d1KeyPassword].every { it }
+    if (d1SigningReady) {
+        signingConfigs {
+            d1Qualification {
+                storeFile file(d1KeyFile)
+                storePassword d1StorePassword
+                keyAlias d1Alias
+                keyPassword d1KeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled true
@@ -65,6 +83,10 @@ android {
                 versionNameSuffix '-d1test'
                 manifestPlaceholders['sentinelAppLabel'] = 'Sentinel D.1 Test'
                 manifestPlaceholders['sentinelTelephonyEnabled'] = 'false'
+                if (!d1SigningReady || !file(d1KeyFile).isFile()) {
+                    throw new GradleException('D1 qualification requires a persistent protected signing keystore; refusing ephemeral Android debug signing.')
+                }
+                signingConfig signingConfigs.d1Qualification
             }
         }
     }
