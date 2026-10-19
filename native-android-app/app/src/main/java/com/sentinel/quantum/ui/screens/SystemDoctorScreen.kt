@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,6 +66,7 @@ fun SystemDoctorScreen(navController: NavController) {
     val deviceUtilities = remember { SentinelDeviceUtilitiesOrchestrator(context) }
     var scan by remember { mutableStateOf<SentinelSystemDoctor.Scan?>(null) }
     var isScanning by remember { mutableStateOf(false) }
+    var scanError by remember { mutableStateOf<String?>(null) }
     var observedRole by remember { mutableStateOf<String?>(null) }
     var observedBattery by remember { mutableStateOf<Int?>(null) }
     var cleanupDiscovery by remember {
@@ -74,6 +76,7 @@ fun SystemDoctorScreen(navController: NavController) {
         mutableStateOf<SentinelDeviceUtilitiesOrchestrator.CleanupRun?>(null)
     }
     var isCleanupBusy by remember { mutableStateOf(false) }
+    var cleanupError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val doctorStatus = scan?.let { result ->
         when (result.report.highestObservedRisk) {
@@ -145,11 +148,20 @@ fun SystemDoctorScreen(navController: NavController) {
                 onClick = {
                     if (!isScanning) {
                         isScanning = true
+                        scanError = null
                         scope.launch {
-                            scan = withContext(Dispatchers.IO) { doctor.scan() }
-                            observedRole = readOwnAndroidRoles(context)
-                            observedBattery = readBatteryPercentage(context)
-                            isScanning = false
+                            try {
+                                val newScan = withContext(Dispatchers.IO) { doctor.scan() }
+                                scan = newScan
+                                observedRole = runCatching { readOwnAndroidRoles(context) }.getOrNull()
+                                observedBattery = runCatching { readBatteryPercentage(context) }.getOrNull()
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                scanError = "Analyse Android indisponible. Réessayez ; aucun résultat non vérifié n’est affiché."
+                            } finally {
+                                isScanning = false
+                            }
                         }
                     }
                 },
@@ -157,6 +169,14 @@ fun SystemDoctorScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
+            }
+
+            scanError?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error)
+            }
+
+            cleanupError?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error)
             }
 
             SentinelHolographicScene(
@@ -215,9 +235,18 @@ fun SystemDoctorScreen(navController: NavController) {
                     if (!isCleanupBusy) {
                         isCleanupBusy = true
                         cleanupRun = null
+                        cleanupError = null
                         scope.launch {
-                            cleanupDiscovery = withContext(Dispatchers.IO) { deviceUtilities.discover() }
-                            isCleanupBusy = false
+                            try {
+                                cleanupDiscovery = withContext(Dispatchers.IO) { deviceUtilities.discover() }
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (_: Exception) {
+                                cleanupDiscovery = null
+                                cleanupError = "Impossible d’analyser les caches Sentinel pour le moment."
+                            } finally {
+                                isCleanupBusy = false
+                            }
                         }
                     }
                 },
@@ -243,14 +272,23 @@ fun SystemDoctorScreen(navController: NavController) {
                         onClick = {
                             if (!isCleanupBusy) {
                                 isCleanupBusy = true
+                                cleanupError = null
                                 scope.launch {
-                                    cleanupRun = withContext(Dispatchers.IO) {
-                                        deviceUtilities.cleanup(discovery)
+                                    try {
+                                        cleanupRun = withContext(Dispatchers.IO) {
+                                            deviceUtilities.cleanup(discovery)
+                                        }
+                                        cleanupDiscovery = withContext(Dispatchers.IO) {
+                                            deviceUtilities.discover()
+                                        }
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (_: Exception) {
+                                        cleanupDiscovery = null
+                                        cleanupError = "Nettoyage interrompu ou vérification indisponible. Aucun succès n’est présumé."
+                                    } finally {
+                                        isCleanupBusy = false
                                     }
-                                    cleanupDiscovery = withContext(Dispatchers.IO) {
-                                        deviceUtilities.discover()
-                                    }
-                                    isCleanupBusy = false
                                 }
                             }
                         },
