@@ -10,6 +10,12 @@ if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=normal)" ]]; the
   echo "BLOCKED: source tree contains uncommitted or untracked changes; cannot attest to commit-only provenance" >&2
   exit 2
 fi
+SOURCE_SHA="$(git -C "$ROOT" rev-parse --verify HEAD)"
+SOURCE_REF="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD || true)"
+if [[ -n "${EXPECTED_SOURCE_SHA:-}" && "$SOURCE_SHA" != "$EXPECTED_SOURCE_SHA" ]]; then
+  echo "BLOCKED: source SHA mismatch (expected $EXPECTED_SOURCE_SHA, got $SOURCE_SHA)" >&2
+  exit 2
+fi
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 if [[ -z "$SDK" || ! -d "$SDK/platforms/android-37" ]]; then
   echo "BLOCKED: Android SDK platform android-37 not available (ANDROID_HOME / ANDROID_SDK_ROOT)" >&2
@@ -38,7 +44,8 @@ rm -f -- "$APK"
 "${GRADLE_CMD[@]}" --no-daemon --stacktrace :app:assembleDebug
 [[ -s "$APK" ]] || { echo "BLOCKED: APK missing or empty" >&2; exit 3; }
 echo "BUILD_OK: $APK"
-echo "COMMIT: $(git -C "$ROOT" rev-parse HEAD)"
+echo "COMMIT: $SOURCE_SHA"
+echo "SOURCE_REF: ${SOURCE_REF:-DETACHED_HEAD}"
 echo "BYTES: $(wc -c < "$APK" | tr -d ' ')"
 echo "SHA256: $(sha256sum "$APK")"
 echo "STATUS: DEBUG_ONLY_NOT_PHYSICALLY_VALIDATED"
