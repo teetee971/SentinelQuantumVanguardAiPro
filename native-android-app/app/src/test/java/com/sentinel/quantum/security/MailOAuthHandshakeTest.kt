@@ -7,9 +7,10 @@ import org.junit.Test
 
 class MailOAuthHandshakeTest {
     private val callback = "https://auth.sentinel.example/mail/callback"
+    private val allowlist = mapOf(MailConnectorContract.Provider.GMAIL to setOf(callback))
 
     @Test fun freshHandshakeHasRandomStateAndValidPkceLengths() {
-        val h = MailOAuthHandshake(nowEpochMs = { 1_000L })
+        val h = MailOAuthHandshake(nowEpochMs = { 1_000L }, approvedRedirects = allowlist)
         val one = h.begin(MailConnectorContract.Provider.GMAIL, callback)
         val two = h.begin(MailConnectorContract.Provider.GMAIL, callback)
         assertNotEquals(one.state, two.state)
@@ -19,7 +20,7 @@ class MailOAuthHandshakeTest {
     }
 
     @Test fun validCallbackMayBeConsumedExactlyOnce() {
-        val h = MailOAuthHandshake(nowEpochMs = { 1_000L })
+        val h = MailOAuthHandshake(nowEpochMs = { 1_000L }, approvedRedirects = allowlist)
         val p = h.begin(MailConnectorContract.Provider.GMAIL, callback)
         assertEquals(MailOAuthHandshake.Check.ACCEPTED,
             h.consume(p.provider, callback, p.state))
@@ -28,7 +29,7 @@ class MailOAuthHandshakeTest {
     }
 
     @Test fun alteredStateInvalidatesPendingTransaction() {
-        val h = MailOAuthHandshake(nowEpochMs = { 1_000L })
+        val h = MailOAuthHandshake(nowEpochMs = { 1_000L }, approvedRedirects = allowlist)
         val p = h.begin(MailConnectorContract.Provider.GMAIL, callback)
         assertEquals(MailOAuthHandshake.Check.STATE_MISMATCH,
             h.consume(p.provider, callback, p.state + "x"))
@@ -38,7 +39,7 @@ class MailOAuthHandshakeTest {
 
     @Test fun replayExpiredOrWrongProviderIsRejected() {
         var time = 1_000L
-        val h = MailOAuthHandshake(nowEpochMs = { time })
+        val h = MailOAuthHandshake(nowEpochMs = { time }, approvedRedirects = allowlist)
         val p = h.begin(MailConnectorContract.Provider.GMAIL, callback)
         assertEquals(MailOAuthHandshake.Check.PROVIDER_MISMATCH,
             h.consume(MailConnectorContract.Provider.MICROSOFT_365, callback, p.state))
@@ -49,7 +50,7 @@ class MailOAuthHandshakeTest {
     }
 
     @Test fun callbackUriMustMatchExactly() {
-        val h = MailOAuthHandshake(nowEpochMs = { 1_000L })
+        val h = MailOAuthHandshake(nowEpochMs = { 1_000L }, approvedRedirects = allowlist)
         val p = h.begin(MailConnectorContract.Provider.GMAIL, callback)
         assertEquals(MailOAuthHandshake.Check.REDIRECT_MISMATCH,
             h.consume(p.provider, callback + "/other", p.state))
