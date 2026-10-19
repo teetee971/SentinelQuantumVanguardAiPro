@@ -1,0 +1,42 @@
+# Free individual Codemagic M2 build for PR #1707. Debug-only; no publishing.
+workflows:
+  sentinel-d1-debug:
+    name: Sentinel D.1 - Android debug qualification
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 17
+    scripts:
+      - name: Verify source and install Android 37 platform
+        script: |
+          set -euo pipefail
+          java -version
+          node --version
+          test -n "${ANDROID_SDK_ROOT:-}"
+          sdkmanager "platforms;android-37" "build-tools;36.0.0" "platform-tools"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+          git rev-parse HEAD
+      - name: D.1 Android source gates
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR"
+          node scripts/check-android-ui-consistency.js
+          node scripts/check-d1-activation-source.mjs
+          node scripts/check-android-manifest.js
+      - name: Build and validate debug APK
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -tqq "$APK"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep "^package: name='com.sentinel.quantum' "
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
+          (cd app/build/outputs/apk/debug && shasum -a 256 app-debug.apk > app-debug.apk.sha256)
+          printf "source_commit=%s\\nqualification=DEBUG_ONLY_NOT_EMULATOR_OR_DEVICE_VALIDATED\\n" "$(git rev-parse HEAD)" > app/build/outputs/apk/debug/build-provenance.txt
+    artifacts:
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk
+      - native-android-app/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
