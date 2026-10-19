@@ -166,6 +166,65 @@ jobs:
           const fs = require('node:fs');
           const path = require('node:path');
           const crypto = require('node:crypto');
+          const zlib = require('node:zlib');
+          const crcTable = Array.from({ length: 256 }, (_, n) => {
+            let c = n;
+            for (let i = 0; i < 8; i++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+            return c >>> 0;
+          });
+          const crc32 = (bytes) => {
+            let c = 0xffffffff;
+            for (const byte of bytes) c = crcTable[(c ^ byte) & 255] ^ (c >>> 8);
+            return (c ^ 0xffffffff) >>> 0;
+          };
+          const validatePng = (bytes, file) => {
+            if (bytes.length < 1024 || !bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))) {
+              throw new Error('Invalid PNG signature/size: ' + file);
+            }
+            let offset = 8, ihdr = null, ended = false;
+            const idat = [];
+            while (offset + 12 <= bytes.length) {
+              const size = bytes.readUInt32BE(offset);
+              const end = offset + 12 + size;
+              if (end > bytes.length) throw new Error('Truncated PNG chunk: ' + file);
+              const chunk = bytes.subarray(offset + 4, offset + 8);
+              const name = chunk.toString('ascii');
+              const data = bytes.subarray(offset + 8, offset + 8 + size);
+              const crc = bytes.readUInt32BE(end - 4);
+              if (crc32(bytes.subarray(offset + 4, end - 4)) !== crc) throw new Error('PNG CRC mismatch: ' + file);
+              if (offset === 8 && (name !== 'IHDR' || size !== 13)) throw new Error('PNG IHDR missing: ' + file);
+              if (name === 'IHDR') {
+                if (ihdr) throw new Error('Duplicate IHDR: ' + file);
+                ihdr = data;
+              }
+              if (name === 'IDAT') idat.push(data);
+              offset = end;
+              if (name === 'IEND') {
+                if (size !== 0 || offset !== bytes.length) throw new Error('Invalid PNG ending: ' + file);
+                ended = true;
+                break;
+              }
+            }
+            if (!ihdr || !ended || idat.length === 0) throw new Error('Incomplete PNG chunks: ' + file);
+            const width = ihdr.readUInt32BE(0), height = ihdr.readUInt32BE(4);
+            if (width < 320 || height < 480 || width > 8192 || height > 8192) {
+              throw new Error('Implausible PNG dimensions: ' + file);
+            }
+            const bitDepth = ihdr[8], colorType = ihdr[9], interlace = ihdr[12];
+            const channels = ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 })[colorType];
+            if (!channels || ![1, 2, 4, 8, 16].includes(bitDepth) || interlace !== 0) {
+              throw new Error('Unsupported PNG format: ' + file);
+            }
+            const rowBytes = Math.ceil(width * channels * bitDepth / 8);
+            const expectedRawSize = height * (rowBytes + 1);
+            if (expectedRawSize > 512 * 1024 * 1024) throw new Error('Excessive decompressed PNG size: ' + file);
+            const raw = zlib.inflateSync(Buffer.concat(idat), { maxOutputLength: expectedRawSize + 1 });
+            if (raw.length !== expectedRawSize) throw new Error('PNG scanline size mismatch: ' + file);
+            for (let row = 0; row < height; row++) {
+              if (raw[row * (rowBytes + 1)] > 4) throw new Error('Invalid PNG scanline filter: ' + file);
+            }
+            return { width, height };
+          };
           const output = process.env.OUTPUT;
           const captureDir = path.join(output, 'captures');
           const files = fs.readdirSync(captureDir).filter((name) => name.endsWith('.png')).sort();
@@ -185,17 +244,7 @@ jobs:
           const seen = new Set();
           const captureEvidence = files.map((file) => {
             const bytes = fs.readFileSync(path.join(captureDir, file));
-            const signature = Buffer.from('89504e470d0a1a0a', 'hex');
-            if (bytes.length < 1024 || !bytes.subarray(0, 8).equals(signature) ||
-                bytes.toString('ascii', 12, 16) !== 'IHDR' ||
-                bytes.readUInt32BE(8) !== 13) {
-              throw new Error('Invalid or implausibly small PNG: ' + file);
-            }
-            const width = bytes.readUInt32BE(16);
-            const height = bytes.readUInt32BE(20);
-            if (width < 320 || height < 480 || width > 8192 || height > 8192) {
-              throw new Error('Implausible PNG dimensions: ' + file);
-            }
+            const { width, height } = validatePng(bytes, file);
             const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
             if (seen.has(sha256)) throw new Error('Duplicate screenshot bytes: ' + file);
             seen.add(sha256);
