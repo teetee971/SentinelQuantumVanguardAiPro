@@ -574,6 +574,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var number by rememberSaveable { mutableStateOf(initialDialNumber()) }
                 var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
                 var lookupRunning by remember { mutableStateOf(false) }
+                var lookupAttempted by remember { mutableStateOf(false) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
                 var phoneTab by rememberSaveable { mutableStateOf(
@@ -746,6 +747,7 @@ class SentinelDialerActivity : ComponentActivity() {
                     if (number.isBlank() || lookupRunning) return
                     val lookupNumber = number
                     lookupRunning = true
+                    lookupAttempted = true
                     directoryStatus = "Recherche officielle…"
                     contactStatus = null
                     val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
@@ -1177,6 +1179,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                     onValueChange = {
                                         number = it.take(32)
                                         directoryStatus = "Saisissez un numéro puis lancez la vérification."
+                                lookupAttempted = false
                                         contactStatus = null
                                         reputationStatus = null
                                     },
@@ -1219,7 +1222,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 contactStatus = null
                                 reputationStatus = null
                             })
-                            if (contactStatus != null || reputationStatus != null || lookupRunning) {
+                            if (lookupAttempted || lookupRunning) {
                                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
                                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text("Résultat Sentinel", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
