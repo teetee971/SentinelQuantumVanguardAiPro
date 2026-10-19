@@ -85,7 +85,7 @@ if [[ -z "$APKSIGNER" ]]; then
   echo "BLOCKED: Android SDK apksigner unavailable" >&2
   exit 3
 fi
-if ! "$APKSIGNER" verify --verbose "$APK"; then
+if ! "$APKSIGNER" verify --verbose --print-certs "$APK"; then
   echo "BLOCKED: APK cryptographic signature verification failed" >&2
   exit 3
 fi
