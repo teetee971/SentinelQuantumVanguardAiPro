@@ -60,6 +60,12 @@ workflows:
           echo "PASS: D.1 keystore certificate matches pinned SHA-256"
           echo "SENTINEL_D1_KEYSTORE_FILE=$SENTINEL_D1_KEYSTORE_FILE" >> "$CM_ENV"
           echo "D.1 persistent signing keystore validated; private material not logged."
+      - name: Verify talkie-walkie transmission policy
+        script: |
+          set -euo pipefail
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest --tests 'com.sentinel.quantum.security.PttTransmissionPolicyTest' -PsentinelIsolatedDebug=true --no-daemon --stacktrace
       - name: Build and validate debug APK
         script: |
           set -euo pipefail
