@@ -178,7 +178,8 @@ fun OsintFeedScreen(navController: NavController) {
             SentinelHeroVisual(
                 status = when {
                     isLoading -> SentinelStatus.LIMITED
-                    errorMessage != null -> SentinelStatus.BAD
+                    // A failed public-feed refresh is an availability limitation, not a device threat.
+                    errorMessage != null -> SentinelStatus.LIMITED
                     displayedSnapshot == OsintDisplayedSnapshot.PARTIAL -> SentinelStatus.WARN
                     feedItems.isNotEmpty() -> SentinelStatus.OK
                     else -> SentinelStatus.UNKNOWN
