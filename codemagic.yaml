@@ -157,6 +157,14 @@ workflows:
             exit 3
           }
           chmod 600 "$KEYSTORE_FILE"
+          # This fixed-size check is specific to the locally verified Sentinel signing file.
+          # Never print or hash private keystore contents in public CI logs.
+          DECODED_BYTES="$(wc -c < "$KEYSTORE_FILE" | tr -d '[:space:]')"
+          if [[ "$DECODED_BYTES" != "3586" ]]; then
+            echo "BLOCKED: decoded PKCS12 size mismatch; expected 3586 bytes, received $DECODED_BYTES" >&2
+            exit 4
+          fi
+          echo "PASS: decoded PKCS12 file size matches local reference (3586 bytes)"
           test -s "$KEYSTORE_FILE" || { echo "BLOCKED: production keystore file missing" >&2; exit 3; }
           echo "KEYSTORE_FILE=$KEYSTORE_FILE" >> "$CM_ENV"
           echo "CHECK: encoded signing file decoded; validating PKCS12 structure"
