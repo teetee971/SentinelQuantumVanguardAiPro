@@ -909,11 +909,20 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                             modifier = Modifier.weight(1f),
                                             style = MaterialTheme.typography.bodySmall
                                         )
+                                        val permanentlyRedirected = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                                            !shouldShowRequestPermissionRationale(permission) &&
+                                            !hasPermission(permission)
                                         TextButton(onClick = {
-                                            setupPermissionInFlight = permission
                                             allowWizardAutoAdvance = false
-                                            setupPermissionLauncher.launch(permission)
-                                        }) { Text("Réessayer") }
+                                            if (permanentlyRedirected) {
+                                                settingsLauncher.launch(
+                                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                                                )
+                                            } else {
+                                                setupPermissionInFlight = permission
+                                                setupPermissionLauncher.launch(permission)
+                                            }
+                                        }) { Text(if (permanentlyRedirected) "Paramètres" else "Réessayer") }
                                     }
                                 }
                                 Text(
