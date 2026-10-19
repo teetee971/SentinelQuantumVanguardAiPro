@@ -944,7 +944,8 @@ if (dialerSource) {
     'Sources disponibles : contacts locaux, ARCEP (France/DOM)',
     'requestGeneration != lookupGeneration',
     'lookupGeneration++',
-    'reputationStatus = updatedReputationStatus'
+    'reputationStatus = updatedReputationStatus',
+    'runCatching { contacts.find(lookupNumber) }.getOrNull()'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
