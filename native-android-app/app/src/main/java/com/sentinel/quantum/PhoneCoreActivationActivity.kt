@@ -885,6 +885,29 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                     "Android indique qu’au moins une autorisation demandée n’est pas accordée. Sentinel ne suppose pas la cause du refus. Vous pouvez réessayer ou vérifier les autorisations dans les paramètres Android.",
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                                Text("Autorisations à vérifier :", fontWeight = FontWeight.SemiBold)
+                                deniedPermissions.sorted().forEach { permission ->
+                                    val explanation = when (permission) {
+                                        Manifest.permission.READ_CONTACTS -> "Contacts — afficher les correspondants enregistrés"
+                                        Manifest.permission.READ_CALL_LOG -> "Historique d’appels — afficher les communications locales (rôle Téléphone requis)"
+                                        Manifest.permission.READ_PHONE_STATE -> "État du téléphone — reconnaître les lignes SIM"
+                                        Manifest.permission.CALL_PHONE -> "Appels — lancer un appel à votre demande"
+                                        Manifest.permission.READ_SMS -> "SMS — lire les messages (rôle SMS requis)"
+                                        Manifest.permission.RECEIVE_MMS -> "MMS — recevoir les messages multimédias"
+                                        Manifest.permission.RECEIVE_WAP_PUSH -> "MMS — recevoir les notifications de téléchargement"
+                                        Manifest.permission.POST_NOTIFICATIONS -> "Notifications — afficher les alertes"
+                                        Manifest.permission.RECORD_AUDIO -> "Microphone — utiliser les fonctions audio explicitement demandées"
+                                        else -> permission.substringAfterLast('.')
+                                    }
+                                    Text("• $explanation", style = MaterialTheme.typography.bodySmall)
+                                }
+                                Text(
+                                    "Dans Android : Autorisations → sélectionnez chaque accès manquant → Autoriser. " +
+                                        "Revenez ensuite dans Sentinel : l’état sera revérifié. " +
+                                        "Les rôles Téléphone et SMS se demandent séparément et ne peuvent pas être accordés silencieusement.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 OutlinedButton(
                                     onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
                                     modifier = Modifier.fillMaxWidth()
