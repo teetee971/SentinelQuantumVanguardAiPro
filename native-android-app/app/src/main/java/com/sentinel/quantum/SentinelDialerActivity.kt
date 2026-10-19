@@ -794,7 +794,7 @@ class SentinelDialerActivity : ComponentActivity() {
                         if (requestGeneration != lookupGeneration) return@launch
                         directoryStatus = result
                         if (remoteReputationAllowed) {
-                            reputationStatus = withContext(Dispatchers.IO) {
+                            val updatedReputationStatus = withContext(Dispatchers.IO) {
                                 runCatching {
                                     val r = reputation.evaluate(
                                         callerNumber = lookupNumber,
@@ -812,6 +812,8 @@ class SentinelDialerActivity : ComponentActivity() {
                                         if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
+                            if (requestGeneration != lookupGeneration) return@launch
+                            reputationStatus = updatedReputationStatus
                         }
                         if (requestGeneration != lookupGeneration) return@launch
                         lookupRunning = false
