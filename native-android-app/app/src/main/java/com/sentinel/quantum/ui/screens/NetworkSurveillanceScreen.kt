@@ -187,6 +187,14 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         timelineSnapshot = withContext(Dispatchers.IO) { networkTimelineStore.read() }
     }
 
+    // Paired devices must be visible without waiting for a new BLE advertisement.
+    // This observation does not establish an active radio connection.
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == SurveillanceTab.BLUETOOTH) {
+            pairedBluetoothDevices = bluetoothScanner.pairedDevices()
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             wifiScanner.close()
