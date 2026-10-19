@@ -73,6 +73,17 @@ fun SystemDoctorScreen(navController: NavController) {
             SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE -> SentinelStatus.UNKNOWN
         }
     } ?: SentinelStatus.UNKNOWN
+    // The storage metric must use the actual storage evidence collected by the
+    // system scan, not a separate cache-cleanup discovery action.
+    val storageEvidence = scan?.evidence?.firstOrNull { it.id == "storage.primary_free" }
+    val storageStatus = when (storageEvidence?.status) {
+        SentinelDeviceDiagnostic.Status.OK -> SentinelStatus.OK
+        SentinelDeviceDiagnostic.Status.WARNING -> SentinelStatus.WARN
+        SentinelDeviceDiagnostic.Status.CRITICAL -> SentinelStatus.BAD
+        SentinelDeviceDiagnostic.Status.UNKNOWN,
+        SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE,
+        null -> SentinelStatus.UNKNOWN
+    }
     val doctorModules = listOf(
         SentinelCoreModule(
             id = "permissions",
@@ -90,8 +101,8 @@ fun SystemDoctorScreen(navController: NavController) {
         ),
         SentinelCoreModule(
             id = "storage",
-            label = if (cleanupDiscovery == null) "Stockage · INCONNU" else "Stockage · OBSERVÉ",
-            status = if (cleanupDiscovery == null) SentinelStatus.UNKNOWN else SentinelStatus.OK,
+            label = if (storageEvidence == null) "Stockage · INCONNU" else "Stockage · ${storageStatus.visual().label}",
+            status = storageStatus,
             icon = Icons.Default.Storage,
             enabled = false
         ),
@@ -168,7 +179,7 @@ fun SystemDoctorScreen(navController: NavController) {
                     SentinelReferenceMetric(
                         label = "Stockage",
                         value = doctorModules[2].status.visual().label,
-                        detail = "caches Sentinel",
+                        detail = "espace de stockage Android mesuré",
                         status = doctorModules[2].status
                     ),
                     SentinelReferenceMetric(
