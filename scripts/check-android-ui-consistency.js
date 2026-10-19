@@ -946,7 +946,10 @@ if (dialerSource) {
     'lookupGeneration++',
     'reputationStatus = updatedReputationStatus',
     'runCatching { contacts.find(lookupNumber) }.getOrNull()',
-    'score de risque indisponible'
+    'score de risque indisponible',
+    'simCountryIso',
+    'recipientCountry = requireNotNull(recipientCountry)',
+    'pays de la ligne SIM non déterminé'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
