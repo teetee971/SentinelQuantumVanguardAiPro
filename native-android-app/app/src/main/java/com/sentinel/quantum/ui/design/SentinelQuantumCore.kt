@@ -301,8 +301,26 @@ fun SentinelQuantumCore(
         val widthBound = (maxWidth.value * 0.5f - 60f).coerceAtLeast(48f)
         val heightBound = (maxHeight.value * 0.5f - 48f).takeIf { it.isFinite() } ?: widthBound
         val orbitRadiusDp = min(widthBound, heightBound).coerceAtLeast(48f)
-        val orbitRadius = with(LocalDensity.current) { orbitRadiusDp.dp.toPx() }
+        val pixelsPerDp = LocalDensity.current.density
+        val orbitRadius = orbitRadiusDp * pixelsPerDp
         val count = visibleModules.size.coerceAtLeast(1)
+        // Eight full-width cards cannot fit around a small circular orbit.
+        // Use two vertical rails with four non-overlapping cards per rail.
+        val useCompactRails = visibleModules.size > 4
+        val railX = ((maxWidth.value - 112f) / 2f - 8f).coerceAtLeast(0f)
+        val railStep = ((maxHeight.value - 72f) / 3f).coerceAtLeast(0f)
+        fun nodeDp(index: Int): Pair<Float, Float> =
+            if (useCompactRails) {
+                val column = index % 2
+                val row = index / 2
+                Pair(if (column == 0) -railX else railX, (row - 1.5f) * railStep)
+            } else {
+                val angle = -PI / 2f + (index.toFloat() / count) * 2f * PI
+                Pair(
+                    cos(angle).toFloat() * orbitRadiusDp,
+                    sin(angle).toFloat() * orbitRadiusDp
+                )
+            }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
@@ -323,10 +341,10 @@ fun SentinelQuantumCore(
             }
             drawCoreVolume(center, volumeRadius, coreAccent, rotation / (2f * PI.toFloat()))
             visibleModules.forEachIndexed { index, module ->
-                val angle = -PI / 2f + (index.toFloat() / count) * 2f * PI
+                val (nodeX, nodeY) = nodeDp(index)
                 val node = Offset(
-                    center.x + cos(angle).toFloat() * orbitRadius,
-                    center.y + sin(angle).toFloat() * orbitRadius
+                    center.x + nodeX * pixelsPerDp,
+                    center.y + nodeY * pixelsPerDp
                 )
                 drawLine(
                     color = module.status.accentColor().copy(alpha = 0.28f),
@@ -384,9 +402,7 @@ fun SentinelQuantumCore(
         }
 
         visibleModules.forEachIndexed { index, module ->
-            val angle = -PI / 2f + (index.toFloat() / count) * 2f * PI
-            val x = cos(angle).toFloat() * orbitRadiusDp
-            val y = sin(angle).toFloat() * orbitRadiusDp
+            val (x, y) = nodeDp(index)
             Surface(
                 modifier = Modifier
                     .align(Alignment.Center)
