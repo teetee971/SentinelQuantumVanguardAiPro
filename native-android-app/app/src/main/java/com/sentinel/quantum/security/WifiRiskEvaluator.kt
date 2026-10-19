@@ -27,7 +27,8 @@ enum class WifiBand {
 enum class NetworkRiskLevel {
     HIGH,
     MEDIUM,
-    LOW
+    LOW,
+    UNKNOWN
 }
 
 data class WifiRiskAssessment(
