@@ -93,8 +93,8 @@ fun SystemDoctorScreen(navController: NavController) {
         SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE,
         null -> SentinelStatus.UNKNOWN
     }
-    val rolesStatus = if (observedRole == null) SentinelStatus.UNKNOWN else SentinelStatus.OK
-    val batteryStatus = if (observedBattery == null) SentinelStatus.UNKNOWN else SentinelStatus.OK
+    val rolesStatus = if (observedRole == null || observedRole == "Aucun rôle détenu") SentinelStatus.UNKNOWN else SentinelStatus.TEST
+    val batteryStatus = if (observedBattery == null) SentinelStatus.UNKNOWN else SentinelStatus.TEST
     val doctorModules = listOf(
         SentinelCoreModule(
             id = "permissions",
