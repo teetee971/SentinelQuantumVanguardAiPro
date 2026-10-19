@@ -933,7 +933,10 @@ if (dialerSource) {
     'Text(directoryStatus, style = MaterialTheme.typography.bodySmall)',
     'PhoneCountryPrefixCatalog.resolveNumber(number)',
     'Pays / zone d’indicatif',
-    'ni position réelle, ni identité'
+    'ni position réelle, ni identité',
+    'ArcepDirectoryClient.toFrenchNational(lookupNumber) != null',
+    'Répertoire national non connecté pour ce numéro',
+    'titulaire du bloc'
   ]) {
     if (!dialerSource.includes(token)) errors.push('Dialer lookup visibility regression: ' + token);
   }
