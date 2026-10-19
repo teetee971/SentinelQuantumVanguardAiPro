@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import com.sentinel.quantum.R
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 object SentinelD1 {
     val Background = SentinelVisualTokens.Background
@@ -118,10 +120,15 @@ fun SentinelStateChip(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(visual.icon, contentDescription = null)
+            Icon(
+                imageVector = visual.icon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
         }
