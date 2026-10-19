@@ -56,6 +56,12 @@ android {
         }
         debug {
             minifyEnabled false
+            // Opt-in isolated qualification APK. A different application ID prevents
+            // accidental replacement of the installed production-package Sentinel.
+            if (providers.gradleProperty('sentinelIsolatedDebug').orNull == 'true') {
+                applicationIdSuffix '.d1test'
+                versionNameSuffix '-d1test'
+            }
         }
     }
 
