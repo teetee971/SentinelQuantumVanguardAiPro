@@ -1,5 +1,12 @@
 package com.sentinel.quantum.ui.screens
 
+import android.app.role.RoleManager
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import android.os.Build
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,6 +63,8 @@ fun SystemDoctorScreen(navController: NavController) {
     val deviceUtilities = remember { SentinelDeviceUtilitiesOrchestrator(context) }
     var scan by remember { mutableStateOf<SentinelSystemDoctor.Scan?>(null) }
     var isScanning by remember { mutableStateOf(false) }
+    var observedRole by remember { mutableStateOf<String?>(null) }
+    var observedBattery by remember { mutableStateOf<Int?>(null) }
     var cleanupDiscovery by remember {
         mutableStateOf<SentinelDeviceUtilitiesOrchestrator.Discovery?>(null)
     }
@@ -84,6 +93,8 @@ fun SystemDoctorScreen(navController: NavController) {
         SentinelDeviceDiagnostic.Status.NOT_ACCESSIBLE,
         null -> SentinelStatus.UNKNOWN
     }
+    val rolesStatus = if (observedRole == null) SentinelStatus.UNKNOWN else SentinelStatus.OK
+    val batteryStatus = if (observedBattery == null) SentinelStatus.UNKNOWN else SentinelStatus.OK
     val doctorModules = listOf(
         SentinelCoreModule(
             id = "permissions",
@@ -94,8 +105,8 @@ fun SystemDoctorScreen(navController: NavController) {
         ),
         SentinelCoreModule(
             id = "roles",
-            label = "Rôles Android · INCONNU",
-            status = SentinelStatus.UNKNOWN,
+            label = "Rôles Android · ${observedRole ?: "INCONNU"}",
+            status = rolesStatus,
             icon = Icons.Default.Security,
             enabled = false
         ),
@@ -108,8 +119,8 @@ fun SystemDoctorScreen(navController: NavController) {
         ),
         SentinelCoreModule(
             id = "battery",
-            label = "Batterie · INCONNU",
-            status = SentinelStatus.UNKNOWN,
+            label = "Batterie · ${observedBattery?.let { "$it %" } ?: "INCONNU"}",
+            status = batteryStatus,
             icon = Icons.Default.BatteryChargingFull,
             enabled = false
         )
@@ -134,6 +145,8 @@ fun SystemDoctorScreen(navController: NavController) {
                         isScanning = true
                         scope.launch {
                             scan = withContext(Dispatchers.IO) { doctor.scan() }
+                            observedRole = readOwnAndroidRoles(context)
+                            observedBattery = readBatteryPercentage(context)
                             isScanning = false
                         }
                     }
@@ -172,9 +185,9 @@ fun SystemDoctorScreen(navController: NavController) {
                     ),
                     SentinelReferenceMetric(
                         label = "Rôles",
-                        value = "INCONNU",
-                        detail = "gérés par Android",
-                        status = SentinelStatus.UNKNOWN
+                        value = observedRole ?: "INCONNU",
+                        detail = "rôles détenus par Sentinel uniquement",
+                        status = rolesStatus
                     ),
                     SentinelReferenceMetric(
                         label = "Stockage",
@@ -184,9 +197,9 @@ fun SystemDoctorScreen(navController: NavController) {
                     ),
                     SentinelReferenceMetric(
                         label = "Batterie",
-                        value = "INCONNU",
-                        detail = "aucune inférence",
-                        status = SentinelStatus.UNKNOWN
+                        value = observedBattery?.let { "$it %" } ?: "INCONNU",
+                        detail = "niveau de batterie Android mesuré",
+                        status = batteryStatus
                     )
                 ),
                 modifier = Modifier.testTag("system_doctor_reference_metrics")
@@ -352,4 +365,30 @@ private fun diagnosticObservedValueLabel(value: String): String = when (value) {
     "CONSENT_REQUIRED" -> "Consentement VPN Android requis"
     "UNKNOWN" -> "Inconnu"
     else -> value
+}
+
+/** An observed percentage is not a battery-health or security verdict. */
+private fun readBatteryPercentage(context: Context): Int? {
+    val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        ?: return null
+    val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+    val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+    if (level < 0 || scale <= 0 || level > scale) return null
+    return (level * 100 / scale).coerceIn(0, 100)
+}
+
+/** Holds are checked without requesting privileged roles or changing user defaults. */
+private fun readOwnAndroidRoles(context: Context): String? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+    val manager = context.getSystemService(RoleManager::class.java) ?: return null
+    return runCatching {
+        val phone = manager.isRoleHeld(RoleManager.ROLE_DIALER)
+        val sms = manager.isRoleHeld(RoleManager.ROLE_SMS)
+        when {
+            phone && sms -> "Téléphone + SMS"
+            phone -> "Téléphone"
+            sms -> "SMS"
+            else -> "Aucun rôle détenu"
+        }
+    }.getOrNull()
 }
