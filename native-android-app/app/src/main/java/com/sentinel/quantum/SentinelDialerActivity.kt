@@ -755,9 +755,22 @@ class SentinelDialerActivity : ComponentActivity() {
                     lookupAttempted = true
                     directoryStatus = "Recherche officielle…"
                     contactStatus = null
-                    val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
+                    // Country of the receiving line, not the caller's E.164 prefix.
+                    // A missing SIM country must never silently become France.
+                    val recipientCountry = runCatching {
+                        applicationContext.getSystemService(TelephonyManager::class.java)
+                            ?.simCountryIso
+                            ?.uppercase(java.util.Locale.ROOT)
+                            ?.takeIf { it.length == 2 && it.all(Char::isLetter) }
+                    }.getOrNull()
+                    val remoteReputationAllowed = recipientCountry != null &&
+                        settings.callerReputationEnrichmentEnabled &&
                         ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
-                    reputationStatus = if (remoteReputationAllowed) "Réputation Sentinel : analyse…" else null
+                    reputationStatus = when {
+                        remoteReputationAllowed -> "Réputation Sentinel : analyse…"
+                        recipientCountry == null -> "Réputation distante indisponible : pays de la ligne SIM non déterminé."
+                        else -> null
+                    }
                     scope.launch {
                         val localIdentity = withContext(Dispatchers.IO) {
                             runCatching { contacts.find(lookupNumber) }.getOrNull()
@@ -798,7 +811,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 runCatching {
                                     val r = reputation.evaluate(
                                         callerNumber = lookupNumber,
-                                        recipientCountry = "FR",
+                                        recipientCountry = requireNotNull(recipientCountry),
                                         verificationStatus = "outgoing_user_lookup",
                                         privacyMode = PhonePrivacyFirewall.Mode.ENHANCED,
                                         explicitConsent = settings.callerReputationEnrichmentEnabled
