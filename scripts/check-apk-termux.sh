@@ -28,4 +28,9 @@ if command -v apksigner >/dev/null; then
 else
   signature_status=NOT_CHECKED
 fi
-printf 'LOCAL_APK_INTAKE_OK (not Android runtime qualification)\nFile: %s\nBytes: %s\nSHA-256: %s\nSignature: %s\n' "$apk" "$bytes" "$actual" "$signature_status"
+if [[ $# -eq 2 ]]; then
+  hash_status=MATCHED_EXPECTED
+else
+  hash_status=NO_TRUSTED_REFERENCE
+fi
+printf 'LOCAL_APK_STRUCTURE_OK (not artifact authenticity or runtime qualification)\nFile: %s\nBytes: %s\nSHA-256: %s\nHash reference: %s\nSignature: %s\n' "$apk" "$bytes" "$actual" "$hash_status" "$signature_status"
