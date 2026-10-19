@@ -1226,8 +1226,24 @@ class SentinelDialerActivity : ComponentActivity() {
                                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
                                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text("Résultat Sentinel", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            "Numéro recherché : $number",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            "Identité du titulaire : " +
+                                                (if (contactStatus != null) "contact local identifié" else "non vérifiée"),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
                                         contactStatus?.let { Text(it, fontWeight = FontWeight.Bold) }
+                                        Text("Attribution officielle / source :", fontWeight = FontWeight.SemiBold)
                                         Text(directoryStatus, style = MaterialTheme.typography.bodySmall)
+                                        Text(
+                                            "L’opérateur attributaire peut différer de l’opérateur actuel (portabilité).",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                         reputationStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                                         if (!settings.callerReputationEnrichmentEnabled ||
                                             !ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)) {
