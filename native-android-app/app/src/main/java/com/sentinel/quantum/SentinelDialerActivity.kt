@@ -578,6 +578,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
                 var lookupRunning by remember { mutableStateOf(false) }
                 var lookupAttempted by remember { mutableStateOf(false) }
+                var lookupGeneration by remember { mutableIntStateOf(0) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
                 var phoneTab by rememberSaveable { mutableStateOf(
@@ -749,6 +750,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 fun lookup() {
                     if (number.isBlank() || lookupRunning) return
                     val lookupNumber = number
+                    val requestGeneration = ++lookupGeneration
                     lookupRunning = true
                     lookupAttempted = true
                     directoryStatus = "Recherche officielle…"
@@ -760,6 +762,7 @@ class SentinelDialerActivity : ComponentActivity() {
                         val localIdentity = withContext(Dispatchers.IO) {
                             contacts.find(lookupNumber)
                         }
+                        if (requestGeneration != lookupGeneration) return@launch
                         contactStatus = localIdentity?.let { identity ->
                             "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
                         }
@@ -788,6 +791,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }.getOrElse { "Répertoire officiel temporairement indisponible" }
                         }
+                        if (requestGeneration != lookupGeneration) return@launch
                         directoryStatus = result
                         if (remoteReputationAllowed) {
                             reputationStatus = withContext(Dispatchers.IO) {
@@ -809,6 +813,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
                         }
+                        if (requestGeneration != lookupGeneration) return@launch
                         lookupRunning = false
                     }
                 }
@@ -1224,6 +1229,9 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
 
                             PhoneCoreNumberPad(number = number, onChange = {
+                                lookupGeneration++
+                                lookupRunning = false
+                                lookupAttempted = false
                                 number = it
                                 directoryStatus = "Saisissez un numéro puis lancez la vérification."
                                 contactStatus = null
