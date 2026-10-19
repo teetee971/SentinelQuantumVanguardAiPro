@@ -165,10 +165,46 @@ jobs:
           SOURCE_COMMIT="$SOURCE_COMMIT" OUTPUT="$output" node <<'NODE'
           const fs = require('node:fs');
           const path = require('node:path');
+          const crypto = require('node:crypto');
           const output = process.env.OUTPUT;
           const captureDir = path.join(output, 'captures');
           const files = fs.readdirSync(captureDir).filter((name) => name.endsWith('.png')).sort();
           const read = (name) => fs.readFileSync(path.join(output, name), 'utf8').trim();
+          const expected = [
+            '01-fiche-numero.png', '02-messages-securises.png',
+            '03-contacts-sentinel.png', '04-vpn-prive.png',
+            '05-planche-coherence-shell.png', '06-command-center.png',
+            '07-analyse-appareil.png', '08-detail-menace.png',
+            '09-protection-temps-reel.png', '10-quarantaine-securisee.png',
+            '11-applications-a-risque.png', '12-carte-menaces.png',
+            '13-rapport-analyse.png'
+          ];
+          if (JSON.stringify(files) !== JSON.stringify(expected.slice().sort())) {
+            throw new Error('Unexpected, missing or duplicate capture filenames');
+          }
+          const seen = new Set();
+          const captureEvidence = files.map((file) => {
+            const bytes = fs.readFileSync(path.join(captureDir, file));
+            const signature = Buffer.from('89504e470d0a1a0a', 'hex');
+            if (bytes.length < 1024 || !bytes.subarray(0, 8).equals(signature) ||
+                bytes.toString('ascii', 12, 16) !== 'IHDR' ||
+                bytes.readUInt32BE(8) !== 13) {
+              throw new Error('Invalid or implausibly small PNG: ' + file);
+            }
+            const width = bytes.readUInt32BE(16);
+            const height = bytes.readUInt32BE(20);
+            if (width < 320 || height < 480 || width > 8192 || height > 8192) {
+              throw new Error('Implausible PNG dimensions: ' + file);
+            }
+            const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+            if (seen.has(sha256)) throw new Error('Duplicate screenshot bytes: ' + file);
+            seen.add(sha256);
+            return { file, reference: file.replace(/\\.png$/, ''), sha256, bytes: bytes.length, width, height };
+          });
+          const apkLine = read('apk.sha256');
+          const apkHash = apkLine.split(/\\s+/)[0];
+          if (!/^[a-f0-9]{64}$/.test(apkHash)) throw new Error('Invalid APK SHA-256');
+          const apkBytes = fs.statSync('app/build/outputs/apk/debug/app-debug.apk').size;
           const manifest = {
             schema_version: 1,
             evidence_type: 'ANDROID_RUNTIME_DISPLAY_CAPTURE',
@@ -178,11 +214,13 @@ jobs:
             android_api: Number(read('android-api.txt')),
             device_model: read('android-model.txt'),
             capture_count: files.length,
-            captures: files.map((file) => ({ file, reference: file.replace(/\.png$/, '') })),
+            apk_sha256: apkHash,
+            apk_bytes: apkBytes,
+            captures: captureEvidence,
             planche_capture: 'representative D.1 shell; the official planche is cross-screen and has no one-to-one Activity',
             physical_device_validation: false,
             galaxy_s24_plus_validation: false,
-            comparison_status: 'CAPTURES_READY_FOR_REFERENCE_COMPARISON'
+            comparison_status: 'CAPTURES_READY_FOR_MANUAL_REFERENCE_COMPARISON'
           };
           if (manifest.built_commit !== manifest.source_commit || files.length !== 13) {
             throw new Error('Capture provenance or count is invalid');
