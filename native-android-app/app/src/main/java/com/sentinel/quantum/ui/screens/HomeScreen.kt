@@ -278,24 +278,6 @@ fun HomeScreen(navController: NavController) {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelActionTile(
-                title = when {
-                    phoneCoreModule.status == SentinelStatus.LIMITED -> "Examiner Phone Core"
-                    phoneCoreReady -> "Vérifier Phone Core"
-                    else -> "Continuer l’activation"
-                },
-                subtitle = when {
-                    phoneCoreModule.status == SentinelStatus.LIMITED -> phoneCoreModule.detail
-                    phoneCoreReady -> "$readyCount/8 étapes prêtes · validation physique distincte."
-                    else -> "$readyCount/8 étapes d’activation Android prêtes · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
-                },
-                icon = Icons.Default.Shield,
-                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_primary_action")
-            )
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -348,6 +330,24 @@ fun HomeScreen(navController: NavController) {
                     )
                 ),
                 modifier = Modifier.testTag("home_reference_metrics")
+            )
+
+            SentinelActionTile(
+                title = when {
+                    phoneCoreModule.status == SentinelStatus.LIMITED -> "Examiner Phone Core"
+                    phoneCoreReady -> "Vérifier Phone Core"
+                    else -> "Continuer l’activation"
+                },
+                subtitle = when {
+                    phoneCoreModule.status == SentinelStatus.LIMITED -> phoneCoreModule.detail
+                    phoneCoreReady -> "$readyCount/8 étapes prêtes · validation physique distincte."
+                    else -> "$readyCount/8 étapes d’activation Android prêtes · prochaine étape : ${PhoneCoreSetupWizardStore.stepLabel(nextPhoneCoreStep)}"
+                },
+                icon = Icons.Default.Shield,
+                onClick = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("home_primary_action")
             )
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
