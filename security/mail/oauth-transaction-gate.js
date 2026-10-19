@@ -19,6 +19,14 @@ export class MailOAuthTransactionGate {
   start({ accountId, provider, callbackUri, scopes }) {
     if (typeof accountId !== 'string' || !accountId.trim()) throw new Error('ACCOUNT_REQUIRED');
     if (!['gmail', 'microsoft'].includes(provider)) throw new Error('PROVIDER_UNSUPPORTED');
+    // Even a misconfigured allowlist must never authorize an insecure callback.
+    // URL parsing rejects credentials, fragments, non-HTTPS schemes and off-port redirects.
+    let callback;
+    try { callback = new URL(callbackUri); } catch { throw new Error('CALLBACK_INVALID'); }
+    if (callback.protocol !== 'https:' || callback.username || callback.password ||
+        callback.hash || callback.port || !callback.hostname ||
+        callbackUri !== callback.href)
+      throw new Error('CALLBACK_INVALID');
     // Enforce an exact per-provider allowlist. Callers cannot provide an arbitrary
     // HTTPS callback (which would permit redirecting authorization codes).
     if (typeof callbackUri !== 'string' ||
