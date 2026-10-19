@@ -19,6 +19,24 @@ class SystemDoctorScrollContractTest {
         assertFalse(source.contains("LazyColumn("))
     }
 
+    @Test fun scanAndCleanupAlwaysReleaseBusyIndicators() {
+        assertTrue(source.contains("scanError = null"))
+        assertTrue(source.contains("scan = null"))
+        assertTrue(source.contains("observedRole = null"))
+        assertTrue(source.contains("observedBattery = null"))
+        assertTrue(source.contains("cleanupRun = null"))
+        assertTrue(source.contains("catch (cancelled: CancellationException)"))
+        assertTrue(source.contains("isScanning = false"))
+        assertTrue(source.contains("isCleanupBusy = false"))
+        assertTrue(source.contains("finally {"))
+    }
+
+    @Test fun failuresAreVisibleWithoutClaimingSuccess() {
+        assertTrue(source.contains("scanError?.let"))
+        assertTrue(source.contains("cleanupError?.let"))
+        assertTrue(source.contains("Aucun succès n’est présumé."))
+    }
+
     @Test fun allEvidenceRemainsRenderedWithinScroll() {
         assertTrue(source.contains("result.evidence.forEach { evidence ->"))
         assertTrue(source.contains("EvidenceCard(evidence)"))
