@@ -82,3 +82,21 @@ test('expired pending transactions are pruned before enforcing the limit', () =>
   const replacement = gate.start(input);
   assert.equal(typeof replacement.state, 'string');
 });
+
+test('accidentally allowlisted insecure or credential-bearing redirect still fails closed', () => {
+  const badUris = [
+    'http://sentinel.example/oauth/callback',
+    'https://user:password@sentinel.example/oauth/callback',
+    'https://sentinel.example/oauth/callback#fragment',
+    'https://sentinel.example:444/oauth/callback'
+  ];
+  for (const callbackUri of badUris) {
+    const gate = new MailOAuthTransactionGate({
+      approvedCallbacks: { gmail: [callbackUri] }
+    });
+    assert.throws(
+      () => gate.start({ ...input, callbackUri }),
+      /CALLBACK_INVALID/
+    );
+  }
+});
