@@ -74,6 +74,21 @@ if [[ ! "$PACKAGE_LINE" =~ ^package:\ name=\'com[.]sentinel[.]quantum\'\  ]]; th
   echo "BLOCKED: generated APK does not declare com.sentinel.quantum" >&2
   exit 3
 fi
+# Android verifies APK signatures, not merely ZIP structure or package labels.
+APKSIGNER=""
+if [[ -d "$SDK/build-tools" ]]; then
+  while IFS= read -r candidate; do
+    if [[ -x "$candidate" ]]; then APKSIGNER="$candidate"; break; fi
+  done < <(find "$SDK/build-tools" -mindepth 2 -maxdepth 2 -type f -name apksigner -print | sort -Vr)
+fi
+if [[ -z "$APKSIGNER" ]]; then
+  echo "BLOCKED: Android SDK apksigner unavailable" >&2
+  exit 3
+fi
+if ! "$APKSIGNER" verify --verbose "$APK"; then
+  echo "BLOCKED: APK cryptographic signature verification failed" >&2
+  exit 3
+fi
 POST_BUILD_SHA="$(git -C "$ROOT" rev-parse --verify HEAD)"
 if [[ "$POST_BUILD_SHA" != "$SOURCE_SHA" ]]; then
   echo "BLOCKED: HEAD changed during compilation" >&2
