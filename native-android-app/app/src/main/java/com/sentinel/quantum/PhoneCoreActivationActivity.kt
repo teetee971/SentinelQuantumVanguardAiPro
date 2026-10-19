@@ -438,11 +438,11 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 modifier = Modifier.padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text("Progression réelle", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text("PRÉREQUIS ANDROID", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = SentinelD1.Cyan)
                                 Text(
                                     "${setupChecks.count { it.second }}/${setupChecks.size} prérequis confirmés par Android. Les étapes restantes ne sont pas encore validées.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = SentinelVisualTokens.TextSecondary
                                 )
                                 FlowRow(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -465,7 +465,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 colors = CardDefaults.cardColors(containerColor = SentinelD1.Panel)
                             ) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("Configuration initiale", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text("CONFIGURATION INITIALE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = SentinelVisualTokens.TextPrimary)
                                     Text(
                                         "Sentinel va vous guider dans les autorisations et rôles Android nécessaires. Chaque demande reste affichée et confirmée par Android ; vous pouvez refuser ou reporter un accès.",
                                         style = MaterialTheme.typography.bodySmall
