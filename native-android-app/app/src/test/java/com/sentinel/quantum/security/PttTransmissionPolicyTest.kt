@@ -46,4 +46,19 @@ class PttTransmissionPolicyTest {
             PttTransmissionPolicy.evaluate(ready.copy(anotherTransmissionActive = true))
         )
     }
+    @Test fun connectivityDoesNotBypassAuthorization() {
+        val input = ready.copy(microphonePermissionGranted = false, authenticated = false, groupMembershipVerified = false)
+        assertEquals(
+            PttTransmissionDecision.Blocked(PttTransmissionBlock.MICROPHONE_PERMISSION_MISSING),
+            PttTransmissionPolicy.evaluate(input)
+        )
+        assertEquals(
+            PttTransmissionDecision.Blocked(PttTransmissionBlock.AUTHENTICATION_REQUIRED),
+            PttTransmissionPolicy.evaluate(input.copy(microphonePermissionGranted = true))
+        )
+        assertEquals(
+            PttTransmissionDecision.Blocked(PttTransmissionBlock.GROUP_MEMBERSHIP_REQUIRED),
+            PttTransmissionPolicy.evaluate(input.copy(microphonePermissionGranted = true, authenticated = true))
+        )
+    }
 }
