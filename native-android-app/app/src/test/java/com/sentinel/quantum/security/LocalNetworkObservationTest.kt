@@ -48,4 +48,11 @@ class LocalNetworkObservationTest {
         val stale = observation(observed = 100L, expires = 400L).copy(id = "stale")
         assertEquals(listOf("new", "old"), NetworkObservationPolicy.freshEvidence(listOf(old, stale, newer), 1250L).map { it.id })
     }
+    @Test fun excludesObservationsWithoutProvenance() {
+        val noId = observation().copy(id = "")
+        val noVersion = observation().copy(id = "known", sourceVersion = "  ")
+        assertFalse(noId.isDirectEvidence(1500L))
+        assertFalse(noVersion.isDirectEvidence(1500L))
+        assertTrue(NetworkObservationPolicy.freshEvidence(listOf(noId, noVersion), 1500L).isEmpty())
+    }
 }
