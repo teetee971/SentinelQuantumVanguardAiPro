@@ -19,7 +19,6 @@ data class DiscoveredBluetoothDevice(
     val address: String,
     val rssiDbm: Int,
     val kind: BluetoothDeviceKind,
-    val randomizedAddress: Boolean,
     val assessment: BluetoothRiskAssessment
 )
 
@@ -36,6 +35,7 @@ class BluetoothScanner(context: Context) {
     private val handler = Handler(Looper.getMainLooper())
     private val discovered = linkedMapOf<String, DiscoveredBluetoothDevice>()
     private var callback: ScanCallback? = null
+    private var timeoutTask: Runnable? = null
 
     /** Autorisations réellement nécessaires au produit pour exécuter ce scan et lire ses métadonnées. */
     val requiredPermissions: Array<String> = requiredPermissionsForApi(Build.VERSION.SDK_INT)
@@ -74,55 +74,69 @@ class BluetoothScanner(context: Context) {
         onError: (String) -> Unit,
         onScanFinished: () -> Unit = {}
     ) {
+        // A replacement request ends the prior session even if preflight fails.
+        // Otherwise a denied/disabled second scan leaves the old scan running.
+        stop()
+        fun failBeforeStart(message: String) {
+            onError(message)
+            onScanFinished()
+        }
+        if (durationMs <= 0L) {
+            failBeforeStart("Durée du scan Bluetooth invalide.")
+            return
+        }
         val currentAdapter = adapter
         if (currentAdapter == null) {
-            onError("Bluetooth indisponible sur cet appareil.")
+            failBeforeStart("Bluetooth indisponible sur cet appareil.")
             return
         }
         // Permission truth must be established before touching protected adapter/scanner APIs.
         if (!hasPermissions()) {
-            onError("Autorisations Bluetooth requises incomplètes.")
+            failBeforeStart("Autorisations Bluetooth requises incomplètes.")
             return
         }
 
         val scanner = try {
             if (!currentAdapter.isEnabled) null else currentAdapter.bluetoothLeScanner
         } catch (_: SecurityException) {
-            onError("Autorisation Bluetooth refusée ou révoquée par le système.")
+            failBeforeStart("Autorisation Bluetooth refusée ou révoquée par le système.")
             return
         }
         if (scanner == null) {
-            onError("Bluetooth indisponible ou désactivé.")
+            failBeforeStart("Bluetooth indisponible ou désactivé.")
             return
         }
 
-        stop()
         discovered.clear()
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                if (callback !== this) return
                 val scanResult = result ?: return
-                val device = scanResult.device ?: return
-                val mapped = toDevice(device, scanResult)
-                val sessionKey = sessionKeyForAddress(mapped.address)
-                if (sessionKey == null) {
-                    // BLUETOOTH_CONNECT can be revoked while the scan is active. Without a stable,
-                    // authorized address Sentinel cannot deduplicate truthfully, so stop instead of
-                    // manufacturing an identity from the in-memory BluetoothDevice instance.
-                    stop()
-                    onError("Métadonnées Bluetooth devenues indisponibles ; autorisation à vérifier.")
-                    onScanFinished()
-                    return
+                handler.post {
+                    if (callback !== this) return@post
+                    val device = scanResult.device ?: return@post
+                    val mapped = toDevice(device, scanResult)
+                    val sessionKey = sessionKeyForAddress(mapped.address)
+                    if (sessionKey == null) {
+                        // BLUETOOTH_CONNECT can be revoked while the scan is active. Without a stable,
+                        // authorized address Sentinel cannot deduplicate truthfully, so stop instead of
+                        // manufacturing an identity from the in-memory BluetoothDevice instance.
+                        stop()
+                        onError("Métadonnées Bluetooth devenues indisponibles ; autorisation à vérifier.")
+                        onScanFinished()
+                        return@post
+                    }
+                    discovered[sessionKey] = mapped
+                    onResults(sortedResults())
                 }
-                discovered[sessionKey] = mapped
-                onResults(sortedResults())
             }
 
             override fun onScanFailed(errorCode: Int) {
-                if (callback !== this) return
-                stop()
-                onError("Scan Bluetooth impossible (code $errorCode).")
-                onScanFinished()
+                handler.post {
+                    if (callback !== this) return@post
+                    stop()
+                    onError("Scan Bluetooth impossible (code $errorCode).")
+                    onScanFinished()
+                }
             }
         }
         callback = scanCallback
@@ -131,26 +145,34 @@ class BluetoothScanner(context: Context) {
             scanner.startScan(scanCallback)
         } catch (_: SecurityException) {
             callback = null
-            onError("Autorisation Bluetooth refusée ou révoquée par le système.")
+            failBeforeStart("Autorisation Bluetooth refusée ou révoquée par le système.")
             return
         } catch (_: IllegalStateException) {
             callback = null
-            onError("Bluetooth indisponible ou désactivé.")
+            failBeforeStart("Bluetooth indisponible ou désactivé.")
             return
         }
 
-        handler.postDelayed({
-            stop()
-            onResults(sortedResults())
-            onScanFinished()
-        }, durationMs)
+        // startScan may invoke onScanFailed synchronously. A failed or superseded
+        // scan must never enqueue a second completion callback.
+        if (callback !== scanCallback) return
+        val timeout = Runnable {
+            if (callback === scanCallback) {
+                stop()
+                onResults(sortedResults())
+                onScanFinished()
+            }
+        }
+        timeoutTask = timeout
+        handler.postDelayed(timeout, durationMs)
     }
 
     @SuppressLint("MissingPermission")
     fun stop() {
         val scanCallback = callback ?: return
         callback = null
-        handler.removeCallbacksAndMessages(null)
+        timeoutTask?.let(handler::removeCallbacks)
+        timeoutTask = null
         runCatching { adapter?.bluetoothLeScanner?.stopScan(scanCallback) }
     }
 
@@ -163,7 +185,6 @@ class BluetoothScanner(context: Context) {
         val name = systemName.ifEmpty { advertisedName }
         val kind = runCatching { deviceKind(device.bluetoothClass) }.getOrDefault(BluetoothDeviceKind.UNKNOWN)
         val bonded = runCatching { device.bondState == BluetoothDevice.BOND_BONDED }.getOrDefault(false)
-        val randomizedAddress = runCatching { device.type == BluetoothDevice.DEVICE_TYPE_LE }.getOrDefault(false)
         val address = runCatching { device.address }.getOrNull()?.trim().orEmpty()
 
         return DiscoveredBluetoothDevice(
@@ -171,7 +192,6 @@ class BluetoothScanner(context: Context) {
             address = address,
             rssiDbm = result.rssi,
             kind = kind,
-            randomizedAddress = randomizedAddress,
             assessment = BluetoothRiskEvaluator.evaluate(
                 deviceName = name.takeIf { it.isNotEmpty() },
                 kind = kind,
