@@ -23,10 +23,12 @@ command -v sha256sum >/dev/null || fail "sha256sum missing"
 [[ -f native-android-app/gradlew ]] || fail "Missing canonical Android Gradle wrapper"
 [[ -d node_modules ]] || fail "Install locked root dependencies with npm ci first"
 [[ -f package-lock.json ]] || fail "Root package-lock.json missing"
-[[ -x "$ANDROID_HOME/build-tools" || -d "$ANDROID_HOME/build-tools" ]] || fail "Android build-tools directory missing"
+[[ -d "$ANDROID_HOME/build-tools" ]] || fail "Android build-tools directory missing"
 
 command -v git >/dev/null || fail "git missing"
 git rev-parse --verify HEAD > "$RUN/commit.txt" || fail "Cannot capture repository commit"
+[[ -z "$(git status --porcelain --untracked-files=no)" ]] || fail "Tracked working tree is dirty; commit or restore changes before qualification"
+trap 'rc=$?; if (( rc != 0 )); then printf "BLOCKED exit=%s\\n" "$rc" > "$RUN/verdict.txt"; fi' EXIT
 # Prevent stale Gradle outputs from being mistaken for current validation evidence.
 [[ ! -e native-android-app/app/build/outputs/apk/debug ]] || fail "Existing debug APK outputs found. Run ./gradlew clean before validation."
 [[ ! -e native-android-app/app/build/reports/release-dependencies.json ]] || fail "Existing dependency inventory found. Run ./gradlew clean before validation."
