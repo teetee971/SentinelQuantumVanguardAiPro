@@ -16,6 +16,14 @@ data class PairedBluetoothDevice(
 )
 
 object PairedBluetoothInventory {
+    /** Heuristic label only; this does not prove the device type. */
+    fun classifyDisplayName(name: String): String {
+        val normalized = name.trim().lowercase(java.util.Locale.ROOT)
+        return if (listOf("watch", "montre", "galaxy fit", "gear s", "gear sport").any { normalized.contains(it) }) {
+            "Montre probable"
+        } else "Bluetooth"
+    }
+
     @Suppress("DEPRECATION")
     fun read(context: Context): List<PairedBluetoothDevice> {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -26,8 +34,7 @@ object PairedBluetoothInventory {
         return try {
             adapter.bondedDevices.orEmpty().map { device ->
                 val name = device.name?.trim().orEmpty().ifBlank { "Appareil associé (nom indisponible)" }
-                val type = if (name.contains("watch", ignoreCase = true) ||
-                    name.contains("montre", ignoreCase = true)) "Montre probable" else "Bluetooth"
+                val type = classifyDisplayName(name)
                 PairedBluetoothDevice(name, type)
             }.sortedBy { it.displayName }
         } catch (_: SecurityException) {
