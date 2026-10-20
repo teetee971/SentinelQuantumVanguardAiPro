@@ -11,8 +11,8 @@ data class LocalLinkSummary(
     val dnsServersPresent: Boolean,
     val defaultGatewayPresent: Boolean,
     val privateDnsActive: Boolean,
-    val privateDnsSupported: Boolean = true,
     val observedAtMillis: Long,
+    val privateDnsSupported: Boolean = true,
 ) {
     fun isFresh(nowMillis: Long): Boolean =
         observedAtMillis >= 0L && nowMillis >= observedAtMillis &&
