@@ -37,3 +37,15 @@
 
 ## Définition de terminé
 Chaque route et Activity recensée doit avoir : test de navigation, état vide/erreur, police agrandie, contraste, capture D.1 réelle, test absence de débordement, vérification d'accessibilité et absence de régression Phone Core. Une compilation verte ne démontre pas cette couverture.
+
+## Inventaire de navigation vérifié dans le code (20/10/2026)
+Source : `navigation/Screen.kt` et `navigation/NavGraph.kt` sur `main`.
+
+**23 routes Compose déclarées et câblées dans NavGraph :**
+`home`, `search`, `osint_feed`, `security_audit`, `system_doctor`, `local_logs`, `phone_security`, `communications_hub`, `call_blocking`, `phone_lists`, `call_filter_history`, `email_security`, `sms_scanner`, `app_permission_analyzer`, `network_surveillance`, `digital_exposure`, `collective_defense`, `smart_home`, `vpn`, `about`, `compliance`, `settings`, `osint_detail/{itemId}`.
+
+**8 fichiers d'Activity Android à inspecter dans le même module :** `MainActivity`, `CallerIdActivity`, `PhoneCoreActivationActivity`, `PhoneCoreDiagnosticActivity`, `SentinelDialerActivity`, `SentinelInCallActivity`, `SmsComposeActivity`, `VoiceStudioActivity`. La présence d'une classe ne prouve pas son exposition dans le Manifest ni son accessibilité utilisateur : audit manifeste et déclencheurs à suivre.
+
+**Composant partagé examiné** : `ui/design/SentinelChrome.kt` contient `SentinelTopBar`, `SentinelPanel`, `SentinelHero`. Il exploite déjà des couleurs D.1, mais utilise certaines couleurs directes et la rangée de badges de `SentinelHero` ne traite pas encore les petits écrans ni le passage à la ligne. Corriger de manière ciblée puis tester avant d'affirmer couverture globale.
+
+**Contrôle d'acceptation complémentaire** : comparer à chaque migration la liste `Screen` avec les destinations `composable(Screen.*.route)` ; toute nouvelle route exige une entrée dans la matrice et un contrôle visuel sur S24+.
