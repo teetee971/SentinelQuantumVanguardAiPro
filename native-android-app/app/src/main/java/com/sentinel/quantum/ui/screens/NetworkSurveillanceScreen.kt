@@ -371,7 +371,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                             )
                         }
                         if (pairedDevices.isEmpty()) {
-                            item { EmptyStateCard("Aucun appareil associé accessible. Vérifiez l'autorisation Appareils à proximité puis relancez Scanner.") }
+                            item { EmptyStateCard(if (bluetoothScanner.hasPermissions()) "Aucun appareil Bluetooth associé trouvé. Vérifiez les appareils associés dans les paramètres Android puis relancez Scanner." else "Autorisation Appareils à proximité requise pour consulter les appareils Bluetooth associés.") }
                         } else {
                             items(pairedDevices) { device ->
                                 SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
