@@ -111,20 +111,20 @@ class BluetoothScanner(context: Context) {
                 val scanResult = result ?: return
                 handler.post {
                     if (callback !== this) return@post
-                val device = scanResult.device ?: return
-                val mapped = toDevice(device, scanResult)
-                val sessionKey = sessionKeyForAddress(mapped.address)
-                if (sessionKey == null) {
-                    // BLUETOOTH_CONNECT can be revoked while the scan is active. Without a stable,
-                    // authorized address Sentinel cannot deduplicate truthfully, so stop instead of
-                    // manufacturing an identity from the in-memory BluetoothDevice instance.
-                    stop()
-                    onError("Métadonnées Bluetooth devenues indisponibles ; autorisation à vérifier.")
-                    onScanFinished()
-                    return
-                }
-                discovered[sessionKey] = mapped
-                onResults(sortedResults())
+                    val device = scanResult.device ?: return@post
+                    val mapped = toDevice(device, scanResult)
+                    val sessionKey = sessionKeyForAddress(mapped.address)
+                    if (sessionKey == null) {
+                        // BLUETOOTH_CONNECT can be revoked while the scan is active. Without a stable,
+                        // authorized address Sentinel cannot deduplicate truthfully, so stop instead of
+                        // manufacturing an identity from the in-memory BluetoothDevice instance.
+                        stop()
+                        onError("Métadonnées Bluetooth devenues indisponibles ; autorisation à vérifier.")
+                        onScanFinished()
+                        return@post
+                    }
+                    discovered[sessionKey] = mapped
+                    onResults(sortedResults())
                 }
             }
 
