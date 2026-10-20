@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +30,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.security.AndroidDefaultNetworkEvidence
+import com.sentinel.quantum.security.AndroidLinkSummary
+import com.sentinel.quantum.security.LocalLinkSummary
+import com.sentinel.quantum.security.LocalNetworkObservation
+import com.sentinel.quantum.security.LocalObservationSource
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
@@ -82,6 +88,20 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
+    var defaultTransportObservation by remember { mutableStateOf<LocalNetworkObservation?>(null) }
+    var localLinkSummary by remember { mutableStateOf<LocalLinkSummary?>(null) }
+    var transportClockMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(defaultTransportObservation, localLinkSummary) {
+        transportClockMillis = System.currentTimeMillis()
+        val expiries = listOfNotNull(defaultTransportObservation?.expiresAtMillis, localLinkSummary?.observedAtMillis?.plus(30_000L))
+            .filter { it > transportClockMillis }
+            .sorted()
+        for (expiry in expiries) {
+            val remainingMillis = expiry - System.currentTimeMillis()
+            if (remainingMillis > 0L) delay(remainingMillis)
+            transportClockMillis = System.currentTimeMillis()
+        }
+    }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     var covertDeviceAlerted by remember { mutableStateOf(false) }
@@ -200,6 +220,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     }
 
     fun startScan() {
+        defaultTransportObservation = AndroidDefaultNetworkEvidence.read(context)
+        localLinkSummary = AndroidLinkSummary.read(context)
         statusMessage = null
         when (selectedTab) {
             SurveillanceTab.WIFI ->
@@ -262,6 +284,45 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         modifier = Modifier.testTag("network-command-center"),
                         motionLevel = motionLevel
                     )
+                }
+
+                item {
+                    SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("network-default-transport")) {
+                        Text("Transport réseau actif", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        val observation = defaultTransportObservation
+                        val active = observation?.takeIf { it.isFresh(transportClockMillis) }
+                        val sourceLabel = when (active?.source) {
+                            LocalObservationSource.ANDROID_WIFI -> "Wi-Fi"
+                            LocalObservationSource.ANDROID_CELLULAR -> "Données mobiles"
+                            LocalObservationSource.ANDROID_ETHERNET -> "Ethernet"
+                            LocalObservationSource.VPN -> "VPN (transport sous-jacent non déterminé)"
+                            LocalObservationSource.ANDROID_OTHER -> "Autre transport"
+                            else -> "Non vérifié"
+                        }
+                        Text("Observation locale : $sourceLabel")
+                        Text(
+                            "Lecture ponctuelle lors du scan, non assimilable à une découverte d'appareils ou à un état de sécurité.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                item {
+                    SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("network-link-summary")) {
+                        Text("DNS et passerelle", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        val link = localLinkSummary?.takeIf { it.isFresh(transportClockMillis) }
+                        if (link == null) {
+                            Text("Non vérifié — lecture réseau indisponible ou expirée.")
+                        } else {
+                            Text("Serveurs DNS renseignés : " + if (link.dnsServersPresent) "Oui" else "Non observés")
+                            Text("Route avec passerelle par défaut : " + if (link.defaultGatewayPresent) "Oui" else "Non observée")
+                            Text("DNS privé : " + if (!link.privateDnsSupported) "Non disponible sur cette version Android" else if (link.privateDnsActive) "Actif" else "Inactif")
+                        }
+                        Text("Informations locales Android uniquement. Une absence ne prouve pas une attaque.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
 
                 item {
