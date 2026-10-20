@@ -108,8 +108,9 @@ class BluetoothScanner(context: Context) {
         discovered.clear()
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
-                if (callback !== this) return
                 val scanResult = result ?: return
+                handler.post {
+                    if (callback !== this) return@post
                 val device = scanResult.device ?: return
                 val mapped = toDevice(device, scanResult)
                 val sessionKey = sessionKeyForAddress(mapped.address)
@@ -124,13 +125,16 @@ class BluetoothScanner(context: Context) {
                 }
                 discovered[sessionKey] = mapped
                 onResults(sortedResults())
+                }
             }
 
             override fun onScanFailed(errorCode: Int) {
-                if (callback !== this) return
-                stop()
-                onError("Scan Bluetooth impossible (code $errorCode).")
-                onScanFinished()
+                handler.post {
+                    if (callback !== this) return@post
+                    stop()
+                    onError("Scan Bluetooth impossible (code $errorCode).")
+                    onScanFinished()
+                }
             }
         }
         callback = scanCallback
