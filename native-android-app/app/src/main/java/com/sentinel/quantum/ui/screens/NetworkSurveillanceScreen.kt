@@ -93,10 +93,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var transportClockMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(defaultTransportObservation, localLinkSummary) {
         transportClockMillis = System.currentTimeMillis()
-        val expiry = listOfNotNull(defaultTransportObservation?.expiresAtMillis, localLinkSummary?.observedAtMillis?.plus(30_000L)).minOrNull() ?: return@LaunchedEffect
-        val remainingMillis = expiry - transportClockMillis
-        if (remainingMillis > 0L) {
-            delay(remainingMillis)
+        val expiries = listOfNotNull(defaultTransportObservation?.expiresAtMillis, localLinkSummary?.observedAtMillis?.plus(30_000L))
+            .filter { it > transportClockMillis }
+            .sorted()
+        for (expiry in expiries) {
+            val remainingMillis = expiry - System.currentTimeMillis()
+            if (remainingMillis > 0L) delay(remainingMillis)
             transportClockMillis = System.currentTimeMillis()
         }
     }
