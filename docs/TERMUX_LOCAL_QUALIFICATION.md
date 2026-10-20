@@ -21,7 +21,6 @@ git fetch origin docs/network-center-beyond-wifiman-20261020
 git show origin/docs/network-center-beyond-wifiman-20261020:scripts/termux-network-qualify.sh > "$HOME/sentinel-termux-qualify.sh"
 bash -n "$HOME/sentinel-termux-qualify.sh"
 # Ne lancer que si la vérification de syntaxe réussit.
-bash "$HOME/sentinel-termux-qualify.sh" "$HOME/sentinel-qa-d1" "fix/dashboard-d1-pr1718" "<SHA_PR1718>"
 ```
 
 **Attention :** la branche du dashboard doit être récupérée depuis la PR #1718 et remplacée par sa vraie référence Git, pas par une valeur supposée. Pour éviter les erreurs de frappe, la méthode recommandée est d'utiliser directement une référence PR GitHub :
