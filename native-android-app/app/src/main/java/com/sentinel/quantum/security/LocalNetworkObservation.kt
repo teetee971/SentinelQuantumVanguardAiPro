@@ -5,7 +5,7 @@ package com.sentinel.quantum.security
  * network traffic occur here. This is NOT a discovery engine.
  */
 enum class NetworkEvidenceSource {
-    ANDROID_WIFI, ANDROID_BLE, ANDROID_BONDED, LOCAL_GATEWAY, DNS, VPN, USER_REPORT
+    ANDROID_WIFI, ANDROID_CELLULAR, ANDROID_ETHERNET, ANDROID_OTHER, ANDROID_BLE, ANDROID_BONDED, LOCAL_GATEWAY, DNS, VPN, USER_REPORT
 }
 
 enum class NetworkEvidenceConfidence { OBSERVED, INFERRED, UNKNOWN }
