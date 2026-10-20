@@ -16,7 +16,7 @@ command -v proot-distro >/dev/null || { echo "proot-distro absent"; exit 2; }
 test -x "$AAPT" || { echo "AAPT2 ARM64 wrapper absent: $AAPT"; exit 2; }
 if [[ ! -d "$REPO/.git" ]]; then
   [[ ! -e "$REPO" ]] || { echo "Dossier existant non Git; abandon."; exit 2; }
-  git clone --no-checkout "$URL" "$REPO"
+  git clone "$URL" "$REPO"
 fi
 [[ "$(git -C "$REPO" remote get-url origin)" == "$URL" ]] || {
   echo "Dépôt d'origine différent. Abandon."; exit 2;
@@ -26,6 +26,9 @@ fi
 }
 git -C "$REPO" fetch --no-tags origin "$REF"
 git -C "$REPO" checkout --detach FETCH_HEAD
+[[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ]] || {
+  echo "Worktree modifié après extraction du commit; arrêt."; exit 3;
+}
 SHA="$(git -C "$REPO" rev-parse HEAD)"
 echo "COMMIT=$SHA"
 echo "REF=$REF"
