@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.RouteInfo
+import android.os.Build
 
 /** Passive summary only. No DNS addresses, gateway IPs, SSIDs or device identifiers leave Android. */
 data class LocalLinkSummary(
@@ -23,7 +24,7 @@ object AndroidLinkSummary {
         return LocalLinkSummary(
             dnsServersPresent = link.dnsServers.isNotEmpty(),
             defaultGatewayPresent = defaultRoute,
-            privateDnsActive = link.isPrivateDnsActive,
+            privateDnsActive = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && link.isPrivateDnsActive,
             observedAtMillis = nowMillis,
         )
     }
