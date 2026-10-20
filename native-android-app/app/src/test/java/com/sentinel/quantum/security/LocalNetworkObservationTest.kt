@@ -55,4 +55,15 @@ class LocalNetworkObservationTest {
         assertFalse(noVersion.isDirectEvidence(1500L))
         assertTrue(NetworkObservationPolicy.freshEvidence(listOf(noId, noVersion), 1500L).isEmpty())
     }
+    @Test fun duplicateCollapseIsScopedToSourceAndId() {
+        val early = observation(observed = 1000L, expires = 2500L).copy(id = "shared")
+        val late = observation(observed = 1200L, expires = 2500L).copy(id = "shared")
+        val otherSource = late.copy(source = NetworkEvidenceSource.ANDROID_BLE)
+        val distinct = late.copy(id = "other")
+        val output = NetworkObservationPolicy.latestPerSourceId(listOf(early, otherSource, late, distinct), 1500L)
+        assertEquals(3, output.size)
+        assertEquals(1, output.count { it.id == "shared" && it.source == NetworkEvidenceSource.ANDROID_WIFI })
+        assertTrue(output.any { it.id == "shared" && it.source == NetworkEvidenceSource.ANDROID_BLE })
+        assertTrue(output.any { it.id == "shared" && it.observedAtMillis == 1200L && it.source == NetworkEvidenceSource.ANDROID_WIFI })
+    }
 }
