@@ -7,7 +7,7 @@ import org.junit.Test
 
 class LocalNetworkObservationTest {
     private fun observation(
-        source: NetworkEvidenceSource = NetworkEvidenceSource.ANDROID_WIFI,
+        source: LocalObservationSource = LocalObservationSource.ANDROID_WIFI,
         confidence: NetworkEvidenceConfidence = NetworkEvidenceConfidence.OBSERVED,
         observed: Long = 1000L,
         expires: Long = 2000L,
@@ -35,7 +35,7 @@ class LocalNetworkObservationTest {
     }
 
     @Test fun userReportAndInferencesDoNotCountAsDirectEvidence() {
-        assertFalse(observation(source = NetworkEvidenceSource.USER_REPORT).isDirectEvidence(1500L))
+        assertFalse(observation(source = LocalObservationSource.USER_REPORT).isDirectEvidence(1500L))
         assertFalse(observation(confidence = NetworkEvidenceConfidence.INFERRED).isDirectEvidence(1500L))
         assertFalse(observation(confidence = NetworkEvidenceConfidence.UNKNOWN).isDirectEvidence(1500L))
         assertTrue(observation().isDirectEvidence(1500L))
@@ -58,12 +58,12 @@ class LocalNetworkObservationTest {
     @Test fun duplicateCollapseIsScopedToSourceAndId() {
         val early = observation(observed = 1000L, expires = 2500L).copy(id = "shared")
         val late = observation(observed = 1200L, expires = 2500L).copy(id = "shared")
-        val otherSource = late.copy(source = NetworkEvidenceSource.ANDROID_BLE)
+        val otherSource = late.copy(source = LocalObservationSource.ANDROID_BLE)
         val distinct = late.copy(id = "other")
         val output = NetworkObservationPolicy.latestPerSourceId(listOf(early, otherSource, late, distinct), 1500L)
         assertEquals(3, output.size)
-        assertEquals(1, output.count { it.id == "shared" && it.source == NetworkEvidenceSource.ANDROID_WIFI })
-        assertTrue(output.any { it.id == "shared" && it.source == NetworkEvidenceSource.ANDROID_BLE })
-        assertTrue(output.any { it.id == "shared" && it.observedAtMillis == 1200L && it.source == NetworkEvidenceSource.ANDROID_WIFI })
+        assertEquals(1, output.count { it.id == "shared" && it.source == LocalObservationSource.ANDROID_WIFI })
+        assertTrue(output.any { it.id == "shared" && it.source == LocalObservationSource.ANDROID_BLE })
+        assertTrue(output.any { it.id == "shared" && it.observedAtMillis == 1200L && it.source == LocalObservationSource.ANDROID_WIFI })
     }
 }
