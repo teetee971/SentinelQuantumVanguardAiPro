@@ -12,9 +12,10 @@ import java.util.UUID
  */
 object AndroidDefaultNetworkEvidence {
     fun read(context: Context, nowMillis: Long = System.currentTimeMillis()): LocalNetworkObservation? {
-        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-            ?: return null
+        if (nowMillis < 0L || nowMillis > Long.MAX_VALUE - 30_000L) return null
         return try {
+            val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                ?: return null
             val active = manager.activeNetwork ?: return null
             val capabilities = manager.getNetworkCapabilities(active) ?: return null
             val transport = when {
