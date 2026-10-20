@@ -11,6 +11,20 @@ import java.util.UUID
  * is not evidence that a particular remote device exists or is safe.
  */
 object AndroidDefaultNetworkEvidence {
+    /** VPN takes precedence: underlying transport is not independently confirmed here. */
+    fun classifyTransport(
+        vpn: Boolean,
+        wifi: Boolean,
+        cellular: Boolean,
+        ethernet: Boolean,
+    ): NetworkEvidenceSource = when {
+        vpn -> NetworkEvidenceSource.VPN
+        wifi -> NetworkEvidenceSource.ANDROID_WIFI
+        cellular -> NetworkEvidenceSource.ANDROID_CELLULAR
+        ethernet -> NetworkEvidenceSource.ANDROID_ETHERNET
+        else -> NetworkEvidenceSource.ANDROID_OTHER
+    }
+
     fun read(context: Context, nowMillis: Long = System.currentTimeMillis()): LocalNetworkObservation? {
         if (nowMillis < 0L || nowMillis > Long.MAX_VALUE - 30_000L) return null
         return try {
@@ -18,27 +32,20 @@ object AndroidDefaultNetworkEvidence {
                 ?: return null
             val active = manager.activeNetwork ?: return null
             val capabilities = manager.getNetworkCapabilities(active) ?: return null
-            val transport = when {
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "vpn"
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ethernet"
-                else -> "other"
-            }
+            val source = classifyTransport(
+                vpn = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN),
+                wifi = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI),
+                cellular = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR),
+                ethernet = capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET),
+            )
             // Ephemeral ID: no SSID, BSSID, MAC, network handle, IP or DNS data.
             LocalNetworkObservation(
                 id = UUID.randomUUID().toString(),
-                source = when (transport) {
-                    "vpn" -> NetworkEvidenceSource.VPN
-                    "wifi" -> NetworkEvidenceSource.ANDROID_WIFI
-                    "cellular" -> NetworkEvidenceSource.ANDROID_CELLULAR
-                    "ethernet" -> NetworkEvidenceSource.ANDROID_ETHERNET
-                    else -> NetworkEvidenceSource.ANDROID_OTHER
-                },
+                source = source,
                 observedAtMillis = nowMillis,
                 expiresAtMillis = nowMillis + 30_000L,
                 confidence = NetworkEvidenceConfidence.OBSERVED,
-                sourceVersion = "android-default-transport-v1:$transport",
+                sourceVersion = "android-default-transport-v1",
             )
         } catch (_: SecurityException) {
             null
