@@ -61,7 +61,7 @@ class WearableSessionAuthority {
         }
         // Authenticate the same immutable capability snapshot that becomes session authority.
         val capabilities = java.util.Collections.unmodifiableSet(LinkedHashSet(session.negotiatedCapabilities))
-        if (!verifiedProof.capabilities.containsAll(capabilities.map { it.name })) {
+        if (verifiedProof.capabilities != capabilities.map { it.name }.toSet()) {
             return WearableSessionActivationDecision.CAPABILITY_MISMATCH
         }
         activeByIdentity[attempt.stableId] = session.copy(negotiatedCapabilities = capabilities)
