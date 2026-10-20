@@ -22,11 +22,14 @@ command -v sha256sum >/dev/null || fail "sha256sum missing"
 [[ -d "${ANDROID_HOME:-}" ]] || fail "ANDROID_HOME must point to installed SDK"
 [[ -f native-android-app/gradlew ]] || fail "Missing canonical Android Gradle wrapper"
 [[ -d node_modules ]] || fail "Install locked root dependencies with npm ci first"
+[[ -f package-lock.json ]] || fail "Root package-lock.json missing"
+[[ -x "$ANDROID_HOME/build-tools" || -d "$ANDROID_HOME/build-tools" ]] || fail "Android build-tools directory missing"
 
 command -v git >/dev/null || fail "git missing"
 git rev-parse --verify HEAD > "$RUN/commit.txt" || fail "Cannot capture repository commit"
-# Avoid mixing artifacts from prior builds; do not delete the user\x27s existing outputs.
-[[ ! -e native-android-app/app/build/outputs/apk/debug ]] || fail "Existing debug APK outputs found. Move or clean them before running this validation."
+# Prevent stale Gradle outputs from being mistaken for current validation evidence.
+[[ ! -e native-android-app/app/build/outputs/apk/debug ]] || fail "Existing debug APK outputs found. Run ./gradlew clean before validation."
+[[ ! -e native-android-app/app/build/reports/release-dependencies.json ]] || fail "Existing dependency inventory found. Run ./gradlew clean before validation."
 uname -a > "$RUN/host.txt"
 java -version > "$RUN/java-version.txt" 2>&1
 node --version > "$RUN/node-version.txt"
@@ -50,8 +53,11 @@ step unit-tests ./gradlew testDebugUnitTest --no-daemon --console=plain
 step lint ./gradlew lintDebug --no-daemon --console=plain
 step inventory ./gradlew :app:exportReleaseDependencyInventory --no-daemon --console=plain
 test -s app/build/reports/release-dependencies.json || fail "Missing release dependency inventory"
+step inventory-schema node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("app/build/reports/release-dependencies.json","utf8"));if(d.schema_version!==2||d.configuration!=="releaseRuntimeClasspath"||!Number.isInteger(d.component_count)||!Number.isInteger(d.relationship_count)||!Array.isArray(d.components)||!Array.isArray(d.relationships)||d.component_count!==d.components.length||d.relationship_count!==d.relationships.length||d.component_count<1||d.relationship_count<1||!d.components.some(c=>c.key===d.root_component))process.exit(1)'
 step debug-apk ./gradlew assembleDebug --no-daemon --console=plain
-APK="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print -quit)"
+mapfile -t APKS < <(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print)
+[[ "${#APKS[@]}" -eq 1 ]] || fail "Expected exactly one debug APK, found ${#APKS[@]}"
+APK="${APKS[0]}"
 [[ -n "$APK" && -s "$APK" ]] || fail "Missing debug APK"
 TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
 [[ -n "$TOOLS" && -d "$TOOLS" ]] || fail "Android build-tools missing"
