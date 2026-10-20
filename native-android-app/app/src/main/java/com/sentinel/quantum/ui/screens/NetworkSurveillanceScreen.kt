@@ -34,7 +34,7 @@ import com.sentinel.quantum.security.AndroidDefaultNetworkEvidence
 import com.sentinel.quantum.security.AndroidLinkSummary
 import com.sentinel.quantum.security.LocalLinkSummary
 import com.sentinel.quantum.security.LocalNetworkObservation
-import com.sentinel.quantum.security.NetworkEvidenceSource
+import com.sentinel.quantum.security.LocalObservationSource
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
@@ -292,11 +292,11 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         val observation = defaultTransportObservation
                         val active = observation?.takeIf { it.isFresh(transportClockMillis) }
                         val sourceLabel = when (active?.source) {
-                            NetworkEvidenceSource.ANDROID_WIFI -> "Wi-Fi"
-                            NetworkEvidenceSource.ANDROID_CELLULAR -> "Données mobiles"
-                            NetworkEvidenceSource.ANDROID_ETHERNET -> "Ethernet"
-                            NetworkEvidenceSource.VPN -> "VPN (transport sous-jacent non déterminé)"
-                            NetworkEvidenceSource.ANDROID_OTHER -> "Autre transport"
+                            LocalObservationSource.ANDROID_WIFI -> "Wi-Fi"
+                            LocalObservationSource.ANDROID_CELLULAR -> "Données mobiles"
+                            LocalObservationSource.ANDROID_ETHERNET -> "Ethernet"
+                            LocalObservationSource.VPN -> "VPN (transport sous-jacent non déterminé)"
+                            LocalObservationSource.ANDROID_OTHER -> "Autre transport"
                             else -> "Non vérifié"
                         }
                         Text("Observation locale : $sourceLabel")
