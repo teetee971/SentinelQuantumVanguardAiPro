@@ -317,7 +317,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         } else {
                             Text("Serveurs DNS renseignés : " + if (link.dnsServersPresent) "Oui" else "Non observés")
                             Text("Route avec passerelle par défaut : " + if (link.defaultGatewayPresent) "Oui" else "Non observée")
-                            Text("DNS privé actif : " + if (link.privateDnsActive) "Oui" else "Non")
+                            Text("DNS privé : " + if (!link.privateDnsSupported) "Non disponible sur cette version Android" else if (link.privateDnsActive) "Actif" else "Inactif")
                         }
                         Text("Informations locales Android uniquement. Une absence ne prouve pas une attaque.",
                             style = MaterialTheme.typography.bodySmall,
