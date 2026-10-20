@@ -19,7 +19,6 @@ data class DiscoveredBluetoothDevice(
     val address: String,
     val rssiDbm: Int,
     val kind: BluetoothDeviceKind,
-    val randomizedAddress: Boolean,
     val assessment: BluetoothRiskAssessment
 )
 
@@ -163,7 +162,6 @@ class BluetoothScanner(context: Context) {
         val name = systemName.ifEmpty { advertisedName }
         val kind = runCatching { deviceKind(device.bluetoothClass) }.getOrDefault(BluetoothDeviceKind.UNKNOWN)
         val bonded = runCatching { device.bondState == BluetoothDevice.BOND_BONDED }.getOrDefault(false)
-        val randomizedAddress = runCatching { device.type == BluetoothDevice.DEVICE_TYPE_LE }.getOrDefault(false)
         val address = runCatching { device.address }.getOrNull()?.trim().orEmpty()
 
         return DiscoveredBluetoothDevice(
@@ -171,7 +169,6 @@ class BluetoothScanner(context: Context) {
             address = address,
             rssiDbm = result.rssi,
             kind = kind,
-            randomizedAddress = randomizedAddress,
             assessment = BluetoothRiskEvaluator.evaluate(
                 deviceName = name.takeIf { it.isNotEmpty() },
                 kind = kind,
