@@ -9,7 +9,7 @@ URL="https://github.com/teetee971/SentinelQuantumVanguardAiPro.git"
 AAPT="$HOME/sentinel-aapt2-amd64/gradle-wrapper/aapt2"
 LOGDIR="$HOME/sentinel-qa-logs"
 mkdir -p "$LOGDIR"
-LOG="$LOGDIR/qualify-$(date +%Y%m%d-%H%M%S).log"
+LOG="$LOGDIR/qualify-$(date +%Y%m%d-%H%M%S)-$.log"
 exec > >(tee -a "$LOG") 2>&1
 echo "Journal: $LOG"
 command -v git >/dev/null || { echo "git absent"; exit 2; }
@@ -26,7 +26,12 @@ fi
   echo "Worktree non propre; aucune modification automatique."; exit 3;
 }
 git -C "$REPO" fetch --no-tags origin "$REF"
-git -C "$REPO" checkout --detach FETCH_HEAD
+# FETCH_HEAD is verified as the fetched commit, not a locally supplied fallback.
+FETCHED_SHA="$(git -C "$REPO" rev-parse --verify FETCH_HEAD^{commit})"
+if [[ -n "$EXPECTED_SHA" && "$FETCHED_SHA" != "$EXPECTED_SHA" ]]; then
+  echo "ERREUR : SHA distant $FETCHED_SHA différent du SHA attendu $EXPECTED_SHA"; exit 4
+fi
+git -C "$REPO" checkout --detach "$FETCHED_SHA"
 [[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ]] || {
   echo "Worktree modifié après extraction du commit; arrêt."; exit 3;
 }
@@ -51,6 +56,7 @@ proot-distro login ubuntu -- bash -c '
     -Pandroid.aapt2FromMavenOverride=/data/data/com.termux/files/home/sentinel-aapt2-amd64/gradle-wrapper/aapt2
 ' _ "$APP"
 [[ "$(git -C "$REPO" rev-parse HEAD)" == "$SHA" ]] || { echo "HEAD modifié pendant la compilation"; exit 4; }
+[[ -z "$(git -C "$REPO" status --porcelain)" ]] || { echo "Worktree modifié pendant compilation"; exit 4; }
 [[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ]] || {
   echo "Fichiers suivis modifiés pendant la compilation"; exit 4;
 }
