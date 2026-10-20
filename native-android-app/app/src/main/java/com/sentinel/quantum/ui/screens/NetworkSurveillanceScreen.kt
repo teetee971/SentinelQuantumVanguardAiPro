@@ -155,6 +155,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     }
 
     fun runBluetoothScan() {
+        // A new observation cycle must not present last scan's BLE devices as current.
+        bluetoothDevices = emptyList()
         pairedDevices = PairedBluetoothInventory.read(context)
         isScanning = true
         covertDeviceAlerted = false
