@@ -46,7 +46,9 @@ object WearableAdapterPolicy {
         val reachable = available && channelProof?.isFresh(nowMs) == true
         val platformCapabilities = observation.observedCapabilities
         val negotiated = observation.observedCapabilities intersect negotiatedCapabilities
-        val safeCapabilities = if (reachable) {
+        val safeCapabilities = if (!available) {
+            emptySet()
+        } else if (reachable) {
             platformCapabilities - sentinelPrivilegedCapabilities + (negotiated intersect sentinelPrivilegedCapabilities)
         } else {
             platformCapabilities - sentinelPrivilegedCapabilities
