@@ -102,6 +102,20 @@ class WearableSessionAuthorityTest {
             authority.activate(next, session("new"), proof("watch-1", "new")))
     }
 
+    @Test fun signedExtraCapabilitiesCannotActivateDifferentSessionSnapshot() {
+        val authority = WearableSessionAuthority()
+        val attempt = WearableHandshakeAttempt("watch-1", "a1", 1)
+        authority.beginHandshake(attempt)
+        val expandedProof = VerifiedWearableHandshakeFixture.create(
+            "watch-1", key, "s1", 1, setOf("SENTINEL_ALERTS", "QUICK_ACTIONS")
+        )
+        assertEquals(
+            WearableSessionActivationDecision.CAPABILITY_MISMATCH,
+            authority.activate(attempt, session("s1"), expandedProof)
+        )
+        assertNull(authority.activeSession("watch-1"))
+    }
+
     @Test fun capabilityMutationCannotExpandActivatedAuthority() {
         val authority = WearableSessionAuthority()
         val attempt = WearableHandshakeAttempt("watch-1", "a1", 1)
