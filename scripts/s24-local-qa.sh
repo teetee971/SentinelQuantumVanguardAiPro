@@ -12,6 +12,13 @@ if [[ ! -f "${ROOT}/gradlew" || ! -x "${AAPT}" ]]; then
   exit 2
 fi
 printf 'Démarrage qualification Android. Journal : %s\n' "${LOG}"
+{
+  echo "=== PROVENANCE GIT ==="
+  git -C "${HOME_DIR}/sentinel-bluetooth-test" log -1 --format="%H %s" || true
+  git -C "${HOME_DIR}/sentinel-bluetooth-test" status --short || true
+  echo "=== VERSION BUILD ==="
+  grep -E "versionCode|versionName|applicationId" "${ROOT}/app/build.gradle" || true
+} | tee -a "${LOG}"
 proot-distro login ubuntu -- bash -c '
   cd /data/data/com.termux/files/home/sentinel-bluetooth-test/native-android-app || exit 2
   export ANDROID_HOME=/root/android-sdk
