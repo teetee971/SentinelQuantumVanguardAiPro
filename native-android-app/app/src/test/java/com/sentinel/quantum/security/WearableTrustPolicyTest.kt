@@ -31,6 +31,17 @@ class WearableTrustPolicyTest {
         )
     }
 
+    @Test fun matchingKeyAndStableIdWithDifferentIdentityProvenanceFailsClosed() {
+        val presented = expected.copy(
+            source = WearableIdentitySource.PLATFORM_STABLE_NODE_ID,
+            verifiedAtMs = 10_001L
+        )
+        assertEquals(
+            WearableTrustDecision.IDENTITY_SOURCE_MISMATCH,
+            WearableTrustPolicy.evaluate(expected, presented, session)
+        )
+    }
+
     @Test fun matchingStableIdWithoutKeyBindingFailsClosed() {
         val presented = expected.copy(keyFingerprintSha256 = null, verifiedAtMs = 10_001L)
         assertEquals(WearableTrustDecision.KEY_NOT_BOUND, WearableTrustPolicy.evaluate(expected, presented, session))

@@ -36,6 +36,7 @@ data class WearableIdentityProof(
 enum class WearableTrustDecision {
     TRUSTED,
     IDENTITY_MISMATCH,
+    IDENTITY_SOURCE_MISMATCH,
     KEY_NOT_BOUND,
     KEY_MISMATCH,
     PROOF_PREDATES_SESSION
@@ -48,6 +49,7 @@ object WearableTrustPolicy {
         session: WearableSession
     ): WearableTrustDecision {
         if (presented.stableId != expected.stableId) return WearableTrustDecision.IDENTITY_MISMATCH
+        if (presented.source != expected.source) return WearableTrustDecision.IDENTITY_SOURCE_MISMATCH
         val expectedKey = expected.keyFingerprintSha256 ?: return WearableTrustDecision.KEY_NOT_BOUND
         val presentedKey = presented.keyFingerprintSha256 ?: return WearableTrustDecision.KEY_NOT_BOUND
         if (presentedKey != expectedKey) return WearableTrustDecision.KEY_MISMATCH
