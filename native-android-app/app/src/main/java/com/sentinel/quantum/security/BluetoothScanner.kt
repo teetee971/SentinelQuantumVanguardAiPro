@@ -147,7 +147,11 @@ class BluetoothScanner(context: Context) {
             return
         }
 
+        // startScan may invoke onScanFailed synchronously. A failed or superseded
+        // scan must never enqueue a second completion callback.
+        if (callback !== scanCallback) return
         handler.postDelayed({
+            if (callback !== scanCallback) return@postDelayed
             stop()
             onResults(sortedResults())
             onScanFinished()
