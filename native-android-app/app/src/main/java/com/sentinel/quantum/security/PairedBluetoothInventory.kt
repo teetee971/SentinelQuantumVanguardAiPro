@@ -15,6 +15,10 @@ data class PairedBluetoothDevice(
     val deviceType: String
 )
 
+enum class PairedBluetoothStatus { READY, PERMISSION_REQUIRED, BLUETOOTH_UNAVAILABLE, BLUETOOTH_DISABLED, ACCESS_DENIED }
+
+data class PairedBluetoothResult(val status: PairedBluetoothStatus, val devices: List<PairedBluetoothDevice> = emptyList())
+
 object PairedBluetoothInventory {
     /** Heuristic label only; this does not prove the device type. */
     fun classifyDisplayName(name: String): String {
@@ -25,20 +29,25 @@ object PairedBluetoothInventory {
     }
 
     @Suppress("DEPRECATION")
-    fun read(context: Context): List<PairedBluetoothDevice> {
+    fun read(context: Context): List<PairedBluetoothDevice> = inspect(context).devices
+
+    @Suppress("DEPRECATION")
+    fun inspect(context: Context): PairedBluetoothResult {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
-        ) return emptyList()
+        ) return PairedBluetoothResult(PairedBluetoothStatus.PERMISSION_REQUIRED)
         val adapter = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
-            ?: return emptyList()
+            ?: return PairedBluetoothResult(PairedBluetoothStatus.BLUETOOTH_UNAVAILABLE)
         return try {
-            adapter.bondedDevices.orEmpty().map { device ->
+            if (!adapter.isEnabled) return PairedBluetoothResult(PairedBluetoothStatus.BLUETOOTH_DISABLED)
+            val devices = adapter.bondedDevices.orEmpty().map { device ->
                 val name = device.name?.trim().orEmpty().ifBlank { "Appareil associé (nom indisponible)" }
                 val type = classifyDisplayName(name)
                 PairedBluetoothDevice(name, type)
             }.sortedBy { it.displayName }
+            PairedBluetoothResult(PairedBluetoothStatus.READY, devices)
         } catch (_: SecurityException) {
-            emptyList()
+            PairedBluetoothResult(PairedBluetoothStatus.ACCESS_DENIED)
         }
     }
 }
