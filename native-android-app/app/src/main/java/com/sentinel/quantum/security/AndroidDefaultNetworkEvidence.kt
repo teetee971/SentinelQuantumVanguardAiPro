@@ -1,0 +1,41 @@
+package com.sentinel.quantum.security
+
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.SystemClock
+import java.util.UUID
+
+/**
+ * Passive, local-only snapshot of Android's default network transport.
+ * Never probes LAN hosts or uploads identifiers. A transport observation
+ * is not evidence that a particular remote device exists or is safe.
+ */
+object AndroidDefaultNetworkEvidence {
+    fun read(context: Context, nowMillis: Long = System.currentTimeMillis()): LocalNetworkObservation? {
+        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return null
+        return try {
+            val active = manager.activeNetwork ?: return null
+            val capabilities = manager.getNetworkCapabilities(active) ?: return null
+            val transport = when {
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "vpn"
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ethernet"
+                else -> "other"
+            }
+            // Ephemeral ID: no SSID, BSSID, MAC, network handle, IP or DNS data.
+            LocalNetworkObservation(
+                id = UUID.randomUUID().toString(),
+                source = if (transport == "vpn") NetworkEvidenceSource.VPN else NetworkEvidenceSource.ANDROID_WIFI,
+                observedAtMillis = nowMillis,
+                expiresAtMillis = nowMillis + 30_000L,
+                confidence = NetworkEvidenceConfidence.OBSERVED,
+                sourceVersion = "android-default-transport-v1:$transport",
+            )
+        } catch (_: SecurityException) {
+            null
+        }
+    }
+}
