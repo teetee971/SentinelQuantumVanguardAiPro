@@ -18,6 +18,10 @@ if [[ -n "${EXPECTED_SHA}" && "${CURRENT_SHA}" != "${EXPECTED_SHA}" ]]; then
   echo "ÉCHEC : worktree sur ${CURRENT_SHA}, commit attendu ${EXPECTED_SHA}. Aucune compilation lancée." | tee -a "${LOG}"
   exit 4
 fi
+if [[ -z "${CURRENT_SHA}" ]]; then
+  echo "ÉCHEC : impossible de lire le commit local." | tee -a "${LOG}"
+  exit 5
+fi
 if [[ -z "${EXPECTED_SHA}" ]]; then
   echo "ATTENTION : aucun commit attendu fourni. Résultat limité au commit local ${CURRENT_SHA}." | tee -a "${LOG}"
 fi
@@ -28,6 +32,9 @@ fi
   echo "=== VERSION BUILD ==="
   grep -E "versionCode|versionName|applicationId" "${ROOT}/app/build.gradle" || true
 } | tee -a "${LOG}"
+if [[ -n "$(git -C "${HOME_DIR}/sentinel-bluetooth-test" status --porcelain --untracked-files=no)" ]]; then
+  echo "ATTENTION : fichiers suivis modifiés localement ; résultat non assimilable à un commit propre." | tee -a "${LOG}"
+fi
 proot-distro login ubuntu -- bash -c '
   cd /data/data/com.termux/files/home/sentinel-bluetooth-test/native-android-app || exit 2
   export ANDROID_HOME=/root/android-sdk
@@ -48,6 +55,7 @@ if [[ ! -s "${APK}" ]]; then
   exit 3
 fi
 sha256sum "${APK}" | tee -a "${LOG}"
+echo "SHA_COMPILE=${CURRENT_SHA}" | tee -a "${LOG}"
 echo "QUALIFICATION LOCALE RÉUSSIE : build/tests. APK DEBUG uniquement."
 echo "Ne pas installer cet APK : une signature compatible doit être vérifiée séparément."
 echo "Aucun changement de données Android, de rôles, de signature ni de Play Protect."
