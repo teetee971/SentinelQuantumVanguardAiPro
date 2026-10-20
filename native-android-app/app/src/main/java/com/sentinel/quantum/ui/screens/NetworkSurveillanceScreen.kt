@@ -497,13 +497,6 @@ private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
         if (device.assessment.likelyBeacon) {
             Text("Balise BLE potentielle.", style = MaterialTheme.typography.bodySmall)
         }
-        if (device.randomizedAddress) {
-            Text(
-                text = "Adresse possiblement aléatoire (BLE) : elle peut changer entre deux scans.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
         device.assessment.reasons.forEach { reason ->
             Text("• $reason", style = MaterialTheme.typography.bodySmall)
         }
