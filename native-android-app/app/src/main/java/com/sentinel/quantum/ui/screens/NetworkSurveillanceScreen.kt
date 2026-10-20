@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +87,16 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var defaultTransportObservation by remember { mutableStateOf<LocalNetworkObservation?>(null) }
+    var transportClockMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(defaultTransportObservation) {
+        val observation = defaultTransportObservation ?: return@LaunchedEffect
+        transportClockMillis = System.currentTimeMillis()
+        val remainingMillis = observation.expiresAtMillis - transportClockMillis
+        if (remainingMillis > 0L) {
+            delay(remainingMillis)
+            transportClockMillis = System.currentTimeMillis()
+        }
+    }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     var covertDeviceAlerted by remember { mutableStateOf(false) }
@@ -273,7 +284,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("network-default-transport")) {
                         Text("Transport réseau actif", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         val observation = defaultTransportObservation
-                        val active = observation?.takeIf { it.isFresh(System.currentTimeMillis()) }
+                        val active = observation?.takeIf { it.isFresh(transportClockMillis) }
                         val sourceLabel = when (active?.source) {
                             NetworkEvidenceSource.ANDROID_WIFI -> "Wi-Fi"
                             NetworkEvidenceSource.ANDROID_CELLULAR -> "Données mobiles"
