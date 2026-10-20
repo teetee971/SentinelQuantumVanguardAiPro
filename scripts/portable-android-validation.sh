@@ -28,7 +28,7 @@ command -v sha256sum >/dev/null || fail "sha256sum missing"
 command -v git >/dev/null || fail "git missing"
 git rev-parse --verify HEAD > "$RUN/commit.txt" || fail "Cannot capture repository commit"
 [[ -z "$(git status --porcelain --untracked-files=no)" ]] || fail "Tracked working tree is dirty; commit or restore changes before qualification"
-trap 'rc=$?; if (( rc != 0 )); then printf "BLOCKED exit=%s\\n" "$rc" > "$RUN/verdict.txt"; fi' EXIT
+trap 'rc=$?; if (( rc != 0 )); then printf "BLOCKED exit=%s\n" "$rc" > "$RUN/verdict.txt"; fi' EXIT
 # Prevent stale Gradle outputs from being mistaken for current validation evidence.
 [[ ! -e native-android-app/app/build/outputs/apk/debug ]] || fail "Existing debug APK outputs found. Run ./gradlew clean before validation."
 [[ ! -e native-android-app/app/build/reports/release-dependencies.json ]] || fail "Existing dependency inventory found. Run ./gradlew clean before validation."
@@ -57,6 +57,7 @@ step inventory ./gradlew :app:exportReleaseDependencyInventory --no-daemon --con
 test -s app/build/reports/release-dependencies.json || fail "Missing release dependency inventory"
 step inventory-schema node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("app/build/reports/release-dependencies.json","utf8"));if(d.schema_version!==2||d.configuration!=="releaseRuntimeClasspath"||!Number.isInteger(d.component_count)||!Number.isInteger(d.relationship_count)||!Array.isArray(d.components)||!Array.isArray(d.relationships)||d.component_count!==d.components.length||d.relationship_count!==d.relationships.length||d.component_count<1||d.relationship_count<1||!d.components.some(c=>c.key===d.root_component))process.exit(1)'
 step debug-apk ./gradlew assembleDebug --no-daemon --console=plain
+[[ -d app/build/outputs/apk/debug ]] || fail "Missing APK output directory"
 mapfile -t APKS < <(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print)
 [[ "${#APKS[@]}" -eq 1 ]] || fail "Expected exactly one debug APK, found ${#APKS[@]}"
 APK="${APKS[0]}"
