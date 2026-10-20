@@ -32,17 +32,15 @@ echo "REF=$REF"
 APP="$REPO/native-android-app"
 test -f "$APP/gradlew" || { echo "Projet Android absent"; exit 2; }
 # Our proot shares the Termux home through an Android data path.
-ANDROID_PATH="$APP"
-export SENTINEL_QA_ANDROID_PATH="$ANDROID_PATH"
 proot-distro login ubuntu -- bash -c '
   set -euo pipefail
-  cd "$SENTINEL_QA_ANDROID_PATH"
+  cd "$1"
   export ANDROID_HOME=/root/android-sdk ANDROID_SDK_ROOT=/root/android-sdk
   export JAVA_TOOL_OPTIONS="-Dorg.sqlite.lib.path=/root/sentinel-sqlite-linux -Dorg.sqlite.lib.name=libsqlitejdbc.so"
   ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:assembleDebug \
     --no-daemon --console=plain \
     -Pandroid.aapt2FromMavenOverride=/data/data/com.termux/files/home/sentinel-aapt2-amd64/gradle-wrapper/aapt2
-'
+' _ "$APP"
 [[ "$(git -C "$REPO" rev-parse HEAD)" == "$SHA" ]] || { echo "HEAD modifié pendant la compilation"; exit 4; }
 [[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ]] || {
   echo "Fichiers suivis modifiés pendant la compilation"; exit 4;
