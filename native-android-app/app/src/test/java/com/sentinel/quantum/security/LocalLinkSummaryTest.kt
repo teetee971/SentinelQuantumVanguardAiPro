@@ -24,4 +24,16 @@ class LocalLinkSummaryTest {
         assertFalse(summary.defaultGatewayPresent)
         assertFalse(summary.privateDnsActive)
     }
+    @Test fun unsupportedPrivateDnsIsNotInterpretedAsDisabled() {
+        val summary = LocalLinkSummary(
+            dnsServersPresent = false,
+            defaultGatewayPresent = false,
+            privateDnsActive = false,
+            observedAtMillis = 1000L,
+            privateDnsSupported = false,
+        )
+        assertFalse(summary.privateDnsSupported)
+        assertFalse(summary.privateDnsActive)
+        assertTrue(summary.isFresh(1500L))
+    }
 }
