@@ -3,7 +3,6 @@ package com.sentinel.quantum.security
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.os.SystemClock
 import java.util.UUID
 
 /**
@@ -28,7 +27,13 @@ object AndroidDefaultNetworkEvidence {
             // Ephemeral ID: no SSID, BSSID, MAC, network handle, IP or DNS data.
             LocalNetworkObservation(
                 id = UUID.randomUUID().toString(),
-                source = if (transport == "vpn") NetworkEvidenceSource.VPN else NetworkEvidenceSource.ANDROID_WIFI,
+                source = when (transport) {
+                    "vpn" -> NetworkEvidenceSource.VPN
+                    "wifi" -> NetworkEvidenceSource.ANDROID_WIFI
+                    "cellular" -> NetworkEvidenceSource.ANDROID_CELLULAR
+                    "ethernet" -> NetworkEvidenceSource.ANDROID_ETHERNET
+                    else -> NetworkEvidenceSource.ANDROID_OTHER
+                },
                 observedAtMillis = nowMillis,
                 expiresAtMillis = nowMillis + 30_000L,
                 confidence = NetworkEvidenceConfidence.OBSERVED,
