@@ -4,7 +4,7 @@ package com.sentinel.quantum.security
  * Local-only representation of a network observation. No Android API calls or
  * network traffic occur here. This is NOT a discovery engine.
  */
-enum class NetworkEvidenceSource {
+enum class LocalObservationSource {
     ANDROID_WIFI, ANDROID_CELLULAR, ANDROID_ETHERNET, ANDROID_OTHER, ANDROID_BLE, ANDROID_BONDED, LOCAL_GATEWAY, DNS, VPN, USER_REPORT
 }
 
@@ -12,7 +12,7 @@ enum class NetworkEvidenceConfidence { OBSERVED, INFERRED, UNKNOWN }
 
 data class LocalNetworkObservation(
     val id: String,
-    val source: NetworkEvidenceSource,
+    val source: LocalObservationSource,
     val observedAtMillis: Long,
     val expiresAtMillis: Long,
     val confidence: NetworkEvidenceConfidence,
@@ -29,7 +29,7 @@ data class LocalNetworkObservation(
     fun isDirectEvidence(nowMillis: Long): Boolean =
         isFresh(nowMillis) &&
             confidence == NetworkEvidenceConfidence.OBSERVED &&
-            source != NetworkEvidenceSource.USER_REPORT &&
+            source != LocalObservationSource.USER_REPORT &&
             id.isNotBlank() && sourceVersion.isNotBlank()
 }
 
