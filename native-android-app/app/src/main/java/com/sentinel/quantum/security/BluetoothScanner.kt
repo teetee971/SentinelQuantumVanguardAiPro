@@ -75,6 +75,9 @@ class BluetoothScanner(context: Context) {
         onError: (String) -> Unit,
         onScanFinished: () -> Unit = {}
     ) {
+        // A replacement request ends the prior session even if preflight fails.
+        // Otherwise a denied/disabled second scan leaves the old scan running.
+        stop()
         fun failBeforeStart(message: String) {
             onError(message)
             onScanFinished()
@@ -105,7 +108,6 @@ class BluetoothScanner(context: Context) {
             return
         }
 
-        stop()
         discovered.clear()
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
