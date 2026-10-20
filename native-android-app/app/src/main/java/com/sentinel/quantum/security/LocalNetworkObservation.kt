@@ -44,4 +44,14 @@ object NetworkObservationPolicy {
     ): List<LocalNetworkObservation> =
         candidates.filter { it.isFresh(nowMillis) && it.id.isNotBlank() && it.sourceVersion.isNotBlank() }
             .sortedWith(compareByDescending<LocalNetworkObservation> { it.observedAtMillis }.thenBy { it.id })
+
+    /** Deterministic duplicate elimination for the *same observation ID and source* only.
+     * This must never merge distinct devices by display name or IP address.
+     */
+    fun latestPerSourceId(
+        candidates: List<LocalNetworkObservation>,
+        nowMillis: Long,
+    ): List<LocalNetworkObservation> =
+        freshEvidence(candidates, nowMillis)
+            .distinctBy { it.source to it.id }
 }
