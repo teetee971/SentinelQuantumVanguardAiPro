@@ -29,6 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.security.AndroidDefaultNetworkEvidence
+import com.sentinel.quantum.security.LocalNetworkObservation
+import com.sentinel.quantum.security.NetworkEvidenceSource
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
@@ -82,6 +85,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
+    var defaultTransportObservation by remember { mutableStateOf<LocalNetworkObservation?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     var covertDeviceAlerted by remember { mutableStateOf(false) }
@@ -200,6 +204,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     }
 
     fun startScan() {
+        defaultTransportObservation = AndroidDefaultNetworkEvidence.read(context)
         statusMessage = null
         when (selectedTab) {
             SurveillanceTab.WIFI ->
@@ -262,6 +267,28 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         modifier = Modifier.testTag("network-command-center"),
                         motionLevel = motionLevel
                     )
+                }
+
+                item {
+                    SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("network-default-transport")) {
+                        Text("Transport réseau actif", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        val observation = defaultTransportObservation
+                        val active = observation?.takeIf { it.isFresh(System.currentTimeMillis()) }
+                        val sourceLabel = when (active?.source) {
+                            NetworkEvidenceSource.ANDROID_WIFI -> "Wi-Fi"
+                            NetworkEvidenceSource.ANDROID_CELLULAR -> "Données mobiles"
+                            NetworkEvidenceSource.ANDROID_ETHERNET -> "Ethernet"
+                            NetworkEvidenceSource.VPN -> "VPN (transport sous-jacent non déterminé)"
+                            NetworkEvidenceSource.ANDROID_OTHER -> "Autre transport"
+                            else -> "Non vérifié"
+                        }
+                        Text("Observation locale : $sourceLabel")
+                        Text(
+                            "Lecture ponctuelle lors du scan, non assimilable à une découverte d'appareils ou à un état de sécurité.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 item {
