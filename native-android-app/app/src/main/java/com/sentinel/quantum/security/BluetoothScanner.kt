@@ -36,6 +36,7 @@ class BluetoothScanner(context: Context) {
     private val handler = Handler(Looper.getMainLooper())
     private val discovered = linkedMapOf<String, DiscoveredBluetoothDevice>()
     private var callback: ScanCallback? = null
+    private var timeoutTask: Runnable? = null
 
     /** Autorisations réellement nécessaires au produit pour exécuter ce scan et lire ses métadonnées. */
     val requiredPermissions: Array<String> = requiredPermissionsForApi(Build.VERSION.SDK_INT)
@@ -154,19 +155,23 @@ class BluetoothScanner(context: Context) {
         // startScan may invoke onScanFailed synchronously. A failed or superseded
         // scan must never enqueue a second completion callback.
         if (callback !== scanCallback) return
-        handler.postDelayed({
-            if (callback !== scanCallback) return@postDelayed
-            stop()
-            onResults(sortedResults())
-            onScanFinished()
-        }, durationMs)
+        val timeout = Runnable {
+            if (callback === scanCallback) {
+                stop()
+                onResults(sortedResults())
+                onScanFinished()
+            }
+        }
+        timeoutTask = timeout
+        handler.postDelayed(timeout, durationMs)
     }
 
     @SuppressLint("MissingPermission")
     fun stop() {
         val scanCallback = callback ?: return
         callback = null
-        handler.removeCallbacksAndMessages(null)
+        timeoutTask?.let(handler::removeCallbacks)
+        timeoutTask = null
         runCatching { adapter?.bluetoothLeScanner?.stopScan(scanCallback) }
     }
 
