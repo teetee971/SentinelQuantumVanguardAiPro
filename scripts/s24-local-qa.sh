@@ -34,6 +34,10 @@ fi
 } | tee -a "${LOG}"
 if [[ -n "$(git -C "${HOME_DIR}/sentinel-bluetooth-test" status --porcelain --untracked-files=no)" ]]; then
   echo "ATTENTION : fichiers suivis modifiés localement ; résultat non assimilable à un commit propre." | tee -a "${LOG}"
+  if [[ -n "${EXPECTED_SHA}" ]]; then
+    echo "ÉCHEC : qualification d’un commit exact impossible avec un worktree modifié." | tee -a "${LOG}"
+    exit 6
+  fi
 fi
 proot-distro login ubuntu -- bash -c '
   cd /data/data/com.termux/files/home/sentinel-bluetooth-test/native-android-app || exit 2
@@ -48,6 +52,11 @@ rc=${PIPESTATUS[0]}
 if [[ "${rc}" -ne 0 ]]; then
   echo "ÉCHEC build/tests (${rc}). Voir ${LOG}"
   exit "${rc}"
+fi
+POST_SHA=$(git -C "${HOME_DIR}/sentinel-bluetooth-test" rev-parse HEAD 2>/dev/null || true)
+if [[ "${CURRENT_SHA}" != "${POST_SHA}" ]]; then
+  echo "ÉCHEC : HEAD a changé pendant la compilation ; preuve invalide." | tee -a "${LOG}"
+  exit 7
 fi
 APK="${ROOT}/app/build/outputs/apk/debug/app-debug.apk"
 if [[ ! -s "${APK}" ]]; then
