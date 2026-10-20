@@ -32,6 +32,9 @@ import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.BluetoothDeviceKind
 import com.sentinel.quantum.security.BluetoothRiskEvaluator
 import com.sentinel.quantum.security.BluetoothScanner
+import com.sentinel.quantum.security.PairedBluetoothStatus
+import com.sentinel.quantum.security.PairedBluetoothInventory
+import com.sentinel.quantum.security.PairedBluetoothDevice
 import com.sentinel.quantum.security.CovertDetectionSupport
 import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
@@ -81,6 +84,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var selectedTab by rememberSaveable { mutableStateOf(SurveillanceTab.WIFI) }
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
+    var pairedDevices by remember { mutableStateOf<List<PairedBluetoothDevice>>(emptyList()) }
+    var pairedStatus by remember { mutableStateOf(PairedBluetoothStatus.PERMISSION_REQUIRED) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
@@ -152,6 +157,11 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     }
 
     fun runBluetoothScan() {
+        // A new observation cycle must not present last scan's BLE devices as current.
+        bluetoothDevices = emptyList()
+        val pairedResult = PairedBluetoothInventory.inspect(context)
+        pairedDevices = pairedResult.devices
+        pairedStatus = pairedResult.status
         isScanning = true
         covertDeviceAlerted = false
         bluetoothScanner.scan(
@@ -360,6 +370,32 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     }
 
                     SurveillanceTab.BLUETOOTH -> {
+                        item {
+                            SentinelSectionHeader(
+                                title = "Appareils associés Android",
+                                subtitle = "Association système uniquement : connexion active et canal Sentinel non vérifiés."
+                            )
+                        }
+                        if (pairedDevices.isEmpty()) {
+                            item { EmptyStateCard(when (pairedStatus) {
+                                PairedBluetoothStatus.PERMISSION_REQUIRED, PairedBluetoothStatus.ACCESS_DENIED -> "Autorisation Appareils à proximité requise pour consulter les appareils Bluetooth associés."
+                                PairedBluetoothStatus.BLUETOOTH_DISABLED -> "Bluetooth est désactivé sur cet appareil."
+                                PairedBluetoothStatus.BLUETOOTH_UNAVAILABLE -> "Bluetooth indisponible sur cet appareil."
+                                PairedBluetoothStatus.READY -> "Aucun appareil Bluetooth associé trouvé. Vérifiez les appareils associés dans les paramètres Android puis relancez Scanner."
+                            }) }
+                        } else {
+                            items(pairedDevices) { device ->
+                                SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                                    Text(device.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text("${device.deviceType} · Associé Android · Liaison Sentinel non vérifiée",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                        item {
+                            SentinelSectionHeader(title = "Appareils observés par scan BLE")
+                        }
                         if (bluetoothDevices.isEmpty()) {
                             item { EmptyStateCard("Lancez un scan pour lister les appareils Bluetooth environnants.") }
                         } else {
