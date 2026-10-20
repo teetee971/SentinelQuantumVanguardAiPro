@@ -12,6 +12,15 @@ if [[ ! -f "${ROOT}/gradlew" || ! -x "${AAPT}" ]]; then
   exit 2
 fi
 printf 'Démarrage qualification Android. Journal : %s\n' "${LOG}"
+CURRENT_SHA=$(git -C "${HOME_DIR}/sentinel-bluetooth-test" rev-parse HEAD 2>/dev/null || true)
+EXPECTED_SHA="${SENTINEL_EXPECTED_SHA:-}"
+if [[ -n "${EXPECTED_SHA}" && "${CURRENT_SHA}" != "${EXPECTED_SHA}" ]]; then
+  echo "ÉCHEC : worktree sur ${CURRENT_SHA}, commit attendu ${EXPECTED_SHA}. Aucune compilation lancée." | tee -a "${LOG}"
+  exit 4
+fi
+if [[ -z "${EXPECTED_SHA}" ]]; then
+  echo "ATTENTION : aucun commit attendu fourni. Résultat limité au commit local ${CURRENT_SHA}." | tee -a "${LOG}"
+fi
 {
   echo "=== PROVENANCE GIT ==="
   git -C "${HOME_DIR}/sentinel-bluetooth-test" log -1 --format="%H %s" || true
@@ -27,7 +36,7 @@ proot-distro login ubuntu -- bash -c '
   ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:assembleDebug \
     --no-daemon --console=plain \
     -Pandroid.aapt2FromMavenOverride=/data/data/com.termux/files/home/sentinel-aapt2-amd64/gradle-wrapper/aapt2
-' 2>&1 | tee "${LOG}"
+' 2>&1 | tee -a "${LOG}"
 rc=${PIPESTATUS[0]}
 if [[ "${rc}" -ne 0 ]]; then
   echo "ÉCHEC build/tests (${rc}). Voir ${LOG}"
