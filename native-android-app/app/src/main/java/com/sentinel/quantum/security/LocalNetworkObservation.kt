@@ -29,7 +29,8 @@ data class LocalNetworkObservation(
     fun isDirectEvidence(nowMillis: Long): Boolean =
         isFresh(nowMillis) &&
             confidence == NetworkEvidenceConfidence.OBSERVED &&
-            source != NetworkEvidenceSource.USER_REPORT
+            source != NetworkEvidenceSource.USER_REPORT &&
+            id.isNotBlank() && sourceVersion.isNotBlank()
 }
 
 object NetworkObservationPolicy {
@@ -41,6 +42,6 @@ object NetworkObservationPolicy {
         candidates: List<LocalNetworkObservation>,
         nowMillis: Long,
     ): List<LocalNetworkObservation> =
-        candidates.filter { it.isFresh(nowMillis) }
+        candidates.filter { it.isFresh(nowMillis) && it.id.isNotBlank() && it.sourceVersion.isNotBlank() }
             .sortedWith(compareByDescending<LocalNetworkObservation> { it.observedAtMillis }.thenBy { it.id })
 }
