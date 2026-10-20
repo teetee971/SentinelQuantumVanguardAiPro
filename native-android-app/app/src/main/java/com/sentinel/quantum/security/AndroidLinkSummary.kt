@@ -11,6 +11,7 @@ data class LocalLinkSummary(
     val dnsServersPresent: Boolean,
     val defaultGatewayPresent: Boolean,
     val privateDnsActive: Boolean,
+    val privateDnsSupported: Boolean = true,
     val observedAtMillis: Long,
 ) {
     fun isFresh(nowMillis: Long): Boolean =
@@ -25,6 +26,7 @@ object AndroidLinkSummary {
             dnsServersPresent = link.dnsServers.isNotEmpty(),
             defaultGatewayPresent = defaultRoute,
             privateDnsActive = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && link.isPrivateDnsActive,
+            privateDnsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P,
             observedAtMillis = nowMillis,
         )
     }
