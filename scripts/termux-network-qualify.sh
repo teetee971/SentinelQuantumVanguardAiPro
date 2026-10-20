@@ -14,7 +14,8 @@ exec > >(tee -a "$LOG") 2>&1
 echo "Journal: $LOG"
 command -v git >/dev/null || { echo "git absent"; exit 2; }
 command -v proot-distro >/dev/null || { echo "proot-distro absent"; exit 2; }
-test -x "$AAPT" || { echo "AAPT2 ARM64 wrapper absent: $AAPT"; exit 2; }
+test -x "$AAPT" || { echo "AAPT2 wrapper absent: $AAPT"; exit 2; }
+command -v sha256sum >/dev/null || { echo "sha256sum absent"; exit 2; }
 if [[ ! -d "$REPO/.git" ]]; then
   [[ ! -e "$REPO" ]] || { echo "Dossier existant non Git; abandon."; exit 2; }
   git clone "$URL" "$REPO"
