@@ -62,6 +62,18 @@ class WearableAdapterPolicyTest {
         assertFalse(WearableCapability.QUICK_ACTIONS in truth.usableCapabilities)
     }
 
+    @Test fun unavailableAdapterExposesNoUsableCapabilities() {
+        val truth = WearableAdapterPolicy.evaluate(
+            observation(WearableAdapterAvailability.UNAVAILABLE),
+            activeProof(),
+            setOf(WearableCapability.SENTINEL_ALERTS),
+            200
+        )
+        assertFalse(truth.adapterAvailable)
+        assertFalse(truth.sentinelReachable)
+        assertTrue(truth.usableCapabilities.isEmpty())
+    }
+
     @Test fun staleChannelRemovesPrivilegedCapabilities() {
         val truth = WearableAdapterPolicy.evaluate(
             observation(),
