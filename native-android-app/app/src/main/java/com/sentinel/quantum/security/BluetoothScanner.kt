@@ -74,25 +74,33 @@ class BluetoothScanner(context: Context) {
         onError: (String) -> Unit,
         onScanFinished: () -> Unit = {}
     ) {
+        fun failBeforeStart(message: String) {
+            onError(message)
+            onScanFinished()
+        }
+        if (durationMs <= 0L) {
+            failBeforeStart("Durée du scan Bluetooth invalide.")
+            return
+        }
         val currentAdapter = adapter
         if (currentAdapter == null) {
-            onError("Bluetooth indisponible sur cet appareil.")
+            failBeforeStart("Bluetooth indisponible sur cet appareil.")
             return
         }
         // Permission truth must be established before touching protected adapter/scanner APIs.
         if (!hasPermissions()) {
-            onError("Autorisations Bluetooth requises incomplètes.")
+            failBeforeStart("Autorisations Bluetooth requises incomplètes.")
             return
         }
 
         val scanner = try {
             if (!currentAdapter.isEnabled) null else currentAdapter.bluetoothLeScanner
         } catch (_: SecurityException) {
-            onError("Autorisation Bluetooth refusée ou révoquée par le système.")
+            failBeforeStart("Autorisation Bluetooth refusée ou révoquée par le système.")
             return
         }
         if (scanner == null) {
-            onError("Bluetooth indisponible ou désactivé.")
+            failBeforeStart("Bluetooth indisponible ou désactivé.")
             return
         }
 
@@ -131,11 +139,11 @@ class BluetoothScanner(context: Context) {
             scanner.startScan(scanCallback)
         } catch (_: SecurityException) {
             callback = null
-            onError("Autorisation Bluetooth refusée ou révoquée par le système.")
+            failBeforeStart("Autorisation Bluetooth refusée ou révoquée par le système.")
             return
         } catch (_: IllegalStateException) {
             callback = null
-            onError("Bluetooth indisponible ou désactivé.")
+            failBeforeStart("Bluetooth indisponible ou désactivé.")
             return
         }
 
