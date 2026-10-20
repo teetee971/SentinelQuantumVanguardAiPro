@@ -7,11 +7,11 @@ import org.junit.Test
 class NetworkEvidenceTransportTest {
     @Test fun transportSourcesRemainSeparate() {
         val sources = listOf(
-            NetworkEvidenceSource.ANDROID_WIFI,
-            NetworkEvidenceSource.ANDROID_CELLULAR,
-            NetworkEvidenceSource.ANDROID_ETHERNET,
-            NetworkEvidenceSource.VPN,
-            NetworkEvidenceSource.ANDROID_OTHER
+            LocalObservationSource.ANDROID_WIFI,
+            LocalObservationSource.ANDROID_CELLULAR,
+            LocalObservationSource.ANDROID_ETHERNET,
+            LocalObservationSource.VPN,
+            LocalObservationSource.ANDROID_OTHER
         )
         assertEquals(sources.size, sources.toSet().size)
     }
@@ -19,13 +19,13 @@ class NetworkEvidenceTransportTest {
     @Test fun passiveTransportObservationDoesNotImplyDeviceIdentity() {
         val observation = LocalNetworkObservation(
             id = "test-observation",
-            source = NetworkEvidenceSource.ANDROID_CELLULAR,
+            source = LocalObservationSource.ANDROID_CELLULAR,
             observedAtMillis = 1000L,
             expiresAtMillis = 31000L,
             confidence = NetworkEvidenceConfidence.OBSERVED,
             sourceVersion = "android-default-transport-v1:cellular"
         )
         assertTrue(observation.isDirectEvidence(1500L))
-        assertEquals(NetworkEvidenceSource.ANDROID_CELLULAR, observation.source)
+        assertEquals(LocalObservationSource.ANDROID_CELLULAR, observation.source)
     }
 }
