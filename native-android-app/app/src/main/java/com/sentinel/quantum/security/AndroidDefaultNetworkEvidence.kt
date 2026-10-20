@@ -17,12 +17,12 @@ object AndroidDefaultNetworkEvidence {
         wifi: Boolean,
         cellular: Boolean,
         ethernet: Boolean,
-    ): NetworkEvidenceSource = when {
-        vpn -> NetworkEvidenceSource.VPN
-        wifi -> NetworkEvidenceSource.ANDROID_WIFI
-        cellular -> NetworkEvidenceSource.ANDROID_CELLULAR
-        ethernet -> NetworkEvidenceSource.ANDROID_ETHERNET
-        else -> NetworkEvidenceSource.ANDROID_OTHER
+    ): LocalObservationSource = when {
+        vpn -> LocalObservationSource.VPN
+        wifi -> LocalObservationSource.ANDROID_WIFI
+        cellular -> LocalObservationSource.ANDROID_CELLULAR
+        ethernet -> LocalObservationSource.ANDROID_ETHERNET
+        else -> LocalObservationSource.ANDROID_OTHER
     }
 
     fun read(context: Context, nowMillis: Long = System.currentTimeMillis()): LocalNetworkObservation? {
