@@ -5,18 +5,18 @@ import org.junit.Test
 
 class AndroidDefaultNetworkEvidenceTest {
     @Test fun classifiesEachTransport() {
-        assertEquals(NetworkEvidenceSource.ANDROID_WIFI,
+        assertEquals(LocalObservationSource.ANDROID_WIFI,
             AndroidDefaultNetworkEvidence.classifyTransport(false, true, false, false))
-        assertEquals(NetworkEvidenceSource.ANDROID_CELLULAR,
+        assertEquals(LocalObservationSource.ANDROID_CELLULAR,
             AndroidDefaultNetworkEvidence.classifyTransport(false, false, true, false))
-        assertEquals(NetworkEvidenceSource.ANDROID_ETHERNET,
+        assertEquals(LocalObservationSource.ANDROID_ETHERNET,
             AndroidDefaultNetworkEvidence.classifyTransport(false, false, false, true))
-        assertEquals(NetworkEvidenceSource.ANDROID_OTHER,
+        assertEquals(LocalObservationSource.ANDROID_OTHER,
             AndroidDefaultNetworkEvidence.classifyTransport(false, false, false, false))
     }
 
     @Test fun vpnTakesPrecedenceOverUnderlyingNetwork() {
-        assertEquals(NetworkEvidenceSource.VPN,
+        assertEquals(LocalObservationSource.VPN,
             AndroidDefaultNetworkEvidence.classifyTransport(true, true, true, false))
     }
 }
