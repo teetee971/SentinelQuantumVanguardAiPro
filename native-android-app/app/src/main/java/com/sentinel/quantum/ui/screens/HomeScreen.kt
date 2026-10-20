@@ -213,14 +213,6 @@ fun HomeScreen(navController: NavController) {
                 .padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelHeroVisual(
-                status = homeState.overallStatus,
-                title = homeState.headline,
-                subtitle = homeState.summary,
-                motionLevel = motionLevel,
-                modifier = Modifier.testTag("home_security_hero")
-            )
-
             SentinelActionTile(
                 title = when {
                     phoneCoreModule.status == SentinelStatus.LIMITED -> "Examiner Phone Core"
@@ -238,6 +230,15 @@ fun HomeScreen(navController: NavController) {
                     .fillMaxWidth()
                     .testTag("home_primary_action")
             )
+
+            SentinelHeroVisual(
+                status = homeState.overallStatus,
+                title = homeState.headline,
+                subtitle = homeState.summary,
+                motionLevel = motionLevel,
+                modifier = Modifier.testTag("home_security_hero")
+            )
+
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text("Priorité", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
