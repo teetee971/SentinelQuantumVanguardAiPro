@@ -29,8 +29,7 @@ object PairedBluetoothInventory {
                 val type = if (name.contains("watch", ignoreCase = true) ||
                     name.contains("montre", ignoreCase = true)) "Montre probable" else "Bluetooth"
                 PairedBluetoothDevice(name, type)
-            }.distinctBy { it.displayName to it.deviceType }
-                .sortedBy { it.displayName }
+            }.sortedBy { it.displayName }
         } catch (_: SecurityException) {
             emptyList()
         }
