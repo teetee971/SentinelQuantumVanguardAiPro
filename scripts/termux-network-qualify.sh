@@ -22,7 +22,7 @@ fi
 [[ "$(git -C "$REPO" remote get-url origin)" == "$URL" ]] || {
   echo "Dépôt d'origine différent. Abandon."; exit 2;
 }
-[[ -z "$(git -C "$REPO" status --porcelain)" ]] || {
+[[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ]] || {
   echo "Worktree non propre; aucune modification automatique."; exit 3;
 }
 git -C "$REPO" fetch --no-tags origin "$REF"
@@ -56,7 +56,6 @@ proot-distro login ubuntu -- bash -c '
     -Pandroid.aapt2FromMavenOverride=/data/data/com.termux/files/home/sentinel-aapt2-amd64/gradle-wrapper/aapt2
 ' _ "$APP"
 [[ "$(git -C "$REPO" rev-parse HEAD)" == "$SHA" ]] || { echo "HEAD modifié pendant la compilation"; exit 4; }
-[[ -z "$(git -C "$REPO" status --porcelain)" ]] || { echo "Worktree modifié pendant compilation"; exit 4; }
 [[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ]] || {
   echo "Fichiers suivis modifiés pendant la compilation"; exit 4;
 }
