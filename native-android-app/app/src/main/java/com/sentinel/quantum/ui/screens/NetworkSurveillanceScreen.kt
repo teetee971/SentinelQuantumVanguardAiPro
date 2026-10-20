@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.AndroidDefaultNetworkEvidence
+import com.sentinel.quantum.security.AndroidLinkSummary
+import com.sentinel.quantum.security.LocalLinkSummary
 import com.sentinel.quantum.security.LocalNetworkObservation
 import com.sentinel.quantum.security.NetworkEvidenceSource
 import com.sentinel.quantum.security.BluetoothDeviceKind
@@ -87,11 +89,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var defaultTransportObservation by remember { mutableStateOf<LocalNetworkObservation?>(null) }
+    var localLinkSummary by remember { mutableStateOf<LocalLinkSummary?>(null) }
     var transportClockMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(defaultTransportObservation) {
-        val observation = defaultTransportObservation ?: return@LaunchedEffect
+    LaunchedEffect(defaultTransportObservation, localLinkSummary) {
         transportClockMillis = System.currentTimeMillis()
-        val remainingMillis = observation.expiresAtMillis - transportClockMillis
+        val expiry = listOfNotNull(defaultTransportObservation?.expiresAtMillis, localLinkSummary?.observedAtMillis?.plus(30_000L)).minOrNull() ?: return@LaunchedEffect
+        val remainingMillis = expiry - transportClockMillis
         if (remainingMillis > 0L) {
             delay(remainingMillis)
             transportClockMillis = System.currentTimeMillis()
@@ -216,6 +219,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     fun startScan() {
         defaultTransportObservation = AndroidDefaultNetworkEvidence.read(context)
+        localLinkSummary = AndroidLinkSummary.read(context)
         statusMessage = null
         when (selectedTab) {
             SurveillanceTab.WIFI ->
@@ -299,6 +303,23 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+
+                item {
+                    SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("network-link-summary")) {
+                        Text("DNS et passerelle", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        val link = localLinkSummary?.takeIf { it.isFresh(transportClockMillis) }
+                        if (link == null) {
+                            Text("Non vérifié — lecture réseau indisponible ou expirée.")
+                        } else {
+                            Text("Serveurs DNS renseignés : " + if (link.dnsServersPresent) "Oui" else "Non observés")
+                            Text("Route avec passerelle par défaut : " + if (link.defaultGatewayPresent) "Oui" else "Non observée")
+                            Text("DNS privé actif : " + if (link.privateDnsActive) "Oui" else "Non")
+                        }
+                        Text("Informations locales Android uniquement. Une absence ne prouve pas une attaque.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
