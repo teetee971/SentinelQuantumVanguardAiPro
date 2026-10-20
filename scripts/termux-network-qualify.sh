@@ -4,6 +4,7 @@
 set -euo pipefail
 REPO="${1:-$HOME/sentinel-network-qa}"
 REF="${2:-docs/network-center-beyond-wifiman-20261020}"
+EXPECTED_SHA="${3:-}"
 URL="https://github.com/teetee971/SentinelQuantumVanguardAiPro.git"
 AAPT="$HOME/sentinel-aapt2-amd64/gradle-wrapper/aapt2"
 LOGDIR="$HOME/sentinel-qa-logs"
@@ -30,7 +31,12 @@ git -C "$REPO" checkout --detach FETCH_HEAD
   echo "Worktree modifié après extraction du commit; arrêt."; exit 3;
 }
 SHA="$(git -C "$REPO" rev-parse HEAD)"
+if [[ -n "$EXPECTED_SHA" && "$SHA" != "$EXPECTED_SHA" ]]; then
+  echo "ERREUR : SHA récupéré $SHA différent du SHA attendu $EXPECTED_SHA"; exit 4
+fi
 echo "COMMIT=$SHA"
+echo "VERSION_GRADLE:"
+grep -E "versionCode|versionName|applicationId" "$REPO/native-android-app/app/build.gradle" || true
 echo "REF=$REF"
 APP="$REPO/native-android-app"
 test -f "$APP/gradlew" || { echo "Projet Android absent"; exit 2; }
