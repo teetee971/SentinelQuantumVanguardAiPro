@@ -239,6 +239,7 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.testTag("home_security_hero")
             )
 
+
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text("Priorité", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
                 Text(homeState.priorityMessage, fontWeight = FontWeight.Bold)

@@ -120,8 +120,8 @@ fun SentinelOrbitField(
         List(3) { ring ->
             OrbitRing(
                 radiusFactor = 1f + ring * 0.28f,
-                color = accent.copy(alpha = 0.22f - ring * 0.045f),
-                stroke = Stroke(width = 1.2f + ring * 0.4f)
+                color = accent.copy(alpha = 0.55f - ring * 0.10f),
+                stroke = Stroke(width = 1.8f + ring * 0.4f)
             )
         }
     }
@@ -138,6 +138,18 @@ fun SentinelOrbitField(
                 radius = base * ring.radiusFactor,
                 center = center,
                 style = ring.stroke
+            )
+        }
+        // D.1 convergence rays: restrained geometry, visible even when motion is reduced.
+        val rayLength = base * 1.68f
+        repeat(8) { index ->
+            val angle = (index * PI / 4.0).toFloat()
+            val inner = base * 1.12f
+            drawLine(
+                color = accent.copy(alpha = 0.30f),
+                start = Offset(center.x + cos(angle) * inner, center.y + sin(angle) * inner),
+                end = Offset(center.x + cos(angle) * rayLength, center.y + sin(angle) * rayLength),
+                strokeWidth = 1.5f
             )
         }
         if (motionLevel != MotionLevel.STATIC) {
