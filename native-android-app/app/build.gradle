@@ -50,6 +50,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
 
+        // Separately installable preview; never inherits the production application ID.
+        labPreview {
+            initWith debug
+            applicationIdSuffix '.labpreview'
+            versionNameSuffix '-lab-preview'
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['debug']
+        }
+
         // Unsigned variant used to prove that an Android App Bundle compiles and
         // packages correctly (e.g. for Play Console dry-runs) before real release
         // signing secrets are available. It intentionally never applies a
