@@ -35,10 +35,11 @@ object ApkComparisonEngine {
         }, "Identifiant de paquet", "Un changement de package exige une revue de provenance.")
 
         finding("VERSION_CODE", when {
+            beforePackage == null || afterPackage == null || beforePackage != afterPackage -> AppIntegrityStatus.UNKNOWN
             before.versionCode == null || after.versionCode == null -> AppIntegrityStatus.UNKNOWN
             after.versionCode < before.versionCode -> AppIntegrityStatus.WARN
             else -> AppIntegrityStatus.OK
-        }, "Numéro de build", "Une régression de version peut être intentionnelle, à vérifier.")
+        }, "Numéro de build", "Les versions ne sont comparables que pour un même identifiant de paquet ; une régression peut être intentionnelle.")
 
         val left = before.fileSha256?.takeIf { sha256.matches(it) }
         val right = after.fileSha256?.takeIf { sha256.matches(it) }
