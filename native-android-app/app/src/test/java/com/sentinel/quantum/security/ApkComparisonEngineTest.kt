@@ -15,8 +15,9 @@ class ApkComparisonEngineTest {
 
     @Test fun identicalMetadataHasNoReviewFlags() {
         val result = ApkComparisonEngine.compare(evidence(), evidence(), 123)
-        assertEquals(4, result.findings.size)
+        assertEquals(5, result.findings.size)
         assertFalse(result.hasReviewRequired)
+        assertEquals(AppIntegrityStatus.UNKNOWN, status(result, "CRYPTOGRAPHIC_SIGNATURE"))
         assertEquals(AppIntegrityStatus.OK, status(result, "SIGNER_SET"))
     }
 
@@ -31,6 +32,15 @@ class ApkComparisonEngineTest {
         val result = ApkComparisonEngine.compare(evidence(file = null, signer = null), evidence(), 123)
         assertEquals(AppIntegrityStatus.UNKNOWN, status(result, "SIGNER_SET"))
         assertEquals(AppIntegrityStatus.UNKNOWN, status(result, "APK_CONTENT_SHA256"))
+    }
+
+    @Test fun invalidCryptographicSignatureBlocksTrust() {
+        val result = ApkComparisonEngine.compare(
+            evidence().copy(signatureVerified = true),
+            evidence().copy(signatureVerified = false), 123
+        )
+        assertEquals(AppIntegrityStatus.BAD, status(result, "CRYPTOGRAPHIC_SIGNATURE"))
+        assertTrue(result.hasReviewRequired)
     }
 
     @Test fun downgradeIsFlagged() {
