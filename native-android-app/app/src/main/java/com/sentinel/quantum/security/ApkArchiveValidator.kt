@@ -18,6 +18,26 @@ internal object ApkArchiveValidator {
         }
         try {
             ZipFile(file).use { zip ->
+                var count = 0
+                var totalExpanded = 0L
+                val entries = zip.entries()
+                while (entries.hasMoreElements()) {
+                    val entry = entries.nextElement()
+                    count++
+                    require(count <= 100_000) { "Trop d'entrées ZIP" }
+                    require(entry.name.length <= 1024) { "Nom d'entrée ZIP excessif" }
+                    require(!entry.name.startsWith("/") && !entry.name.split('/').contains("..")) {
+                        "Chemin ZIP non sûr"
+                    }
+                    val size = entry.size
+                    require(size >= 0) { "Taille décompressée inconnue" }
+                    require(size <= 350L * 1024 * 1024) { "Entrée ZIP trop grande" }
+                    totalExpanded += size
+                    require(totalExpanded <= 1_000L * 1024 * 1024) { "Archive trop volumineuse après extraction" }
+                    val compressed = entry.compressedSize
+                    require(compressed >= 0) { "Taille compressée inconnue" }
+                    require(size <= 1024L * maxOf(1L, compressed)) { "Compression suspecte" }
+                }
                 require(zip.getEntry("AndroidManifest.xml") != null) { "Manifeste Android absent" }
                 require(zip.entries().asSequence().any { it.name.matches(Regex("classes[0-9]*\\.dex")) }) {
                     "Code DEX absent : archive APK non prise en charge"
