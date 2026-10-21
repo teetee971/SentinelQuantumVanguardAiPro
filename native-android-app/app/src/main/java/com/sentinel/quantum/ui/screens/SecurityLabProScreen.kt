@@ -1,6 +1,9 @@
 package com.sentinel.quantum.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -17,6 +20,30 @@ fun SecurityLabProScreen(navController: NavController) {
     val context = LocalContext.current
     var report by remember { mutableStateOf<AppIntegrityReport?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var firstApk by remember { mutableStateOf<ApkEvidence?>(null) }
+    var secondApk by remember { mutableStateOf<ApkEvidence?>(null) }
+    var comparison by remember { mutableStateOf<ApkComparison?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var selectionBusy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val firstPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            selectionBusy = true
+            error = null
+            try { firstApk = SelectedApkInspector(context.applicationContext).inspect(uri); comparison = null }
+            catch (e: Exception) { error = "Premier APK non lisible : ${e.message ?: "erreur"}" }
+            finally { selectionBusy = false }
+        }
+    }
+    val secondPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            selectionBusy = true
+            error = null
+            try { secondApk = SelectedApkInspector(context.applicationContext).inspect(uri); comparison = null }
+            catch (e: Exception) { error = "Second APK non lisible : ${e.message ?: "erreur"}" }
+            finally { selectionBusy = false }
+        }
+    }
     LaunchedEffect(context) {
         busy = true
         report = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
@@ -32,7 +59,33 @@ fun SecurityLabProScreen(navController: NavController) {
                 Text("Inspection locale en lecture seule — aucune modification d'application.",
                     style = MaterialTheme.typography.bodyMedium)
                 Button(onClick = { navController.popBackStack() }) { Text("Retour") }
-                if (busy) CircularProgressIndicator()
+                if (busy || selectionBusy) CircularProgressIndicator()
+                Text("Comparer deux APK sélectionnés sur ce téléphone (sans installation).")
+                Button(enabled = !selectionBusy, onClick = { firstPicker.launch(arrayOf("*/*")) }) {
+                    Text("Choisir APK de référence")
+                }
+                Button(enabled = !selectionBusy, onClick = { secondPicker.launch(arrayOf("*/*")) }) {
+                    Text("Choisir APK à comparer")
+                }
+                firstApk?.let { Text("Référence : ${it.packageName ?: "Non identifié"} / build ${it.versionCode ?: "?"}") }
+                secondApk?.let { Text("Comparaison : ${it.packageName ?: "Non identifié"} / build ${it.versionCode ?: "?"}") }
+                Button(
+                    enabled = firstApk != null && secondApk != null && !selectionBusy,
+                    onClick = { comparison = ApkComparisonEngine.compare(
+                        firstApk!!, secondApk!!, System.currentTimeMillis()
+                    ) }
+                ) { Text("Comparer les deux APK") }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+            comparison?.let { result ->
+                item { Text("Résultats — divergence ne prouve pas un piratage",
+                    style = MaterialTheme.typography.titleMedium) }
+                items(result.findings, key = { "apk_" + it.id }) { finding ->
+                    Card { Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text("${finding.status}: ${finding.title}")
+                        Text(finding.explanation)
+                    } }
+                }
             }
             val current = report
             if (current != null) {
