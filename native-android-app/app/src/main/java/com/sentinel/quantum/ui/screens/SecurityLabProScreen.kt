@@ -228,11 +228,14 @@ fun SecurityLabProScreen(navController: NavController) {
                 Text("Inventaire limité aux applications visibles par Android.", style = MaterialTheme.typography.bodySmall)
                 }
                 if (labTab == 1) {
-                Text("Analyser un APK ou comparer deux fichiers locaux.", style = MaterialTheme.typography.titleMedium)
+                Text("FICHIERS APK", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
+                Text("Analyse, installation contrôlée et comparaison", style = MaterialTheme.typography.titleMedium)
 
                 Button(enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
                     Text("Analyser puis demander l'installation")
                 }
+                HorizontalDivider()
+                Text("Désinstallation avec confirmation Android", style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(value = uninstallInput, onValueChange = { uninstallInput = it.trim() },
                     label = { Text("Identifiant Android à désinstaller") }, singleLine = true)
                 Button(enabled = uninstallInput.isNotBlank() && uninstallInput != "com.sentinel.quantum" &&
@@ -244,10 +247,26 @@ fun SecurityLabProScreen(navController: NavController) {
                 }
                 }
                 if (labTab == 2) {
-                Text("Journal local : demandes initiées, pas succès vérifiés.", style = MaterialTheme.typography.labelMedium)
+                Text("HISTORIQUE LOCAL", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
+                Text("Demandes envoyées à Android ; aucun succès n'est présumé.", style = MaterialTheme.typography.bodySmall)
                 @Suppress("UNUSED_VARIABLE") val refreshAudit = auditRevision
-                apkManager.entries().take(8).forEach { entry ->
-                    Text(entry, style = MaterialTheme.typography.bodySmall)
+                val recentEntries = apkManager.entries()
+                if (recentEntries.isEmpty()) {
+                    Card(shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, Color(0xFF355C86)),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF111C30))) {
+                        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Aucune demande enregistrée", style = MaterialTheme.typography.titleMedium)
+                            Text("Les demandes d'installation et de désinstallation apparaîtront ici après ouverture de leur confirmation Android. Une demande ne prouve pas sa réussite.",
+                                style = MaterialTheme.typography.bodyMedium, color = Color(0xFFA9B9D4))
+                        }
+                    }
+                } else {
+                    recentEntries.take(15).forEach { entry ->
+                        Card(shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF151C2B))) {
+                            Text(entry, modifier = Modifier.fillMaxWidth().padding(14.dp), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                 }
                 }
                 if (labTab == 1) {
