@@ -70,6 +70,34 @@ object ApkComparisonEngine {
                 AppIntegrityStatus.OK -> "Les signatures sont cryptographiquement valides. Cela ne garantit ni une provenance fiable ni l’absence de code malveillant."
                 else -> "Validité cryptographique non démontrée pour au moins un APK ; résultat indéterminé."
             })
-        return ApkComparison(results)
+        val clarified = results.map { item ->
+            val explanation = when (item.id) {
+                "PACKAGE_ID" -> when (item.status) {
+                    AppIntegrityStatus.OK -> "Même identifiant Android pour les deux fichiers."
+                    AppIntegrityStatus.WARN -> "Identifiants différents : ce ne sont pas deux versions de la même application."
+                    else -> "Identifiant de paquet absent ou illisible."
+                }
+                "VERSION_CODE" -> when (item.status) {
+                    AppIntegrityStatus.OK -> if (before.versionCode == after.versionCode)
+                        "Même numéro de build ; cela ne garantit pas un contenu identique."
+                    else "Numéro de build plus récent, pour le même identifiant Android."
+                    AppIntegrityStatus.WARN -> "Numéro de build inférieur : vérifier si ce retour de version est voulu."
+                    else -> "Numéros de build non comparables ou indisponibles."
+                }
+                "APK_CONTENT_SHA256" -> when (item.status) {
+                    AppIntegrityStatus.OK -> "Empreintes SHA-256 identiques : fichiers de même contenu."
+                    AppIntegrityStatus.WARN -> "Empreintes SHA-256 différentes : les fichiers ne sont pas identiques. Cela ne prouve pas une attaque."
+                    else -> "Empreinte SHA-256 manquante ou invalide."
+                }
+                "SIGNER_SET" -> when (item.status) {
+                    AppIntegrityStatus.OK -> "Même ensemble de certificats signataires observé."
+                    AppIntegrityStatus.WARN -> "Certificats signataires différents : vérifier la provenance et une éventuelle rotation légitime."
+                    else -> "Certificats signataires insuffisamment connus pour conclure."
+                }
+                else -> item.explanation
+            }
+            item.copy(explanation = explanation)
+        }
+        return ApkComparison(clarified)
     }
 }
