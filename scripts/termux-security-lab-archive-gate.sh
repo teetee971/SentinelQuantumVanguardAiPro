@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 ROOT="$HOME/sentinel-security-lab-androidtest"
-test -d "$ROOT/.git" || { echo "BLOQUE: copie de travail absente"; exit 2; }
+git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "BLOQUE: copie Git absente ou invalide"; exit 2; }
 test -z "$(git -C "$ROOT" status --porcelain --untracked-files=no)" || { echo "BLOQUE: modifications locales"; exit 2; }
 git -C "$ROOT" fetch --no-tags origin feature/d1-global-audit-20261020
 git -C "$ROOT" checkout --detach "$(git -C "$ROOT" rev-parse FETCH_HEAD)"
