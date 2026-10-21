@@ -3,6 +3,7 @@ package com.sentinel.quantum.security
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.io.File
+import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -64,9 +65,16 @@ class ApkArchiveValidatorTest {
             ZipOutputStream(f.outputStream()).use { out ->
                 for (name in listOf("AndroidManifest.xml", "classes.dex")) {
                     out.putNextEntry(ZipEntry(name))
-                    out.write(ByteArray(2_000_000))
+                    out.write(ByteArray(8_000_000))
                     out.closeEntry()
                 }
+            }
+            ZipFile(f).use { zip ->
+                val entry = zip.getEntry("classes.dex")
+                org.junit.Assert.assertTrue(
+                    "Fixture must exceed the 1024:1 compression threshold",
+                    entry.size > 1024L * maxOf(1L, entry.compressedSize)
+                )
             }
             assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) }
         } finally { f.delete() }
