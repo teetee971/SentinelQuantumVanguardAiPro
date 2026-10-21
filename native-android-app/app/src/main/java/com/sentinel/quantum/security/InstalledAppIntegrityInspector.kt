@@ -63,14 +63,14 @@ class InstalledAppIntegrityInspector(private val context: Context) {
                 hashes.joinToString(", "), now
             )
         }
-        val exported = buildList {
-            info.activities?.filterTo(this) { it.exported }
-            info.services?.filterTo(this) { it.exported }
-            info.receivers?.filterTo(this) { it.exported }
-            info.providers?.filterTo(this) { it.exported }
-        }
+        val exportedCount = listOf(
+            info.activities?.count { it.exported } ?: 0,
+            info.services?.count { it.exported } ?: 0,
+            info.receivers?.count { it.exported } ?: 0,
+            info.providers?.count { it.exported } ?: 0,
+        ).sum()
         report += finding("EXPORTED_COUNT", AppIntegrityStatus.UNKNOWN, "Composants accessibles",
-            "${exported.size} composant(s) exporté(s) ; leur nécessité et leurs protections demandent une analyse individuelle.",
+            "$exportedCount composant(s) exporté(s) ; leur nécessité et leurs protections demandent une analyse individuelle.",
             now)
         val requested = info.requestedPermissions?.size ?: 0
         report += finding("PERMISSION_COUNT", AppIntegrityStatus.UNKNOWN, "Permissions déclarées",
