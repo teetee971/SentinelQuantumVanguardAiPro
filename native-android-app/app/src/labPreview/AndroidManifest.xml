@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" tools:node="remove" />
     <uses-permission android:name="android.permission.RECEIVE_MMS" tools:node="remove" />
     <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" tools:node="remove" />
-    <application android:label="Sentinel Lab Preview">
+    <application android:label="Sentinel Lab Preview" tools:replace="android:label">
         <service android:name=".security.SentinelCallScreeningService" tools:node="remove" />
         <service android:name=".security.SentinelInCallService" tools:node="remove" />
         <service android:name=".security.SentinelRespondViaMessageService" tools:node="remove" />
