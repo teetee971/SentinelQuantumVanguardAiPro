@@ -51,6 +51,27 @@ class ApkArchiveValidatorTest {
         finally { f.delete() }
     }
 
+
+    @Test fun traversalEntryRejected() {
+        val f = fixture(listOf("AndroidManifest.xml", "classes.dex", "../outside.txt"))
+        try { assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) } }
+        finally { f.delete() }
+    }
+
+    @Test fun excessiveCompressionRejected() {
+        val f = File.createTempFile("sentinel-bomb-", ".apk")
+        try {
+            ZipOutputStream(f.outputStream()).use { out ->
+                for (name in listOf("AndroidManifest.xml", "classes.dex")) {
+                    out.putNextEntry(ZipEntry(name))
+                    out.write(ByteArray(2_000_000))
+                    out.closeEntry()
+                }
+            }
+            assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) }
+        } finally { f.delete() }
+    }
+
     @Test fun truncatedZipRejected() {
         val f = fixture(listOf("AndroidManifest.xml", "classes.dex"))
         try {
