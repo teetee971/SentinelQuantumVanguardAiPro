@@ -18,7 +18,7 @@ internal fun <T> withTemporaryApk(directory: File, block: (File) -> T): T {
     return ApkInspectionProcessGuard.exclusive(directory) {
     val file = File.createTempFile("sentinel_apk_inspection_", ".apk", directory)
     ActiveTemporaryApks.enter(file)
-    return try {
+    val result = try {
         block(file)
     } finally {
         ActiveTemporaryApks.leave(file)
@@ -27,6 +27,7 @@ internal fun <T> withTemporaryApk(directory: File, block: (File) -> T): T {
             throw IllegalStateException("Échec de suppression du fichier temporaire APK")
         }
     }
+    result
     }
 }
 
