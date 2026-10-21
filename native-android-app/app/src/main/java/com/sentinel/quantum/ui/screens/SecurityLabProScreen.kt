@@ -79,13 +79,12 @@ fun SecurityLabProScreen(navController: NavController) {
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
             comparison?.let { result ->
-                item { Text("Résultats — divergence ne prouve pas un piratage",
-                    style = MaterialTheme.typography.titleMedium) }
+                item {
+                    Text("Résultats — divergence ne prouve pas un piratage",
+                        style = MaterialTheme.typography.titleMedium)
+                }
                 items(result.findings, key = { "apk_" + it.id }) { finding ->
-                    Card { Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text("${finding.status}: ${finding.title}")
-                        Text(finding.explanation)
-                    } }
+                    ApkComparisonFindingCard(finding)
                 }
             }
             val current = report
@@ -112,6 +111,17 @@ fun SecurityLabProScreen(navController: NavController) {
                 Text("Les applications tierces peuvent être masquées par Android. Aucun verdict de sûreté n'est déduit de leur absence.",
                     style = MaterialTheme.typography.bodySmall)
             }
+        }
+    }
+}
+
+/** Isolated finding component for emulator UI validation with known test evidence. */
+@Composable
+internal fun ApkComparisonFindingCard(finding: AppIntegrityFinding) {
+    Card {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Text("${finding.status.name}: ${finding.title}")
+            Text(finding.explanation)
         }
     }
 }
