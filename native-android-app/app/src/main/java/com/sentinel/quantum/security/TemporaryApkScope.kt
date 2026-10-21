@@ -14,7 +14,7 @@ internal object ActiveTemporaryApks {
 /** Guarantees deletion attempts on normal completion, failures and coroutine cancellation.
  * The block must cooperate with cancellation; this does not interrupt blocked OS I/O.
  */
-internal inline fun <T> withTemporaryApk(directory: File, block: (File) -> T): T {
+internal fun <T> withTemporaryApk(directory: File, block: (File) -> T): T {
     return ApkInspectionProcessGuard.exclusive(directory) {
     val file = File.createTempFile("sentinel_apk_inspection_", ".apk", directory)
     ActiveTemporaryApks.enter(file)
