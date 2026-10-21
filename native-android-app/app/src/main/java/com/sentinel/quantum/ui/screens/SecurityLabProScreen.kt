@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 /** Local-only security inspection. A self-inspection is always visible even with package visibility limits. */
 @Composable
@@ -34,6 +35,7 @@ fun SecurityLabProScreen(navController: NavController) {
             error = null
             selection = selection.startReferenceReplacement()
             try { selection = selection.referenceLoaded(SelectedApkInspector(context.applicationContext).inspect(uri)) }
+            catch (e: CancellationException) { throw e }
             catch (e: Exception) { error = "Premier APK non lisible : ${e.message ?: "erreur"}" }
             finally { selectionBusy = false }
         }
@@ -44,16 +46,24 @@ fun SecurityLabProScreen(navController: NavController) {
             error = null
             selection = selection.startCandidateReplacement()
             try { selection = selection.candidateLoaded(SelectedApkInspector(context.applicationContext).inspect(uri)) }
+            catch (e: CancellationException) { throw e }
             catch (e: Exception) { error = "Second APK non lisible : ${e.message ?: "erreur"}" }
             finally { selectionBusy = false }
         }
     }
     LaunchedEffect(context) {
         busy = true
-        report = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-            InstalledAppIntegrityInspector(context.applicationContext).inspect(context.packageName)
+        try {
+            report = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                InstalledAppIntegrityInspector(context.applicationContext).inspect(context.packageName)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            error = "Inspection locale indisponible : ${e.message ?: "erreur"}"
+        } finally {
+            busy = false
         }
-        busy = false
     }
     Scaffold(topBar = { Text("Security Lab Pro", style = MaterialTheme.typography.headlineSmall,
         modifier = Modifier.padding(20.dp)) }) { padding ->
