@@ -150,10 +150,21 @@ fun SecurityLabProScreen(navController: NavController) {
 /** Isolated finding component for emulator UI validation with known test evidence. */
 @Composable
 internal fun ApkComparisonFindingCard(finding: AppIntegrityFinding) {
+    var expanded by remember(finding.id) { mutableStateOf(false) }
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text("${finding.status.name}: ${finding.title}")
-            Text(finding.explanation)
+            val label = when (finding.status) {
+                AppIntegrityStatus.OK -> "Vérifié"
+                AppIntegrityStatus.WARN -> "À examiner"
+                AppIntegrityStatus.BAD -> "Invalide"
+                AppIntegrityStatus.UNKNOWN -> "Indéterminé"
+            }
+            Text("$label — ${finding.title}", style = MaterialTheme.typography.titleMedium)
+            Text(finding.explanation, maxLines = if (expanded) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis)
+            TextButton(onClick = { expanded = !expanded }) {
+                Text(if (expanded) "Réduire" else "Afficher les détails")
+            }
         }
     }
 }
