@@ -16,6 +16,7 @@ import kotlin.coroutines.coroutineContext
 class SelectedApkInspector(private val context: Context) {
     suspend fun inspect(uri: Uri): ApkEvidence = withTimeout(45_000L) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val inspectionJob = coroutineContext[kotlinx.coroutines.Job]
         withTemporaryApk(context.cacheDir) { file ->
             val digest = MessageDigest.getInstance("SHA-256")
             var total = 0L
@@ -26,7 +27,7 @@ class SelectedApkInspector(private val context: Context) {
                 file.outputStream().use { target ->
                     val buf = ByteArray(64 * 1024)
                     while (true) {
-                        coroutineContext.ensureActive()
+                        inspectionJob?.ensureActive()
                         val n = source.read(buf)
                         if (n < 0) break
                         total += n
@@ -37,7 +38,7 @@ class SelectedApkInspector(private val context: Context) {
                 }
             }
             if (total == 0L) throw IllegalArgumentException("APK vide")
-            coroutineContext.ensureActive()
+            inspectionJob?.ensureActive()
             ApkArchiveValidator.validate(file)
             val signatureVerified = ApkSignatureVerifier.verify(file)
             val flags = PackageManager.GET_SIGNING_CERTIFICATES
