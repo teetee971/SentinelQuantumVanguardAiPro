@@ -278,3 +278,9 @@ tasks.register('exportReleaseDependencyInventory') {
     }
 }
 
+
+tasks.withType(Test).configureEach {
+    if (project.hasProperty('sentinelSignatureFixture')) {
+        systemProperty 'sentinel.signature.fixture', project.property('sentinelSignatureFixture').toString()
+    }
+}
