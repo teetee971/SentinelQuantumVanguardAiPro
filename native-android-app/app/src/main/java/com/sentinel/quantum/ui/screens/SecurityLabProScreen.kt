@@ -44,6 +44,8 @@ fun SecurityLabProScreen(navController: NavController) {
                 val evidence = SelectedApkInspector(context.applicationContext).inspect(uri)
                 if (evidence.signatureVerified != true) {
                     managerError = "Signature APK non vérifiée : installation refusée."
+                } else if (evidence.packageName == "com.sentinel.quantum" || evidence.packageName == "com.sentinel.quantum.labpreview") {
+                    managerError = "APK Sentinel protégé : utiliser le parcours de mise à jour dédié, hors du laboratoire."
                 } else {
                     installPending = uri to evidence
                 }
@@ -143,7 +145,10 @@ fun SecurityLabProScreen(navController: NavController) {
                 Button(enabled = uninstallInput.isNotBlank() && uninstallInput != "com.sentinel.quantum" &&
                     uninstallInput != "com.sentinel.quantum.labpreview",
                     onClick = { uninstallPending = uninstallInput }) { Text("Demander la désinstallation") }
-                managerError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                managerError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = { managerError = null }) { Text("Effacer le message") }
+                }
                 Text("Journal local : demandes initiées, pas succès vérifiés.", style = MaterialTheme.typography.labelMedium)
                 @Suppress("UNUSED_VARIABLE") val refreshAudit = auditRevision
                 apkManager.entries().take(8).forEach { entry ->
