@@ -80,6 +80,13 @@ fun SecurityLabProScreen(navController: NavController) {
             }
             comparison?.let { result ->
                 item {
+                    Text(when {
+                        result.hasReviewRequired -> "Revue nécessaire : au moins une différence ou anomalie demande vérification."
+                        result.hasUnknownEvidence -> "Analyse incomplète : certaines preuves sont indéterminées."
+                        else -> "Aucune divergence détectée sur les preuves vérifiées ; sécurité globale non garantie."
+                    })
+                }
+                item {
                     Text("Résultats — divergence ne prouve pas un piratage",
                         style = MaterialTheme.typography.titleMedium)
                 }
