@@ -21,8 +21,10 @@ SIGNER=/root/android-sdk/build-tools/36.0.0/apksigner
 "$SIGNER" verify --verbose --print-certs "$APK" | tee /tmp/sentinel-lab-preview-cert.txt
 grep -q "Signer #1 certificate SHA-256 digest: 68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2" /tmp/sentinel-lab-preview-cert.txt || { echo "BLOQUE: certificat debug changé, mise à jour non autorisée"; exit 4; }
 ' _ "$APK"
-MANIFEST="$ROOT/native-android-app/app/build/intermediates/merged_manifests/labPreview/processLabPreviewMainManifest/AndroidManifest.xml"
-test -f "$MANIFEST" || { echo "BLOQUE: manifeste fusionné absent"; exit 5; }
+MANIFEST_ROOT="$ROOT/native-android-app/app/build/intermediates/merged_manifests/labPreview"
+MANIFEST="$(find "$MANIFEST_ROOT" -maxdepth 3 -type f -name AndroidManifest.xml -print -quit)"
+test -n "$MANIFEST" && test -f "$MANIFEST" || { echo "BLOQUE: manifeste fusionné absent"; exit 5; }
+echo "MANIFESTE=$MANIFEST"
 grep -q 'package="com.sentinel.quantum.labpreview"' "$MANIFEST" || { echo "BLOQUE: mauvais identifiant"; exit 6; }
 if grep -Eq 'SentinelInCallService|SentinelCallScreeningService|SentinelSmsDeliverReceiver|SentinelMmsDeliverReceiver|SentinelRespondViaMessageService|SentinelDialerActivity|SmsComposeActivity' "$MANIFEST"; then
   echo "BLOQUE: composants telephonie presents"; exit 7
