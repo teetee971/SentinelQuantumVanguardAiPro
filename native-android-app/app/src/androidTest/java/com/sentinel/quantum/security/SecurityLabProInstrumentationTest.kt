@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sentinel.quantum.ui.screens.SecurityLabProScreen
+import com.sentinel.quantum.ui.screens.ApkComparisonFindingCard
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,6 +20,23 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SecurityLabProInstrumentationTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun invalidCryptographicProofIsDisplayedAsBad() {
+        val finding = AppIntegrityFinding(
+            id = "CRYPTOGRAPHIC_SIGNATURE",
+            status = AppIntegrityStatus.BAD,
+            title = "Validité cryptographique des APK",
+            explanation = "La signature du fichier est invalide.",
+            source = AppEvidenceSource.USER_SELECTED_APK,
+            evidence = null,
+            observedAtMillis = 1L,
+        )
+        rule.setContent {
+            MaterialTheme { ApkComparisonFindingCard(finding) }
+        }
+        rule.onNodeWithText("BAD: Validité cryptographique des APK").assertExists()
+        rule.onNodeWithText("La signature du fichier est invalide.").assertExists()
+    }
 
     @Test fun securityLabOpensWithSafePickerControls() {
         rule.setContent {
