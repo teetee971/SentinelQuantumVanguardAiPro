@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.*
+import kotlinx.coroutines.launch
 
 /** Local-only security inspection. A self-inspection is always visible even with package visibility limits. */
 @Composable
