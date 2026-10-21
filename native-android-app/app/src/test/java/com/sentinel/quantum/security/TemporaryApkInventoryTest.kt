@@ -43,6 +43,20 @@ class TemporaryApkInventoryTest {
         }
     }
 
+    @Test fun activeFileIsExcludedEvenWhenOld() {
+        val dir = Files.createTempDirectory("sentinel-inventory-active").toFile()
+        try {
+            withTemporaryApk(dir) { current ->
+                current.writeText("busy")
+                current.setLastModified(1_000L)
+                val candidates = TemporaryApkInventory.candidates(dir, 20_000L, 5_000L)
+                assertTrue(candidates.isEmpty())
+                assertTrue(current.exists())
+            }
+            assertTrue(dir.listFiles().orEmpty().isEmpty())
+        } finally { dir.deleteRecursively() }
+    }
+
     @Test fun missingFolderReturnsNoCandidates() {
         val dir = Files.createTempDirectory("sentinel-inventory-absent").toFile()
         dir.deleteRecursively()
