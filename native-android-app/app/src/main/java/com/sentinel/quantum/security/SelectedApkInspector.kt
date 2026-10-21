@@ -34,6 +34,7 @@ class SelectedApkInspector(private val context: Context) {
                 }
             }
             if (total == 0L) throw IllegalArgumentException("APK vide")
+            val signatureVerified = ApkSignatureVerifier.verify(file)
             val flags = PackageManager.GET_SIGNING_CERTIFICATES
             val info = if (Build.VERSION.SDK_INT >= 33) {
                 context.packageManager.getPackageArchiveInfo(
@@ -62,7 +63,8 @@ class SelectedApkInspector(private val context: Context) {
                 packageName = info?.packageName,
                 versionCode = versionCode,
                 fileSha256 = digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) },
-                signerSha256 = signers
+                signerSha256 = signers,
+                signatureVerified = signatureVerified
             )
         } finally {
             file.delete()
