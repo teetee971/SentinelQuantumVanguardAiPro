@@ -11,6 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import android.widget.ImageView
+import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.*
 import kotlinx.coroutines.launch
@@ -157,7 +160,29 @@ fun SecurityLabProScreen(navController: NavController) {
                         label = { Text("Rechercher une application") }, singleLine = true)
                     visibleApps.filter { it.label.contains(appSearch, true) || it.packageName.contains(appSearch, true) }
                         .take(25).forEach { app ->
-                            Text("${app.label} — ${app.packageName}", style = MaterialTheme.typography.bodySmall)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                AndroidView(
+                                    modifier = Modifier.size(44.dp),
+                                    factory = { viewContext -> ImageView(viewContext).apply {
+                                        scaleType = ImageView.ScaleType.FIT_CENTER
+                                        contentDescription = "Icône de l'application"
+                                    } },
+                                    update = { image ->
+                                        val icon = try {
+                                            context.packageManager.getApplicationIcon(app.packageName)
+                                        } catch (_: Exception) {
+                                            context.packageManager.defaultActivityIcon
+                                        }
+                                        image.setImageDrawable(icon)
+                                        image.contentDescription = "Icône de ${app.label}"
+                                    }
+                                )
+                                Column {
+                                    Text(app.label, style = MaterialTheme.typography.bodyMedium)
+                                    Text(app.packageName, style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = {
                                 try { installedScanner.openDetails(app.packageName) }
