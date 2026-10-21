@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import java.io.File
 import java.security.MessageDigest
-import java.util.zip.ZipFile
 
 /**
  * Reads only a user-selected APK through Android's document picker.
@@ -35,20 +34,7 @@ class SelectedApkInspector(private val context: Context) {
                 }
             }
             if (total == 0L) throw IllegalArgumentException("APK vide")
-            // File extension and MIME type are untrusted. Validate the archive shape.
-            file.inputStream().use { stream ->
-                val h = ByteArray(4)
-                if (stream.read(h) != 4 || h[0] != 0x50.toByte() ||
-                    h[1] != 0x4b.toByte() || h[2] != 0x03.toByte() ||
-                    h[3] != 0x04.toByte()) {
-                    throw IllegalArgumentException("Le document n'est pas une archive APK ZIP")
-                }
-            }
-            ZipFile(file).use { zip ->
-                if (zip.getEntry("AndroidManifest.xml") == null) {
-                    throw IllegalArgumentException("Manifest Android absent")
-                }
-            }
+            ApkArchiveValidator.validate(file)
             val signatureVerified = ApkSignatureVerifier.verify(file)
             val flags = PackageManager.GET_SIGNING_CERTIFICATES
             val info = if (Build.VERSION.SDK_INT >= 33) {
