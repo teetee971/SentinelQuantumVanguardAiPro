@@ -30,6 +30,6 @@ if len(f)!=1: raise SystemExit("BLOQUÉ: preuve XML inventaire absente")
 r=ET.parse(f[0]).getroot()
 v=[int(r.attrib.get(k,0)) for k in ("tests","skipped","failures","errors")]
 print("INVENTAIRE_TESTS=%d SKIPPED=%d FAILURES=%d ERRORS=%d"%tuple(v))
-if v != [3,0,0,0]: raise SystemExit("VERDICT=INVENTAIRE_NON_VALIDE")
-print("VERDICT=INVENTAIRE_LECTURE_SEULE_3_TESTS_REUSSIS")
+if v != [4,0,0,0]: raise SystemExit("VERDICT=INVENTAIRE_NON_VALIDE")
+print("VERDICT=INVENTAIRE_LECTURE_SEULE_4_TESTS_REUSSIS")
 PY
