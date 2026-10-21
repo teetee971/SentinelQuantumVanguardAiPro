@@ -14,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import android.widget.ImageView
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.*
 import kotlinx.coroutines.launch
@@ -38,6 +41,7 @@ fun SecurityLabProScreen(navController: NavController) {
     var visibleApps by remember { mutableStateOf<List<VisibleInstalledApp>>(emptyList()) }
     var scanBusy by remember { mutableStateOf(false) }
     var appSearch by remember { mutableStateOf("") }
+    var appsFilter by remember { mutableStateOf(0) }
     var installPending by remember { mutableStateOf<Pair<Uri, ApkEvidence>?>(null) }
     var uninstallPending by remember { mutableStateOf<String?>(null) }
     var uninstallInput by remember { mutableStateOf("") }
@@ -143,7 +147,13 @@ fun SecurityLabProScreen(navController: NavController) {
                 Button(onClick = { navController.popBackStack() }) { Text("Retour") }
                 if (selfInspection.loading || selectionBusy) CircularProgressIndicator()
                 selfInspection.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                Text("Gestionnaire APK — opérations soumises à confirmation Android.", style = MaterialTheme.typography.titleMedium)
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111C30)), shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, Color(0xFF355C86))) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("SENTINEL / D.1", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
+                        Text("APK INTELLIGENCE", style = MaterialTheme.typography.headlineSmall)
+                        Text("Analyse locale • Inventaire contrôlé • Gestion avec consentement", color = Color(0xFFA9B9D4), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
                 Button(enabled = !scanBusy, onClick = {
                     scope.launch {
                         scanBusy = true
@@ -156,10 +166,21 @@ fun SecurityLabProScreen(navController: NavController) {
                 if (scanBusy) CircularProgressIndicator()
                 if (visibleApps.isNotEmpty()) {
                     Text("${visibleApps.size} application(s) visibles par Android — inventaire potentiellement partiel.")
+                    Text("Applications détectées", style = MaterialTheme.typography.titleMedium)
+                    SingleChoiceSegmentedButtonRow {
+                        listOf("Utilisateur", "Système", "Toutes").forEachIndexed { index, title ->
+                            SegmentedButton(selected = appsFilter == index, onClick = { appsFilter = index },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = 3)) { Text(title) }
+                        }
+                    }
                     OutlinedTextField(value = appSearch, onValueChange = { appSearch = it },
                         label = { Text("Rechercher une application") }, singleLine = true)
-                    visibleApps.filter { it.label.contains(appSearch, true) || it.packageName.contains(appSearch, true) }
+                    visibleApps.filter { (appsFilter == 2 || (appsFilter == 0 && !it.system) || (appsFilter == 1 && it.system)) &&
+                        (it.label.contains(appSearch, true) || it.packageName.contains(appSearch, true)) }
                         .take(25).forEach { app ->
+                            Card(shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, Color(0xFF273D59)),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF151C2B))) {
+                                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 AndroidView(
                                     modifier = Modifier.size(44.dp),
@@ -191,6 +212,8 @@ fun SecurityLabProScreen(navController: NavController) {
                             if (!app.system && app.packageName != "com.sentinel.quantum" && app.packageName != "com.sentinel.quantum.labpreview") {
                                 TextButton(onClick = { uninstallPending = app.packageName }) { Text("Désinstaller…") }
                             }
+                            }
+                                }
                             }
                         }
                 }
