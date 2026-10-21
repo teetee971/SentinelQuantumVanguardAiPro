@@ -31,6 +31,10 @@ fun SecurityLabProScreen(navController: NavController) {
     var selectionBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val apkManager = remember(context) { SentinelApkManager(context.applicationContext) }
+    val installedScanner = remember(context) { InstalledAppScanner(context.applicationContext) }
+    var visibleApps by remember { mutableStateOf<List<VisibleInstalledApp>>(emptyList()) }
+    var scanBusy by remember { mutableStateOf(false) }
+    var appSearch by remember { mutableStateOf("") }
     var installPending by remember { mutableStateOf<Pair<Uri, ApkEvidence>?>(null) }
     var uninstallPending by remember { mutableStateOf<String?>(null) }
     var uninstallInput by remember { mutableStateOf("") }
@@ -137,6 +141,31 @@ fun SecurityLabProScreen(navController: NavController) {
                 if (selfInspection.loading || selectionBusy) CircularProgressIndicator()
                 selfInspection.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Text("Gestionnaire APK — opérations soumises à confirmation Android.", style = MaterialTheme.typography.titleMedium)
+                Button(enabled = !scanBusy, onClick = {
+                    scope.launch {
+                        scanBusy = true
+                        try {
+                            visibleApps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { installedScanner.scan() }
+                        } catch (e: Exception) { managerError = "Inventaire indisponible : ${e.message ?: "erreur"}" }
+                        finally { scanBusy = false }
+                    }
+                }) { Text("Scanner les applications installées") }
+                if (scanBusy) CircularProgressIndicator()
+                if (visibleApps.isNotEmpty()) {
+                    Text("${visibleApps.size} application(s) visibles par Android — inventaire potentiellement partiel.")
+                    OutlinedTextField(value = appSearch, onValueChange = { appSearch = it },
+                        label = { Text("Rechercher une application") }, singleLine = true)
+                    visibleApps.filter { it.label.contains(appSearch, true) || it.packageName.contains(appSearch, true) }
+                        .take(25).forEach { app ->
+                            Text("${app.label} — ${app.packageName}", style = MaterialTheme.typography.bodySmall)
+                            TextButton(onClick = {
+                                try { installedScanner.openDetails(app.packageName) }
+                                catch (e: Exception) { managerError = e.message ?: "Fiche Android indisponible" }
+                            }) { Text("Ouvrir la fiche Android") }
+                        }
+                }
+                Text("Pour chercher des fichiers APK non installés : utiliser le sélecteur de fichiers Android.", style = MaterialTheme.typography.bodySmall)
+
                 Button(enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
                     Text("Analyser puis demander l'installation")
                 }
