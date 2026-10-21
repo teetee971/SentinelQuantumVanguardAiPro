@@ -21,7 +21,7 @@ import kotlinx.coroutines.CancellationException
 fun SecurityLabProScreen(navController: NavController) {
     val context = LocalContext.current
     var report by remember { mutableStateOf<AppIntegrityReport?>(null) }
-    var busy by remember { mutableStateOf(false) }
+    var selfInspection by remember { mutableStateOf(ApkInspectionActivityState()) }
     var selection by remember { mutableStateOf(ApkSelectionState()) }
     val firstApk = selection.reference
     val secondApk = selection.candidate
@@ -52,17 +52,18 @@ fun SecurityLabProScreen(navController: NavController) {
         }
     }
     LaunchedEffect(context) {
-        busy = true
+        selfInspection = selfInspection.started()
         try {
             report = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                 InstalledAppIntegrityInspector(context.applicationContext).inspect(context.packageName)
             }
         } catch (e: CancellationException) {
+            selfInspection = selfInspection.cancelled()
             throw e
         } catch (e: Exception) {
-            error = "Inspection locale indisponible : ${e.message ?: "erreur"}"
+            selfInspection = selfInspection.failed("Inspection locale indisponible : ${e.message ?: "erreur"}")
         } finally {
-            busy = false
+            if (selfInspection.loading) selfInspection = selfInspection.completed()
         }
     }
     Scaffold(topBar = { Text("Security Lab Pro", style = MaterialTheme.typography.headlineSmall,
@@ -73,7 +74,8 @@ fun SecurityLabProScreen(navController: NavController) {
                 Text("Inspection locale en lecture seule — aucune modification d'application.",
                     style = MaterialTheme.typography.bodyMedium)
                 Button(onClick = { navController.popBackStack() }) { Text("Retour") }
-                if (busy || selectionBusy) CircularProgressIndicator()
+                if (selfInspection.loading || selectionBusy) CircularProgressIndicator()
+                selfInspection.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Text("Comparer deux APK sélectionnés sur ce téléphone (sans installation).")
                 Button(enabled = !selectionBusy, onClick = { firstPicker.launch(arrayOf("*/*")) }) {
                     Text("Choisir APK de référence")
