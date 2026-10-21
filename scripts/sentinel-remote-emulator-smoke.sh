@@ -14,7 +14,7 @@ SERIAL="${DEVICES[0]}"
 ADB=(adb -s "$SERIAL")
 QEMU="$("${ADB[@]}" shell getprop ro.kernel.qemu | tr -d '\r')"
 QEMU_BOOT="$("${ADB[@]}" shell getprop ro.boot.qemu | tr -d '\r')"
-[[ "$QEMU" == "1" || "$QEMU_BOOT" == "1" ]] || { echo "BLOCKED: cet appareil n'est pas un émulateur attesté par getprop"; exit 3; }
+[[ "$SERIAL" == emulator-* && ( "$QEMU" == "1" || "$QEMU_BOOT" == "1" ) ]] || { echo "BLOCKED: cible ADB non confirmée comme émulateur local isolé"; exit 3; }
 API="$("${ADB[@]}" shell getprop ro.build.version.sdk | tr -d '\r')"
 echo "Émulateur ADB=$SERIAL API=$API"
 echo "Empreintes APK :"
@@ -34,7 +34,11 @@ RC=$?
 set -e
 cat "$OUT/navigation-smoke.txt"
 "${ADB[@]}" logcat -d -t 2500 > "$OUT/logcat-tail.txt" 2>&1 || true
-if [[ "$RC" -ne 0 ]] || ! grep -Eq '^OK \([0-9]+ tests?\)' "$OUT/navigation-smoke.txt" || grep -q '^FAILURES!!!' "$OUT/navigation-smoke.txt"; then
+if [[ "$RC" -ne 0 ]] || ! grep -Eq '^OK \(22 tests\)' "$OUT/navigation-smoke.txt" || ! grep -Eq '^INSTRUMENTATION_CODE: -1
+  echo "FAILED: navigation smoke non prouvé; voir $OUT/navigation-smoke.txt"; exit 5
+fi
+echo "PASS: navigation smoke exécuté sur émulateur; Phone Core physique/VPN/UX restent NON VALIDÉS."
+ "$OUT/navigation-smoke.txt" || grep -Eq '^(FAILURES!!!|INSTRUMENTATION_FAILED:)' "$OUT/navigation-smoke.txt"; then
   echo "FAILED: navigation smoke non prouvé; voir $OUT/navigation-smoke.txt"; exit 5
 fi
 echo "PASS: navigation smoke exécuté sur émulateur; Phone Core physique/VPN/UX restent NON VALIDÉS."
