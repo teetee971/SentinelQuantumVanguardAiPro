@@ -81,4 +81,28 @@ class ApkComparisonEngineTest {
         assertEquals(AppIntegrityStatus.UNKNOWN, status(result, "VERSION_CODE"))
     }
 
+    @Test fun matchingPackageAndBuildGiveAccurateExplanations() {
+        val item = evidence().copy(signatureVerified = true)
+        val findings = ApkComparisonEngine.compare(item, item, 123).findings
+        org.junit.Assert.assertTrue(findings.single { it.id == "PACKAGE_ID" }.explanation.contains("Même identifiant"))
+        org.junit.Assert.assertTrue(findings.single { it.id == "VERSION_CODE" }.explanation.contains("Même numéro"))
+        org.junit.Assert.assertTrue(findings.single { it.id == "APK_CONTENT_SHA256" }.explanation.contains("identiques"))
+        org.junit.Assert.assertTrue(findings.single { it.id == "SIGNER_SET" }.explanation.contains("Même ensemble"))
+    }
+
+    @Test fun divergentContentExplainsDifferenceWithoutMalwareClaim() {
+        val findings = ApkComparisonEngine.compare(evidence(), evidence(file = b), 123).findings
+        val mismatch = findings.single { it.id == "APK_CONTENT_SHA256" }
+        assertEquals(AppIntegrityStatus.WARN, mismatch.status)
+        org.junit.Assert.assertTrue(mismatch.explanation.contains("ne prouve pas une attaque"))
+    }
+
+    @Test fun differentPackageExplainsNonComparableVersions() {
+        val findings = ApkComparisonEngine.compare(
+            evidence(), evidence(version = 11).copy(packageName = "org.example.alternate"), 123
+        ).findings
+        assertEquals(AppIntegrityStatus.UNKNOWN, findings.single { it.id == "VERSION_CODE" }.status)
+        org.junit.Assert.assertTrue(findings.single { it.id == "PACKAGE_ID" }.explanation.contains("Identifiants différents"))
+    }
+
 }
