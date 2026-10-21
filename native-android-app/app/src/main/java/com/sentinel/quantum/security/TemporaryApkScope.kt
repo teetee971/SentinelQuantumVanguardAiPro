@@ -1,15 +1,26 @@
 package com.sentinel.quantum.security
 
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+
+/** Tracks active inspections within the current app process. Does not assert cross-process locking. */
+internal object ActiveTemporaryApks {
+    private val paths = ConcurrentHashMap.newKeySet<String>()
+    fun enter(file: File) { check(paths.add(file.absolutePath)) { "APK déjà actif" } }
+    fun leave(file: File) { paths.remove(file.absolutePath) }
+    fun contains(file: File): Boolean = paths.contains(file.absolutePath)
+}
 
 /** Guarantees deletion attempts on normal completion, failures and coroutine cancellation.
  * The block must cooperate with cancellation; this does not interrupt blocked OS I/O.
  */
 internal inline fun <T> withTemporaryApk(directory: File, block: (File) -> T): T {
     val file = File.createTempFile("sentinel_apk_inspection_", ".apk", directory)
+    ActiveTemporaryApks.enter(file)
     return try {
         block(file)
     } finally {
+        ActiveTemporaryApks.leave(file)
         if (file.exists() && !file.delete()) {
             // Fail closed: never represent unsuccessful temporary file cleanup as success.
             throw IllegalStateException("Échec de suppression du fichier temporaire APK")
@@ -30,6 +41,7 @@ internal object TemporaryApkInventory {
             .asSequence()
             .filter { it.isFile }
             .filter { it.name.startsWith("sentinel_apk_inspection_") && it.name.endsWith(".apk") }
+            .filterNot { ActiveTemporaryApks.contains(it) }
             .filter {
                 val modified = it.lastModified()
                 modified > 0L && modified <= nowMillis &&
