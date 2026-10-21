@@ -25,10 +25,17 @@ internal object ApkArchiveValidator {
                 var count = 0
                 var totalExpanded = 0L
                 val entries = zip.entries()
+                val seen = HashSet<String>()
+                val criticalEntries = mutableListOf<String>()
                 while (entries.hasMoreElements()) {
                     val entry = entries.nextElement()
                     checkDeadline()
                     count++
+                    require(seen.add(entry.name)) { "Entrée ZIP dupliquée" }
+                    require(!entry.name.contains(92.toChar())) { "Chemin ZIP non sûr" }
+                    if (entry.name == "AndroidManifest.xml" || entry.name.matches(Regex("classes[0-9]*\\.dex"))) {
+                        criticalEntries.add(entry.name)
+                    }
                     require(count <= 100_000) { "Trop d'entrées ZIP" }
                     require(entry.name.length <= 1024) { "Nom d'entrée ZIP excessif" }
                     require(!entry.name.startsWith("/") && !entry.name.split('/').contains("..")) {
@@ -49,7 +56,7 @@ internal object ApkArchiveValidator {
                 }
                 // Read the security-critical entries through a bounded stream. This validates
                 // actual expansion and CRC, rather than trusting the ZIP directory alone.
-                for (name in listOf("AndroidManifest.xml", "classes.dex")) {
+                for (name in criticalEntries) {
                     val entry = zip.getEntry(name) ?: continue
                     val cap = if (name == "AndroidManifest.xml") 8L * 1024 * 1024
                               else 128L * 1024 * 1024
