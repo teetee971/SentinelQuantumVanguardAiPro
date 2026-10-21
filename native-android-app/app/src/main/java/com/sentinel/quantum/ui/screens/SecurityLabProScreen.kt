@@ -158,10 +158,15 @@ fun SecurityLabProScreen(navController: NavController) {
                     visibleApps.filter { it.label.contains(appSearch, true) || it.packageName.contains(appSearch, true) }
                         .take(25).forEach { app ->
                             Text("${app.label} — ${app.packageName}", style = MaterialTheme.typography.bodySmall)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = {
                                 try { installedScanner.openDetails(app.packageName) }
                                 catch (e: Exception) { managerError = e.message ?: "Fiche Android indisponible" }
-                            }) { Text("Ouvrir la fiche Android") }
+                            }) { Text("Fiche Android") }
+                            if (!app.system && app.packageName != "com.sentinel.quantum" && app.packageName != "com.sentinel.quantum.labpreview") {
+                                TextButton(onClick = { uninstallPending = app.packageName }) { Text("Désinstaller…") }
+                            }
+                            }
                         }
                 }
                 Text("Pour chercher des fichiers APK non installés : utiliser le sélecteur de fichiers Android.", style = MaterialTheme.typography.bodySmall)
