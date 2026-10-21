@@ -124,7 +124,15 @@ fun PhoneCoreConversationRow(
             }
         }
     ) {
-        Card(onClick = onOpen, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+        val conversationShape = RoundedCornerShape(SentinelVisualTokens.GlassCornerRadiusDp.dp)
+        Card(
+            onClick = onOpen,
+            modifier = Modifier.fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .border(1.dp, SentinelD1.BorderStrong, conversationShape),
+            shape = conversationShape,
+            colors = CardDefaults.cardColors(containerColor = SentinelD1.Card)
+        ) {
             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(Modifier.size(44.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), contentColor = MaterialTheme.colorScheme.primary) {
                     Box(contentAlignment = Alignment.Center) {
