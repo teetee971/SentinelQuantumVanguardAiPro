@@ -21,9 +21,10 @@ fun SecurityLabProScreen(navController: NavController) {
     val context = LocalContext.current
     var report by remember { mutableStateOf<AppIntegrityReport?>(null) }
     var busy by remember { mutableStateOf(false) }
-    var firstApk by remember { mutableStateOf<ApkEvidence?>(null) }
-    var secondApk by remember { mutableStateOf<ApkEvidence?>(null) }
-    var comparison by remember { mutableStateOf<ApkComparison?>(null) }
+    var selection by remember { mutableStateOf(ApkSelectionState()) }
+    val firstApk = selection.reference
+    val secondApk = selection.candidate
+    val comparison = selection.comparison
     var error by remember { mutableStateOf<String?>(null) }
     var selectionBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -31,9 +32,8 @@ fun SecurityLabProScreen(navController: NavController) {
         if (uri != null) scope.launch {
             selectionBusy = true
             error = null
-            firstApk = null
-            comparison = null
-            try { firstApk = SelectedApkInspector(context.applicationContext).inspect(uri); comparison = null }
+            selection = selection.startReferenceReplacement()
+            try { selection = selection.referenceLoaded(SelectedApkInspector(context.applicationContext).inspect(uri)) }
             catch (e: Exception) { error = "Premier APK non lisible : ${e.message ?: "erreur"}" }
             finally { selectionBusy = false }
         }
@@ -42,9 +42,8 @@ fun SecurityLabProScreen(navController: NavController) {
         if (uri != null) scope.launch {
             selectionBusy = true
             error = null
-            secondApk = null
-            comparison = null
-            try { secondApk = SelectedApkInspector(context.applicationContext).inspect(uri); comparison = null }
+            selection = selection.startCandidateReplacement()
+            try { selection = selection.candidateLoaded(SelectedApkInspector(context.applicationContext).inspect(uri)) }
             catch (e: Exception) { error = "Second APK non lisible : ${e.message ?: "erreur"}" }
             finally { selectionBusy = false }
         }
@@ -76,9 +75,9 @@ fun SecurityLabProScreen(navController: NavController) {
                 secondApk?.let { Text("Comparaison : ${it.packageName ?: "Non identifié"} / build ${it.versionCode ?: "?"}") }
                 Button(
                     enabled = firstApk != null && secondApk != null && !selectionBusy,
-                    onClick = { comparison = ApkComparisonEngine.compare(
+                    onClick = { selection = selection.withComparison(ApkComparisonEngine.compare(
                         firstApk!!, secondApk!!, System.currentTimeMillis()
-                    ) }
+                    )) }
                 ) { Text("Comparer les deux APK") }
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
