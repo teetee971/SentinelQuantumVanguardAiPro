@@ -19,6 +19,6 @@ if len(files)!=1: raise SystemExit("BLOQUÉ: rapport XML absent")
 r=ET.parse(files[0]).getroot()
 v=[int(r.attrib.get(k,0)) for k in ("tests","skipped","failures","errors")]
 print("TESTS=%d SKIPPED=%d FAILURES=%d ERRORS=%d"%tuple(v))
-if v != [9,0,0,0]: raise SystemExit("VERDICT=PREUVE_NON_CONFORME")
-print("VERDICT=CONTROLES_ZIP_FLUX_9_TESTS_REUSSIS")
+if v != [10,0,0,0]: raise SystemExit("VERDICT=PREUVE_NON_CONFORME")
+print("VERDICT=CONTROLES_ZIP_FLUX_10_TESTS_REUSSIS")
 PY
