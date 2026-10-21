@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import java.io.File
 import java.security.MessageDigest
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withTimeout
@@ -17,8 +16,7 @@ import kotlin.coroutines.coroutineContext
 class SelectedApkInspector(private val context: Context) {
     suspend fun inspect(uri: Uri): ApkEvidence = withTimeout(45_000L) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-        val file = File.createTempFile("sentinel_apk_inspection_", ".apk", context.cacheDir)
-        try {
+        withTemporaryApk(context.cacheDir) { file ->
             val digest = MessageDigest.getInstance("SHA-256")
             var total = 0L
             val limit = 350L * 1024 * 1024
@@ -73,8 +71,6 @@ class SelectedApkInspector(private val context: Context) {
                 signerSha256 = signers,
                 signatureVerified = signatureVerified
             )
-        } finally {
-            file.delete()
         }
         }
     }
