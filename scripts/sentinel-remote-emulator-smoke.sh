@@ -34,7 +34,7 @@ RC=$?
 set -e
 cat "$OUT/navigation-smoke.txt"
 "${ADB[@]}" logcat -d -t 2500 > "$OUT/logcat-tail.txt" 2>&1 || true
-if [[ "$RC" -ne 0 ]] || ! grep -Fqx 'INSTRUMENTATION_CODE: -1' "$OUT/navigation-smoke.txt" || ! grep -Fqx 'OK (22 tests)' "$OUT/navigation-smoke.txt" || grep -Eq '^(FAILURES!!!|INSTRUMENTATION_FAILED:)' "$OUT/navigation-smoke.txt"; then
+if [[ "$RC" -ne 0 ]] || ! grep -Fqx 'INSTRUMENTATION_CODE: -1' "$OUT/navigation-smoke.txt" || ! grep -Fqx 'OK (23 tests)' "$OUT/navigation-smoke.txt" || grep -Eq '^(FAILURES!!!|INSTRUMENTATION_FAILED:)' "$OUT/navigation-smoke.txt"; then
   echo "FAILED: navigation smoke non prouvé; voir $OUT/navigation-smoke.txt"; exit 5
 fi
-echo "PASS: 22 tests de navigation exécutés sur émulateur; Phone Core physique/VPN/UX restent NON VALIDÉS."
+echo "PASS: 23 tests de navigation exécutés sur émulateur; Phone Core physique/VPN/UX restent NON VALIDÉS."
