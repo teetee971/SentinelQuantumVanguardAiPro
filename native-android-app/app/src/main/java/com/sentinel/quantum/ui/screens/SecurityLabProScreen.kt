@@ -102,6 +102,9 @@ fun SecurityLabProScreen(navController: NavController) {
                     })
                 }
                 item {
+                    if (firstApk?.packageName != null && secondApk?.packageName != null && firstApk.packageName != secondApk.packageName) {
+                        Text("Ces fichiers correspondent à deux identifiants Android différents. Il ne s’agit pas d’une comparaison de mise à jour de la même application.", style = MaterialTheme.typography.bodyMedium)
+                    }
                     Text("Résultats — divergence ne prouve pas un piratage",
                         style = MaterialTheme.typography.titleMedium)
                 }
@@ -122,7 +125,7 @@ fun SecurityLabProScreen(navController: NavController) {
                             Text("${finding.status.name} • ${finding.title}",
                                 style = MaterialTheme.typography.titleMedium)
                             Text(finding.explanation)
-                            finding.evidence?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                            finding.evidence?.let { Text(it, style = MaterialTheme.typography.bodySmall, overflow = TextOverflow.Ellipsis, maxLines = 3) }
                             Text("Source : ${finding.source.name}",
                                 style = MaterialTheme.typography.labelSmall)
                         }
