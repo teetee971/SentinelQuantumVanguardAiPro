@@ -95,6 +95,13 @@ fun SecurityLabProScreen(navController: NavController) {
             }
             comparison?.let { result ->
                 item {
+                    val ok = result.findings.count { it.status == AppIntegrityStatus.OK }
+                    val warn = result.findings.count { it.status == AppIntegrityStatus.WARN }
+                    val bad = result.findings.count { it.status == AppIntegrityStatus.BAD }
+                    val unknown = result.findings.count { it.status == AppIntegrityStatus.UNKNOWN }
+                    Text("Synthèse : $ok vérifié(s) · $warn à revoir · $bad invalide(s) · $unknown indéterminé(s)", style = MaterialTheme.typography.titleSmall)
+                }
+                item {
                     Text(when {
                         result.hasReviewRequired -> "Revue nécessaire : au moins une différence ou anomalie demande vérification."
                         result.hasUnknownEvidence -> "Analyse incomplète : certaines preuves sont indéterminées."
