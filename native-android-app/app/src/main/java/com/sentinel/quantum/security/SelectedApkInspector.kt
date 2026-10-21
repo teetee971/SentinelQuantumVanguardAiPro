@@ -6,13 +6,17 @@ import android.net.Uri
 import android.os.Build
 import java.io.File
 import java.security.MessageDigest
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.coroutineContext
 
 /**
  * Reads only a user-selected APK through Android's document picker.
  * Copies into app cache for PackageManager parsing, never executes or installs the APK.
  */
 class SelectedApkInspector(private val context: Context) {
-    suspend fun inspect(uri: Uri): ApkEvidence = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    suspend fun inspect(uri: Uri): ApkEvidence = withTimeout(45_000L) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val file = File.createTempFile("sentinel_apk_inspection_", ".apk", context.cacheDir)
         try {
             val digest = MessageDigest.getInstance("SHA-256")
@@ -24,6 +28,7 @@ class SelectedApkInspector(private val context: Context) {
                 file.outputStream().use { target ->
                     val buf = ByteArray(64 * 1024)
                     while (true) {
+                        coroutineContext.ensureActive()
                         val n = source.read(buf)
                         if (n < 0) break
                         total += n
@@ -34,6 +39,7 @@ class SelectedApkInspector(private val context: Context) {
                 }
             }
             if (total == 0L) throw IllegalArgumentException("APK vide")
+            coroutineContext.ensureActive()
             ApkArchiveValidator.validate(file)
             val signatureVerified = ApkSignatureVerifier.verify(file)
             val flags = PackageManager.GET_SIGNING_CERTIFICATES
@@ -69,6 +75,7 @@ class SelectedApkInspector(private val context: Context) {
             )
         } finally {
             file.delete()
+        }
         }
     }
 }
