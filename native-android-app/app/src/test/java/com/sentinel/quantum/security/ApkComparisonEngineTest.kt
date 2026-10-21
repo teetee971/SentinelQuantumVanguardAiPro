@@ -74,4 +74,11 @@ class ApkComparisonEngineTest {
         assertEquals(AppIntegrityStatus.OK, status(result, "SIGNER_SET"))
         assertEquals(AppIntegrityStatus.OK, status(result, "APK_CONTENT_SHA256"))
     }
+    @Test fun versionOfOtherPackageIsUnknown() {
+        val other = evidence(version = 11).copy(packageName = "org.example.other")
+        val result = ApkComparisonEngine.compare(evidence(), other, 123)
+        assertEquals(AppIntegrityStatus.WARN, status(result, "PACKAGE_ID"))
+        assertEquals(AppIntegrityStatus.UNKNOWN, status(result, "VERSION_CODE"))
+    }
+
 }
