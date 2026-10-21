@@ -101,6 +101,15 @@ class ApkArchiveValidatorTest {
         } finally { f.delete() }
     }
 
+    @Test fun expiredDeadlineRejectsBeforeArchiveProcessing() {
+        val f = fixture(listOf("AndroidManifest.xml", "classes.dex"))
+        try {
+            assertThrows(IllegalArgumentException::class.java) {
+                ApkArchiveValidator.validate(f, System.nanoTime() - 1_000_000L)
+            }
+        } finally { f.delete() }
+    }
+
     @Test fun truncatedZipRejected() {
         val f = fixture(listOf("AndroidManifest.xml", "classes.dex"))
         try {
