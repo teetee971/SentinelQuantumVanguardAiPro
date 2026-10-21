@@ -32,8 +32,14 @@ for PACKAGE in com.sentinel.quantum com.sentinel.quantum.test; do
     exit 4
   fi
 done
+# adb install may report a device-side failure; require the exact Success acknowledgement.
 "${ADB[@]}" install "$APP_APK" | tee "$OUT/install-app.txt"
+grep -Fqx "Success" "$OUT/install-app.txt" || { echo "FAILED: installation APK application non confirmée"; exit 4; }
 "${ADB[@]}" install "$TEST_APK" | tee "$OUT/install-test.txt"
+grep -Fqx "Success" "$OUT/install-test.txt" || { echo "FAILED: installation APK tests non confirmée"; exit 4; }
+for PACKAGE in com.sentinel.quantum com.sentinel.quantum.test; do
+  "${ADB[@]}" shell pm path "$PACKAGE" | tr -d "\r" | grep -q "^package:" || { echo "FAILED: paquet absent après installation: $PACKAGE"; exit 4; }
+done
 if ! "${ADB[@]}" shell pm list instrumentation | tee "$OUT/instrumentation-list.txt" | grep -Fq "com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner"; then
   echo "BLOCKED: instrumentation runner absent"; exit 4
 fi
