@@ -17,6 +17,8 @@ class ApkComparisonEngineTest {
         val result = ApkComparisonEngine.compare(evidence(), evidence(), 123)
         assertEquals(5, result.findings.size)
         assertFalse(result.hasReviewRequired)
+        assertTrue(result.hasUnknownEvidence)
+        assertFalse(result.isFullyVerified)
         assertEquals(AppIntegrityStatus.UNKNOWN, status(result, "CRYPTOGRAPHIC_SIGNATURE"))
         assertEquals(AppIntegrityStatus.OK, status(result, "SIGNER_SET"))
     }
@@ -41,6 +43,25 @@ class ApkComparisonEngineTest {
         )
         assertEquals(AppIntegrityStatus.BAD, status(result, "CRYPTOGRAPHIC_SIGNATURE"))
         assertTrue(result.hasReviewRequired)
+    }
+
+    @Test fun verifiedMatchingEvidenceIsMarkedFullyVerifiedWithoutSafetyClaim() {
+        val both = evidence().copy(signatureVerified = true)
+        val result = ApkComparisonEngine.compare(both, both, 123)
+        assertTrue(result.isFullyVerified)
+        assertFalse(result.hasUnknownEvidence)
+        assertFalse(result.hasReviewRequired)
+        assertEquals(AppIntegrityStatus.OK, status(result, "CRYPTOGRAPHIC_SIGNATURE"))
+    }
+
+    @Test fun invalidSignatureHasActionableWarning() {
+        val result = ApkComparisonEngine.compare(
+            evidence().copy(signatureVerified = false),
+            evidence().copy(signatureVerified = true), 123
+        )
+        val finding = result.findings.single { it.id == "CRYPTOGRAPHIC_SIGNATURE" }
+        assertEquals(AppIntegrityStatus.BAD, finding.status)
+        assertTrue(finding.explanation.contains("Ne pas installer"))
     }
 
     @Test fun downgradeIsFlagged() {
