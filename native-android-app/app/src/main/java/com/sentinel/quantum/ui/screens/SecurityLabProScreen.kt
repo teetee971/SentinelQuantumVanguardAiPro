@@ -42,6 +42,7 @@ fun SecurityLabProScreen(navController: NavController) {
     var scanBusy by remember { mutableStateOf(false) }
     var appSearch by remember { mutableStateOf("") }
     var appsFilter by remember { mutableStateOf(0) }
+    var labTab by remember { mutableStateOf(0) }
     var installPending by remember { mutableStateOf<Pair<Uri, ApkEvidence>?>(null) }
     var uninstallPending by remember { mutableStateOf<String?>(null) }
     var uninstallInput by remember { mutableStateOf("") }
@@ -154,6 +155,13 @@ fun SecurityLabProScreen(navController: NavController) {
                         Text("Analyse locale • Inventaire contrôlé • Gestion avec consentement", color = Color(0xFFA9B9D4), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
+                SingleChoiceSegmentedButtonRow {
+                    listOf("Scanner", "APK", "Journal").forEachIndexed { index, label ->
+                        SegmentedButton(selected = labTab == index, onClick = { labTab = index },
+                            shape = SegmentedButtonDefaults.itemShape(index, 3)) { Text(label) }
+                    }
+                }
+                if (labTab == 0) {
                 Button(enabled = !scanBusy, onClick = {
                     scope.launch {
                         scanBusy = true
@@ -217,7 +225,10 @@ fun SecurityLabProScreen(navController: NavController) {
                             }
                         }
                 }
-                Text("Pour chercher des fichiers APK non installés : utiliser le sélecteur de fichiers Android.", style = MaterialTheme.typography.bodySmall)
+                Text("Inventaire limité aux applications visibles par Android.", style = MaterialTheme.typography.bodySmall)
+                }
+                if (labTab == 1) {
+                Text("Analyser un APK ou comparer deux fichiers locaux.", style = MaterialTheme.typography.titleMedium)
 
                 Button(enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
                     Text("Analyser puis demander l'installation")
@@ -231,13 +242,17 @@ fun SecurityLabProScreen(navController: NavController) {
                     Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     TextButton(onClick = { managerError = null }) { Text("Effacer le message") }
                 }
+                }
+                if (labTab == 2) {
                 Text("Journal local : demandes initiées, pas succès vérifiés.", style = MaterialTheme.typography.labelMedium)
                 @Suppress("UNUSED_VARIABLE") val refreshAudit = auditRevision
                 apkManager.entries().take(8).forEach { entry ->
                     Text(entry, style = MaterialTheme.typography.bodySmall)
                 }
+                }
+                if (labTab == 1) {
                 HorizontalDivider()
-                                Text("Comparer deux APK sélectionnés sur ce téléphone (sans installation).")
+                Text("Comparer deux APK sélectionnés sur ce téléphone (sans installation).")
                 Button(enabled = !selectionBusy, onClick = { firstPicker.launch(arrayOf("*/*")) }) {
                     Text("Choisir APK de référence")
                 }
@@ -253,8 +268,9 @@ fun SecurityLabProScreen(navController: NavController) {
                     )) }
                 ) { Text("Comparer les deux APK") }
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
             }
-            comparison?.let { result ->
+            if (labTab == 1) comparison?.let { result ->
                 item {
                     val ok = result.findings.count { it.status == AppIntegrityStatus.OK }
                     val warn = result.findings.count { it.status == AppIntegrityStatus.WARN }
@@ -281,7 +297,7 @@ fun SecurityLabProScreen(navController: NavController) {
                 }
             }
             val current = report
-            if (current != null) {
+            if (current != null && labTab == 0) {
                 item {
                     Text("Application : ${current.packageName ?: "Inconnue"}")
                     Text("Build : ${current.versionCode ?: "Non vérifiable"}")
@@ -300,7 +316,7 @@ fun SecurityLabProScreen(navController: NavController) {
                     }
                 }
             }
-            item {
+            if (labTab == 0) item {
                 Text("Les applications tierces peuvent être masquées par Android. Aucun verdict de sûreté n'est déduit de leur absence.",
                     style = MaterialTheme.typography.bodySmall)
             }
