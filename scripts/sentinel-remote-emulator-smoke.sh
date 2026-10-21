@@ -25,8 +25,15 @@ echo "Émulateur ADB=$SERIAL API=$API"
 echo "Empreintes APK :"
 sha256sum "$APP_APK" "$TEST_APK" | tee "$OUT/apk-sha256.txt"
 "${ADB[@]}" wait-for-device
-"${ADB[@]}" install -r "$APP_APK" | tee "$OUT/install-app.txt"
-"${ADB[@]}" install -r "$TEST_APK" | tee "$OUT/install-test.txt"
+# Do not overwrite existing app or test data; require a dedicated clean emulator.
+for PACKAGE in com.sentinel.quantum com.sentinel.quantum.test; do
+  if "${ADB[@]}" shell pm path "$PACKAGE" | tr -d "\r" | grep -q "^package:"; then
+    echo "BLOCKED: $PACKAGE already installed; use a clean dedicated emulator"
+    exit 4
+  fi
+done
+"${ADB[@]}" install "$APP_APK" | tee "$OUT/install-app.txt"
+"${ADB[@]}" install "$TEST_APK" | tee "$OUT/install-test.txt"
 if ! "${ADB[@]}" shell pm list instrumentation | tee "$OUT/instrumentation-list.txt" | grep -Fq "com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner"; then
   echo "BLOCKED: instrumentation runner absent"; exit 4
 fi
