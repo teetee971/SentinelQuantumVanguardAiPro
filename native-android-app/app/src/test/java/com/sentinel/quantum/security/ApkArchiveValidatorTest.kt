@@ -80,6 +80,27 @@ class ApkArchiveValidatorTest {
         } finally { f.delete() }
     }
 
+
+    @Test fun oversizedManifestIsRejectedDuringBoundedStream() {
+        val f = File.createTempFile("sentinel-large-manifest-", ".apk")
+        try {
+            ZipOutputStream(f.outputStream()).use { out ->
+                out.putNextEntry(ZipEntry("AndroidManifest.xml"))
+                val random = java.util.Random(42L)
+                val block = ByteArray(64 * 1024)
+                repeat(140) {
+                    random.nextBytes(block)
+                    out.write(block)
+                }
+                out.closeEntry()
+                out.putNextEntry(ZipEntry("classes.dex"))
+                out.write(byteArrayOf(1, 2, 3))
+                out.closeEntry()
+            }
+            assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) }
+        } finally { f.delete() }
+    }
+
     @Test fun truncatedZipRejected() {
         val f = fixture(listOf("AndroidManifest.xml", "classes.dex"))
         try {
