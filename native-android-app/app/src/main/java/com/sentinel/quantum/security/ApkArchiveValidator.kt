@@ -6,7 +6,11 @@ import java.util.zip.ZipFile
 
 /** Structural screening only. Cryptographic validity is checked separately with apksig. */
 internal object ApkArchiveValidator {
-    fun validate(file: File) {
+    fun validate(file: File, deadlineNanos: Long = System.nanoTime() + 30_000_000_000L) {
+        fun checkDeadline() {
+            require(System.nanoTime() - deadlineNanos < 0L) { "Délai d'analyse ZIP dépassé" }
+        }
+        checkDeadline()
         require(file.isFile && file.length() > 0) { "APK vide ou absent" }
         file.inputStream().use { input ->
             val header = ByteArray(4)
@@ -23,6 +27,7 @@ internal object ApkArchiveValidator {
                 val entries = zip.entries()
                 while (entries.hasMoreElements()) {
                     val entry = entries.nextElement()
+                    checkDeadline()
                     count++
                     require(count <= 100_000) { "Trop d'entrées ZIP" }
                     require(entry.name.length <= 1024) { "Nom d'entrée ZIP excessif" }
@@ -54,6 +59,7 @@ internal object ApkArchiveValidator {
                         while (true) {
                             val n = stream.read(buffer)
                             if (n == -1) break
+                            checkDeadline()
                             expanded += n
                             require(expanded <= cap) { "Entrée critique décompressée trop volumineuse" }
                         }
