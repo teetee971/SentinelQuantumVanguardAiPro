@@ -13,6 +13,8 @@ data class ApkComparison(
     val findings: List<AppIntegrityFinding>,
 ) {
     val hasReviewRequired: Boolean get() = findings.any { it.status == AppIntegrityStatus.WARN || it.status == AppIntegrityStatus.BAD }
+    val hasUnknownEvidence: Boolean get() = findings.any { it.status == AppIntegrityStatus.UNKNOWN }
+    val isFullyVerified: Boolean get() = findings.isNotEmpty() && findings.all { it.status == AppIntegrityStatus.OK }
 }
 
 object ApkComparisonEngine {
@@ -56,12 +58,17 @@ object ApkComparisonEngine {
             prev == next -> AppIntegrityStatus.OK
             else -> AppIntegrityStatus.WARN
         }, "Certificats signataires", "Vérifier les rotations légitimes de signature avant de qualifier une divergence.")
-        finding("CRYPTOGRAPHIC_SIGNATURE", when {
+        val signatureStatus = when {
             before.signatureVerified == false || after.signatureVerified == false -> AppIntegrityStatus.BAD
             before.signatureVerified == true && after.signatureVerified == true -> AppIntegrityStatus.OK
             else -> AppIntegrityStatus.UNKNOWN
-        }, "Validité cryptographique des APK",
-            "Une empreinte ou un certificat lu dans un APK ne prouve pas la validité de sa signature. Vérification explicite nécessaire.")
+        }
+        finding("CRYPTOGRAPHIC_SIGNATURE", signatureStatus, "Validité cryptographique des APK",
+            when (signatureStatus) {
+                AppIntegrityStatus.BAD -> "Au moins un APK présente une signature cryptographique invalide. Ne pas installer ce fichier."
+                AppIntegrityStatus.OK -> "Les signatures sont cryptographiquement valides. Cela ne garantit ni une provenance fiable ni l’absence de code malveillant."
+                else -> "Validité cryptographique non démontrée pour au moins un APK ; résultat indéterminé."
+            })
         return ApkComparison(results)
     }
 }
