@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # Evidence-only APK signature tamper test. Never signs, installs, patches or touches live apps.
 set -euo pipefail
-APK="${1:-$HOME/sentinel-security-lab-compile/native-android-app/app/build/outputs/apk/debug/app-debug.apk}"
+APK="${1:-$HOME/sentinel-qa-release-110/native-android-app/app/build/outputs/apk/debug/app-debug.apk}"
 [[ -s "$APK" ]] || { echo "BLOQUÉ : APK de test absent. Lancer d'abord assembleDebug dans la copie de qualification."; exit 2; }
 LAB="$(mktemp -d "$HOME/sentinel-sigcheck.XXXXXXXX")"
 trap 'rm -rf "$LAB"' EXIT
