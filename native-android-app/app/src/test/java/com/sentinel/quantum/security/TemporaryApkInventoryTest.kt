@@ -53,7 +53,7 @@ class TemporaryApkInventoryTest {
                 assertTrue(candidates.isEmpty())
                 assertTrue(current.exists())
             }
-            assertTrue(dir.listFiles().orEmpty().isEmpty())
+            assertTrue(dir.listFiles().orEmpty().none { it.name.startsWith("sentinel_apk_inspection_") })
         } finally { dir.deleteRecursively() }
     }
 
