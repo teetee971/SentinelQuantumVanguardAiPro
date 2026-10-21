@@ -1,0 +1,62 @@
+package com.sentinel.quantum.security
+
+import org.junit.Assert.assertThrows
+import org.junit.Test
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+
+class ApkArchiveValidatorTest {
+    private fun fixture(entries: List<String>): File {
+        val f = File.createTempFile("sentinel-archive-test-", ".apk")
+        ZipOutputStream(f.outputStream()).use { out ->
+            for (name in entries) {
+                out.putNextEntry(ZipEntry(name))
+                out.write(byteArrayOf(1, 2, 3))
+                out.closeEntry()
+            }
+        }
+        return f
+    }
+
+    @Test fun emptyInputRejected() {
+        val f = File.createTempFile("sentinel-empty-", ".apk")
+        try { assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) } }
+        finally { f.delete() }
+    }
+
+    @Test fun arbitraryDocumentRejected() {
+        val f = File.createTempFile("sentinel-random-", ".apk")
+        try {
+            f.writeText("not an apk")
+            assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) }
+        } finally { f.delete() }
+    }
+
+    @Test fun missingManifestRejected() {
+        val f = fixture(listOf("classes.dex"))
+        try { assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) } }
+        finally { f.delete() }
+    }
+
+    @Test fun missingDexRejected() {
+        val f = fixture(listOf("AndroidManifest.xml"))
+        try { assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) } }
+        finally { f.delete() }
+    }
+
+    @Test fun validStructureAcceptedButNotSignatureCertified() {
+        val f = fixture(listOf("AndroidManifest.xml", "classes.dex"))
+        try { ApkArchiveValidator.validate(f) }
+        finally { f.delete() }
+    }
+
+    @Test fun truncatedZipRejected() {
+        val f = fixture(listOf("AndroidManifest.xml", "classes.dex"))
+        try {
+            val bytes = f.readBytes()
+            f.writeBytes(bytes.copyOf(bytes.size / 2))
+            assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) }
+        } finally { f.delete() }
+    }
+}
