@@ -53,6 +53,18 @@ class ApkArchiveValidatorTest {
     }
 
 
+    @Test fun validMultiDexStructureAccepted() {
+        val f = fixture(listOf("AndroidManifest.xml", "classes.dex", "classes2.dex"))
+        try { ApkArchiveValidator.validate(f) }
+        finally { f.delete() }
+    }
+
+    @Test fun windowsTraversalEntryRejected() {
+        val f = fixture(listOf("AndroidManifest.xml", "classes.dex", "..\\\\outside.txt"))
+        try { assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) } }
+        finally { f.delete() }
+    }
+
     @Test fun traversalEntryRejected() {
         val f = fixture(listOf("AndroidManifest.xml", "classes.dex", "../outside.txt"))
         try { assertThrows(IllegalArgumentException::class.java) { ApkArchiveValidator.validate(f) } }
