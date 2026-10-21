@@ -31,6 +31,8 @@ fun SecurityLabProScreen(navController: NavController) {
         if (uri != null) scope.launch {
             selectionBusy = true
             error = null
+            firstApk = null
+            comparison = null
             try { firstApk = SelectedApkInspector(context.applicationContext).inspect(uri); comparison = null }
             catch (e: Exception) { error = "Premier APK non lisible : ${e.message ?: "erreur"}" }
             finally { selectionBusy = false }
@@ -40,6 +42,8 @@ fun SecurityLabProScreen(navController: NavController) {
         if (uri != null) scope.launch {
             selectionBusy = true
             error = null
+            secondApk = null
+            comparison = null
             try { secondApk = SelectedApkInspector(context.applicationContext).inspect(uri); comparison = null }
             catch (e: Exception) { error = "Second APK non lisible : ${e.message ?: "erreur"}" }
             finally { selectionBusy = false }
