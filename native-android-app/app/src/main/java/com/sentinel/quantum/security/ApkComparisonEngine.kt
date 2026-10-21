@@ -6,6 +6,7 @@ data class ApkEvidence(
     val versionCode: Long?,
     val fileSha256: String?,
     val signerSha256: Set<String>?,
+    val signatureVerified: Boolean? = null,
 )
 
 data class ApkComparison(
@@ -55,6 +56,12 @@ object ApkComparisonEngine {
             prev == next -> AppIntegrityStatus.OK
             else -> AppIntegrityStatus.WARN
         }, "Certificats signataires", "Vérifier les rotations légitimes de signature avant de qualifier une divergence.")
+        finding("CRYPTOGRAPHIC_SIGNATURE", when {
+            before.signatureVerified == false || after.signatureVerified == false -> AppIntegrityStatus.BAD
+            before.signatureVerified == true && after.signatureVerified == true -> AppIntegrityStatus.OK
+            else -> AppIntegrityStatus.UNKNOWN
+        }, "Validité cryptographique des APK",
+            "Une empreinte ou un certificat lu dans un APK ne prouve pas la validité de sa signature. Vérification explicite nécessaire.")
         return ApkComparison(results)
     }
 }
