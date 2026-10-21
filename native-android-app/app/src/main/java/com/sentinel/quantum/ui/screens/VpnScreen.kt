@@ -57,7 +57,7 @@ fun VpnScreen(navController: NavController) {
         topBar = {
             SentinelTopBar(
                 title = "Sentinel VPN",
-                subtitle = "WireGuard défensif · vérité runtime",
+                subtitle = "Passerelle indisponible · tunnel non attesté",
                 onBack = { navController.popBackStack() }
             )
         }
@@ -133,7 +133,7 @@ fun VpnScreen(navController: NavController) {
             }
 
             SentinelSectionHeader(
-                title = "Fondations déjà actives",
+                title = "Capacités du client Android",
                 trailing = "Client Android"
             )
 
