@@ -42,6 +42,24 @@ internal object ApkArchiveValidator {
                 require(zip.entries().asSequence().any { it.name.matches(Regex("classes[0-9]*\\.dex")) }) {
                     "Code DEX absent : archive APK non prise en charge"
                 }
+                // Read the security-critical entries through a bounded stream. This validates
+                // actual expansion and CRC, rather than trusting the ZIP directory alone.
+                for (name in listOf("AndroidManifest.xml", "classes.dex")) {
+                    val entry = zip.getEntry(name) ?: continue
+                    val cap = if (name == "AndroidManifest.xml") 8L * 1024 * 1024
+                              else 128L * 1024 * 1024
+                    var expanded = 0L
+                    zip.getInputStream(entry).use { stream ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            val n = stream.read(buffer)
+                            if (n == -1) break
+                            expanded += n
+                            require(expanded <= cap) { "Entrée critique décompressée trop volumineuse" }
+                        }
+                    }
+                    require(expanded == entry.size) { "Taille ZIP déclarée incohérente" }
+                }
             }
         } catch (e: ZipException) {
             throw IllegalArgumentException("Archive ZIP invalide", e)
