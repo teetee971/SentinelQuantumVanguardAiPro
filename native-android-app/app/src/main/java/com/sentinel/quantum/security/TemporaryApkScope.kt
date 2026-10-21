@@ -15,6 +15,7 @@ internal object ActiveTemporaryApks {
  * The block must cooperate with cancellation; this does not interrupt blocked OS I/O.
  */
 internal inline fun <T> withTemporaryApk(directory: File, block: (File) -> T): T {
+    return ApkInspectionProcessGuard.exclusive(directory) {
     val file = File.createTempFile("sentinel_apk_inspection_", ".apk", directory)
     ActiveTemporaryApks.enter(file)
     return try {
@@ -26,6 +27,7 @@ internal inline fun <T> withTemporaryApk(directory: File, block: (File) -> T): T
             throw IllegalStateException("Échec de suppression du fichier temporaire APK")
         }
     }
+    }
 }
 
 /**
@@ -36,7 +38,7 @@ internal inline fun <T> withTemporaryApk(directory: File, block: (File) -> T): T
 internal object TemporaryApkInventory {
     fun candidates(directory: File, nowMillis: Long, minAgeMillis: Long): List<File> {
         require(minAgeMillis > 0L)
-        if (!directory.isDirectory) return emptyList()
+        if (!directory.isDirectory || !ApkInspectionProcessGuard.available(directory)) return emptyList()
         return directory.listFiles().orEmpty()
             .asSequence()
             .filter { it.isFile }
