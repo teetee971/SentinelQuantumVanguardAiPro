@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$1/native-android-app"
 export ANDROID_HOME=/root/android-sdk ANDROID_SDK_ROOT=/root/android-sdk
 export JAVA_TOOL_OPTIONS="-Dorg.sqlite.lib.path=/root/sentinel-sqlite-linux -Dorg.sqlite.lib.name=libsqlitejdbc.so"
-./gradlew :app:testDebugUnitTest --tests "com.sentinel.quantum.security.TemporaryApkScopeTest" --no-daemon --console=plain -Pandroid.aapt2FromMavenOverride=/data/data/com.termux/files/home/sentinel-aapt2-amd64/gradle-wrapper/aapt2
+./gradlew :app:testDebugUnitTest --tests "com.sentinel.quantum.security.TemporaryApkScopeTest" --tests "com.sentinel.quantum.security.TemporaryApkInventoryTest" --no-daemon --console=plain -Pandroid.aapt2FromMavenOverride=/data/data/com.termux/files/home/sentinel-aapt2-amd64/gradle-wrapper/aapt2
 ' _ "$ROOT"
 python - "$ROOT/native-android-app/app/build/test-results/testDebugUnitTest" <<'PY'
 import sys,pathlib,xml.etree.ElementTree as ET
@@ -21,4 +21,15 @@ v=[int(r.attrib.get(k,0)) for k in ("tests","skipped","failures","errors")]
 print("TESTS=%d SKIPPED=%d FAILURES=%d ERRORS=%d"%tuple(v))
 if v != [3,0,0,0]: raise SystemExit("VERDICT=NETTOYAGE_TEMPORAIRE_NON_VALIDE")
 print("VERDICT=NETTOYAGE_TEMPORAIRE_3_TESTS_REUSSIS")
+PY
+
+python - "$ROOT/native-android-app/app/build/test-results/testDebugUnitTest" <<'PY'
+import sys,pathlib,xml.etree.ElementTree as ET
+f=list(pathlib.Path(sys.argv[1]).rglob("TEST-*TemporaryApkInventoryTest.xml"))
+if len(f)!=1: raise SystemExit("BLOQUÉ: preuve XML inventaire absente")
+r=ET.parse(f[0]).getroot()
+v=[int(r.attrib.get(k,0)) for k in ("tests","skipped","failures","errors")]
+print("INVENTAIRE_TESTS=%d SKIPPED=%d FAILURES=%d ERRORS=%d"%tuple(v))
+if v != [3,0,0,0]: raise SystemExit("VERDICT=INVENTAIRE_NON_VALIDE")
+print("VERDICT=INVENTAIRE_LECTURE_SEULE_3_TESTS_REUSSIS")
 PY
