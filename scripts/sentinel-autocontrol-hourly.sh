@@ -5,12 +5,13 @@ ACTION="${1:-status}"
 BASE="$HOME/sentinel-autocontrol"
 SCRIPT="$HOME/sentinel-v3.sh"
 MARK="# SENTINEL_AUTOCONTROL_V3_HOURLY"
-CRON="13 * * * * /data/data/com.termux/files/usr/bin/bash $SCRIPT >> $BASE/hourly.log 2>&1 $MARK"
+CRON="13 * * * * /data/data/com.termux/files/usr/bin/env PATH=/data/data/com.termux/files/usr/bin:/system/bin HOME=$HOME /data/data/com.termux/files/usr/bin/bash $SCRIPT >> $BASE/hourly.log 2>&1 $MARK"
 case "$ACTION" in
  status)
    if ! command -v crontab >/dev/null; then echo "NON INSTALLÉ : cronie absent"; exit 0; fi
    if crontab -l 2>/dev/null | grep -Fq "$MARK"; then echo "PLANIFICATION PRÉSENTE (non garantie si Android suspend Termux)"; else echo "PLANIFICATION ABSENTE"; fi
    if pgrep -x crond >/dev/null 2>&1; then echo "crond actif"; else echo "crond arrêté"; fi
+   if [[ -f "$BASE/hourly.log" ]]; then echo "Dernier lancement enregistré :"; grep "SENTINEL AUTOCONTROL V3" "$BASE/hourly.log" | tail -n 2 || true; else echo "Aucun journal horaire encore créé"; fi
    ;;
  enable)
    [[ -f "$SCRIPT" ]] || { echo "BLOQUÉ : installer sentinel-v3.sh avant"; exit 2; }
