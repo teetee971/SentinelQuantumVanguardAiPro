@@ -32,7 +32,7 @@ if not re.search(r"MAX_HISTORY_ENTRIES\s*=\s*500\b", source):
     findings.append("HISTORY_BOUND_CHANGED")
 if "numberFingerprint = decision.normalizedNumber?.let(fingerprinter::fingerprint)" not in source:
     findings.append("NUMBER_FINGERPRINT_PATH_CHANGED")
-if not re.search(r"dao\.prune\s*\(\s*MAX_HISTORY_ENTRIES\s*\)", source):
+if not (re.search(r"dao\.insertAndPrune\s*\(", source) and re.search(r"@Transaction\s+fun\s+insertAndPrune\s*\(", source) and re.search(r"MAX_HISTORY_ENTRIES\s*\)", source)):
     findings.append("HISTORY_PRUNE_PATH_CHANGED")
 for finding in findings:
     print(f"CALL_HISTORY_FINDING={finding}")
