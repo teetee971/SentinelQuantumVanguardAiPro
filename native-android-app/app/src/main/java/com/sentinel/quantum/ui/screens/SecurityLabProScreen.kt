@@ -54,6 +54,15 @@ fun SecurityLabProScreen(navController: NavController) {
     var scanBusy by remember { mutableStateOf(false) }
     var appSearch by remember { mutableStateOf("") }
     var appsFilter by remember { mutableStateOf(0) }
+    var inventoryPage by remember(appSearch, appsFilter, visibleApps) { mutableIntStateOf(0) }
+    val filteredApps = remember(visibleApps, appsFilter, appSearch) {
+        visibleApps.filter { app ->
+            (appsFilter == 2 || (appsFilter == 0 && !app.system) || (appsFilter == 1 && app.system)) &&
+                (app.label.contains(appSearch, true) || app.packageName.contains(appSearch, true))
+        }
+    }
+    val inventoryPageSize = 25
+    val inventoryPageCount = (filteredApps.size + inventoryPageSize - 1) / inventoryPageSize
     var labTab by remember { mutableStateOf(0) }
     var volumetricEnabled by remember { mutableStateOf(false) }
     var installPending by remember { mutableStateOf<Pair<Uri, ApkEvidence>?>(null) }
@@ -230,7 +239,7 @@ fun SecurityLabProScreen(navController: NavController) {
                 if (visibleApps.isNotEmpty()) {
                     Text("${visibleApps.size} application(s) visibles par Android — inventaire potentiellement partiel.")
                     Text("Applications détectées", style = MaterialTheme.typography.titleMedium)
-                    Text("Affichage limité aux 25 premiers résultats correspondant au filtre.",
+                    Text("${filteredApps.size} résultat(s) correspondant au filtre · page ${if (inventoryPageCount == 0) 0 else inventoryPage + 1}/$inventoryPageCount.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SingleChoiceSegmentedButtonRow {
@@ -241,9 +250,8 @@ fun SecurityLabProScreen(navController: NavController) {
                     }
                     OutlinedTextField(value = appSearch, onValueChange = { appSearch = it },
                         label = { Text("Rechercher une application") }, singleLine = true)
-                    visibleApps.filter { (appsFilter == 2 || (appsFilter == 0 && !it.system) || (appsFilter == 1 && it.system)) &&
-                        (it.label.contains(appSearch, true) || it.packageName.contains(appSearch, true)) }
-                        .take(25).forEach { app ->
+                    filteredApps.drop(inventoryPage * inventoryPageSize)
+                        .take(inventoryPageSize).forEach { app ->
                             Card(shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, Color(0xFF273D59)),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF151C2B))) {
                                 Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -284,6 +292,22 @@ fun SecurityLabProScreen(navController: NavController) {
                                 }
                             }
                         }
+                    if (inventoryPageCount > 1) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(enabled = inventoryPage > 0, onClick = { inventoryPage-- }) {
+                                Text("Précédent")
+                            }
+                            Text("${inventoryPage + 1} / $inventoryPageCount", style = MaterialTheme.typography.bodySmall)
+                            TextButton(enabled = inventoryPage + 1 < inventoryPageCount,
+                                onClick = { inventoryPage++ }) {
+                                Text("Suivant")
+                            }
+                        }
+                    }
                 }
                 Text("Inventaire limité aux applications visibles par Android.", style = MaterialTheme.typography.bodySmall)
                 }
