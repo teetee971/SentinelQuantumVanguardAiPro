@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - integration/sentinel-d1-3d-20261022
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
