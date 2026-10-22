@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -116,6 +117,7 @@ fun SentinelActionTile(
     val shape = RoundedCornerShape(SentinelVisualTokens.CompactCornerRadiusDp.dp)
     Surface(
         modifier = modifier
+            .heightIn(min = 48.dp)
             .clickable(role = Role.Button, onClick = onClick)
             .border(1.dp, accent.copy(alpha = 0.36f), shape),
         shape = shape,
@@ -130,7 +132,7 @@ fun SentinelActionTile(
         ) {
             Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(28.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 Text(
                     subtitle,
                     fontSize = SentinelVisualTokens.BodyTextSp.sp,

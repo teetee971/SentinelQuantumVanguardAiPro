@@ -3,6 +3,7 @@
 package com.sentinel.quantum.ui.design
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -20,9 +23,19 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PhoneCoreDisclosure(title: String, initiallyExpanded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+    val shape = RoundedCornerShape(SentinelVisualTokens.GlassCornerRadiusDp.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth().border(1.dp, SentinelD1.BorderStrong, shape),
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = SentinelD1.Card)
+    ) {
         Column(Modifier.fillMaxWidth().padding(8.dp)) {
-            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
+            TextButton(
+                onClick = { expanded = !expanded },
+                modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .semantics { stateDescription = if (expanded) "Développé" else "Réduit" }
+            ) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(title, modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
                     Text(if (expanded) "Masquer" else "Afficher", style = MaterialTheme.typography.labelMedium)
@@ -111,7 +124,15 @@ fun PhoneCoreConversationRow(
             }
         }
     ) {
-        Card(onClick = onOpen, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
+        val conversationShape = RoundedCornerShape(SentinelVisualTokens.GlassCornerRadiusDp.dp)
+        Card(
+            onClick = onOpen,
+            modifier = Modifier.fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .border(1.dp, SentinelD1.BorderStrong, conversationShape),
+            shape = conversationShape,
+            colors = CardDefaults.cardColors(containerColor = SentinelD1.Card)
+        ) {
             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(Modifier.size(44.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), contentColor = MaterialTheme.colorScheme.primary) {
                     Box(contentAlignment = Alignment.Center) {

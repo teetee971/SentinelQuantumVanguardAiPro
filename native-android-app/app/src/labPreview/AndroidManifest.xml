@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Preview must never become the default dialer, SMS client, or call screener. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.SEND_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" tools:node="remove" />
+    <application android:label="Sentinel Lab Preview" tools:replace="android:label">
+        <service android:name=".security.SentinelCallScreeningService" tools:node="remove" />
+        <service android:name=".security.SentinelInCallService" tools:node="remove" />
+        <service android:name=".security.SentinelRespondViaMessageService" tools:node="remove" />
+        <receiver android:name=".security.SentinelSmsDeliverReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelMmsDeliverReceiver" tools:node="remove" />
+        <activity android:name=".SentinelDialerActivity" tools:node="remove" />
+        <activity android:name=".SmsComposeActivity" tools:node="remove" />
+    </application>
+</manifest>

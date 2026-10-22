@@ -173,6 +173,13 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
             }
 
             item {
+                Button(onClick = { navController.navigate(Screen.SecurityLabPro.route) },
+                    modifier = Modifier.fillMaxWidth()) {
+                    Text("Ouvrir Security Lab Pro")
+                }
+            }
+
+            item {
                 DeviceAnalysisStatusPanel(
                     state = analysisState,
                     title = "Analyse des permissions applications",

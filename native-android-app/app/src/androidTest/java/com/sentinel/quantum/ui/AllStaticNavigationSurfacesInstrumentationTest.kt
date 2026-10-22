@@ -41,6 +41,7 @@ class AllStaticNavigationSurfacesInstrumentationTest {
     @Test fun aboutRenders() = render(Screen.About.route)
     @Test fun complianceRenders() = render(Screen.Compliance.route)
     @Test fun settingsRenders() = render(Screen.Settings.route)
+    @Test fun osintDetailMissingItemRenders() = render(Screen.OsintDetail.createRoute("sentinel-test-missing-item"))
 
     private fun render(route: String) {
         composeRule.setContent {

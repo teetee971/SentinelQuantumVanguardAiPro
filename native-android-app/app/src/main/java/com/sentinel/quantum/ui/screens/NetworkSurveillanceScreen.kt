@@ -20,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -228,8 +230,20 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { if (!isScanning) startScan() },
-                icon = { Icon(Icons.Default.Radar, contentDescription = null) },
-                text = { Text(if (isScanning) "Scan en cours…" else "Scanner") }
+                icon = {
+                    if (isScanning) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.Radar, contentDescription = null)
+                    }
+                },
+                text = { Text(if (isScanning) "Scan en cours…" else "Scanner") },
+                modifier = Modifier.semantics {
+                    stateDescription = if (isScanning) "Analyse en cours" else "Prêt à scanner"
+                }
             )
         }
     ) { paddingValues ->

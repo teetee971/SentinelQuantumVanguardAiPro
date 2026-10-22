@@ -1,6 +1,8 @@
 package com.sentinel.quantum.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -26,6 +28,7 @@ import com.sentinel.quantum.data.OsintRepository
 import com.sentinel.quantum.data.OsintSource
 import com.sentinel.quantum.data.OsintTransientItemStore
 import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.ui.design.SentinelVisualTokens
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.Dispatchers
@@ -307,18 +310,17 @@ fun OsintFeedCard(item: OsintFeedItem, isRead: Boolean = false, onOpen: () -> Un
         stringResource(R.string.osint_date_unknown)
     )
 
+    val cardShape = RoundedCornerShape(SentinelVisualTokens.GlassCornerRadiusDp.dp)
     Card(
+        onClick = onOpen,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onOpen),
+            .heightIn(min = 64.dp)
+            .border(1.dp, if (isRead) SentinelD1.Border else SentinelD1.BorderStrong, cardShape),
+        shape = cardShape,
         colors = CardDefaults.cardColors(
-            containerColor = if (isRead) {
-                MaterialTheme.colorScheme.surfaceVariant
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            containerColor = if (isRead) SentinelD1.Panel else SentinelD1.Card
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
