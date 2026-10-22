@@ -1,6 +1,9 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import android.util.Log
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicLong
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Entity
@@ -17,19 +20,29 @@ class CallFilterLogStore private constructor(
     private val fingerprinter: CallNumberFingerprinter = CallNumberFingerprinter()
 ) {
     fun recordAsync(decision: CallRuleEngine.Decision, now: Long = System.currentTimeMillis()) {
-        WRITER.execute {
-            runCatching {
-                dao.insert(
-                    CallFilterDecisionEntity(
-                        occurredAtMs = now,
-                        action = decision.action.name,
-                        reason = sanitize(decision.reason),
-                        source = decision.source.name,
-                        numberFingerprint = decision.normalizedNumber?.let(fingerprinter::fingerprint)
+        try {
+            WRITER.execute {
+                runCatching {
+                    dao.insert(
+                        CallFilterDecisionEntity(
+                            occurredAtMs = now,
+                            action = decision.action.name,
+                            reason = sanitize(decision.reason),
+                            source = decision.source.name,
+                            numberFingerprint = decision.normalizedNumber?.let(fingerprinter::fingerprint)
+                        )
                     )
-                )
-                dao.prune(MAX_HISTORY_ENTRIES)
+                    dao.prune(MAX_HISTORY_ENTRIES)
+                }.onFailure {
+                    // Never log phone numbers, decision reasons, fingerprints, or exception messages.
+                    val failures = WRITE_FAILURES.incrementAndGet()
+                    Log.w(TAG, "Call history persistence failed; count=$failures")
+                }
             }
+        } catch (_: RejectedExecutionException) {
+            // Optional history must never delay or fail the telecom screening response.
+            val rejected = REJECTED_WRITES.incrementAndGet()
+            Log.w(TAG, "Call history queue saturated; dropped=$rejected")
         }
     }
 
@@ -41,6 +54,9 @@ class CallFilterLogStore private constructor(
         value.replace(Regex("[\\r\\n\\u0000|]"), " ").take(MAX_REASON_LENGTH)
 
     companion object {
+        private const val TAG = "SentinelCallHistory"
+        private val WRITE_FAILURES = AtomicLong(0)
+        private val REJECTED_WRITES = AtomicLong(0)
         const val MAX_HISTORY_ENTRIES = 500
         private const val MAX_REASON_LENGTH = 128
         private const val MAX_PENDING_WRITES = 128
