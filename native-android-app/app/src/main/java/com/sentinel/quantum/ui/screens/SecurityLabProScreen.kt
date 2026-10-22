@@ -250,6 +250,23 @@ fun SecurityLabProScreen(navController: NavController) {
                     }
                     OutlinedTextField(value = appSearch, onValueChange = { appSearch = it },
                         label = { Text("Rechercher une application") }, singleLine = true)
+                    if (inventoryPageCount > 1) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(enabled = inventoryPage > 0, onClick = { inventoryPage-- }) {
+                                Text("Précédent")
+                            }
+                            Text("Page ${inventoryPage + 1} / $inventoryPageCount",
+                                style = MaterialTheme.typography.bodySmall)
+                            TextButton(enabled = inventoryPage + 1 < inventoryPageCount,
+                                onClick = { inventoryPage++ }) {
+                                Text("Suivant")
+                            }
+                        }
+                    }
                     filteredApps.drop(inventoryPage * inventoryPageSize)
                         .take(inventoryPageSize).forEach { app ->
                             Card(shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, Color(0xFF273D59)),
