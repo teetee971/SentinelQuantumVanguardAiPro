@@ -151,8 +151,16 @@ fun SecurityLabProScreen(navController: NavController) {
             if (selfInspection.loading) selfInspection = selfInspection.completed()
         }
     }
-    Scaffold(topBar = { Text("Security Lab Pro", style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.padding(20.dp)) }) { padding ->
+    Scaffold(topBar = {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            TextButton(onClick = { navController.popBackStack() }) { Text("Retour") }
+            Text("Security Lab Pro", style = MaterialTheme.typography.titleLarge)
+        }
+    }) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
@@ -161,7 +169,6 @@ fun SecurityLabProScreen(navController: NavController) {
             item {
                 Text("Analyse locale des applications. Toute installation ou désinstallation nécessite votre confirmation Android.",
                     style = MaterialTheme.typography.bodyMedium)
-                Button(onClick = { navController.popBackStack() }) { Text("Retour") }
                 if (selfInspection.loading || selectionBusy) CircularProgressIndicator()
                 selfInspection.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Card(
