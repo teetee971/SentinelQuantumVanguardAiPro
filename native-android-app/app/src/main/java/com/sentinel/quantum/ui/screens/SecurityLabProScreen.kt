@@ -166,21 +166,28 @@ fun SecurityLabProScreen(navController: NavController) {
                     shape = RoundedCornerShape(26.dp),
                     border = BorderStroke(1.dp, Color(0xFF3D83AB))
                 ) {
-                    Box(Modifier.fillMaxWidth().heightIn(min = 190.dp).clip(RoundedCornerShape(26.dp))) {
-                        if (volumetricEnabled) D1VolumetricSurface(Modifier.matchParentSize())
-                        else D1HolographicField(Modifier.matchParentSize())
-                        Column(
-                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("SENTINEL / D.1", color = Color(0xFF5DDEFF), style = MaterialTheme.typography.labelLarge)
+                        Text("APK INTELLIGENCE", color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                        Row(
+                            Modifier.fillMaxWidth().height(116.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("SENTINEL / D.1", color = Color(0xFF5DDEFF), style = MaterialTheme.typography.labelLarge)
-                            Text("APK INTELLIGENCE", color = Color.White, style = MaterialTheme.typography.headlineSmall)
                             Text(
                                 "Analyse locale • Inventaire contrôlé • Gestion avec consentement",
                                 color = Color(0xFFC0D6E9),
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.fillMaxWidth(.76f)
+                                modifier = Modifier.weight(1.2f)
                             )
+                            Box(
+                                Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(14.dp))
+                            ) {
+                                if (volumetricEnabled) D1VolumetricSurface(Modifier.matchParentSize())
+                                else D1HolographicField(Modifier.matchParentSize())
+                            }
                         }
                     }
                 }
