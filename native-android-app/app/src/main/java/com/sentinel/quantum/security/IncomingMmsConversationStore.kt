@@ -109,7 +109,7 @@ internal class IncomingMmsConversationStore(context: Context) {
         var insertedRootUri: Uri? = null
         var rootInsertCleanupFailed = false
         val operations = object : MmsProviderProjectionTransaction.Operations {
-            override fun beginJournal(): Boolean = journal.begin(plan, nowMs)
+            override fun beginJournal(): Boolean = holdsSmsRole() && journal.begin(plan, nowMs)
 
             override fun insertRoot(): Long? {
                 if (!holdsSmsRole()) return null
@@ -180,7 +180,7 @@ internal class IncomingMmsConversationStore(context: Context) {
                                 putPartReferenceMetadata(this, part)
                             }
                             if (runCatching {
-                                    appContext.contentResolver.insert(partsUri(providerMessageId), values)
+                                    if (!holdsSmsRole()) null else appContext.contentResolver.insert(partsUri(providerMessageId), values)
                                 }.getOrNull() == null
                             ) return false
                             insertedCount++
@@ -196,7 +196,7 @@ internal class IncomingMmsConversationStore(context: Context) {
                                 putPartReferenceMetadata(this, part)
                             }
                             if (runCatching {
-                                    appContext.contentResolver.insert(partsUri(providerMessageId), values)
+                                    if (!holdsSmsRole()) null else appContext.contentResolver.insert(partsUri(providerMessageId), values)
                                 }.getOrNull() == null
                             ) return false
                             insertedCount++
@@ -208,14 +208,18 @@ internal class IncomingMmsConversationStore(context: Context) {
                                 putPartReferenceMetadata(this, part)
                             }
                             val partUri = runCatching {
-                                appContext.contentResolver.insert(partsUri(providerMessageId), values)
+                                if (!holdsSmsRole()) null else appContext.contentResolver.insert(partsUri(providerMessageId), values)
                             }.getOrNull() ?: return false
                             val written = runCatching {
-                                appContext.contentResolver.openOutputStream(partUri, "w")?.use { output ->
-                                    output.write(part.payload)
-                                    output.flush()
-                                    true
-                                } ?: false
+                                if (!holdsSmsRole()) {
+                                    false
+                                } else {
+                                    appContext.contentResolver.openOutputStream(partUri, "w")?.use { output ->
+                                        output.write(part.payload)
+                                        output.flush()
+                                        true
+                                    } ?: false
+                                }
                             }.getOrDefault(false)
                             if (!written) return false
                             insertedCount++
@@ -226,7 +230,7 @@ internal class IncomingMmsConversationStore(context: Context) {
             }
 
             override fun markReady(providerMessageId: Long): Boolean =
-                journal.markReady(plan.digestHex, providerMessageId)
+                holdsSmsRole() && journal.markReady(plan.digestHex, providerMessageId)
 
             override fun deleteRoot(providerMessageId: Long): Boolean =
                 cleanupRoot(providerMessageId, insertedRootUri, identity(plan))
