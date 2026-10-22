@@ -153,8 +153,11 @@ fun SecurityLabProScreen(navController: NavController) {
     }
     Scaffold(topBar = { Text("Security Lab Pro", style = MaterialTheme.typography.headlineSmall,
         modifier = Modifier.padding(20.dp)) }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             item {
                 Text("Analyse locale des applications. Toute installation ou désinstallation nécessite votre confirmation Android.",
                     style = MaterialTheme.typography.bodyMedium)
@@ -201,7 +204,7 @@ fun SecurityLabProScreen(navController: NavController) {
                     }
                 }
                 if (labTab == 0) {
-                Button(enabled = !scanBusy, onClick = {
+                Button(modifier = Modifier.fillMaxWidth(), enabled = !scanBusy, onClick = {
                     scope.launch {
                         scanBusy = true
                         try {
@@ -245,10 +248,12 @@ fun SecurityLabProScreen(navController: NavController) {
                                         image.contentDescription = "Icône de ${app.label}"
                                     }
                                 )
-                                Column {
-                                    Text(app.label, style = MaterialTheme.typography.bodyMedium)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(app.label, style = MaterialTheme.typography.bodyMedium,
+                                        maxLines = 2, overflow = TextOverflow.Ellipsis)
                                     Text(app.packageName, style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2, overflow = TextOverflow.Ellipsis)
                                 }
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
