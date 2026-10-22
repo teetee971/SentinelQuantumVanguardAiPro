@@ -1,6 +1,12 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
+import android.util.Log
+import androidx.room3.Transaction
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicLong
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Entity
@@ -17,30 +23,53 @@ class CallFilterLogStore private constructor(
     private val fingerprinter: CallNumberFingerprinter = CallNumberFingerprinter()
 ) {
     fun recordAsync(decision: CallRuleEngine.Decision, now: Long = System.currentTimeMillis()) {
-        WRITER.execute {
-            runCatching {
-                dao.insert(
-                    CallFilterDecisionEntity(
-                        occurredAtMs = now,
-                        action = decision.action.name,
-                        reason = sanitize(decision.reason),
-                        source = decision.source.name,
-                        numberFingerprint = decision.normalizedNumber?.let(fingerprinter::fingerprint)
-                    )
-                )
-                dao.prune(MAX_HISTORY_ENTRIES)
+        val generation = CLEAR_GENERATION.get()
+        try {
+            WRITER.execute {
+                runCatching {
+                    synchronized(HISTORY_LOCK) {
+                        if (generation != CLEAR_GENERATION.get()) return@execute
+                        dao.insertAndPrune(
+                            CallFilterDecisionEntity(
+                                occurredAtMs = now,
+                                action = decision.action.name,
+                                reason = sanitize(decision.reason),
+                                source = decision.source.name,
+                                numberFingerprint = decision.normalizedNumber?.let(fingerprinter::fingerprint)
+                            ),
+                            MAX_HISTORY_ENTRIES
+                        )
+                    }
+                }.onFailure {
+                    val failures = WRITE_FAILURES.incrementAndGet()
+                    // No numbers, reasons, fingerprints or exception messages in the log.
+                    Log.w(TAG, "Call history persistence failed; count=$failures")
+                }
             }
+        } catch (_: RejectedExecutionException) {
+            val rejected = REJECTED_WRITES.incrementAndGet()
+            Log.w(TAG, "Call history queue saturated; dropped=$rejected")
         }
     }
 
     suspend fun history(): List<CallFilterDecisionEntity> = dao.latest(MAX_HISTORY_ENTRIES)
 
-    suspend fun clear() = dao.clear()
+    suspend fun clear() = withContext(Dispatchers.IO) {
+        synchronized(HISTORY_LOCK) {
+            CLEAR_GENERATION.incrementAndGet()
+            dao.clearBlocking()
+        }
+    }
 
     private fun sanitize(value: String): String =
         value.replace(Regex("[\\r\\n\\u0000|]"), " ").take(MAX_REASON_LENGTH)
 
     companion object {
+        private const val TAG = "SentinelCallHistory"
+        private val HISTORY_LOCK = Any()
+        private val CLEAR_GENERATION = AtomicLong(0)
+        private val WRITE_FAILURES = AtomicLong(0)
+        private val REJECTED_WRITES = AtomicLong(0)
         const val MAX_HISTORY_ENTRIES = 500
         private const val MAX_REASON_LENGTH = 128
         private const val MAX_PENDING_WRITES = 128
@@ -76,8 +105,14 @@ interface CallFilterDecisionDao {
     @Query("DELETE FROM call_filter_decisions WHERE id NOT IN (SELECT id FROM call_filter_decisions ORDER BY occurredAtMs DESC, id DESC LIMIT :limit)")
     fun prune(limit: Int)
 
+    @Transaction
+    fun insertAndPrune(entry: CallFilterDecisionEntity, limit: Int) {
+        insert(entry)
+        prune(limit)
+    }
+
     @Query("DELETE FROM call_filter_decisions")
-    suspend fun clear()
+    fun clearBlocking()
 }
 
 @Database(entities = [CallFilterDecisionEntity::class], version = 1, exportSchema = true)
