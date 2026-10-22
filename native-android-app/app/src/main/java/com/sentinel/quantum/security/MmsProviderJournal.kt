@@ -33,13 +33,14 @@ internal class MmsProviderJournal(context: Context) {
         Context.MODE_PRIVATE
     )
 
+    @Synchronized
     fun begin(token: String, transactionId: String, nowMs: Long = System.currentTimeMillis()): Boolean {
         if (!validToken(token) || !validTransactionId(transactionId) || nowMs < 0L) return false
-        val recordKey = key(token)
-        if (!preferences.contains(recordKey)) {
-            val persistedCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
-            if (persistedCount >= MAX_RECORDS) return false
-        }
+        // Never overwrite a pending provider root, a READY projection, or a submitted result.
+        // Reusing a token must be rejected even if the previous record cannot be decoded.
+        if (preferences.contains(key(token))) return false
+        val persistedCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
+        if (persistedCount >= MAX_RECORDS) return false
         return write(Record(token, transactionId, null, Phase.BUILDING, nowMs))
     }
 
