@@ -48,6 +48,19 @@ for p in files:
     print(f"SCHEMA={relative} VERSION={version} TRACKED={str(tracked).lower()} SHA256={digest}")
     if not tracked:
         errors.append(f"{relative}: UNTRACKED_BASELINE")
+    else:
+        committed = subprocess.run(
+            ["git", "-C", str(root), "show", f"HEAD:{relative}"],
+            capture_output=True, check=False
+        )
+        if committed.returncode != 0:
+            errors.append(f"{relative}: CANNOT_READ_COMMITTED_BASELINE")
+        else:
+            try:
+                if json.loads(committed.stdout) != data:
+                    errors.append(f"{relative}: TRACKED_SCHEMA_DRIFT")
+            except (UnicodeError, ValueError):
+                errors.append(f"{relative}: COMMITTED_BASELINE_INVALID_JSON")
 if errors:
     for error in errors:
         print(f"ROOM_SCHEMA_FINDING={error}")
