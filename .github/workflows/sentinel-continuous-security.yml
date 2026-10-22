@@ -19,41 +19,74 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
+        id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
+        id: setup_node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: npm
 
       - name: Install locked dependencies
+        id: install
         run: npm ci --ignore-scripts
 
       - name: Sentinel isolation gate
+        id: isolation
         run: node scripts/check-sentinel-isolation.js
 
       - name: Credential hygiene gate
+        id: credentials
         run: npm run test:credential-hygiene
 
       - name: Security governance validation
+        id: governance
         run: npm run test:security-governance
 
       - name: Security fuzz validation
+        id: fuzz
         run: npm run test:security-fuzz
 
       - name: Supply-chain validation
+        id: supply_chain
         run: npm run test:ci-supply-chain
 
       - name: Static-link validation
+        id: static_links
         run: npm run test:static-links
 
       - name: Build validation
+        id: build
         run: npm run build
 
-      - name: Report status
+      - name: Report status and failing stage
         if: always()
+        env:
+          CHECKOUT: ${{ steps.checkout.outcome }}
+          SETUP_NODE: ${{ steps.setup_node.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          ISOLATION: ${{ steps.isolation.outcome }}
+          CREDENTIALS: ${{ steps.credentials.outcome }}
+          GOVERNANCE: ${{ steps.governance.outcome }}
+          FUZZ: ${{ steps.fuzz.outcome }}
+          SUPPLY_CHAIN: ${{ steps.supply_chain.outcome }}
+          STATIC_LINKS: ${{ steps.static_links.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
         run: |
-          echo "Sentinel hourly loop completed with conclusion: ${{ job.status }}"
+          set -euo pipefail
+          {
+            echo '## Sentinel security loop — stage outcomes'
+            echo ''
+            echo '| Stage | Outcome |'
+            echo '| --- | --- |'
+            for stage in CHECKOUT SETUP_NODE INSTALL ISOLATION CREDENTIALS GOVERNANCE FUZZ SUPPLY_CHAIN STATIC_LINKS BUILD; do
+              printf '| %s | %s |\n' "$stage" "${!stage:-unknown}"
+            done
+            printf '\nOverall job status before reporting: **%s**\n' "$JOB_STATUS"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
