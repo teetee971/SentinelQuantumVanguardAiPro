@@ -11,10 +11,15 @@ workflows:
       - name: Android SDK 37
         script: |
           set -eu
-          : "${ANDROID_SDK_ROOT:?ANDROID_SDK_ROOT missing}"
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
-          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "SDK Manager absent: $SDKMANAGER"
+            find /usr/local/share/android-sdk "$HOME/Library/Android/sdk" -name sdkmanager -type f 2>/dev/null | head -10 || true
+            exit 127
+          fi
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.0" "build-tools;36.0.0"
+          printf 'sdk.dir=%s\n' "$SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
       - name: Compile, test and assemble APK
         script: |
           set -eu
