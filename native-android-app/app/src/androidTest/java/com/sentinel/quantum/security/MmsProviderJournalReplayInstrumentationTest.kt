@@ -9,6 +9,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -68,4 +72,33 @@ class MmsProviderJournalReplayInstrumentationTest {
         assertEquals("tx-new", journal.read(token)?.transactionId)
         assertEquals(MmsProviderJournal.Phase.BUILDING, journal.read(token)?.phase)
     }
+    @Test
+    fun concurrentInstancesMayClaimSameTokenOnlyOnce() {
+        val token = UUID.randomUUID().toString()
+        tokens += token
+        val workers = 12
+        val ready = CountDownLatch(workers)
+        val start = CountDownLatch(1)
+        val results = BooleanArray(workers)
+        val threads = (0 until workers).map { index ->
+            thread(start = true, name = "mms-journal-race-$index") {
+                val journal = MmsProviderJournal(context)
+                ready.countDown()
+                if (start.await(10, TimeUnit.SECONDS)) {
+                    results[index] = journal.begin(token, "tx-$index", 100L + index)
+                }
+            }
+        }
+        try {
+            assertTrue("workers did not reach start gate", ready.await(10, TimeUnit.SECONDS))
+        } finally {
+            start.countDown()
+            threads.forEach { it.join(10_000) }
+        }
+        assertTrue("workers still running", threads.none { it.isAlive })
+        assertEquals("exactly one owner of token", 1, results.count { it })
+        val winner = results.indexOfFirst { it }
+        assertEquals("tx-$winner", MmsProviderJournal(context).read(token)?.transactionId)
+    }
+
 }

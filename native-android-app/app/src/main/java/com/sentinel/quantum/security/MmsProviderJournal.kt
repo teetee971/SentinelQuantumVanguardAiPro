@@ -33,16 +33,18 @@ internal class MmsProviderJournal(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    @Synchronized
-    fun begin(token: String, transactionId: String, nowMs: Long = System.currentTimeMillis()): Boolean {
-        if (!validToken(token) || !validTransactionId(transactionId) || nowMs < 0L) return false
-        // Never overwrite a pending provider root, a READY projection, or a submitted result.
-        // Reusing a token must be rejected even if the previous record cannot be decoded.
-        if (preferences.contains(key(token))) return false
-        val persistedCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
-        if (persistedCount >= MAX_RECORDS) return false
-        return write(Record(token, transactionId, null, Phase.BUILDING, nowMs))
-    }
+    // Shared across journal instances in this process: @Synchronized on an instance is insufficient.
+    fun begin(token: String, transactionId: String, nowMs: Long = System.currentTimeMillis()): Boolean =
+        synchronized(JOURNAL_LOCK) {
+            if (!validToken(token) || !validTransactionId(transactionId) || nowMs < 0L) {
+                return@synchronized false
+            }
+            // Preserve unresolved records, including records that cannot be decoded.
+            if (preferences.contains(key(token))) return@synchronized false
+            val persistedCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
+            if (persistedCount >= MAX_RECORDS) return@synchronized false
+            write(Record(token, transactionId, null, Phase.BUILDING, nowMs))
+        }
 
     fun recordRoot(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
         transition(token, providerMessageId, Phase.ROOT_INSERTED, nowMs)
@@ -86,8 +88,9 @@ internal class MmsProviderJournal(context: Context) {
         return changed
     }
 
-    fun remove(token: String): Boolean =
+    fun remove(token: String): Boolean = synchronized(JOURNAL_LOCK) {
         validToken(token) && preferences.edit().remove(key(token)).commit()
+    }
 
     fun read(token: String): Record? = if (validToken(token)) decode(
         token,
@@ -104,12 +107,15 @@ internal class MmsProviderJournal(context: Context) {
         .take(MAX_RECORDS)
         .toList()
 
-    private fun transition(token: String, providerMessageId: Long, phase: Phase, nowMs: Long): Boolean {
-        if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return false
-        val current = read(token) ?: return false
-        if (current.providerMessageId != null && current.providerMessageId != providerMessageId) return false
-        return write(current.copy(providerMessageId = providerMessageId, phase = phase, updatedAtMs = nowMs))
-    }
+    private fun transition(token: String, providerMessageId: Long, phase: Phase, nowMs: Long): Boolean =
+        synchronized(JOURNAL_LOCK) {
+            if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return@synchronized false
+            val current = read(token) ?: return@synchronized false
+            if (current.providerMessageId != null && current.providerMessageId != providerMessageId) {
+                return@synchronized false
+            }
+            write(current.copy(providerMessageId = providerMessageId, phase = phase, updatedAtMs = nowMs))
+        }
 
     private fun write(record: Record): Boolean {
         val encoded = JSONObject()
@@ -141,6 +147,7 @@ internal class MmsProviderJournal(context: Context) {
     private fun key(token: String) = KEY_PREFIX + token
 
     companion object {
+        private val JOURNAL_LOCK = Any()
         private const val PREFS_NAME = "sentinel_mms_provider_journal_v1"
         private const val KEY_PREFIX = "record."
         private const val SCHEMA_VERSION = 1
