@@ -216,8 +216,13 @@ fun SecurityLabProScreen(navController: NavController) {
                         scanBusy = true
                         try {
                             visibleApps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { installedScanner.scan() }
-                        } catch (e: Exception) { managerError = "Inventaire indisponible : ${e.message ?: "erreur"}" }
-                        finally { scanBusy = false }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            managerError = "Inventaire indisponible : ${e.message ?: "erreur"}"
+                        } finally {
+                            scanBusy = false
+                        }
                     }
                 }) { Text("Scanner les applications installées") }
                 if (scanBusy) CircularProgressIndicator()
