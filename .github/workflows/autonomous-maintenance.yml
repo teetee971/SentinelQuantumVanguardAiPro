@@ -3,7 +3,7 @@ name: Sentinel Autonomous Maintenance
 on:
   workflow_dispatch:
   schedule:
-    - cron: '23 */6 * * *'
+    - cron: '23 * * * *'
   push:
     branches: [main]
     paths:
@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: sentinel-autonomous-maintenance
+  group: sentinel-autonomous-maintenance-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
