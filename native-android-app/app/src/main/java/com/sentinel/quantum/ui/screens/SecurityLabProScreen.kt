@@ -11,6 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import android.widget.ImageView
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
@@ -52,6 +55,7 @@ fun SecurityLabProScreen(navController: NavController) {
     var appSearch by remember { mutableStateOf("") }
     var appsFilter by remember { mutableStateOf(0) }
     var labTab by remember { mutableStateOf(0) }
+    var volumetricEnabled by remember { mutableStateOf(false) }
     var installPending by remember { mutableStateOf<Pair<Uri, ApkEvidence>?>(null) }
     var uninstallPending by remember { mutableStateOf<String?>(null) }
     var uninstallInput by remember { mutableStateOf("") }
@@ -163,7 +167,8 @@ fun SecurityLabProScreen(navController: NavController) {
                     border = BorderStroke(1.dp, Color(0xFF3D83AB))
                 ) {
                     Box(Modifier.fillMaxWidth().heightIn(min = 190.dp).clip(RoundedCornerShape(26.dp))) {
-                        D1HolographicField(Modifier.matchParentSize())
+                        if (volumetricEnabled) D1VolumetricSurface(Modifier.matchParentSize())
+                        else D1HolographicField(Modifier.matchParentSize())
                         Column(
                             Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -178,6 +183,14 @@ fun SecurityLabProScreen(navController: NavController) {
                             )
                         }
                     }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Volume 3D (GPU) • expérimental", style = MaterialTheme.typography.labelMedium)
+                    Switch(checked = volumetricEnabled, onCheckedChange = { volumetricEnabled = it })
                 }
                 SingleChoiceSegmentedButtonRow {
                     listOf("Scanner", "APK", "Journal").forEachIndexed { index, label ->
@@ -455,4 +468,34 @@ private fun D1HolographicField(modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+
+@Composable
+private fun D1VolumetricSurface(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    val animate = remember(context) {
+        val power = context.getSystemService(PowerManager::class.java)
+        power?.isPowerSaveMode != true &&
+            runCatching {
+                Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+            }.getOrDefault(true)
+    }
+    val scene = remember(context, animate) { D1VolumetricView(context, animate) }
+    DisposableEffect(owner, scene) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> scene.suspendRendering()
+                Lifecycle.Event.ON_RESUME -> scene.resumeRendering()
+                else -> Unit
+            }
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose {
+            owner.lifecycle.removeObserver(observer)
+            scene.suspendRendering()
+        }
+    }
+    AndroidView(factory = { scene }, modifier = modifier)
 }
