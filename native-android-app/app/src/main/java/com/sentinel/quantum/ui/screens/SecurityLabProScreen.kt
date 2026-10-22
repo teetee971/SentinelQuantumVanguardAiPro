@@ -214,6 +214,7 @@ fun SecurityLabProScreen(navController: NavController) {
                 Button(modifier = Modifier.fillMaxWidth(), enabled = !scanBusy, onClick = {
                     scope.launch {
                         scanBusy = true
+                        managerError = null
                         try {
                             visibleApps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { installedScanner.scan() }
                         } catch (e: CancellationException) {
@@ -229,6 +230,9 @@ fun SecurityLabProScreen(navController: NavController) {
                 if (visibleApps.isNotEmpty()) {
                     Text("${visibleApps.size} application(s) visibles par Android — inventaire potentiellement partiel.")
                     Text("Applications détectées", style = MaterialTheme.typography.titleMedium)
+                    Text("Affichage limité aux 25 premiers résultats correspondant au filtre.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SingleChoiceSegmentedButtonRow {
                         listOf("Utilisateur", "Système", "Toutes").forEachIndexed { index, title ->
                             SegmentedButton(selected = appsFilter == index, onClick = { appsFilter = index },
