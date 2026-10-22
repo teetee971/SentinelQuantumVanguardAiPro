@@ -145,6 +145,13 @@ private class D1SceneRenderer(private val animate: Boolean) : GLSurfaceView.Rend
                 vec2 jitter = vec2(fract(id * 19.13), fract(id * 41.37)) - 0.5;
                 return step(0.975, id) * (1.0 - smoothstep(0.005, 0.060, length(local - jitter * 0.6)));
             }
+            // Hexagonal microstructure remains local to the sphere surface; no texture assets.
+            float hexGrid(vec2 p) {
+                vec2 a = abs(mod(p, vec2(1.0, 1.732)) - vec2(0.5, 0.866));
+                vec2 b = abs(mod(p - vec2(0.5, 0.866), vec2(1.0, 1.732)) - vec2(0.5, 0.866));
+                vec2 d = min(a, b);
+                return 1.0 - smoothstep(0.38, 0.46, max(d.x * 0.866 + d.y * 0.5, d.y));
+            }
             void main() {
                 vec2 uv = vUv;
                 uv.x *= uResolution.x / max(uResolution.y, 1.0);
@@ -186,6 +193,10 @@ private class D1SceneRenderer(private val animate: Boolean) : GLSurfaceView.Rend
                     float isCore = 1.0 - smoothstep(0.015, 0.05, sphereSurface);
                     vec3 solid = mix(cyan * (0.60 + 0.55 * diffuse), vec3(0.012, 0.085, 0.20) +
                                      cyan * (0.15 * diffuse + 0.80 * fresnel), isCore);
+                    // The central core has a subdued crystalline honeycomb texture,
+                    // while the orbital tori stay bright and visibly separate.
+                    float cells = hexGrid(normal.xy * 10.0 + vec2(normal.z * 1.2, 0.0));
+                    solid += cyan * isCore * (0.045 + 0.14 * cells) * (0.25 + diffuse);
                     color += solid + vec3(0.48, 0.86, 1.0) * spec * 0.65;
                 }
                 gl_FragColor = vec4(min(color, vec3(1.0)), 1.0);
