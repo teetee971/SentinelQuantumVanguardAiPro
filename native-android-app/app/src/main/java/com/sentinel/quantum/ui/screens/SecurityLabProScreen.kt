@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import android.widget.ImageView
@@ -19,6 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.*
+import androidx.compose.ui.platform.LocalContext
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
@@ -394,6 +397,21 @@ internal fun ApkComparisonFindingCard(finding: AppIntegrityFinding) {
  */
 @Composable
 private fun D1HolographicField(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val motionAllowed = remember(context) {
+        val power = context.getSystemService(PowerManager::class.java)
+        val systemScale = runCatching {
+            Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        }.getOrDefault(1f)
+        systemScale > 0f && power?.isPowerSaveMode != true
+    }
+    val transition = rememberInfiniteTransition(label = "d1AmbientParticles")
+    val animatedPhase by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(14000, easing = LinearEasing), RepeatMode.Restart),
+        label = "d1ParticleDrift"
+    )
+    val phase = if (motionAllowed) animatedPhase else 0f
     Canvas(modifier) {
         val w = size.width
         val h = size.height
@@ -429,7 +447,7 @@ private fun D1HolographicField(modifier: Modifier = Modifier) {
         // Stable particle coordinates prevent flickering and avoid frame-by-frame allocations.
         for (i in 0 until 26) {
             val x = w * (.50f + ((i * 37) % 49) / 100f)
-            val y = h * (.06f + ((i * 29) % 88) / 100f)
+            val y = h * (.06f + ((((i * 29) % 88) / 100f + phase * (.025f + (i % 3) * .012f)) % .88f))
             drawCircle(
                 color = Color(0xFF96E8FF).copy(alpha = .24f + (i % 4) * .12f),
                 radius = if (i % 5 == 0) 2.2f else 1.2f,
