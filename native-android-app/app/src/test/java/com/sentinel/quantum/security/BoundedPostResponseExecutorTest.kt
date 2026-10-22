@@ -47,4 +47,32 @@ class BoundedPostResponseExecutorTest {
             executor.shutdownNow()
         }
     }
+    @Test fun productionQueueCapacityRejectsAt128PendingTasks() {
+        val executor = BoundedPostResponseExecutor.create(
+            threadName = "call-history-capacity-test",
+            queueCapacity = 128
+        )
+        val workerStarted = CountDownLatch(1)
+        val releaseWorker = CountDownLatch(1)
+        try {
+            executor.execute {
+                workerStarted.countDown()
+                releaseWorker.await()
+            }
+            assertTrue("Worker did not start", workerStarted.await(3, TimeUnit.SECONDS))
+            repeat(128) { executor.execute { Unit } }
+            assertEquals(128, executor.queue.size)
+            assertEquals(0, executor.queue.remainingCapacity())
+            try {
+                executor.execute { Unit }
+                fail("The 129th pending history task must be rejected")
+            } catch (_: RejectedExecutionException) {
+                assertEquals(128, executor.queue.size)
+            }
+        } finally {
+            releaseWorker.countDown()
+            executor.shutdownNow()
+        }
+    }
+
 }
