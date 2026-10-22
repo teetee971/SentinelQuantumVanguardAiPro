@@ -211,11 +211,15 @@ internal class IncomingMmsConversationStore(context: Context) {
                                 if (!holdsSmsRole()) null else appContext.contentResolver.insert(partsUri(providerMessageId), values)
                             }.getOrNull() ?: return false
                             val written = runCatching {
-                                if (!holdsSmsRole()) null else appContext.contentResolver.openOutputStream(partUri, "w")?.use { output ->
-                                    output.write(part.payload)
-                                    output.flush()
-                                    true
-                                } ?: false
+                                if (!holdsSmsRole()) {
+                                    false
+                                } else {
+                                    appContext.contentResolver.openOutputStream(partUri, "w")?.use { output ->
+                                        output.write(part.payload)
+                                        output.flush()
+                                        true
+                                    } ?: false
+                                }
                             }.getOrDefault(false)
                             if (!written) return false
                             insertedCount++
