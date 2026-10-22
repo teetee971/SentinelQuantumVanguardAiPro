@@ -246,10 +246,10 @@ fun SecurityLabProScreen(navController: NavController) {
                         .take(25).forEach { app ->
                             Card(shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, Color(0xFF273D59)),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF151C2B))) {
-                                Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 AndroidView(
-                                    modifier = Modifier.size(44.dp),
+                                    modifier = Modifier.size(40.dp),
                                     factory = { viewContext -> ImageView(viewContext).apply {
                                         scaleType = ImageView.ScaleType.FIT_CENTER
                                         contentDescription = "Icône de l'application"
@@ -272,7 +272,7 @@ fun SecurityLabProScreen(navController: NavController) {
                                         maxLines = 2, overflow = TextOverflow.Ellipsis)
                                 }
                             }
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             TextButton(onClick = {
                                 try { installedScanner.openDetails(app.packageName) }
                                 catch (e: Exception) { managerError = e.message ?: "Fiche Android indisponible" }
