@@ -126,37 +126,69 @@ private class D1SceneRenderer(private val animate: Boolean) : GLSurfaceView.Rend
                 float c = cos(a), s = sin(a);
                 return mat2(c, -s, s, c);
             }
+            // A real signed-distance scene: central solid sphere and orbital 3D tori.
+            // The sphere gives the hologram body and specular depth beyond wire rings.
             float scene(vec3 p) {
-                p.xy *= rot(0.42 + sin(uTime * 0.20) * 0.19);
-                p.yz *= rot(0.57 + uTime * 0.12);
-                float ring1 = sdTorus(p, vec2(0.90, 0.045));
-                float ring2 = sdTorus(p.yzx, vec2(0.70, 0.032));
-                float ring3 = sdTorus(p.zxy, vec2(0.54, 0.028));
-                return min(ring1, min(ring2, ring3));
+                vec3 q = p;
+                q.xy *= rot(0.40 + sin(uTime * 0.20) * 0.17);
+                q.yz *= rot(0.54 + uTime * 0.11);
+                float ring1 = sdTorus(q, vec2(0.95, 0.038));
+                float ring2 = sdTorus(q.yzx, vec2(0.83, 0.031));
+                float ring3 = sdTorus(q.zxy, vec2(0.74, 0.024));
+                float core = length(p) - 0.57;
+                return min(core, min(ring1, min(ring2, ring3)));
+            }
+            float star(vec2 xy) {
+                vec2 cell = floor(xy);
+                vec2 local = fract(xy) - 0.5;
+                float id = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
+                vec2 jitter = vec2(fract(id * 19.13), fract(id * 41.37)) - 0.5;
+                return step(0.975, id) * (1.0 - smoothstep(0.005, 0.060, length(local - jitter * 0.6)));
             }
             void main() {
                 vec2 uv = vUv;
                 uv.x *= uResolution.x / max(uResolution.y, 1.0);
                 vec3 origin = vec3(0.0, 0.0, 3.1);
                 vec3 dir = normalize(vec3(uv, -2.0));
-                float distanceTraveled = 0.0;
+                float travel = 0.0;
                 float glow = 0.0;
                 float hit = 0.0;
                 vec3 pos = origin;
                 for (int i = 0; i < 56; i++) {
-                    pos = origin + dir * distanceTraveled;
+                    pos = origin + dir * travel;
                     float d = scene(pos);
-                    glow += 0.008 / (0.06 + abs(d));
-                    if (d < 0.004) { hit = 1.0; break; }
-                    if (distanceTraveled > 6.0) break;
-                    distanceTraveled += max(d * 0.72, 0.022);
+                    glow += 0.006 / (0.055 + abs(d));
+                    if (d < 0.005) { hit = 1.0; break; }
+                    if (travel > 6.0) break;
+                    travel += max(d * 0.76, 0.018);
                 }
-                vec3 base = mix(vec3(0.018, 0.035, 0.075), vec3(0.035, 0.10, 0.19), smoothstep(-1.2, 1.2, vUv.y));
-                float shade = 0.55 + 0.45 * smoothstep(-1.0, 1.0, pos.z);
-                vec3 cyan = vec3(0.09, 0.78, 1.0);
-                vec3 color = base + cyan * min(glow * 0.055, 0.40);
-                color += cyan * hit * shade * 0.75;
-                gl_FragColor = vec4(color, 1.0);
+                vec3 color = mix(vec3(0.008, 0.020, 0.045), vec3(0.022, 0.075, 0.13),
+                                 smoothstep(-1.0, 1.0, vUv.y));
+                vec3 cyan = vec3(0.06, 0.69, 1.0);
+                float stars = star(uv * 14.0 + vec2(uTime * 0.025, 0.0));
+                stars += star(uv * 25.0 - vec2(uTime * 0.014, 0.0)) * 0.45;
+                color += cyan * stars * 0.26;
+                color += cyan * min(glow * 0.046, 0.32);
+                if (hit > 0.5) {
+                    vec3 normal = normalize(pos);
+                    float sphereSurface = abs(length(pos) - 0.57);
+                    if (sphereSurface > 0.035) {
+                        normal = normalize(vec3(
+                            scene(pos + vec3(0.012, 0.0, 0.0)) - scene(pos - vec3(0.012, 0.0, 0.0)),
+                            scene(pos + vec3(0.0, 0.012, 0.0)) - scene(pos - vec3(0.0, 0.012, 0.0)),
+                            scene(pos + vec3(0.0, 0.0, 0.012)) - scene(pos - vec3(0.0, 0.0, 0.012))
+                        ));
+                    }
+                    vec3 light = normalize(vec3(-0.5, 0.8, 1.2));
+                    float diffuse = max(dot(normal, light), 0.0);
+                    float fresnel = pow(1.0 - max(dot(normal, -dir), 0.0), 3.0);
+                    float spec = pow(max(dot(reflect(-light, normal), -dir), 0.0), 18.0);
+                    float isCore = 1.0 - smoothstep(0.015, 0.05, sphereSurface);
+                    vec3 solid = mix(cyan * (0.60 + 0.55 * diffuse), vec3(0.012, 0.085, 0.20) +
+                                     cyan * (0.15 * diffuse + 0.80 * fresnel), isCore);
+                    color += solid + vec3(0.48, 0.86, 1.0) * spec * 0.65;
+                }
+                gl_FragColor = vec4(min(color, vec3(1.0)), 1.0);
             }
         """
     }
