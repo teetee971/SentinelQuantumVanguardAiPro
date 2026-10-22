@@ -17,6 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.draw.clip
 import androidx.navigation.NavController
 import com.sentinel.quantum.security.*
 import kotlinx.coroutines.launch
@@ -143,16 +149,31 @@ fun SecurityLabProScreen(navController: NavController) {
         LazyColumn(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
-                Text("Inspection locale en lecture seule — aucune modification d'application.",
+                Text("Analyse locale des applications. Toute installation ou désinstallation nécessite votre confirmation Android.",
                     style = MaterialTheme.typography.bodyMedium)
                 Button(onClick = { navController.popBackStack() }) { Text("Retour") }
                 if (selfInspection.loading || selectionBusy) CircularProgressIndicator()
                 selfInspection.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF111C30)), shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, Color(0xFF355C86))) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("SENTINEL / D.1", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
-                        Text("APK INTELLIGENCE", style = MaterialTheme.typography.headlineSmall)
-                        Text("Analyse locale • Inventaire contrôlé • Gestion avec consentement", color = Color(0xFFA9B9D4), style = MaterialTheme.typography.bodyMedium)
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0A1628)),
+                    shape = RoundedCornerShape(26.dp),
+                    border = BorderStroke(1.dp, Color(0xFF3D83AB))
+                ) {
+                    Box(Modifier.fillMaxWidth().heightIn(min = 190.dp).clip(RoundedCornerShape(26.dp))) {
+                        D1HolographicField(Modifier.matchParentSize())
+                        Column(
+                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text("SENTINEL / D.1", color = Color(0xFF5DDEFF), style = MaterialTheme.typography.labelLarge)
+                            Text("APK INTELLIGENCE", color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                            Text(
+                                "Analyse locale • Inventaire contrôlé • Gestion avec consentement",
+                                color = Color(0xFFC0D6E9),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.fillMaxWidth(.76f)
+                            )
+                        }
                     }
                 }
                 SingleChoiceSegmentedButtonRow {
@@ -361,6 +382,59 @@ internal fun ApkComparisonFindingCard(finding: AppIntegrityFinding) {
             TextButton(onClick = { expanded = !expanded }) {
                 Text(if (expanded) "Réduire" else "Afficher les détails")
             }
+        }
+    }
+}
+
+
+/**
+ * D.1 decorative layer: deterministic, non-interactive and inexpensive.
+ * Particles/rings are drawn rather than downloaded; no access to app or user data.
+ * Static until motion preferences and hardware performance are validated on-device.
+ */
+@Composable
+private fun D1HolographicField(modifier: Modifier = Modifier) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val center = Offset(w * .84f, h * .48f)
+        drawRect(
+            brush = Brush.linearGradient(
+                listOf(Color(0xFF081427), Color(0xFF112B48), Color(0xFF081427)),
+                start = Offset.Zero, end = Offset(w, h)
+            )
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Color(0x5545CFFF), Color(0x1125AEE8), Color.Transparent),
+                center = center, radius = h * .72f
+            ),
+            radius = h * .72f, center = center
+        )
+        for (ring in 0..3) {
+            drawCircle(
+                color = Color(0xFF4AD5FF).copy(alpha = .36f - ring * .055f),
+                radius = h * (.15f + ring * .075f),
+                center = center,
+                style = Stroke(width = if (ring == 0) 2.5f else 1.3f)
+            )
+        }
+        for (line in 0..5) {
+            val path = Path().apply {
+                moveTo(w * (.50f + line * .075f), h)
+                lineTo(center.x, center.y)
+            }
+            drawPath(path, Color(0xFF56CCF2).copy(alpha = .10f), style = Stroke(width = 1f))
+        }
+        // Stable particle coordinates prevent flickering and avoid frame-by-frame allocations.
+        for (i in 0 until 26) {
+            val x = w * (.50f + ((i * 37) % 49) / 100f)
+            val y = h * (.06f + ((i * 29) % 88) / 100f)
+            drawCircle(
+                color = Color(0xFF96E8FF).copy(alpha = .24f + (i % 4) * .12f),
+                radius = if (i % 5 == 0) 2.2f else 1.2f,
+                center = Offset(x, y)
+            )
         }
     }
 }
