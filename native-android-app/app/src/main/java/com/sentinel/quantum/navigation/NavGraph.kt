@@ -59,6 +59,9 @@ fun NavGraph(
         composable(Screen.SmsScanner.route) {
             SmsScannerScreen(navController = navController)
         }
+        composable(Screen.SecurityLabPro.route) {
+            SecurityLabProScreen(navController = navController)
+        }
         composable(Screen.AppPermissionAnalyzer.route) {
             AppPermissionAnalyzerScreen(navController = navController)
         }

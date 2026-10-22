@@ -603,6 +603,14 @@ private fun homeTools(context: Context, navController: NavController): List<Home
         HomeDomain.PROTECTION
     ) { navController.navigate(Screen.SecurityAudit.route) },
     HomeTool(
+        "Laboratoire de sécurité 3D",
+        "Inspection locale des applications et visualisation D.1",
+        Icons.Default.Security,
+        setOf("laboratoire", "3d", "apk", "application", "inspection"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.SecurityLabPro.route) },
+
+    HomeTool(
         "Veille & événements",
         "Consulter les événements OSINT disponibles",
         Icons.Default.Public,
