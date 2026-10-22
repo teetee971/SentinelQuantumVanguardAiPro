@@ -18,6 +18,12 @@ if re.search(r"suspend\s+fun\s+clear\s*\(\s*\)\s*=\s*dao\.clear\s*\(\s*\)", code
 if re.search(r"dao\.insert\s*\(", code) and re.search(r"dao\.prune\s*\(", code):
     if not re.search(r"@Transaction|withTransaction|immediateTransaction", code):
         findings.append("INSERT_AND_PRUNE_NOT_EXPLICITLY_ATOMIC")
+if "synchronized(HISTORY_LOCK)" not in code or "CLEAR_GENERATION.incrementAndGet()" not in code or "generation != CLEAR_GENERATION.get()" not in code:
+    findings.append("CLEAR_WRITE_SERIALIZATION_NOT_PRESENT")
+if not re.search(r"@Transaction\\s+fun\\s+insertAndPrune\\s*\\(", code):
+    findings.append("ATOMIC_INSERT_PRUNE_NOT_PRESENT")
+if not re.search(r"dao\\.insertAndPrune\\s*\\(", code):
+    findings.append("WRITE_DOES_NOT_USE_TRANSACTION_METHOD")
 for finding in findings:
     print("CALL_HISTORY_FINDING=" + finding)
 if findings:
