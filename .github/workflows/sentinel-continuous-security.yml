@@ -86,7 +86,7 @@ jobs:
             echo '| Stage | Outcome |'
             echo '| --- | --- |'
             for stage in CHECKOUT SETUP_NODE INSTALL ISOLATION CREDENTIALS GOVERNANCE FUZZ SUPPLY_CHAIN STATIC_LINKS BUILD; do
-              printf '| %s | %s |\\n' "$stage" "${!stage:-unknown}"
+              printf '| %s | %s |\n' "$stage" "${!stage:-unknown}"
             done
-            printf '\\nOverall job status before reporting: **%s**\\n' "$JOB_STATUS"
+            printf '\nOverall job status before reporting: **%s**\n' "$JOB_STATUS"
           } | tee -a "$GITHUB_STEP_SUMMARY"
