@@ -40,6 +40,11 @@ private class D1SceneRenderer(private val animate: Boolean) : GLSurfaceView.Rend
     private var width = 1
     private var height = 1
     private val start = SystemClock.elapsedRealtime()
+    private val coords = java.nio.ByteBuffer.allocateDirect(8 * 4)
+        .order(java.nio.ByteOrder.nativeOrder()).asFloatBuffer().apply {
+            put(floatArrayOf(-1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f))
+            position(0)
+        }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.027f, 0.058f, 0.11f, 1f)
@@ -78,9 +83,7 @@ private class D1SceneRenderer(private val animate: Boolean) : GLSurfaceView.Rend
         GLES20.glUseProgram(program)
         GLES20.glUniform1f(time, if (animate) (SystemClock.elapsedRealtime() - start) / 1000f else 0f)
         GLES20.glUniform2f(resolution, width.toFloat(), height.toFloat())
-        val coords = java.nio.ByteBuffer.allocateDirect(8 * 4)
-            .order(java.nio.ByteOrder.nativeOrder()).asFloatBuffer()
-        coords.put(floatArrayOf(-1f, -1f, 1f, -1f, -1f, 1f, 1f, 1f)).position(0)
+        coords.position(0)
         GLES20.glEnableVertexAttribArray(position)
         GLES20.glVertexAttribPointer(position, 2, GLES20.GL_FLOAT, false, 0, coords)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
