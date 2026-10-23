@@ -71,7 +71,7 @@ workflows:
           (cd "$APK_DIR" && shasum -a 256 "$(basename "$1")" > apk-debug.sha256 && shasum -a 256 -c apk-debug.sha256)
           ACTUAL_BRANCH="${CM_BRANCH:-}"
           case "$ACTUAL_BRANCH" in
-            integration/sentinel-d1-3d-20261022|fix/d1-apk-process-guard-20261023) ;;
+            integration/sentinel-d1-3d-20261022|fix/d1-apk-process-guard-20261023|fix/d1-auth0-voice-revocation-20261023) ;;
             *)
               echo "BLOCKED: unexpected source branch: $ACTUAL_BRANCH"
               exit 1
@@ -108,7 +108,7 @@ workflows:
           set -eu
           cd "$CM_BUILD_DIR"
           case "${CM_BRANCH:-}" in
-            fix/d1-apk-process-guard-20261023) ;;
+            fix/d1-apk-process-guard-20261023|fix/d1-auth0-voice-revocation-20261023) ;;
             *) echo "BLOCKED: unexpected branch"; exit 1 ;;
           esac
           python3 scripts/verify-play-source-preflight.py
