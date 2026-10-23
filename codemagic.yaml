@@ -30,7 +30,7 @@ workflows:
           set -eu
           cd "$CM_BUILD_DIR/native-android-app"
           chmod +x gradlew
-          ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:assembleDebug --no-daemon --max-workers=2 --console=plain
+          ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:assembleDebug --no-daemon --max-workers=2 --console=plain
       - name: Verify unit-test evidence
         script: |
           set -eu
@@ -54,13 +54,25 @@ workflows:
               'ApkInspectionSafetyTest',
               'ApkComparisonTruthTest',
               'ApkInspectionProcessGuardTest',
+              'AuthSessionAtomicityTest',
+              'AuthSessionConcurrencyTest',
+              'AuthSessionGenerationTest',
           )
           missing = [name for name in mandatory if not any(suite.endswith('.' + name) or suite == name for suite in suite_names)]
           print(f'Unit-test evidence: {total} tests, {failures} failures, {errors} errors, {skipped} skipped, {len(files)} suites')
           print('Required APK suites present:', not missing)
-          if total == 0 or failures or errors or skipped or missing:
+          if total < 1310 or failures or errors or skipped or missing:
               sys.exit('BLOCKED: failed or missing mandatory APK unit-test evidence: ' + ', '.join(missing))
           PY
+      - name: Verify AndroidTest APK exists
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR/native-android-app"
+          TEST_DIR="app/build/outputs/apk/androidTest/debug"
+          set -- "$TEST_DIR"/*.apk
+          test "$#" -eq 1 && test -s "$1" || { echo "BLOCKED: expected exactly one nonempty AndroidTest APK"; exit 1; }
+          (cd "$TEST_DIR" && shasum -a 256 "$(basename "$1")" > android-test.sha256 && shasum -a 256 -c android-test.sha256)
+          echo "ANDROID_TEST_APK_COMPILED_NOT_EXECUTED"
       - name: Record APK SHA-256
         script: |
           set -eu
@@ -89,6 +101,8 @@ workflows:
           cat "$APK_DIR/apk-debug.sha256"
     artifacts:
       - native-android-app/app/build/outputs/apk/debug/*.apk
+      - native-android-app/app/build/outputs/apk/androidTest/debug/*.apk
+      - native-android-app/app/build/outputs/apk/androidTest/debug/*.sha256
       - native-android-app/app/build/outputs/apk/debug/*.sha256
       - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
       - native-android-app/app/build/reports/tests/**/*
