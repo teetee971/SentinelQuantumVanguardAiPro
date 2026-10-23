@@ -251,7 +251,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 112.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
@@ -415,16 +415,11 @@ private fun WifiNetworkCard(
     onBlock: () -> Unit
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = network.ssid,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
+                fontWeight = FontWeight.Bold
             )
             RiskBadge(network.assessment.riskLevel, "Risque")
         }
@@ -456,11 +451,11 @@ private fun WifiNetworkCard(
         network.assessment.reasons.forEach { reason ->
             Text("• $reason", style = MaterialTheme.typography.bodySmall)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onAllow, enabled = network.bssid.isNotBlank()) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onAllow, enabled = network.bssid.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
                 Text("Réseau de confiance")
             }
-            OutlinedButton(onClick = onBlock, enabled = network.bssid.isNotBlank()) {
+            OutlinedButton(onClick = onBlock, enabled = network.bssid.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
                 Text("Marquer suspect")
             }
         }
