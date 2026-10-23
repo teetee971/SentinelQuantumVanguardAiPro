@@ -2,7 +2,6 @@ package com.sentinel.quantum.security
 
 import java.io.File
 import java.util.zip.ZipFile
-import java.util.zip.ZipException
 
 object ApkArchiveValidator {
     private const val MAX_ENTRY_BYTES = 350L * 1024 * 1024
