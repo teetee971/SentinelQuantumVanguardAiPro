@@ -68,8 +68,14 @@ workflows:
           set -- "$APK_DIR"/*.apk
           test "$#" -eq 1 && test -f "$1" || { echo "BLOCKED: expected exactly one APK"; exit 1; }
           (cd "$APK_DIR" && shasum -a 256 "$(basename "$1")" > apk-debug.sha256 && shasum -a 256 -c apk-debug.sha256)
+          printf 'git_commit=%s\nbranch=%s\nbuild_id=%s\n' \
+            "$(git rev-parse HEAD)" "${CM_BRANCH:-unknown}" "${CM_BUILD_ID:-unknown}" \
+            > "$APK_DIR/build-provenance.txt"
+          cat "$APK_DIR/build-provenance.txt"
+          cat "$APK_DIR/apk-debug.sha256"
     artifacts:
       - native-android-app/app/build/outputs/apk/debug/*.apk
       - native-android-app/app/build/outputs/apk/debug/*.sha256
+      - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
       - native-android-app/app/build/reports/tests/**/*
       - native-android-app/app/build/test-results/**/*
