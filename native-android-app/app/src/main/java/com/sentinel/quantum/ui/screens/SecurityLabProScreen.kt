@@ -332,14 +332,14 @@ fun SecurityLabProScreen(navController: NavController) {
                 Text("FICHIERS APK", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
                 Text("Analyse, installation contrôlée et comparaison", style = MaterialTheme.typography.titleMedium)
 
-                Button(enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
+                Button(modifier = Modifier.fillMaxWidth(), enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
                     Text("Analyser puis demander l'installation")
                 }
                 HorizontalDivider()
                 Text("Désinstallation avec confirmation Android", style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(value = uninstallInput, onValueChange = { uninstallInput = it.trim() },
-                    label = { Text("Identifiant Android à désinstaller") }, singleLine = true)
-                Button(enabled = uninstallInput.isNotBlank() && uninstallInput != "com.sentinel.quantum" &&
+                    modifier = Modifier.fillMaxWidth(), label = { Text("Identifiant Android à désinstaller") }, singleLine = true)
+                Button(modifier = Modifier.fillMaxWidth(), enabled = uninstallInput.isNotBlank() && uninstallInput != "com.sentinel.quantum" &&
                     uninstallInput != "com.sentinel.quantum.labpreview",
                     onClick = { uninstallPending = uninstallInput }) { Text("Demander la désinstallation") }
                 managerError?.let {
@@ -373,15 +373,16 @@ fun SecurityLabProScreen(navController: NavController) {
                 if (labTab == 1) {
                 HorizontalDivider()
                 Text("Comparer deux APK sélectionnés sur ce téléphone (sans installation).")
-                Button(enabled = !selectionBusy, onClick = { firstPicker.launch(arrayOf("*/*")) }) {
+                Button(modifier = Modifier.fillMaxWidth(), enabled = !selectionBusy, onClick = { firstPicker.launch(arrayOf("*/*")) }) {
                     Text("Choisir APK de référence")
                 }
-                Button(enabled = !selectionBusy, onClick = { secondPicker.launch(arrayOf("*/*")) }) {
+                Button(modifier = Modifier.fillMaxWidth(), enabled = !selectionBusy, onClick = { secondPicker.launch(arrayOf("*/*")) }) {
                     Text("Choisir APK à comparer")
                 }
                 firstApk?.let { Text("Référence : ${it.packageName ?: "Non identifié"} / build ${it.versionCode ?: "?"}") }
                 secondApk?.let { Text("Comparaison : ${it.packageName ?: "Non identifié"} / build ${it.versionCode ?: "?"}") }
                 Button(
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = firstApk != null && secondApk != null && !selectionBusy,
                     onClick = { selection = selection.withComparison(ApkComparisonEngine.compare(
                         firstApk!!, secondApk!!, System.currentTimeMillis()
@@ -396,7 +397,7 @@ fun SecurityLabProScreen(navController: NavController) {
                     val warn = result.findings.count { it.status == AppIntegrityStatus.WARN }
                     val bad = result.findings.count { it.status == AppIntegrityStatus.BAD }
                     val unknown = result.findings.count { it.status == AppIntegrityStatus.UNKNOWN }
-                    Text("Synthèse : $ok vérifié(s) · $warn à revoir · $bad invalide(s) · $unknown indéterminé(s)", style = MaterialTheme.typography.titleSmall)
+                    Text("Contrôles de comparaison : $ok concordant(s) · $warn à revoir · $bad invalide(s) · $unknown indéterminé(s)", style = MaterialTheme.typography.titleSmall)
                 }
                 item {
                     Text(when {
@@ -451,7 +452,7 @@ internal fun ApkComparisonFindingCard(finding: AppIntegrityFinding) {
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             val label = when (finding.status) {
-                AppIntegrityStatus.OK -> "Vérifié"
+                AppIntegrityStatus.OK -> "Concordant"
                 AppIntegrityStatus.WARN -> "À examiner"
                 AppIntegrityStatus.BAD -> "Invalide"
                 AppIntegrityStatus.UNKNOWN -> "Indéterminé"
