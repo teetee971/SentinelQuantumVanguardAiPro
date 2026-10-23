@@ -107,7 +107,11 @@ class ApkInspectionSafetyTest {
                 }
             }
             assertEquals("inspection failed", caught.message)
-            assertTrue(dir.listFiles().isNullOrEmpty())
+            // The persistent lock file is expected; no temporary APK or unexpected file may remain.
+            assertEquals(
+                setOf(".sentinel_apk_inspection.lock"),
+                dir.listFiles().orEmpty().map { it.name }.toSet()
+            )
         } finally {
             dir.deleteRecursively()
         }

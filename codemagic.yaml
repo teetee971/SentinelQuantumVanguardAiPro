@@ -53,6 +53,7 @@ workflows:
           mandatory = (
               'ApkInspectionSafetyTest',
               'ApkComparisonTruthTest',
+              'ApkInspectionProcessGuardTest',
           )
           missing = [name for name in mandatory if not any(suite.endswith('.' + name) or suite == name for suite in suite_names)]
           print(f'Unit-test evidence: {total} tests, {failures} failures, {errors} errors, {skipped} skipped, {len(files)} suites')
@@ -68,12 +69,14 @@ workflows:
           set -- "$APK_DIR"/*.apk
           test "$#" -eq 1 && test -f "$1" || { echo "BLOCKED: expected exactly one APK"; exit 1; }
           (cd "$APK_DIR" && shasum -a 256 "$(basename "$1")" > apk-debug.sha256 && shasum -a 256 -c apk-debug.sha256)
-          EXPECTED_BRANCH="integration/sentinel-d1-3d-20261022"
           ACTUAL_BRANCH="${CM_BRANCH:-}"
-          test "$ACTUAL_BRANCH" = "$EXPECTED_BRANCH" || {
-            echo "BLOCKED: unexpected source branch: $ACTUAL_BRANCH"
-            exit 1
-          }
+          case "$ACTUAL_BRANCH" in
+            integration/sentinel-d1-3d-20261022|fix/d1-apk-process-guard-20261023) ;;
+            *)
+              echo "BLOCKED: unexpected source branch: $ACTUAL_BRANCH"
+              exit 1
+              ;;
+          esac
           test "$(git rev-parse --is-inside-work-tree)" = "true"
           test -z "$(git -c core.filemode=false status --porcelain --untracked-files=no)" || {
             echo "BLOCKED: tracked files modified during build"
@@ -90,3 +93,70 @@ workflows:
       - native-android-app/app/build/outputs/apk/debug/build-provenance.txt
       - native-android-app/app/build/reports/tests/**/*
       - native-android-app/app/build/test-results/**/*
+
+  sentinel-d1-release-unsigned:
+    name: Sentinel D1 unsigned release qualification
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    environment:
+      java: 17
+    triggering:
+      events: []
+    scripts:
+      - name: Verify source and release safety prerequisites
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          case "${CM_BRANCH:-}" in
+            fix/d1-apk-process-guard-20261023) ;;
+            *) echo "BLOCKED: unexpected branch"; exit 1 ;;
+          esac
+          python3 scripts/verify-play-source-preflight.py
+          python3 scripts/verify-apk-install-gate.py
+          if env | grep -Eq '^(KEYSTORE_FILE|KEYSTORE_PASSWORD|KEY_ALIAS|KEY_PASSWORD)='; then
+            echo "BLOCKED: production signing secrets must not be present in unsigned qualification"
+            exit 1
+          fi
+      - name: Android SDK 37
+        script: |
+          set -eu
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER" || { echo "BLOCKED: Android SDK manager missing"; exit 1; }
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.0" "build-tools;36.0.0"
+          printf 'sdk.dir=%s\n' "$SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+      - name: Generate and audit merged releaseUnsigned manifest
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:processReleaseUnsignedMainManifest --no-daemon --max-workers=2 --console=plain
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          root = Path("app/build/intermediates")
+          candidates = sorted(p for p in root.rglob("AndroidManifest.xml")
+              if "releaseUnsigned" in p.parts and
+              any(part in ("merged_manifest", "merged_manifests") for part in p.parts))
+          if len(candidates) != 1:
+              raise SystemExit(f"BLOCKED: expected exactly one releaseUnsigned merged manifest, found {len(candidates)}: {candidates}")
+          print("Merged release manifest:", candidates[0], flush=True)
+          subprocess.run(["python3", "../scripts/verify-android-release-manifest.py", str(candidates[0])], check=True)
+          PY
+      - name: Build unsigned release bundle
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR/native-android-app"
+          ./gradlew :app:bundleReleaseUnsigned --no-daemon --max-workers=2 --console=plain
+          BUNDLE_DIR="app/build/outputs/bundle/releaseUnsigned"
+          set -- "$BUNDLE_DIR"/*.aab
+          test "$#" -eq 1 && test -f "$1" || { echo "BLOCKED: expected exactly one unsigned AAB"; exit 1; }
+          (cd "$BUNDLE_DIR" && shasum -a 256 "$(basename "$1")" > bundle-unsigned.sha256 && shasum -a 256 -c bundle-unsigned.sha256)
+          printf 'commit=%s\nbranch=%s\nbuild_id=%s\nUNSIGNED_ONLY=true\n' \
+            "$(git rev-parse HEAD)" "${CM_BRANCH:-unknown}" "${CM_BUILD_ID:-unknown}" > "$BUNDLE_DIR/build-provenance.txt"
+          cat "$BUNDLE_DIR/build-provenance.txt"
+    artifacts:
+      - native-android-app/app/build/outputs/bundle/releaseUnsigned/*.aab
+      - native-android-app/app/build/outputs/bundle/releaseUnsigned/*.sha256
+      - native-android-app/app/build/outputs/bundle/releaseUnsigned/build-provenance.txt
+      - native-android-app/app/build/outputs/logs/manifest-merger-*.txt
