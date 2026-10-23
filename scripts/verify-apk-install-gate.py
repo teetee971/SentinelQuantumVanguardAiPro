@@ -16,7 +16,7 @@ checks = {
     )),
     "no install API called from UI": "installUserSelected(" not in screen,
     "no direct APK install intent in manager": "ACTION_INSTALL_PACKAGE" not in manager,
-    "no pending install UI": "installPending" not in screen,
+    "no pending install UI": re.search(r"\binstallPending\b", screen) is None,
 }
 for description, ok in checks.items():
     print(f"{'PASS' if ok else 'FAIL'} {description}")
