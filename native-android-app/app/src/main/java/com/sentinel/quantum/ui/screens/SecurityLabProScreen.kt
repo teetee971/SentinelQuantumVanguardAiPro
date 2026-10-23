@@ -315,7 +315,7 @@ fun SecurityLabProScreen(navController: NavController) {
                 Text("Analyse, installation contrôlée et comparaison", style = MaterialTheme.typography.titleMedium)
 
                 Button(modifier = Modifier.fillMaxWidth(), enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
-                    Text("Analyser puis demander l'installation")
+                    Text("Analyser un APK (installation désactivée)")
                 }
                 HorizontalDivider()
                 Text("Désinstallation avec confirmation Android", style = MaterialTheme.typography.titleMedium)
