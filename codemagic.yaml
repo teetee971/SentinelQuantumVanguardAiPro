@@ -68,6 +68,17 @@ workflows:
           set -- "$APK_DIR"/*.apk
           test "$#" -eq 1 && test -f "$1" || { echo "BLOCKED: expected exactly one APK"; exit 1; }
           (cd "$APK_DIR" && shasum -a 256 "$(basename "$1")" > apk-debug.sha256 && shasum -a 256 -c apk-debug.sha256)
+          EXPECTED_BRANCH="integration/sentinel-d1-3d-20261022"
+          ACTUAL_BRANCH="${CM_BRANCH:-}"
+          test "$ACTUAL_BRANCH" = "$EXPECTED_BRANCH" || {
+            echo "BLOCKED: unexpected source branch: $ACTUAL_BRANCH"
+            exit 1
+          }
+          test "$(git rev-parse --is-inside-work-tree)" = "true"
+          test -z "$(git status --porcelain --untracked-files=no)" || {
+            echo "BLOCKED: tracked files modified during build"
+            exit 1
+          }
           printf 'git_commit=%s\nbranch=%s\nbuild_id=%s\n' \
             "$(git rev-parse HEAD)" "${CM_BRANCH:-unknown}" "${CM_BUILD_ID:-unknown}" \
             > "$APK_DIR/build-provenance.txt"
