@@ -67,8 +67,7 @@ workflows:
           APK_DIR="app/build/outputs/apk/debug"
           set -- "$APK_DIR"/*.apk
           test "$#" -eq 1 && test -f "$1" || { echo "BLOCKED: expected exactly one APK"; exit 1; }
-          shasum -a 256 "$1" > "$APK_DIR/apk-debug.sha256"
-          (cd "$APK_DIR" && shasum -a 256 -c apk-debug.sha256)
+          (cd "$APK_DIR" && shasum -a 256 "$(basename "$1")" > apk-debug.sha256 && shasum -a 256 -c apk-debug.sha256)
     artifacts:
       - native-android-app/app/build/outputs/apk/debug/*.apk
       - native-android-app/app/build/outputs/apk/debug/*.sha256
