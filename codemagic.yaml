@@ -20,6 +20,11 @@ workflows:
           fi
           "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.0" "build-tools;36.0.0"
           printf 'sdk.dir=%s\n' "$SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+      - name: Verify APK installation fail-closed
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          python3 scripts/verify-apk-install-gate.py
       - name: Compile, test and assemble APK
         script: |
           set -eu
