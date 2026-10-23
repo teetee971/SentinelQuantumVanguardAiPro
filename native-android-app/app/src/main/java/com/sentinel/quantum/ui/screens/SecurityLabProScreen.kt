@@ -65,7 +65,6 @@ fun SecurityLabProScreen(navController: NavController) {
     val inventoryPageCount = (filteredApps.size + inventoryPageSize - 1) / inventoryPageSize
     var labTab by remember { mutableStateOf(0) }
     var volumetricEnabled by remember { mutableStateOf(false) }
-    var installPending by remember { mutableStateOf<Pair<Uri, ApkEvidence>?>(null) }
     var uninstallPending by remember { mutableStateOf<String?>(null) }
     var uninstallInput by remember { mutableStateOf("") }
     var managerError by remember { mutableStateOf<String?>(null) }
@@ -76,12 +75,10 @@ fun SecurityLabProScreen(navController: NavController) {
             managerError = null
             try {
                 val evidence = SelectedApkInspector(context.applicationContext).inspect(uri)
-                if (evidence.signatureVerified != true) {
-                    managerError = "Signature APK non vérifiée : installation refusée."
-                } else if (evidence.packageName == "com.sentinel.quantum" || evidence.packageName == "com.sentinel.quantum.labpreview") {
-                    managerError = "APK Sentinel protégé : utiliser le parcours de mise à jour dédié, hors du laboratoire."
+                managerError = if (evidence.signatureVerified == true) {
+                    "Analyse terminée pour ${evidence.packageName ?: "APK inconnu"}. Installation désactivée : liaison sécurisée au fichier vérifié non disponible."
                 } else {
-                    installPending = uri to evidence
+                    "Signature APK non vérifiée : installation interdite."
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -91,21 +88,6 @@ fun SecurityLabProScreen(navController: NavController) {
                 selectionBusy = false
             }
         }
-    }
-    installPending?.let { pending ->
-        AlertDialog(
-            onDismissRequest = { installPending = null },
-            title = { Text("Confirmer la demande d'installation") },
-            text = { Text("APK : ${pending.second.packageName ?: "inconnu"}. Android demandera une confirmation supplémentaire. Aucun résultat d'installation n'est encore connu.") },
-            confirmButton = { TextButton(onClick = {
-                try {
-                    apkManager.installUserSelected(pending.first, pending.second)
-                    auditRevision++
-                } catch (e: Exception) { managerError = e.message ?: "Installateur indisponible" }
-                installPending = null
-            }) { Text("Ouvrir l'installateur Android") } },
-            dismissButton = { TextButton(onClick = { installPending = null }) { Text("Annuler") } }
-        )
     }
     uninstallPending?.let { packageName ->
         AlertDialog(
