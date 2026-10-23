@@ -15,18 +15,15 @@ internal class SentinelApkManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("sentinel_apk_manager_audit", Context.MODE_PRIVATE)
     private val protectedIds = setOf("com.sentinel.quantum", "com.sentinel.quantum.labpreview")
 
-    fun installUserSelected(uri: Uri, evidence: ApkEvidence) {
-        require(evidence.signatureVerified == true) { "Signature APK non validée : installation bloquée" }
-        val packageName = evidence.packageName ?: throw IllegalArgumentException("Identifiant APK indéterminé")
-        require(packageName !in protectedIds) { "Mise à jour de Sentinel interdite depuis le laboratoire" }
-        require(uri.scheme == "content") { "Seuls les documents sélectionnés par Android sont acceptés" }
-        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-            data = uri
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        require(intent.resolveActivity(context.packageManager) != null) { "Aucun installateur Android disponible" }
-        record("INSTALLATION_DEMANDEE", packageName)
-        context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    /**
+     * Intentionally fail closed. Inspecting an external content URI does not pin its bytes.
+     * A future installer must serve a verified, immutable private snapshot through FileProvider.
+     */
+    @Deprecated("Unsafe URI handoff; implement verified immutable snapshot before enabling")
+    fun installUserSelected(uri: Uri, evidence: ApkEvidence): Nothing {
+        throw UnsupportedOperationException(
+            "Installation désactivée : le fichier analysé doit être figé avant transmission à Android."
+        )
     }
 
     fun requestUninstall(packageName: String) {
