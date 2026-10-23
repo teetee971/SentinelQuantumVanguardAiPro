@@ -38,8 +38,21 @@ def main(argv):
     if len(argv) != 2 or not Path(argv[1]).is_file():
         print("BLOCKED: pass an existing merged release AndroidManifest.xml")
         return 2
+    # Fail closed on source manifests, even when their attributes look safe.
+    candidate = Path(argv[1]).resolve()
+    app_build = (Path(__file__).resolve().parent.parent / "native-android-app/app/build/intermediates").resolve()
     try:
-        issues = inspect(argv[1])
+        relative = candidate.relative_to(app_build)
+    except ValueError:
+        print("BLOCKED: manifest is not a generated app/build/intermediates artifact")
+        return 2
+    parts = relative.parts
+    if (len(parts) < 4 or parts[0] not in ("merged_manifest", "merged_manifests")
+            or parts[1] != "releaseUnsigned" or candidate.name != "AndroidManifest.xml"):
+        print("BLOCKED: expected a generated releaseUnsigned merged AndroidManifest.xml")
+        return 2
+    try:
+        issues = inspect(candidate)
     except (ET.ParseError, OSError, ValueError) as exc:
         print(f"BLOCKED: unreadable merged release manifest: {exc}")
         return 2
