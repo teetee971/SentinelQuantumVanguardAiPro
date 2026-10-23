@@ -32,6 +32,24 @@ class ApkInspectionSafetyTest {
         }
     }
 
+    @Test fun emptyManifestRejected() {
+        val file = Files.createTempFile("sentinel-empty-manifest-", ".apk").toFile()
+        try {
+            ZipOutputStream(file.outputStream()).use { zip ->
+                zip.putNextEntry(ZipEntry("AndroidManifest.xml"))
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("classes.dex"))
+                zip.write(byteArrayOf(1, 2, 3))
+                zip.closeEntry()
+            }
+            assertThrows(IllegalArgumentException::class.java) {
+                ApkArchiveValidator.validate(file)
+            }
+        } finally {
+            file.delete()
+        }
+    }
+
     @Test fun missingManifestRejected() {
         val file = archive("classes.dex")
         try {
