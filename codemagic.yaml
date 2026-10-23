@@ -57,14 +57,18 @@ workflows:
           missing = [name for name in mandatory if not any(suite.endswith('.' + name) or suite == name for suite in suite_names)]
           print(f'Unit-test evidence: {total} tests, {failures} failures, {errors} errors, {skipped} skipped, {len(files)} suites')
           print('Required APK suites present:', not missing)
-          if total == 0 or failures or errors or missing:
+          if total == 0 or failures or errors or skipped or missing:
               sys.exit('BLOCKED: failed or missing mandatory APK unit-test evidence: ' + ', '.join(missing))
           PY
       - name: Record APK SHA-256
         script: |
           set -eu
           cd "$CM_BUILD_DIR/native-android-app"
-          shasum -a 256 app/build/outputs/apk/debug/*.apk > app/build/outputs/apk/debug/apk-debug.sha256
+          APK_DIR="app/build/outputs/apk/debug"
+          set -- "$APK_DIR"/*.apk
+          test "$#" -eq 1 && test -f "$1" || { echo "BLOCKED: expected exactly one APK"; exit 1; }
+          shasum -a 256 "$1" > "$APK_DIR/apk-debug.sha256"
+          (cd "$APK_DIR" && shasum -a 256 -c apk-debug.sha256)
     artifacts:
       - native-android-app/app/build/outputs/apk/debug/*.apk
       - native-android-app/app/build/outputs/apk/debug/*.sha256
