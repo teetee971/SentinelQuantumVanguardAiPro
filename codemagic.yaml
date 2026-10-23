@@ -36,19 +36,29 @@ workflows:
           set -eu
           cd "$CM_BUILD_DIR/native-android-app"
           python3 - <<'PY'
-          import glob, sys, xml.etree.ElementTree as ET
-          files = glob.glob('app/build/test-results/testDebugUnitTest/TEST-*.xml')
+          import glob, os, sys, xml.etree.ElementTree as ET
+          directory = 'app/build/test-results/testDebugUnitTest'
+          files = glob.glob(f'{directory}/TEST-*.xml')
           if not files:
               sys.exit('BLOCKED: missing JVM unit-test XML reports')
-          total = failures = errors = 0
+          total = failures = errors = skipped = 0
+          suite_names = set()
           for path in files:
               root = ET.parse(path).getroot()
+              suite_names.add(root.get('name', os.path.basename(path)))
               total += int(root.get('tests', '0'))
               failures += int(root.get('failures', '0'))
               errors += int(root.get('errors', '0'))
-          print(f'Unit-test evidence: {total} tests, {failures} failures, {errors} errors, {len(files)} suites')
-          if total == 0 or failures or errors:
-              sys.exit('BLOCKED: unit tests not proven successful')
+              skipped += int(root.get('skipped', '0'))
+          mandatory = (
+              'ApkInspectionSafetyTest',
+              'ApkComparisonTruthTest',
+          )
+          missing = [name for name in mandatory if not any(suite.endswith('.' + name) or suite == name for suite in suite_names)]
+          print(f'Unit-test evidence: {total} tests, {failures} failures, {errors} errors, {skipped} skipped, {len(files)} suites')
+          print('Required APK suites present:', not missing)
+          if total == 0 or failures or errors or missing:
+              sys.exit('BLOCKED: failed or missing mandatory APK unit-test evidence: ' + ', '.join(missing))
           PY
       - name: Record APK SHA-256
         script: |
