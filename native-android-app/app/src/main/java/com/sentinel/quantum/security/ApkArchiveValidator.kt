@@ -4,6 +4,9 @@ import java.io.File
 import java.util.zip.ZipFile
 
 object ApkArchiveValidator {
+    private const val MAX_ENTRY_BYTES = 350L * 1024 * 1024
+    private const val MAX_TOTAL_BYTES = 350L * 1024 * 1024
+
     fun validate(file: File) {
         require(file.isFile && file.length() > 0) {
             "APK absent ou vide"
@@ -17,6 +20,7 @@ object ApkArchiveValidator {
             val entries = zip.entries()
             val names = HashSet<String>()
             var manifestFound = false
+            var totalDeclaredBytes = 0L
 
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement()
@@ -29,6 +33,15 @@ object ApkArchiveValidator {
                 ) {
                     "Chemin APK dangereux"
                 }
+
+                val size = entry.size
+                require(size in 0..MAX_ENTRY_BYTES) {
+                    "Taille ZIP non determinee ou excessive"
+                }
+                require(totalDeclaredBytes <= MAX_TOTAL_BYTES - size) {
+                    "Contenu ZIP total trop volumineux"
+                }
+                totalDeclaredBytes += size
 
                 require(names.add(name)) {
                     "Entree ZIP dupliquee"
