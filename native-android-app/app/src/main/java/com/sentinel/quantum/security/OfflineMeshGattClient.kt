@@ -152,6 +152,29 @@ class OfflineMeshGattClient(context: Context) {
                     // TRANSPORT_READY is not authenticated and cannot send private messages.
                 }
             }
+            // No application notification protocol is enabled yet. Receiving bytes
+            // must never be interpreted as authenticated content.
+            override fun onCharacteristicChanged(
+                client: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                value: ByteArray
+            ) {
+                main.post {
+                    if (session != epoch || client !== gatt) return@post
+                    terminate("UNEXPECTED_GATT_NOTIFICATION")
+                }
+            }
+
+            @Suppress("DEPRECATION")
+            override fun onCharacteristicChanged(
+                client: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic
+            ) {
+                main.post {
+                    if (session != epoch || client !== gatt) return@post
+                    terminate("UNEXPECTED_GATT_NOTIFICATION")
+                }
+            }
             override fun onDescriptorWrite(
                 client: BluetoothGatt,
                 descriptor: android.bluetooth.BluetoothGattDescriptor,
