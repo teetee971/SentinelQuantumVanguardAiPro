@@ -1,8 +1,10 @@
 package com.sentinel.quantum.ui.design
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -113,30 +117,57 @@ fun SentinelActionTile(
     modifier: Modifier = Modifier,
     accent: Color = SentinelD1.Cyan
 ) {
-    val shape = RoundedCornerShape(SentinelVisualTokens.CompactCornerRadiusDp.dp)
+    val shape = RoundedCornerShape(SentinelVisualTokens.GlassCornerRadiusDp.dp)
     Surface(
         modifier = modifier
-            .clickable(role = Role.Button, onClick = onClick)
-            .border(1.dp, accent.copy(alpha = 0.36f), shape),
+            .border(1.dp, accent.copy(alpha = 0.48f), shape)
+            .clickable(role = Role.Button, onClick = onClick),
         shape = shape,
-        color = SentinelD1.Card.copy(alpha = 0.9f)
+        color = SentinelD1.Panel,
+        tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(accent.copy(alpha = 0.16f), SentinelD1.Panel, SentinelD1.Card)
+                    )
+                )
                 .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(28.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Surface(
+                modifier = Modifier.size(54.dp),
+                shape = CircleShape,
+                color = accent.copy(alpha = 0.15f),
+                contentColor = accent
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(30.dp))
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
                 Text(
-                    subtitle,
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = subtitle,
                     fontSize = SentinelVisualTokens.BodyTextSp.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            Text(
+                text = "›",
+                fontSize = 27.sp,
+                color = accent
+            )
         }
     }
 }
