@@ -10,8 +10,10 @@ import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.Signature
+import java.security.GeneralSecurityException
 import java.security.cert.Certificate
 import java.security.spec.ECGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 
 /**
  * OWNER device identity backed by AndroidKeyStore.
@@ -22,6 +24,11 @@ import java.security.spec.ECGenParameterSpec
  * OWNER identity binding remain server-side responsibilities.
  */
 class OwnerDeviceKeyManager {
+
+    class IdentityUnavailableException(cause: Throwable) : IllegalStateException(
+        "OWNER_DEVICE_IDENTITY_UNAVAILABLE",
+        cause
+    )
 
     companion object {
         const val KEY_ALIAS = "sentinel_owner_device_identity_v1"
@@ -44,14 +51,22 @@ class OwnerDeviceKeyManager {
      * Android key attestation on supported devices. The challenge must be
      * fresh and single-use; this method does not create or validate it.
      */
+    @Synchronized
     fun ensureKey(attestationChallenge: ByteArray? = null): DevicePublicIdentity {
-        val keyStore = loadKeyStore()
-        if (!keyStore.containsAlias(KEY_ALIAS)) {
-            generateKey(attestationChallenge, preferStrongBox = true)
+        try {
+            val keyStore = loadKeyStore()
+            if (!keyStore.containsAlias(KEY_ALIAS)) {
+                generateKey(attestationChallenge, preferStrongBox = true)
+            }
+            return publicIdentity()
+        } catch (error: KeyPermanentlyInvalidatedException) {
+            throw IdentityUnavailableException(error)
+        } catch (error: GeneralSecurityException) {
+            throw IdentityUnavailableException(error)
         }
-        return publicIdentity()
     }
 
+    @Synchronized
     fun publicIdentity(): DevicePublicIdentity {
         val keyStore = loadKeyStore()
         val certificate = keyStore.getCertificate(KEY_ALIAS)
@@ -76,19 +91,27 @@ class OwnerDeviceKeyManager {
      * Signs a server-issued challenge. The challenge must be validated for
      * freshness and one-time use by the server before the signature is trusted.
      */
+    @Synchronized
     fun signChallenge(challenge: ByteArray): ByteArray {
         require(challenge.size in 16..1024) { "Challenge length is outside the accepted range" }
 
-        val privateKey = loadKeyStore().getKey(KEY_ALIAS, null)
-            ?: throw IllegalStateException("OWNER device key is not enrolled")
+        return try {
+            val privateKey = loadKeyStore().getKey(KEY_ALIAS, null)
+                ?: throw IllegalStateException("OWNER device key is not enrolled")
 
-        return Signature.getInstance(SIGNATURE_ALGORITHM).run {
-            initSign(privateKey as java.security.PrivateKey)
-            update(challenge)
-            sign()
+            Signature.getInstance(SIGNATURE_ALGORITHM).run {
+                initSign(privateKey as java.security.PrivateKey)
+                update(challenge)
+                sign()
+            }
+        } catch (error: KeyPermanentlyInvalidatedException) {
+            throw IdentityUnavailableException(error)
+        } catch (error: GeneralSecurityException) {
+            throw IdentityUnavailableException(error)
         }
     }
 
+    @Synchronized
     fun revokeLocalKey() {
         val keyStore = loadKeyStore()
         if (keyStore.containsAlias(KEY_ALIAS)) {

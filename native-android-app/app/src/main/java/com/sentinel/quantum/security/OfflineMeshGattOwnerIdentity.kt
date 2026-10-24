@@ -10,6 +10,14 @@ import java.security.MessageDigest
 object OfflineMeshGattOwnerIdentity {
     fun fromOwnerDeviceKeyManager(
         keyManager: OwnerDeviceKeyManager,
+        trustStore: OfflineMeshGattAndroidTrustStore
+    ): OfflineMeshGattCryptoIdentity = fromOwnerDeviceKeyManager(
+        keyManager,
+        { trustStore.trustedPublicKeysX509() }
+    )
+
+    fun fromOwnerDeviceKeyManager(
+        keyManager: OwnerDeviceKeyManager,
         trustedPeerPublicKeysX509: Collection<ByteArray>
     ): OfflineMeshGattCryptoIdentity = fromOwnerDeviceKeyManager(
         keyManager,
@@ -36,4 +44,8 @@ object OfflineMeshGattOwnerIdentity {
             }
         )
     }
+
+    /** Authorization callback for an established transport; revocation closes it on next use. */
+    fun authorizationFor(trustStore: OfflineMeshGattAndroidTrustStore): (ByteArray?) -> Boolean =
+        { peerPublicKeyX509 -> peerPublicKeyX509?.let(trustStore::isTrusted) == true }
 }

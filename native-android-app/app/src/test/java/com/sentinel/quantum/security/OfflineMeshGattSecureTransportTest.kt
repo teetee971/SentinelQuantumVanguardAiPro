@@ -119,17 +119,60 @@ class OfflineMeshGattSecureTransportTest {
         assertEquals(OfflineMeshGattTransport.Offer.LOCKED, channel.offer(byteArrayOf(1)))
     }
 
+    @Test
+    fun authorizationRevocationInterruptsAnEstablishedChannel() {
+        val initiatorKeys = keyPair()
+        val responderKeys = keyPair()
+        var authorized = true
+        val initiator = channel(
+            OfflineMeshGattCryptoSession.Role.INITIATOR,
+            initiatorKeys,
+            responderKeys,
+            authorization = { authorized }
+        )
+        val responder = channel(
+            OfflineMeshGattCryptoSession.Role.RESPONDER,
+            responderKeys,
+            initiatorKeys
+        )
+        completeHandshake(initiator, responder)
+        assertTrue(initiator.isAuthenticated())
+
+        authorized = false
+        assertEquals(OfflineMeshGattTransport.Offer.LOCKED, initiator.offer(byteArrayOf(9)))
+        assertFalse(initiator.isAuthenticated())
+    }
+
+    private fun completeHandshake(
+        initiator: OfflineMeshGattSecureTransport,
+        responder: OfflineMeshGattSecureTransport
+    ) {
+        assertTrue(initiator.startLink(1L))
+        assertTrue(responder.startLink(1L))
+        val hello = requireNotNull(initiator.next(0L))
+        assertTrue(initiator.onRadioWriteComplete(hello.ticket, 1L, true, 1L))
+        assertTrue(responder.receive(hello.bytes, 2L).accepted)
+        val response = requireNotNull(responder.next(2L))
+        assertTrue(responder.onRadioWriteComplete(response.ticket, 1L, true, 3L))
+        assertTrue(initiator.receive(response.bytes, 4L).accepted)
+        val finish = requireNotNull(initiator.next(4L))
+        assertTrue(initiator.onRadioWriteComplete(finish.ticket, 1L, true, 5L))
+        assertTrue(responder.receive(finish.bytes, 6L).accepted)
+    }
+
     private fun channel(
         role: OfflineMeshGattCryptoSession.Role,
         local: KeyPair,
-        peer: KeyPair
+        peer: KeyPair,
+        authorization: () -> Boolean = { true }
     ): OfflineMeshGattSecureTransport = OfflineMeshGattSecureTransport(
         OfflineMeshGattCryptoSession(
             role,
             OfflineMeshGattCryptoIdentity.fromKeyPair(local) { candidate ->
                 MessageDigest.isEqual(peer.public.encoded, candidate)
             }
-        )
+        ),
+        isPeerAuthorized = { authorization() }
     )
 
     private fun keyPair(): KeyPair = KeyPairGenerator.getInstance("EC").apply {

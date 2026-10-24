@@ -111,10 +111,12 @@ class OfflineMeshGattCryptoSession(
     private var transcript: ByteArray? = null
     private var sendKey: ByteArray? = null
     private var receiveKey: ByteArray? = null
+    private var peerPublicX509: ByteArray? = null
     private val receivedCounters = HashSet<Long>()
 
     @Synchronized fun state(): State = currentState
     @Synchronized fun isEstablished(): Boolean = currentState == State.ESTABLISHED
+    @Synchronized fun peerPublicIdentityX509(): ByteArray? = peerPublicX509?.copyOf()
 
     @Synchronized fun start(): ByteArray? {
         if (role != Role.INITIATOR || currentState != State.NEW || identity == null) return null
@@ -189,6 +191,7 @@ class OfflineMeshGattCryptoSession(
         sendKey?.fill(0)
         receiveKey?.fill(0)
         transcript?.fill(0)
+        peerPublicX509?.fill(0)
         localNonce?.fill(0)
         initUnsigned?.fill(0)
         currentState = State.NEW
@@ -198,6 +201,7 @@ class OfflineMeshGattCryptoSession(
         transcript = null
         sendKey = null
         receiveKey = null
+        peerPublicX509 = null
         receivedCounters.clear()
     }
 
@@ -209,6 +213,7 @@ class OfflineMeshGattCryptoSession(
         if (!identity!!.trusts(peerX509) ||
             !verify(peerPublic, signatureInput(HELLO, parsed.unsigned), parsed.signature)
         ) return fail()
+        peerPublicX509 = peerX509.copyOf()
 
         val keyPair = generateEphemeral()
         val responderNonce = ByteArray(NONCE_BYTES).also(random::nextBytes)
@@ -236,6 +241,7 @@ class OfflineMeshGattCryptoSession(
         if (!identity!!.trusts(peerPublic.encoded) ||
             !verify(peerPublic, signatureInput(RESPONSE, init + parsed.unsigned), parsed.signature)
         ) return fail()
+        peerPublicX509 = peerPublic.encoded.copyOf()
         val keyPair = ephemeral ?: return fail()
         installKeys(sharedSecret(keyPair, parsed.ephemeralWire), init + parsed.unsigned)
         currentState = State.ESTABLISHED
@@ -359,7 +365,7 @@ class OfflineMeshGattCryptoSession(
     }
 }
 
-private object OfflineMeshGattCryptoCodec {
+internal object OfflineMeshGattCryptoCodec {
     private const val RAW_POINT_BYTES = 65
     private const val NONCE_BYTES = 16
     private const val MAX_SIGNATURE_BYTES = 80

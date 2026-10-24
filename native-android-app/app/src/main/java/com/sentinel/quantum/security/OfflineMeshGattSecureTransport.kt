@@ -13,7 +13,8 @@ class OfflineMeshGattSecureTransport(
     maxFrameBytes: Int = 244,
     ackTimeoutMs: Long = 1_500L,
     maxRetries: Int = 3,
-    private val handshakeTimeoutMs: Long = 15_000L
+    private val handshakeTimeoutMs: Long = 15_000L,
+    private val isPeerAuthorized: (ByteArray?) -> Boolean = { true }
 ) {
     init { require(handshakeTimeoutMs > 0L) }
     enum class State { LOCKED, HANDSHAKING, AUTHENTICATED }
@@ -82,6 +83,7 @@ class OfflineMeshGattSecureTransport(
 
     @Synchronized fun offer(payload: ByteArray): OfflineMeshGattTransport.Offer {
         if (!isAuthenticated()) return OfflineMeshGattTransport.Offer.LOCKED
+        if (!authorizationStillValid()) return OfflineMeshGattTransport.Offer.LOCKED
         val session = crypto ?: return OfflineMeshGattTransport.Offer.LOCKED
         val counter = nextMessageCounter
         val encrypted = runCatching { session.encrypt(payload, counter) }.getOrNull()
@@ -92,6 +94,7 @@ class OfflineMeshGattSecureTransport(
     }
 
     @Synchronized fun next(nowMs: Long): Outbound? {
+        if (currentState == State.AUTHENTICATED && !authorizationStillValid()) return null
         if (controlPending != null) return null
         if (controlQueue.isNotEmpty()) {
             val bytes = controlQueue.removeFirst()
@@ -138,6 +141,7 @@ class OfflineMeshGattSecureTransport(
     }
 
     @Synchronized fun receive(bytes: ByteArray, nowMs: Long): Inbound {
+        if (currentState == State.AUTHENTICATED && !authorizationStillValid()) return Inbound(false)
         val frame = OfflineMeshGattFrameCodec.decode(bytes) ?: return Inbound(false)
         if (frame is OfflineMeshGattFrameCodec.Frame.Control) {
             val session = crypto ?: return Inbound(false)
@@ -165,6 +169,7 @@ class OfflineMeshGattSecureTransport(
     }
 
     @Synchronized fun tick(nowMs: Long): Tick {
+        if (currentState == State.AUTHENTICATED && !authorizationStillValid()) return Tick.Interrupted
         if (currentState == State.HANDSHAKING && nowMs >= handshakeDeadline) {
             interrupt()
             return Tick.Interrupted
@@ -197,5 +202,13 @@ class OfflineMeshGattSecureTransport(
         controlPending = null
         currentState = State.LOCKED
         handshakeDeadline = Long.MAX_VALUE
+    }
+
+    private fun authorizationStillValid(): Boolean {
+        val authorized = runCatching {
+            isPeerAuthorized(crypto?.peerPublicIdentityX509())
+        }.getOrDefault(false)
+        if (!authorized) interrupt()
+        return authorized
     }
 }
