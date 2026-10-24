@@ -45,6 +45,7 @@ import com.sentinel.quantum.security.WifiScanResultTruth
 import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.security.WifiSecurityType
 import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelMetricCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
@@ -262,6 +263,30 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         modifier = Modifier.testTag("network-command-center"),
                         motionLevel = motionLevel
                     )
+                }
+
+                item {
+                    SentinelSectionHeader(
+                        title = "Radar local",
+                        subtitle = "Observations du téléphone, sans cartographie mondiale simulée"
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().testTag("network-radar-metrics"),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        SentinelMetricCard(
+                            label = if (selectedTab == SurveillanceTab.WIFI) "Réseaux visibles" else "Appareils visibles",
+                            value = visibleRiskLevels.size.toString(),
+                            status = SentinelStatus.UNKNOWN,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SentinelMetricCard(
+                            label = "Signaux élevés",
+                            value = visibleRiskLevels.count { it == NetworkRiskLevel.HIGH }.toString(),
+                            status = if (visibleRiskLevels.any { it == NetworkRiskLevel.HIGH }) SentinelStatus.WARN else SentinelStatus.UNKNOWN,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
 
                 item {
