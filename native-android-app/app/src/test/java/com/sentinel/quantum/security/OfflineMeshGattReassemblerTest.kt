@@ -12,14 +12,15 @@ class OfflineMeshGattReassemblerTest {
             .map { OfflineMeshGattFrameCodec.decode(it, 32) as OfflineMeshGattFrameCodec.Frame.Data }
 
     @Test fun outOfOrderFragmentsDeliverExactlyOnce() {
-        val fragments = frames(ByteArray(70) { (it + 1).toByte() })
+        val expected = ByteArray(50) { (it + 1).toByte() }
+        val fragments = frames(expected)
         val reassembler = OfflineMeshGattReassembler(fragmentTimeoutMs = 1000L)
 
         assertFalse(reassembler.accept(fragments[1], nowMs = 10L).complete != null)
         assertFalse(reassembler.accept(fragments[0], nowMs = 20L).complete != null)
         val completed = reassembler.accept(fragments[2], nowMs = 30L)
 
-        assertArrayEquals(ByteArray(70) { (it + 1).toByte() }, completed.complete)
+        assertArrayEquals(expected, completed.complete)
         assertTrue(completed.ack != null)
     }
 
