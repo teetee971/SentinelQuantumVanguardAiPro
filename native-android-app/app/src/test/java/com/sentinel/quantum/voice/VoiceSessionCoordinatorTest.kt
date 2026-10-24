@@ -79,6 +79,41 @@ class VoiceSessionCoordinatorTest {
         assertFalse(coordinator.isConnected())
     }
 
+    @Test
+    fun thrownTransportConnectionErrorClosesRemoteSession() = runBlocking {
+        val api = FakeSessionApi()
+        val transport = ThrowingSessionTransport()
+        val coordinator = VoiceSessionCoordinator(api, transport)
+
+        val result = coordinator.connect(
+            accessToken = "auth-token",
+            request = VoiceSessionRequest("demo-room", "device-1", "1.0.6"),
+            effect = VoiceAddonPolicy.Effect.DEEP
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(1, api.createCalls)
+        assertEquals(1, api.closeCalls)
+        assertEquals(1, transport.disconnectCalls)
+        assertFalse(coordinator.isConnected())
+    }
+
+    private class ThrowingSessionTransport : VoiceSessionTransportPort {
+        var disconnectCalls = 0
+
+        override fun configureVoice(effect: VoiceAddonPolicy.Effect) = Unit
+
+        override suspend fun connectForPushToTalk(
+            credentials: SentinelLiveKitCallTransport.Credentials
+        ): Result<PushToTalkSession> {
+            throw IllegalStateException("TRANSPORT_CONNECT_FAILED")
+        }
+
+        override suspend fun disconnect() {
+            disconnectCalls++
+        }
+    }
+
     private class FakeSessionApi : VoiceSessionApi {
         var createCalls = 0
         var closeCalls = 0
