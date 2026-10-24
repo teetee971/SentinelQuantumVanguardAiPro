@@ -10,33 +10,35 @@ import android.os.Looper
  * Instances are not connected to application startup. Main-thread only.
  */
 class OfflineMeshBleHost(context: Context) {
-    enum class State { STOPPED, REGISTERING_SERVICE, ADVERTISING_REQUESTED }
     enum class Start { STARTING, BUSY, WRONG_THREAD, FAILED }
     private val server = OfflineMeshGattServer(context)
     private val advertiser = OfflineMeshConnectableAdvertiser(context)
-    private var state = State.STOPPED
-    private var generation = 0L
+    private val gate = OfflineMeshBleHostGate()
     private var listener: ((String) -> Unit)? = null
 
-    fun state(): State = state
+    fun state(): OfflineMeshBleHostGate.State = gate.state()
 
     fun start(onStopped: (String) -> Unit = {}): Start {
         if (Looper.myLooper() != Looper.getMainLooper()) return Start.WRONG_THREAD
-        if (state != State.STOPPED) return Start.BUSY
-        val run = ++generation
+        val run = gate.begin() ?: return Start.BUSY
         listener = onStopped
-        state = State.REGISTERING_SERVICE
         val outcome = server.start { registered ->
-            if (generation == run && state == State.REGISTERING_SERVICE) {
-                if (!registered) {
+            if (gate.generation() == run && gate.state() == OfflineMeshBleHostGate.State.REGISTERING) {
+                if (!gate.serviceRegistered(run, registered)) {
                     shutdown("SERVICE_REGISTRATION_FAILED")
                 } else {
-                    state = State.ADVERTISING_REQUESTED
-                    val adv = advertiser.start { reason ->
-                        if (generation == run && state != State.STOPPED) {
-                            shutdown("ADVERTISING_" + reason)
+                    val adv = advertiser.start(
+                        stopped = { reason ->
+                            if (gate.generation() == run && gate.state() != OfflineMeshBleHostGate.State.STOPPED) {
+                                shutdown("ADVERTISING_" + reason)
+                            }
+                        },
+                        started = {
+                            if (gate.generation() == run && !gate.advertisingStarted(run, true)) {
+                                shutdown("ADVERTISING_STATE_MISMATCH")
+                            }
                         }
-                    }
+                    )
                     if (adv != OfflineMeshConnectableAdvertiser.Start.STARTING) {
                         shutdown("ADVERTISING_START_REJECTED")
                     }
@@ -57,9 +59,8 @@ class OfflineMeshBleHost(context: Context) {
     }
 
     private fun shutdown(reason: String) {
-        if (state == State.STOPPED) return
-        generation++
-        state = State.STOPPED
+        if (gate.state() == OfflineMeshBleHostGate.State.STOPPED && listener == null) return
+        gate.stop()
         advertiser.stop()
         server.stop()
         val notify = listener
