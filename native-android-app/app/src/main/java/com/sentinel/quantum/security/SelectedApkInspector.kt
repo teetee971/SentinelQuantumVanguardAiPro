@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import androidx.annotation.RequiresApi
 import java.security.MessageDigest
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withTimeout
@@ -50,15 +51,9 @@ class SelectedApkInspector(private val context: Context) {
                 @Suppress("DEPRECATION")
                 context.packageManager.getPackageArchiveInfo(file.absolutePath, flags)
             }
-            val signing = if (Build.VERSION.SDK_INT >= 28) info?.signingInfo else null
-            val signers = if (signing == null) null else {
-                val certificates = if (signing.hasMultipleSigners())
-                    signing.apkContentsSigners else signing.signingCertificateHistory
-                certificates?.map { cert ->
-                    MessageDigest.getInstance("SHA-256").digest(cert.toByteArray())
-                        .joinToString("") { "%02x".format(it.toInt() and 0xff) }
-                }?.toSet()
-            }
+            val signers = if (Build.VERSION.SDK_INT >= 28) {
+                info?.let(::signerDigestsApi28)
+            } else null
             val versionCode = info?.let {
                 if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else {
                     @Suppress("DEPRECATION")
@@ -74,5 +69,19 @@ class SelectedApkInspector(private val context: Context) {
             )
         }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun signerDigestsApi28(info: android.content.pm.PackageInfo): Set<String>? {
+        val signing = info.signingInfo ?: return null
+        val certificates = if (signing.hasMultipleSigners()) {
+            signing.apkContentsSigners
+        } else {
+            signing.signingCertificateHistory
+        }
+        return certificates?.map { cert ->
+            MessageDigest.getInstance("SHA-256").digest(cert.toByteArray())
+                .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+        }?.toSet()
     }
 }
