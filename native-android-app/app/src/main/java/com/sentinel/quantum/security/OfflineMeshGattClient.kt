@@ -98,7 +98,7 @@ class OfflineMeshGattClient(context: Context) {
         }
         return try {
             // No autoConnect; user initiation only.
-            val opened = device.connectGatt(app, false, callback)
+            val opened = device.connectGatt(app, false, callback, BluetoothDevice.TRANSPORT_LE)
             if (opened == null) {
                 terminate("CONNECT_START_FAILED")
                 Start.FAILED
