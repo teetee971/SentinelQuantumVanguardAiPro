@@ -170,6 +170,18 @@ class OfflineMeshGattServer(context: Context) {
                     0, 0
                 )
             )
+            // Reserved identifiers only: no reads, writes or notifications permitted.
+            // CCCD will only be added with explicit safe subscription handling.
+            service.addCharacteristic(
+                BluetoothGattCharacteristic(
+                    OfflineMeshGattProtocolIds.CLIENT_TO_SERVER, 0, 0
+                )
+            )
+            service.addCharacteristic(
+                BluetoothGattCharacteristic(
+                    OfflineMeshGattProtocolIds.SERVER_TO_CLIENT, 0, 0
+                )
+            )
             if (!opened.addService(service)) {
                 stopInternal(false)
                 Start.FAILED
