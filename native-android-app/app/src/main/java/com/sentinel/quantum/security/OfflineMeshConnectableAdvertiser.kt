@@ -33,6 +33,7 @@ class OfflineMeshConnectableAdvertiser(context: Context) {
     private var watchdog: Runnable? = null
     private var session = 0L
     private var onStopped: ((String) -> Unit)? = null
+    private var onStarted: (() -> Unit)? = null
 
     private fun permitted(): Boolean =
         Build.VERSION.SDK_INT < 31 ||
@@ -42,7 +43,7 @@ class OfflineMeshConnectableAdvertiser(context: Context) {
                 PackageManager.PERMISSION_GRANTED)
 
     @SuppressLint("MissingPermission")
-    fun start(durationMs: Long = 12_000L, stopped: (String) -> Unit = {}): Start {
+    fun start(durationMs: Long = 12_000L, stopped: (String) -> Unit = {}, started: () -> Unit = {}): Start {
         if (Looper.myLooper() != Looper.getMainLooper()) return Start.WRONG_THREAD
         if (callback != null) return Start.BUSY
         if (durationMs !in 1_000L..30_000L) return Start.FAILED
@@ -52,6 +53,15 @@ class OfflineMeshConnectableAdvertiser(context: Context) {
         val radio = adapter.bluetoothLeAdvertiser ?: return Start.UNAVAILABLE
         val current = ++session
         val cb = object : AdvertiseCallback() {
+            override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
+                main.post {
+                    if (current == session && callback === this) {
+                        val notify = onStarted
+                        onStarted = null
+                        notify?.invoke()
+                    }
+                }
+            }
             override fun onStartFailure(errorCode: Int) {
                 main.post {
                     if (current == session) stopInternal("START_FAILED")
@@ -61,6 +71,7 @@ class OfflineMeshConnectableAdvertiser(context: Context) {
         advertiser = radio
         callback = cb
         onStopped = stopped
+        onStarted = started
         return try {
             val data = AdvertiseData.Builder()
                 .addServiceUuid(service)
@@ -102,6 +113,7 @@ class OfflineMeshConnectableAdvertiser(context: Context) {
         watchdog?.let(main::removeCallbacks)
         watchdog = null
         val cb = callback
+        onStarted = null
         val radio = advertiser
         callback = null
         advertiser = null
