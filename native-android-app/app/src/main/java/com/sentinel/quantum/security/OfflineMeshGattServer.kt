@@ -34,6 +34,9 @@ class OfflineMeshGattServer(context: Context) {
     // Keys are local connection handles, not cryptographic identities.
     private val peerSessions = OfflineMeshGattPeerSessions()
     private val peerTokens = mutableMapOf<String, OfflineMeshGattPeerSessions.Token>()
+    // Android callbacks have no connection ID. After a disconnect, fail closed
+    // for this address until the server is restarted.
+    private val retiredPeerKeys = mutableSetOf<String>()
 
     private fun onMain() = Looper.myLooper() == Looper.getMainLooper()
     private fun permitted() = Build.VERSION.SDK_INT < 31 ||
@@ -55,9 +58,12 @@ class OfflineMeshGattServer(context: Context) {
                     when {
                         status != BluetoothGatt.GATT_SUCCESS ||
                             newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED ->
-                            peerTokens.remove(key)?.let(peerSessions::disconnect)
+                            {
+                                retiredPeerKeys.add(key)
+                                peerTokens.remove(key)?.let(peerSessions::disconnect)
+                            }
                         newState == android.bluetooth.BluetoothProfile.STATE_CONNECTED -> {
-                            if (!permitted()) return@post
+                            if (!permitted() || key in retiredPeerKeys) return@post
                             if (!peerTokens.containsKey(key)) {
                                 peerSessions.connect(key)?.let { peerTokens[key] = it }
                             }
@@ -71,7 +77,7 @@ class OfflineMeshGattServer(context: Context) {
                 main.post {
                     if (run != generation || server == null) return@post
                     val key = try { device.address } catch (_: SecurityException) { return@post }
-                    peerTokens[key]?.let { peerSessions.updateMtu(it, mtu) }
+                    if (key !in retiredPeerKeys) peerTokens[key]?.let { peerSessions.updateMtu(it, mtu) }
                 }
             }
             override fun onServiceAdded(status: Int, service: BluetoothGattService) {
@@ -194,6 +200,7 @@ class OfflineMeshGattServer(context: Context) {
     private fun stopInternal(reportFailure: Boolean) {
         generation++
         peerTokens.clear()
+        retiredPeerKeys.clear()
         peerSessions.close()
         timeout?.let(main::removeCallbacks)
         timeout = null
