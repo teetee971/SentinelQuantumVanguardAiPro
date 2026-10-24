@@ -114,6 +114,44 @@ class VoiceSessionCoordinatorTest {
         }
     }
 
+    @Test
+    fun disconnectReportsTransportFailureAndStillClosesRemote() = runBlocking {
+        val api = FakeSessionApi()
+        val transport = FailingDisconnectTransport()
+        val coordinator = VoiceSessionCoordinator(api, transport)
+
+        assertTrue(coordinator.connect(
+            accessToken = "auth-token",
+            request = VoiceSessionRequest("demo-room", "device-1", "1.0.6"),
+            effect = VoiceAddonPolicy.Effect.DEEP
+        ).isSuccess)
+
+        val result = coordinator.disconnect()
+
+        assertTrue(result.isFailure)
+        assertEquals("TRANSPORT_DISCONNECT_FAILED", result.exceptionOrNull()?.message)
+        assertEquals(1, transport.disconnectCalls)
+        assertEquals(1, api.closeCalls)
+        assertFalse(coordinator.isConnected())
+    }
+
+    private class FailingDisconnectTransport : VoiceSessionTransportPort {
+        var disconnectCalls = 0
+
+        override fun configureVoice(effect: VoiceAddonPolicy.Effect) = Unit
+
+        override suspend fun connectForPushToTalk(
+            credentials: SentinelLiveKitCallTransport.Credentials
+        ): Result<PushToTalkSession> = Result.success(
+            PushToTalkSession { Result.success(Unit) }
+        )
+
+        override suspend fun disconnect() {
+            disconnectCalls++
+            throw IllegalStateException("TRANSPORT_DISCONNECT_FAILED")
+        }
+    }
+
     private class FakeSessionApi : VoiceSessionApi {
         var createCalls = 0
         var closeCalls = 0
