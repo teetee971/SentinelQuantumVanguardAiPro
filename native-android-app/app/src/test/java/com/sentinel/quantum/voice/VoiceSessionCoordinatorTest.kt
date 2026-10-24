@@ -79,6 +79,164 @@ class VoiceSessionCoordinatorTest {
         assertFalse(coordinator.isConnected())
     }
 
+    @Test
+    fun thrownTransportConnectionErrorClosesRemoteSession() = runBlocking {
+        val api = FakeSessionApi()
+        val transport = ThrowingSessionTransport()
+        val coordinator = VoiceSessionCoordinator(api, transport)
+
+        val result = coordinator.connect(
+            accessToken = "auth-token",
+            request = VoiceSessionRequest("demo-room", "device-1", "1.0.6"),
+            effect = VoiceAddonPolicy.Effect.DEEP
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(1, api.createCalls)
+        assertEquals(1, api.closeCalls)
+        assertEquals(1, transport.disconnectCalls)
+        assertFalse(coordinator.isConnected())
+    }
+
+    private class ThrowingSessionTransport : VoiceSessionTransportPort {
+        var disconnectCalls = 0
+
+        override fun configureVoice(effect: VoiceAddonPolicy.Effect) = Unit
+
+        override suspend fun connectForPushToTalk(
+            credentials: SentinelLiveKitCallTransport.Credentials
+        ): Result<PushToTalkSession> {
+            throw IllegalStateException("TRANSPORT_CONNECT_FAILED")
+        }
+
+        override suspend fun disconnect() {
+            disconnectCalls++
+        }
+    }
+
+    @Test
+    fun disconnectReportsTransportFailureAndStillClosesRemote() = runBlocking {
+        val api = FakeSessionApi()
+        val transport = FailingDisconnectTransport()
+        val coordinator = VoiceSessionCoordinator(api, transport)
+
+        assertTrue(coordinator.connect(
+            accessToken = "auth-token",
+            request = VoiceSessionRequest("demo-room", "device-1", "1.0.6"),
+            effect = VoiceAddonPolicy.Effect.DEEP
+        ).isSuccess)
+
+        val result = coordinator.disconnect()
+
+        assertTrue(result.isFailure)
+        assertEquals("TRANSPORT_DISCONNECT_FAILED", result.exceptionOrNull()?.message)
+        assertEquals(1, transport.disconnectCalls)
+        assertEquals(1, api.closeCalls)
+        assertFalse(coordinator.isConnected())
+    }
+
+    private class FailingDisconnectTransport : VoiceSessionTransportPort {
+        var disconnectCalls = 0
+
+        override fun configureVoice(effect: VoiceAddonPolicy.Effect) = Unit
+
+        override suspend fun connectForPushToTalk(
+            credentials: SentinelLiveKitCallTransport.Credentials
+        ): Result<PushToTalkSession> = Result.success(
+            PushToTalkSession { Result.success(Unit) }
+        )
+
+        override suspend fun disconnect() {
+            disconnectCalls++
+            throw IllegalStateException("TRANSPORT_DISCONNECT_FAILED")
+        }
+    }
+
+    @Test
+    fun failedRemoteCloseBlocksReconnectUntilExplicitRetry() = runBlocking {
+        val api = RetriableCloseSessionApi()
+        val coordinator = VoiceSessionCoordinator(api, FakeSessionTransport())
+        val request = VoiceSessionRequest("demo-room", "device-1", "1.0.6")
+
+        assertTrue(coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP).isSuccess)
+        assertTrue(coordinator.disconnect().isFailure)
+        assertFalse(coordinator.isConnected())
+
+        val blocked = coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP)
+        assertTrue(blocked.isFailure)
+        assertEquals("VOICE_REMOTE_CLOSE_PENDING", blocked.exceptionOrNull()?.message)
+        assertEquals(1, api.createCalls)
+
+        api.allowClose = true
+        assertTrue(coordinator.disconnect().isSuccess)
+        assertEquals(2, api.closeCalls)
+        assertTrue(coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP).isSuccess)
+        assertEquals(2, api.createCalls)
+    }
+
+    private class RetriableCloseSessionApi : VoiceSessionApi {
+        private val delegate = FakeSessionApi()
+        var createCalls = 0
+        var closeCalls = 0
+        var allowClose = false
+
+        override fun createSession(
+            accessToken: String,
+            request: VoiceSessionRequest,
+            idempotencyKey: String
+        ): Result<VoiceSession> {
+            createCalls++
+            return delegate.createSession(accessToken, request, idempotencyKey)
+        }
+
+        override fun closeSession(
+            accessToken: String,
+            sessionId: String,
+            idempotencyKey: String
+        ): Result<Unit> {
+            closeCalls++
+            return if (allowClose) Result.success(Unit)
+                else Result.failure(IllegalStateException("REMOTE_CLOSE_FAILED"))
+        }
+    }
+
+    @Test
+    fun throwingPttCloseStillClosesTransportAndRemote() = runBlocking {
+        val api = FakeSessionApi()
+        val transport = ThrowingPttCloseTransport()
+        val coordinator = VoiceSessionCoordinator(api, transport)
+        val request = VoiceSessionRequest("demo-room", "device-1", "1.0.6")
+
+        val active = coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP).getOrThrow()
+        assertTrue(active.pushToTalk.press().isSuccess)
+
+        val result = coordinator.disconnect()
+        assertTrue(result.isFailure)
+        assertEquals("PTT_CLOSE_FAILED", result.exceptionOrNull()?.message)
+        assertEquals(1, transport.disconnectCalls)
+        assertEquals(1, api.closeCalls)
+        assertFalse(coordinator.isConnected())
+    }
+
+    private class ThrowingPttCloseTransport : VoiceSessionTransportPort {
+        var disconnectCalls = 0
+
+        override fun configureVoice(effect: VoiceAddonPolicy.Effect) = Unit
+
+        override suspend fun connectForPushToTalk(
+            credentials: SentinelLiveKitCallTransport.Credentials
+        ): Result<PushToTalkSession> = Result.success(
+            PushToTalkSession { enabled ->
+                if (!enabled) throw IllegalStateException("PTT_CLOSE_FAILED")
+                Result.success(Unit)
+            }
+        )
+
+        override suspend fun disconnect() {
+            disconnectCalls++
+        }
+    }
+
     private class FakeSessionApi : VoiceSessionApi {
         var createCalls = 0
         var closeCalls = 0

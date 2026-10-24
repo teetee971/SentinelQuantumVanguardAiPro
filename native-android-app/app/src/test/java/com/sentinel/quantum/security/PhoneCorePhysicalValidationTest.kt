@@ -48,6 +48,11 @@ class PhoneCorePhysicalValidationTest {
             PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
         ),
         event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_USER_OBSERVED
+        ),
+        event(
             PhonePrivateTimeline.Kind.SMS,
             "INCOMING",
             PhoneCorePhysicalValidation.SIGNAL_SMS_NOTIFICATION_POSTED
@@ -64,7 +69,7 @@ class PhoneCorePhysicalValidationTest {
         )
     )
 
-    @Test fun schemaV5RequiresAllFourteenPhoneCoreChecks() {
+    @Test fun schemaV6RequiresAllFourteenPhoneCoreChecks() {
         val evidence = PhoneCorePhysicalValidation.evaluate(
             events = almostCompleteEvents(),
             contactsProviderReady = true,
@@ -249,8 +254,23 @@ class PhoneCorePhysicalValidationTest {
             )
         )
         assertTrue(callOnly.incomingCallNotificationPosted)
+        assertFalse(callOnly.incomingCallNotificationObserved)
         assertFalse(callOnly.incomingSmsNotificationPosted)
-        assertEquals(1, callOnly.completedCount)
+        assertEquals(0, callOnly.completedCount)
+        assertTrue("incoming_call_notification" in callOnly.missingCriteria)
+
+        val observedCall = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_USER_OBSERVED
+                )
+            )
+        )
+        assertFalse(observedCall.incomingCallNotificationPosted)
+        assertTrue(observedCall.incomingCallNotificationObserved)
+        assertEquals(1, observedCall.completedCount)
 
         val smsOnly = PhoneCorePhysicalValidation.evaluate(
             events = listOf(

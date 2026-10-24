@@ -1,0 +1,70 @@
+name: Sentinel D1 APK validation
+
+on:
+  push:
+    branches:
+      - integration/sentinel-d1-3d-20261022
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentinel-d1-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: native-android-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android 37 SDK
+        run: |
+          sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Compile Kotlin
+        run: ./gradlew :app:compileDebugKotlin --no-daemon --max-workers=2 --console=plain
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon --max-workers=2 --console=plain
+      - name: Compile instrumentation tests
+        run: ./gradlew :app:compileDebugAndroidTestKotlin --no-daemon --max-workers=2 --console=plain
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon --max-workers=2 --console=plain
+      - name: APK SHA256
+        run: sha256sum app/build/outputs/apk/debug/*.apk | tee apk-debug.sha256
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-d1-debug-apk
+          path: |
+            native-android-app/app/build/outputs/apk/debug/*.apk
+            native-android-app/apk-debug.sha256
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-d1-test-reports
+          path: |
+            native-android-app/app/build/reports/tests/
+            native-android-app/app/build/test-results/
+            native-android-app/build/reports/problems/
+          if-no-files-found: ignore
+          retention-days: 7

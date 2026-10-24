@@ -19,6 +19,9 @@ data class Auth0UserSummary(
 
 /** Official Auth0 SDK boundary for login, logout and encrypted session restoration. */
 class Auth0SessionController(context: Context) {
+    private companion object {
+        val sessionGuard = AuthSessionGeneration()
+    }
     private val appContext = context.applicationContext
     private val configuration = Auth0Configuration(
         domain = appContext.getString(R.string.com_auth0_domain),
@@ -44,13 +47,20 @@ class Auth0SessionController(context: Context) {
         onSuccess: (Auth0UserSummary) -> Unit,
         onFailure: () -> Unit
     ) {
+        val requestGeneration = sessionGuard.current()
         credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {
-                onSuccess(result.toSummary())
+                if (sessionGuard.isCurrent(requestGeneration)) {
+                    onSuccess(result.toSummary())
+                } else {
+                    onFailure()
+                }
             }
 
             override fun onFailure(error: CredentialsManagerException) {
-                onFailure()
+                sessionGuard.runIfCurrent(requestGeneration) {
+                    onFailure()
+                }
             }
         })
     }
@@ -63,18 +73,25 @@ class Auth0SessionController(context: Context) {
         onSuccess: (String) -> Unit,
         onFailure: (String?) -> Unit
     ) {
+        val requestGeneration = sessionGuard.current()
         credentialsManager.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
             override fun onSuccess(result: Credentials) {
-                val token = result.accessToken
-                if (token.isNullOrBlank()) {
-                    onFailure("AUTH0_ACCESS_TOKEN_MISSING")
+                if (!sessionGuard.isCurrent(requestGeneration)) {
+                    onFailure("AUTH0_SESSION_CANCELLED")
                 } else {
-                    onSuccess(token)
+                    val token = result.accessToken
+                    if (token.isNullOrBlank()) {
+                        onFailure("AUTH0_ACCESS_TOKEN_MISSING")
+                    } else {
+                        onSuccess(token)
+                    }
                 }
             }
 
             override fun onFailure(error: CredentialsManagerException) {
-                onFailure(error.message)
+                sessionGuard.runIfCurrent(requestGeneration) {
+                    onFailure(error.message)
+                }
             }
         })
     }
@@ -84,14 +101,21 @@ class Auth0SessionController(context: Context) {
         onSuccess: (Auth0UserSummary) -> Unit,
         onFailure: (String?) -> Unit
     ) {
+        val requestGeneration = sessionGuard.begin()
         WebAuthProvider.login(account)
             .withScheme(configuration.scheme)
             .withAudience(configuration.audience)
             .withScope("openid profile email offline_access")
             .start(activity, object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(result: Credentials) {
-                    credentialsManager.saveCredentials(result)
-                    onSuccess(result.toSummary())
+                    val accepted = sessionGuard.runIfCurrent(requestGeneration) {
+                        credentialsManager.saveCredentials(result)
+                    }
+                    if (!accepted || !sessionGuard.isCurrent(requestGeneration)) {
+                        onFailure("AUTH0_SESSION_CANCELLED")
+                    } else {
+                        onSuccess(result.toSummary())
+                    }
                 }
 
                 override fun onFailure(error: AuthenticationException) {
@@ -105,7 +129,10 @@ class Auth0SessionController(context: Context) {
         onSuccess: () -> Unit,
         onFailure: (String?) -> Unit
     ) {
-        credentialsManager.clearCredentials()
+        sessionGuard.invalidateAndRun {
+            credentialsManager.clearCredentials()
+        }
+        AuthSessionRevocation.revoke()
         onSuccess()
 
         WebAuthProvider.logout(account)
