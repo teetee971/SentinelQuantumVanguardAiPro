@@ -23,6 +23,7 @@ import com.sentinel.quantum.security.SecurityAudit
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelMetricCard
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -154,6 +155,54 @@ fun SecurityAuditScreen(navController: NavController) {
                 Text(
                     if (isLoading) stringResource(R.string.security_audit_running)
                     else stringResource(R.string.security_audit_run)
+                )
+            }
+
+            SentinelSectionHeader(
+                title = "Menaces et quarantaine",
+                subtitle = "Distinguer les observations locales d'une détection ou isolation confirmée."
+            )
+            SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "Analyse des menaces",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SentinelStatusChip(
+                        status = SentinelStatus.UNKNOWN,
+                        label = "Non évalué"
+                    )
+                }
+                Text(
+                    "L’audit des autorisations ne détecte pas à lui seul les malwares. Aucun compteur de menace bloquée n'est déduit des avertissements.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "Quarantaine d’applications",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SentinelStatusChip(
+                        status = SentinelStatus.LOCKED,
+                        label = "Non disponible"
+                    )
+                }
+                Text(
+                    "Aucune isolation automatique d’application n'est exécutée depuis cet écran. Les fonctions disponibles dépendent des capacités réellement implémentées et des restrictions Android.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
