@@ -66,9 +66,9 @@ reste isolée sur `fix/selected-apk-inspector-api28-20261024`.
 
 - Le protocole applicatif reste propriétaire et ne constitue pas une
   implémentation Noise; aucune revue cryptographique indépendante n'a eu lieu.
-- La résistance au rollback est fournie par `noBackupFilesDir` et la clé MAC
-  Keystore; une restauration manuelle de fichiers ou une compromission du
-  système Android reste hors garantie.
+- Le durcissement anti-rollback par clés HMAC Keystore versionnées et publication
+  atomique est détaillé dans le rapport phase 4; une restauration manuelle
+  simultanée des fichiers privés et du Keystore reste hors garantie.
 - La révocation d'une session active est appliquée au prochain appel du canal
   ou callback de transport; le coordinateur doit utiliser le callback fourni
   lors de la construction du transport.

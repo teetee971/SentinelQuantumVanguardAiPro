@@ -15,8 +15,7 @@ class OfflineMeshGattKeystoreInstrumentationTest {
     @Test
     fun keystoreMacBackedTrustPersistsAndRevokesAcrossStoreRecreation() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
-        context.noBackupFilesDir.resolve("offline_mesh_trust_v1.bin").delete()
-        val store = OfflineMeshGattAndroidTrustStore(context)
+        val store = OfflineMeshGattAndroidTrustStore(context).also { it.resetStorage() }
         val key = keyPair()
         val pending = store.requestApproval(key.public.encoded, 100L)
         store.approve(pending.stableId, 101L)
@@ -25,6 +24,7 @@ class OfflineMeshGattKeystoreInstrumentationTest {
         store.revoke(pending.stableId, 102L)
         assertFalse(OfflineMeshGattAndroidTrustStore(context).isTrusted(key.public.encoded))
         assertEquals(OfflineMeshTrustState.REVOKED, store.records().single().state)
+        store.resetStorage()
     }
 
     @Test
@@ -36,7 +36,26 @@ class OfflineMeshGattKeystoreInstrumentationTest {
             val record = OfflineMeshGattAndroidTrustStore(context).observe(keyPair().public.encoded, 200L)
             assertEquals(OfflineMeshTrustState.ERROR, record.state)
         } finally {
-            file.delete()
+            OfflineMeshGattAndroidTrustStore(context).resetStorage()
+        }
+    }
+
+    @Test
+    fun restoringAnOlderAuthenticatedTrustFileCannotRestoreRevokedTrust() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+        val store = OfflineMeshGattAndroidTrustStore(context).also { it.resetStorage() }
+        val file = context.noBackupFilesDir.resolve("offline_mesh_trust_v1.bin")
+        val key = keyPair()
+        val pending = store.requestApproval(key.public.encoded, 300L)
+        store.approve(pending.stableId, 301L)
+        val oldBytes = file.readBytes()
+        store.revoke(pending.stableId, 302L)
+        file.writeBytes(oldBytes)
+        try {
+            assertFalse(OfflineMeshGattAndroidTrustStore(context).isTrusted(key.public.encoded))
+            assertEquals(OfflineMeshTrustState.ERROR, store.observe(key.public.encoded, 303L).state)
+        } finally {
+            store.resetStorage()
         }
     }
 

@@ -31,12 +31,13 @@ class OfflineMeshTrustStoreTest {
     @Test
     fun approvalPersistsAcrossStoreRecreation() {
         val backend = MemoryBackend()
+        val keyRing = KeyRing()
         val key = ecKeyPair()
-        val first = store(backend)
+        val first = store(backend, keyRing)
         val pending = first.requestApproval(key.public.encoded, 20L)
         first.approve(pending.stableId, 21L)
 
-        val restarted = store(backend)
+        val restarted = store(backend, keyRing)
         assertTrue(restarted.isTrusted(key.public.encoded))
         assertEquals(OfflineMeshTrustState.TRUSTED, restarted.require(key.public.encoded).state)
     }
@@ -44,13 +45,14 @@ class OfflineMeshTrustStoreTest {
     @Test
     fun revocationRemovesAuthorizationAndSurvivesRestart() {
         val backend = MemoryBackend()
+        val keyRing = KeyRing()
         val key = ecKeyPair()
-        val first = store(backend)
+        val first = store(backend, keyRing)
         val record = first.requestApproval(key.public.encoded, 30L)
         first.approve(record.stableId, 31L)
         first.revoke(record.stableId, 32L)
 
-        val restarted = store(backend)
+        val restarted = store(backend, keyRing)
         assertFalse(restarted.isTrusted(key.public.encoded))
         assertEquals(OfflineMeshTrustState.REVOKED, restarted.require(key.public.encoded).state)
     }
@@ -108,7 +110,7 @@ class OfflineMeshTrustStoreTest {
     @Test
     fun failedWriteLeavesPreviousAuthorizationAndFailsClosed() {
         val backend = MemoryBackend().also { it.failWrites = true }
-        val store = store(backend)
+        val store = store(backend, KeyRing())
         val key = ecKeyPair()
 
         assertThrows(OfflineMeshTrustStore.StorageException::class.java) {
@@ -118,10 +120,77 @@ class OfflineMeshTrustStoreTest {
     }
 
     @Test
+    fun crashAfterRetiringOldKeyCannotRestoreTheOldTrustedState() {
+        val backend = MemoryBackend()
+        val keyRing = KeyRing()
+        val store = store(backend, keyRing)
+        val key = ecKeyPair()
+        val pending = store.requestApproval(key.public.encoded, 90L)
+        store.approve(pending.stableId, 91L)
+        keyRing.throwAfterDelete = true
+
+        assertThrows(OfflineMeshTrustStore.StorageException::class.java) {
+            store.revoke(pending.stableId, 92L)
+        }
+        assertFalse(OfflineMeshTrustStore(backend, keyRing).isTrusted(key.public.encoded))
+        assertEquals(OfflineMeshTrustState.ERROR, store.observe(key.public.encoded, 93L).state)
+    }
+
+    @Test
+    fun restoringAnAuthenticatedOldFileAfterRevocationFailsClosed() {
+        val backend = MemoryBackend()
+        val keyRing = KeyRing()
+        val store = store(backend, keyRing)
+        val key = ecKeyPair()
+        val pending = store.requestApproval(key.public.encoded, 100L)
+        store.approve(pending.stableId, 101L)
+        val oldEntry = requireNotNull(backend.read())
+        store.revoke(pending.stableId, 102L)
+        backend.entry = oldEntry
+
+        assertFalse(OfflineMeshTrustStore(backend, keyRing).isTrusted(key.public.encoded))
+        assertEquals(OfflineMeshTrustState.ERROR, store.observe(key.public.encoded, 103L).state)
+    }
+
+    @Test
+    fun failedPublicationAfterOldKeyDeletionRequiresExplicitRecovery() {
+        val backend = MemoryBackend()
+        val keyRing = KeyRing()
+        val store = store(backend, keyRing)
+        val key = ecKeyPair()
+        val pending = store.requestApproval(key.public.encoded, 110L)
+        store.approve(pending.stableId, 111L)
+        backend.failWrites = true
+
+        assertThrows(OfflineMeshTrustStore.StorageException::class.java) {
+            store.revoke(pending.stableId, 112L)
+        }
+        assertFalse(store.isTrusted(key.public.encoded))
+        assertThrows(OfflineMeshTrustStore.StorageException::class.java) {
+            store.requestApproval(key.public.encoded, 113L)
+        }
+    }
+
+    @Test
+    fun keyCreationFailureLeavesThePreviouslyCommittedStateValid() {
+        val backend = MemoryBackend()
+        val keyRing = KeyRing()
+        val store = store(backend, keyRing)
+        val key = ecKeyPair()
+        val pending = store.requestApproval(key.public.encoded, 120L)
+        store.approve(pending.stableId, 121L)
+        keyRing.failCreate = true
+
+        assertThrows(OfflineMeshTrustStore.StorageException::class.java) {
+            store.revoke(pending.stableId, 122L)
+        }
+        assertTrue(store.isTrusted(key.public.encoded))
+    }
+
+    @Test
     fun corruptedStorageIsNotTrusted() {
         val backend = MemoryBackend().also {
-            it.payload = "corrupted"
-            it.mac = byteArrayOf(9)
+            it.entry = OfflineMeshTrustBackend.Entry("corrupted", byteArrayOf(9), 1L)
         }
         val store = store(backend)
         assertEquals(OfflineMeshTrustState.ERROR, store.observe(ecKeyPair().public.encoded, 80L).state)
@@ -141,28 +210,48 @@ class OfflineMeshTrustStoreTest {
         assertNotNull(records.single().stableId)
     }
 
-    private fun store(backend: MemoryBackend = MemoryBackend()) =
-        OfflineMeshTrustStore(backend, HmacMac())
+    private fun store(
+        backend: MemoryBackend = MemoryBackend(),
+        keyRing: KeyRing = KeyRing()
+    ) = OfflineMeshTrustStore(backend, keyRing)
 
     private class MemoryBackend : OfflineMeshTrustBackend {
-        var payload: String? = null
-        var mac: ByteArray? = null
+        var entry: OfflineMeshTrustBackend.Entry? = null
         var failWrites = false
 
-        override fun read(): OfflineMeshTrustBackend.Entry? =
-            payload?.let { OfflineMeshTrustBackend.Entry(it, mac?.copyOf() ?: byteArrayOf()) }
+        override fun read(): OfflineMeshTrustBackend.Entry? = entry?.let {
+            it.copy(mac = it.mac.copyOf())
+        }
 
-        override fun write(payload: String, mac: ByteArray): Boolean {
+        override fun write(payload: String, mac: ByteArray, keyRevision: Long): Boolean {
             if (failWrites) return false
-            this.payload = payload
-            this.mac = mac.copyOf()
+            entry = OfflineMeshTrustBackend.Entry(payload, mac.copyOf(), keyRevision)
             return true
         }
     }
 
-    private class HmacMac : OfflineMeshTrustMac {
-        override fun mac(payload: ByteArray): ByteArray = Mac.getInstance("HmacSHA256").run {
-            init(SecretKeySpec(ByteArray(32) { 7 }, "HmacSHA256"))
+    private class KeyRing : OfflineMeshTrustKeyRing {
+        private val keys = mutableSetOf<Long>()
+        var throwAfterDelete = false
+        var failCreate = false
+
+        override fun createKey(revision: Long): Boolean {
+            if (failCreate) return false
+            return keys.add(revision) || revision in keys
+        }
+
+        override fun deleteKey(revision: Long): Boolean {
+            val removed = keys.remove(revision)
+            if (throwAfterDelete) {
+                throwAfterDelete = false
+                error("injected crash after key deletion")
+            }
+            return removed
+        }
+
+        override fun mac(revision: Long, payload: ByteArray): ByteArray = Mac.getInstance("HmacSHA256").run {
+            check(revision in keys) { "key unavailable" }
+            init(SecretKeySpec(ByteArray(32) { revision.toByte() }, "HmacSHA256"))
             doFinal(payload)
         }
     }

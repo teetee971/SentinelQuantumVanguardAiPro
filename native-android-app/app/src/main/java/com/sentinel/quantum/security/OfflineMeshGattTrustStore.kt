@@ -3,7 +3,9 @@ package com.sentinel.quantum.security
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.system.Os
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
 import java.security.KeyStore
@@ -35,14 +37,16 @@ data class OfflineMeshTrustRecord(
 }
 
 interface OfflineMeshTrustBackend {
-    data class Entry(val payload: String, val mac: ByteArray)
+    data class Entry(val payload: String, val mac: ByteArray, val keyRevision: Long)
 
     fun read(): Entry?
-    fun write(payload: String, mac: ByteArray): Boolean
+    fun write(payload: String, mac: ByteArray, keyRevision: Long): Boolean
 }
 
-fun interface OfflineMeshTrustMac {
-    fun mac(payload: ByteArray): ByteArray
+interface OfflineMeshTrustKeyRing {
+    fun createKey(revision: Long): Boolean
+    fun deleteKey(revision: Long): Boolean
+    fun mac(revision: Long, payload: ByteArray): ByteArray
 }
 
 /**
@@ -54,7 +58,7 @@ fun interface OfflineMeshTrustMac {
  */
 class OfflineMeshTrustStore(
     private val backend: OfflineMeshTrustBackend,
-    private val macProvider: OfflineMeshTrustMac
+    private val keyRing: OfflineMeshTrustKeyRing
 ) {
     class StorageException(message: String, cause: Throwable? = null) : IllegalStateException(message, cause)
     class PolicyException(message: String) : IllegalStateException(message)
@@ -215,26 +219,43 @@ class OfflineMeshTrustStore(
     fun require(publicKeyX509: ByteArray): OfflineMeshTrustRecord =
         observe(publicKeyX509, 0L)
 
-    private fun readSnapshot(): Snapshot = readSnapshotOrNull()
-        ?: throw StorageException("OFFLINE_MESH_TRUST_STORAGE_INVALID")
-
-    private fun readSnapshotOrNull(): Snapshot? {
+    private fun readSnapshot(): Snapshot {
         val entry = try {
             backend.read()
-        } catch (_: Throwable) {
-            return null
+        } catch (error: Throwable) {
+            throw StorageException("OFFLINE_MESH_TRUST_STORAGE_READ_FAILED", error)
         } ?: return Snapshot(0L, emptyList())
-        return runCatching {
-            val bytes = entry.payload.toByteArray(StandardCharsets.UTF_8)
-            require(MessageDigest.isEqual(macProvider.mac(bytes), entry.mac))
-            OfflineMeshTrustCodec.decode(entry.payload)
-        }.getOrNull()
+        return try {
+            require(entry.keyRevision > 0L) { "OFFLINE_MESH_TRUST_KEY_REVISION_INVALID" }
+            val snapshot = OfflineMeshTrustCodec.decode(entry.payload)
+            require(snapshot.revision == entry.keyRevision) { "OFFLINE_MESH_TRUST_REVISION_MISMATCH" }
+            require(
+                MessageDigest.isEqual(
+                    keyRing.mac(entry.keyRevision, entry.payload.toByteArray(StandardCharsets.UTF_8)),
+                    entry.mac
+                )
+            ) { "OFFLINE_MESH_TRUST_MAC_INVALID" }
+            snapshot
+        } catch (error: Throwable) {
+            throw StorageException("OFFLINE_MESH_TRUST_STORAGE_INVALID", error)
+        }
+    }
+
+    private fun readSnapshotOrNull(): Snapshot? {
+        return runCatching { readSnapshot() }.getOrNull()
     }
 
     private fun write(snapshot: Snapshot) {
+        require(snapshot.revision > 0L) { "OFFLINE_MESH_TRUST_REVISION_INVALID" }
         val payload = OfflineMeshTrustCodec.encode(snapshot)
         val ok = try {
-            backend.write(payload, macProvider.mac(payload.toByteArray(StandardCharsets.UTF_8)))
+            require(keyRing.createKey(snapshot.revision)) { "OFFLINE_MESH_TRUST_KEY_CREATE_FAILED" }
+            val mac = keyRing.mac(snapshot.revision, payload.toByteArray(StandardCharsets.UTF_8))
+            val previousRevision = snapshot.revision - 1L
+            if (previousRevision > 0L) {
+                require(keyRing.deleteKey(previousRevision)) { "OFFLINE_MESH_TRUST_KEY_DELETE_FAILED" }
+            }
+            backend.write(payload, mac, snapshot.revision)
         } catch (error: Throwable) {
             throw StorageException("OFFLINE_MESH_TRUST_STORAGE_WRITE_FAILED", error)
         }
@@ -344,9 +365,11 @@ private object OfflineMeshTrustCodec {
 
 /** Device-local backend stored outside Android backup and protected by an AndroidKeyStore MAC key. */
 class OfflineMeshGattAndroidTrustStore(context: Context) {
+    private val file = File(context.applicationContext.noBackupFilesDir, FILE_NAME)
+    private val keyRing = AndroidKeyStoreTrustKeyRing()
     private val delegate = OfflineMeshTrustStore(
-        FileBackend(File(context.applicationContext.noBackupFilesDir, FILE_NAME)),
-        AndroidKeyStoreMac()
+        FileBackend(file),
+        keyRing
     )
 
     fun observe(publicKeyX509: ByteArray, nowMs: Long) = delegate.observe(publicKeyX509, nowMs)
@@ -362,6 +385,12 @@ class OfflineMeshGattAndroidTrustStore(context: Context) {
     fun trustedPublicKeysX509() = delegate.trustedPublicKeysX509()
     fun records() = delegate.records()
 
+    /** Explicit recovery after a fail-closed storage error; requires re-approval of every peer. */
+    fun resetStorage() {
+        file.delete()
+        keyRing.deleteAll()
+    }
+
     private companion object {
         const val FILE_NAME = "offline_mesh_trust_v1.bin"
     }
@@ -371,50 +400,87 @@ private class FileBackend(private val file: File) : OfflineMeshTrustBackend {
     override fun read(): OfflineMeshTrustBackend.Entry? {
         if (!file.exists()) return null
         val lines = file.readText(StandardCharsets.UTF_8).split('\n')
-        require(lines.size == 2 && lines[0].isNotEmpty() && lines[1].isNotEmpty())
+        require(lines.size == 3 && lines.all(String::isNotEmpty))
         return OfflineMeshTrustBackend.Entry(
             String(java.util.Base64.getDecoder().decode(lines[0]), StandardCharsets.UTF_8),
-            java.util.Base64.getDecoder().decode(lines[1])
+            java.util.Base64.getDecoder().decode(lines[1]),
+            lines[2].toLong()
         )
     }
 
-    override fun write(payload: String, mac: ByteArray): Boolean {
+    override fun write(payload: String, mac: ByteArray, keyRevision: Long): Boolean {
         file.parentFile?.mkdirs()
         val temporary = File(file.parentFile, "${file.name}.tmp")
-        temporary.writeText(
-            java.util.Base64.getEncoder().encodeToString(payload.toByteArray(StandardCharsets.UTF_8)) +
-                '\n' + java.util.Base64.getEncoder().encodeToString(mac),
-            StandardCharsets.UTF_8
-        )
-        if (!temporary.renameTo(file)) {
+        return try {
+            FileOutputStream(temporary).use { output ->
+                output.write(
+                    (
+                        java.util.Base64.getEncoder().encodeToString(payload.toByteArray(StandardCharsets.UTF_8)) +
+                            '\n' + java.util.Base64.getEncoder().encodeToString(mac) +
+                            '\n' + keyRevision
+                        ).toByteArray(StandardCharsets.UTF_8)
+                )
+                output.fd.sync()
+            }
+            // POSIX rename replaces the destination atomically on Android's app filesystem.
+            Os.rename(temporary.absolutePath, file.absolutePath)
+            true
+        } catch (_: Throwable) {
             temporary.delete()
-            return false
+            false
         }
-        return true
     }
 }
 
-private class AndroidKeyStoreMac : OfflineMeshTrustMac {
-    override fun mac(payload: ByteArray): ByteArray = Mac.getInstance(HMAC).run {
-        init(loadOrCreateKey())
-        doFinal(payload)
-    }
-
-    private fun loadOrCreateKey(): SecretKey {
+private class AndroidKeyStoreTrustKeyRing : OfflineMeshTrustKeyRing {
+    override fun createKey(revision: Long): Boolean {
+        require(revision > 0L)
         val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
-        (keyStore.getKey(ALIAS, null) as? SecretKey)?.let { return it }
+        if (keyStore.containsAlias(alias(revision))) return true
         val generator = javax.crypto.KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, KEYSTORE)
         generator.init(
-            KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_SIGN)
+            KeyGenParameterSpec.Builder(alias(revision), KeyProperties.PURPOSE_SIGN)
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .build()
         )
-        return generator.generateKey()
+        generator.generateKey()
+        return true
+    }
+
+    override fun deleteKey(revision: Long): Boolean {
+        val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+        if (!keyStore.containsAlias(alias(revision))) return false
+        keyStore.deleteEntry(alias(revision))
+        return !keyStore.containsAlias(alias(revision))
+    }
+
+    override fun mac(revision: Long, payload: ByteArray): ByteArray = Mac.getInstance(HMAC).run {
+        init(loadKey(revision))
+        doFinal(payload)
+    }
+
+    private fun loadKey(revision: Long): SecretKey {
+        val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+        return keyStore.getKey(alias(revision), null) as? SecretKey
+            ?: error("OFFLINE_MESH_TRUST_KEY_UNAVAILABLE")
+    }
+
+    private fun alias(revision: Long) = "$ALIAS_PREFIX$revision"
+
+    fun deleteAll() {
+        val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+        val aliases = keyStore.aliases()
+        val toDelete = mutableListOf<String>()
+        while (aliases.hasMoreElements()) {
+            val candidate = aliases.nextElement()
+            if (candidate.startsWith(ALIAS_PREFIX)) toDelete += candidate
+        }
+        toDelete.forEach(keyStore::deleteEntry)
     }
 
     private companion object {
         const val KEYSTORE = "AndroidKeyStore"
         const val HMAC = "HmacSHA256"
-        const val ALIAS = "sentinel_offline_mesh_trust_hmac_v1"
+        const val ALIAS_PREFIX = "sentinel_offline_mesh_trust_hmac_v1_"
     }
 }
