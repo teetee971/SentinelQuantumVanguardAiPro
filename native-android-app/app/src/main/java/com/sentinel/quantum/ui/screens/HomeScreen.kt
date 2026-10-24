@@ -253,6 +253,49 @@ fun HomeScreen(navController: NavController) {
                 )
             }
 
+            SentinelSectionHeader(
+                title = "Centre de commande",
+                subtitle = "Accès aux fonctions réelles de Sentinel"
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth().testTag("home_command_shortcuts"),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                QuickToolCard(
+                    title = "Appels",
+                    subtitle = if (phoneCoreFacts.dialerRoleHeld) "Rôle téléphone accordé" else "Rôle téléphone à configurer",
+                    icon = Icons.Default.Phone,
+                    onClick = { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+                    modifier = Modifier.weight(1f)
+                )
+                QuickToolCard(
+                    title = "Messages",
+                    subtitle = if (phoneCoreFacts.smsRoleHeld) "Rôle SMS accordé" else "Rôle SMS à configurer",
+                    icon = Icons.Default.Sms,
+                    onClick = { context.startActivity(Intent(context, SmsComposeActivity::class.java)) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                QuickToolCard(
+                    title = "Réseau",
+                    subtitle = "Observations locales et connexions",
+                    icon = Icons.Default.Wifi,
+                    onClick = { navController.navigate(Screen.NetworkSurveillance.route) },
+                    modifier = Modifier.weight(1f)
+                )
+                QuickToolCard(
+                    title = "Applications",
+                    subtitle = "Permissions et risques observables",
+                    icon = Icons.Default.Apps,
+                    onClick = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
             SentinelSectionHeader(title = "Protection principale")
             homeState.modules.forEach { module ->
                 HomeModuleCard(
