@@ -15,7 +15,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
-import java.util.UUID
 
 /**
  * Experimental service-registration-only GATT server, intentionally no data path.
@@ -27,7 +26,7 @@ class OfflineMeshGattServer(context: Context) {
     private val app = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private val manager = app.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-    private val serviceId = UUID.fromString("de939bda-5b41-4c5d-8bb7-58c24458a6e2")
+    private val serviceId = OfflineMeshGattProtocolIds.SERVICE
     private var server: BluetoothGattServer? = null
     private var generation = 0L
     private var onReady: ((Boolean) -> Unit)? = null
@@ -102,6 +101,42 @@ class OfflineMeshGattServer(context: Context) {
                     catch (_: RuntimeException) { stopInternal(false) }
                 }
             }
+            override fun onDescriptorReadRequest(
+                device: BluetoothDevice, requestId: Int, offset: Int,
+                descriptor: android.bluetooth.BluetoothGattDescriptor
+            ) {
+                main.post {
+                    if (run != generation || server == null) return@post
+                    try {
+                        server?.sendResponse(device, requestId, BluetoothGatt.GATT_READ_NOT_PERMITTED, offset, null)
+                    } catch (_: SecurityException) { stopInternal(false) }
+                    catch (_: RuntimeException) { stopInternal(false) }
+                }
+            }
+            override fun onDescriptorWriteRequest(
+                device: BluetoothDevice, requestId: Int,
+                descriptor: android.bluetooth.BluetoothGattDescriptor,
+                preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray
+            ) {
+                main.post {
+                    if (run != generation || server == null) return@post
+                    if (responseNeeded) {
+                        try {
+                            server?.sendResponse(device, requestId, BluetoothGatt.GATT_WRITE_NOT_PERMITTED, offset, null)
+                        } catch (_: SecurityException) { stopInternal(false) }
+                        catch (_: RuntimeException) { stopInternal(false) }
+                    }
+                }
+            }
+            override fun onExecuteWrite(device: BluetoothDevice, requestId: Int, execute: Boolean) {
+                main.post {
+                    if (run != generation || server == null) return@post
+                    try {
+                        server?.sendResponse(device, requestId, BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED, 0, null)
+                    } catch (_: SecurityException) { stopInternal(false) }
+                    catch (_: RuntimeException) { stopInternal(false) }
+                }
+            }
             override fun onCharacteristicWriteRequest(
                 device: BluetoothDevice, requestId: Int,
                 characteristic: BluetoothGattCharacteristic,
@@ -126,7 +161,7 @@ class OfflineMeshGattServer(context: Context) {
             // A marker characteristic with no read or write properties: never expose private data.
             service.addCharacteristic(
                 BluetoothGattCharacteristic(
-                    UUID.fromString("f63dd7df-68e2-4ffb-b949-a4d403a8ad67"),
+                    OfflineMeshGattProtocolIds.MARKER,
                     0, 0
                 )
             )
