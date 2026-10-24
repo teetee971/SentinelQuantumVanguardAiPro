@@ -135,7 +135,7 @@ class OfflineMeshGattServer(context: Context) {
                         android.bluetooth.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
                     val valid = isCccd && !preparedWrite && offset == 0 &&
                         token != null && key !in retiredPeerKeys && permitted() && (enable || disable)
-                    val accepted = if (valid) peerSessions.setNotifications(token!!, enable) else false
+                    val accepted = if (valid && token != null) peerSessions.setNotifications(token, enable) else false
                     if (responseNeeded) {
                         try {
                             server?.sendResponse(device, requestId,
