@@ -99,6 +99,11 @@ class OfflineMeshGattClient(context: Context) {
                     if (session != epoch || client !== gatt) return@post
                     if (!gate.mtuResolved(generation, mtu, status == BluetoothGatt.GATT_SUCCESS)) {
                         terminate("MTU_FAILED")
+                    } else {
+                        // The watchdog bounds connection setup only. Once negotiation
+                        // succeeds, do not disconnect a healthy idle link at 15 seconds.
+                        watchdog?.let(main::removeCallbacks)
+                        watchdog = null
                     }
                     // TRANSPORT_READY is not authenticated and cannot send private messages.
                 }
