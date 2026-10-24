@@ -125,9 +125,22 @@ class OfflineMeshGattServer(context: Context) {
             ) {
                 main.post {
                     if (run != generation || server == null) return@post
+                    val key = try { device.address } catch (_: SecurityException) { return@post }
+                    val token = peerTokens[key]
+                    val isCccd = descriptor.uuid == OfflineMeshGattProtocolIds.CCCD &&
+                        descriptor.characteristic?.uuid == OfflineMeshGattProtocolIds.SERVER_TO_CLIENT
+                    val enable = value.contentEquals(
+                        android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                    val disable = value.contentEquals(
+                        android.bluetooth.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
+                    val valid = isCccd && !preparedWrite && offset == 0 &&
+                        token != null && key !in retiredPeerKeys && permitted() && (enable || disable)
+                    val accepted = if (valid) peerSessions.setNotifications(token!!, enable) else false
                     if (responseNeeded) {
                         try {
-                            server?.sendResponse(device, requestId, BluetoothGatt.GATT_WRITE_NOT_PERMITTED, offset, null)
+                            server?.sendResponse(device, requestId,
+                                if (accepted) BluetoothGatt.GATT_SUCCESS else BluetoothGatt.GATT_WRITE_NOT_PERMITTED,
+                                0, null)
                         } catch (_: SecurityException) { stopInternal(false) }
                         catch (_: RuntimeException) { stopInternal(false) }
                     }
@@ -170,18 +183,24 @@ class OfflineMeshGattServer(context: Context) {
                     0, 0
                 )
             )
-            // Reserved identifiers only: no reads, writes or notifications permitted.
-            // CCCD will only be added with explicit safe subscription handling.
+            // No client-to-server writes or private notifications are enabled here.
+            // CCCD subscription does not grant authentication or data access.
             service.addCharacteristic(
                 BluetoothGattCharacteristic(
                     OfflineMeshGattProtocolIds.CLIENT_TO_SERVER, 0, 0
                 )
             )
-            service.addCharacteristic(
-                BluetoothGattCharacteristic(
-                    OfflineMeshGattProtocolIds.SERVER_TO_CLIENT, 0, 0
+            val notifyCharacteristic = BluetoothGattCharacteristic(
+                OfflineMeshGattProtocolIds.SERVER_TO_CLIENT,
+                BluetoothGattCharacteristic.PROPERTY_NOTIFY, 0
+            )
+            notifyCharacteristic.addDescriptor(
+                android.bluetooth.BluetoothGattDescriptor(
+                    OfflineMeshGattProtocolIds.CCCD,
+                    android.bluetooth.BluetoothGattDescriptor.PERMISSION_WRITE
                 )
             )
+            service.addCharacteristic(notifyCharacteristic)
             if (!opened.addService(service)) {
                 stopInternal(false)
                 Start.FAILED
