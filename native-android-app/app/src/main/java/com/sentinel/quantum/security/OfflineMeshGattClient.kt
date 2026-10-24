@@ -165,7 +165,7 @@ class OfflineMeshGattClient(context: Context) {
                 }
             }
 
-            @Suppress("DEPRECATION")
+            @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
             override fun onCharacteristicChanged(
                 client: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic
@@ -197,6 +197,7 @@ class OfflineMeshGattClient(context: Context) {
         }
         return try {
             // No autoConnect; user initiation only.
+            @Suppress("DEPRECATION")
             val opened = device.connectGatt(app, false, callback, BluetoothDevice.TRANSPORT_LE)
             if (opened == null) {
                 terminate("CONNECT_START_FAILED")
