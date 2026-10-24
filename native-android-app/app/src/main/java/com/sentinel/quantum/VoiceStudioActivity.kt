@@ -168,33 +168,52 @@ class VoiceStudioActivity : ComponentActivity() {
                 return
             }
 
+            val authorizationEpoch = AuthSessionRevocation.current()
             sessionBusy = true
             sessionStatus = "Récupération du jeton Auth0…"
             authController.accessToken(
                 onSuccess = { authToken ->
-                    voiceConnectJob = lifecycleScope.launch {
-                        sessionStatus = "Création de la session sécurisée…"
-                        val created = voiceSessionCoordinator.connect(
-                            accessToken = authToken,
-                            request = VoiceSessionRequest(
-                                roomId = demoRoomId(deviceId),
-                                deviceId = deviceId,
-                                appVersion = BuildConfig.VERSION_NAME
-                            ),
-                            effect = selectedEffect
-                        )
-                        created.fold(
-                            onSuccess = { active ->
-                                activeVoiceSession = active
-                                sessionConnected = true
+                    if (!AuthSessionRevocation.isCurrent(authorizationEpoch) || isDestroyed) {
+                        sessionBusy = false
+                        sessionStatus = "Session annulée : authentification révoquée."
+                    } else {
+                        voiceConnectJob = lifecycleScope.launch {
+                            if (!AuthSessionRevocation.isCurrent(authorizationEpoch)) {
                                 sessionBusy = false
-                                sessionStatus = "Session PTT connectée dans la salle de test isolée."
-                            },
-                            onFailure = { failure ->
-                                sessionBusy = false
-                                sessionStatus = "Session vocale refusée : ${failure.message.orEmpty()}"
+                                sessionStatus = "Session annulée : authentification révoquée."
+                                return@launch
                             }
-                        )
+                            sessionStatus = "Création de la session sécurisée…"
+                            val created = voiceSessionCoordinator.connect(
+                                accessToken = authToken,
+                                request = VoiceSessionRequest(
+                                    roomId = demoRoomId(deviceId),
+                                    deviceId = deviceId,
+                                    appVersion = BuildConfig.VERSION_NAME
+                                ),
+                                effect = selectedEffect
+                            )
+                            if (!AuthSessionRevocation.isCurrent(authorizationEpoch)) {
+                                voiceSessionCoordinator.disconnect()
+                                activeVoiceSession = null
+                                sessionConnected = false
+                                sessionBusy = false
+                                sessionStatus = "Session annulée : authentification révoquée."
+                                return@launch
+                            }
+                            created.fold(
+                                onSuccess = { active ->
+                                    activeVoiceSession = active
+                                    sessionConnected = true
+                                    sessionBusy = false
+                                    sessionStatus = "Session PTT connectée dans la salle de test isolée."
+                                },
+                                onFailure = { failure ->
+                                    sessionBusy = false
+                                    sessionStatus = "Session vocale refusée : ${failure.message.orEmpty()}"
+                                }
+                            )
+                        }
                     }
                 },
                 onFailure = { message ->
