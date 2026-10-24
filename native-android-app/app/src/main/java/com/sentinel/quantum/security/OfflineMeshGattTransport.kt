@@ -41,6 +41,7 @@ class OfflineMeshGattTransport(
     private val reassembler = OfflineMeshGattReassembler()
     private var pending: Outbound? = null
     private var radioPending = false
+    private var ackInFlight: Outbound? = null
     private var deadline = Long.MAX_VALUE
 
     @Synchronized fun state(): State = status
@@ -73,7 +74,7 @@ class OfflineMeshGattTransport(
         return Offer.QUEUED
     }
     @Synchronized fun next(nowMs: Long): Outbound? {
-        if (status != State.AUTHENTICATED || radioPending) return null
+        if (status != State.AUTHENTICATED || radioPending || ackInFlight != null) return null
         // Application ACK is mandatory before advancing to the next data fragment.
         if (ackQueue.isNotEmpty()) {
             val bytes = ackQueue.removeFirst()
@@ -81,7 +82,7 @@ class OfflineMeshGattTransport(
                 ?: return null
             val out = Outbound(bytes.copyOf(), nextTicket++, generation, frame.fragmentIndex, 1, false)
             radioPending = true
-            if (pending == null) pending = out
+            ackInFlight = out
             return out
         }
         if (pending != null) return null
@@ -95,12 +96,11 @@ class OfflineMeshGattTransport(
     }
     @Synchronized fun onRadioWriteComplete(ticket: Long, linkGeneration: Long, success: Boolean, nowMs: Long): Boolean {
         if (status != State.AUTHENTICATED || linkGeneration != generation || !radioPending) return false
-        val item = pending ?: return false
-        if (item.ticket != ticket) return false
+        val item = ackInFlight?.takeIf { it.ticket == ticket } ?: pending?.takeIf { it.ticket == ticket } ?: return false
         if (!success) { reset(); return false }
         radioPending = false
         if (!item.requiresAck) {
-            pending = null
+            ackInFlight = null
         } else {
             deadline = nowMs + ackTimeoutMs
         }
@@ -154,6 +154,7 @@ class OfflineMeshGattTransport(
         dataQueue.clear()
         ackQueue.clear()
         pending = null
+        ackInFlight = null
         radioPending = false
         deadline = Long.MAX_VALUE
         reassembler.reset()
