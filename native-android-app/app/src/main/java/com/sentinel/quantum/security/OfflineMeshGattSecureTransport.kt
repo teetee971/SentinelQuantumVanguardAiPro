@@ -12,8 +12,10 @@ class OfflineMeshGattSecureTransport(
     maxFrames: Int = 32,
     maxFrameBytes: Int = 244,
     ackTimeoutMs: Long = 1_500L,
-    maxRetries: Int = 3
+    maxRetries: Int = 3,
+    private val handshakeTimeoutMs: Long = 15_000L
 ) {
+    init { require(handshakeTimeoutMs > 0L) }
     enum class State { LOCKED, HANDSHAKING, AUTHENTICATED }
 
     data class Outbound(
@@ -51,11 +53,12 @@ class OfflineMeshGattSecureTransport(
     private var nextControlTicket = 1L
     private var nextMessageCounter = 1L
     private var currentState = State.LOCKED
+    private var handshakeDeadline = Long.MAX_VALUE
 
-    fun state(): State = currentState
-    fun isAuthenticated(): Boolean = currentState == State.AUTHENTICATED
+    @Synchronized fun state(): State = currentState
+    @Synchronized fun isAuthenticated(): Boolean = currentState == State.AUTHENTICATED
 
-    fun startLink(generation: Long): Boolean {
+    @Synchronized fun startLink(generation: Long, nowMs: Long = 0L): Boolean {
         if (!transport.startLink(generation)) return false
         crypto?.reset()
         controlQueue.clear()
@@ -63,13 +66,21 @@ class OfflineMeshGattSecureTransport(
         activeGeneration = generation
         nextMessageCounter = 1L
         currentState = if (crypto == null) State.LOCKED else State.HANDSHAKING
+        handshakeDeadline = if (crypto == null || nowMs > Long.MAX_VALUE - handshakeTimeoutMs) {
+            Long.MAX_VALUE
+        } else {
+            nowMs + handshakeTimeoutMs
+        }
         if (crypto?.role == OfflineMeshGattCryptoSession.Role.INITIATOR) {
-            crypto.start()?.let(controlQueue::addLast) ?: return false
+            crypto.start()?.let(controlQueue::addLast) ?: run {
+                interrupt()
+                return false
+            }
         }
         return true
     }
 
-    fun offer(payload: ByteArray): OfflineMeshGattTransport.Offer {
+    @Synchronized fun offer(payload: ByteArray): OfflineMeshGattTransport.Offer {
         if (!isAuthenticated()) return OfflineMeshGattTransport.Offer.LOCKED
         val session = crypto ?: return OfflineMeshGattTransport.Offer.LOCKED
         val counter = nextMessageCounter
@@ -80,7 +91,7 @@ class OfflineMeshGattSecureTransport(
         return result
     }
 
-    fun next(nowMs: Long): Outbound? {
+    @Synchronized fun next(nowMs: Long): Outbound? {
         if (controlPending != null) return null
         if (controlQueue.isNotEmpty()) {
             val bytes = controlQueue.removeFirst()
@@ -106,7 +117,7 @@ class OfflineMeshGattSecureTransport(
         )
     }
 
-    fun onRadioWriteComplete(
+    @Synchronized fun onRadioWriteComplete(
         ticket: Long,
         generation: Long,
         success: Boolean,
@@ -126,7 +137,7 @@ class OfflineMeshGattSecureTransport(
         return transport.onRadioWriteComplete(ticket, generation, success, nowMs)
     }
 
-    fun receive(bytes: ByteArray, nowMs: Long): Inbound {
+    @Synchronized fun receive(bytes: ByteArray, nowMs: Long): Inbound {
         val frame = OfflineMeshGattFrameCodec.decode(bytes) ?: return Inbound(false)
         if (frame is OfflineMeshGattFrameCodec.Frame.Control) {
             val session = crypto ?: return Inbound(false)
@@ -153,7 +164,11 @@ class OfflineMeshGattSecureTransport(
         return Inbound(true, plaintext)
     }
 
-    fun tick(nowMs: Long): Tick {
+    @Synchronized fun tick(nowMs: Long): Tick {
+        if (currentState == State.HANDSHAKING && nowMs >= handshakeDeadline) {
+            interrupt()
+            return Tick.Interrupted
+        }
         if (controlPending != null) return Tick.Idle
         return when (val tick = transport.tick(nowMs)) {
             is OfflineMeshGattTransport.Tick.Retry -> Tick.Retry(
@@ -175,11 +190,12 @@ class OfflineMeshGattSecureTransport(
         }
     }
 
-    fun interrupt() {
+    @Synchronized fun interrupt() {
         transport.interrupt()
         crypto?.reset()
         controlQueue.clear()
         controlPending = null
         currentState = State.LOCKED
+        handshakeDeadline = Long.MAX_VALUE
     }
 }

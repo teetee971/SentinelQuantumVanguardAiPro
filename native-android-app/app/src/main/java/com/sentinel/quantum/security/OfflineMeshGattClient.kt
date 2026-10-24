@@ -46,6 +46,7 @@ class OfflineMeshGattClient(
     private var writeCharacteristic: BluetoothGattCharacteristic? = null
     private var notificationCharacteristic: BluetoothGattCharacteristic? = null
     private var pendingWrite: OfflineMeshGattSecureTransport.Outbound? = null
+    private var pendingWriteStartedAt: Long? = null
     private val cccdGate = OfflineMeshGattCccdGate()
     private var transport: OfflineMeshGattSecureTransport? = null
 
@@ -212,7 +213,7 @@ class OfflineMeshGattClient(
                         return@post
                     }
                     transport = channel
-                    if (channel != null && !channel.startLink(generation)) {
+                    if (channel != null && !channel.startLink(generation, SystemClock.elapsedRealtime())) {
                         terminate("TRANSPORT_START_FAILED")
                         return@post
                     }
@@ -253,6 +254,7 @@ class OfflineMeshGattClient(
                     if (!current(client) || characteristic !== writeCharacteristic) return@post
                     val sent = pendingWrite ?: return@post
                     pendingWrite = null
+                    pendingWriteStartedAt = null
                     val channel = transport ?: return@post
                     val accepted = channel.onRadioWriteComplete(
                         sent.ticket,
@@ -333,7 +335,19 @@ class OfflineMeshGattClient(
 
     @SuppressLint("MissingPermission")
     private fun pumpTransport(session: Long) {
-        if (session != epoch || gatt == null || pendingWrite != null) return
+        if (session != epoch || gatt == null) return
+        val pending = pendingWrite
+        if (pending != null) {
+            val startedAt = pendingWriteStartedAt ?: SystemClock.elapsedRealtime()
+            val now = SystemClock.elapsedRealtime()
+            if (now - startedAt >= RADIO_CONFIRMATION_TIMEOUT_MS) {
+                pendingWrite = null
+                pendingWriteStartedAt = null
+                transport?.onRadioWriteComplete(pending.ticket, session, false, now)
+                terminate("RADIO_CONFIRMATION_TIMEOUT")
+            }
+            return
+        }
         val channel = transport ?: return
         when (val tick = channel.tick(SystemClock.elapsedRealtime())) {
             is OfflineMeshGattSecureTransport.Tick.Interrupted -> {
@@ -372,6 +386,7 @@ class OfflineMeshGattClient(
             return
         }
         pendingWrite = outbound
+        pendingWriteStartedAt = SystemClock.elapsedRealtime()
         try {
             val started = if (Build.VERSION.SDK_INT >= 33) {
                 client.writeCharacteristic(
@@ -389,6 +404,7 @@ class OfflineMeshGattClient(
             }
             if (!started) {
                 pendingWrite = null
+                pendingWriteStartedAt = null
                 transport?.onRadioWriteComplete(
                     outbound.ticket,
                     session,
@@ -399,9 +415,11 @@ class OfflineMeshGattClient(
             }
         } catch (_: SecurityException) {
             pendingWrite = null
+            pendingWriteStartedAt = null
             terminate("PERMISSION_REVOKED")
         } catch (_: RuntimeException) {
             pendingWrite = null
+            pendingWriteStartedAt = null
             terminate("WRITE_START_FAILED")
         }
     }
@@ -432,6 +450,7 @@ class OfflineMeshGattClient(
         transportTimer?.let(main::removeCallbacks)
         transportTimer = null
         pendingWrite = null
+        pendingWriteStartedAt = null
         transport?.interrupt()
         transport = null
         val old = gatt
@@ -449,5 +468,9 @@ class OfflineMeshGattClient(
         val listener = stopListener
         stopListener = null
         listener?.invoke(reason)
+    }
+
+    private companion object {
+        const val RADIO_CONFIRMATION_TIMEOUT_MS = 5_000L
     }
 }

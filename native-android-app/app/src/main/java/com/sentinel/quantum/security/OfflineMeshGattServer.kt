@@ -48,6 +48,7 @@ class OfflineMeshGattServer(
     private val peerTokens = mutableMapOf<String, OfflineMeshGattPeerSessions.Token>()
     private val transports = mutableMapOf<String, OfflineMeshGattSecureTransport>()
     private val notificationInFlight = mutableMapOf<String, OfflineMeshGattSecureTransport.Outbound>()
+    private val notificationStartedAt = mutableMapOf<String, Long>()
     // Android callbacks have no connection ID. After a disconnect, fail closed
     // for this address until the server is restarted.
     private val retiredPeerKeys = mutableSetOf<String>()
@@ -251,6 +252,7 @@ class OfflineMeshGattServer(
                     if (!current()) return@post
                     val key = peerKey(device) ?: return@post
                     val sent = notificationInFlight.remove(key) ?: return@post
+                    notificationStartedAt.remove(key)
                     val token = peerTokens[key] ?: return@post
                     val channel = transports[key] ?: return@post
                     val accepted = channel.onRadioWriteComplete(
@@ -348,13 +350,14 @@ class OfflineMeshGattServer(
     ): Boolean {
         transports.remove(key)?.interrupt()
         notificationInFlight.remove(key)
+        notificationStartedAt.remove(key)
         val channel = try {
             transportFactory?.invoke(key, token.generation)
         } catch (_: RuntimeException) {
             null
         }
         if (transportFactory != null && channel == null) return false
-        if (channel != null && !channel.startLink(token.generation)) return false
+        if (channel != null && !channel.startLink(token.generation, SystemClock.elapsedRealtime())) return false
         if (channel != null) transports[key] = channel
         return true
     }
@@ -381,7 +384,25 @@ class OfflineMeshGattServer(
         val channel = transports[key] ?: return
         peerSessions.setPrivateDataAllowed(token, channel.isAuthenticated())
         val snapshot = peerSessions.snapshot(token) ?: return
-        if (!snapshot.notificationsEnabled || notificationInFlight.containsKey(key)) return
+        if (!snapshot.notificationsEnabled) return
+        if (notificationInFlight.containsKey(key)) {
+            val startedAt = notificationStartedAt[key]
+            if (startedAt != null && SystemClock.elapsedRealtime() - startedAt >= RADIO_CONFIRMATION_TIMEOUT_MS) {
+                val sent = notificationInFlight.remove(key)
+                notificationStartedAt.remove(key)
+                if (sent != null) {
+                    channel.onRadioWriteComplete(
+                        sent.ticket,
+                        token.generation,
+                        false,
+                        SystemClock.elapsedRealtime()
+                    )
+                }
+                channel.interrupt()
+                transports.remove(key)
+            }
+            return
+        }
         when (val tick = channel.tick(SystemClock.elapsedRealtime())) {
             is OfflineMeshGattSecureTransport.Tick.Interrupted -> {
                 channel.interrupt()
@@ -418,6 +439,7 @@ class OfflineMeshGattServer(
         val characteristic = notifyCharacteristic
         if (device == null || gattServer == null || characteristic == null || !permitted()) return
         notificationInFlight[key] = outbound
+        notificationStartedAt[key] = SystemClock.elapsedRealtime()
         try {
             val started = if (Build.VERSION.SDK_INT >= 33) {
                 gattServer.notifyCharacteristicChanged(device, characteristic, false, outbound.bytes) ==
@@ -430,13 +452,16 @@ class OfflineMeshGattServer(
             }
             if (!started) {
                 notificationInFlight.remove(key)
+                notificationStartedAt.remove(key)
                 transports.remove(key)?.interrupt()
             }
         } catch (_: SecurityException) {
             notificationInFlight.remove(key)
+            notificationStartedAt.remove(key)
             transports.remove(key)?.interrupt()
         } catch (_: RuntimeException) {
             notificationInFlight.remove(key)
+            notificationStartedAt.remove(key)
             transports.remove(key)?.interrupt()
         }
     }
@@ -456,6 +481,7 @@ class OfflineMeshGattServer(
 
     private fun removePeer(key: String) {
         notificationInFlight.remove(key)
+        notificationStartedAt.remove(key)
         transports.remove(key)?.interrupt()
         peerTokens.remove(key)?.let(peerSessions::disconnect)
     }
@@ -466,6 +492,7 @@ class OfflineMeshGattServer(
         peerTokens.clear()
         retiredPeerKeys.clear()
         notificationInFlight.clear()
+        notificationStartedAt.clear()
         transports.values.forEach(OfflineMeshGattSecureTransport::interrupt)
         transports.clear()
         peerSessions.close()
@@ -488,5 +515,9 @@ class OfflineMeshGattServer(
         val notify = onReady
         onReady = null
         if (reportFailure || notify != null) notify?.invoke(false)
+    }
+
+    private companion object {
+        const val RADIO_CONFIRMATION_TIMEOUT_MS = 5_000L
     }
 }

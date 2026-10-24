@@ -11,16 +11,29 @@ object OfflineMeshGattOwnerIdentity {
     fun fromOwnerDeviceKeyManager(
         keyManager: OwnerDeviceKeyManager,
         trustedPeerPublicKeysX509: Collection<ByteArray>
+    ): OfflineMeshGattCryptoIdentity = fromOwnerDeviceKeyManager(
+        keyManager,
+        { trustedPeerPublicKeysX509 }
+    )
+
+    /**
+     * The provider is evaluated for every handshake, allowing the application
+     * to revoke or rotate a peer without rebuilding the identity object.
+     */
+    fun fromOwnerDeviceKeyManager(
+        keyManager: OwnerDeviceKeyManager,
+        trustedPeerPublicKeysX509: () -> Collection<ByteArray>
     ): OfflineMeshGattCryptoIdentity {
         val publicKey = Base64.decode(
             keyManager.publicIdentity().publicKeyBase64,
             Base64.NO_WRAP
         )
-        val trusted = trustedPeerPublicKeysX509.map(ByteArray::copyOf)
         return OfflineMeshGattCryptoIdentity.fromSigner(
             publicKeyX509 = publicKey,
             signer = keyManager::signChallenge,
-            trusts = { candidate -> trusted.any { MessageDigest.isEqual(it, candidate) } }
+            trusts = { candidate ->
+                trustedPeerPublicKeysX509().any { MessageDigest.isEqual(it, candidate) }
+            }
         )
     }
 }

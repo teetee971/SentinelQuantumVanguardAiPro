@@ -5,6 +5,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class OfflineMeshGattTransportTest {
     private fun opened(
@@ -98,5 +100,28 @@ class OfflineMeshGattTransportTest {
         val ack = receiver.next(1L) ?: error("ack frame missing")
         assertTrue(receiver.onRadioWriteComplete(ack.ticket, ack.generation, true, 1L))
         assertTrue(sender.receive(ack.bytes, 1L).accepted)
+    }
+
+    @Test fun concurrentOffersRemainBoundedAndDoNotCorruptTickets() {
+        val transport = opened(maxFrameBytes = 32)
+        val workers = Executors.newFixedThreadPool(8)
+        try {
+            val results = (1..128).map {
+                workers.submit<OfflineMeshGattTransport.Offer> {
+                    transport.offer(byteArrayOf(it.toByte()))
+                }
+            }.map { it.get(10, TimeUnit.SECONDS) }
+            assertTrue(results.any { it == OfflineMeshGattTransport.Offer.QUEUED })
+            assertTrue(transport.queuedCount() <= 32)
+            val tickets = mutableSetOf<Long>()
+            repeat(32) {
+                transport.next(it.toLong())?.let { outbound ->
+                    assertTrue(tickets.add(outbound.ticket))
+                    transport.onRadioWriteComplete(outbound.ticket, outbound.generation, false, it.toLong())
+                }
+            }
+        } finally {
+            workers.shutdownNow()
+        }
     }
 }

@@ -102,6 +102,23 @@ class OfflineMeshGattSecureTransportTest {
         assertTrue(channel.onRadioWriteComplete(hello.ticket, 4L, true, 1L))
     }
 
+    @Test
+    fun handshakeExpiresWithoutTreatingRadioSetupAsAuthentication() {
+        val channel = OfflineMeshGattSecureTransport(
+            OfflineMeshGattCryptoSession(
+                OfflineMeshGattCryptoSession.Role.INITIATOR,
+                OfflineMeshGattCryptoIdentity.fromKeyPair(keyPair()) { true }
+            ),
+            handshakeTimeoutMs = 100L
+        )
+        assertTrue(channel.startLink(1L, nowMs = 0L))
+        val hello = requireNotNull(channel.next(0L))
+        assertTrue(channel.onRadioWriteComplete(hello.ticket, 1L, true, 1L))
+        assertTrue(channel.tick(101L) is OfflineMeshGattSecureTransport.Tick.Interrupted)
+        assertFalse(channel.isAuthenticated())
+        assertEquals(OfflineMeshGattTransport.Offer.LOCKED, channel.offer(byteArrayOf(1)))
+    }
+
     private fun channel(
         role: OfflineMeshGattCryptoSession.Role,
         local: KeyPair,

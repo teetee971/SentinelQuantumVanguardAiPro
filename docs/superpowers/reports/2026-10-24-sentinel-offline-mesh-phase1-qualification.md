@@ -7,6 +7,11 @@ Qualification commit: supplied in the final Git handoff (`git rev-parse HEAD`);
 it is not duplicated here because changing this line would change the commit
 SHA itself.
 
+Phase 2 follow-up: see
+[`2026-10-24-sentinel-offline-mesh-phase2-crypto-audit.md`](2026-10-24-sentinel-offline-mesh-phase2-crypto-audit.md),
+[`2026-10-24-sentinel-offline-mesh-phase2-android-regression.md`](2026-10-24-sentinel-offline-mesh-phase2-android-regression.md)
+and [`2026-10-24-sentinel-offline-mesh-s24-physical-procedure.md`](2026-10-24-sentinel-offline-mesh-s24-physical-procedure.md).
+
 ## Delivered
 
 - Bidirectional GATT data path: client writes to `CLIENT_TO_SERVER`; server

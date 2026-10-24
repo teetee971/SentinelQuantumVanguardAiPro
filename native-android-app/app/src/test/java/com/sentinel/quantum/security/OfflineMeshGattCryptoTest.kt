@@ -4,8 +4,12 @@ import java.nio.charset.StandardCharsets
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
+import java.security.Signature
+import java.security.spec.ECGenParameterSpec
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -99,6 +103,88 @@ class OfflineMeshGattCryptoTest {
         )
         assertNull(session.start())
         assertFalse(session.isEstablished())
+    }
+
+    @Test
+    fun identityRejectsNonP256PublicKeys() {
+        val nonP256 = KeyPairGenerator.getInstance("EC").apply {
+            initialize(ECGenParameterSpec("secp384r1"))
+        }.generateKeyPair()
+        assertThrows(IllegalArgumentException::class.java) {
+            OfflineMeshGattCryptoIdentity.fromKeyPair(nonP256) { true }
+        }
+    }
+
+    @Test
+    fun identityRejectsSignerThatDoesNotMatchAdvertisedKey() {
+        val advertised = ecKeyPair()
+        val wrongSigner = ecKeyPair().private
+        assertThrows(IllegalArgumentException::class.java) {
+            OfflineMeshGattCryptoIdentity.fromSigner(
+                advertised.public.encoded,
+                { bytes ->
+                    Signature.getInstance("SHA256withECDSA").run {
+                        initSign(wrongSigner)
+                        update(bytes)
+                        sign()
+                    }
+                },
+                { true }
+            )
+        }
+    }
+
+    @Test
+    fun resetCreatesFreshEphemeralHandshakeMaterial() {
+        val session = OfflineMeshGattCryptoSession(
+            OfflineMeshGattCryptoSession.Role.INITIATOR,
+            identity(ecKeyPair(), emptyList<KeyPair>())
+        )
+        val first = requireNotNull(session.start())
+        session.reset()
+        val second = requireNotNull(session.start())
+        assertNotEquals(first.toList(), second.toList())
+    }
+
+    @Test
+    fun revokedPeerIsRejectedOnTheNextSession() {
+        val initiatorKeys = ecKeyPair()
+        val responderKeys = ecKeyPair()
+        var trusted = true
+        val initiator = OfflineMeshGattCryptoSession(
+            OfflineMeshGattCryptoSession.Role.INITIATOR,
+            identity(initiatorKeys, responderKeys)
+        )
+        val responder = OfflineMeshGattCryptoSession(
+            OfflineMeshGattCryptoSession.Role.RESPONDER,
+            OfflineMeshGattCryptoIdentity.fromKeyPair(responderKeys) { candidate ->
+                trusted && MessageDigest.isEqual(initiatorKeys.public.encoded, candidate)
+            }
+        )
+        val hello = requireNotNull(initiator.start())
+        assertTrue(responder.receive(hello).accepted)
+        trusted = false
+        responder.reset()
+        assertFalse(responder.receive(hello).accepted)
+    }
+
+    @Test
+    fun malformedEcPointIsRejectedWithoutEscapingAsAnException() {
+        val initiator = OfflineMeshGattCryptoSession(
+            OfflineMeshGattCryptoSession.Role.INITIATOR,
+            identity(ecKeyPair(), emptyList<KeyPair>())
+        )
+        val responder = OfflineMeshGattCryptoSession(
+            OfflineMeshGattCryptoSession.Role.RESPONDER,
+            identity(ecKeyPair(), emptyList<KeyPair>())
+        )
+        val malformed = requireNotNull(initiator.start()).copyOf().also {
+            // Control header (7), version (1), identity length (2), then the
+            // uncompressed EC point. Zeroing X makes the point invalid.
+            for (index in 11 until 43) it[index] = 0
+        }
+        assertFalse(responder.receive(malformed).accepted)
+        assertFalse(responder.isEstablished())
     }
 
     private fun ecKeyPair(): KeyPair = KeyPairGenerator.getInstance("EC").apply {

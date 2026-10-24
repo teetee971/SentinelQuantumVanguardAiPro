@@ -18,6 +18,7 @@ import java.security.spec.ECGenParameterSpec
 import java.security.spec.ECPoint
 import java.security.spec.ECPublicKeySpec
 import java.security.spec.ECParameterSpec
+import java.security.spec.ECFieldFp
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
@@ -32,13 +33,22 @@ class OfflineMeshGattCryptoIdentity private constructor(
     private val peerTrust: (ByteArray) -> Boolean
 ) {
     val publicKeyX509: ByteArray = publicKeyX509.copyOf()
+    private val publicKey: ECPublicKey =
+        OfflineMeshGattCryptoCodec.decodeEcPublicKeyX509(this.publicKeyX509) as ECPublicKey
     internal val publicKeyWire: ByteArray = OfflineMeshGattCryptoCodec.rawPoint(
-        OfflineMeshGattCryptoCodec.decodeEcPublicKeyX509(this.publicKeyX509)
+        publicKey
     )
 
     init {
         require(this.publicKeyX509.isNotEmpty())
-        OfflineMeshGattCryptoCodec.decodeEcPublicKeyX509(this.publicKeyX509)
+        val bindingChallenge = "sentinel-offline-mesh-identity-v1".toByteArray(StandardCharsets.US_ASCII)
+        require(
+            OfflineMeshGattCryptoCodec.verifyEcdsa(
+                publicKey,
+                bindingChallenge,
+                signer(bindingChallenge).copyOf()
+            )
+        ) { "identity signer does not match advertised public key" }
     }
 
     internal fun sign(transcript: ByteArray): ByteArray =
@@ -103,10 +113,10 @@ class OfflineMeshGattCryptoSession(
     private var receiveKey: ByteArray? = null
     private val receivedCounters = HashSet<Long>()
 
-    fun state(): State = currentState
-    fun isEstablished(): Boolean = currentState == State.ESTABLISHED
+    @Synchronized fun state(): State = currentState
+    @Synchronized fun isEstablished(): Boolean = currentState == State.ESTABLISHED
 
-    fun start(): ByteArray? {
+    @Synchronized fun start(): ByteArray? {
         if (role != Role.INITIATOR || currentState != State.NEW || identity == null) return null
         val keyPair = generateEphemeral()
         val nonce = ByteArray(NONCE_BYTES).also(random::nextBytes)
@@ -121,24 +131,26 @@ class OfflineMeshGattCryptoSession(
         return encodeControl(HELLO, unsigned + sized(signature))
     }
 
-    fun receive(frameBytes: ByteArray): HandshakeResult {
+    @Synchronized fun receive(frameBytes: ByteArray): HandshakeResult {
         if (identity == null || currentState == State.FAILED || currentState == State.ESTABLISHED) {
             return HandshakeResult(false)
         }
-        val frame = OfflineMeshGattFrameCodec.decode(frameBytes) as? OfflineMeshGattFrameCodec.Frame.Control
-            ?: return fail()
-        return when {
-            role == Role.RESPONDER && currentState == State.NEW && frame.code == HELLO ->
-                receiveHello(frame.payload)
-            role == Role.INITIATOR && currentState == State.WAITING_RESPONSE && frame.code == RESPONSE ->
-                receiveResponse(frame.payload)
-            role == Role.RESPONDER && currentState == State.WAITING_CONFIRMATION && frame.code == FINISH ->
-                receiveFinish(frame.payload)
-            else -> fail()
-        }
+        return runCatching {
+            val frame = OfflineMeshGattFrameCodec.decode(frameBytes) as?
+                OfflineMeshGattFrameCodec.Frame.Control ?: return@runCatching fail()
+            when {
+                role == Role.RESPONDER && currentState == State.NEW && frame.code == HELLO ->
+                    receiveHello(frame.payload)
+                role == Role.INITIATOR && currentState == State.WAITING_RESPONSE && frame.code == RESPONSE ->
+                    receiveResponse(frame.payload)
+                role == Role.RESPONDER && currentState == State.WAITING_CONFIRMATION && frame.code == FINISH ->
+                    receiveFinish(frame.payload)
+                else -> fail()
+            }
+        }.getOrElse { fail() }
     }
 
-    fun encrypt(plaintext: ByteArray, counter: Long): ByteArray {
+    @Synchronized fun encrypt(plaintext: ByteArray, counter: Long): ByteArray {
         check(isEstablished()) { "GATT crypto session is not authenticated" }
         require(counter > 0L && plaintext.isNotEmpty() && plaintext.size <= MAX_PLAINTEXT)
         val key = requireNotNull(sendKey)
@@ -153,7 +165,7 @@ class OfflineMeshGattCryptoSession(
             .put(ENVELOPE_VERSION.toByte()).putLong(counter).put(cipherText).array()
     }
 
-    fun decrypt(envelope: ByteArray): ByteArray? {
+    @Synchronized fun decrypt(envelope: ByteArray): ByteArray? {
         if (!isEstablished() || envelope.size < ENVELOPE_HEADER + TAG_BYTES) return null
         val input = ByteBuffer.wrap(envelope).order(ByteOrder.BIG_ENDIAN)
         if ((input.get().toInt() and 0xff) != ENVELOPE_VERSION) return null
@@ -171,9 +183,14 @@ class OfflineMeshGattCryptoSession(
         }.getOrNull()?.also { receivedCounters.add(counter) }
     }
 
-    fun sessionProof(): ByteArray = requireNotNull(transcript).copyOf()
+    @Synchronized fun sessionProof(): ByteArray = requireNotNull(transcript).copyOf()
 
-    internal fun reset() {
+    @Synchronized internal fun reset() {
+        sendKey?.fill(0)
+        receiveKey?.fill(0)
+        transcript?.fill(0)
+        localNonce?.fill(0)
+        initUnsigned?.fill(0)
         currentState = State.NEW
         ephemeral = null
         localNonce = null
@@ -402,18 +419,32 @@ private object OfflineMeshGattCryptoCodec {
     }
 
     fun decodeEcPublicKeyX509(x509: ByteArray): PublicKey =
-        KeyFactory.getInstance("EC").generatePublic(X509EncodedKeySpec(x509.copyOf()))
+        KeyFactory.getInstance("EC").generatePublic(X509EncodedKeySpec(x509.copyOf())).also {
+            require(it is ECPublicKey && isP256(it.params)) { "only P-256 identities are supported" }
+        }
 
     fun rawPoint(publicKey: PublicKey): ByteArray {
         val ec = publicKey as? ECPublicKey ?: error("GATT identity must use EC")
+        require(isP256(ec.params)) { "only P-256 identities are supported" }
         return byteArrayOf(4) + fixed(ec.w.affineX) + fixed(ec.w.affineY)
     }
 
+    fun verifyEcdsa(publicKey: PublicKey, bytes: ByteArray, derSignature: ByteArray): Boolean =
+        runCatching {
+            Signature.getInstance("SHA256withECDSA").run {
+                initVerify(publicKey)
+                update(bytes)
+                verify(derSignature)
+            }
+        }.getOrDefault(false)
+
     fun derSignatureToRaw(der: ByteArray): ByteArray {
-        require(der.size >= 8 && der[0] == 0x30.toByte())
+        require(der.size >= 8 && der[0] == 0x30.toByte() &&
+            (der[1].toInt() and 0xff) == der.size - 2)
         var index = 2
         val r = readDerInteger(der, index).also { index = it.second }.first
-        val s = readDerInteger(der, index).first
+        val s = readDerInteger(der, index).also { index = it.second }.first
+        require(index == der.size)
         return fixed(BigInteger(r)) + fixed(BigInteger(s))
     }
 
@@ -459,4 +490,23 @@ private object OfflineMeshGattCryptoCodec {
         if (length !in 1..maximum || remaining() < length) return null
         return ByteArray(length).also(::get)
     }
+
+    private fun isP256(params: ECParameterSpec): Boolean {
+        val field = params.curve.field as? ECFieldFp ?: return false
+        val expected = p256Spec()
+        val expectedField = expected.curve.field as? ECFieldFp ?: return false
+        val actualGenerator = params.generator
+        val expectedGenerator = expected.generator
+        return field.p == expectedField.p &&
+            params.curve.a == expected.curve.a &&
+            params.curve.b == expected.curve.b &&
+            actualGenerator.affineX == expectedGenerator.affineX &&
+            actualGenerator.affineY == expectedGenerator.affineY &&
+            params.order == expected.order &&
+            params.cofactor == expected.cofactor
+    }
+
+    private fun p256Spec(): ECParameterSpec = AlgorithmParameters.getInstance("EC").apply {
+        init(ECGenParameterSpec("secp256r1"))
+    }.getParameterSpec(ECParameterSpec::class.java)
 }
