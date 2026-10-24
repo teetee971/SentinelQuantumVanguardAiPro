@@ -61,6 +61,11 @@ class OfflineMeshGattTransportTest {
         assertTrue(retry is OfflineMeshGattTransport.Tick.Retry)
         assertEquals(2, (retry as OfflineMeshGattTransport.Tick.Retry).outbound.attempts)
 
+        val retried = (retry as OfflineMeshGattTransport.Tick.Retry).outbound
+        assertTrue(sender.onRadioWriteComplete(
+            retried.ticket, retried.generation, true, nowMs = 102L
+        ))
+
         val failed = sender.tick(nowMs = 202L)
         assertTrue(failed is OfflineMeshGattTransport.Tick.Interrupted)
         assertEquals(OfflineMeshGattTransport.State.LOCKED, sender.state())

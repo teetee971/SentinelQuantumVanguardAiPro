@@ -18,7 +18,9 @@ class OfflineMeshGattReassemblerTest {
 
         assertFalse(reassembler.accept(fragments[1], nowMs = 10L).complete != null)
         assertFalse(reassembler.accept(fragments[0], nowMs = 20L).complete != null)
-        val completed = reassembler.accept(fragments[2], nowMs = 30L)
+        assertEquals(4, fragments.size)
+        assertFalse(reassembler.accept(fragments[2], nowMs = 30L).complete != null)
+        val completed = reassembler.accept(fragments[3], nowMs = 40L)
 
         assertArrayEquals(expected, completed.complete)
         assertTrue(completed.ack != null)
