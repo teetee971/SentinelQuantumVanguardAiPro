@@ -93,6 +93,9 @@ class VoiceSessionCoordinator(
         } catch (cancelled: CancellationException) {
             cleanupCreatedSession(accessToken, session.sessionId)
             throw cancelled
+        } catch (failure: Exception) {
+            cleanupCreatedSession(accessToken, session.sessionId)
+            Result.failure(failure)
         }
     }
 
