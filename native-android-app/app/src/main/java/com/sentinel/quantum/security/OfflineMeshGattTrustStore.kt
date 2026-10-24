@@ -82,14 +82,14 @@ class OfflineMeshTrustStore(
     }
 
     @Synchronized
-    fun requestApproval(publicKeyX509: ByteArray, nowMs: Long): OfflineMeshTrustRecord {
+    fun requestApproval(publicKeyX509: ByteArray, nowMs: Long): OfflineMeshTrustRecord = withProcessLock {
         val key = validatePublicKey(publicKeyX509)
         val snapshot = readSnapshot()
         val existing = find(snapshot.records, fingerprint(key))
         if (existing?.state == OfflineMeshTrustState.REVOKED) {
             throw PolicyException("REVOKED_IDENTITY_REQUIRES_EXPLICIT_RESET")
         }
-        if (existing != null) return existing
+        if (existing != null) return@withProcessLock existing
         val record = OfflineMeshTrustRecord(
             stableId = fingerprint(key),
             publicKeyX509 = key,
@@ -99,11 +99,11 @@ class OfflineMeshTrustStore(
             version = snapshot.revision + 1
         )
         write(snapshot.copy(revision = snapshot.revision + 1, records = snapshot.records + record))
-        return record
+        return@withProcessLock record
     }
 
     @Synchronized
-    fun approve(stableId: String, nowMs: Long): OfflineMeshTrustRecord {
+    fun approve(stableId: String, nowMs: Long): OfflineMeshTrustRecord = withProcessLock {
         val snapshot = readSnapshot()
         val existing = snapshot.records.singleOrNull { it.stableId == stableId }
             ?: throw PolicyException("UNKNOWN_IDENTITY")
@@ -111,7 +111,7 @@ class OfflineMeshTrustStore(
             throw PolicyException("REVOKED_IDENTITY_REQUIRES_EXPLICIT_RESET")
         }
         if (existing.state != OfflineMeshTrustState.PENDING_APPROVAL) {
-            if (existing.state == OfflineMeshTrustState.TRUSTED) return existing
+            if (existing.state == OfflineMeshTrustState.TRUSTED) return@withProcessLock existing
             throw PolicyException("IDENTITY_NOT_PENDING_APPROVAL")
         }
         val approved = existing.copy(
@@ -120,11 +120,11 @@ class OfflineMeshTrustStore(
             version = snapshot.revision + 1
         )
         write(snapshot.copy(revision = snapshot.revision + 1, records = replace(snapshot.records, approved)))
-        return approved
+        return@withProcessLock approved
     }
 
     @Synchronized
-    fun revoke(stableId: String, nowMs: Long): OfflineMeshTrustRecord {
+    fun revoke(stableId: String, nowMs: Long): OfflineMeshTrustRecord = withProcessLock {
         val snapshot = readSnapshot()
         val existing = snapshot.records.singleOrNull { it.stableId == stableId }
             ?: throw PolicyException("UNKNOWN_IDENTITY")
@@ -135,16 +135,16 @@ class OfflineMeshTrustStore(
             version = snapshot.revision + 1
         )
         write(snapshot.copy(revision = snapshot.revision + 1, records = replace(snapshot.records, revoked)))
-        return revoked
+        return@withProcessLock revoked
     }
 
     /** Explicit operator action required to allow a revoked identity to enroll again. */
     @Synchronized
-    fun resetRevoked(stableId: String, nowMs: Long): OfflineMeshTrustRecord {
+    fun resetRevoked(stableId: String, nowMs: Long): OfflineMeshTrustRecord = withProcessLock {
         val snapshot = readSnapshot()
         val existing = snapshot.records.singleOrNull { it.stableId == stableId }
             ?: throw PolicyException("UNKNOWN_IDENTITY")
-        if (existing.state != OfflineMeshTrustState.REVOKED) return existing
+        if (existing.state != OfflineMeshTrustState.REVOKED) return@withProcessLock existing
         val reset = existing.copy(
             state = OfflineMeshTrustState.PENDING_APPROVAL,
             approvedAtMs = null,
@@ -152,7 +152,7 @@ class OfflineMeshTrustStore(
             version = snapshot.revision + 1
         )
         write(snapshot.copy(revision = snapshot.revision + 1, records = replace(snapshot.records, reset)))
-        return reset
+        return@withProcessLock reset
     }
 
     @Synchronized
@@ -161,7 +161,7 @@ class OfflineMeshTrustStore(
         newPublicKeyX509: ByteArray,
         proof: ByteArray,
         nowMs: Long
-    ): OfflineMeshTrustRecord {
+    ): OfflineMeshTrustRecord = withProcessLock {
         val newKey = validatePublicKey(newPublicKeyX509)
         val snapshot = readSnapshot()
         val existing = snapshot.records.singleOrNull { it.stableId == stableId }
@@ -177,11 +177,11 @@ class OfflineMeshTrustStore(
             version = snapshot.revision + 1
         )
         write(snapshot.copy(revision = snapshot.revision + 1, records = replace(snapshot.records, pending)))
-        return pending
+        return@withProcessLock pending
     }
 
     @Synchronized
-    fun acceptRotation(stableId: String, newPublicKeyX509: ByteArray, nowMs: Long): OfflineMeshTrustRecord {
+    fun acceptRotation(stableId: String, newPublicKeyX509: ByteArray, nowMs: Long): OfflineMeshTrustRecord = withProcessLock {
         val newKey = validatePublicKey(newPublicKeyX509)
         val snapshot = readSnapshot()
         val existing = snapshot.records.singleOrNull { it.stableId == stableId }
@@ -198,7 +198,7 @@ class OfflineMeshTrustStore(
             version = snapshot.revision + 1
         )
         write(snapshot.copy(revision = snapshot.revision + 1, records = replace(snapshot.records, rotated)))
-        return rotated
+        return@withProcessLock rotated
     }
 
     @Synchronized
@@ -330,6 +330,8 @@ class OfflineMeshTrustStore(
     data class Snapshot(val revision: Long, val records: List<OfflineMeshTrustRecord>)
 
     companion object {
+        private val PROCESS_LOCK = Any()
+
         fun fingerprint(publicKeyX509: ByteArray): String =
             MessageDigest.getInstance("SHA-256").digest(publicKeyX509)
                 .joinToString("") { "%02x".format(it.toInt() and 0xff) }
@@ -345,6 +347,8 @@ class OfflineMeshTrustStore(
 
     private fun transitionMessage(fromRevision: Long, toRevision: Long): ByteArray =
         Companion.transitionMessage(fromRevision, toRevision)
+
+    private fun <T> withProcessLock(block: () -> T): T = synchronized(PROCESS_LOCK, block)
 }
 
 private object OfflineMeshTrustCodec {

@@ -90,9 +90,31 @@ class OfflineMeshGattCryptoTest {
         val response2 = requireNotNull(responder2.receive(requireNotNull(initiator2.start())).outbound)
         val finish = requireNotNull(initiator2.receive(response2).outbound)
         assertTrue(responder2.receive(finish).accepted)
-        val envelope = initiator2.encrypt("secret".toByteArray(StandardCharsets.UTF_8), 7L)
+        val envelope = initiator2.encrypt("secret".toByteArray(StandardCharsets.UTF_8), 1L)
         envelope[envelope.lastIndex] = (envelope[envelope.lastIndex].toInt() xor 0x01).toByte()
         assertNull(responder2.decrypt(envelope))
+    }
+
+    @Test
+    fun encryptRejectsNonceCounterReuseWithinOneSession() {
+        val initiatorKeys = ecKeyPair()
+        val responderKeys = ecKeyPair()
+        val initiator = OfflineMeshGattCryptoSession(
+            OfflineMeshGattCryptoSession.Role.INITIATOR,
+            identity(initiatorKeys, responderKeys)
+        )
+        val responder = OfflineMeshGattCryptoSession(
+            OfflineMeshGattCryptoSession.Role.RESPONDER,
+            identity(responderKeys, initiatorKeys)
+        )
+        val response = requireNotNull(responder.receive(requireNotNull(initiator.start())).outbound)
+        val finish = requireNotNull(initiator.receive(response).outbound)
+        assertTrue(responder.receive(finish).accepted)
+
+        initiator.encrypt("first".toByteArray(StandardCharsets.UTF_8), 1L)
+        assertThrows(IllegalArgumentException::class.java) {
+            initiator.encrypt("reused".toByteArray(StandardCharsets.UTF_8), 1L)
+        }
     }
 
     @Test

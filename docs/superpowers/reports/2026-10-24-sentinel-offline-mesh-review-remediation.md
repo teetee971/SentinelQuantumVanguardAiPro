@@ -27,6 +27,8 @@ nouveau comportement fail-closed.
 
 - Test ajouté observé rouge avant implémentation : API de marqueur absente.
 - `:app:testDebugUnitTest` : `BUILD SUCCESSFUL`, 1 404 tests, 0 échec.
+- Après les durcissements complémentaires : `:app:testDebugUnitTest` reste vert,
+  avec 1 406 tests et 0 échec.
 - `:app:assembleDebug` : `BUILD SUCCESSFUL`.
 - `:app:compileDebugAndroidTestKotlin` : `BUILD SUCCESSFUL`.
 - `git diff --check` : succès.
@@ -37,12 +39,12 @@ BLE radio.
 
 ## Limites restantes
 
-- Les écritures concurrentes entre plusieurs instances/processus utilisant le
-  même fichier doivent encore recevoir un test dédié et un verrouillage
-  inter-instance explicite.
-- `OfflineMeshGattCryptoSession.encrypt()` accepte toujours un compteur fourni
-  par l'appelant ; le transport sécurisé lui-même impose son compteur, mais
-  l'API devrait empêcher toute réutilisation accidentelle de nonce.
+- Les mutations entre plusieurs instances du magasin dans le même processus
+  sont maintenant sérialisées et couvertes par un test déterministe. Un
+  verrouillage inter-processus n'est pas ajouté, l'application ne déclarant
+  aucun composant dans un processus Android distinct.
+- `OfflineMeshGattCryptoSession.encrypt()` impose maintenant un compteur
+  strictement monotone par session et rejette toute réutilisation de nonce.
 - La revue cryptographique indépendante, les tests instrumentés et les essais
   sur deux appareils BLE restent nécessaires.
 

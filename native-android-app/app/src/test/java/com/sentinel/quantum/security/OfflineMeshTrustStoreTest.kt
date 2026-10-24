@@ -4,6 +4,8 @@ import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.Signature
 import java.security.spec.ECGenParameterSpec
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import org.junit.Assert.assertEquals
@@ -228,8 +230,31 @@ class OfflineMeshTrustStoreTest {
         assertNotNull(records.single().stableId)
     }
 
+    @Test
+    fun concurrentMutationsAcrossStoreInstancesPreserveBothPeers() {
+        val backend = ConcurrentBackend()
+        val keyRing = KeyRing()
+        val firstStore = store(backend, keyRing)
+        val secondStore = store(backend, keyRing)
+        val firstKey = ecKeyPair()
+        val secondKey = ecKeyPair()
+        val first = Thread { firstStore.requestApproval(firstKey.public.encoded, 130L) }
+        val second = Thread { secondStore.requestApproval(secondKey.public.encoded, 131L) }
+
+        first.start()
+        assertTrue(backend.firstWriteStarted.await(5, TimeUnit.SECONDS))
+        second.start()
+        backend.allowFirstWrite.countDown()
+        first.join(5_000L)
+        second.join(5_000L)
+
+        assertFalse(first.isAlive)
+        assertFalse(second.isAlive)
+        assertEquals(2, firstStore.records().size)
+    }
+
     private fun store(
-        backend: MemoryBackend = MemoryBackend(),
+        backend: OfflineMeshTrustBackend = MemoryBackend(),
         keyRing: KeyRing = KeyRing()
     ) = OfflineMeshTrustStore(backend, keyRing)
 
@@ -263,6 +288,31 @@ class OfflineMeshTrustStoreTest {
             pending = null
             return true
         }
+    }
+
+    private class ConcurrentBackend : OfflineMeshTrustBackend {
+        val firstWriteStarted = CountDownLatch(1)
+        val allowFirstWrite = CountDownLatch(1)
+        private var entry: OfflineMeshTrustBackend.Entry? = null
+
+        override fun read(): OfflineMeshTrustBackend.Entry? {
+            return entry?.copy(mac = entry!!.mac.copyOf())
+        }
+
+        override fun write(payload: String, mac: ByteArray, keyRevision: Long): Boolean {
+            if (firstWriteStarted.count == 1L) {
+                firstWriteStarted.countDown()
+                allowFirstWrite.await(5, TimeUnit.SECONDS)
+            }
+            entry = OfflineMeshTrustBackend.Entry(payload, mac.copyOf(), keyRevision)
+            return true
+        }
+
+        override fun readPending(): OfflineMeshTrustBackend.Pending? = null
+
+        override fun writePending(fromRevision: Long, toRevision: Long, mac: ByteArray): Boolean = true
+
+        override fun clearPending(): Boolean = true
     }
 
     private class KeyRing : OfflineMeshTrustKeyRing {

@@ -111,6 +111,7 @@ class OfflineMeshGattCryptoSession(
     private var transcript: ByteArray? = null
     private var sendKey: ByteArray? = null
     private var receiveKey: ByteArray? = null
+    private var nextSendCounter = 1L
     private var peerPublicX509: ByteArray? = null
     private val receivedCounters = HashSet<Long>()
 
@@ -154,7 +155,12 @@ class OfflineMeshGattCryptoSession(
 
     @Synchronized fun encrypt(plaintext: ByteArray, counter: Long): ByteArray {
         check(isEstablished()) { "GATT crypto session is not authenticated" }
-        require(counter > 0L && plaintext.isNotEmpty() && plaintext.size <= MAX_PLAINTEXT)
+        require(
+            counter == nextSendCounter &&
+                counter < Long.MAX_VALUE &&
+                plaintext.isNotEmpty() &&
+                plaintext.size <= MAX_PLAINTEXT
+        ) { "AES-GCM send counter must be strictly monotonic" }
         val key = requireNotNull(sendKey)
         val nonce = nonce(counter, direction = true)
         val aad = aad(counter, direction = true)
@@ -163,6 +169,7 @@ class OfflineMeshGattCryptoSession(
             updateAAD(aad)
             doFinal(plaintext.copyOf())
         }
+        nextSendCounter = counter + 1L
         return ByteBuffer.allocate(ENVELOPE_HEADER + cipherText.size).order(ByteOrder.BIG_ENDIAN)
             .put(ENVELOPE_VERSION.toByte()).putLong(counter).put(cipherText).array()
     }
@@ -201,6 +208,7 @@ class OfflineMeshGattCryptoSession(
         transcript = null
         sendKey = null
         receiveKey = null
+        nextSendCounter = 1L
         peerPublicX509 = null
         receivedCounters.clear()
     }
