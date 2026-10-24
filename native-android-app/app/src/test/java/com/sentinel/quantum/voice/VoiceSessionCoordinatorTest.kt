@@ -152,6 +152,54 @@ class VoiceSessionCoordinatorTest {
         }
     }
 
+    @Test
+    fun failedRemoteCloseBlocksReconnectUntilExplicitRetry() = runBlocking {
+        val api = RetriableCloseSessionApi()
+        val coordinator = VoiceSessionCoordinator(api, FakeSessionTransport())
+        val request = VoiceSessionRequest("demo-room", "device-1", "1.0.6")
+
+        assertTrue(coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP).isSuccess)
+        assertTrue(coordinator.disconnect().isFailure)
+        assertFalse(coordinator.isConnected())
+
+        val blocked = coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP)
+        assertTrue(blocked.isFailure)
+        assertEquals("VOICE_REMOTE_CLOSE_PENDING", blocked.exceptionOrNull()?.message)
+        assertEquals(1, api.createCalls)
+
+        api.allowClose = true
+        assertTrue(coordinator.disconnect().isSuccess)
+        assertEquals(2, api.closeCalls)
+        assertTrue(coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP).isSuccess)
+        assertEquals(2, api.createCalls)
+    }
+
+    private class RetriableCloseSessionApi : VoiceSessionApi {
+        private val delegate = FakeSessionApi()
+        var createCalls = 0
+        var closeCalls = 0
+        var allowClose = false
+
+        override fun createSession(
+            accessToken: String,
+            request: VoiceSessionRequest,
+            idempotencyKey: String
+        ): Result<VoiceSession> {
+            createCalls++
+            return delegate.createSession(accessToken, request, idempotencyKey)
+        }
+
+        override fun closeSession(
+            accessToken: String,
+            sessionId: String,
+            idempotencyKey: String
+        ): Result<Unit> {
+            closeCalls++
+            return if (allowClose) Result.success(Unit)
+                else Result.failure(IllegalStateException("REMOTE_CLOSE_FAILED"))
+        }
+    }
+
     private class FakeSessionApi : VoiceSessionApi {
         var createCalls = 0
         var closeCalls = 0
