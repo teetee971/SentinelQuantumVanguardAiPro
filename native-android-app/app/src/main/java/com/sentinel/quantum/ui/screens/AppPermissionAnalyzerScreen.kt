@@ -35,6 +35,8 @@ import com.sentinel.quantum.data.PermissionRiskLevel
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelMetricCard
+import com.sentinel.quantum.ui.design.SentinelStatus
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelStatusChip
@@ -241,21 +243,45 @@ private fun PermissionSummaryCard(profiles: List<InstalledAppPermissionProfile>)
         profile.permissions.any { it.riskLevel == PermissionRiskLevel.HIGH_RISK }
     }
 
-    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Text(
-            text = "Synthèse locale",
-            style = MaterialTheme.typography.titleMedium,
+            text = "Applications sous surveillance",
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-        SummaryRow("Applications analysées", profiles.size.toString())
-        SummaryRow("Heuristiques de permissions élevées", highRiskApps.toString())
-        SummaryRow("Applications avec permissions sensibles", sensitiveApps.toString())
-        Text(
-            text = "Ces compteurs décrivent des permissions déclarées. Ils ne représentent ni des virus détectés, ni des malwares bloqués, ni des éléments placés en quarantaine.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            SentinelMetricCard(
+                label = "Applications visibles",
+                value = profiles.size.toString(),
+                status = SentinelStatus.UNKNOWN,
+                modifier = Modifier.weight(1f)
+            )
+            SentinelMetricCard(
+                label = "Permissions à examiner",
+                value = highRiskApps.toString(),
+                status = if (highRiskApps > 0) SentinelStatus.WARN else SentinelStatus.UNKNOWN,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Analyse locale des permissions",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            SummaryRow("Applications avec permissions sensibles", sensitiveApps.toString())
+            Text(
+                text = "Les niveaux de risque sont des heuristiques de permissions, pas des preuves de malware. Android peut limiter la liste des applications visibles.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
