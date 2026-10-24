@@ -133,6 +133,8 @@ class VoiceSessionCoordinator(
         } catch (cancelled: CancellationException) {
             cancellation = cancelled
             Result.failure(cancelled)
+        } catch (failure: Exception) {
+            Result.failure(failure)
         }
 
         val (transportResult, remoteResult) = withContext(NonCancellable) {
