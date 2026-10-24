@@ -1,10 +1,12 @@
 package com.sentinel.quantum.ui.design
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
@@ -59,6 +61,7 @@ fun SentinelHeroVisual(
             .heightIn(min = 300.dp)
             .wrapContentHeight()
             .clip(shape)
+            .border(1.dp, accent.copy(alpha = 0.30f), shape)
             .background(
                 brush = Brush.radialGradient(
                     colors = listOf(accent.copy(alpha = 0.18f), SentinelD1.Panel, SentinelD1.Background)
@@ -79,10 +82,13 @@ fun SentinelHeroVisual(
             accent = accent
         )
         Column(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            SentinelStatusChip(status = status)
             Surface(
                 modifier = Modifier.size(82.dp),
                 shape = CircleShape,
@@ -101,15 +107,16 @@ fun SentinelHeroVisual(
                 text = title,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
             Text(
                 text = subtitle,
                 fontSize = SentinelVisualTokens.BodyTextSp.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp)
             )
-            SentinelStatusChip(status = status)
         }
     }
 }
