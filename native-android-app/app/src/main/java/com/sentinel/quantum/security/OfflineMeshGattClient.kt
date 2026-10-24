@@ -31,6 +31,7 @@ class OfflineMeshGattClient(context: Context) {
     private var watchdog: Runnable? = null
     private var subscriptionDescriptor: android.bluetooth.BluetoothGattDescriptor? = null
     private var subscribed = false
+    private var subscriptionPending = false
 
     fun notificationsSubscribed(): Boolean = mainThread() && subscribed
 
@@ -122,6 +123,7 @@ class OfflineMeshGattClient(context: Context) {
                                 terminate("NOTIFY_ENABLE_FAILED")
                                 return@post
                             }
+                            subscriptionPending = true
                             val started = if (Build.VERSION.SDK_INT >= 33) {
                                 client.writeDescriptor(
                                     descriptor,
@@ -150,11 +152,12 @@ class OfflineMeshGattClient(context: Context) {
             ) {
                 main.post {
                     if (session != epoch || client !== gatt) return@post
-                    if (descriptor !== subscriptionDescriptor ||
-                        status != BluetoothGatt.GATT_SUCCESS || subscribed) {
+                    if (!subscriptionPending || descriptor !== subscriptionDescriptor ||
+                        status != BluetoothGatt.GATT_SUCCESS || subscribed || !permitted()) {
                         terminate("CCCD_WRITE_FAILED")
                         return@post
                     }
+                    subscriptionPending = false
                     subscribed = true
                     watchdog?.let(main::removeCallbacks)
                     watchdog = null
@@ -196,6 +199,7 @@ class OfflineMeshGattClient(context: Context) {
         gate.close()
         subscriptionDescriptor = null
         subscribed = false
+        subscriptionPending = false
         watchdog?.let(main::removeCallbacks)
         watchdog = null
         val old = gatt
