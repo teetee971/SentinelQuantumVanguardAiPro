@@ -259,7 +259,10 @@ class SentinelVpnController(
             require(expected.isNotEmpty()) { "Gateway DNS pin set is empty" }
 
             val configured = config.getInterface().getDnsServers()
-                .map { it.hostAddress.substringBefore('%').lowercase() }
+                .map { address ->
+                    requireNotNull(address.hostAddress) { "Tunnel DNS address unavailable" }
+                        .substringBefore('%').lowercase()
+                }
                 .toSet()
             require(configured.isNotEmpty()) { "Tunnel DNS set is empty" }
             require(configured.all { it in expected }) {
@@ -277,7 +280,8 @@ class SentinelVpnController(
             require(ipv4Literal || ipv6Literal) { "DNS address must be a numeric IP literal" }
 
             val parsed = InetAddress.getByName(value)
-            val canonical = parsed.hostAddress.substringBefore('%').lowercase()
+            val canonical = requireNotNull(parsed.hostAddress) { "DNS address unavailable" }
+                .substringBefore('%').lowercase()
             if (ipv4Literal) {
                 require(parsed.address.size == 4) { "Invalid IPv4 DNS address" }
             } else {
