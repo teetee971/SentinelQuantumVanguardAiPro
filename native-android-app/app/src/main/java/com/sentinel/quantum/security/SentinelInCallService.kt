@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Intent
+import android.content.ActivityNotFoundException
 import android.os.Build
 import android.os.IBinder
 import android.os.Handler
@@ -20,22 +21,141 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
+ * Identity- and lifecycle-scoped state for evidence writes owned by the in-call service.
+ *
+ * A completion token is valid only for the exact call object, call generation, service
+ * lifecycle and write attempt that created it. This lets a storage coroutine finish without
+ * being able to resurrect state after onCallRemoved() or onDestroy().
+ */
+internal class InCallEvidenceTracker<K : Any> {
+    enum class Kind { INCOMING_NOTIFICATION, CONNECTED }
+
+    enum class Completion { APPLIED, STALE }
+
+    class Token<K : Any> internal constructor(
+        internal val call: K,
+        internal val callGeneration: Long,
+        internal val lifecycleGeneration: Long,
+        internal val kind: Kind,
+        internal val attempt: Long
+    )
+
+    private class Entry(val generation: Long) {
+        var incomingRecorded = false
+        var incomingAttempt: Long? = null
+        var connectedRecorded = false
+        var connectedAttempt: Long? = null
+    }
+
+    private val entries = java.util.IdentityHashMap<K, Entry>()
+    private var nextCallGeneration = 0L
+    private var nextAttempt = 0L
+    private var lifecycleGeneration = 0L
+    private var active = true
+
+    @Synchronized
+    fun track(call: K) {
+        if (active && !entries.containsKey(call)) {
+            entries[call] = Entry(++nextCallGeneration)
+        }
+    }
+
+    @Synchronized
+    fun remove(call: K) {
+        entries.remove(call)
+    }
+
+    @Synchronized
+    fun destroy() {
+        active = false
+        lifecycleGeneration++
+        entries.clear()
+    }
+
+    @Synchronized
+    fun begin(call: K, kind: Kind): Token<K>? {
+        if (!active) return null
+        val entry = entries[call] ?: return null
+        if (isRecorded(entry, kind) || isInFlight(entry, kind)) return null
+
+        val attempt = ++nextAttempt
+        setAttempt(entry, kind, attempt)
+        return Token(call, entry.generation, lifecycleGeneration, kind, attempt)
+    }
+
+    @Synchronized
+    fun complete(token: Token<K>, stored: Boolean): Completion {
+        val entry = entries[token.call]
+        if (
+            !active ||
+            entry == null ||
+            entry.generation != token.callGeneration ||
+            lifecycleGeneration != token.lifecycleGeneration ||
+            attempt(entry, token.kind) != token.attempt
+        ) return Completion.STALE
+
+        setAttempt(entry, token.kind, null)
+        if (stored) setRecorded(entry, token.kind)
+        return Completion.APPLIED
+    }
+
+    @Synchronized
+    fun isRecorded(call: K, kind: Kind): Boolean =
+        entries[call]?.let { isRecorded(it, kind) } == true
+
+    @Synchronized
+    fun isInFlight(call: K, kind: Kind): Boolean = entries[call]?.let { isInFlight(it, kind) } == true
+
+    private fun isRecorded(entry: Entry, kind: Kind): Boolean = when (kind) {
+        Kind.INCOMING_NOTIFICATION -> entry.incomingRecorded
+        Kind.CONNECTED -> entry.connectedRecorded
+    }
+
+    private fun isInFlight(entry: Entry, kind: Kind): Boolean = when (kind) {
+        Kind.INCOMING_NOTIFICATION -> entry.incomingAttempt != null
+        Kind.CONNECTED -> entry.connectedAttempt != null
+    }
+
+    private fun attempt(entry: Entry, kind: Kind): Long? = when (kind) {
+        Kind.INCOMING_NOTIFICATION -> entry.incomingAttempt
+        Kind.CONNECTED -> entry.connectedAttempt
+    }
+
+    private fun setAttempt(entry: Entry, kind: Kind, attempt: Long?) {
+        when (kind) {
+            Kind.INCOMING_NOTIFICATION -> entry.incomingAttempt = attempt
+            Kind.CONNECTED -> entry.connectedAttempt = attempt
+        }
+    }
+
+    private fun setRecorded(entry: Entry, kind: Kind) {
+        when (kind) {
+            Kind.INCOMING_NOTIFICATION -> entry.incomingRecorded = true
+            Kind.CONNECTED -> entry.connectedRecorded = true
+        }
+    }
+}
+
+/** Only an explicit Telecom foreground request is allowed to request an activity launch. */
+internal object InCallActivityLaunchPolicy {
+    enum class Trigger {
+        TELECOM_BRING_TO_FOREGROUND,
+        CALL_ADDED,
+        INCOMING_NOTIFICATION_FALLBACK
+    }
+
+    fun shouldRequest(trigger: Trigger, hasActiveCall: Boolean): Boolean =
+        hasActiveCall && trigger == Trigger.TELECOM_BRING_TO_FOREGROUND
+}
+
+internal enum class InCallActivityLaunchResult { NOT_REQUESTED, REQUESTED, FAILED }
+
+/**
  * ROLE_DIALER in-call foundation. Exposes only bounded call state/actions to Sentinel UI;
  * the Telecom Call object remains owned by this service.
  */
 class SentinelInCallService : InCallService() {
-    private val connectedEvidenceRecorded = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
-    private val incomingNotificationEvidenceRecorded = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
-    private val connectedEvidenceInFlight = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
-    private val incomingNotificationEvidenceInFlight = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
+    private val evidenceTracker = InCallEvidenceTracker<Call>()
     private val timelineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var currentDirection = "UNKNOWN"
 
@@ -81,10 +201,13 @@ class SentinelInCallService : InCallService() {
 
     override fun onUnbind(intent: Intent): Boolean {
         if (registry.detach(this)) {
-            trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+            trackedCalls.toList().forEach {
+                evidenceTracker.remove(it)
+                it.unregisterCallback(callback)
+            }
             trackedCalls.clear()
             callIds.clear()
-        callDirections.clear()
+            callDirections.clear()
             currentCall = null
             activeService = null
             currentDirection = "UNKNOWN"
@@ -98,7 +221,9 @@ class SentinelInCallService : InCallService() {
     private fun synchronizePlatformCalls() {
         if (activeService !== this) return
         calls.forEach { call ->
-            if (trackedCalls.add(call)) {
+            val newCall = trackedCalls.add(call)
+            evidenceTracker.track(call)
+            if (newCall) {
                 callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
                 call.registerCallback(callback, Handler(Looper.getMainLooper()))
             }
@@ -109,19 +234,19 @@ class SentinelInCallService : InCallService() {
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         trackedCalls.add(call)
+        evidenceTracker.track(call)
         if (!callIds.containsKey(call)) {
             callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
         }
         call.registerCallback(callback, Handler(Looper.getMainLooper()))
         initializeAudioState()
         refreshForegroundCall()
-        if (call.state != Call.STATE_RINGING) showInCallActivity()
     }
 
     override fun onBringToForeground(showDialpad: Boolean) {
         super.onBringToForeground(showDialpad)
         synchronizePlatformCalls()
-        showInCallActivity()
+        showInCallActivity(InCallActivityLaunchPolicy.Trigger.TELECOM_BRING_TO_FOREGROUND)
     }
 
     override fun onDestroy() {
@@ -134,10 +259,7 @@ class SentinelInCallService : InCallService() {
             currentCall = null
             activeService = null
         }
-        connectedEvidenceRecorded.clear()
-        incomingNotificationEvidenceRecorded.clear()
-        connectedEvidenceInFlight.clear()
-        incomingNotificationEvidenceInFlight.clear()
+        evidenceTracker.destroy()
         timelineScope.cancel()
         currentDirection = "UNKNOWN"
         clearAudioState()
@@ -150,10 +272,7 @@ class SentinelInCallService : InCallService() {
         trackedCalls.remove(call)
         callIds.remove(call)
         callDirections.remove(call)
-        connectedEvidenceRecorded.remove(call)
-        incomingNotificationEvidenceRecorded.remove(call)
-        connectedEvidenceInFlight.remove(call)
-        incomingNotificationEvidenceInFlight.remove(call)
+        evidenceTracker.remove(call)
         if (activeService !== this) {
             super.onCallRemoved(call)
             return
@@ -191,7 +310,6 @@ class SentinelInCallService : InCallService() {
         currentSnapshot()?.let { snapshot ->
             val posted = SentinelCallNotificationHelper.showIncoming(this, snapshot)
             if (posted) recordIncomingNotificationEvidence()
-            else showInCallActivity()
         }
     }
 
@@ -241,10 +359,10 @@ class SentinelInCallService : InCallService() {
 
     private fun recordIncomingNotificationEvidence() {
         val call = currentCall ?: return
-        if (
-            incomingNotificationEvidenceRecorded.contains(call) ||
-            !incomingNotificationEvidenceInFlight.add(call)
-        ) return
+        val token = evidenceTracker.begin(
+            call,
+            InCallEvidenceTracker.Kind.INCOMING_NOTIFICATION
+        ) ?: return
 
         timelineScope.launch {
             val stored = runCatching {
@@ -264,15 +382,47 @@ class SentinelInCallService : InCallService() {
                 )
             }.getOrDefault(false)
 
-            incomingNotificationEvidenceInFlight.remove(call)
-            if (stored) incomingNotificationEvidenceRecorded.add(call)
+            evidenceTracker.complete(token, stored)
         }
     }
 
-    private fun showInCallActivity() {
-        startActivity(
-            Intent(this, SentinelInCallActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    /**
+     * Telecom calls this only when it explicitly asks the in-call service to come forward.
+     * REQUESTED means Android accepted startActivity(); it is not proof that the activity was
+     * rendered. Incoming calls use the notification's full-screen PendingIntent instead of a
+     * background-service fallback.
+     */
+    private fun showInCallActivity(
+        trigger: InCallActivityLaunchPolicy.Trigger
+    ): InCallActivityLaunchResult {
+        if (!InCallActivityLaunchPolicy.shouldRequest(trigger, currentCall != null)) {
+            return InCallActivityLaunchResult.NOT_REQUESTED
+        }
+
+        return try {
+            startActivity(
+                Intent(this, SentinelInCallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+            InCallActivityLaunchResult.REQUESTED
+        } catch (error: ActivityNotFoundException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        } catch (error: SecurityException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        } catch (error: RuntimeException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        }
+    }
+
+    private fun logActivityLaunchFailure(error: RuntimeException) {
+        LocalLogger(this).log(
+            LocalLogger.LogLevel.WARNING,
+            "InCall",
+            "Android a refusé le lancement de l’interface d’appel (" +
+                error::class.java.simpleName + ") ; le service téléphonique continue"
         )
     }
 
@@ -422,6 +572,7 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun publish(call: Call) {
+        evidenceTracker.track(call)
         if (currentDirection == "UNKNOWN") currentDirection = resolveDirection(call)
         registry.publish(
             this,
@@ -429,13 +580,10 @@ class SentinelInCallService : InCallService() {
             trackedCalls.sortedBy { callPriority(it.state) }.mapNotNull(::snapshotFor)
         )
 
-        if (
-            call.state == Call.STATE_ACTIVE &&
-            !connectedEvidenceRecorded.contains(call) &&
-            currentDirection in setOf("INCOMING", "OUTGOING") &&
-            connectedEvidenceInFlight.add(call)
-        ) {
-            val evidenceDirection = currentDirection
+        val evidenceDirection = resolveDirection(call)
+        if (call.state == Call.STATE_ACTIVE && evidenceDirection in setOf("INCOMING", "OUTGOING")) {
+            val token = evidenceTracker.begin(call, InCallEvidenceTracker.Kind.CONNECTED)
+                ?: return
             timelineScope.launch {
                 val stored = runCatching {
                     PhonePrivateTimelineStore(this@SentinelInCallService).append(
@@ -454,8 +602,7 @@ class SentinelInCallService : InCallService() {
                     )
                 }.getOrDefault(false)
 
-                connectedEvidenceInFlight.remove(call)
-                if (stored) connectedEvidenceRecorded.add(call)
+                evidenceTracker.complete(token, stored)
             }
         }
     }
