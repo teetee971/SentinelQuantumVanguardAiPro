@@ -105,6 +105,40 @@ class SentinelVpnControllerTest {
         )
     }
 
+    @Test
+    fun canonicalizesNumericDnsLiterals() {
+        assertEquals("10.73.0.1", SentinelVpnController.canonicalizeNumericIp("10.73.0.1"))
+        assertEquals("fd73:0:0:0:0:0:0:1", SentinelVpnController.canonicalizeNumericIp("fd73::1"))
+    }
+
+    @Test
+    fun rejectsInvalidDnsLiteralsWithoutResolvingHostnames() {
+        for (input in listOf(
+            "resolver.example", "10.73.0.999", " 10.73.0.1", "10.73.0.1 ",
+            "2001:db8::zz", "", "1.1.1.1%eth0"
+        )) {
+            assertThrows("Must reject DNS literal: $input", IllegalArgumentException::class.java) {
+                SentinelVpnController.canonicalizeNumericIp(input)
+            }
+        }
+    }
+
+    @Test
+    fun rejectsDnsPinnedToUnavailableGateway() {
+        val config = SentinelVpnController.parseAndValidateFullTunnelConfig(
+            validConfig("0.0.0.0/0, ::/0", dns = "10.73.0.1").toByteArray()
+        )
+        val gateway = SentinelVpnController.GatewayDescriptor(
+            id = "fr-par-01",
+            countryCode = "FR",
+            status = SentinelVpnController.GatewayStatus.OFFLINE,
+            dnsServerAddresses = setOf("10.73.0.1")
+        )
+        assertThrows(IllegalArgumentException::class.java) {
+            SentinelVpnController.validateGatewayDns(config, gateway)
+        }
+    }
+
     private fun validConfig(allowedIps: String, dns: String = "1.1.1.1"): String = """
         [Interface]
         PrivateKey = AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=
