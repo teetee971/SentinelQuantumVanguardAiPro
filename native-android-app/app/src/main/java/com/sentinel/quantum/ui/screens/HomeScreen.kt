@@ -6,8 +6,10 @@ import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
@@ -60,6 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.testTag
@@ -353,6 +357,18 @@ private fun HomeModuleCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val accent = when (module.status) {
+        SentinelStatus.OK -> SentinelD1.Success
+        SentinelStatus.WARN, SentinelStatus.LIMITED -> SentinelD1.Warning
+        SentinelStatus.BAD -> SentinelD1.Danger
+        else -> SentinelD1.Unknown
+    }
+    val symbol = when (module.id) {
+        HomeModuleId.PHONE_CORE -> Icons.Default.Phone
+        HomeModuleId.VPN -> Icons.Default.VpnLock
+        HomeModuleId.NETWORK -> Icons.Default.Wifi
+        HomeModuleId.COLLECTIVE_DEFENSE -> Icons.Default.Security
+    }
     SentinelGlassCard(
         modifier = modifier
             .fillMaxWidth()
@@ -360,19 +376,42 @@ private fun HomeModuleCard(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(module.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .background(
+                        Brush.radialGradient(
+                            listOf(accent.copy(alpha = 0.30f), accent.copy(alpha = 0.06f))
+                        ),
+                        CircleShape
+                    )
+                    .padding(13.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = symbol,
+                    contentDescription = null,
+                    tint = accent
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
-                    module.detail,
+                    text = module.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                SentinelStatusChip(module.status)
+                Text(
+                    text = module.detail,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Spacer(Modifier.width(12.dp))
-            SentinelStatusChip(module.status)
         }
     }
 }
