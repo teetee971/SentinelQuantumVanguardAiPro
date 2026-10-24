@@ -279,7 +279,16 @@ class SentinelVpnController(
                 value.matches(Regex("""[0-9A-Fa-f:.]+"""))
             require(ipv4Literal || ipv6Literal) { "DNS address must be a numeric IP literal" }
 
-            val parsed = InetAddress.getByName(value)
+            if (ipv4Literal) {
+                require(value.split('.').all { octet -> octet.toIntOrNull() in 0..255 }) {
+                    "Invalid IPv4 DNS address"
+                }
+            }
+            val parsed = try {
+                InetAddress.getByName(value)
+            } catch (_: java.net.UnknownHostException) {
+                throw IllegalArgumentException("Invalid numeric DNS address")
+            }
             val canonical = requireNotNull(parsed.hostAddress) { "DNS address unavailable" }
                 .substringBefore('%').lowercase()
             if (ipv4Literal) {
