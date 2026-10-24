@@ -38,9 +38,13 @@ data class OfflineMeshTrustRecord(
 
 interface OfflineMeshTrustBackend {
     data class Entry(val payload: String, val mac: ByteArray, val keyRevision: Long)
+    data class Pending(val fromRevision: Long, val toRevision: Long, val mac: ByteArray)
 
     fun read(): Entry?
     fun write(payload: String, mac: ByteArray, keyRevision: Long): Boolean
+    fun readPending(): Pending?
+    fun writePending(fromRevision: Long, toRevision: Long, mac: ByteArray): Boolean
+    fun clearPending(): Boolean
 }
 
 interface OfflineMeshTrustKeyRing {
@@ -220,6 +224,11 @@ class OfflineMeshTrustStore(
         observe(publicKeyX509, 0L)
 
     private fun readSnapshot(): Snapshot {
+        try {
+            require(backend.readPending() == null) { "OFFLINE_MESH_TRUST_TRANSITION_PENDING" }
+        } catch (error: Throwable) {
+            throw StorageException("OFFLINE_MESH_TRUST_STORAGE_INVALID", error)
+        }
         val entry = try {
             backend.read()
         } catch (error: Throwable) {
@@ -249,13 +258,26 @@ class OfflineMeshTrustStore(
         require(snapshot.revision > 0L) { "OFFLINE_MESH_TRUST_REVISION_INVALID" }
         val payload = OfflineMeshTrustCodec.encode(snapshot)
         val ok = try {
+            val previousRevision = snapshot.revision - 1L
+            if (previousRevision > 0L) {
+                val transitionMac = keyRing.mac(
+                    previousRevision,
+                    transitionMessage(previousRevision, snapshot.revision)
+                )
+                require(
+                    backend.writePending(previousRevision, snapshot.revision, transitionMac)
+                ) { "OFFLINE_MESH_TRUST_TRANSITION_MARK_FAILED" }
+            }
             require(keyRing.createKey(snapshot.revision)) { "OFFLINE_MESH_TRUST_KEY_CREATE_FAILED" }
             val mac = keyRing.mac(snapshot.revision, payload.toByteArray(StandardCharsets.UTF_8))
-            val previousRevision = snapshot.revision - 1L
             if (previousRevision > 0L) {
                 require(keyRing.deleteKey(previousRevision)) { "OFFLINE_MESH_TRUST_KEY_DELETE_FAILED" }
             }
-            backend.write(payload, mac, snapshot.revision)
+            require(backend.write(payload, mac, snapshot.revision)) {
+                "OFFLINE_MESH_TRUST_STORAGE_WRITE_FAILED"
+            }
+            require(backend.clearPending()) { "OFFLINE_MESH_TRUST_TRANSITION_CLEAR_FAILED" }
+            true
         } catch (error: Throwable) {
             throw StorageException("OFFLINE_MESH_TRUST_STORAGE_WRITE_FAILED", error)
         }
@@ -314,7 +336,15 @@ class OfflineMeshTrustStore(
 
         fun rotationMessage(newPublicKeyX509: ByteArray): ByteArray =
             "sentinel-offline-mesh-key-rotation-v1".toByteArray(StandardCharsets.US_ASCII) + newPublicKeyX509
+
+        private fun transitionMessage(fromRevision: Long, toRevision: Long): ByteArray =
+            "sentinel-offline-mesh-trust-transition-v1".toByteArray(StandardCharsets.US_ASCII) +
+                fromRevision.toString().toByteArray(StandardCharsets.US_ASCII) +
+                byteArrayOf(0) + toRevision.toString().toByteArray(StandardCharsets.US_ASCII)
     }
+
+    private fun transitionMessage(fromRevision: Long, toRevision: Long): ByteArray =
+        Companion.transitionMessage(fromRevision, toRevision)
 }
 
 private object OfflineMeshTrustCodec {
@@ -397,6 +427,8 @@ class OfflineMeshGattAndroidTrustStore(context: Context) {
 }
 
 private class FileBackend(private val file: File) : OfflineMeshTrustBackend {
+    private val pendingFile = File(file.parentFile, "${file.name}.pending")
+
     override fun read(): OfflineMeshTrustBackend.Entry? {
         if (!file.exists()) return null
         val lines = file.readText(StandardCharsets.UTF_8).split('\n')
@@ -430,6 +462,42 @@ private class FileBackend(private val file: File) : OfflineMeshTrustBackend {
             false
         }
     }
+
+    override fun readPending(): OfflineMeshTrustBackend.Pending? {
+        if (!pendingFile.exists()) return null
+        val lines = pendingFile.readText(StandardCharsets.UTF_8).split('\n')
+        require(lines.size == 3 && lines.all(String::isNotEmpty))
+        return OfflineMeshTrustBackend.Pending(
+            lines[0].toLong(),
+            lines[1].toLong(),
+            java.util.Base64.getDecoder().decode(lines[2])
+        )
+    }
+
+    override fun writePending(
+        fromRevision: Long,
+        toRevision: Long,
+        mac: ByteArray
+    ): Boolean {
+        require(fromRevision > 0L && toRevision == fromRevision + 1L)
+        val temporary = File(pendingFile.parentFile, "${pendingFile.name}.tmp")
+        return try {
+            FileOutputStream(temporary).use { output ->
+                output.write(
+                    "$fromRevision\n$toRevision\n${java.util.Base64.getEncoder().encodeToString(mac)}"
+                        .toByteArray(StandardCharsets.UTF_8)
+                )
+                output.fd.sync()
+            }
+            Os.rename(temporary.absolutePath, pendingFile.absolutePath)
+            true
+        } catch (_: Throwable) {
+            temporary.delete()
+            false
+        }
+    }
+
+    override fun clearPending(): Boolean = !pendingFile.exists() || pendingFile.delete()
 }
 
 private class AndroidKeyStoreTrustKeyRing : OfflineMeshTrustKeyRing {

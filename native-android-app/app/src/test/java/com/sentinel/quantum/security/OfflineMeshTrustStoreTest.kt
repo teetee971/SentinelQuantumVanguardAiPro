@@ -137,6 +137,23 @@ class OfflineMeshTrustStoreTest {
     }
 
     @Test
+    fun crashBeforeRetiringOldKeyCannotRestoreTheOldTrustedState() {
+        val backend = MemoryBackend()
+        val keyRing = KeyRing()
+        val store = store(backend, keyRing)
+        val key = ecKeyPair()
+        val pending = store.requestApproval(key.public.encoded, 94L)
+        store.approve(pending.stableId, 95L)
+        keyRing.throwBeforeDelete = true
+
+        assertThrows(OfflineMeshTrustStore.StorageException::class.java) {
+            store.revoke(pending.stableId, 96L)
+        }
+        assertFalse(OfflineMeshTrustStore(backend, keyRing).isTrusted(key.public.encoded))
+        assertEquals(OfflineMeshTrustState.ERROR, store.observe(key.public.encoded, 97L).state)
+    }
+
+    @Test
     fun restoringAnAuthenticatedOldFileAfterRevocationFailsClosed() {
         val backend = MemoryBackend()
         val keyRing = KeyRing()
@@ -172,7 +189,7 @@ class OfflineMeshTrustStoreTest {
     }
 
     @Test
-    fun keyCreationFailureLeavesThePreviouslyCommittedStateValid() {
+    fun keyCreationFailureAfterTransitionMarkFailsClosed() {
         val backend = MemoryBackend()
         val keyRing = KeyRing()
         val store = store(backend, keyRing)
@@ -184,7 +201,8 @@ class OfflineMeshTrustStoreTest {
         assertThrows(OfflineMeshTrustStore.StorageException::class.java) {
             store.revoke(pending.stableId, 122L)
         }
-        assertTrue(store.isTrusted(key.public.encoded))
+        assertFalse(store.isTrusted(key.public.encoded))
+        assertEquals(OfflineMeshTrustState.ERROR, store.observe(key.public.encoded, 123L).state)
     }
 
     @Test
@@ -217,6 +235,7 @@ class OfflineMeshTrustStoreTest {
 
     private class MemoryBackend : OfflineMeshTrustBackend {
         var entry: OfflineMeshTrustBackend.Entry? = null
+        var pending: OfflineMeshTrustBackend.Pending? = null
         var failWrites = false
 
         override fun read(): OfflineMeshTrustBackend.Entry? = entry?.let {
@@ -228,10 +247,27 @@ class OfflineMeshTrustStoreTest {
             entry = OfflineMeshTrustBackend.Entry(payload, mac.copyOf(), keyRevision)
             return true
         }
+
+        override fun readPending(): OfflineMeshTrustBackend.Pending? = pending
+
+        override fun writePending(
+            fromRevision: Long,
+            toRevision: Long,
+            mac: ByteArray
+        ): Boolean {
+            pending = OfflineMeshTrustBackend.Pending(fromRevision, toRevision, mac.copyOf())
+            return true
+        }
+
+        override fun clearPending(): Boolean {
+            pending = null
+            return true
+        }
     }
 
     private class KeyRing : OfflineMeshTrustKeyRing {
         private val keys = mutableSetOf<Long>()
+        var throwBeforeDelete = false
         var throwAfterDelete = false
         var failCreate = false
 
@@ -241,6 +277,10 @@ class OfflineMeshTrustStoreTest {
         }
 
         override fun deleteKey(revision: Long): Boolean {
+            if (throwBeforeDelete) {
+                throwBeforeDelete = false
+                error("injected crash before key deletion")
+            }
             val removed = keys.remove(revision)
             if (throwAfterDelete) {
                 throwAfterDelete = false
