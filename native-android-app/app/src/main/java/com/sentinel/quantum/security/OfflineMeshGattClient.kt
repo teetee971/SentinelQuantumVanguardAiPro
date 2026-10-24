@@ -18,7 +18,7 @@ import java.util.UUID
 /**
  * Explicit, client-only experimental GATT connection. No characteristic reads,
  * writes, pairing, identity assertions, encryption, or background connection.
- * A compatible connectable GATT server is not yet implemented by Sentinel.
+ * The marker-only GATT server cannot accept application data.
  * All public methods are main-thread only; link state is never authentication.
  */
 class OfflineMeshGattClient(context: Context) {
@@ -32,6 +32,7 @@ class OfflineMeshGattClient(context: Context) {
     private var watchdog: Runnable? = null
 
     private val serviceId = UUID.fromString("de939bda-5b41-4c5d-8bb7-58c24458a6e2")
+    private val markerId = UUID.fromString("f63dd7df-68e2-4ffb-b949-a4d403a8ad67")
 
     private fun mainThread() = Looper.myLooper() == Looper.getMainLooper()
     private fun permitted(): Boolean =
@@ -70,8 +71,11 @@ class OfflineMeshGattClient(context: Context) {
             override fun onServicesDiscovered(client: BluetoothGatt, status: Int) {
                 main.post {
                     if (session != epoch || client !== gatt) return@post
-                    val found = status == BluetoothGatt.GATT_SUCCESS &&
-                        client.getService(serviceId) != null
+                    val found = if (status != BluetoothGatt.GATT_SUCCESS) false else try {
+                        val marker = client.getService(serviceId)?.getCharacteristic(markerId)
+                        marker != null && marker.properties == 0 && marker.permissions == 0
+                    } catch (_: SecurityException) { false }
+                      catch (_: RuntimeException) { false }
                     if (!gate.servicesDiscovered(generation, found)) {
                         terminate("SERVICE_INVALID")
                     } else {
@@ -133,8 +137,10 @@ class OfflineMeshGattClient(context: Context) {
         watchdog = null
         val old = gatt
         gatt = null
-        try { old?.disconnect() } catch (_: RuntimeException) { }
-        try { old?.close() } catch (_: RuntimeException) { }
+        try { old?.disconnect() } catch (_: SecurityException) { }
+        catch (_: RuntimeException) { }
+        try { old?.close() } catch (_: SecurityException) { }
+        catch (_: RuntimeException) { }
         val listener = stopListener
         stopListener = null
         listener?.invoke(reason)
