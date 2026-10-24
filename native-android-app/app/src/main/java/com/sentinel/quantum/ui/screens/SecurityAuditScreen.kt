@@ -22,6 +22,7 @@ import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.SecurityAudit
 import com.sentinel.quantum.ui.design.DeviceAnalysisStatusPanel
 import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelMetricCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -157,6 +158,56 @@ fun SecurityAuditScreen(navController: NavController) {
             }
 
             auditResult?.let { result ->
+                val grantedByUser = result.permissions.count {
+                    it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && it.granted
+                }
+                val permissionsToEnable = result.permissions.count {
+                    it.grantModel == SecurityAudit.PermissionGrantModel.RUNTIME_USER && !it.granted
+                }
+                Text(
+                    text = "Rapport d’analyse locale",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SentinelMetricCard(
+                        label = "Autorisations accordées",
+                        value = grantedByUser.toString(),
+                        status = SentinelStatus.UNKNOWN,
+                        modifier = Modifier.weight(1f)
+                    )
+                    SentinelMetricCard(
+                        label = "À configurer",
+                        value = permissionsToEnable.toString(),
+                        status = if (permissionsToEnable > 0) SentinelStatus.WARN else SentinelStatus.UNKNOWN,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "Observations de configuration",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SentinelStatusChip(
+                            status = if (result.warnings.isNotEmpty()) SentinelStatus.WARN else SentinelStatus.UNKNOWN,
+                            label = result.warnings.size.toString()
+                        )
+                    }
+                    Text(
+                        "Les avertissements sont issus de l’audit local. Aucun nombre de virus bloqués ou de menaces neutralisées n’est déduit de ces observations.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
