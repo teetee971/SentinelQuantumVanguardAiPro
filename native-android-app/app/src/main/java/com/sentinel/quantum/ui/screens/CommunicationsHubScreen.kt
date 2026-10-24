@@ -20,6 +20,7 @@ import com.sentinel.quantum.SmsComposeActivity
 import com.sentinel.quantum.PhoneCoreActivationActivity
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -186,27 +187,34 @@ private fun ChannelStatus(
     actionLabel: String = "Ouvrir",
     onClick: (() -> Unit)? = null
 ) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
-    ) {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
-            Text(name, style = MaterialTheme.typography.titleMedium)
             Text(
-                status,
-                style = MaterialTheme.typography.bodySmall,
+                name,
+                style = MaterialTheme.typography.titleMedium,
+                color = SentinelD1.Cyan
+            )
+            Text(
+                "CANAL LOCAL",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (onClick != null) {
-                Button(
-                    onClick = onClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(actionLabel)
-                }
+        }
+        Text(
+            status,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (onClick != null) {
+            Button(
+                onClick = onClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(actionLabel)
             }
         }
     }
