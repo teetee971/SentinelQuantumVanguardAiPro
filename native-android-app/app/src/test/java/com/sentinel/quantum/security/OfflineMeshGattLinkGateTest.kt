@@ -64,4 +64,37 @@ class OfflineMeshGattLinkGateTest {
         assertNull(gate.begin())
         assertEquals(id, gate.generation())
     }
+    @Test fun duplicatedConnectionCallbackCannotRestartServiceDiscovery() {
+        val gate = OfflineMeshGattLinkGate()
+        val id = gate.begin()!!
+        assertTrue(gate.connected(id, true))
+        assertFalse(gate.connected(id, true))
+        assertEquals(OfflineMeshGattLinkGate.Stage.DISCOVERING, gate.stage())
+    }
+
+    @Test fun lateMtuCallbackAfterReadyCannotChangePayloadLimit() {
+        val gate = OfflineMeshGattLinkGate()
+        val id = gate.begin()!!
+        assertTrue(gate.connected(id, true))
+        assertTrue(gate.servicesDiscovered(id, true))
+        assertTrue(gate.mtuResolved(id, 247, true))
+        assertFalse(gate.mtuResolved(id, 517, true))
+        assertEquals(244, gate.maxWriteBytes())
+        assertEquals(OfflineMeshGattLinkGate.Stage.TRANSPORT_READY, gate.stage())
+    }
+
+    @Test fun closedLinkRejectsLateCallbacksAfterNewSessionBegins() {
+        val gate = OfflineMeshGattLinkGate()
+        val old = gate.begin()!!
+        gate.connected(old, true)
+        gate.servicesDiscovered(old, true)
+        gate.close()
+        val current = gate.begin()!!
+        assertFalse(gate.mtuResolved(old, 247, true))
+        assertFalse(gate.servicesDiscovered(old, true))
+        assertFalse(gate.mayWrite(old, 1))
+        assertEquals(OfflineMeshGattLinkGate.Stage.CONNECTING, gate.stage())
+        assertTrue(gate.connected(current, true))
+    }
+
 }
