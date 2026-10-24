@@ -102,6 +102,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelD1
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.flow.collectLatest
@@ -528,6 +530,26 @@ class SmsComposeActivity : ComponentActivity() {
                             status = activationModel.title,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "CENTRE DE MESSAGERIE",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = SentinelD1.Cyan
+                            )
+                            Text(
+                                text = if (activationSnapshot.canSend)
+                                    "Envoi SMS autorisé par les prérequis Android"
+                                else
+                                    "Envoi SMS limité · vérifiez le rôle et les autorisations",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "SMS/MMS opérateur · sécurité et délivrance vérifiées séparément. Pas de chiffrement de bout en bout garanti.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         TabRow(selectedTabIndex = if (showComposer) 1 else 0) {
                             Tab(selected = !showComposer, onClick = {
                                 showComposer = false
