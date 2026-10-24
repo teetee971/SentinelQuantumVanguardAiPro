@@ -4,14 +4,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class OfflineMeshGattOutboxTest {
+    private fun verifiedQueue(maxFrames: Int = 32, maxFrameBytes: Int = 244) =
+        OfflineMeshGattOutbox(maxFrames, maxFrameBytes) { _, proof -> proof.contentEquals(byteArrayOf(9)) }
+    private fun unlock(q: OfflineMeshGattOutbox) =
+        assertTrue(q.openAuthenticatedLink(q.currentGeneration(), byteArrayOf(9)))
+
     @Test fun lockedByDefault() {
-        val q = OfflineMeshGattOutbox()
+        val q = verifiedQueue()
         assertEquals(OfflineMeshGattOutbox.Offer.LOCKED, q.offer(byteArrayOf(1)))
         assertNull(q.next())
     }
     @Test fun boundedAndSingleInFlight() {
-        val q = OfflineMeshGattOutbox(maxFrames=2,maxFrameBytes=3)
-        q.openAuthenticatedLink()
+        val q = verifiedQueue(maxFrames=2,maxFrameBytes=3)
+        unlock(q)
         assertEquals(OfflineMeshGattOutbox.Offer.QUEUED,q.offer(byteArrayOf(1,2)))
         assertEquals(OfflineMeshGattOutbox.Offer.QUEUED,q.offer(byteArrayOf(3)))
         assertEquals(OfflineMeshGattOutbox.Offer.FULL,q.offer(byteArrayOf(4)))
@@ -21,14 +26,14 @@ class OfflineMeshGattOutboxTest {
         assertNotNull(q.next())
     }
     @Test fun oversizedAndEmptyRejected() {
-        val q = OfflineMeshGattOutbox(maxFrameBytes=2)
-        q.openAuthenticatedLink()
+        val q = verifiedQueue(maxFrameBytes=2)
+        unlock(q)
         assertEquals(OfflineMeshGattOutbox.Offer.INVALID_FRAME,q.offer(byteArrayOf()))
         assertEquals(OfflineMeshGattOutbox.Offer.INVALID_FRAME,q.offer(byteArrayOf(1,2,3)))
     }
     @Test fun bothInputAndOutputAreCopied() {
-        val q = OfflineMeshGattOutbox()
-        q.openAuthenticatedLink()
+        val q = verifiedQueue()
+        unlock(q)
         val bytes = byteArrayOf(7,8)
         q.offer(bytes)
         bytes[0] = 99
@@ -38,12 +43,12 @@ class OfflineMeshGattOutboxTest {
         assertTrue(q.complete(first.ticket,first.generation,true))
     }
     @Test fun staleCallbackCannotCompleteNewSession() {
-        val q = OfflineMeshGattOutbox()
-        q.openAuthenticatedLink()
+        val q = verifiedQueue()
+        unlock(q)
         q.offer(byteArrayOf(1))
         val old = q.next()!!
         q.closeLink()
-        q.openAuthenticatedLink()
+        unlock(q)
         q.offer(byteArrayOf(2))
         val current = q.next()!!
         assertFalse(q.complete(old.ticket,old.generation,true))
@@ -51,13 +56,26 @@ class OfflineMeshGattOutboxTest {
         assertTrue(q.complete(current.ticket,current.generation,true))
     }
     @Test fun failedRadioCallbackInvalidatesLink() {
-        val q = OfflineMeshGattOutbox()
-        q.openAuthenticatedLink()
+        val q = verifiedQueue()
+        unlock(q)
         q.offer(byteArrayOf(1))
         q.offer(byteArrayOf(2))
         val frame = q.next()!!
         assertFalse(q.complete(frame.ticket,frame.generation,false))
         assertEquals(0,q.queuedCount())
         assertEquals(OfflineMeshGattOutbox.Offer.LOCKED,q.offer(byteArrayOf(3)))
+    }
+    @Test fun defaultVerifierCannotBeBypassed() {
+        val q = OfflineMeshGattOutbox()
+        assertFalse(q.openAuthenticatedLink(q.currentGeneration(), byteArrayOf(9)))
+        assertEquals(OfflineMeshGattOutbox.Offer.LOCKED, q.offer(byteArrayOf(1)))
+    }
+    @Test fun staleGenerationAndWrongProofRejected() {
+        val q = verifiedQueue()
+        assertFalse(q.openAuthenticatedLink(q.currentGeneration(), byteArrayOf(8)))
+        val old = q.currentGeneration()
+        q.closeLink()
+        assertFalse(q.openAuthenticatedLink(old, byteArrayOf(9)))
+        assertEquals(OfflineMeshGattOutbox.Offer.LOCKED, q.offer(byteArrayOf(1)))
     }
 }
