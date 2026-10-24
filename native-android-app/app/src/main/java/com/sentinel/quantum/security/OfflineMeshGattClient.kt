@@ -13,7 +13,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
-import java.util.UUID
 
 /**
  * Explicit, client-only experimental GATT connection. No characteristic reads,
@@ -30,9 +29,13 @@ class OfflineMeshGattClient(context: Context) {
     private var epoch = 0L
     private var stopListener: ((String) -> Unit)? = null
     private var watchdog: Runnable? = null
+    private var subscriptionDescriptor: android.bluetooth.BluetoothGattDescriptor? = null
+    private var subscribed = false
 
-    private val serviceId = UUID.fromString("de939bda-5b41-4c5d-8bb7-58c24458a6e2")
-    private val markerId = UUID.fromString("f63dd7df-68e2-4ffb-b949-a4d403a8ad67")
+    fun notificationsSubscribed(): Boolean = mainThread() && subscribed
+
+    private val serviceId = OfflineMeshGattProtocolIds.SERVICE
+    private val markerId = OfflineMeshGattProtocolIds.MARKER
 
     private fun mainThread() = Looper.myLooper() == Looper.getMainLooper()
     private fun permitted(): Boolean =
@@ -77,7 +80,15 @@ class OfflineMeshGattClient(context: Context) {
                     if (session != epoch || client !== gatt) return@post
                     val found = if (status != BluetoothGatt.GATT_SUCCESS) false else try {
                         val marker = client.getService(serviceId)?.getCharacteristic(markerId)
-                        marker != null && marker.properties == 0 && marker.permissions == 0
+                        val notify = client.getService(serviceId)?.getCharacteristic(
+                            OfflineMeshGattProtocolIds.SERVER_TO_CLIENT)
+                        val descriptor = notify?.getDescriptor(OfflineMeshGattProtocolIds.CCCD)
+                        val valid = marker != null && marker.properties == 0 && marker.permissions == 0 &&
+                            notify != null &&
+                            (notify.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0 &&
+                            descriptor != null
+                        subscriptionDescriptor = if (valid) descriptor else null
+                        valid
                     } catch (_: SecurityException) { false }
                       catch (_: RuntimeException) { false }
                     if (!gate.servicesDiscovered(generation, found)) {
@@ -100,12 +111,53 @@ class OfflineMeshGattClient(context: Context) {
                     if (!gate.mtuResolved(generation, mtu, status == BluetoothGatt.GATT_SUCCESS)) {
                         terminate("MTU_FAILED")
                     } else {
-                        // The watchdog bounds connection setup only. Once negotiation
-                        // succeeds, do not disconnect a healthy idle link at 15 seconds.
-                        watchdog?.let(main::removeCallbacks)
-                        watchdog = null
+                        val descriptor = subscriptionDescriptor
+                        val characteristic = descriptor?.characteristic
+                        if (descriptor == null || characteristic == null || !permitted()) {
+                            terminate("CCCD_UNAVAILABLE")
+                            return@post
+                        }
+                        try {
+                            if (!client.setCharacteristicNotification(characteristic, true)) {
+                                terminate("NOTIFY_ENABLE_FAILED")
+                                return@post
+                            }
+                            val started = if (Build.VERSION.SDK_INT >= 33) {
+                                client.writeDescriptor(
+                                    descriptor,
+                                    android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                                ) == BluetoothGatt.GATT_SUCCESS
+                            } else {
+                                @Suppress("DEPRECATION")
+                                descriptor.value = android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                                @Suppress("DEPRECATION")
+                                client.writeDescriptor(descriptor)
+                            }
+                            if (!started) terminate("CCCD_WRITE_START_FAILED")
+                        } catch (_: SecurityException) {
+                            terminate("PERMISSION_REVOKED")
+                        } catch (_: RuntimeException) {
+                            terminate("CCCD_WRITE_START_FAILED")
+                        }
                     }
                     // TRANSPORT_READY is not authenticated and cannot send private messages.
+                }
+            }
+            override fun onDescriptorWrite(
+                client: BluetoothGatt,
+                descriptor: android.bluetooth.BluetoothGattDescriptor,
+                status: Int
+            ) {
+                main.post {
+                    if (session != epoch || client !== gatt) return@post
+                    if (descriptor !== subscriptionDescriptor ||
+                        status != BluetoothGatt.GATT_SUCCESS || subscribed) {
+                        terminate("CCCD_WRITE_FAILED")
+                        return@post
+                    }
+                    subscribed = true
+                    watchdog?.let(main::removeCallbacks)
+                    watchdog = null
                 }
             }
         }
@@ -142,6 +194,8 @@ class OfflineMeshGattClient(context: Context) {
     private fun terminate(reason: String) {
         epoch++
         gate.close()
+        subscriptionDescriptor = null
+        subscribed = false
         watchdog?.let(main::removeCallbacks)
         watchdog = null
         val old = gatt
