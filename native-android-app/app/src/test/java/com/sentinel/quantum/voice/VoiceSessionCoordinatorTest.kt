@@ -207,7 +207,8 @@ class VoiceSessionCoordinatorTest {
         val coordinator = VoiceSessionCoordinator(api, transport)
         val request = VoiceSessionRequest("demo-room", "device-1", "1.0.6")
 
-        assertTrue(coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP).isSuccess)
+        val active = coordinator.connect("auth-token", request, VoiceAddonPolicy.Effect.DEEP).getOrThrow()
+        assertTrue(active.pushToTalk.press().isSuccess)
 
         val result = coordinator.disconnect()
         assertTrue(result.isFailure)
