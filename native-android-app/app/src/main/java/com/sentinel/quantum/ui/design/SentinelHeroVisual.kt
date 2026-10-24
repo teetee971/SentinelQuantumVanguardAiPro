@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -55,7 +56,8 @@ fun SentinelHeroVisual(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 230.dp)
+            .heightIn(min = 300.dp)
+            .wrapContentHeight()
             .clip(shape)
             .background(
                 brush = Brush.radialGradient(
