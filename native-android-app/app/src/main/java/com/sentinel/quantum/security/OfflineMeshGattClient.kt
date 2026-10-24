@@ -52,8 +52,12 @@ class OfflineMeshGattClient(context: Context) {
             override fun onConnectionStateChange(client: BluetoothGatt, status: Int, newState: Int) {
                 main.post {
                     if (session != epoch || client !== gatt) return@post
-                    if (status != BluetoothGatt.GATT_SUCCESS || newState != BluetoothProfile.STATE_CONNECTED) {
+                    // Disconnect is terminal. Other successful states are not connection proof.
+                    if (status != BluetoothGatt.GATT_SUCCESS || newState == BluetoothProfile.STATE_DISCONNECTED) {
                         terminate("DISCONNECTED")
+                    } else if (newState != BluetoothProfile.STATE_CONNECTED) {
+                        // CONNECTING / DISCONNECTING callbacks are not authorization.
+                        return@post
                     } else if (!gate.connected(generation, true)) {
                         terminate("STATE_MISMATCH")
                     } else {
