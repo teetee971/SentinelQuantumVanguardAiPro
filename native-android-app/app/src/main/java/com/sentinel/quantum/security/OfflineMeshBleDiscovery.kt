@@ -37,6 +37,7 @@ class OfflineMeshBleDiscovery(context: Context) {
     private var expiry: Runnable? = null
     private var generation: Long = 0
     private var active: Boolean = false
+    private var stoppedListener: ((String) -> Unit)? = null
 
     private fun onMainThread() = Looper.myLooper() == Looper.getMainLooper()
     private fun granted(permission: String) =
@@ -71,19 +72,26 @@ class OfflineMeshBleDiscovery(context: Context) {
         generation++
         val session = generation
         active = true
+        stoppedListener = onStopped
         scanner = nextScanner
         advertiser = nextAdvertiser
         val scan = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                if (active && generation == session) onSignal(result.rssi)
+                handler.post {
+                    if (active && generation == session) onSignal(result.rssi)
+                }
             }
             override fun onScanFailed(errorCode: Int) {
-                if (active && generation == session) stopInternal("SCAN_FAILED", onStopped)
+                handler.post {
+                    if (active && generation == session) stopInternal("SCAN_FAILED")
+                }
             }
         }
         val advert = object : AdvertiseCallback() {
             override fun onStartFailure(errorCode: Int) {
-                if (active && generation == session) stopInternal("ADVERTISE_FAILED", onStopped)
+                handler.post {
+                    if (active && generation == session) stopInternal("ADVERTISE_FAILED")
+                }
             }
         }
         scanCallback = scan
@@ -101,16 +109,16 @@ class OfflineMeshBleDiscovery(context: Context) {
             val scanSettings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
             nextScanner.startScan(listOf(filter), scanSettings, scan)
             val timeout = Runnable {
-                if (active && generation == session) stopInternal("TIMEOUT", onStopped)
+                if (active && generation == session) stopInternal("TIMEOUT")
             }
             expiry = timeout
             handler.postDelayed(timeout, durationMs)
             StartResult.STARTED
         } catch (_: SecurityException) {
-            stopInternal("PERMISSION_REVOKED", onStopped)
+            stopInternal("PERMISSION_REVOKED")
             StartResult.PERMISSION_REQUIRED
         } catch (_: RuntimeException) {
-            stopInternal("START_FAILED", onStopped)
+            stopInternal("START_FAILED")
             StartResult.START_FAILED
         }
     }
@@ -119,14 +127,17 @@ class OfflineMeshBleDiscovery(context: Context) {
     fun stop(): Boolean {
         if (!onMainThread()) return false
         if (!active) return true
-        stopInternal("USER_STOPPED", {})
+        stopInternal("USER_STOPPED")
         return true
     }
 
     @SuppressLint("MissingPermission")
-    private fun stopInternal(reason: String, onStopped: (String) -> Unit) {
+    private fun stopInternal(reason: String) {
+        if (!active) return
         generation++
         active = false
+        val listener = stoppedListener
+        stoppedListener = null
         expiry?.let(handler::removeCallbacks)
         expiry = null
         val oldScanner = scanner
@@ -136,6 +147,6 @@ class OfflineMeshBleDiscovery(context: Context) {
         scanner = null; scanCallback = null; advertiser = null; advertiseCallback = null
         try { if (oldScan != null) oldScanner?.stopScan(oldScan) } catch (_: RuntimeException) { }
         try { if (oldAdvert != null) oldAdvertiser?.stopAdvertising(oldAdvert) } catch (_: RuntimeException) { }
-        onStopped(reason)
+        listener?.invoke(reason)
     }
 }
