@@ -57,11 +57,10 @@ class OfflineMeshGattServer(context: Context) {
                     val key = try { device.address } catch (_: SecurityException) { return@post }
                     when {
                         status != BluetoothGatt.GATT_SUCCESS ||
-                            newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED ->
-                            {
-                                retiredPeerKeys.add(key)
-                                peerTokens.remove(key)?.let(peerSessions::disconnect)
-                            }
+                            newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED -> {
+                            retiredPeerKeys.add(key)
+                            peerTokens.remove(key)?.let(peerSessions::disconnect)
+                        }
                         newState == android.bluetooth.BluetoothProfile.STATE_CONNECTED -> {
                             if (!permitted() || key in retiredPeerKeys) return@post
                             if (!peerTokens.containsKey(key)) {
