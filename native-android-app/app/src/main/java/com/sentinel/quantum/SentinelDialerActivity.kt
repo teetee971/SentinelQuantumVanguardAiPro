@@ -94,6 +94,8 @@ import com.sentinel.quantum.ui.design.PhoneCoreNumberPad
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.sentinel.quantum.ui.design.SentinelTopBar
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelD1
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -1008,6 +1010,35 @@ class SentinelDialerActivity : ComponentActivity() {
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
+                        if (phoneTab == 0 || phoneTab == 2) {
+                            SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = if (phoneTab == 0) "COMMUNICATIONS SÉCURISÉES" else "CONTACTS SENTINEL",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = SentinelD1.Cyan
+                                )
+                                Text(
+                                    text = if (phoneTab == 0) "Clavier et appels" else "Répertoire et identités locales",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (phoneTab == 0) {
+                                        if (holdsDialerRole())
+                                            "Rôle Téléphone accordé. La validation des appels réels reste distincte."
+                                        else
+                                            "Rôle Téléphone non accordé. Activez Sentinel pour disposer des fonctions de composeur."
+                                    } else {
+                                        if (contactsPermissionGranted)
+                                            "Contacts Android accessibles selon les autorisations accordées. Aucune identité distante n’est présumée vérifiée."
+                                        else
+                                            "Accès aux contacts Android à autoriser. Aucune identité n’est présumée vérifiée."
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         ScrollableTabRow(selectedTabIndex = phoneTab, edgePadding = 0.dp) {
                             listOf(stringResource(R.string.phone_core_keypad), "Récents", "Répertoire", "Réglages").forEachIndexed { index, label ->
                                 Tab(
