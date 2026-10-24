@@ -44,6 +44,15 @@ class OfflineMeshGattFrameTest {
         assertEquals(ack, decodedAck)
     }
 
+    @Test fun handshakeControlFramesRoundTripWithoutBeingData() {
+        val control = OfflineMeshGattFrameCodec.Frame.Control(2, ByteArray(32) { it.toByte() })
+        val decoded = OfflineMeshGattFrameCodec.decode(
+            OfflineMeshGattFrameCodec.encode(control)
+        ) as OfflineMeshGattFrameCodec.Frame.Control
+        assertEquals(control.code, decoded.code)
+        assertArrayEquals(control.payload, decoded.payload)
+    }
+
     @Test fun malformedAndOversizedFramesAreRejected() {
         val encoded = OfflineMeshGattFrameCodec.encode(
             OfflineMeshGattFrameCodec.Frame.Data(4L, 0, 1, byteArrayOf(8, 9))

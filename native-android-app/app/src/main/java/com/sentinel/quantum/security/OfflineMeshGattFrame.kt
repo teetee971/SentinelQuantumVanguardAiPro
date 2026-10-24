@@ -4,6 +4,7 @@ package com.sentinel.quantum.security
 object OfflineMeshGattFrameCodec {
     private const val HEADER = 18
     private const val ACK_SIZE = 14
+    private const val CONTROL_HEADER = 7
     private const val MAX_FRAME = 244
     private const val MAX_PAYLOAD = 64 * 1024
     private const val MAX_FRAGMENTS = 4096
@@ -11,6 +12,7 @@ object OfflineMeshGattFrameCodec {
     sealed class Frame {
         data class Data(val messageId: Long, val fragmentIndex: Int, val fragmentCount: Int, val payload: ByteArray) : Frame()
         data class Ack(val messageId: Long, val fragmentIndex: Int) : Frame()
+        data class Control(val code: Int, val payload: ByteArray) : Frame()
     }
 
     fun encode(frame: Frame): ByteArray {
@@ -25,6 +27,11 @@ object OfflineMeshGattFrameCodec {
                 require(frame.messageId >= 0 && frame.fragmentIndex in 0 until MAX_FRAGMENTS)
                 ACK_SIZE
             }
+            is Frame.Control -> {
+                require(frame.code in 1..0xff && frame.payload.isNotEmpty() &&
+                    frame.payload.size <= MAX_FRAME - CONTROL_HEADER)
+                CONTROL_HEADER + frame.payload.size
+            }
         }
         val out = java.nio.ByteBuffer.allocate(size).order(java.nio.ByteOrder.BIG_ENDIAN)
         out.put(0x53.toByte()).put(0x4d.toByte()).put(1.toByte())
@@ -35,21 +42,23 @@ object OfflineMeshGattFrameCodec {
                 out.putShort(frame.payload.size.toShort()).put(frame.payload.copyOf())
             }
             is Frame.Ack -> out.put(2.toByte()).putLong(frame.messageId).putShort(frame.fragmentIndex.toShort())
+            is Frame.Control -> out.put(3.toByte()).put(frame.code.toByte())
+                .putShort(frame.payload.size.toShort()).put(frame.payload.copyOf())
         }
         return out.array()
     }
 
     fun decode(bytes: ByteArray, maxFrameBytes: Int = MAX_FRAME): Frame? {
-        if (maxFrameBytes !in HEADER..MAX_FRAME || bytes.size > maxFrameBytes || bytes.size < ACK_SIZE) return null
+        if (maxFrameBytes !in CONTROL_HEADER..MAX_FRAME || bytes.size > maxFrameBytes || bytes.size < CONTROL_HEADER) return null
         val b = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.BIG_ENDIAN)
         if (b.get().toInt() != 0x53 || b.get().toInt() != 0x4d || b.get().toInt() != 1) return null
         val type = b.get().toInt()
-        val id = b.long
-        if (id < 0) return null
-        val index = b.short.toInt() and 0xffff
         return when (type) {
             1 -> {
                 if (bytes.size < HEADER) return null
+                val id = b.long
+                if (id < 0) return null
+                val index = b.short.toInt() and 0xffff
                 val count = b.short.toInt() and 0xffff
                 val length = b.short.toInt() and 0xffff
                 if (count !in 1..MAX_FRAGMENTS || index >= count ||
@@ -58,7 +67,21 @@ object OfflineMeshGattFrameCodec {
                 b.get(payload)
                 Frame.Data(id, index, count, payload)
             }
-            2 -> if (bytes.size == ACK_SIZE && index < MAX_FRAGMENTS) Frame.Ack(id, index) else null
+            2 -> {
+                if (bytes.size != ACK_SIZE) return null
+                val id = b.long
+                if (id < 0) return null
+                val index = b.short.toInt() and 0xffff
+                if (index < MAX_FRAGMENTS) Frame.Ack(id, index) else null
+            }
+            3 -> {
+                val code = b.get().toInt() and 0xff
+                val length = b.short.toInt() and 0xffff
+                if (code == 0 || length == 0 || length != bytes.size - CONTROL_HEADER) return null
+                val payload = ByteArray(length)
+                b.get(payload)
+                Frame.Control(code, payload)
+            }
             else -> null
         }
     }

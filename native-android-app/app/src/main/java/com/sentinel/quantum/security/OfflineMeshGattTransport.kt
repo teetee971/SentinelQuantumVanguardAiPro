@@ -132,6 +132,7 @@ class OfflineMeshGattTransport(
                     Inbound(true)
                 }
             }
+            is OfflineMeshGattFrameCodec.Frame.Control -> Inbound(false)
         }
     }
     @Synchronized fun tick(nowMs: Long): Tick {

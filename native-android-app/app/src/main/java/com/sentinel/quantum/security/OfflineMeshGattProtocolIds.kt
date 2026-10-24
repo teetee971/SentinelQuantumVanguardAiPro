@@ -3,11 +3,11 @@ package com.sentinel.quantum.security
 import java.util.UUID
 
 /**
- * Reserved GATT identifiers for a future authenticated transport.
+ * Versioned GATT identifiers for the authenticated Offline Mesh transport.
  *
- * This contract alone MUST NOT be registered as writable GATT characteristics.
- * The existing marker remains read/write-disabled. Do not expose private data
- * until peer authentication, per-peer session isolation, and encryption exist.
+ * The marker remains read/write-disabled. Writable/notify directions are
+ * useful only when the adapter has an explicit cryptographic identity and
+ * per-peer authenticated session; the identifiers themselves grant no trust.
  */
 internal object OfflineMeshGattProtocolIds {
     val SERVICE: UUID = UUID.fromString("de939bda-5b41-4c5d-8bb7-58c24458a6e2")

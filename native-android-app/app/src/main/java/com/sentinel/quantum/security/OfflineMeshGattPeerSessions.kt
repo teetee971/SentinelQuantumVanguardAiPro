@@ -23,7 +23,8 @@ internal class OfflineMeshGattPeerSessions(private val maximumPeers: Int = 8) {
     private data class Session(
         val token: Token,
         var mtu: Int = 23,
-        var notificationsEnabled: Boolean = false
+        var notificationsEnabled: Boolean = false,
+        var privateDataAllowed: Boolean = false
     )
 
     private val sessions = mutableMapOf<String, Session>()
@@ -46,6 +47,14 @@ internal class OfflineMeshGattPeerSessions(private val maximumPeers: Int = 8) {
     fun setNotifications(token: Token, enabled: Boolean): Boolean {
         val session = current(token) ?: return false
         session.notificationsEnabled = enabled
+        if (!enabled) session.privateDataAllowed = false
+        return true
+    }
+
+    fun setPrivateDataAllowed(token: Token, allowed: Boolean): Boolean {
+        val session = current(token) ?: return false
+        if (allowed && !session.notificationsEnabled) return false
+        session.privateDataAllowed = allowed
         return true
     }
 
@@ -58,8 +67,8 @@ internal class OfflineMeshGattPeerSessions(private val maximumPeers: Int = 8) {
         return session.notificationsEnabled && bytes in 1..minOf(244, session.mtu - 3)
     }
 
-    /** Deliberately fail closed: no production cryptographic authenticator is wired. */
-    fun canTransferPrivateData(token: Token): Boolean = false
+    /** Only the adapter's authenticated secure channel may enable this flag. */
+    fun canTransferPrivateData(token: Token): Boolean = current(token)?.privateDataAllowed == true
 
     fun disconnect(token: Token): Boolean {
         if (current(token) == null) return false

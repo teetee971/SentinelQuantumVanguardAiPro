@@ -1,9 +1,9 @@
 package com.sentinel.quantum.security
 
 /**
- * Pure Kotlin guard for a single connected GATT link. This does NOT implement GATT,
- * establish trust, or encrypt frames. Transport callbacks must be checked against
- * the current generation before forwarding any data to a higher layer.
+ * Pure Kotlin guard for a single connected GATT link. This does NOT establish
+ * trust; transport callbacks must be checked against the current generation
+ * before forwarding any data to a higher layer.
  */
 class OfflineMeshGattLinkGate {
     enum class Stage { CLOSED, CONNECTING, DISCOVERING, NEGOTIATING_MTU, TRANSPORT_READY }

@@ -53,4 +53,15 @@ class OfflineMeshGattPeerSessionsTest {
         assertEquals(23, peers.snapshot(token)!!.mtu)
         assertFalse(peers.canTransferPrivateData(token))
     }
+
+    @Test fun onlyExplicitAuthenticatedChannelMayEnablePrivateData() {
+        val peers = OfflineMeshGattPeerSessions()
+        val token = peers.connect("peer-a")!!
+        assertFalse(peers.setPrivateDataAllowed(token, true))
+        assertTrue(peers.setNotifications(token, true))
+        assertTrue(peers.setPrivateDataAllowed(token, true))
+        assertTrue(peers.canTransferPrivateData(token))
+        assertTrue(peers.setNotifications(token, false))
+        assertFalse(peers.canTransferPrivateData(token))
+    }
 }

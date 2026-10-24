@@ -1,5 +1,9 @@
 # Sentinel Offline Mesh Phase 1 Implementation Plan
 
+> Historical plan for the pre-crypto scaffold. The implementation and security
+> boundary for the current head are defined in
+> `docs/superpowers/specs/2026-10-24-sentinel-offline-mesh-secure-transport-design.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a real, bounded, bidirectional BLE GATT transport foundation with fragmentation, reassembly, ACKs, timeouts, retries, and interruption handling while keeping private messages locked until cryptographic authentication exists.

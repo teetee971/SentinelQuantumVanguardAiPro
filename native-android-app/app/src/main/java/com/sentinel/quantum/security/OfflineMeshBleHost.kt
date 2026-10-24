@@ -10,18 +10,23 @@ import android.os.Looper
 import androidx.core.content.ContextCompat
 
 /**
- * Opt-in marker-only BLE coordinator. The server must register successfully before
- * advertising starts; a failure on either component stops both. No message path.
+ * Opt-in BLE coordinator. The server must register successfully before advertising
+ * starts; a failure on either component stops both. Its default server has no
+ * identity/trust factory, so it remains unable to authorize private messages.
  *
  * Instances are not connected to application startup. Main-thread only.
  */
-class OfflineMeshBleHost(context: Context) {
+class OfflineMeshBleHost(
+    context: Context,
+    transportFactory: ((peerKey: String, generation: Long) -> OfflineMeshGattSecureTransport?)? = null,
+    onMessage: (peerKey: String, payload: ByteArray) -> Unit = { _, _ -> }
+) {
     enum class Start { STARTING, BUSY, WRONG_THREAD, FAILED }
     private val app = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private val bluetooth = app.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
     private var monitor: Runnable? = null
-    private val server = OfflineMeshGattServer(context)
+    private val server = OfflineMeshGattServer(context, transportFactory, onMessage)
     private val advertiser = OfflineMeshConnectableAdvertiser(context)
     private val gate = OfflineMeshBleHostGate()
     private var listener: ((String) -> Unit)? = null
@@ -68,6 +73,13 @@ class OfflineMeshBleHost(context: Context) {
         shutdown("USER_STOPPED")
         return true
     }
+
+    fun send(peerKey: String, payload: ByteArray): OfflineMeshGattServer.Send =
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            OfflineMeshGattServer.Send.WRONG_THREAD
+        } else {
+            server.send(peerKey, payload)
+        }
 
     private fun monitorRadio(run: Long) {
         val tick = object : Runnable {
