@@ -57,11 +57,12 @@ workflows:
               'AuthSessionAtomicityTest',
               'AuthSessionConcurrencyTest',
               'AuthSessionGenerationTest',
+              'SentinelVpnControllerTest',
           )
           missing = [name for name in mandatory if not any(suite.endswith('.' + name) or suite == name for suite in suite_names)]
           print(f'Unit-test evidence: {total} tests, {failures} failures, {errors} errors, {skipped} skipped, {len(files)} suites')
           print('Required APK suites present:', not missing)
-          if total < 1310 or failures or errors or skipped or missing:
+          if total < 1313 or failures or errors or skipped or missing:
               sys.exit('BLOCKED: failed or missing mandatory APK unit-test evidence: ' + ', '.join(missing))
           PY
       - name: Verify AndroidTest APK exists
