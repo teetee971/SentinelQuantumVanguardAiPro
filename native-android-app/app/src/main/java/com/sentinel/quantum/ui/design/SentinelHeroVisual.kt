@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,13 +60,13 @@ fun SentinelHeroVisual(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 300.dp)
+            .heightIn(min = 380.dp)
             .wrapContentHeight()
             .clip(shape)
             .border(1.dp, accent.copy(alpha = 0.30f), shape)
             .background(
                 brush = Brush.radialGradient(
-                    colors = listOf(accent.copy(alpha = 0.18f), SentinelD1.Panel, SentinelD1.Background)
+                    colors = listOf(SentinelD1.Cyan.copy(alpha = 0.28f), SentinelD1.Panel, SentinelD1.Background)
                 ),
                 shape = shape
             )
@@ -84,23 +86,54 @@ fun SentinelHeroVisual(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 24.dp),
+                .padding(horizontal = 18.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SentinelStatusChip(status = status)
-            Surface(
-                modifier = Modifier.size(82.dp),
-                shape = CircleShape,
-                color = accent.copy(alpha = 0.16f),
-                contentColor = accent
+            Text(
+                text = "SENTINEL  /  PROTECTION",
+                style = MaterialTheme.typography.labelMedium,
+                color = SentinelD1.Cyan,
+                letterSpacing = 2.sp,
+                textAlign = TextAlign.Center
+            )
+            Box(
+                modifier = Modifier.size(174.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Security,
-                        contentDescription = null,
-                        modifier = Modifier.size(46.dp)
+                Canvas(modifier = Modifier.matchParentSize()) {
+                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    val outer = size.minDimension * 0.47f
+                    drawCircle(SentinelD1.Cyan.copy(alpha = 0.09f), radius = outer)
+                    drawCircle(
+                        SentinelD1.Cyan.copy(alpha = 0.55f),
+                        radius = outer,
+                        style = Stroke(width = 2.dp.toPx())
                     )
+                    drawCircle(
+                        accent.copy(alpha = 0.65f),
+                        radius = outer * 0.77f,
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                    drawCircle(
+                        SentinelD1.Cyan.copy(alpha = 0.18f),
+                        radius = outer * 0.62f
+                    )
+                }
+                Surface(
+                    modifier = Modifier.size(108.dp),
+                    shape = CircleShape,
+                    color = SentinelD1.Cyan.copy(alpha = 0.11f),
+                    contentColor = accent
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Security,
+                            contentDescription = null,
+                            modifier = Modifier.size(68.dp),
+                            tint = accent
+                        )
+                    }
                 }
             }
             Text(
@@ -108,14 +141,16 @@ fun SentinelHeroVisual(
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.fillMaxWidth()
             )
+            SentinelStatusChip(status = status)
             Text(
                 text = subtitle,
-                fontSize = SentinelVisualTokens.BodyTextSp.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp)
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
