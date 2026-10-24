@@ -50,12 +50,16 @@ class VoiceSessionCoordinator(
 
     private val mutex = Mutex()
     private var activeSession: ActiveSession? = null
+    private var pendingRemoteClose: Pair<String, String>? = null
 
     suspend fun connect(
         accessToken: String,
         request: VoiceSessionRequest,
         effect: VoiceAddonPolicy.Effect
     ): Result<ActiveSession> = mutex.withLock {
+        if (pendingRemoteClose != null) {
+            return Result.failure(IllegalStateException("VOICE_REMOTE_CLOSE_PENDING"))
+        }
         if (activeSession != null) {
             return Result.failure(IllegalStateException("VOICE_SESSION_ALREADY_CONNECTED"))
         }
@@ -102,14 +106,25 @@ class VoiceSessionCoordinator(
     private suspend fun cleanupCreatedSession(accessToken: String, sessionId: String) {
         withContext(NonCancellable) {
             runCatching { transport.disconnect() }
-            withContext(Dispatchers.IO) {
-                api.closeSession(accessToken, sessionId)
+            val closeResult = withContext(Dispatchers.IO) {
+                runCatching { api.closeSession(accessToken, sessionId) }
+                    .getOrElse { Result.failure(it) }
             }
+            pendingRemoteClose = if (closeResult.isSuccess) null else accessToken to sessionId
         }
     }
 
     suspend fun disconnect(): Result<Unit> = mutex.withLock {
-        val active = activeSession ?: return Result.success(Unit)
+        val active = activeSession
+        if (active == null) {
+            val pending = pendingRemoteClose ?: return Result.success(Unit)
+            val retried = withContext(NonCancellable + Dispatchers.IO) {
+                runCatching { api.closeSession(pending.first, pending.second) }
+                    .getOrElse { Result.failure(it) }
+            }
+            if (retried.isSuccess) pendingRemoteClose = null
+            return retried
+        }
         activeSession = null
 
         var cancellation: CancellationException? = null
@@ -129,6 +144,8 @@ class VoiceSessionCoordinator(
             transportResult to remoteResult
         }
 
+        pendingRemoteClose = if (remoteResult.isSuccess) null
+            else active.authAccessToken to active.sessionId
         cancellation?.let { throw it }
         when {
             closeResult.isFailure -> closeResult
