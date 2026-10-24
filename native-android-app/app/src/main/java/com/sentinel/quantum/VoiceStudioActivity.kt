@@ -43,6 +43,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.auth.Auth0SessionController
+import com.sentinel.quantum.auth.AuthSessionRevocation
+import android.os.Handler
+import android.os.Looper
 import com.sentinel.quantum.security.SentinelDeviceIdentity
 import com.sentinel.quantum.security.SentinelInCallService
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
@@ -71,6 +74,9 @@ class VoiceStudioActivity : ComponentActivity() {
     private lateinit var voiceSessionCoordinator: VoiceSessionCoordinator
     private var activeVoiceSession: VoiceSessionCoordinator.ActiveSession? = null
     private var pttGestureJob: Job? = null
+    private var voiceConnectJob: Job? = null
+    private var unsubscribeAuthRevocation: (() -> Unit)? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,6 +89,20 @@ class VoiceStudioActivity : ComponentActivity() {
                 LiveKitVoiceAudioProcessor()
             )
         )
+        unsubscribeAuthRevocation = AuthSessionRevocation.subscribe {
+            mainHandler.post {
+                if (isDestroyed) return@post
+                val pendingConnection = voiceConnectJob
+                cancelPendingVoiceConnection()
+                activeVoiceSession = null
+
+                (application as SentinelApplication).launchVoiceTeardown {
+                    pendingConnection?.join()
+                    voiceSessionCoordinator.disconnect()
+                }
+            }
+        }
+
         setContent {
             SentinelQuantumTheme {
                 VoiceStudioScreen()
@@ -148,33 +168,52 @@ class VoiceStudioActivity : ComponentActivity() {
                 return
             }
 
+            val authorizationEpoch = AuthSessionRevocation.current()
             sessionBusy = true
             sessionStatus = "Récupération du jeton Auth0…"
             authController.accessToken(
                 onSuccess = { authToken ->
-                    lifecycleScope.launch {
-                        sessionStatus = "Création de la session sécurisée…"
-                        val created = voiceSessionCoordinator.connect(
-                            accessToken = authToken,
-                            request = VoiceSessionRequest(
-                                roomId = demoRoomId(deviceId),
-                                deviceId = deviceId,
-                                appVersion = BuildConfig.VERSION_NAME
-                            ),
-                            effect = selectedEffect
-                        )
-                        created.fold(
-                            onSuccess = { active ->
-                                activeVoiceSession = active
-                                sessionConnected = true
+                    if (!AuthSessionRevocation.isCurrent(authorizationEpoch) || isDestroyed) {
+                        sessionBusy = false
+                        sessionStatus = "Session annulée : authentification révoquée."
+                    } else {
+                        voiceConnectJob = lifecycleScope.launch {
+                            if (!AuthSessionRevocation.isCurrent(authorizationEpoch)) {
                                 sessionBusy = false
-                                sessionStatus = "Session PTT connectée dans la salle de test isolée."
-                            },
-                            onFailure = { failure ->
-                                sessionBusy = false
-                                sessionStatus = "Session vocale refusée : ${failure.message.orEmpty()}"
+                                sessionStatus = "Session annulée : authentification révoquée."
+                                return@launch
                             }
-                        )
+                            sessionStatus = "Création de la session sécurisée…"
+                            val created = voiceSessionCoordinator.connect(
+                                accessToken = authToken,
+                                request = VoiceSessionRequest(
+                                    roomId = demoRoomId(deviceId),
+                                    deviceId = deviceId,
+                                    appVersion = BuildConfig.VERSION_NAME
+                                ),
+                                effect = selectedEffect
+                            )
+                            if (!AuthSessionRevocation.isCurrent(authorizationEpoch)) {
+                                voiceSessionCoordinator.disconnect()
+                                activeVoiceSession = null
+                                sessionConnected = false
+                                sessionBusy = false
+                                sessionStatus = "Session annulée : authentification révoquée."
+                                return@launch
+                            }
+                            created.fold(
+                                onSuccess = { active ->
+                                    activeVoiceSession = active
+                                    sessionConnected = true
+                                    sessionBusy = false
+                                    sessionStatus = "Session PTT connectée dans la salle de test isolée."
+                                },
+                                onFailure = { failure ->
+                                    sessionBusy = false
+                                    sessionStatus = "Session vocale refusée : ${failure.message.orEmpty()}"
+                                }
+                            )
+                        }
                     }
                 },
                 onFailure = { message ->
@@ -644,6 +683,13 @@ class VoiceStudioActivity : ComponentActivity() {
         }
     }
 
+    private fun cancelPendingVoiceConnection() {
+        voiceConnectJob?.cancel()
+        voiceConnectJob = null
+        pttGestureJob?.cancel()
+        pttGestureJob = null
+    }
+
     private fun disconnectVoiceSession(onFinished: () -> Unit) {
         val active = activeVoiceSession
         if (active == null) {
@@ -669,16 +715,18 @@ class VoiceStudioActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        pttGestureJob?.cancel()
-        pttGestureJob = null
+        unsubscribeAuthRevocation?.invoke()
+        unsubscribeAuthRevocation = null
+        val pendingConnection = voiceConnectJob
+        cancelPendingVoiceConnection()
         stopRecording()
         stopPlayback()
         runCatching { previewFile.delete() }
-        if (activeVoiceSession != null) {
-            activeVoiceSession = null
-            (application as SentinelApplication).launchVoiceTeardown {
-                voiceSessionCoordinator.disconnect()
-            }
+        activeVoiceSession = null
+
+        (application as SentinelApplication).launchVoiceTeardown {
+            pendingConnection?.join()
+            voiceSessionCoordinator.disconnect()
         }
         super.onDestroy()
     }

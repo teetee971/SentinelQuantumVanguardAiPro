@@ -66,9 +66,10 @@ internal class MmsConversationStore(private val context: Context) {
         var insertedRootUri: Uri? = null
         var rootInsertCleanupFailed = false
         val operations = object : MmsProviderProjectionTransaction.Operations {
-            override fun beginJournal(): Boolean = journal.begin(token, transactionId, nowMs)
+            override fun beginJournal(): Boolean = holdsSmsRole() && journal.begin(token, transactionId, nowMs)
 
             override fun insertRoot(): Long? {
+                if (!holdsSmsRole()) return null
                 val threadId = runCatching {
                     Telephony.Threads.getOrCreateThreadId(appContext, normalized)
                 }.getOrNull()?.takeIf { it > 0L } ?: return null
@@ -106,6 +107,7 @@ internal class MmsConversationStore(private val context: Context) {
                 journal.recordRoot(token, providerMessageId)
 
             override fun insertAddress(providerMessageId: Long): Boolean {
+                if (!holdsSmsRole()) return false
                 val values = ContentValues().apply {
                     put(Telephony.Mms.Addr.ADDRESS, normalized)
                     put(Telephony.Mms.Addr.CHARSET, UTF_8_MIB_ENUM)
@@ -117,8 +119,10 @@ internal class MmsConversationStore(private val context: Context) {
             }
 
             override fun insertParts(providerMessageId: Long): Boolean {
+                if (!holdsSmsRole()) return false
                 var sequence = 0
                 if (text.isNotEmpty()) {
+                    if (!holdsSmsRole()) return false
                     val values = ContentValues().apply {
                         put(Telephony.Mms.Part.SEQ, sequence++)
                         put(Telephony.Mms.Part.CONTENT_TYPE, "text/plain")
@@ -131,6 +135,7 @@ internal class MmsConversationStore(private val context: Context) {
                 }
 
                 for (attachment in attachments) {
+                    if (!holdsSmsRole()) return false
                     val values = ContentValues().apply {
                         put(Telephony.Mms.Part.SEQ, sequence++)
                         put(Telephony.Mms.Part.CONTENT_TYPE, attachment.mimeType.lowercase())
@@ -138,6 +143,7 @@ internal class MmsConversationStore(private val context: Context) {
                     val partUri = runCatching {
                         appContext.contentResolver.insert(partsUri(providerMessageId), values)
                     }.getOrNull() ?: return false
+                    if (!holdsSmsRole()) return false
                     val written = runCatching {
                         appContext.contentResolver.openOutputStream(partUri, "w")?.use { output ->
                             output.write(attachment.payload)
@@ -151,7 +157,7 @@ internal class MmsConversationStore(private val context: Context) {
             }
 
             override fun markReady(providerMessageId: Long): Boolean =
-                journal.markReady(token, providerMessageId)
+                holdsSmsRole() && journal.markReady(token, providerMessageId)
 
             override fun deleteRoot(providerMessageId: Long): Boolean =
                 cleanupRoot(providerMessageId, insertedRootUri)

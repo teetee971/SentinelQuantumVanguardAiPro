@@ -124,13 +124,20 @@ class SmsComposeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // External entry is accepted for draft prefill only via the declared SENDTO schemes.
+        // Other intents may still open the UI, but must not import an untrusted destination/body.
         val initialScheme = intent?.data?.scheme.orEmpty()
-        val initialMmsIntent = initialScheme.equals("mms", ignoreCase = true) ||
-            initialScheme.equals("mmsto", ignoreCase = true)
-        val initialDestination = sanitizeSmsDestination(
-            intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
-        ).orEmpty()
-        val initialBody = intent?.getStringExtra("sms_body")
+        val validSendTo = intent?.action == Intent.ACTION_SENDTO &&
+            initialScheme.lowercase(java.util.Locale.ROOT) in setOf("sms", "smsto", "mms", "mmsto")
+        val initialMmsIntent = validSendTo &&
+            (initialScheme.equals("mms", ignoreCase = true) ||
+                initialScheme.equals("mmsto", ignoreCase = true))
+        val initialDestination = if (validSendTo) {
+            sanitizeSmsDestination(
+                intent?.data?.schemeSpecificPart.orEmpty().substringBefore('?')
+            ).orEmpty()
+        } else ""
+        val initialBody = (if (validSendTo) intent?.getStringExtra("sms_body") else null)
             .orEmpty()
             .take(
                 if (initialMmsIntent) MmsSendEligibilityPolicy.MAX_TEXT_CHARS

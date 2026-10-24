@@ -125,9 +125,25 @@ Les versions sont maintenues dans `app/build.gradle` et alignées sur les versio
 
 ## Validation
 
-Le workflow `.github/workflows/build-native-android.yml` constitue le build Android de validation. Le workflow `.github/workflows/android-release.yml` est réservé aux releases signées sur tags de version.
+Le circuit de qualification D1 est **Termux + Codemagic**. GitHub héberge le dépôt et les PR ; les jobs GitHub Actions ne sont pas considérés comme une preuve de validation D1 (compte bloqué pour facturation). Le fichier `codemagic.yaml` contient les workflows manuels `sentinel-d1-debug` et `sentinel-d1-release-unsigned` ; aucune fusion ou publication Play automatique n'est autorisée.
 
-Une modification du code ou des dépendances ne vaut pas validation CI tant que le runner GitHub n'a pas effectivement exécuté les étapes et produit des résultats exploitables.
+Preuves obtenues pour le commit `ef474d5` : Codemagic debug n°17, 1 310 tests unitaires réussis, APK debug construit ; Codemagic release unsigned n°2, AAB non signé construit et manifeste statique vérifié. Le commit ultérieur `f877203` étend la production d'artefacts AndroidTest ; sa génération n'est **pas** une exécution des tests sur émulateur ou appareil.
+
+### Matrice de vérité des capacités (à compléter par des preuves d'exécution)
+
+| Domaine | Code / configuration | Preuve encore requise |
+| --- | --- | --- |
+| Téléphone / Call Screening | Services et rôles déclarés | attribution et révocation des rôles, appels entrants/sortants, latences, urgences sur appareil |
+| SMS / MMS | Client, récepteurs et journal présents | réception/émission opérateur, multi-SIM, MMS, redémarrage et révocation du rôle |
+| Auth0 / Voice Studio | Connecteurs et tests unitaires présents | connexion réelle, course révocation/connexion, démontage PTT/LiveKit |
+| VPN WireGuard | Client et `VpnService` présents | passerelle réellement provisionnée, consentement, DNS et routage testés ; service commercial non disponible |
+| APK Inspection | Validations statiques et tests unitaires | inspection de fichiers réels, signature, règles anti-TOCTOU ; installation directe volontairement désactivée |
+| Wi-Fi / Bluetooth | Code et permissions présents | scans réels, restrictions constructeur/Android |
+| OSINT / réputation / index Web | Clients et cache présents | sources actives, signature et synchronisation web–Android ; certaines intégrations non provisionnées |
+| Contacts / montres / fonctions premium | Périmètre partiel ou prévu | audit des branchements, contrats et tests d'intégration |
+| Google Play | AAB unsigned qualifié statiquement | signature production, permissions sensibles, Play Console et tests réels |
+
+Aucune ligne de cette matrice ne signifie « 100 % opérationnel ». L'état `READY` doit résulter de preuves Android/runtime et non de la seule présence de fichiers ou d'un build réussi.
 
 ## Version actuelle
 

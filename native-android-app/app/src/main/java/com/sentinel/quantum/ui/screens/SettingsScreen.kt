@@ -88,6 +88,16 @@ fun SettingsScreen(
     var authUser by remember { mutableStateOf<Auth0UserSummary?>(null) }
     var authLoading by remember { mutableStateOf(true) }
     var authErrorMessage by remember { mutableStateOf<String?>(null) }
+    val authEpoch = remember { mutableIntStateOf(0) }
+    val authAlive = remember { mutableStateOf(true) }
+
+    DisposableEffect(authController) {
+        authAlive.value = true
+        onDispose {
+            authAlive.value = false
+            authEpoch.intValue++
+        }
+    }
     val ioScope = rememberCoroutineScope()
 
     fun openExternalPage(url: String) {
@@ -233,14 +243,19 @@ fun SettingsScreen(
     }
 
     LaunchedEffect(authController) {
+        val requestEpoch = ++authEpoch.intValue
         authController.restore(
             onSuccess = {
-                authUser = it
-                authLoading = false
+                if (authAlive.value && authEpoch.intValue == requestEpoch) {
+                    authUser = it
+                    authLoading = false
+                }
             },
             onFailure = {
-                authUser = null
-                authLoading = false
+                if (authAlive.value && authEpoch.intValue == requestEpoch) {
+                    authUser = null
+                    authLoading = false
+                }
             }
         )
     }
@@ -273,12 +288,19 @@ fun SettingsScreen(
                         onClick = {
                             val currentActivity = activity ?: return@Button
                             authErrorMessage = null
+                            val requestEpoch = ++authEpoch.intValue
                             authController.login(
                                 currentActivity,
-                                onSuccess = { authUser = it },
+                                onSuccess = {
+                                    if (authAlive.value && authEpoch.intValue == requestEpoch) {
+                                        authUser = it
+                                    }
+                                },
                                 onFailure = { message ->
-                                    authUser = null
-                                    authErrorMessage = auth0ErrorMessage(message)
+                                    if (authAlive.value && authEpoch.intValue == requestEpoch) {
+                                        authUser = null
+                                        authErrorMessage = auth0ErrorMessage(message)
+                                    }
                                 }
                             )
                         },
@@ -321,10 +343,19 @@ fun SettingsScreen(
                         onClick = {
                             val currentActivity = activity ?: return@OutlinedButton
                             authErrorMessage = null
+                            val requestEpoch = ++authEpoch.intValue
                             authController.logout(
                                 currentActivity,
-                                onSuccess = { authUser = null },
-                                onFailure = { message -> authErrorMessage = auth0ErrorMessage(message) }
+                                onSuccess = {
+                                    if (authAlive.value && authEpoch.intValue == requestEpoch) {
+                                        authUser = null
+                                    }
+                                },
+                                onFailure = { message ->
+                                    if (authAlive.value && authEpoch.intValue == requestEpoch) {
+                                        authErrorMessage = auth0ErrorMessage(message)
+                                    }
+                                }
                             )
                         },
                         enabled = activity != null,
