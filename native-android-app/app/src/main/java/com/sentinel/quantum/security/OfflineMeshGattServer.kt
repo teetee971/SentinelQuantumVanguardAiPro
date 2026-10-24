@@ -32,6 +32,9 @@ class OfflineMeshGattServer(context: Context) {
     private var generation = 0L
     private var onReady: ((Boolean) -> Unit)? = null
     private var timeout: Runnable? = null
+    // Keys are local connection handles, not cryptographic identities.
+    private val peerSessions = OfflineMeshGattPeerSessions()
+    private val peerTokens = mutableMapOf<String, OfflineMeshGattPeerSessions.Token>()
 
     private fun onMain() = Looper.myLooper() == Looper.getMainLooper()
     private fun permitted() = Build.VERSION.SDK_INT < 31 ||
@@ -46,6 +49,32 @@ class OfflineMeshGattServer(context: Context) {
         val radioManager = manager ?: return Start.UNAVAILABLE
         val run = ++generation
         val callback = object : BluetoothGattServerCallback() {
+            override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
+                main.post {
+                    if (run != generation || server == null) return@post
+                    val key = try { device.address } catch (_: SecurityException) { return@post }
+                    when {
+                        status != BluetoothGatt.GATT_SUCCESS ||
+                            newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED ->
+                            peerTokens.remove(key)?.let(peerSessions::disconnect)
+                        newState == android.bluetooth.BluetoothProfile.STATE_CONNECTED -> {
+                            if (!permitted()) return@post
+                            if (!peerTokens.containsKey(key)) {
+                                peerSessions.connect(key)?.let { peerTokens[key] = it }
+                            }
+                        }
+                    }
+                    // A GATT connection never grants private data access.
+                }
+            }
+
+            override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
+                main.post {
+                    if (run != generation || server == null) return@post
+                    val key = try { device.address } catch (_: SecurityException) { return@post }
+                    peerTokens[key]?.let { peerSessions.updateMtu(it, mtu) }
+                }
+            }
             override fun onServiceAdded(status: Int, service: BluetoothGattService) {
                 main.post {
                     if (run != generation || server == null) return@post
@@ -129,6 +158,8 @@ class OfflineMeshGattServer(context: Context) {
     @SuppressLint("MissingPermission")
     private fun stopInternal(reportFailure: Boolean) {
         generation++
+        peerTokens.clear()
+        peerSessions.close()
         timeout?.let(main::removeCallbacks)
         timeout = null
         val old = server
