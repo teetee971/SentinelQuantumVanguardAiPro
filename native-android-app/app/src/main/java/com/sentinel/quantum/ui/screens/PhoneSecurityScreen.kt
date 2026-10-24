@@ -61,6 +61,7 @@ import com.sentinel.quantum.security.PhoneRiskCard
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.ui.design.SentinelActionTile
+import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -260,13 +261,8 @@ fun PhoneSecurityScreen(navController: NavController) {
                 motionLevel = protectionMotion
             )
 
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
-            ) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.weight(1f)) {
