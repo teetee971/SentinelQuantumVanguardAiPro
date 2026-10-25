@@ -182,11 +182,10 @@ workflows:
     max_build_duration: 90
     environment:
       java: 17
-      # This is an existing Codemagic environment group. It must provide the
-      # four variables consumed by app/build.gradle; no keystore material is
-      # stored in Git or printed by this workflow.
+      # Existing Codemagic group. KEYSTORE_BASE64 is decoded only in the
+      # build process; no keystore material is stored in Git or printed.
       groups:
-        - sentinel-android-signing
+        - sentinel_production
     triggering:
       events: []
     scripts:
@@ -198,10 +197,13 @@ workflows:
             echo "BLOCKED: signed qualification is restricted to the consolidation branch"
             exit 1
           }
-          for name in KEYSTORE_FILE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+          test "${PLAY_IMPORT_KEY_MATCH_CONFIRMED:-}" = "true" || {
+            echo "BLOCKED: Google Play import-key correspondence is not confirmed"
+            exit 1
+          }
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
             test -n "${!name:-}" || { echo "BLOCKED: missing Codemagic signing binding: $name"; exit 1; }
           done
-          test -f "$KEYSTORE_FILE" || { echo "BLOCKED: configured keystore file is unavailable"; exit 1; }
           python3 scripts/verify-apk-install-gate.py
       - name: Android SDK 37
         script: |
@@ -216,6 +218,17 @@ workflows:
           set -eu
           cd "$CM_BUILD_DIR/native-android-app"
           chmod +x gradlew
+          umask 077
+          SIGNING_DIR="$(mktemp -d "$CM_BUILD_DIR/.sentinel-signing.XXXXXX")"
+          trap 'rm -rf -- "$SIGNING_DIR"' EXIT
+          KEYSTORE_FILE="$SIGNING_DIR/sentinel-release.p12"
+          export KEYSTORE_FILE
+          if ! printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE" 2>/dev/null; then
+            rm -f -- "$KEYSTORE_FILE"
+            printf '%s' "$KEYSTORE_BASE64" | base64 -D > "$KEYSTORE_FILE"
+          fi
+          chmod 600 "$KEYSTORE_FILE"
+          test -s "$KEYSTORE_FILE" || { echo "BLOCKED: decoded keystore file is empty"; exit 1; }
           ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease :app:bundleRelease --no-daemon --max-workers=2 --console=plain
       - name: Verify signed artifacts without exposing secrets
         script: |
@@ -239,12 +252,6 @@ workflows:
             "$(git rev-parse HEAD)" "${CM_BRANCH:-unknown}" "${CM_BUILD_ID:-unknown}" \
             > "$APK_DIR/build-provenance.txt"
           cat "$APK_DIR/build-provenance.txt"
-      - name: Remove derived keystore path
-        script: |
-          set -eu
-          case "${KEYSTORE_FILE:-}" in
-            "$CM_BUILD_DIR"/*) rm -f -- "$KEYSTORE_FILE" ;;
-          esac
     artifacts:
       - native-android-app/app/build/outputs/apk/release/*.apk
       - native-android-app/app/build/outputs/apk/release/*.sha256
