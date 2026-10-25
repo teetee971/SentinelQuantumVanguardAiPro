@@ -101,7 +101,7 @@ fun SentinelHeroVisual(
                 modifier = Modifier.size(174.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Canvas(modifier = Modifier.matchParentSize()) {
+                Canvas(modifier = Modifier.size(174.dp)) {
                     val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
                     val outer = size.minDimension * 0.47f
                     drawCircle(SentinelD1.Cyan.copy(alpha = 0.09f), radius = outer)
