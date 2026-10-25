@@ -76,3 +76,16 @@ Tester ultérieurement : attribution et révocation des rôles Téléphone/Call 
 - Suite Mesh Zero Trust : PASS, 205/205 tests.
 - Hygiène des identifiants/secrets : PASS, 6/6 tests.
 - `./gradlew :app:testDebugUnitTest` : NOT_TESTED côté compilation ; le wrapper n’a pas pu télécharger Gradle 9.8.0 (`services.gradle.org` connexion refusée).
+
+## Dépendances web — correction des six alertes
+
+L’audit npm complet a relié les six alertes GitHub à la dépendance directe de développement `vite@8.3.1` :
+
+- `GHSA-698v-4r3x-3vcv`
+- `GHSA-r825-w8mm-5pxw`
+- `GHSA-587h-7wmj-h5pm` (high)
+- `GHSA-9jrq-w75r-8gcw`
+- `GHSA-rq7h-c2jc-7f22`
+- `GHSA-vfpm-58rq-9qcg`
+
+La mise à jour minimale vers `vite@8.3.5` est appliquée dans `package.json` et `package-lock.json`. Après `npm ci --ignore-scripts`, `npx vite --version` retourne `8.3.5` et `npm audit --package-lock-only` retourne 0 vulnérabilité. Cette correction concerne le serveur/build web de développement ; aucune dépendance de l’APK Android n’a été modifiée.
