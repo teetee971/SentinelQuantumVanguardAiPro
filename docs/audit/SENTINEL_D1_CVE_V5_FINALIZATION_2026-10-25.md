@@ -66,3 +66,13 @@ Tester ultérieurement : attribution et révocation des rôles Téléphone/Call 
 - Le client VPN ne doit pas être présenté comme service VPN opérationnel sans gateway disponible et preuve de tunnel réel.
 - Les versions de dépendances Android très récentes ne peuvent être déclarées sûres pour les six alertes GitHub sans les identifiants et chemins d’applicabilité exacts ; toute mise à jour doit être faite par lot minimal avec tests de régression.
 - Aucun merge automatique n’est effectué.
+
+## Preuves complémentaires — 2026-10-25
+
+- `npm run test:syntax` : PASS, aucune erreur `node --check`.
+- `npm run test:security-governance` : PASS, 218/218 tests ; les sorties de test contenant un APK synthétique sont des tests de garde et ne constituent pas un APK Android compilé.
+- Suite Android vérité produit : PASS, 69/69 tests.
+- Suite CVE V5 ciblée : PASS, 32/32 tests.
+- Suite Mesh Zero Trust : PASS, 205/205 tests.
+- Hygiène des identifiants/secrets : PASS, 6/6 tests.
+- `./gradlew :app:testDebugUnitTest` : NOT_TESTED côté compilation ; le wrapper n’a pas pu télécharger Gradle 9.8.0 (`services.gradle.org` connexion refusée).
