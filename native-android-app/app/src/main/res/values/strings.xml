@@ -335,4 +335,16 @@
     </plurals>
     <string name="phone_core_open_validations">Ouvrir les validations</string>
 
+    <string name="vpn_d1_top_subtitle">WireGuard défensif · vérité runtime</string>
+    <string name="vpn_d1_hero_title">Passerelle requise</string>
+    <string name="vpn_d1_hero_subtitle">Service VPN public non opérationnel : aucune passerelle Sentinel disponible et validée.</string>
+    <string name="vpn_d1_tunnel_title">État du tunnel</string>
+    <string name="vpn_d1_runtime_evidence">Preuve runtime</string>
+    <string name="vpn_d1_gateway_missing">Passerelle absente</string>
+    <string name="vpn_d1_client_integrated">Client intégré</string>
+    <string name="vpn_d1_wireguard_integrated">Client WireGuard intégré</string>
+    <string name="vpn_d1_locked_reason">Pourquoi la connexion est verrouillée</string>
+    <string name="vpn_d1_gateway_unavailable">Passerelle Sentinel indisponible</string>
+    <string name="vpn_d1_foundations">Fondations déjà actives</string>
+    <string name="vpn_d1_android_client">Client Android</string>
 </resources>
