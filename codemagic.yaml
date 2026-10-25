@@ -182,7 +182,7 @@ workflows:
     max_build_duration: 90
     environment:
       java: 17
-      # Existing Codemagic group. KEYSTORE_BASE64 is decoded only in the
+      # Existing Codemagic group. SENTINEL_PRODUCTION_KEYSTORE_B64 is decoded only in the
       # build process; no keystore material is stored in Git or printed.
       # EXPECTED_CERTIFICATE_SHA256 is public certificate identity metadata.
       groups:
@@ -216,7 +216,7 @@ workflows:
               exit 1
               ;;
           esac
-          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD EXPECTED_CERTIFICATE_SHA256; do
+          for name in SENTINEL_PRODUCTION_KEYSTORE_B64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD EXPECTED_CERTIFICATE_SHA256; do
             test -n "${!name:-}" || { echo "BLOCKED: missing Codemagic signing binding: $name"; exit 1; }
           done
           EXPECTED_CERTIFICATE_SHA256="$(printf '%s' "$EXPECTED_CERTIFICATE_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
@@ -243,9 +243,9 @@ workflows:
           trap 'rm -rf -- "$SIGNING_DIR"' EXIT
           KEYSTORE_FILE="$SIGNING_DIR/sentinel-release.p12"
           export KEYSTORE_FILE
-          if ! printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE" 2>/dev/null; then
+          if ! printf '%s' "$SENTINEL_PRODUCTION_KEYSTORE_B64" | base64 --decode > "$KEYSTORE_FILE" 2>/dev/null; then
             rm -f -- "$KEYSTORE_FILE"
-            printf '%s' "$KEYSTORE_BASE64" | base64 -D > "$KEYSTORE_FILE"
+            printf '%s' "$SENTINEL_PRODUCTION_KEYSTORE_B64" | base64 -D > "$KEYSTORE_FILE"
           fi
           chmod 600 "$KEYSTORE_FILE"
           test -s "$KEYSTORE_FILE" || { echo "BLOCKED: decoded keystore file is empty"; exit 1; }
