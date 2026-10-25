@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +59,7 @@ fun VpnScreen(navController: NavController) {
         topBar = {
             SentinelTopBar(
                 title = "Sentinel VPN",
-                subtitle = "WireGuard défensif · vérité runtime",
+                subtitle = stringResource(R.string.vpn_d1_top_subtitle),
                 onBack = { navController.popBackStack() }
             )
         }
@@ -72,15 +74,15 @@ fun VpnScreen(navController: NavController) {
         ) {
             SentinelHeroVisual(
                 status = runtimeStatus,
-                title = "Passerelle requise",
-                subtitle = "Service VPN public non opérationnel : aucune passerelle Sentinel disponible et validée.",
+                title = stringResource(R.string.vpn_d1_hero_title),
+                subtitle = stringResource(R.string.vpn_d1_hero_subtitle),
                 modifier = Modifier.testTag("vpn-command-center"),
                 motionLevel = motionLevel
             )
 
             SentinelSectionHeader(
-                title = "État du tunnel",
-                trailing = "Preuve runtime"
+                title = stringResource(R.string.vpn_d1_tunnel_title),
+                trailing = stringResource(R.string.vpn_d1_runtime_evidence)
             )
 
             SentinelGlassCard(
@@ -88,15 +90,15 @@ fun VpnScreen(navController: NavController) {
                     .fillMaxWidth()
                     .testTag("vpn-runtime-truth")
             ) {
-                SentinelStatusChip(status = runtimeStatus, label = "Passerelle absente")
+                SentinelStatusChip(status = runtimeStatus, label = stringResource(R.string.vpn_d1_gateway_missing))
                 Text(
-                    text = "Client intégré",
+                    text = stringResource(R.string.vpn_d1_client_integrated),
                     style = MaterialTheme.typography.labelLarge,
                     color = SentinelD1.Cyan,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Client WireGuard intégré",
+                    text = stringResource(R.string.vpn_d1_wireguard_integrated),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -111,13 +113,13 @@ fun VpnScreen(navController: NavController) {
             }
 
             SentinelSectionHeader(
-                title = "Pourquoi la connexion est verrouillée",
+                title = stringResource(R.string.vpn_d1_locked_reason),
                 trailing = "Fail-closed"
             )
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Passerelle Sentinel indisponible",
+                    text = stringResource(R.string.vpn_d1_gateway_unavailable),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = SentinelD1.Warning
@@ -133,8 +135,8 @@ fun VpnScreen(navController: NavController) {
             }
 
             SentinelSectionHeader(
-                title = "Fondations déjà actives",
-                trailing = "Client Android"
+                title = stringResource(R.string.vpn_d1_foundations),
+                trailing = stringResource(R.string.vpn_d1_android_client)
             )
 
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
