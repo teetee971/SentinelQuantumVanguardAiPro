@@ -7,7 +7,7 @@ package com.sentinel.quantum.security
  * No phone number, contact name, message body, URL or subscription identifier is retained.
  */
 object PhoneCorePhysicalValidation {
-    const val CERTIFICATION_SCHEMA_VERSION = 6
+    const val CERTIFICATION_SCHEMA_VERSION = 5
     data class Evidence(
         val incomingCallConnected: Boolean,
         val outgoingCallConnected: Boolean,

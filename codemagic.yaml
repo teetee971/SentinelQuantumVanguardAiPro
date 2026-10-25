@@ -30,7 +30,7 @@ workflows:
           set -eu
           cd "$CM_BUILD_DIR/native-android-app"
           chmod +x gradlew
-          ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:assembleDebug --no-daemon --max-workers=2 --console=plain
+          ./gradlew :app:compileDebugKotlin :app:testDebugUnitTest :app:lintDebug :app:assembleDebugAndroidTest :app:assembleDebug --no-daemon --max-workers=2 --console=plain
       - name: Verify unit-test evidence
         script: |
           set -eu
@@ -84,7 +84,7 @@ workflows:
           (cd "$APK_DIR" && shasum -a 256 "$(basename "$1")" > apk-debug.sha256 && shasum -a 256 -c apk-debug.sha256)
           ACTUAL_BRANCH="${CM_BRANCH:-}"
           case "$ACTUAL_BRANCH" in
-            integration/sentinel-d1-3d-20261022|fix/d1-apk-process-guard-20261023|fix/d1-auth0-voice-revocation-20261023) ;;
+            integration/sentinel-d1-cve-v5-20261025|integration/sentinel-d1-3d-20261022|fix/d1-apk-process-guard-20261023|fix/d1-auth0-voice-revocation-20261023) ;;
             *)
               echo "BLOCKED: unexpected source branch: $ACTUAL_BRANCH"
               exit 1
@@ -123,7 +123,7 @@ workflows:
           set -eu
           cd "$CM_BUILD_DIR"
           case "${CM_BRANCH:-}" in
-            fix/d1-apk-process-guard-20261023|fix/d1-auth0-voice-revocation-20261023) ;;
+            integration/sentinel-d1-cve-v5-20261025|fix/d1-apk-process-guard-20261023|fix/d1-auth0-voice-revocation-20261023) ;;
             *) echo "BLOCKED: unexpected branch"; exit 1 ;;
           esac
           python3 scripts/verify-play-source-preflight.py
@@ -175,3 +175,79 @@ workflows:
       - native-android-app/app/build/outputs/bundle/releaseUnsigned/*.sha256
       - native-android-app/app/build/outputs/bundle/releaseUnsigned/build-provenance.txt
       - native-android-app/app/build/outputs/logs/manifest-merger-*.txt
+
+  sentinel-d1-release-signed:
+    name: Sentinel D1 signed Android qualification
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    environment:
+      java: 17
+      # This is an existing Codemagic environment group. It must provide the
+      # four variables consumed by app/build.gradle; no keystore material is
+      # stored in Git or printed by this workflow.
+      groups:
+        - sentinel-android-signing
+    triggering:
+      events: []
+    scripts:
+      - name: Verify source and signing bindings
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          test "${CM_BRANCH:-}" = "integration/sentinel-d1-cve-v5-20261025" || {
+            echo "BLOCKED: signed qualification is restricted to the consolidation branch"
+            exit 1
+          }
+          for name in KEYSTORE_FILE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            test -n "${!name:-}" || { echo "BLOCKED: missing Codemagic signing binding: $name"; exit 1; }
+          done
+          test -f "$KEYSTORE_FILE" || { echo "BLOCKED: configured keystore file is unavailable"; exit 1; }
+          python3 scripts/verify-apk-install-gate.py
+      - name: Android SDK 37
+        script: |
+          set -eu
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER" || { echo "BLOCKED: Android SDK manager missing"; exit 1; }
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-37.0" "build-tools;36.0.0"
+          printf 'sdk.dir=%s\n' "$SDK_ROOT" > "$CM_BUILD_DIR/native-android-app/local.properties"
+      - name: Build, test, lint, APK and AAB
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease :app:bundleRelease --no-daemon --max-workers=2 --console=plain
+      - name: Verify signed artifacts without exposing secrets
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR/native-android-app"
+          APK_DIR="app/build/outputs/apk/release"
+          AAB_DIR="app/build/outputs/bundle/release"
+          set -- "$APK_DIR"/*.apk
+          test "$#" -eq 1 && test -s "$1" || { echo "BLOCKED: expected one signed release APK"; exit 1; }
+          APK="$1"
+          set -- "$AAB_DIR"/*.aab
+          test "$#" -eq 1 && test -s "$1" || { echo "BLOCKED: expected one signed release AAB"; exit 1; }
+          AAB="$1"
+          APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}/build-tools/36.0.0/apksigner"
+          test -x "$APKSIGNER" || { echo "BLOCKED: apksigner missing"; exit 1; }
+          "$APKSIGNER" verify --verbose "$APK" >/dev/null
+          jarsigner -verify -strict "$AAB" >/dev/null
+          (cd "$APK_DIR" && shasum -a 256 "$(basename "$APK")" > release.apk.sha256)
+          (cd "$AAB_DIR" && shasum -a 256 "$(basename "$AAB")" > release.aab.sha256)
+          printf 'commit=%s\nbranch=%s\nbuild_id=%s\nSIGNED_BY=CODEMAGIC_ENVIRONMENT_GROUP\n' \
+            "$(git rev-parse HEAD)" "${CM_BRANCH:-unknown}" "${CM_BUILD_ID:-unknown}" \
+            > "$APK_DIR/build-provenance.txt"
+          cat "$APK_DIR/build-provenance.txt"
+      - name: Remove derived keystore path
+        script: |
+          set -eu
+          case "${KEYSTORE_FILE:-}" in
+            "$CM_BUILD_DIR"/*) rm -f -- "$KEYSTORE_FILE" ;;
+          esac
+    artifacts:
+      - native-android-app/app/build/outputs/apk/release/*.apk
+      - native-android-app/app/build/outputs/apk/release/*.sha256
+      - native-android-app/app/build/outputs/apk/release/build-provenance.txt
+      - native-android-app/app/build/outputs/bundle/release/*.aab
+      - native-android-app/app/build/outputs/bundle/release/*.sha256

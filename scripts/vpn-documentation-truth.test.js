@@ -17,7 +17,7 @@ const screen = readFileSync(
 test('VPN architecture does not deny the implemented Android WireGuard client', () => {
   assert.match(controller, /class SentinelVpnController/);
   assert.match(controller, /GoBackend/);
-  assert.match(screen, /Client WireGuard intégré/);
+  assert.match(screen, /R\.string\.vpn_d1_client_integrated/);
 
   assert.doesNotMatch(architecture, /does \*\*not\*\* currently contain a VPN implementation/i);
   assert.doesNotMatch(architecture, /future `SentinelVpnController`/i);
