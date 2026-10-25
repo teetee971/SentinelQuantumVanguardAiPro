@@ -299,17 +299,81 @@ workflows:
           AAB="$1"
           APKSIGNER="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}/build-tools/36.0.0/apksigner"
           test -x "$APKSIGNER" || { echo "BLOCKED: apksigner missing"; exit 1; }
-          "$APKSIGNER" verify --verbose --print-certs "$APK" > "$APK_DIR/release.apk.certificates.txt"
-          jarsigner -verify -strict "$AAB" >/dev/null
-          jarsigner -verify -verbose -certs "$AAB" > "$AAB_DIR/release.aab.certificates.txt"
+          APK_CERT_LOG="$APK_DIR/release.apk.certificates.txt"
+          if "$APKSIGNER" verify --verbose --print-certs "$APK" > "$APK_CERT_LOG" 2>&1; then
+            echo "CHECK apksigner_verify=PASS"
+          else
+            echo "CHECK apksigner_verify=FAIL"
+            tail -n 20 "$APK_CERT_LOG"
+            exit 1
+          fi
+          AAB_VERIFY_LOG="$AAB_DIR/release.aab.verify.txt"
+          set +e
+          jarsigner -verify "$AAB" > "$AAB_VERIFY_LOG" 2>&1
+          AAB_VERIFY_STATUS=$?
+          set -e
+          echo "CHECK jarsigner_verify_status=$AAB_VERIFY_STATUS"
+          if test "$AAB_VERIFY_STATUS" -ne 0 || ! grep -Eiq 'jar verified|jar is verified' "$AAB_VERIFY_LOG"; then
+            echo "BLOCKED: AAB cryptographic verification failed"
+            tail -n 30 "$AAB_VERIFY_LOG"
+            exit 1
+          fi
+          echo "CHECK jarsigner_verify=PASS"
+          AAB_STRICT_LOG="$AAB_DIR/release.aab.strict.txt"
+          set +e
+          jarsigner -verify -strict "$AAB" > "$AAB_STRICT_LOG" 2>&1
+          AAB_STRICT_STATUS=$?
+          set -e
+          echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
+          case "$AAB_STRICT_STATUS" in
+            0)
+              echo "CHECK jarsigner_strict=PASS"
+              ;;
+            4)
+              if grep -Eiq 'not trusted|does not chain|self-signed|chain.*(not|error)|certificate.*(expired|weak|disabled)' "$AAB_STRICT_LOG" &&
+                 ! grep -Eiq 'unsigned|invalid|digest.*(error|mismatch)|signature.*(invalid|error)|cannot verify' "$AAB_STRICT_LOG"; then
+                echo "CHECK jarsigner_strict=PASS_TRUST_WARNING"
+              else
+                echo "BLOCKED: jarsigner strict code 4 was not limited to a certificate trust warning"
+                tail -n 30 "$AAB_STRICT_LOG"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "BLOCKED: jarsigner strict verification failed with status $AAB_STRICT_STATUS"
+              tail -n 30 "$AAB_STRICT_LOG"
+              exit 1
+              ;;
+          esac
+          AAB_CERT_LOG="$AAB_DIR/release.aab.certificates.txt"
+          if keytool -printcert -jarfile "$AAB" > "$AAB_CERT_LOG" 2>&1; then
+            echo "CHECK aab_signer_certificate_extraction=PASS"
+          else
+            echo "CHECK aab_signer_certificate_extraction=FAIL"
+            tail -n 20 "$AAB_CERT_LOG"
+            exit 1
+          fi
           (cd "$APK_DIR" && shasum -a 256 "$(basename "$APK")" > release.apk.sha256)
           (cd "$AAB_DIR" && shasum -a 256 "$(basename "$AAB")" > release.aab.sha256)
-          CERTIFICATE_SHA256="$(sed -nE 's/.*certificate SHA-256 digest: ([0-9A-Fa-f:]+).*/\1/p' "$APK_DIR/release.apk.certificates.txt" | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          CERTIFICATE_SHA256="$(sed -nE 's/.*certificate SHA-256 digest: ([0-9A-Fa-f:]+).*/\1/p' "$APK_CERT_LOG" | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
           test "$CERTIFICATE_SHA256" = "${EXPECTED_CERTIFICATE_SHA256:-}" || {
             echo "BLOCKED: signed APK certificate identity mismatch"
             exit 1
           }
+          AAB_CERTIFICATE_SHA256_COUNT="$(sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*([0-9A-Fa-f:]+).*/\1/p' "$AAB_CERT_LOG" | sed '/^$/d' | wc -l | tr -d '[:space:]')"
+          test "$AAB_CERTIFICATE_SHA256_COUNT" -eq 1 || {
+            echo "BLOCKED: expected exactly one AAB signer certificate fingerprint"
+            exit 1
+          }
+          AAB_CERTIFICATE_SHA256="$(sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*([0-9A-Fa-f:]+).*/\1/p' "$AAB_CERT_LOG" | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          test "$AAB_CERTIFICATE_SHA256" = "${EXPECTED_CERTIFICATE_SHA256:-}" || {
+            echo "BLOCKED: signed AAB certificate identity mismatch"
+            exit 1
+          }
+          echo "CHECK apk_certificate_identity=PASS"
+          echo "CHECK aab_certificate_identity=PASS"
           printf '%s\n' "$CERTIFICATE_SHA256" > "$APK_DIR/release.certificate.sha256"
+          printf '%s\n' "$AAB_CERTIFICATE_SHA256" > "$AAB_DIR/release.certificate.sha256"
           printf 'commit=%s\nbranch=%s\nbuild_id=%s\nSIGNED_BY=CODEMAGIC_ENVIRONMENT_GROUP\n' \
             "$(git rev-parse HEAD)" "${CM_BRANCH:-unknown}" "${CM_BUILD_ID:-unknown}" \
             > "$APK_DIR/build-provenance.txt"
@@ -325,3 +389,6 @@ workflows:
       - native-android-app/app/build/outputs/bundle/release/*.aab
       - native-android-app/app/build/outputs/bundle/release/*.sha256
       - native-android-app/app/build/outputs/bundle/release/*.certificates.txt
+      - native-android-app/app/build/outputs/bundle/release/release.aab.verify.txt
+      - native-android-app/app/build/outputs/bundle/release/release.aab.strict.txt
+      - native-android-app/app/build/outputs/bundle/release/release.certificate.sha256
