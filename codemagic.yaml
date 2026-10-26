@@ -325,8 +325,8 @@ workflows:
           AAB_STRICT_STATUS=$?
           set -e
           echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
-          INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream|signature.*(no timestamp|not timestamped|without a timestamp)|without a timestamp|POSIX.*(unprotected|not protected)|unprotected.*POSIX|JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream|^[[:space:]]*(Warning:|Error:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
-          TRUST_WARNING_PATTERN='PKIX path building failed|unable to find valid certification path to requested target|certificate chain.*(not trusted|not validated)|self-signed'
+          INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream|signature.*(no timestamp|not timestamped|without a timestamp|do not include.*timestamp)|signatures?.*do not include.*timestamp|without a timestamp|POSIX.*(unprotected|not protected)|unprotected.*POSIX|JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream|^[[:space:]]*(Warning:|Error:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
+          TRUST_WARNING_PATTERN='PKIX path building failed|unable to find valid certification path to requested target|certificate chain.*(not trusted|not validated)|signer certificate.*(not trusted|does not chain)|self-signed'
           FORBIDDEN_NON_TRUST_PATTERN='unsigned|digest.*(error|mismatch)|signature.*(invalid|error)|certificate.*expired|certificate.*not yet valid|cannot verify|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
           FORBIDDEN_PATTERN="$FORBIDDEN_NON_TRUST_PATTERN|certificate.*invalid"
           INFO_WARNING_COUNT="$(grep -Eic "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" || true)"
@@ -341,7 +341,7 @@ workflows:
             fi
           }
           record_info_matches 'jarfile_jarinputstream_consistency' 'Entry .* is signed in JarFile but is not signed in JarInputStream'
-          record_info_matches 'missing_timestamp' 'signature.*(no timestamp|not timestamped|without a timestamp)|without a timestamp'
+          record_info_matches 'missing_timestamp' 'signature.*(no timestamp|not timestamped|without a timestamp|do not include.*timestamp)|signatures?.*do not include.*timestamp|without a timestamp'
           record_info_matches 'posix_metadata_warning' 'POSIX.*(unprotected|not protected)|unprotected.*POSIX'
           record_info_matches 'jarinputstream_manifest_diagnostic' 'JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream'
           record_info_matches 'diagnostic_header' '^[[:space:]]*(Warning:|Error:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
@@ -364,7 +364,7 @@ workflows:
           }
           record_trust_matches 'pkix_unrecognized_chain' 'PKIX path building failed|unable to find valid certification path to requested target'
           record_trust_matches 'self_signed_certificate' 'self-signed'
-          record_trust_matches 'untrusted_certificate_chain' 'certificate chain.*(not trusted|not validated)'
+          record_trust_matches 'untrusted_certificate_chain' 'certificate chain.*(not trusted|not validated)|signer certificate.*(not trusted|does not chain)'
           FORBIDDEN_DIAGNOSTICS="$AAB_DIR/release.aab.forbidden-diagnostics.txt"
           : > "$FORBIDDEN_DIAGNOSTICS"
           record_forbidden_matches() {
