@@ -327,7 +327,7 @@ workflows:
           echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
           INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream'
           TRUST_WARNING_PATTERN='self-signed|not trusted|does not chain|chain.*(not trusted|not validated|error)|unable to build.*certification path'
-          FORBIDDEN_PATTERN='unsigned|invalid|digest.*(error|mismatch)|signature.*(invalid|error)|cannot verify|expired|not yet valid|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
+          FORBIDDEN_PATTERN='unsigned|digest.*(error|mismatch)|signature.*(invalid|error)|certificate.*invalid|certificate.*expired|certificate.*not yet valid|cannot verify|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
           INFO_WARNING_COUNT="$(grep -Eic "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" || true)"
           grep -Eiv "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" > "$AAB_DIR/release.aab.actionable.txt" || true
           TRUST_WARNING_COUNT="$(grep -Eic "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
@@ -343,16 +343,16 @@ workflows:
             fi
           }
           record_forbidden_matches 'unsigned_or_missing_signature' 'unsigned'
-          record_forbidden_matches 'invalid_signature_or_certificate' 'invalid'
           record_forbidden_matches 'digest_error_or_mismatch' 'digest.*(error|mismatch)'
           record_forbidden_matches 'signature_error' 'signature.*(invalid|error)'
+          record_forbidden_matches 'invalid_certificate' 'certificate.*invalid'
           record_forbidden_matches 'verification_failure' 'cannot verify'
-          record_forbidden_matches 'certificate_expired' 'expired'
-          record_forbidden_matches 'certificate_not_yet_valid' 'not yet valid'
+          record_forbidden_matches 'certificate_expired' 'certificate.*expired'
+          record_forbidden_matches 'certificate_not_yet_valid' 'certificate.*not yet valid'
           record_forbidden_matches 'disabled_algorithm' 'disabled algorithm|algorithm.*disabled'
           record_forbidden_matches 'weak_algorithm' 'weak algorithm|algorithm.*weak'
           record_forbidden_matches 'key_too_small' 'key.*too small'
-          grep -Eiv "$TRUST_WARNING_PATTERN|^jar verified(, with signer errors)?\.?$|^[[:space:]]*Warning:[[:space:]]*$" \
+          grep -Eiv "$TRUST_WARNING_PATTERN|$FORBIDDEN_PATTERN|^jar verified(, with signer errors)?\.?$|^[[:space:]]*Warning:[[:space:]]*$" \
             "$AAB_DIR/release.aab.actionable.txt" | sed '/^[[:space:]]*$/d' > "$AAB_DIR/release.aab.unclassified.txt" || true
           UNCLASSIFIED_COUNT="$(wc -l < "$AAB_DIR/release.aab.unclassified.txt" | tr -d '[:space:]')"
           UNCLASSIFIED_LINE_NUMBERS="$(grep -n . "$AAB_DIR/release.aab.unclassified.txt" | cut -d: -f1 | paste -sd, - || true)"
