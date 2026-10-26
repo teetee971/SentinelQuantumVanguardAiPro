@@ -403,7 +403,13 @@ workflows:
           } > "$AAB_SUMMARY"
           case "$AAB_STRICT_STATUS" in
             0)
-              echo "CHECK jarsigner_strict=PASS"
+              if test "$FORBIDDEN_COUNT" -eq 0 && test "$UNCLASSIFIED_COUNT" -eq 0; then
+                echo "CHECK jarsigner_strict=PASS"
+              else
+                echo "BLOCKED: strict verification left forbidden or unclassified diagnostics"
+                cat "$AAB_SUMMARY"
+                exit 1
+              fi
               ;;
             4)
               if test "$TRUST_WARNING_COUNT" -gt 0 &&
