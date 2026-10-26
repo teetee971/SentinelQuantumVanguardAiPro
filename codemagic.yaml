@@ -527,3 +527,193 @@ workflows:
       - native-android-app/app/build/outputs/bundle/release/*.certificates.txt
       - native-android-app/app/build/outputs/bundle/release/release.certificate.sha256
       - native-android-app/app/build/outputs/bundle/release/release.aab.verification-summary.txt
+
+  sentinel-d1-emulator-qualification:
+    name: Sentinel D1 Android emulator qualification
+    # Linux is required for the headless emulator; mac_mini_m2 is intentionally not used.
+    # Codemagic execution requires a Linux image with KVM (/dev/kvm). If unavailable,
+    # this workflow fails closed and the same scripts must be run on an external Linux
+    # runner with hardware virtualization; that runner may incur separate billing.
+    instance_type: linux_x2
+    max_build_duration: 90
+    environment:
+      java: 17
+    triggering:
+      events: []
+    scripts:
+      - name: Verify emulator qualification source and host
+        script: |
+          set -eu
+          set -o pipefail
+          cd "$CM_BUILD_DIR"
+          case "${CM_BRANCH:-}" in
+            integration/sentinel-d1-cve-v5-20261025) ;;
+            *) echo "BLOCKED: unexpected qualification branch"; exit 1 ;;
+          esac
+          BASE_COMMIT="373f2ea78c033e371db8b6776ba30b6ea9b59f89"
+          git merge-base --is-ancestor "$BASE_COMMIT" HEAD || {
+            echo "BLOCKED: source is not descended from the qualified base $BASE_COMMIT"
+            exit 1
+          }
+          test "$(git rev-parse --is-inside-work-tree)" = true
+          mkdir -p emulator-qualification
+          printf 'source_commit=%s\nbranch=%s\nbuild_id=%s\nqualified_base=%s\n' \
+            "$(git rev-parse HEAD)" "${CM_BRANCH:-unknown}" "${CM_BUILD_ID:-unknown}" "$BASE_COMMIT" \
+            > emulator-qualification/source-provenance.txt
+          for secret_name in KEYSTORE_FILE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD KEYSTORE_BASE64 SENTINEL_PRODUCTION_KEYSTORE_B64; do
+            if env | grep -q "^${secret_name}="; then
+              echo "BLOCKED: signing binding $secret_name must not be present in emulator qualification"
+              exit 1
+            fi
+          done
+          mkdir -p emulator-qualification
+          find native-android-app/app/src/androidTest -type f -name '*Test.kt' | sort \
+            > emulator-qualification/androidTest-inventory.txt
+          TEST_COUNT="$(wc -l < emulator-qualification/androidTest-inventory.txt | tr -d '[:space:]')"
+          test "$TEST_COUNT" -eq 18 || {
+            echo "BLOCKED: expected 18 androidTest sources, found $TEST_COUNT"
+            exit 1
+          }
+          printf 'api_24=PREPARED_NOT_EXECUTED\napi_29=EXECUTION_TARGET\napi_36=PREPARED_NOT_EXECUTED\n' \
+            > emulator-qualification/api-matrix.txt
+          printf 'linux_instance=linux_x2\nkvm_required=/dev/kvm\nexternal_runner=required_if_kvm_unavailable\n' \
+            > emulator-qualification/emulator-host-requirements.txt
+          test "$(uname -s)" = Linux || { echo "BLOCKED: emulator qualification requires Linux"; exit 1; }
+          test -e /dev/kvm || {
+            echo "BLOCKED: /dev/kvm is unavailable; no hardware-accelerated emulator can be qualified"
+            exit 1
+          }
+          test -r /dev/kvm && test -w /dev/kvm || {
+            echo "BLOCKED: /dev/kvm is not accessible by the build user"
+            exit 1
+          }
+          echo "CHECK emulator_host=LINUX_KVM_AVAILABLE"
+      - name: Install Android API 29 emulator toolchain
+        script: |
+          set -eu
+          set -o pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          AVDMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/avdmanager"
+          EMULATOR="$SDK_ROOT/emulator/emulator"
+          ADB="$SDK_ROOT/platform-tools/adb"
+          test -x "$SDKMANAGER" || { echo "BLOCKED: sdkmanager missing"; exit 1; }
+          test -x "$AVDMANAGER" || { echo "BLOCKED: avdmanager missing"; exit 1; }
+          test -x "$EMULATOR" || { echo "BLOCKED: emulator binary missing"; exit 1; }
+          test -x "$ADB" || { echo "BLOCKED: adb missing"; exit 1; }
+          set +e
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null
+          LICENSE_STATUS="${PIPESTATUS[1]}"
+          set -e
+          test "$LICENSE_STATUS" -eq 0 || { echo "BLOCKED: Android SDK licenses could not be accepted"; exit 1; }
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" \
+            "platform-tools" "platforms;android-29" "build-tools;36.0.0" \
+            "emulator" "system-images;android-29;default;x86_64"
+          AVD_HOME="${CM_BUILD_DIR}/.android-avd"
+          mkdir -p "$AVD_HOME"
+          export ANDROID_AVD_HOME="$AVD_HOME"
+          printf 'no\n' | "$AVDMANAGER" create avd --force --name sentinel-api29 \
+            --package "system-images;android-29;default;x86_64" --device "pixel_2"
+          printf 'sdk_root=%s\navd=sentinel-api29\napi=29\nabi=x86_64\n' "$SDK_ROOT" \
+            > "$CM_BUILD_DIR/emulator-qualification/toolchain.txt"
+      - name: Build debug APK and AndroidTest APK
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR/native-android-app"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --max-workers=2 --console=plain
+          APK_DIR="app/build/outputs/apk/debug"
+          TEST_DIR="app/build/outputs/apk/androidTest/debug"
+          set -- "$APK_DIR"/*.apk
+          test "$#" -eq 1 && test -s "$1" || { echo "BLOCKED: debug APK missing"; exit 1; }
+          set -- "$TEST_DIR"/*.apk
+          test "$#" -eq 1 && test -s "$1" || { echo "BLOCKED: AndroidTest APK missing"; exit 1; }
+          sha256sum "$APK_DIR"/*.apk "$TEST_DIR"/*.apk > "$CM_BUILD_DIR/emulator-qualification/apk-sha256.txt"
+      - name: Start API 29 emulator and verify ADB readiness
+        script: |
+          set -eu
+          set -o pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
+          ADB="$SDK_ROOT/platform-tools/adb"
+          EMULATOR="$SDK_ROOT/emulator/emulator"
+          export ANDROID_AVD_HOME="${CM_BUILD_DIR}/.android-avd"
+          mkdir -p "$CM_BUILD_DIR/emulator-qualification"
+          "$ADB" start-server
+          "$EMULATOR" -avd sentinel-api29 -no-window -no-audio -no-boot-anim \
+            -no-snapshot -gpu swiftshader_indirect \
+            > "$CM_BUILD_DIR/emulator-qualification/emulator.log" 2>&1 &
+          EMULATOR_PID=$!
+          trap 'kill "$EMULATOR_PID" 2>/dev/null || true' EXIT
+          READY=0
+          for attempt in $(seq 1 180); do
+            STATE="$("$ADB" get-state 2>/dev/null | tr -d '\r\n' || true)"
+            BOOT="$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n' || true)"
+            if test "$STATE" = device && test "$BOOT" = 1; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          test "$READY" -eq 1 || {
+            echo "BLOCKED: emulator did not reach ADB device/sys.boot_completed=1"
+            "$ADB" devices -l || true
+            tail -n 80 "$CM_BUILD_DIR/emulator-qualification/emulator.log" || true
+            exit 1
+          }
+          printf 'adb_state=%s\nsys.boot_completed=%s\n' "$STATE" "$BOOT" \
+            > "$CM_BUILD_DIR/emulator-qualification/adb-readiness.txt"
+          "$ADB" shell getprop ro.build.version.sdk \
+            > "$CM_BUILD_DIR/emulator-qualification/emulator-api.txt"
+          echo "CHECK emulator_adb=DEVICE"
+          echo "CHECK sys.boot_completed=1"
+      - name: Install APKs and execute AndroidX instrumentation
+        script: |
+          set -eu
+          set -o pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
+          ADB="$SDK_ROOT/platform-tools/adb"
+          APK_DIR="$CM_BUILD_DIR/native-android-app/app/build/outputs/apk/debug"
+          TEST_DIR="$CM_BUILD_DIR/native-android-app/app/build/outputs/apk/androidTest/debug"
+          APK="$(find "$APK_DIR" -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          TEST_APK="$(find "$TEST_DIR" -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK" && test -n "$TEST_APK"
+          "$ADB" install -r -g "$APK"
+          "$ADB" install -r -g "$TEST_APK"
+          cd "$CM_BUILD_DIR/native-android-app"
+          set +e
+          ./gradlew :app:connectedDebugAndroidTest --no-daemon --max-workers=2 --console=plain \
+            2>&1 | tee "$CM_BUILD_DIR/emulator-qualification/connected-debug-android-test.log"
+          TEST_STATUS="${PIPESTATUS[0]}"
+          set -e
+          "$ADB" logcat -d -v threadtime > "$CM_BUILD_DIR/emulator-qualification/logcat.txt" || true
+          "$ADB" exec-out screencap -p > "$CM_BUILD_DIR/emulator-qualification/final-screen.png" || true
+          test "$TEST_STATUS" -eq 0 || {
+            echo "FAIL: AndroidX instrumentation returned $TEST_STATUS"
+            exit "$TEST_STATUS"
+          }
+          echo "CHECK android_instrumentation=PASS"
+      - name: Verify emulator evidence and limitations
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR"
+          RESULT_DIR="native-android-app/app/build/outputs/androidTest-results/connected"
+          REPORT_DIR="native-android-app/app/build/reports/androidTests/connected"
+          XML_COUNT="$(find "$RESULT_DIR" "$REPORT_DIR" -type f \( -name '*.xml' -o -name '*.html' \) 2>/dev/null | wc -l | tr -d '[:space:]')"
+          test "$XML_COUNT" -gt 0 || { echo "BLOCKED: missing AndroidTest XML/HTML evidence"; exit 1; }
+          cat > emulator-qualification/limitations.txt <<'EOF'
+          API 29 emulator qualification does not prove carrier calls, operator SMS/MMS,
+          physical BLE radio mesh behavior, WireGuard tunnel routing, SIM/multi-SIM behavior,
+          or Galaxy S24+ vendor behavior. These require later physical/device or dedicated
+          network qualification. Emulator PASS must not be promoted to physical PASS.
+          EOF
+          printf 'instrumentation_reports=%s\nsource_commit=%s\n' "$XML_COUNT" "$(git rev-parse HEAD)" \
+            > emulator-qualification/qualification-verdict.txt
+          echo "EMULATOR_QUALIFICATION=PASS_API29_ONLY"
+          echo "PHYSICAL_DEVICE_QUALIFICATION=NOT_TESTED"
+    artifacts:
+      - emulator-qualification/**
+      - native-android-app/app/build/outputs/apk/debug/*.apk
+      - native-android-app/app/build/outputs/apk/androidTest/debug/*.apk
+      - native-android-app/app/build/outputs/androidTest-results/**
+      - native-android-app/app/build/reports/androidTests/**
+      - native-android-app/app/build/test-results/**
