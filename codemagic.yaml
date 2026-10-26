@@ -325,7 +325,7 @@ workflows:
           AAB_STRICT_STATUS=$?
           set -e
           echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
-          STRUCTURAL_INCONSISTENCY_PATTERN='^This JAR file contains internal inconsistencies that may result in different contents when reading via JarFile and JarInputStream\.$'
+          STRUCTURAL_INCONSISTENCY_PATTERN='^This JAR file contains internal inconsistencies that may result in different contents when reading via JarFile and JarInputStream:$'
           STRUCTURAL_DETAILS_PATTERN='^Re-run with the -verbose and -certs options for more details\.$'
           STRUCTURAL_INCONSISTENCY_COUNT="$(grep -Ec "$STRUCTURAL_INCONSISTENCY_PATTERN" "$AAB_STRICT_LOG" || true)"
           STRUCTURAL_DETAILS_COUNT="$(grep -Ec "$STRUCTURAL_DETAILS_PATTERN" "$AAB_STRICT_LOG" || true)"
