@@ -325,7 +325,18 @@ workflows:
           AAB_STRICT_STATUS=$?
           set -e
           echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
-          INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream|signature.*(no timestamp|not timestamped|without a timestamp|do not include.*timestamp)|signatures?.*do not include.*timestamp|without a timestamp|POSIX.*(unprotected|not protected)|unprotected.*POSIX|JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream|^[[:space:]]*(Warning:|Error:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
+          STRUCTURAL_INCONSISTENCY_PATTERN='^This JAR file contains internal inconsistencies that may result in different contents when reading via JarFile and JarInputStream\.$'
+          STRUCTURAL_DETAILS_PATTERN='^Re-run with the -verbose and -certs options for more details\.$'
+          STRUCTURAL_INCONSISTENCY_COUNT="$(grep -Ec "$STRUCTURAL_INCONSISTENCY_PATTERN" "$AAB_STRICT_LOG" || true)"
+          STRUCTURAL_DETAILS_COUNT="$(grep -Ec "$STRUCTURAL_DETAILS_PATTERN" "$AAB_STRICT_LOG" || true)"
+          if test "$AAB_VERIFY_STATUS" -eq 0 &&
+             test "$STRUCTURAL_INCONSISTENCY_COUNT" -eq 1 &&
+             test "$STRUCTURAL_DETAILS_COUNT" -eq 1; then
+            STRUCTURAL_CONTEXT_PATTERN="$STRUCTURAL_INCONSISTENCY_PATTERN|$STRUCTURAL_DETAILS_PATTERN"
+          else
+            STRUCTURAL_CONTEXT_PATTERN='a^'
+          fi
+          INFO_WARNING_PATTERN="Entry .* is signed in JarFile but is not signed in JarInputStream|signature.*(no timestamp|not timestamped|without a timestamp|do not include.*timestamp)|signatures?.*do not include.*timestamp|without a timestamp|POSIX.*(unprotected|not protected)|unprotected.*POSIX|JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream|^[[:space:]]*(Warning:|Error:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$|$STRUCTURAL_CONTEXT_PATTERN"
           TRUST_WARNING_PATTERN='PKIX path building failed|unable to find valid certification path to requested target|certificate chain.*(not trusted|not validated)|signer certificate.*(not trusted|does not chain)|self-signed'
           FORBIDDEN_NON_TRUST_PATTERN='unsigned|digest.*(error|mismatch)|signature.*(invalid|error)|certificate.*expired|certificate.*not yet valid|cannot verify|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
           FORBIDDEN_PATTERN="$FORBIDDEN_NON_TRUST_PATTERN|certificate.*invalid"
@@ -345,6 +356,9 @@ workflows:
           record_info_matches 'posix_metadata_warning' 'POSIX.*(unprotected|not protected)|unprotected.*POSIX'
           record_info_matches 'jarinputstream_manifest_diagnostic' 'JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream'
           record_info_matches 'diagnostic_header' '^[[:space:]]*(Warning:|Error:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
+          if test "$STRUCTURAL_CONTEXT_PATTERN" != 'a^'; then
+            record_info_matches 'jarfile_jarinputstream_structural_context' "$STRUCTURAL_CONTEXT_PATTERN"
+          fi
           grep -Eiv "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" > "$AAB_DIR/release.aab.actionable.txt" || true
           TRUST_WARNING_COUNT="$(grep -Eic "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
           TRUST_FILTERED_LOG="$AAB_DIR/release.aab.security-actionable.txt"
@@ -397,6 +411,9 @@ workflows:
           {
             printf 'jarsigner_verify_status=%s\n' "$AAB_VERIFY_STATUS"
             printf 'jarsigner_strict_status=%s\n' "$AAB_STRICT_STATUS"
+            printf 'jarfile_jarinputstream_structural_messages=%s\n' "$STRUCTURAL_INCONSISTENCY_COUNT"
+            printf 'jarfile_jarinputstream_detail_hints=%s\n' "$STRUCTURAL_DETAILS_COUNT"
+            printf 'jarfile_jarinputstream_structural_context=%s\n' "$([ "$STRUCTURAL_CONTEXT_PATTERN" != 'a^' ] && echo 'EXACT_AND_VERIFY_OK' || echo 'NOT_AUTHORIZED')"
             printf 'informational_jarfile_jarinputstream_warnings=%s\n' "$INFO_WARNING_COUNT"
             printf 'trust_warning_lines=%s\n' "$TRUST_WARNING_COUNT"
             printf 'forbidden_or_crypto_error_lines=%s\n' "$FORBIDDEN_COUNT"
