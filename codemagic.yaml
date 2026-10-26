@@ -327,7 +327,8 @@ workflows:
           echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
           INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream|signature.*(no timestamp|not timestamped|without a timestamp)|without a timestamp|POSIX.*(unprotected|not protected)|unprotected.*POSIX|JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream|^[[:space:]]*(Warning:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
           TRUST_WARNING_PATTERN='PKIX path building failed|unable to find valid certification path to requested target|certificate chain.*(not trusted|not validated)|self-signed'
-          FORBIDDEN_PATTERN='unsigned|digest.*(error|mismatch)|signature.*(invalid|error)|certificate.*invalid|certificate.*expired|certificate.*not yet valid|cannot verify|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
+          FORBIDDEN_NON_TRUST_PATTERN='unsigned|digest.*(error|mismatch)|signature.*(invalid|error)|certificate.*expired|certificate.*not yet valid|cannot verify|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
+          FORBIDDEN_PATTERN="$FORBIDDEN_NON_TRUST_PATTERN|certificate.*invalid"
           INFO_WARNING_COUNT="$(grep -Eic "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" || true)"
           INFO_DIAGNOSTICS="$AAB_DIR/release.aab.informational-diagnostics.txt"
           : > "$INFO_DIAGNOSTICS"
@@ -346,7 +347,11 @@ workflows:
           record_info_matches 'diagnostic_header' '^[[:space:]]*(Warning:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
           grep -Eiv "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" > "$AAB_DIR/release.aab.actionable.txt" || true
           TRUST_WARNING_COUNT="$(grep -Eic "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
-          FORBIDDEN_COUNT="$(grep -Eic "$FORBIDDEN_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
+          TRUST_FILTERED_LOG="$AAB_DIR/release.aab.security-actionable.txt"
+          grep -Eiv "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" > "$TRUST_FILTERED_LOG" || true
+          TRUST_MIXED_FORBIDDEN_COUNT="$(grep -Ei "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" | grep -Eic "$FORBIDDEN_NON_TRUST_PATTERN" || true)"
+          FORBIDDEN_COUNT="$(grep -Eic "$FORBIDDEN_PATTERN" "$TRUST_FILTERED_LOG" || true)"
+          FORBIDDEN_COUNT=$((FORBIDDEN_COUNT + TRUST_MIXED_FORBIDDEN_COUNT))
           TRUST_DIAGNOSTICS="$AAB_DIR/release.aab.trust-diagnostics.txt"
           : > "$TRUST_DIAGNOSTICS"
           record_trust_matches() {
@@ -365,7 +370,7 @@ workflows:
           record_forbidden_matches() {
             category="$1"
             pattern="$2"
-            line_numbers="$(grep -Ein "$pattern" "$AAB_DIR/release.aab.actionable.txt" | cut -d: -f1 | paste -sd, - || true)"
+            line_numbers="$(grep -Ein "$pattern" "$TRUST_FILTERED_LOG" | cut -d: -f1 | paste -sd, - || true)"
             if test -n "$line_numbers"; then
               printf 'forbidden_category=%s line_numbers=%s\n' "$category" "$line_numbers" >> "$FORBIDDEN_DIAGNOSTICS"
             fi
@@ -380,8 +385,12 @@ workflows:
           record_forbidden_matches 'disabled_algorithm' 'disabled algorithm|algorithm.*disabled'
           record_forbidden_matches 'weak_algorithm' 'weak algorithm|algorithm.*weak'
           record_forbidden_matches 'key_too_small' 'key.*too small'
+          if test "$TRUST_MIXED_FORBIDDEN_COUNT" -gt 0; then
+            mixed_line_numbers="$(grep -Ein "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" | cut -d: -f1 | paste -sd, - || true)"
+            printf 'forbidden_category=trust_context_with_security_error line_numbers=%s\n' "$mixed_line_numbers" >> "$FORBIDDEN_DIAGNOSTICS"
+          fi
           grep -Eiv "$TRUST_WARNING_PATTERN|$FORBIDDEN_PATTERN|^jar verified(, with signer errors)?\.?$|^[[:space:]]*Warning:[[:space:]]*$" \
-            "$AAB_DIR/release.aab.actionable.txt" | sed '/^[[:space:]]*$/d' > "$AAB_DIR/release.aab.unclassified.txt" || true
+            "$TRUST_FILTERED_LOG" | sed '/^[[:space:]]*$/d' > "$AAB_DIR/release.aab.unclassified.txt" || true
           UNCLASSIFIED_COUNT="$(wc -l < "$AAB_DIR/release.aab.unclassified.txt" | tr -d '[:space:]')"
           UNCLASSIFIED_LINE_NUMBERS="$(grep -n . "$AAB_DIR/release.aab.unclassified.txt" | cut -d: -f1 | paste -sd, - || true)"
           AAB_SUMMARY="$AAB_DIR/release.aab.verification-summary.txt"
