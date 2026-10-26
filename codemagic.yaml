@@ -325,13 +325,41 @@ workflows:
           AAB_STRICT_STATUS=$?
           set -e
           echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
-          INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream'
-          TRUST_WARNING_PATTERN='self-signed|not trusted|does not chain|chain.*(not trusted|not validated|error)|unable to build.*certification path'
+          INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream|signature.*(no timestamp|not timestamped|without a timestamp)|without a timestamp|POSIX.*(unprotected|not protected)|unprotected.*POSIX|JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream|^[[:space:]]*(Warning:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
+          TRUST_WARNING_PATTERN='PKIX path building failed|unable to find valid certification path to requested target|certificate chain.*(not trusted|not validated)|self-signed'
           FORBIDDEN_PATTERN='unsigned|digest.*(error|mismatch)|signature.*(invalid|error)|certificate.*invalid|certificate.*expired|certificate.*not yet valid|cannot verify|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
           INFO_WARNING_COUNT="$(grep -Eic "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" || true)"
+          INFO_DIAGNOSTICS="$AAB_DIR/release.aab.informational-diagnostics.txt"
+          : > "$INFO_DIAGNOSTICS"
+          record_info_matches() {
+            category="$1"
+            pattern="$2"
+            line_numbers="$(grep -Ein "$pattern" "$AAB_STRICT_LOG" | cut -d: -f1 | paste -sd, - || true)"
+            if test -n "$line_numbers"; then
+              printf 'informational_category=%s line_numbers=%s\n' "$category" "$line_numbers" >> "$INFO_DIAGNOSTICS"
+            fi
+          }
+          record_info_matches 'jarfile_jarinputstream_consistency' 'Entry .* is signed in JarFile but is not signed in JarInputStream'
+          record_info_matches 'missing_timestamp' 'signature.*(no timestamp|not timestamped|without a timestamp)|without a timestamp'
+          record_info_matches 'posix_metadata_warning' 'POSIX.*(unprotected|not protected)|unprotected.*POSIX'
+          record_info_matches 'jarinputstream_manifest_diagnostic' 'JarInputStream.*manifest.*(absent|missing|not found)|manifest.*(absent|missing|not found).*JarInputStream'
+          record_info_matches 'diagnostic_header' '^[[:space:]]*(Warning:|Note:)[[:space:]]*$|^jar verified(, with signer errors)?\.?$'
           grep -Eiv "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" > "$AAB_DIR/release.aab.actionable.txt" || true
           TRUST_WARNING_COUNT="$(grep -Eic "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
           FORBIDDEN_COUNT="$(grep -Eic "$FORBIDDEN_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
+          TRUST_DIAGNOSTICS="$AAB_DIR/release.aab.trust-diagnostics.txt"
+          : > "$TRUST_DIAGNOSTICS"
+          record_trust_matches() {
+            category="$1"
+            pattern="$2"
+            line_numbers="$(grep -Ein "$pattern" "$AAB_DIR/release.aab.actionable.txt" | cut -d: -f1 | paste -sd, - || true)"
+            if test -n "$line_numbers"; then
+              printf 'trust_category=%s line_numbers=%s\n' "$category" "$line_numbers" >> "$TRUST_DIAGNOSTICS"
+            fi
+          }
+          record_trust_matches 'pkix_unrecognized_chain' 'PKIX path building failed|unable to find valid certification path to requested target'
+          record_trust_matches 'self_signed_certificate' 'self-signed'
+          record_trust_matches 'untrusted_certificate_chain' 'certificate chain.*(not trusted|not validated)'
           FORBIDDEN_DIAGNOSTICS="$AAB_DIR/release.aab.forbidden-diagnostics.txt"
           : > "$FORBIDDEN_DIAGNOSTICS"
           record_forbidden_matches() {
@@ -365,6 +393,8 @@ workflows:
             printf 'forbidden_or_crypto_error_lines=%s\n' "$FORBIDDEN_COUNT"
             printf 'unclassified_diagnostic_lines=%s\n' "$UNCLASSIFIED_COUNT"
             printf 'unclassified_line_numbers=%s\n' "${UNCLASSIFIED_LINE_NUMBERS:-none}"
+            if test -s "$INFO_DIAGNOSTICS"; then cat "$INFO_DIAGNOSTICS"; else printf 'informational_category=none\n'; fi
+            if test -s "$TRUST_DIAGNOSTICS"; then cat "$TRUST_DIAGNOSTICS"; else printf 'trust_category=none\n'; fi
             if test -s "$FORBIDDEN_DIAGNOSTICS"; then
               cat "$FORBIDDEN_DIAGNOSTICS"
             else
