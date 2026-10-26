@@ -629,85 +629,107 @@ workflows:
           set -- "$TEST_DIR"/*.apk
           test "$#" -eq 1 && test -s "$1" || { echo "BLOCKED: AndroidTest APK missing"; exit 1; }
           sha256sum "$APK_DIR"/*.apk "$TEST_DIR"/*.apk > "$CM_BUILD_DIR/emulator-qualification/apk-sha256.txt"
-      - name: Start API 29 emulator and verify ADB readiness
+      - name: Run API 29 emulator instrumentation and collect evidence
         script: |
           set -eu
           set -o pipefail
+          cd "$CM_BUILD_DIR"
           SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
           ADB="$SDK_ROOT/platform-tools/adb"
           EMULATOR="$SDK_ROOT/emulator/emulator"
-          export ANDROID_AVD_HOME="${CM_BUILD_DIR}/.android-avd"
-          mkdir -p "$CM_BUILD_DIR/emulator-qualification"
+          APK_DIR="native-android-app/app/build/outputs/apk/debug"
+          TEST_DIR="native-android-app/app/build/outputs/apk/androidTest/debug"
+          QUAL_DIR="$CM_BUILD_DIR/emulator-qualification"
+          export ANDROID_AVD_HOME="$CM_BUILD_DIR/.android-avd"
+          EMULATOR_PID=""
+          cleanup_emulator() {
+            EXIT_STATUS=$?
+            set +e
+            if test -n "${ADB:-}"; then
+              "$ADB" logcat -d -v threadtime > "$QUAL_DIR/logcat.txt"
+              "$ADB" exec-out screencap -p > "$QUAL_DIR/final-screen.png"
+              "$ADB" emu kill >/dev/null 2>&1
+            fi
+            if test -n "${EMULATOR_PID:-}"; then
+              kill "$EMULATOR_PID" >/dev/null 2>&1
+              wait "$EMULATOR_PID" >/dev/null 2>&1
+            fi
+            exit "$EXIT_STATUS"
+          }
+          trap cleanup_emulator EXIT
+          test -x "$ADB" || { echo "BLOCKED: adb missing"; exit 1; }
+          test -x "$EMULATOR" || { echo "BLOCKED: emulator binary missing"; exit 1; }
           "$ADB" start-server
           "$EMULATOR" -avd sentinel-api29 -no-window -no-audio -no-boot-anim \
             -no-snapshot -gpu swiftshader_indirect \
-            > "$CM_BUILD_DIR/emulator-qualification/emulator.log" 2>&1 &
+            > "$QUAL_DIR/emulator.log" 2>&1 &
           EMULATOR_PID=$!
-          trap 'kill "$EMULATOR_PID" 2>/dev/null || true' EXIT
-          READY=0
-          for attempt in $(seq 1 180); do
-            STATE="$("$ADB" get-state 2>/dev/null | tr -d '\r\n' || true)"
-            BOOT="$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n' || true)"
-            if test "$STATE" = device && test "$BOOT" = 1; then
-              READY=1
-              break
-            fi
-            sleep 1
-          done
-          test "$READY" -eq 1 || {
-            echo "BLOCKED: emulator did not reach ADB device/sys.boot_completed=1"
-            "$ADB" devices -l || true
-            tail -n 80 "$CM_BUILD_DIR/emulator-qualification/emulator.log" || true
-            exit 1
+          wait_for_emulator_ready() {
+            READY=0
+            for attempt in $(seq 1 180); do
+              STATE="$("$ADB" get-state 2>/dev/null | tr -d '\r\n' || true)"
+              BOOT="$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n' || true)"
+              if test "$STATE" = device && test "$BOOT" = 1; then
+                READY=1
+                break
+              fi
+              sleep 1
+            done
+            test "$READY" -eq 1 || {
+              echo "BLOCKED: emulator is not ADB device/sys.boot_completed=1"
+              "$ADB" devices -l || true
+              tail -n 80 "$QUAL_DIR/emulator.log" || true
+              exit 1
+            }
           }
-          printf 'adb_state=%s\nsys.boot_completed=%s\n' "$STATE" "$BOOT" \
-            > "$CM_BUILD_DIR/emulator-qualification/adb-readiness.txt"
-          "$ADB" shell getprop ro.build.version.sdk \
-            > "$CM_BUILD_DIR/emulator-qualification/emulator-api.txt"
-          echo "CHECK emulator_adb=DEVICE"
-          echo "CHECK sys.boot_completed=1"
-      - name: Install APKs and execute AndroidX instrumentation
-        script: |
-          set -eu
-          set -o pipefail
-          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
-          ADB="$SDK_ROOT/platform-tools/adb"
-          APK_DIR="$CM_BUILD_DIR/native-android-app/app/build/outputs/apk/debug"
-          TEST_DIR="$CM_BUILD_DIR/native-android-app/app/build/outputs/apk/androidTest/debug"
+          wait_for_emulator_ready
+          printf 'adb_state=%s\nsys.boot_completed=%s\n' "$STATE" "$BOOT" > "$QUAL_DIR/adb-readiness.txt"
+          "$ADB" shell getprop ro.build.version.sdk > "$QUAL_DIR/emulator-api.txt"
+          echo "CHECK emulator_adb_before_install=DEVICE"
+          echo "CHECK sys.boot_completed_before_install=1"
           APK="$(find "$APK_DIR" -maxdepth 1 -type f -name '*.apk' -print -quit)"
           TEST_APK="$(find "$TEST_DIR" -maxdepth 1 -type f -name '*.apk' -print -quit)"
-          test -n "$APK" && test -n "$TEST_APK"
+          test -n "$APK" && test -n "$TEST_APK" || { echo "BLOCKED: debug APK or AndroidTest APK missing"; exit 1; }
           "$ADB" install -r -g "$APK"
           "$ADB" install -r -g "$TEST_APK"
+          echo "CHECK apk_install=PASS"
+          wait_for_emulator_ready
+          echo "CHECK emulator_adb_before_instrumentation=DEVICE"
+          echo "CHECK sys.boot_completed_before_instrumentation=1"
           cd "$CM_BUILD_DIR/native-android-app"
           set +e
           ./gradlew :app:connectedDebugAndroidTest --no-daemon --max-workers=2 --console=plain \
-            2>&1 | tee "$CM_BUILD_DIR/emulator-qualification/connected-debug-android-test.log"
+            2>&1 | tee "$QUAL_DIR/connected-debug-android-test.log"
           TEST_STATUS="${PIPESTATUS[0]}"
           set -e
-          "$ADB" logcat -d -v threadtime > "$CM_BUILD_DIR/emulator-qualification/logcat.txt" || true
-          "$ADB" exec-out screencap -p > "$CM_BUILD_DIR/emulator-qualification/final-screen.png" || true
-          test "$TEST_STATUS" -eq 0 || {
-            echo "FAIL: AndroidX instrumentation returned $TEST_STATUS"
-            exit "$TEST_STATUS"
-          }
-          echo "CHECK android_instrumentation=PASS"
-      - name: Verify emulator evidence and limitations
-        script: |
-          set -eu
-          cd "$CM_BUILD_DIR"
-          RESULT_DIR="native-android-app/app/build/outputs/androidTest-results/connected"
-          REPORT_DIR="native-android-app/app/build/reports/androidTests/connected"
+          RESULT_DIR="app/build/outputs/androidTest-results/connected"
+          REPORT_DIR="app/build/reports/androidTests/connected"
           XML_COUNT="$(find "$RESULT_DIR" "$REPORT_DIR" -type f \( -name '*.xml' -o -name '*.html' \) 2>/dev/null | wc -l | tr -d '[:space:]')"
           test "$XML_COUNT" -gt 0 || { echo "BLOCKED: missing AndroidTest XML/HTML evidence"; exit 1; }
-          cat > emulator-qualification/limitations.txt <<'EOF'
+          python3 - "$RESULT_DIR" <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          files = glob.glob(sys.argv[1] + '/**/*.xml', recursive=True)
+          tests = failures = errors = skipped = 0
+          for path in files:
+              root = ET.parse(path).getroot()
+              tests += int(root.get('tests', '0'))
+              failures += int(root.get('failures', '0'))
+              errors += int(root.get('errors', '0'))
+              skipped += int(root.get('skipped', '0'))
+          print(f'AndroidTest XML: {len(files)} files, {tests} tests, {failures} failures, {errors} errors, {skipped} skipped')
+          if not files or failures or errors:
+              raise SystemExit('FAIL: AndroidTest XML reports contain failures or errors')
+          PY
+          printf 'instrumentation_reports=%s\nsource_commit=%s\n' "$XML_COUNT" "$(git rev-parse HEAD)" \
+            > "$QUAL_DIR/qualification-verdict.txt"
+          cat > "$QUAL_DIR/limitations.txt" <<'EOF'
           API 29 emulator qualification does not prove carrier calls, operator SMS/MMS,
           physical BLE radio mesh behavior, WireGuard tunnel routing, SIM/multi-SIM behavior,
           or Galaxy S24+ vendor behavior. These require later physical/device or dedicated
           network qualification. Emulator PASS must not be promoted to physical PASS.
           EOF
-          printf 'instrumentation_reports=%s\nsource_commit=%s\n' "$XML_COUNT" "$(git rev-parse HEAD)" \
-            > emulator-qualification/qualification-verdict.txt
+          test "$TEST_STATUS" -eq 0 || { echo "FAIL: AndroidX instrumentation returned $TEST_STATUS"; exit "$TEST_STATUS"; }
+          echo "CHECK android_instrumentation=PASS"
           echo "EMULATOR_QUALIFICATION=PASS_API29_ONLY"
           echo "PHYSICAL_DEVICE_QUALIFICATION=NOT_TESTED"
     artifacts:
