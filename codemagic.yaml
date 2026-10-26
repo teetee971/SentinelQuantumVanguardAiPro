@@ -464,8 +464,32 @@ workflows:
           fi
           (cd "$APK_DIR" && shasum -a 256 "$(basename "$APK")" > release.apk.sha256)
           (cd "$AAB_DIR" && shasum -a 256 "$(basename "$AAB")" > release.aab.sha256)
-          CERTIFICATE_SHA256="$(sed -nE 's/.*certificate SHA-256 digest: ([0-9A-Fa-f:]+).*/\1/p' "$APK_CERT_LOG" | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
-          test "$CERTIFICATE_SHA256" = "${EXPECTED_CERTIFICATE_SHA256:-}" || {
+          normalize_sha256() {
+            if test "$#" -gt 0; then
+              printf '%s' "$1"
+            else
+              cat
+            fi | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]'
+          }
+          require_sha256() {
+            name="$1"
+            value="$2"
+            test -n "$value" || { echo "BLOCKED: $name certificate SHA-256 is missing"; exit 1; }
+            printf '%s' "$value" | grep -Eq '^[A-F0-9]{64}$' || {
+              echo "BLOCKED: $name certificate SHA-256 is malformed"
+              exit 1
+            }
+          }
+          EXPECTED_CERTIFICATE_SHA256_NORMALIZED="$(normalize_sha256 "${EXPECTED_CERTIFICATE_SHA256:-}")"
+          require_sha256 'expected' "$EXPECTED_CERTIFICATE_SHA256_NORMALIZED"
+          APK_CERTIFICATE_SHA256_COUNT="$(sed -nE 's/.*certificate SHA-256 digest: ([0-9A-Fa-f:]+).*/\1/p' "$APK_CERT_LOG" | sed '/^$/d' | wc -l | tr -d '[:space:]')"
+          test "$APK_CERTIFICATE_SHA256_COUNT" -eq 1 || {
+            echo "BLOCKED: expected exactly one APK signer certificate fingerprint"
+            exit 1
+          }
+          CERTIFICATE_SHA256="$(sed -nE 's/.*certificate SHA-256 digest: ([0-9A-Fa-f:]+).*/\1/p' "$APK_CERT_LOG" | sed -n '1p' | normalize_sha256)"
+          require_sha256 'APK' "$CERTIFICATE_SHA256"
+          test "$CERTIFICATE_SHA256" = "$EXPECTED_CERTIFICATE_SHA256_NORMALIZED" || {
             echo "BLOCKED: signed APK certificate identity mismatch"
             exit 1
           }
@@ -474,8 +498,9 @@ workflows:
             echo "BLOCKED: expected exactly one AAB signer certificate fingerprint"
             exit 1
           }
-          AAB_CERTIFICATE_SHA256="$(sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*([0-9A-Fa-f:]+).*/\1/p' "$AAB_CERT_LOG" | tr -d ':' | tr '[:lower:]' '[:upper:]')"
-          test "$AAB_CERTIFICATE_SHA256" = "${EXPECTED_CERTIFICATE_SHA256:-}" || {
+          AAB_CERTIFICATE_SHA256="$(sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*([0-9A-Fa-f:]+).*/\1/p' "$AAB_CERT_LOG" | sed -n '1p' | normalize_sha256)"
+          require_sha256 'AAB' "$AAB_CERTIFICATE_SHA256"
+          test "$AAB_CERTIFICATE_SHA256" = "$EXPECTED_CERTIFICATE_SHA256_NORMALIZED" || {
             echo "BLOCKED: signed AAB certificate identity mismatch"
             exit 1
           }
