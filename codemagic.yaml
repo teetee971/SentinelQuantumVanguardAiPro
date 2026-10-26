@@ -325,23 +325,43 @@ workflows:
           AAB_STRICT_STATUS=$?
           set -e
           echo "CHECK jarsigner_strict_status=$AAB_STRICT_STATUS"
+          INFO_WARNING_PATTERN='Entry .* is signed in JarFile but is not signed in JarInputStream'
+          TRUST_WARNING_PATTERN='self-signed|not trusted|does not chain|chain.*(not trusted|not validated|error)|unable to build.*certification path'
+          FORBIDDEN_PATTERN='unsigned|invalid|digest.*(error|mismatch)|signature.*(invalid|error)|cannot verify|expired|not yet valid|disabled algorithm|weak algorithm|algorithm.*(disabled|weak)|key.*too small'
+          INFO_WARNING_COUNT="$(grep -Eic "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" || true)"
+          grep -Eiv "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" > "$AAB_DIR/release.aab.actionable.txt" || true
+          TRUST_WARNING_COUNT="$(grep -Eic "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
+          FORBIDDEN_COUNT="$(grep -Eic "$FORBIDDEN_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
+          grep -Eiv "$TRUST_WARNING_PATTERN|^jar verified(, with signer errors)?\.?$|^[[:space:]]*Warning:[[:space:]]*$" \
+            "$AAB_DIR/release.aab.actionable.txt" | sed '/^[[:space:]]*$/d' > "$AAB_DIR/release.aab.unclassified.txt" || true
+          UNCLASSIFIED_COUNT="$(wc -l < "$AAB_DIR/release.aab.unclassified.txt" | tr -d '[:space:]')"
+          AAB_SUMMARY="$AAB_DIR/release.aab.verification-summary.txt"
+          {
+            printf 'jarsigner_verify_status=%s\n' "$AAB_VERIFY_STATUS"
+            printf 'jarsigner_strict_status=%s\n' "$AAB_STRICT_STATUS"
+            printf 'informational_jarfile_jarinputstream_warnings=%s\n' "$INFO_WARNING_COUNT"
+            printf 'trust_warning_lines=%s\n' "$TRUST_WARNING_COUNT"
+            printf 'forbidden_or_crypto_error_lines=%s\n' "$FORBIDDEN_COUNT"
+            printf 'unclassified_diagnostic_lines=%s\n' "$UNCLASSIFIED_COUNT"
+          } > "$AAB_SUMMARY"
           case "$AAB_STRICT_STATUS" in
             0)
               echo "CHECK jarsigner_strict=PASS"
               ;;
             4)
-              if grep -Eiq 'not trusted|does not chain|self-signed|chain.*(not|error)|certificate.*(expired|weak|disabled)' "$AAB_STRICT_LOG" &&
-                 ! grep -Eiq 'unsigned|invalid|digest.*(error|mismatch)|signature.*(invalid|error)|cannot verify' "$AAB_STRICT_LOG"; then
+              if test "$TRUST_WARNING_COUNT" -gt 0 &&
+                 test "$FORBIDDEN_COUNT" -eq 0 &&
+                 test "$UNCLASSIFIED_COUNT" -eq 0; then
                 echo "CHECK jarsigner_strict=PASS_TRUST_WARNING"
               else
                 echo "BLOCKED: jarsigner strict code 4 was not limited to a certificate trust warning"
-                tail -n 30 "$AAB_STRICT_LOG"
+                cat "$AAB_SUMMARY"
                 exit 1
               fi
               ;;
             *)
               echo "BLOCKED: jarsigner strict verification failed with status $AAB_STRICT_STATUS"
-              tail -n 30 "$AAB_STRICT_LOG"
+              cat "$AAB_SUMMARY"
               exit 1
               ;;
           esac
@@ -379,6 +399,8 @@ workflows:
             > "$APK_DIR/build-provenance.txt"
           printf 'signing_mode=%s\ncertificate_sha256=%s\n' \
             "${SIGNING_MODE:-unknown}" "$CERTIFICATE_SHA256" >> "$APK_DIR/build-provenance.txt"
+          printf 'apk_certificate_sha256=%s\naab_certificate_sha256=%s\n' \
+            "$CERTIFICATE_SHA256" "$AAB_CERTIFICATE_SHA256" >> "$AAB_SUMMARY"
           cat "$APK_DIR/build-provenance.txt"
     artifacts:
       - native-android-app/app/build/outputs/apk/release/*.apk
@@ -389,6 +411,5 @@ workflows:
       - native-android-app/app/build/outputs/bundle/release/*.aab
       - native-android-app/app/build/outputs/bundle/release/*.sha256
       - native-android-app/app/build/outputs/bundle/release/*.certificates.txt
-      - native-android-app/app/build/outputs/bundle/release/release.aab.verify.txt
-      - native-android-app/app/build/outputs/bundle/release/release.aab.strict.txt
       - native-android-app/app/build/outputs/bundle/release/release.certificate.sha256
+      - native-android-app/app/build/outputs/bundle/release/release.aab.verification-summary.txt
