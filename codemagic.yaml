@@ -332,9 +332,30 @@ workflows:
           grep -Eiv "$INFO_WARNING_PATTERN" "$AAB_STRICT_LOG" > "$AAB_DIR/release.aab.actionable.txt" || true
           TRUST_WARNING_COUNT="$(grep -Eic "$TRUST_WARNING_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
           FORBIDDEN_COUNT="$(grep -Eic "$FORBIDDEN_PATTERN" "$AAB_DIR/release.aab.actionable.txt" || true)"
+          FORBIDDEN_DIAGNOSTICS="$AAB_DIR/release.aab.forbidden-diagnostics.txt"
+          : > "$FORBIDDEN_DIAGNOSTICS"
+          record_forbidden_matches() {
+            category="$1"
+            pattern="$2"
+            line_numbers="$(grep -Ein "$pattern" "$AAB_DIR/release.aab.actionable.txt" | cut -d: -f1 | paste -sd, - || true)"
+            if test -n "$line_numbers"; then
+              printf 'forbidden_category=%s line_numbers=%s\n' "$category" "$line_numbers" >> "$FORBIDDEN_DIAGNOSTICS"
+            fi
+          }
+          record_forbidden_matches 'unsigned_or_missing_signature' 'unsigned'
+          record_forbidden_matches 'invalid_signature_or_certificate' 'invalid'
+          record_forbidden_matches 'digest_error_or_mismatch' 'digest.*(error|mismatch)'
+          record_forbidden_matches 'signature_error' 'signature.*(invalid|error)'
+          record_forbidden_matches 'verification_failure' 'cannot verify'
+          record_forbidden_matches 'certificate_expired' 'expired'
+          record_forbidden_matches 'certificate_not_yet_valid' 'not yet valid'
+          record_forbidden_matches 'disabled_algorithm' 'disabled algorithm|algorithm.*disabled'
+          record_forbidden_matches 'weak_algorithm' 'weak algorithm|algorithm.*weak'
+          record_forbidden_matches 'key_too_small' 'key.*too small'
           grep -Eiv "$TRUST_WARNING_PATTERN|^jar verified(, with signer errors)?\.?$|^[[:space:]]*Warning:[[:space:]]*$" \
             "$AAB_DIR/release.aab.actionable.txt" | sed '/^[[:space:]]*$/d' > "$AAB_DIR/release.aab.unclassified.txt" || true
           UNCLASSIFIED_COUNT="$(wc -l < "$AAB_DIR/release.aab.unclassified.txt" | tr -d '[:space:]')"
+          UNCLASSIFIED_LINE_NUMBERS="$(grep -n . "$AAB_DIR/release.aab.unclassified.txt" | cut -d: -f1 | paste -sd, - || true)"
           AAB_SUMMARY="$AAB_DIR/release.aab.verification-summary.txt"
           {
             printf 'jarsigner_verify_status=%s\n' "$AAB_VERIFY_STATUS"
@@ -343,6 +364,12 @@ workflows:
             printf 'trust_warning_lines=%s\n' "$TRUST_WARNING_COUNT"
             printf 'forbidden_or_crypto_error_lines=%s\n' "$FORBIDDEN_COUNT"
             printf 'unclassified_diagnostic_lines=%s\n' "$UNCLASSIFIED_COUNT"
+            printf 'unclassified_line_numbers=%s\n' "${UNCLASSIFIED_LINE_NUMBERS:-none}"
+            if test -s "$FORBIDDEN_DIAGNOSTICS"; then
+              cat "$FORBIDDEN_DIAGNOSTICS"
+            else
+              printf 'forbidden_category=none\n'
+            fi
           } > "$AAB_SUMMARY"
           case "$AAB_STRICT_STATUS" in
             0)
