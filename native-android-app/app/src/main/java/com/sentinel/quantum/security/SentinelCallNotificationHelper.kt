@@ -26,6 +26,7 @@ import com.sentinel.quantum.SentinelInCallActivity
 object SentinelCallNotificationHelper {
     const val ACTION_ANSWER = "com.sentinel.quantum.CALL_ANSWER"
     const val ACTION_REJECT = "com.sentinel.quantum.CALL_REJECT"
+    const val ACTION_DISCONNECT = "com.sentinel.quantum.CALL_DISCONNECT"
     const val EXTRA_CALL_ID = "call.action_id"
     private const val ACTION_URI_SCHEME = "sentinel-call-action"
     private const val ACTION_URI_HOST = "call"
@@ -110,6 +111,71 @@ object SentinelCallNotificationHelper {
 
         return runCatching {
             manager.notify(NOTIFICATION_ID, notification)
+            true
+        }.getOrDefault(false)
+    }
+
+    /**
+     * Persistent user-accessible route back to the real Telecom call surface.
+     * Never starts an activity directly from a background service; the user taps contentIntent.
+     * The disconnect action is bound to the exact call ID and validated by the receiver.
+     */
+    fun showOngoing(
+        context: Context,
+        snapshot: SentinelInCallService.CallSnapshot
+    ): Boolean {
+        if (snapshot.state == android.telecom.Call.STATE_RINGING ||
+            snapshot.state == android.telecom.Call.STATE_DISCONNECTED ||
+            snapshot.state == android.telecom.Call.STATE_DISCONNECTING) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED) return false
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return false
+        ensureChannel(context)
+        if (!isChannelEnabled(context)) return false
+
+        val openCall = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, SentinelInCallActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val disconnect = PendingIntent.getBroadcast(
+            context,
+            3,
+            Intent(context, SentinelCallActionReceiver::class.java)
+                .setAction(ACTION_DISCONNECT)
+                .setData(Uri.parse("$ACTION_URI_SCHEME://$ACTION_URI_HOST/" +
+                    Uri.encode(snapshot.id) + "/disconnect"))
+                .putExtra(EXTRA_CALL_ID, snapshot.id),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val title = snapshot.displayName?.takeIf { it.isNotBlank() }
+            ?: snapshot.handle?.takeIf { it.isNotBlank() }
+            ?: "Appel en cours"
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(
+                if (snapshot.state == android.telecom.Call.STATE_ACTIVE) "En communication · toucher pour ouvrir"
+                else "Appel en cours · toucher pour ouvrir"
+            )
+            .setCategory(NotificationCompat.CATEGORY_CALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(openCall)
+            .addAction(R.drawable.ic_launcher_foreground, "Raccrocher", disconnect)
+        if (snapshot.state == android.telecom.Call.STATE_ACTIVE) {
+            snapshot.connectedAtMs?.takeIf { it > 0L }?.let {
+                builder.setWhen(it).setShowWhen(true).setUsesChronometer(true)
+            }
+        }
+        return runCatching {
+            manager.notify(NOTIFICATION_ID, builder.build())
             true
         }.getOrDefault(false)
     }
