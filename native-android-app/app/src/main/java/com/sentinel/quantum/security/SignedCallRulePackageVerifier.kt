@@ -116,7 +116,13 @@ class SignedCallRulePackageVerifier(
             }
             val value = raw ?: return null
             val normalized = CallRuleEngine.normalizePrefix(value) ?: return null
-            if (value != normalized || normalized.count(Char::isDigit) < MIN_REPUTATION_PREFIX_DIGITS) return null
+            if (value != normalized) return null
+            if (kind == "silence" && normalized.count(Char::isDigit) < MIN_REPUTATION_PREFIX_DIGITS) {
+                return null
+            }
+            if (kind == "block" && normalized !in APPROVED_INTERNATIONAL_BLOCK_PREFIXES) {
+                return null
+            }
             if (kind == "silence") silencePrefixes += normalized else blockPrefixes += normalized
         }
         if (silencePrefixes != silencePrefixes.sorted() ||
@@ -175,5 +181,7 @@ class SignedCallRulePackageVerifier(
         private const val MAX_FUTURE_SKEW_MS = 5 * 60 * 1000L
         private const val MAX_LIFETIME_MS = 31 * 24 * 60 * 60 * 1000L
         private val ID_PATTERN = Regex("[A-Za-z0-9._:-]{1,64}")
+        private val APPROVED_INTERNATIONAL_BLOCK_PREFIXES =
+            E164CallingCodeDirectory.all().mapTo(mutableSetOf()) { it.prefix }
     }
 }

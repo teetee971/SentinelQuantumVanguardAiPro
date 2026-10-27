@@ -29,6 +29,30 @@ class SignedCallRulePackageVerifierTest {
         assertEquals(setOf("+33897", "+33899"), result.rulePackage?.silencePrefixes)
     }
 
+    @Test fun acceptsKnownInternationalCallingCodeForSignedBlocking() {
+        val result = verifier().verify(
+            envelope(payload(blockPrefixes = listOf("+800")), trustedPair), 0, now
+        )
+        assertTrue(result.accepted)
+        assertEquals(setOf("+800"), result.rulePackage?.blockPrefixes)
+    }
+
+    @Test fun rejectsUnknownOrNonInternationalSignedBlockingPrefixes() {
+        for (prefix in listOf("+123", "590", "+59")) {
+            assertEquals(
+                "SIGNED_RULE_PAYLOAD_SCHEMA_INVALID",
+                verifier().verify(envelope(payload(blockPrefixes = listOf(prefix)), trustedPair), 0, now).reason
+            )
+        }
+    }
+
+    @Test fun silencePrefixStillRequiresFiveDigits() {
+        assertEquals(
+            "SIGNED_RULE_PAYLOAD_SCHEMA_INVALID",
+            verifier().verify(envelope(payload(prefixes = listOf("+3389")), trustedPair), 0, now).reason
+        )
+    }
+
     @Test fun rejectsTheSamePrefixDeclaredForSilenceAndBlocking() {
         assertEquals(
             "SIGNED_RULE_PAYLOAD_SCHEMA_INVALID",
