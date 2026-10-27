@@ -302,14 +302,17 @@ class SentinelInCallService : InCallService() {
         else registry.publish(this, null, emptyList())
 
         if (!updateNotification) return
-        if (selected?.state != Call.STATE_RINGING) {
-            SentinelCallNotificationHelper.cancel(this)
-            return
-        }
-
-        currentSnapshot()?.let { snapshot ->
-            val posted = SentinelCallNotificationHelper.showIncoming(this, snapshot)
-            if (posted) recordIncomingNotificationEvidence()
+        val snapshot = currentSnapshot()
+        when {
+            selected == null || snapshot == null ||
+                selected.state == Call.STATE_DISCONNECTED ||
+                selected.state == Call.STATE_DISCONNECTING ->
+                SentinelCallNotificationHelper.cancel(this)
+            selected.state == Call.STATE_RINGING -> {
+                val posted = SentinelCallNotificationHelper.showIncoming(this, snapshot)
+                if (posted) recordIncomingNotificationEvidence()
+            }
+            else -> SentinelCallNotificationHelper.showOngoing(this, snapshot)
         }
     }
 
