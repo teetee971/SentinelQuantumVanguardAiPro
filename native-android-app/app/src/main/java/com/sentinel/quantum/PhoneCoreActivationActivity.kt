@@ -141,8 +141,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var epoch by remember { mutableStateOf(0) }
                 var deniedPermissions by remember { mutableStateOf<Set<String>>(emptySet()) }
-                var roleRequestMessage by remember { mutableStateOf<String?>(null) }
-                var roleRequestRole by remember { mutableStateOf<String?>(null) }
+                var roleRequestMessage by rememberSaveable { mutableStateOf<String?>(null) }
+                var roleRequestRole by rememberSaveable { mutableStateOf<String?>(null) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
@@ -152,16 +152,23 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                     val role = roleRequestRole
-                    if (role != null) {
-                        val roleHeld = holdsRole(RoleManager.ROLE_DIALER)
-                        val status = PhoneCoreRoleRequestPolicy.afterResult(result.resultCode, roleHeld)
-                        Log.i(
-                            TAG,
-                            "role_result role=$role resultCode=${result.resultCode} roleHeld=$roleHeld status=$status"
-                        )
-                        roleRequestMessage = PhoneCoreRoleRequestPolicy.message(status)
-                        roleRequestRole = null
+                    val roleHeld = role?.let(::holdsRole) == true
+                    val status = PhoneCoreRoleRequestPolicy.afterResult(result.resultCode, roleHeld)
+                    val androidDecision = PhoneCoreRoleRequestPolicy.androidDecision(result.resultCode, roleHeld)
+                    val roleLabel = role ?: "UNKNOWN_ROLE"
+                    val logMessage =
+                        "role_android_result role=$roleLabel resultCode=${result.resultCode} " +
+                            "androidDecision=${androidDecision.name} roleHeld=$roleHeld status=$status"
+                    if (status == PhoneCoreRoleRequestPolicy.Status.COMPLETED_HELD) {
+                        Log.i(TAG, logMessage)
+                    } else {
+                        Log.w(TAG, logMessage)
                     }
+                    if (role == null) {
+                        Log.w(TAG, "role_android_result_without_pending_request role=$roleLabel")
+                    }
+                    roleRequestMessage = PhoneCoreRoleRequestPolicy.message(status)
+                    roleRequestRole = null
                     epoch++
                 }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
@@ -331,9 +338,15 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                         PhoneCoreRoleRequestPolicy.Status.INTENT_READY -> {
                             roleRequestRole = role
                             try {
-                                roleLauncher.launch(requireNotNull(intent))
+                                val requestIntent = requireNotNull(intent)
+                                Log.i(
+                                    TAG,
+                                    "role_launch_attempted role=$role action=${requestIntent.action} " +
+                                        "component=${requestIntent.component ?: "none"}"
+                                )
+                                roleLauncher.launch(requestIntent)
                                 val status = PhoneCoreRoleRequestPolicy.afterLaunch(success = true)
-                                Log.i(TAG, "role_launch_attempted role=$role status=$status")
+                                Log.i(TAG, "role_launch_dispatched role=$role status=$status")
                                 roleRequestMessage = PhoneCoreRoleRequestPolicy.message(status)
                             } catch (error: RuntimeException) {
                                 val status = PhoneCoreRoleRequestPolicy.afterLaunch(success = false)

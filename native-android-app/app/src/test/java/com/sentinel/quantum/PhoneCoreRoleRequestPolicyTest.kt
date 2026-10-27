@@ -44,4 +44,23 @@ class PhoneCoreRoleRequestPolicyTest {
             PhoneCoreRoleRequestPolicy.afterResult(resultCode = -1, roleHeld = false)
         )
     }
+
+    @Test fun androidDecisionDistinguishesAcceptanceFromEffectiveRoleOwnership() {
+        assertEquals(
+            PhoneCoreRoleRequestPolicy.AndroidDecision.ACCEPTED_ROLE_HELD,
+            PhoneCoreRoleRequestPolicy.androidDecision(resultCode = -1, roleHeld = true)
+        )
+        assertEquals(
+            PhoneCoreRoleRequestPolicy.AndroidDecision.ACCEPTED_ROLE_NOT_HELD,
+            PhoneCoreRoleRequestPolicy.androidDecision(resultCode = -1, roleHeld = false)
+        )
+        assertEquals(
+            PhoneCoreRoleRequestPolicy.AndroidDecision.REFUSED_OR_CANCELLED,
+            PhoneCoreRoleRequestPolicy.androidDecision(resultCode = 0, roleHeld = false)
+        )
+        assertEquals(
+            PhoneCoreRoleRequestPolicy.AndroidDecision.ANDROID_RESULT_NOT_OK,
+            PhoneCoreRoleRequestPolicy.androidDecision(resultCode = 1, roleHeld = false)
+        )
+    }
 }

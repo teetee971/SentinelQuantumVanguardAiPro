@@ -2,6 +2,13 @@ package com.sentinel.quantum
 
 /** Pure outcome policy for the user-driven Android role request flow. */
 internal object PhoneCoreRoleRequestPolicy {
+    enum class AndroidDecision {
+        ACCEPTED_ROLE_HELD,
+        ACCEPTED_ROLE_NOT_HELD,
+        REFUSED_OR_CANCELLED,
+        ANDROID_RESULT_NOT_OK,
+    }
+
     enum class Status {
         ROLE_UNAVAILABLE,
         INTENT_UNAVAILABLE,
@@ -21,6 +28,13 @@ internal object PhoneCoreRoleRequestPolicy {
 
     fun afterLaunch(success: Boolean): Status =
         if (success) Status.AWAITING_ANDROID else Status.LAUNCH_FAILED
+
+    fun androidDecision(resultCode: Int, roleHeld: Boolean): AndroidDecision = when {
+        roleHeld -> AndroidDecision.ACCEPTED_ROLE_HELD
+        resultCode == -1 -> AndroidDecision.ACCEPTED_ROLE_NOT_HELD
+        resultCode == 0 -> AndroidDecision.REFUSED_OR_CANCELLED
+        else -> AndroidDecision.ANDROID_RESULT_NOT_OK
+    }
 
     fun afterResult(resultCode: Int, roleHeld: Boolean): Status = when {
         roleHeld -> Status.COMPLETED_HELD
