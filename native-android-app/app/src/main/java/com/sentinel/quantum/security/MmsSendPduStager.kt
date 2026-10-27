@@ -6,6 +6,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import java.security.MessageDigest
 
 /**
  * Stages an already-composed MMS PDU in the app-private cache for Android's public MMS API.
@@ -66,6 +67,32 @@ object MmsSendPduStager {
         }.getOrElse {
             finalFile.delete()
             return Result.Rejected("MMS_SEND_URI_FAILED")
+        }
+
+        // Fail closed before persisting the outgoing provider row or calling SmsManager.
+        // Read through the same content URI that Android will consume.
+        val readable = runCatching {
+            val expectedHash = MessageDigest.getInstance("SHA-256").digest(pdu)
+            val digest = MessageDigest.getInstance("SHA-256")
+            var bytesRead = 0L
+            val stream = context.contentResolver.openInputStream(uri)
+                ?: error("Unreadable MMS staged content URI")
+            stream.use { input ->
+                val buffer = ByteArray(8192)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    if (count == 0) continue
+                    bytesRead += count
+                    if (bytesRead > MAX_STAGED_PDU_BYTES) error("MMS staged content too large")
+                    digest.update(buffer, 0, count)
+                }
+            }
+            bytesRead == pdu.size.toLong() && MessageDigest.isEqual(expectedHash, digest.digest())
+        }.getOrDefault(false)
+        if (!readable) {
+            finalFile.delete()
+            return Result.Rejected("MMS_STAGED_URI_UNREADABLE")
         }
 
         val cleanupScheduled = runCatching {
