@@ -28,6 +28,8 @@ class SentinelCallActionReceiver : BroadcastReceiver() {
                 SentinelInCallService.answer(callId)
             intent.action == SentinelCallNotificationHelper.ACTION_REJECT && kind == "reject" ->
                 SentinelInCallService.reject(callId)
+            intent.action == SentinelCallNotificationHelper.ACTION_DISCONNECT && kind == "disconnect" ->
+                SentinelInCallService.disconnect(callId)
         }
     }
 
