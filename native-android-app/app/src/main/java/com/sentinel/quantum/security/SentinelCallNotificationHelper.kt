@@ -168,7 +168,7 @@ object SentinelCallNotificationHelper {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(openCall)
-            .addAction(R.drawable.ic_launcher_foreground, "Raccrocher", disconnect)
+            .addAction(R.mipmap.ic_launcher, "Raccrocher", disconnect)
         if (snapshot.state == android.telecom.Call.STATE_ACTIVE) {
             snapshot.connectedAtMs?.takeIf { it > 0L }?.let {
                 builder.setWhen(it).setShowWhen(true).setUsesChronometer(true)
