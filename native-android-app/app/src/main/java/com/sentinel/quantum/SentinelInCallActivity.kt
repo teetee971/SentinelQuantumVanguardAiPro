@@ -232,6 +232,7 @@ private fun InCallScreen(
                         blockedNumberHashes = rules.blockedNumberHashes,
                         blockedPrefixes = rules.blockedPrefixes,
                         reputationSilencePrefixes = rules.signedSilencePrefixes,
+                        reputationBlockPrefixes = rules.signedBlockPrefixes,
                         fingerprintsForNumber = store::fingerprintsForNumber
                     ).evaluate(number)
                 }.getOrNull()

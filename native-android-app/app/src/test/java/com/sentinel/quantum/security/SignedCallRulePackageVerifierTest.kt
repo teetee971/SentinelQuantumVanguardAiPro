@@ -20,6 +20,26 @@ class SignedCallRulePackageVerifierTest {
         assertEquals(setOf("+33897", "+33899"), result.rulePackage?.silencePrefixes)
     }
 
+    @Test fun acceptsExplicitInternationalBlockPrefixesSeparatelyFromSilence() {
+        val result = verifier().verify(
+            envelope(payload(blockPrefixes = listOf("+590")), trustedPair), 0, now
+        )
+        assertTrue(result.accepted)
+        assertEquals(setOf("+590"), result.rulePackage?.blockPrefixes)
+        assertEquals(setOf("+33897", "+33899"), result.rulePackage?.silencePrefixes)
+    }
+
+    @Test fun rejectsTheSamePrefixDeclaredForSilenceAndBlocking() {
+        assertEquals(
+            "SIGNED_RULE_PAYLOAD_SCHEMA_INVALID",
+            verifier().verify(
+                envelope(payload(prefixes = listOf("+33897"), blockPrefixes = listOf("+33897")), trustedPair),
+                0,
+                now
+            ).reason
+        )
+    }
+
     @Test fun rejectsForgedOrMutatedPackage() {
         assertEquals("SIGNED_RULE_SIGNATURE_INVALID",
             verifier().verify(envelope(payload(), attackerPair), 0, now).reason)
@@ -89,7 +109,8 @@ class SignedCallRulePackageVerifierTest {
         sequence: Long = 1,
         issuedAt: Long = now - 1_000,
         expiresAt: Long = now + 3_600_000,
-        prefixes: List<String> = listOf("+33897", "+33899")
+        prefixes: List<String> = listOf("+33897", "+33899"),
+        blockPrefixes: List<String> = emptyList()
     ): String = buildList {
         add(SignedCallRulePackageVerifier.DOMAIN)
         add("package_id=${SignedCallRulePackageVerifier.EXPECTED_PACKAGE_ID}")
@@ -99,6 +120,7 @@ class SignedCallRulePackageVerifierTest {
         add("issuer_id=sentinel-rules")
         add("key_id=trusted")
         prefixes.forEach { add("silence_prefix=$it") }
+        blockPrefixes.forEach { add("block_prefix=$it") }
     }.joinToString("\n")
 
     private fun envelope(payload: String, signer: KeyPair): String {

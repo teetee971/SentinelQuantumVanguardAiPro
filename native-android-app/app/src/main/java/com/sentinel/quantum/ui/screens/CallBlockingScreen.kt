@@ -324,11 +324,18 @@ fun CallBlockingScreen(navController: NavController) {
             HorizontalDivider()
             Text("Règles Sentinel signées", fontWeight = FontWeight.Bold)
             Text(
-                stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
+                stringResource(
+                    R.string.call_blocking_signed_active,
+                    snapshot.signedSilencePrefixes.size + snapshot.signedBlockPrefixes.size
+                ),
                 style = MaterialTheme.typography.bodySmall
             )
             Text(
-                "Ces règles de réputation peuvent seulement mettre un appel en silencieux ; elles ne deviennent jamais un blocage automatique à elles seules.",
+                if (snapshot.signedBlockPrefixes.isEmpty()) {
+                    "Ces règles de réputation peuvent seulement mettre un appel en silencieux ; elles ne deviennent jamais un blocage automatique à elles seules."
+                } else {
+                    "Les règles signées restent bornées aux actions déclarées : ${snapshot.signedSilencePrefixes.size} silence(s) et ${snapshot.signedBlockPrefixes.size} blocage(s) explicitement provisionné(s)."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

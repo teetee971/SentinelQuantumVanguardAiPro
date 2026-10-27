@@ -7,11 +7,14 @@ class CallRuleEngine(
     blockedNumberHashes: Set<String> = emptySet(),
     blockedPrefixes: Set<String> = emptySet(),
     reputationSilencePrefixes: Set<String> = emptySet(),
+    reputationBlockPrefixes: Set<String> = emptySet(),
     private val fingerprintsForNumber: (String) -> Set<String> = { setOf(sha256(it)) }
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
     private val silenceRules = reputationSilencePrefixes.mapNotNull(::normalizePrefix)
+        .take(MAX_REPUTATION_RULES).toSet()
+    private val reputationBlockRules = reputationBlockPrefixes.mapNotNull(::normalizePrefix)
         .take(MAX_REPUTATION_RULES).toSet()
 
     fun evaluate(rawNumber: String?): Decision {
@@ -25,6 +28,9 @@ class CallRuleEngine(
         if (prefixRules.any(normalized::startsWith)) {
             return Decision(Action.BLOCK, "USER_PREFIX_BLOCK", normalized, RuleSource.USER)
         }
+        if (reputationBlockRules.any(normalized::startsWith)) {
+            return Decision(Action.BLOCK, "SIGNED_REPUTATION_BLOCK_PREFIX", normalized, RuleSource.SIGNED_REPUTATION_BLOCK)
+        }
         if (silenceRules.any(normalized::startsWith)) {
             return Decision(Action.SILENCE, "SIGNED_REPUTATION_PREFIX", normalized, RuleSource.SIGNED_REPUTATION)
         }
@@ -33,7 +39,7 @@ class CallRuleEngine(
 
     data class Decision(val action: Action, val reason: String, val normalizedNumber: String?, val source: RuleSource)
     enum class Action { ALLOW, SILENCE, BLOCK }
-    enum class RuleSource { NONE, USER, SIGNED_REPUTATION }
+    enum class RuleSource { NONE, USER, SIGNED_REPUTATION, SIGNED_REPUTATION_BLOCK }
 
     companion object {
         const val MAX_EXACT_RULES = 500

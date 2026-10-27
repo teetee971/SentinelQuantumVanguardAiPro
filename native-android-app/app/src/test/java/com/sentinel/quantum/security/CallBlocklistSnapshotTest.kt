@@ -31,4 +31,17 @@ class CallBlocklistSnapshotTest {
         )
         assertEquals(emptySet<String>(), snapshot.activeAt(1L).signedSilencePrefixes)
     }
+
+    @Test
+    fun signedBlockRulesExpireWithTheSameVerifiedPackageLifetime() {
+        val snapshot = CallBlocklistStore.Snapshot(
+            blockedNumberHashes = emptySet(),
+            blockedPrefixes = emptySet(),
+            signedSilencePrefixes = emptySet(),
+            signedExpiresAtMs = 3_000L,
+            signedBlockPrefixes = setOf("+590")
+        )
+        assertEquals(setOf("+590"), snapshot.activeAt(2_999L).signedBlockPrefixes)
+        assertEquals(emptySet<String>(), snapshot.activeAt(3_000L).signedBlockPrefixes)
+    }
 }

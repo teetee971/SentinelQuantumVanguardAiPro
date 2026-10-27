@@ -75,6 +75,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 snapshot.blockedNumberHashes,
                 snapshot.effectiveBlockedPrefixes,
                 reputationSilencePrefixes = snapshot.signedSilencePrefixes,
+                reputationBlockPrefixes = snapshot.signedBlockPrefixes,
                 fingerprintsForNumber = SCREENING_FINGERPRINTER::cachedCandidates
             ).evaluate(rawCallerNumber)
         }.getOrElse {

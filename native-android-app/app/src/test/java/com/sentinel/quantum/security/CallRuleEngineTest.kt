@@ -37,6 +37,20 @@ class CallRuleEngineTest {
         assertEquals(CallRuleEngine.RuleSource.SIGNED_REPUTATION, result.source)
     }
 
+    @Test fun signedInternationalBlockRuleBlocksOnlyWhenExplicitlyProvisioned() {
+        val result = CallRuleEngine(reputationBlockPrefixes = setOf("+590"))
+            .evaluate("+590690123456")
+        assertEquals(CallRuleEngine.Action.BLOCK, result.action)
+        assertEquals(CallRuleEngine.RuleSource.SIGNED_REPUTATION_BLOCK, result.source)
+    }
+
+    @Test fun signedReputationBlockDoesNotChangeTheDefaultWithoutProvisionedRules() {
+        assertEquals(
+            CallRuleEngine.Action.ALLOW,
+            CallRuleEngine().evaluate("+590690123456").action
+        )
+    }
+
     @Test fun unsignedDefaultReputationIsEmpty() {
         assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("08 99 12 34 56").action)
     }

@@ -81,7 +81,8 @@ class SignedCallRulePackageVerifier(
         val expiresAtMs: Long,
         val issuerId: String,
         val keyId: String,
-        val silencePrefixes: Set<String>
+        val silencePrefixes: Set<String>,
+        val blockPrefixes: Set<String> = emptySet()
     )
 
     data class Result(
@@ -105,14 +106,34 @@ class SignedCallRulePackageVerifier(
         val issuerId = field(lines[5], "issuer_id")?.takeIf(ID_PATTERN::matches) ?: return null
         val keyId = field(lines[6], "key_id")?.takeIf(ID_PATTERN::matches) ?: return null
         if (keyId != envelopeKeyId) return null
-        val prefixes = lines.drop(FIXED_PAYLOAD_LINES).map { line ->
-            val raw = field(line, "silence_prefix") ?: return null
-            val normalized = CallRuleEngine.normalizePrefix(raw) ?: return null
-            if (raw != normalized || normalized.count(Char::isDigit) < MIN_REPUTATION_PREFIX_DIGITS) return null
-            normalized
+        val silencePrefixes = mutableListOf<String>()
+        val blockPrefixes = mutableListOf<String>()
+        lines.drop(FIXED_PAYLOAD_LINES).forEach { line ->
+            val (kind, raw) = when {
+                line.startsWith("silence_prefix=") -> "silence" to field(line, "silence_prefix")
+                line.startsWith("block_prefix=") -> "block" to field(line, "block_prefix")
+                else -> return null
+            }
+            val value = raw ?: return null
+            val normalized = CallRuleEngine.normalizePrefix(value) ?: return null
+            if (value != normalized || normalized.count(Char::isDigit) < MIN_REPUTATION_PREFIX_DIGITS) return null
+            if (kind == "silence") silencePrefixes += normalized else blockPrefixes += normalized
         }
-        if (prefixes != prefixes.sorted() || prefixes.size != prefixes.toSet().size) return null
-        return RulePackage(packageId, sequence, issuedAt, expiresAt, issuerId, keyId, prefixes.toSet())
+        if (silencePrefixes != silencePrefixes.sorted() ||
+            blockPrefixes != blockPrefixes.sorted() ||
+            silencePrefixes.size != silencePrefixes.toSet().size ||
+            blockPrefixes.size != blockPrefixes.toSet().size ||
+            silencePrefixes.toSet().intersect(blockPrefixes.toSet()).isNotEmpty()) return null
+        return RulePackage(
+            packageId,
+            sequence,
+            issuedAt,
+            expiresAt,
+            issuerId,
+            keyId,
+            silencePrefixes.toSet(),
+            blockPrefixes.toSet()
+        )
     }
 
     private fun field(line: String, name: String): String? {

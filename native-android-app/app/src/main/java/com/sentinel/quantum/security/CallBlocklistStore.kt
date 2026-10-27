@@ -25,6 +25,10 @@ class CallBlocklistStore(context: Context) {
                 preferences.getStringSet(SIGNED_PREFIXES, emptySet()).orEmpty().toSet()
                     .take(CallRuleEngine.MAX_REPUTATION_RULES).toSet()
             } else emptySet(),
+            signedBlockPrefixes = if (now < preferences.getLong(SIGNED_EXPIRES_AT, 0L)) {
+                preferences.getStringSet(SIGNED_BLOCK_PREFIXES, emptySet()).orEmpty().toSet()
+                    .take(CallRuleEngine.MAX_REPUTATION_RULES).toSet()
+            } else emptySet(),
             arcepVerifiedBlockingEnabled = isArcepVerifiedBlockingEnabled(),
             blockedNumberExpiresAtMs = metadataByHash.values
                 .filter { it.fingerprint in blockedHashes && it.expiresAtEpochMs != null }
@@ -229,6 +233,7 @@ class CallBlocklistStore(context: Context) {
             .putLong(SIGNED_ISSUED_AT, rulePackage.issuedAtMs)
             .putLong(SIGNED_EXPIRES_AT, rulePackage.expiresAtMs)
             .putStringSet(SIGNED_PREFIXES, rulePackage.silencePrefixes)
+            .putStringSet(SIGNED_BLOCK_PREFIXES, rulePackage.blockPrefixes)
             .commit()
         if (committed) {
             refreshScreeningSnapshotAfterCommit()
@@ -253,14 +258,16 @@ class CallBlocklistStore(context: Context) {
         val signedSilencePrefixes: Set<String>,
         val arcepVerifiedBlockingEnabled: Boolean = false,
         val blockedNumberExpiresAtMs: Map<String, Long> = emptyMap(),
-        val signedExpiresAtMs: Long = 0L
+        val signedExpiresAtMs: Long = 0L,
+        val signedBlockPrefixes: Set<String> = emptySet()
     ) {
         /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
             blockedNumberHashes = blockedNumberHashes.filter { hash ->
                 blockedNumberExpiresAtMs[hash]?.let { now < it } ?: true
             }.toSet(),
-            signedSilencePrefixes = if (now < signedExpiresAtMs) signedSilencePrefixes else emptySet()
+            signedSilencePrefixes = if (now < signedExpiresAtMs) signedSilencePrefixes else emptySet(),
+            signedBlockPrefixes = if (now < signedExpiresAtMs) signedBlockPrefixes else emptySet()
         )
 
         val effectiveBlockedPrefixes: Set<String>
@@ -304,6 +311,7 @@ class CallBlocklistStore(context: Context) {
         private const val SIGNED_ISSUED_AT = "signed_rule_issued_at"
         private const val SIGNED_EXPIRES_AT = "signed_rule_expires_at"
         private const val SIGNED_PREFIXES = "signed_silence_prefixes"
+        private const val SIGNED_BLOCK_PREFIXES = "signed_block_prefixes"
         private val INSTALL_LOCK = Any()
         @Volatile private var SCREENING_SNAPSHOT = Snapshot(emptySet(), emptySet(), emptySet())
 
