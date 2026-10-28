@@ -18,3 +18,4 @@ rootProject.name = "SentinelQuantumVanguard"
 include ':app'
 include ':wearable-contract'
 include ':wearable-security'
+include ':recording-vault-r1-test'
