@@ -1,0 +1,179 @@
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:32: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        val lockPath = File(root, ".recording-vault-r3.lock").toPath()
+                                                              ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:33: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#isSymbolicLink [NewApi]
+        check(!Files.isSymbolicLink(lockPath))
+                     ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:34: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.channels.FileChannel#open [NewApi]
+        FileChannel.open(lockPath, CREATE, WRITE, NOFOLLOW_LINKS).use { channel ->
+                    ~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:34: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        FileChannel.open(lockPath, CREATE, WRITE, NOFOLLOW_LINKS).use { channel ->
+                                                  ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:34: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.StandardOpenOption#CREATE [NewApi]
+        FileChannel.open(lockPath, CREATE, WRITE, NOFOLLOW_LINKS).use { channel ->
+                                   ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:34: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.StandardOpenOption#WRITE [NewApi]
+        FileChannel.open(lockPath, CREATE, WRITE, NOFOLLOW_LINKS).use { channel ->
+                                           ~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:43: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        if (Files.exists(directory.toPath(), NOFOLLOW_LINKS)) {
+                                   ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:43: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#exists [NewApi]
+        if (Files.exists(directory.toPath(), NOFOLLOW_LINKS)) {
+                  ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:43: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        if (Files.exists(directory.toPath(), NOFOLLOW_LINKS)) {
+                                             ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:44: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+            check(!Files.isSymbolicLink(directory.toPath()))
+                                                  ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:44: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#isSymbolicLink [NewApi]
+            check(!Files.isSymbolicLink(directory.toPath()))
+                         ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:58: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        check(!Files.isSymbolicLink(file.toPath()))
+                                         ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:58: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#isSymbolicLink [NewApi]
+        check(!Files.isSymbolicLink(file.toPath()))
+                     ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:67: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        val destination = target(dir, id).toPath()
+                                          ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:68: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#exists [NewApi]
+        check(!Files.exists(destination, NOFOLLOW_LINKS))
+                     ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:68: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        check(!Files.exists(destination, NOFOLLOW_LINKS))
+                                         ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:70: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        val temporary = File(dir, "r2-${UUID.randomUUID()}.part").toPath()
+                                                                  ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:73: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.channels.FileChannel#open [NewApi]
+        FileChannel.open(temporary, CREATE_NEW, WRITE, NOFOLLOW_LINKS).use { channel ->
+                    ~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:73: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        FileChannel.open(temporary, CREATE_NEW, WRITE, NOFOLLOW_LINKS).use { channel ->
+                                                       ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:73: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.StandardOpenOption#CREATE_NEW [NewApi]
+        FileChannel.open(temporary, CREATE_NEW, WRITE, NOFOLLOW_LINKS).use { channel ->
+                                    ~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:73: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.StandardOpenOption#WRITE [NewApi]
+        FileChannel.open(temporary, CREATE_NEW, WRITE, NOFOLLOW_LINKS).use { channel ->
+                                                ~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:82: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#createLink [NewApi]
+                    Files.createLink(destination, temporary)
+                          ~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:84: Error: Exception requires API level 26, or core library desugaring (current min is 24): java.nio.file.FileAlreadyExistsException [NewApi]
+                } catch (e: FileAlreadyExistsException) {
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:85: Error: Implicit cast from FileAlreadyExistsException to Throwable requires API level 26, or core library desugaring (current min is 24) [NewApi]
+                    throw IllegalStateException("Recording already exists", e)
+                                                                            ~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:88: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#deleteIfExists [NewApi]
+                Files.deleteIfExists(temporary)
+                      ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:94: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        val file = target(prepareDirectory(), id).toPath()
+                                                  ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:95: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#isRegularFile [NewApi]
+        require(Files.isRegularFile(file, NOFOLLOW_LINKS))
+                      ~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:95: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        require(Files.isRegularFile(file, NOFOLLOW_LINKS))
+                                          ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:96: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.channels.FileChannel#open [NewApi]
+        FileChannel.open(file, READ, NOFOLLOW_LINKS).use { channel ->
+                    ~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:96: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        FileChannel.open(file, READ, NOFOLLOW_LINKS).use { channel ->
+                                     ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:96: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.StandardOpenOption#READ [NewApi]
+        FileChannel.open(file, READ, NOFOLLOW_LINKS).use { channel ->
+                               ~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:113: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        !Files.exists(file.toPath(), NOFOLLOW_LINKS) ||
+                           ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:113: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#exists [NewApi]
+        !Files.exists(file.toPath(), NOFOLLOW_LINKS) ||
+               ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:113: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        !Files.exists(file.toPath(), NOFOLLOW_LINKS) ||
+                                     ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:114: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+            Files.isRegularFile(file.toPath(), NOFOLLOW_LINKS) && file.delete()
+                                     ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:114: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#isRegularFile [NewApi]
+            Files.isRegularFile(file.toPath(), NOFOLLOW_LINKS) && file.delete()
+                  ~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:114: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+            Files.isRegularFile(file.toPath(), NOFOLLOW_LINKS) && file.delete()
+                                               ~~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:118: Error: Call requires API level 26, or core library desugaring (current min is 24): java.io.File#toPath [NewApi]
+        Files.isRegularFile(target(prepareDirectory(), id).toPath(), NOFOLLOW_LINKS)
+                                                           ~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:118: Error: Call requires API level 26, or core library desugaring (current min is 24): java.nio.file.Files#isRegularFile [NewApi]
+        Files.isRegularFile(target(prepareDirectory(), id).toPath(), NOFOLLOW_LINKS)
+              ~~~~~~~~~~~~~
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/java/com/sentinel/quantum/security/RecordingVaultStore.kt:118: Error: Field requires API level 26, or core library desugaring (current min is 24): java.nio.file.LinkOption#NOFOLLOW_LINKS [NewApi]
+        Files.isRegularFile(target(prepareDirectory(), id).toPath(), NOFOLLOW_LINKS)
+                                                                     ~~~~~~~~~~~~~~
+
+   Explanation for issues of type "NewApi":
+   This check scans through all the Android API calls in the application and
+   warns about any calls that are not available on all versions targeted by
+   this application (according to its minimum SDK attribute in the manifest).
+
+   If you really want to use this API and don't need to support older devices
+   just set the minSdkVersion in your build.gradle or AndroidManifest.xml
+   files.
+
+   If your code is deliberately accessing newer APIs, and you have ensured
+   (e.g. with conditional execution) that this code will only ever be called
+   on a supported platform, then you can annotate your class or method with
+   the @TargetApi annotation specifying the local minimum SDK to apply, such
+   as @TargetApi(11), such that this check considers 11 rather than your
+   manifest file's minimum SDK as the required API level.
+
+   If you are deliberately setting android: attributes in style definitions,
+   make sure you place this in a values-vNN folder in order to avoid running
+   into runtime conflicts on certain devices where manufacturers have added
+   custom attributes whose ids conflict with the new ones on later platforms.
+
+   Similarly, you can use tools:targetApi="11" in an XML file to indicate that
+   the element will only be inflated in an adequate context.
+
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/build.gradle:12: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        targetSdk 36
+        ~~~~~~~~~~~~
+
+   Explanation for issues of type "OldTargetApi":
+   When your application or sdk runs on a version of Android that is more
+   recent than your targetSdk specifies that it has been tested with, various
+   compatibility modes kick in. This ensures that your application continues
+   to work, but it may look out of place. For example, if the targetSdk is
+   less than 14, your app may get an option button in the UI.
+
+   To fix this issue, set the targetSdk to the highest available value. Then
+   test your app to make sure everything works correctly. You may want to
+   consult the compatibility notes to see what changes apply to each version
+   you are adding support for:
+   https://developer.android.com/reference/android/os/Build.VERSION_CODES.html
+   as well as follow this guide:
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.
+   html
+
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.html
+
+/workspace/sentinel-r3/native-android-app/recording-vault-r1-test/src/main/AndroidManifest.xml:2: Warning: Should explicitly set android:icon, there is no default [MissingApplicationIcon]
+    <application android:label="Sentinel R1 Crypto Test" />
+     ~~~~~~~~~~~
+
+   Explanation for issues of type "MissingApplicationIcon":
+   You should set an icon for the application as whole because there is no
+   default. This attribute must be set as a reference to a drawable resource
+   containing the image (for example @drawable/icon).
+
+   https://developer.android.com/studio/publish/preparing#publishing-configure
+
+40 errors, 2 warnings

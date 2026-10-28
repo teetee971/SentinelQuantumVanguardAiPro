@@ -1,0 +1,14 @@
+info: kotlinc-jvm 2.2.21 (JRE 21.0.12.1+1-1-deb13u1-Debian)
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1-1-deb13u1-Debian)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-deb13u1-Debian, mixed mode, sharing)
+PASS HOST dangling destination introduced during encryption is not replaced
+PASS HOST decrypt with missing key must not generate one
+PASS HOST roundtrip duplicate and recreate store
+PASS HOST size boundaries and malformed envelopes
+PASS HOST version IV ciphertext and tag corruption
+PASS HOST temporary residue is ignored and preserved
+PASS HOST symbolic file and directory rejected
+PASS HOST invalid identifiers rejected
+PASS HOST eight real JVM processes cannot overwrite one recording
+HOST SUMMARY passed=9 failed=0; Android APIs/KeyStore are simulated, filesystem and AES/GCM are JVM/Linux

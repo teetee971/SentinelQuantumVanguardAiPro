@@ -1,0 +1,107 @@
+> Task :recording-vault-r1-test:preBuild UP-TO-DATE
+> Task :recording-vault-r1-test:preDebugBuild UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugResources UP-TO-DATE
+> Task :recording-vault-r1-test:packageDebugResources UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugNavigationResources UP-TO-DATE
+> Task :recording-vault-r1-test:parseDebugLocalResources UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugRFile UP-TO-DATE
+> Task :recording-vault-r1-test:compileDebugKotlin UP-TO-DATE
+> Task :recording-vault-r1-test:javaPreCompileDebug UP-TO-DATE
+> Task :recording-vault-r1-test:compileDebugJavaWithJavac NO-SOURCE
+> Task :recording-vault-r1-test:checkDebugAarMetadata UP-TO-DATE
+> Task :recording-vault-r1-test:mapDebugSourceSetPaths UP-TO-DATE
+> Task :recording-vault-r1-test:compileDebugNavigationResources UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugResources UP-TO-DATE
+> Task :recording-vault-r1-test:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :recording-vault-r1-test:extractDeepLinksDebug UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugMainManifest UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugManifest UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugManifestForPackage UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugResources UP-TO-DATE
+> Task :recording-vault-r1-test:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :recording-vault-r1-test:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :recording-vault-r1-test:preDebugUnitTestBuild UP-TO-DATE
+> Task :recording-vault-r1-test:compileDebugUnitTestKotlin NO-SOURCE
+> Task :recording-vault-r1-test:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :recording-vault-r1-test:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :recording-vault-r1-test:processDebugJavaRes UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugUnitTestJavaRes NO-SOURCE
+> Task :recording-vault-r1-test:testDebugUnitTest NO-SOURCE
+> Task :recording-vault-r1-test:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :recording-vault-r1-test:generateDebugAssets UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAssets UP-TO-DATE
+> Task :recording-vault-r1-test:compressDebugAssets UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugGlobalSynthetics UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugJavaResource UP-TO-DATE
+> Task :recording-vault-r1-test:checkDebugDuplicateClasses UP-TO-DATE
+> Task :recording-vault-r1-test:desugarDebugFileDependencies UP-TO-DATE
+> Task :recording-vault-r1-test:mergeExtDexDebug UP-TO-DATE
+> Task :recording-vault-r1-test:mergeLibDexDebug UP-TO-DATE
+> Task :recording-vault-r1-test:dexBuilderDebug UP-TO-DATE
+> Task :recording-vault-r1-test:mergeProjectDexDebug UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugJniLibFolders UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugNativeLibs NO-SOURCE
+> Task :recording-vault-r1-test:stripDebugDebugSymbols NO-SOURCE
+> Task :recording-vault-r1-test:validateSigningDebug UP-TO-DATE
+> Task :recording-vault-r1-test:writeDebugAppMetadata UP-TO-DATE
+> Task :recording-vault-r1-test:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :recording-vault-r1-test:packageDebug UP-TO-DATE
+> Task :recording-vault-r1-test:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :recording-vault-r1-test:assembleDebug UP-TO-DATE
+> Task :recording-vault-r1-test:preDebugAndroidTestBuild SKIPPED
+> Task :recording-vault-r1-test:generateDebugAndroidTestResources UP-TO-DATE
+> Task :recording-vault-r1-test:packageDebugAndroidTestResources UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :recording-vault-r1-test:parseDebugAndroidTestLocalResources UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugAndroidTestRFile UP-TO-DATE
+> Task :recording-vault-r1-test:javaPreCompileDebugAndroidTest UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugAndroidTestAssets UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAndroidTestAssets UP-TO-DATE
+> Task :recording-vault-r1-test:compressDebugAndroidTestAssets UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugAndroidTestGlobalSynthetics UP-TO-DATE
+> Task :recording-vault-r1-test:checkDebugAndroidTestDuplicateClasses UP-TO-DATE
+> Task :recording-vault-r1-test:desugarDebugAndroidTestFileDependencies UP-TO-DATE
+> Task :recording-vault-r1-test:mergeExtDexDebugAndroidTest UP-TO-DATE
+> Task :recording-vault-r1-test:mergeLibDexDebugAndroidTest UP-TO-DATE
+> Task :recording-vault-r1-test:checkDebugAndroidTestAarMetadata UP-TO-DATE
+> Task :recording-vault-r1-test:mapDebugAndroidTestSourceSetPaths UP-TO-DATE
+> Task :recording-vault-r1-test:compileDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAndroidTestResources UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAndroidTestManifest UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugAndroidTestManifest UP-TO-DATE
+> Task :recording-vault-r1-test:processDebugAndroidTestResources UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAndroidTestJniLibFolders UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAndroidTestNativeLibs NO-SOURCE
+> Task :recording-vault-r1-test:stripDebugAndroidTestDebugSymbols NO-SOURCE
+> Task :recording-vault-r1-test:validateSigningDebugAndroidTest UP-TO-DATE
+> Task :recording-vault-r1-test:writeDebugAndroidTestSigningConfigVersions UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugAndroidTestLintModel
+> Task :recording-vault-r1-test:extractProguardFiles UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugLintReportModel UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugUnitTestLintModel UP-TO-DATE
+> Task :recording-vault-r1-test:lintAnalyzeDebug UP-TO-DATE
+> Task :recording-vault-r1-test:compileDebugAndroidTestKotlin
+> Task :recording-vault-r1-test:compileDebugAndroidTestJavaWithJavac NO-SOURCE
+> Task :recording-vault-r1-test:processDebugAndroidTestJavaRes UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAndroidTestJavaResource UP-TO-DATE
+> Task :recording-vault-r1-test:dexBuilderDebugAndroidTest
+> Task :recording-vault-r1-test:mergeProjectDexDebugAndroidTest
+> Task :recording-vault-r1-test:packageDebugAndroidTest
+> Task :recording-vault-r1-test:createDebugAndroidTestApkListingFileRedirect UP-TO-DATE
+> Task :recording-vault-r1-test:assembleDebugAndroidTest
+> Task :recording-vault-r1-test:lintAnalyzeDebugUnitTest UP-TO-DATE
+> Task :recording-vault-r1-test:lintAnalyzeDebugAndroidTest
+> Task :recording-vault-r1-test:lintReportDebug UP-TO-DATE
+> Task :recording-vault-r1-test:lintDebug
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-r3/native-android-app/recording-vault-r1-test/qualification/android-build/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 5s
+76 actionable tasks: 7 executed, 69 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

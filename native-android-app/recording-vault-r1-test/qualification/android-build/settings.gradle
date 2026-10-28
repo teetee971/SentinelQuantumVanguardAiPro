@@ -1,0 +1,12 @@
+// Build only the isolated test APK; never configure the main application.
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+    plugins { id 'com.android.application' version '9.4.1' }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = 'SentinelRecordingVaultQualification'
+include ':recording-vault-r1-test'
+project(':recording-vault-r1-test').projectDir = file('../..')

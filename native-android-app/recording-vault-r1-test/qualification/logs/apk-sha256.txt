@@ -1,0 +1,2 @@
+d0e487f6f2d75ca6472728f6b46c326de0bdc7695e33e70cfbdf49b61f07f953  build/outputs/apk/debug/recording-vault-r1-test-debug.apk
+8534ce6c077dd3633584deec6346e6e97ae61f013e21216e7dfd221dea141313  build/outputs/apk/androidTest/debug/recording-vault-r1-test-debug-androidTest.apk

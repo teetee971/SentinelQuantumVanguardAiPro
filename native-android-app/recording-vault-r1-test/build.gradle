@@ -8,7 +8,8 @@ android {
 
     defaultConfig {
         applicationId 'com.sentinel.quantum.r1cryptotest'
-        minSdk 24
+        // java.nio.file used by R2/R3 is available from Android 26.
+        minSdk 26
         targetSdk 36
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
