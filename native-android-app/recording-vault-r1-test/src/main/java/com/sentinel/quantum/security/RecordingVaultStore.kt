@@ -2,9 +2,16 @@ package com.sentinel.quantum.security
 
 import android.content.Context
 import java.io.File
-import java.io.FileOutputStream
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
-import java.nio.file.LinkOption
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
+import java.nio.file.StandardOpenOption.CREATE
+import java.nio.file.StandardOpenOption.CREATE_NEW
+import java.nio.file.StandardOpenOption.READ
+import java.nio.file.StandardOpenOption.WRITE
+import java.util.UUID
 
 internal class RecordingVaultStore(
     context: Context,
@@ -17,11 +24,23 @@ internal class RecordingVaultStore(
     private val root = context.noBackupFilesDir
     private val directory = File(root, directoryName)
 
+    // One persistent inode for ALL Store directories sharing the same key alias.
+    // Never delete this lock file: replacing it would split cooperating processes.
+    // This is coordination, not a security boundary against hostile code with our UID.
+    private fun <T> locked(action: () -> T): T = synchronized(LOCK) {
+        check(root.isDirectory)
+        val lockPath = File(root, ".recording-vault-r3.lock").toPath()
+        check(!Files.isSymbolicLink(lockPath))
+        FileChannel.open(lockPath, CREATE, WRITE, NOFOLLOW_LINKS).use { channel ->
+            channel.lock().use { action() }
+        }
+    }
+
     private fun prepareDirectory(): File {
         val canonicalRoot = root.canonicalFile
         check(canonicalRoot.isDirectory)
 
-        if (directory.exists(LinkOption.NOFOLLOW_LINKS)) {
+        if (Files.exists(directory.toPath(), NOFOLLOW_LINKS)) {
             check(!Files.isSymbolicLink(directory.toPath()))
         } else {
             check(directory.mkdir())
@@ -30,7 +49,6 @@ internal class RecordingVaultStore(
         val canonicalDirectory = directory.canonicalFile
         check(canonicalDirectory.parentFile == canonicalRoot)
         check(canonicalDirectory.isDirectory)
-
         return canonicalDirectory
     }
 
@@ -41,56 +59,69 @@ internal class RecordingVaultStore(
         return file
     }
 
-    fun save(id: String, plaintext: ByteArray) = synchronized(LOCK) {
+    fun save(id: String, plaintext: ByteArray) = locked {
         require(plaintext.isNotEmpty())
         require(plaintext.size <= MAX_PLAINTEXT_BYTES)
 
         val dir = prepareDirectory()
-        val destination = target(dir, id)
-
-        check(!destination.exists())
+        val destination = target(dir, id).toPath()
+        check(!Files.exists(destination, NOFOLLOW_LINKS))
         val ciphertext = RecordingVaultCrypto.encrypt(plaintext)
-        val temporary = File.createTempFile("r2-", ".part", dir)
+        val temporary = File(dir, "r2-${UUID.randomUUID()}.part").toPath()
 
-        try {
-            FileOutputStream(temporary).use {
-                it.write(ciphertext)
-                it.fd.sync()
+        // Create and open in one operation. Never reopen a pre-created temp pathname.
+        FileChannel.open(temporary, CREATE_NEW, WRITE, NOFOLLOW_LINKS).use { channel ->
+            try {
+                val buffer = ByteBuffer.wrap(ciphertext)
+                while (buffer.hasRemaining()) channel.write(buffer)
+                channel.force(true)
+
+                // link(2) publishes a complete inode atomically and cannot replace ANY
+                // existing directory entry (including a dangling symbolic link).
+                try {
+                    Files.createLink(destination, temporary)
+                    Unit
+                } catch (e: FileAlreadyExistsException) {
+                    throw IllegalStateException("Recording already exists", e)
+                }
+            } finally {
+                Files.deleteIfExists(temporary)
             }
-
-            check(!destination.exists())
-            check(temporary.renameTo(destination))
-        } finally {
-            if (temporary.exists()) temporary.delete()
         }
     }
 
-    fun read(id: String): ByteArray = synchronized(LOCK) {
-        val file = target(prepareDirectory(), id)
-        require(file.isFile)
-        require(file.length() in 29L..MAX_CIPHERTEXT_BYTES)
-
-        RecordingVaultCrypto.decrypt(file.readBytes())
+    fun read(id: String): ByteArray = locked {
+        val file = target(prepareDirectory(), id).toPath()
+        require(Files.isRegularFile(file, NOFOLLOW_LINKS))
+        FileChannel.open(file, READ, NOFOLLOW_LINKS).use { channel ->
+            // Bound allocation and reads using the opened inode, not pathname length
+            // followed by unbounded File.readBytes(). Reject growth/truncation.
+            val size = channel.size()
+            require(size in 30L..MAX_CIPHERTEXT_BYTES)
+            val bytes = ByteArray(size.toInt())
+            val buffer = ByteBuffer.wrap(bytes)
+            while (buffer.hasRemaining()) {
+                check(channel.read(buffer) > 0) { "Recording truncated during read" }
+            }
+            check(channel.read(ByteBuffer.allocate(1)) == -1) { "Recording grew during read" }
+            RecordingVaultCrypto.decrypt(bytes)
+        }
     }
 
-    fun delete(id: String): Boolean = synchronized(LOCK) {
+    fun delete(id: String): Boolean = locked {
         val file = target(prepareDirectory(), id)
-        !file.exists() || file.isFile && file.delete()
+        !Files.exists(file.toPath(), NOFOLLOW_LINKS) ||
+            Files.isRegularFile(file.toPath(), NOFOLLOW_LINKS) && file.delete()
     }
 
-    fun exists(id: String): Boolean = synchronized(LOCK) {
-        target(prepareDirectory(), id).isFile
+    fun exists(id: String): Boolean = locked {
+        Files.isRegularFile(target(prepareDirectory(), id).toPath(), NOFOLLOW_LINKS)
     }
 
     companion object {
         private val LOCK = Any()
         private val ID_PATTERN = Regex("[A-Za-z0-9_-]{1,64}")
-
         private const val MAX_PLAINTEXT_BYTES = 16 * 1024 * 1024
-        private const val MAX_CIPHERTEXT_BYTES =
-            MAX_PLAINTEXT_BYTES + 29L
+        private const val MAX_CIPHERTEXT_BYTES = MAX_PLAINTEXT_BYTES + 29L
     }
 }
-
-private fun File.exists(vararg options: LinkOption): Boolean =
-    Files.exists(toPath(), *options)

@@ -17,7 +17,7 @@ internal object RecordingVaultCrypto {
     private const val TAG_BITS = 128
 
     @Synchronized
-    private fun key(): SecretKey {
+    private fun key(createIfMissing: Boolean = true): SecretKey {
         val store = KeyStore.getInstance(KEYSTORE).apply {
             load(null)
         }
@@ -25,6 +25,9 @@ internal object RecordingVaultCrypto {
         (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let {
             return it
         }
+
+        check(createIfMissing) { "Recording Vault key is missing" }
+        check(!store.containsAlias(KEY_ALIAS)) { "Recording Vault alias is not a secret key" }
 
         val generator = KeyGenerator.getInstance(
             KeyProperties.KEY_ALGORITHM_AES,
@@ -75,7 +78,7 @@ internal object RecordingVaultCrypto {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(
             Cipher.DECRYPT_MODE,
-            key(),
+            key(createIfMissing = false),
             GCMParameterSpec(TAG_BITS, iv)
         )
 

@@ -1,0 +1,10 @@
+Scope: all staged files are inside native-android-app/recording-vault-r1-test/
+Base: 7b4b84363feac5c691dd9861bd044be7ca34acfc
+UNCHANGED R1/R2: native-android-app/recording-vault-r1-test/src/androidTest/java/com/sentinel/quantum/security/RecordingVaultConcurrencyInstrumentedTest.kt
+UNCHANGED R1/R2: native-android-app/recording-vault-r1-test/src/androidTest/java/com/sentinel/quantum/security/RecordingVaultCryptoInstrumentedTest.kt
+UNCHANGED R1/R2: native-android-app/recording-vault-r1-test/src/androidTest/java/com/sentinel/quantum/security/RecordingVaultKeySecurityInstrumentedTest.kt
+UNCHANGED R1/R2: native-android-app/recording-vault-r1-test/src/androidTest/java/com/sentinel/quantum/security/RecordingVaultRecoveryInstrumentedTest.kt
+UNCHANGED R1/R2: native-android-app/recording-vault-r1-test/src/androidTest/java/com/sentinel/quantum/security/RecordingVaultSecurityInstrumentedTest.kt
+UNCHANGED R1/R2: native-android-app/recording-vault-r1-test/src/androidTest/java/com/sentinel/quantum/security/RecordingVaultStoreInstrumentedTest.kt
+Source/docs diff whitespace check: exit 0. Raw logs excluded to preserve exact output whitespace.
+No changes outside isolated module; no main branch modification; no merge performed.

@@ -1,0 +1,37 @@
+info: kotlinc-jvm 2.2.21 (JRE 21.0.12.1+1-1-deb13u1-Debian)
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1-1-deb13u1-Debian)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-deb13u1-Debian, mixed mode, sharing)
+FAIL HOST dangling destination introduced during encryption is not replaced: java.lang.IllegalStateException: Expected rejection, operation succeeded
+java.lang.IllegalStateException: Expected rejection, operation succeeded
+	at com.sentinel.quantum.security.HostTestsKt.rejected(HostTests.kt:13)
+	at com.sentinel.quantum.security.HostTestsKt.main$lambda$0(HostTests.kt:50)
+	at com.sentinel.quantum.security.HostTestsKt.main$test(HostTests.kt:34)
+	at com.sentinel.quantum.security.HostTestsKt.main(HostTests.kt:46)
+FAIL HOST decrypt with missing key must not generate one: java.lang.IllegalStateException: Check failed.
+java.lang.IllegalStateException: Check failed.
+	at com.sentinel.quantum.security.HostTestsKt.main$lambda$1(HostTests.kt:59)
+	at com.sentinel.quantum.security.HostTestsKt.main$test(HostTests.kt:34)
+	at com.sentinel.quantum.security.HostTestsKt.main(HostTests.kt:54)
+PASS HOST roundtrip duplicate and recreate store
+PASS HOST size boundaries and malformed envelopes
+PASS HOST version IV ciphertext and tag corruption
+PASS HOST characterization: legacy valid ciphertext substitution is ACCEPTED
+PASS HOST temporary residue is ignored and preserved
+PASS HOST symbolic file and directory rejected
+PASS HOST invalid identifiers rejected
+FAIL HOST store waits for a lock held by another process: java.lang.IllegalStateException: Store ignored interprocess lock
+java.lang.IllegalStateException: Store ignored interprocess lock
+	at com.sentinel.quantum.security.HostTestsKt.main$lambda$9(HostTests.kt:144)
+	at com.sentinel.quantum.security.HostTestsKt.main$test(HostTests.kt:34)
+	at com.sentinel.quantum.security.HostTestsKt.main(HostTests.kt:129)
+FAIL HOST lock file symlink is rejected without touching its target: java.lang.IllegalStateException: Expected rejection, operation succeeded
+java.lang.IllegalStateException: Expected rejection, operation succeeded
+	at com.sentinel.quantum.security.HostTestsKt.rejected(HostTests.kt:13)
+	at com.sentinel.quantum.security.HostTestsKt.main$lambda$10(HostTests.kt:157)
+	at com.sentinel.quantum.security.HostTestsKt.main$test(HostTests.kt:34)
+	at com.sentinel.quantum.security.HostTestsKt.main(HostTests.kt:154)
+PASS HOST eight real JVM processes cannot overwrite one recording
+HOST SUMMARY passed=8 failed=4; Android APIs/KeyStore are simulated, filesystem and AES/GCM are JVM/Linux
+Exception in thread "main" java.lang.IllegalStateException: Check failed.
+	at com.sentinel.quantum.security.HostTestsKt.main(HostTests.kt:180)

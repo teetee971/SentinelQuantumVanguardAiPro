@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <service android:name="com.sentinel.quantum.security.RecordingVaultRaceServiceA"
+            android:process=":vault_r3_a" android:exported="false" />
+        <service android:name="com.sentinel.quantum.security.RecordingVaultRaceServiceB"
+            android:process=":vault_r3_b" android:exported="false" />
+    </application>
+</manifest>
