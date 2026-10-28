@@ -81,12 +81,15 @@ internal class RecordingVaultStore(
                 check(!Files.exists(destination, NOFOLLOW_LINKS)) {
                     "Recording already exists"
                 }
-                Files.move(
-                    temporary,
-                    destination,
-                    java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                val result = RecordingVaultNative.renameNoReplace(
+                    temporary.toString(),
+                    destination.toString()
                 )
-                Unit
+                when (result) {
+                    0 -> Unit
+                    17 -> error("Recording already exists (EEXIST)")
+                    else -> error("Atomic publication failed (errno=$result)")
+                }
             } finally {
                 Files.deleteIfExists(temporary)
             }
