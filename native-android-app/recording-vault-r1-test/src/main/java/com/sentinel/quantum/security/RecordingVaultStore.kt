@@ -4,7 +4,6 @@ import android.content.Context
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
-import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.StandardOpenOption.CREATE
@@ -76,14 +75,18 @@ internal class RecordingVaultStore(
                 while (buffer.hasRemaining()) channel.write(buffer)
                 channel.force(true)
 
-                // link(2) publishes a complete inode atomically and cannot replace ANY
-                // existing directory entry (including a dangling symbolic link).
-                try {
-                    Files.createLink(destination, temporary)
-                    Unit
-                } catch (e: FileAlreadyExistsException) {
-                    throw IllegalStateException("Recording already exists", e)
+                // Publish the complete, fsynced temporary file while holding
+                // the persistent interprocess lock. All Store writers cooperate.
+                // This does not protect against same-UID writers bypassing the lock.
+                check(!Files.exists(destination, NOFOLLOW_LINKS)) {
+                    "Recording already exists"
                 }
+                Files.move(
+                    temporary,
+                    destination,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                )
+                Unit
             } finally {
                 Files.deleteIfExists(temporary)
             }
