@@ -5,14 +5,16 @@ import org.junit.Test
 
 class ContactPhotoPolicyTest {
     @Test fun loadedPhotoNeverCrossesContactIdentityWhenAListSlotIsReused() {
-        val loaded = ContactPhotoSnapshot(12, "content://com.android.contacts/photo/12", "photo pixels")
-        assertEquals("photo pixels", loaded.forContact(12, loaded.uri))
-        assertNull(loaded.forContact(13, loaded.uri))
+        val identity = ContactPhotoIdentity(12, "content://com.android.contacts/photo/12")
+        val loaded = ContactPhotoSnapshot(identity, "photo pixels")
+        assertEquals("photo pixels", loaded.forIdentity(identity))
+        assertNull(loaded.forIdentity(identity.copy(contactId = 13)))
     }
     @Test fun changedOrRemovedPhotoHidesThePreviousResultImmediately() {
-        val loaded = ContactPhotoSnapshot(12, "content://com.android.contacts/photo/12", "old pixels")
-        assertNull(loaded.forContact(12, "content://com.android.contacts/photo/updated"))
-        assertNull(loaded.forContact(12, null))
+        val identity = ContactPhotoIdentity(12, "content://com.android.contacts/photo/12")
+        val loaded = ContactPhotoSnapshot(identity, "old pixels")
+        assertNull(loaded.forIdentity(identity.copy(uri = "content://com.android.contacts/photo/updated")))
+        assertNull(loaded.forIdentity(identity.copy(uri = null)))
     }
     @Test fun onlyTheLocalAndroidContactsProviderMaySupplyAnAvatar() {
         assertEquals("content://com.android.contacts/contacts/12/photo", ContactPhotoPolicy.localUri("content://com.android.contacts/contacts/12/photo"))
@@ -27,5 +29,16 @@ class ContactPhotoPolicyTest {
     @Test fun missingPhotoRemainsMissingRatherThanInventingAPortrait() {
         assertNull(ContactPhotoPolicy.localUri(null))
         assertNull(ContactPhotoPolicy.localUri(""))
+    }
+    @Test fun sameUriWithNewProviderRevisionRejectsTheOldPixels() {
+        val original = ContactPhotoIdentity(12, "content://com.android.contacts/photo/12", 100L, 1)
+        val loaded = ContactPhotoSnapshot(original, "old pixels")
+        assertEquals("old pixels", loaded.forIdentity(original))
+        assertNull(loaded.forIdentity(original.copy(revision = 101L)))
+    }
+    @Test fun returningFromEditorInvalidatesEvenWhenProviderRevisionIsUnavailable() {
+        val original = ContactPhotoIdentity(12, "content://com.android.contacts/photo/12", null, 1)
+        val loaded = ContactPhotoSnapshot(original, "old pixels")
+        assertNull(loaded.forIdentity(original.copy(refreshGeneration = 2)))
     }
 }

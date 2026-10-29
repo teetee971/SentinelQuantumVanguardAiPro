@@ -598,6 +598,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 val favorites = remember { PhoneFavoriteStore(context) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 var resumeEpoch by remember { mutableStateOf(0) }
+                var contactPhotoRefreshGeneration by remember { mutableStateOf(0) }
                 DisposableEffect(context) {
                     val observer = LifecycleEventObserver { _, event ->
                         if (event == Lifecycle.Event.ON_RESUME) {
@@ -612,6 +613,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             ) == PackageManager.PERMISSION_GRANTED
                             callLineRefreshEpoch++
                             resumeEpoch++
+                            contactPhotoRefreshGeneration++
                         }
                     }
                     context.lifecycle.addObserver(observer)
@@ -846,6 +848,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 profileContact?.takeIf { contactsPermissionGranted }?.let { contact ->
                     com.sentinel.quantum.ui.design.D1ContactProfileSheet(
                         contact = contact,
+                        photoRefreshGeneration = contactPhotoRefreshGeneration,
                         onDismiss = { profileContact = null },
                         onCall = { candidate ->
                             profileContact = null
@@ -1607,7 +1610,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            com.sentinel.quantum.ui.design.D1ContactAvatar(contact, Modifier.size(50.dp))
+                                            com.sentinel.quantum.ui.design.D1ContactAvatar(contact, Modifier.size(50.dp), contactPhotoRefreshGeneration)
                                             Column(Modifier.weight(1f)) {
                                                 Text(
                                                     contact.displayName,

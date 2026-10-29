@@ -23,18 +23,19 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.data.BoundedInputReader
 import com.sentinel.quantum.security.ContactPhotoPolicy
-import com.sentinel.quantum.security.ContactPhotoSnapshot
+import com.sentinel.quantum.security.ContactPhotoIdentity
 import com.sentinel.quantum.security.LocalContactLookup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /** Local provider photo only, bounded and loaded off the UI thread. Never an invented portrait. */
 @Composable
-fun D1ContactAvatar(contact: LocalContactLookup.Contact, modifier: Modifier = Modifier) {
+fun D1ContactAvatar(contact: LocalContactLookup.Contact, modifier: Modifier = Modifier, refreshGeneration: Int = 0) {
     val context = LocalContext.current.applicationContext
     val safeUri = ContactPhotoPolicy.localUri(contact.photoUri)
-    val photo by produceState<ContactPhotoSnapshot<ImageBitmap>?>(null, contact.contactId, safeUri) {
-        val loaded = withContext(Dispatchers.IO) {
+    val identity = ContactPhotoIdentity(contact.contactId, safeUri, contact.photoRevision, refreshGeneration)
+    val photo = rememberContactPhoto(identity) {
+        withContext(Dispatchers.IO) {
             if (safeUri == null || ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) null
             else runCatching {
                 val bytes = context.contentResolver.openInputStream(Uri.parse(safeUri))?.use {
@@ -48,12 +49,9 @@ fun D1ContactAvatar(contact: LocalContactLookup.Contact, modifier: Modifier = Mo
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)?.asImageBitmap()
             }.getOrNull()
         }
-        value = if (loaded != null && safeUri != null) ContactPhotoSnapshot(contact.contactId, safeUri, loaded) else null
     }
     Surface(modifier.clip(CircleShape), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
-        // produceState retains its previous value until the new producer runs.
-        // Reject that value synchronously when a list slot changes identity or photo URI.
-        val actualPhoto = photo?.forContact(contact.contactId, safeUri)
+        val actualPhoto = photo
         if (actualPhoto != null) Image(actualPhoto, contentDescription = null, contentScale = ContentScale.Crop)
         else Box(contentAlignment = Alignment.Center) {
             Text(contact.displayName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
@@ -70,7 +68,8 @@ fun D1ContactProfileSheet(
     onCall: (String) -> Unit,
     onMessage: (String) -> Unit,
     onEdit: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    photoRefreshGeneration: Int = 0
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().fillMaxHeight(0.92f).verticalScroll(rememberScrollState()).padding(16.dp),
@@ -78,7 +77,7 @@ fun D1ContactProfileSheet(
             SentinelCommunicationHeader("Fiche contact · source locale", contact.displayName,
                 "Dans votre carnet Android. Cette présence ne constitue pas une vérification de l’identité.")
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                D1ContactAvatar(contact, Modifier.size(88.dp))
+                D1ContactAvatar(contact, Modifier.size(88.dp), photoRefreshGeneration)
             }
             SentinelGlassCard(Modifier.fillMaxWidth()) {
                 Text("Coordonnées", style = MaterialTheme.typography.titleMedium)
