@@ -1,0 +1,178 @@
+[
+  {
+    "name": "java-version",
+    "argv": [
+      "/workspace/tooling/jdk17/bin/java",
+      "-version"
+    ],
+    "exit_code": 0,
+    "log": "logs/java-version.log"
+  },
+  {
+    "name": "gradle-build",
+    "argv": [
+      "/workspace/tooling/gradle-9.8.0/bin/gradle",
+      "-p",
+      "native-android-app",
+      ":app:compileDebugKotlin",
+      ":app:testDebugUnitTest",
+      ":app:assembleDebug",
+      ":app:assembleDebugAndroidTest",
+      ":app:bundleReleaseUnsigned",
+      "-PsentinelSignatureFixture=/workspace/phone-core-v1-delivery/Sentinel-PhoneCore-V1-debug.apk",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "exit_code": 0,
+    "log": "logs/gradle-build.log"
+  },
+  {
+    "name": "source-manifest",
+    "argv": [
+      "node",
+      "scripts/check-android-manifest.js"
+    ],
+    "exit_code": 0,
+    "log": "logs/source-manifest.log"
+  },
+  {
+    "name": "release-manifest",
+    "argv": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "scripts/verify-phone-core-v1-release.py",
+      "/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/intermediates/merged_manifests/releaseUnsigned/processReleaseUnsignedManifest/AndroidManifest.xml"
+    ],
+    "exit_code": 0,
+    "log": "logs/release-manifest.log"
+  },
+  {
+    "name": "android-product-truth",
+    "argv": [
+      "npm",
+      "run",
+      "test:android-product-truth"
+    ],
+    "exit_code": 0,
+    "log": "logs/android-product-truth.log"
+  },
+  {
+    "name": "release-policy",
+    "argv": [
+      "node",
+      "--test",
+      "scripts/android-release-policy.test.js",
+      "scripts/android-aab-artifact-policy.test.js"
+    ],
+    "exit_code": 0,
+    "log": "logs/release-policy.log"
+  },
+  {
+    "name": "apk-signature",
+    "argv": [
+      "/workspace/tooling/android-sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-debug.apk"
+    ],
+    "exit_code": 0,
+    "log": "logs/apk-signature.log"
+  },
+  {
+    "name": "apk-zipalign",
+    "argv": [
+      "/workspace/tooling/android-sdk/build-tools/36.0.0/zipalign",
+      "-c",
+      "-P",
+      "16",
+      "-v",
+      "4",
+      "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-debug.apk"
+    ],
+    "exit_code": 0,
+    "log": "logs/apk-zipalign.log"
+  },
+  {
+    "name": "android-test-apk-signature",
+    "argv": [
+      "/workspace/tooling/android-sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-androidTest.apk"
+    ],
+    "exit_code": 0,
+    "log": "logs/android-test-apk-signature.log"
+  },
+  {
+    "name": "android-test-apk-zipalign",
+    "argv": [
+      "/workspace/tooling/android-sdk/build-tools/36.0.0/zipalign",
+      "-c",
+      "-P",
+      "16",
+      "-v",
+      "4",
+      "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-androidTest.apk"
+    ],
+    "exit_code": 0,
+    "log": "logs/android-test-apk-zipalign.log"
+  },
+  {
+    "name": "apk-badging",
+    "argv": [
+      "/workspace/tooling/android-sdk/build-tools/36.0.0/aapt2",
+      "dump",
+      "badging",
+      "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-debug.apk"
+    ],
+    "exit_code": 0,
+    "log": "logs/apk-badging.log"
+  },
+  {
+    "name": "aab-validate",
+    "argv": [
+      "/workspace/tooling/jdk17/bin/java",
+      "-jar",
+      "/workspace/tooling/bundletool.jar",
+      "validate",
+      "--bundle=/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-release-unsigned.aab"
+    ],
+    "exit_code": 0,
+    "log": "logs/aab-validate.log"
+  },
+  {
+    "name": "aab-config",
+    "argv": [
+      "/workspace/tooling/jdk17/bin/java",
+      "-jar",
+      "/workspace/tooling/bundletool.jar",
+      "dump",
+      "config",
+      "--bundle=/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-release-unsigned.aab"
+    ],
+    "exit_code": 0,
+    "log": "logs/aab-config.log"
+  },
+  {
+    "name": "aab-signature-status",
+    "argv": [
+      "/workspace/tooling/jdk17/bin/jarsigner",
+      "-verify",
+      "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-release-unsigned.aab"
+    ],
+    "exit_code": 0,
+    "log": "logs/aab-signature-status.log"
+  },
+  {
+    "name": "adb-devices",
+    "argv": [
+      "/workspace/tooling/android-sdk/platform-tools/adb",
+      "devices",
+      "-l"
+    ],
+    "exit_code": 0,
+    "log": "logs/adb-devices.log"
+  }
+]

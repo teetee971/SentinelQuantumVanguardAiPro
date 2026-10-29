@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-29T16:00:50.128960+00:00",
+  "status": "NON EX\u00c9CUT\u00c9E",
+  "reason": "No single authorized Android device available",
+  "commands": [
+    {
+      "command": [
+        "adb",
+        "get-state"
+      ],
+      "exit_code": 1
+    }
+  ],
+  "physical_scenarios": "NON TEST\u00c9S: record manual observations separately"
+}

@@ -1,5 +1,7 @@
 # Phone Core V1 — qualification du 29 octobre 2026
 
+> Rapport initial de d03dfb07 conservé comme historique. La livraison actualisée (sources Android 846ed793, 1 356 tests app, 30 permissions fusionnées) est dans [release/phone-core-v1/BUILD_REPORT.md](../release/phone-core-v1/BUILD_REPORT.md). Les empreintes et résultats ci-dessous concernent la livraison initiale.
+
 Statut : compilation et tests hôte réussis, publication Google Play non autorisée par ce rapport. Les scénarios sur Galaxy S24+ sont **NON TESTÉS** : `adb devices -l` ne détecte aucun appareil. Aucun lancement sans crash, rôle effectivement accordé, appel réseau ou révocation sur appareil ne peut être certifié ici.
 
 ## Références et périmètre
