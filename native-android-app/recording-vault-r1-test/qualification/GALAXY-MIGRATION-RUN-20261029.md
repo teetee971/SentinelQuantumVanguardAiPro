@@ -9,8 +9,8 @@ journaux bruts. Ce document est un compte rendu, pas une reconstruction de logs.
 
 Code annoncé avant build : `eea40d423a616e845da5e4295b6e9cdb76672c32`, branche
 `fix/recording-vault-v2-migration-hardening-20261028`.
-Le protocole a écrit `commit.txt` dans le dossier d'évidence sur le téléphone ;
-ce fichier brut reste à collecter avec les journaux.
+Le contenu de `commit.txt`, transmis ensuite par l’utilisateur, confirme ce
+SHA complet. Le fichier brut reste à importer avec l’archive des journaux.
 
 - Modèle observé : **SM-S926B**, Android **16**, API **36**.
 - Fingerprint : `samsung/e2sxeea/e2s:16/BP4A.251205.006/S926BXXSHDZI1:user/release-keys`.
@@ -68,14 +68,18 @@ signalé comme interruption, pas comme un résultat JUnit réussi.
 
 Le script n'atteint verify/cleanup qu'après observation des readiness dans
 logcat et force-stop ; la transcription montre aussi les pidof vides après arrêt.
-Les lignes MIGRATION_READY, les identités de processus et les détails de sécurité
-de clé restent à examiner directement dans `logcat.log` archivé.
+Les extraits MIGRATION_READY et de sécurité de clé ont ensuite été transmis
+par l’utilisateur (voir ci-dessous). Le logcat complet reste à importer pour
+revue de l’ensemble des identités et phases.
 
 L'instrumentation exercée utilise AndroidKeyStore réel, le JNI ARM64 et les E/S
 Android. Les succès attestent le fonctionnement observé des synchronisations
 sur ce run ; ils ne prouvent pas la durabilité face à une coupure électrique.
-Le niveau SOFTWARE / TRUSTED_ENVIRONMENT / STRONGBOX n'est pas visible dans la
-transcription et reste **NON DÉTERMINÉ** tant que KEY_SECURITY_LEVEL n'est pas lu.
+Les extraits supplémentaires rapportent **TRUSTED_ENVIRONMENT (TEE)** et
+**256 bits** ; **USER_AUTH_REQUIRED=false**. Cela décrit la valeur rapportée
+par AndroidKeyStore/KeyInfo, pas une attestation matérielle indépendante.
+Aucune protection StrongBox ni exigence d’authentification utilisateur n’est
+revendiquée pour cette clé.
 
 ## Limites et vérifications restantes
 
@@ -92,17 +96,36 @@ Le passage de ce protocole ne constitue pas une validation de transport SMS,
 MMS, RCS ou d'enregistrement des deux côtés d'un appel. Aucun changement de
 périmètre ni fusion de la PR n'est effectué.
 
-## Collecte sur le téléphone, sans relancer les tests
+## Extraits supplémentaires transmis par l’utilisateur
 
-Dans Termux :
+Contenu de commit.txt : `eea40d423a616e845da5e4295b6e9cdb76672c32`.
 
-```bash
-evidence="$HOME/vault-migration-device-20261029T013435Z"
-cat "$evidence/commit.txt"
-grep -E 'KEY_SECURITY_LEVEL=|KEY_SIZE=|USER_AUTH_REQUIRED=|MIGRATION_READY' "$evidence/logcat.log"
-tar -czf "$HOME/vault-migration-c48883da20ff488ba71a09f7b2a57c95.tar.gz" -C "$HOME" "$(basename "$evidence")"
-sha256sum "$HOME/vault-migration-c48883da20ff488ba71a09f7b2a57c95.tar.gz"
+Extraits logcat tels que fournis (horloge locale du téléphone ; fuseau non
+collecté, aucune conversion UTC supposée) :
+
+```text
+10-28 21:34:50.192 18450 18464 I SentinelR1KeyAudit: KEY_SECURITY_LEVEL=TRUSTED_ENVIRONMENT
+10-28 21:34:50.192 18450 18464 I SentinelR1KeyAudit: KEY_SIZE=256
+10-28 21:34:50.192 18450 18464 I SentinelR1KeyAudit: USER_AUTH_REQUIRED=false
+10-28 21:35:16.292 18963 18978 I SentinelR3: MIGRATION_READY run=c48883da20ff488ba71a09f7b2a57c95 point=prepared process=18963:66300634
+10-28 21:35:19.968 19296 19312 I SentinelR3: MIGRATION_READY run=c48883da20ff488ba71a09f7b2a57c95 point=required process=19296:66300992
+10-28 21:35:23.672 19503 19518 I SentinelR3: MIGRATION_READY run=c48883da20ff488ba71a09f7b2a57c95 point=published process=19503:66301361
 ```
 
-Conserver cette archive et transmettre les journaux pour revue. Ne pas effacer
-les données Android, la clé ou le verrou global pour compléter cette collecte.
+Ces lignes confirment le même run et trois processus interrompus distincts.
+Elles ne remplacent pas les assertions des phases verify ni les journaux complets.
+
+## Archive créée sur le téléphone
+
+Archive annoncée : `$HOME/vault-migration-c48883da.tar.gz`.
+SHA-256 **communiqué par l’utilisateur** :
+
+```text
+01d1799265059ccbc02a581c612896f18fbb2a7aaf9799d8c5a855273fee03dd
+```
+
+L’archive n’a pas encore été reçue par Codex ; cette empreinte n’a donc pas été
+recalculée indépendamment et le contenu brut n’a pas été vérifié. Conserver et
+transmettre cette archive pour compléter la revue, sans effacer de données Android,
+la clé ou le verrou global. Le test de redémarrage complet reste à effectuer sur
+une nouvelle fixture, distincte du run déjà nettoyé.

@@ -29,6 +29,8 @@ et la PR brouillon. Aucune fusion demandée ou effectuée.
 | apksigner verify pour les deux APK | codes 0 ; signatures debug cloud, compatibilité avec la clé Galaxy **non vérifiée** |
 | API Dependabot | code 1, HTTP403 Resource not accessible by integration ; **NON VÉRIFIÉ** |
 | Galaxy S24+ SM-S926B, API36, AndroidKeyStore réel, JNI ARM64 et force-stop | **EXÉCUTÉS PAR L’UTILISATEUR** : 38 tests vérifiés, phases write/verify/cleanup et 3 points de migration terminés ; transcription reçue, archive brute à collecter |
+| Niveau de clé transmis par l’utilisateur | KeyInfo : **TRUSTED_ENVIRONMENT (TEE), 256 bits, USER_AUTH_REQUIRED=false** ; pas d’attestation indépendante ni de garantie StrongBox |
+| Archive du run Galaxy | SHA-256 communiqué : `01d1799265059ccbc02a581c612896f18fbb2a7aaf9799d8c5a855273fee03dd` ; archive non encore reçue/recalculée par Codex |
 | Redémarrage complet Galaxy et coupure électrique | **NON EXÉCUTÉS** dans le protocole transmis |
 
 Journal initial : [evidence-migration/commands.json](evidence-migration/commands.json).
@@ -102,9 +104,9 @@ changer de version ni conclure à l’impact des six alertes inaccessibles.
 
 Le build offline ARM64 et le protocole Galaxy sont désormais documentés par la
 transcription utilisateur : installations -r -t réussies, 38 tests et reprises
-aux trois frontières validés. Les logs bruts et le niveau de sécurité de clé
-restent à collecter ; redémarrage complet et vérifications de stockage physique
-restent à effectuer. Aucun résultat de coupure électrique n’est revendiqué.
+aux trois frontières validés. Le commit, les readiness et le niveau TEE de la clé sont confirmés par les
+extraits transmis ; l’archive brute reste à recevoir et vérifier. Redémarrage
+complet et vérifications de stockage physique restent à effectuer. Aucun résultat de coupure électrique n’est revendiqué.
 Un échec de signature, d'outil ARM64, de dépendance offline ou de fsync est un
 blocage, jamais une raison de vider les données ou de déclarer PASS.
 
