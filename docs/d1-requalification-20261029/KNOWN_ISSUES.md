@@ -16,3 +16,7 @@
 ## Itération photos après audit c3226314
 
 Le défaut d’invalidation à URI inchangée et la course de publication après annulation sont corrigés dans les sources 70d5cecd ; preuve JVM dans PHOTO_REFRESH_FOLLOWUP.md. Validation Compose/provider et S24+ toujours NON EXÉCUTÉE/NON TESTÉE. Cette correction ne clôt pas les écarts de fidélité visuelle ni les autres blocages ci-dessus.
+
+## Itération Messages après candidat 70d5cecd
+
+Navigation interne et externe corrigée dans 8cc1ad4e ; preuves et limites dans MESSAGES_NAVIGATION_FOLLOWUP.md. Les brouillons texte sont conservés en mémoire sauvegardable durant cette Activity, pas dans un nouveau stockage durable. Les pièces jointes MMS sélectionnées restent en remember : elles ne sont pas restaurées après recréation, limitation préexistante non corrigée par cette navigation. Tests réels conversation/IME et tests instrumentés restent NON EXÉCUTÉS.

@@ -1,5 +1,7 @@
 # Sentinel D.1 — candidat à requalifier sur Galaxy S24+
 
+> Livraison actuelle : [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md). Les résultats ci-dessous concernent le candidat historique identifié dans ce rapport ; ARTIFACTS.json décrit le dernier candidat.
+
 > Rapport historique du premier candidat (sources 78653c57, 1366 tests). Pour la livraison actuelle et ses 1369 tests, lire [PHOTO_REFRESH_FOLLOWUP.md](PHOTO_REFRESH_FOLLOWUP.md). Le manifeste ARTIFACTS.json décrit désormais le nouveau candidat.
 
 ## Livraison et provenance

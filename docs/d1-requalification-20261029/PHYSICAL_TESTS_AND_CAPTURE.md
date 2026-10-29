@@ -10,7 +10,7 @@ L’installation de l’APK antérieur est rapportée réussie par l’utilisate
 
 ```bash
 sha256sum -c SHA256SUMS.txt
-adb install -r Sentinel-D1-debug-70d5cecd.apk
+adb install -r Sentinel-D1-debug-8cc1ad4e.apk
 adb shell getprop ro.product.model
 adb shell getprop ro.build.version.release
 adb shell getprop ro.build.version.sdk
@@ -51,7 +51,7 @@ Examiner chaque fichier avant de l’accepter : bon écran, contenu stable, pas 
 Uniquement sur un runtime de test sans données personnelles, installer l’APK instrumenté puis :
 
 ```bash
-adb install -r Sentinel-D1-androidTest-70d5cecd.apk
+adb install -r Sentinel-D1-androidTest-8cc1ad4e.apk
 adb shell am instrument -w -e class com.sentinel.quantum.ui.design.D1CommunicationLayoutInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
 # Opt-in explicite car les PNG peuvent contenir des données privées :
 adb shell am instrument -w -e captureD1Screenshots true -e class com.sentinel.quantum.ui.D1CommunicationCaptureInstrumentationTest,com.sentinel.quantum.ui.AllStaticNavigationSurfacesInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
@@ -79,3 +79,23 @@ adb shell am instrument -w -e class com.sentinel.quantum.ui.design.ContactPhotoS
 ```
 
 Ils exercent le vrai producteur d’état utilisé par D1ContactAvatar avec une lecture différée contrôlée ; ils ne valident ni le fournisseur Samsung ni le rendu complet de la fiche.
+
+## Messages : retour, brouillon et contexte
+
+Statut : NON TESTÉ sur S24+. Ouvrir une conversation existante autorisée puis utiliser Retour de l’en-tête : la liste doit réapparaître sans quitter Messages. Répéter avec le geste/touche système ; si le clavier est ouvert, vérifier d’abord sa fermeture par Android. Depuis la liste, choisir Écrire, saisir un brouillon texte de test, revenir, puis rouvrir Écrire : le texte doit être conservé dans cette Activity. Recréer/faire pivoter et répéter. Choisir SMS puis MMS : le titre doit correspondre au mode et aucun ancien expéditeur ne doit servir d’en-tête d’un nouveau message.
+
+Ouvrir séparément un compositeur externe sans destinataire ni envoi automatique :
+
+```bash
+adb shell am start -n com.sentinel.quantum/.SmsComposeActivity -a android.intent.action.SENDTO -d 'smsto:' --es sms_body 'Brouillon de qualification'
+```
+
+Retour doit quitter ce compositeur vers son appelant, pas imposer une liste intermédiaire. Vérifier également révocation de rôle/permissions et absence d’envoi involontaire. La navigation ne crée pas de stockage durable de brouillons ; les pièces jointes MMS restent non restaurées après recréation dans l’implémentation actuelle.
+
+Quatre tests Activity/Compose ajoutés, compilés mais NON EXÉCUTÉS :
+
+```bash
+adb shell am instrument -w -e class com.sentinel.quantum.ui.SmsNavigationInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Le scénario dit « dispatcher » appelle le dispatcher Android dans l’Activity ; il ne remplace pas un essai réel du geste système avec IME ouvert. Aucun SMS ni contact de démonstration n’est injecté dans un provider par ces tests.

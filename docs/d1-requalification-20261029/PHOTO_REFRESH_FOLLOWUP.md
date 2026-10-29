@@ -1,5 +1,7 @@
 # Livraison courante D.1 — photos modifiées et lectures annulées
 
+> Livraison actuelle : [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md). Les résultats ci-dessous concernent le candidat historique identifié dans ce rapport ; ARTIFACTS.json décrit le dernier candidat.
+
 ## Provenance
 
 Sources APK : **70d5cecd2aacd67487bd98591cbbcb4172225617**.
