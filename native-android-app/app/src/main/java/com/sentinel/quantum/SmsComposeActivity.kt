@@ -7,6 +7,7 @@ import android.os.Looper
 import android.database.ContentObserver
 import android.provider.Telephony
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -87,6 +88,7 @@ import com.sentinel.quantum.security.SmsSubscriptionState
 import com.sentinel.quantum.security.SmsSubmitReadiness
 import com.sentinel.quantum.security.SmsSubmissionGate
 import com.sentinel.quantum.security.SmsThreadOrganizer
+import com.sentinel.quantum.security.SmsNavigationPolicy
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
@@ -173,6 +175,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var showComposer by rememberSaveable {
                     mutableStateOf(initialDestination.isNotBlank() || initialBody.isNotBlank() || initialMmsIntent)
                 }
+                var composerFromConversations by rememberSaveable { mutableStateOf(false) }
                 var threadCategoryFilter by remember { mutableStateOf(SmsThreadOrganizer.Category.ALL) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
                 var notificationPreviewEnabled by remember {
@@ -273,6 +276,22 @@ class SmsComposeActivity : ComponentActivity() {
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
                 var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
+                fun returnToConversations() {
+                    showComposer = false
+                    selectedThreadId = null
+                    threadMessages = emptyList()
+                    conversationsSectionExpanded = true
+                }
+                val backAction = SmsNavigationPolicy.backAction(
+                    showComposer, selectedThreadId != null, composerFromConversations
+                )
+                fun handleBack() {
+                    when (backAction) {
+                        SmsNavigationPolicy.BackAction.CONVERSATIONS -> returnToConversations()
+                        SmsNavigationPolicy.BackAction.FINISH -> finish()
+                    }
+                }
+                BackHandler(enabled = backAction == SmsNavigationPolicy.BackAction.CONVERSATIONS) { handleBack() }
                 val visibleThreads = remember(threads, threadCategoryFilter) {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
@@ -397,8 +416,8 @@ class SmsComposeActivity : ComponentActivity() {
                         if (registeredUris.isNotEmpty()) runCatching { contentResolver.unregisterContentObserver(observer) }
                     }
                 }
-                LaunchedEffect(providerEpoch, activationEpoch, selectedThreadId) {
-                    val threadId = selectedThreadId
+                LaunchedEffect(providerEpoch, activationEpoch, selectedThreadId, showComposer) {
+                    val threadId = selectedThreadId.takeUnless { showComposer }
                     val refreshed = withContext(Dispatchers.IO) {
                         conversations.recentThreads(50) to
                             (threadId?.let { conversations.messagesForThread(it, 100) } ?: emptyList())
@@ -442,7 +461,7 @@ class SmsComposeActivity : ComponentActivity() {
                         SentinelTopBar(
                             title = "Sentinel · Messages",
                             subtitle = "SMS/MMS Android · confidentialité locale",
-                            onBack = { finish() }
+                            onBack = { handleBack() }
                         )
                     },
                     bottomBar = {
@@ -519,7 +538,9 @@ class SmsComposeActivity : ComponentActivity() {
                     ) {
                         com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
                             section = "Communications · SMS / MMS",
-                            title = selectedThreadId?.let { id ->
+                            title = if (showComposer) {
+                                if (mmsComposeMode) "Nouveau MMS" else "Nouveau SMS"
+                            } else selectedThreadId?.let { id ->
                                 threads.firstOrNull { it.threadId == id }?.address?.takeIf { it.isNotBlank() }
                             } ?: "Messages Sentinel",
                             description = activationModel.title,
@@ -527,18 +548,18 @@ class SmsComposeActivity : ComponentActivity() {
                         )
                         TabRow(selectedTabIndex = if (showComposer) 1 else 0) {
                             Tab(selected = !showComposer, onClick = {
-                                showComposer = false
-                                selectedThreadId = null
-                                conversationsSectionExpanded = true
+                                returnToConversations()
                             }, text = { Text("Conversations") })
-                            Tab(selected = showComposer, onClick = { showComposer = true }, text = { Text("Écrire") })
+                            Tab(selected = showComposer, onClick = {
+                                if (!showComposer) {
+                                    composerFromConversations = true
+                                    selectedThreadId = null
+                                    threadMessages = emptyList()
+                                    showComposer = true
+                                }
+                            }, text = { Text("Écrire") })
                         }
                         if (showComposer) {
-                            Text(
-                                if (mmsComposeMode) "Nouveau MMS" else "Nouveau SMS",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
-                            )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -562,7 +583,7 @@ class SmsComposeActivity : ComponentActivity() {
                             }
                             Text(
                                 if (mmsComposeMode)
-                                    "MMS opérateur · PDU local borné · résultat réseau distinct de la soumission"
+                                    "Envoi via votre opérateur. Le résultat d’envoi dépend du réseau."
                                 else
                                     "Analyse locale · SMS opérateur sans chiffrement de bout en bout",
                                 style = MaterialTheme.typography.bodySmall
@@ -643,7 +664,7 @@ class SmsComposeActivity : ComponentActivity() {
                             OutlinedTextField(
                                 value = destination,
                                 onValueChange = { destination = it.take(32) },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_destination"),
                                 label = { Text("Destinataire") },
                                 supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -659,7 +680,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                     body = it.take(maxChars)
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_body"),
                                 label = { Text("Message") },
                                 supportingText = {
                                     val maxChars = if (mmsComposeMode) {
@@ -1052,8 +1073,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 } else {
                                     OutlinedButton(
                                         onClick = {
-                                            selectedThreadId = null
-                                            threadMessages = emptyList()
+                                            returnToConversations()
                                         },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
