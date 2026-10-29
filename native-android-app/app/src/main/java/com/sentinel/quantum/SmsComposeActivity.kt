@@ -440,7 +440,7 @@ class SmsComposeActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
-                            title = "Messages Sentinel",
+                            title = "Sentinel · Messages",
                             subtitle = "SMS/MMS Android · confidentialité locale",
                             onBack = { finish() }
                         )
@@ -522,7 +522,8 @@ class SmsComposeActivity : ComponentActivity() {
                             title = selectedThreadId?.let { id ->
                                 threads.firstOrNull { it.threadId == id }?.address?.takeIf { it.isNotBlank() }
                             } ?: "Messages Sentinel",
-                            description = activationModel.title
+                            description = activationModel.title,
+                            compact = true
                         )
                         TabRow(selectedTabIndex = if (showComposer) 1 else 0) {
                             Tab(selected = !showComposer, onClick = {
@@ -1114,11 +1115,18 @@ class SmsComposeActivity : ComponentActivity() {
                                                     )
                                                 }
                                                 if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                    Text(
-                                                        "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
+                                                    com.sentinel.quantum.ui.design.SentinelGlassCard(Modifier.fillMaxWidth()) {
+                                                        Text(
+                                                            if (messageRisk.linksInspected > 0) "Lien à examiner" else "Message à examiner",
+                                                            style = MaterialTheme.typography.titleSmall,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                        Text("Analyse locale : ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score indicatif ${messageRisk.score}/100",
+                                                            style = MaterialTheme.typography.bodyMedium)
+                                                        Text(messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) },
+                                                            style = MaterialTheme.typography.bodySmall)
+                                                    }
                                                 }
                                                 OutlinedButton(
                                                     onClick = {

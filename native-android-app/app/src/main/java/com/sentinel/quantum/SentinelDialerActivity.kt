@@ -588,6 +588,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactFilter by rememberSaveable { mutableStateOf(0) }
                 var favoriteRefreshEpoch by remember { mutableStateOf(0) }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
+                var profileContact by remember { mutableStateOf<LocalContactLookup.Contact?>(null) }
                 var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
                 var contactsLoading by remember { mutableStateOf(false) }
                 var contactListStatus by remember { mutableStateOf<String?>(null) }
@@ -842,6 +843,41 @@ class SentinelDialerActivity : ComponentActivity() {
                     }
                 )
 
+                profileContact?.takeIf { contactsPermissionGranted }?.let { contact ->
+                    com.sentinel.quantum.ui.design.D1ContactProfileSheet(
+                        contact = contact,
+                        onDismiss = { profileContact = null },
+                        onCall = { candidate ->
+                            profileContact = null
+                            val safe = sanitizeDialNumber(candidate)
+                            if (safe != null) {
+                                number = safe
+                                phoneTab = 0
+                                if (holdsDialerRole()) placeCallIfReady(safe) else requestDialerRole(safe)
+                            } else callActionStatus = "Numéro non appelable. Aucun appel n’a été lancé."
+                        },
+                        onMessage = { candidate ->
+                            profileContact = null
+                            val safe = sanitizeDialNumber(candidate)
+                            if (safe != null) startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe)))
+                                .setClass(context, SmsComposeActivity::class.java))
+                        },
+                        onEdit = {
+                            profileContact = null
+                            runCatching { startActivity(Intent(Intent.ACTION_EDIT,
+                                android.content.ContentUris.withAppendedId(android.provider.ContactsContract.Contacts.CONTENT_URI, contact.contactId))) }
+                                .onFailure { contactListStatus = "Impossible d’ouvrir l’éditeur Contacts Android." }
+                        },
+                        onShare = {
+                            profileContact = null
+                            runCatching { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND)
+                                .setType("text/plain").putExtra(Intent.EXTRA_TEXT,
+                                    contact.displayName + "\n" + contact.phoneNumbers.joinToString("\n")), "Partager ce contact")) }
+                                .onFailure { contactListStatus = "Aucune application de partage disponible." }
+                        }
+                    )
+                }
+
                 pendingBlockNumber?.let { candidate ->
                     AlertDialog(
                         onDismissRequest = { pendingBlockNumber = null },
@@ -919,7 +955,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
-                            title = "Téléphone Sentinel",
+                            title = if (phoneTab == 2) "Sentinel · Contacts" else "Sentinel · Téléphone",
                             subtitle = if (protectionReady) {
                                 pluralStringResource(
                                     R.plurals.phone_core_ready_validation_count,
@@ -1571,20 +1607,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            Surface(
-                                                modifier = Modifier.size(50.dp),
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.primaryContainer
-                                            ) {
-                                                Box(contentAlignment = Alignment.Center) {
-                                                    Text(
-                                                        initial,
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                                    )
-                                                }
-                                            }
+                                            com.sentinel.quantum.ui.design.D1ContactAvatar(contact, Modifier.size(50.dp))
                                             Column(Modifier.weight(1f)) {
                                                 Text(
                                                     contact.displayName,
@@ -1602,6 +1625,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
+                                        }
+
+                                        TextButton(onClick = { profileContact = contact }, modifier = Modifier.heightIn(min = 48.dp)) {
+                                            Text("Ouvrir la fiche contact")
                                         }
 
                                         if (displayNumbers.isEmpty()) {

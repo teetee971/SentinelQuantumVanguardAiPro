@@ -16,7 +16,8 @@ class LocalContactLookup(private val context: Context) {
         val contactId: Long,
         val displayName: String,
         val phoneNumbers: List<String>,
-        val providerHasPhoneNumber: Boolean
+        val providerHasPhoneNumber: Boolean,
+        val photoUri: String? = null
     )
 
     enum class ContactAccessState { READY, PERMISSION_REQUIRED, PROVIDER_UNAVAILABLE }
@@ -36,12 +37,14 @@ class LocalContactLookup(private val context: Context) {
         }
         val safeLimit = limit.coerceAtLeast(1)
         return try {
+            val photoUris = mutableMapOf<Long, String>()
             val contactCursor = context.contentResolver.query(
                 ContactsContract.Contacts.CONTENT_URI,
                 arrayOf(
                     ContactsContract.Contacts._ID,
                     ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
-                    ContactsContract.Contacts.HAS_PHONE_NUMBER
+                    ContactsContract.Contacts.HAS_PHONE_NUMBER,
+                    ContactsContract.Contacts.PHOTO_THUMBNAIL_URI
                 ),
                 null,
                 null,
@@ -52,8 +55,12 @@ class LocalContactLookup(private val context: Context) {
                 val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
                 val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
                 val hasPhoneIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+                val photoIndex = cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
                 buildList {
                     while (cursor.moveToNext() && size < safeLimit) {
+                        if (photoIndex >= 0) ContactPhotoPolicy.localUri(cursor.getString(photoIndex))?.let {
+                            photoUris[cursor.getLong(idIndex)] = it
+                        }
                         add(
                             ContactDirectoryPolicy.ContactSeed(
                                 contactId = cursor.getLong(idIndex),
@@ -123,7 +130,8 @@ class LocalContactLookup(private val context: Context) {
                     contactId = entry.contactId,
                     displayName = displayName,
                     phoneNumbers = entry.phoneNumbers,
-                    providerHasPhoneNumber = entry.providerHasPhoneNumber
+                    providerHasPhoneNumber = entry.providerHasPhoneNumber,
+                    photoUri = photoUris[entry.contactId]
                 )
             }.sortedWith(
                 compareBy<Contact> { it.displayName == "Sans nom" }
