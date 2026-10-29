@@ -25,16 +25,27 @@ import com.sentinel.quantum.SentinelInCallActivity
  */
 object SentinelCallNotificationHelper {
     const val ACTION_ANSWER = "com.sentinel.quantum.CALL_ANSWER"
+    const val ACTION_DISCONNECT = "com.sentinel.quantum.CALL_DISCONNECT"
     const val ACTION_REJECT = "com.sentinel.quantum.CALL_REJECT"
     const val EXTRA_CALL_ID = "call.action_id"
     private const val ACTION_URI_SCHEME = "sentinel-call-action"
     private const val ACTION_URI_HOST = "call"
     private const val CHANNEL_ID = "sentinel_incoming_calls"
     private const val NOTIFICATION_ID = 5101
+    private val alertPolicy = IncomingCallAlertPolicy()
 
     fun showIncoming(
         context: Context,
         snapshot: SentinelInCallService.CallSnapshot
+    ): Boolean = showCall(context, snapshot, incoming = true)
+
+    fun showOngoing(context: Context, snapshot: SentinelInCallService.CallSnapshot): Boolean =
+        showCall(context, snapshot, incoming = false)
+
+    private fun showCall(
+        context: Context,
+        snapshot: SentinelInCallService.CallSnapshot,
+        incoming: Boolean
     ): Boolean {
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -96,25 +107,33 @@ object SentinelCallNotificationHelper {
             .setName("$label · ${quickTrust.title}")
             .build()
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setPriority(if (incoming) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_DEFAULT)
             .setOngoing(true)
             .setAutoCancel(false)
             .setContentIntent(fullScreen)
-            .setFullScreenIntent(fullScreen, true)
-            .setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, reject, answer))
-            .build()
+            .setOnlyAlertOnce(!alertPolicy.shouldAlert(incoming, snapshot.id))
+        if (incoming) {
+            builder.setFullScreenIntent(fullScreen, true)
+                .setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, reject, answer))
+        } else {
+            builder.setStyle(NotificationCompat.CallStyle.forOngoingCall(
+                caller, callAction(ACTION_DISCONNECT, "disconnect", 3)
+            ))
+        }
 
         return runCatching {
-            manager.notify(NOTIFICATION_ID, notification)
+            manager.notify(NOTIFICATION_ID, builder.build())
+            alertPolicy.posted(incoming, snapshot.id)
             true
         }.getOrDefault(false)
     }
 
     fun cancel(context: Context) {
+        alertPolicy.clear()
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     }
 

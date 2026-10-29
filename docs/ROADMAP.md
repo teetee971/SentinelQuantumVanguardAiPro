@@ -16,7 +16,7 @@ Les étapes non applicables sont déclarées explicitement dans le registre cano
 
 Le socle logiciel est présent : composeur Sentinel, InCall, filtrage `CallScreeningService`, Caller ID local, contacts, historique, SMS, MMS, notifications, multi-SIM et diagnostic séparé du Wi-Fi.
 
-Le certificat Phone Core v5 comporte **exactement 14 preuves** définies par `PhoneCorePhysicalValidation.kt` et détaillées dans `PHONE_CORE_PHYSICAL_VALIDATION.md`. Les deux sondes provider et les douze observations opérationnelles doivent appartenir au périmètre d’installation courant.
+Le certificat Phone Core v6 comporte **exactement 14 preuves** définies par `PhoneCorePhysicalValidation.kt` et détaillées dans `PHONE_CORE_PHYSICAL_VALIDATION.md`. Les deux sondes provider et les douze observations opérationnelles doivent appartenir au périmètre d’installation courant.
 
 Condition de sortie :
 

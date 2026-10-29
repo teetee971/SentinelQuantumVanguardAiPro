@@ -608,12 +608,7 @@ private fun OngoingPrimaryControls(
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         selected = true
                     ) { SentinelInCallService.unhold(snapshot.id) }
-                    else -> CallActionCircle(
-                        label = "Attente", icon = Icons.Rounded.Pause,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        enabled = false
-                    ) {}
+                    else -> Unit
                 }
             }
 
@@ -764,17 +759,16 @@ private fun CallActionCircle(
 @Composable
 private fun DtmfPad(callId: String) {
     val scope = rememberCoroutineScope()
+    val tonePlayer = remember(scope) { com.sentinel.quantum.security.DtmfTonePlayer(scope, DTMF_TONE_DURATION_MS) }
     listOf("123", "456", "789", "*0#").forEach { row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             row.forEach { digit ->
                 FilledTonalButton(
                     onClick = {
-                        scope.launch {
-                            if (SentinelInCallService.startDtmf(callId, digit)) {
-                                delay(DTMF_TONE_DURATION_MS)
-                                SentinelInCallService.stopDtmf(callId)
-                            }
-                        }
+                        tonePlayer.play(
+                            start = { SentinelInCallService.startDtmf(callId, digit) },
+                            stop = { SentinelInCallService.stopDtmf(callId) }
+                        )
                     },
                     modifier = Modifier.size(64.dp).semantics {
                         contentDescription = when (digit) {
