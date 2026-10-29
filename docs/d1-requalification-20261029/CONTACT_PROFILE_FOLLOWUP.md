@@ -1,3 +1,5 @@
+> Candidat historique 067f0f68. Livraison actuelle : [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md).
+
 # Fiche Contacts : relecture du carnet et révocation
 
 ## Défaut et correctif

@@ -32,3 +32,7 @@ Appeler ce numéro et Ajouter aux contacts sont implémentés dans l’en-tête 
 ## Itération relecture de fiche Contacts
 
 Sources 067f0f68 : fiche réconciliée avec le carnet rechargé, fermeture si contact absent ou accès refusé/indisponible ; résultat tardif rejeté si permission révoquée. Quatre tests JVM et suite complète réussis. Fournisseur Contacts Samsung, modification/suppression et révocations sur S24+ NON TESTÉS. Voir CONTACT_PROFILE_FOLLOWUP.md.
+
+## Itération accès au journal Android
+
+Sources d5c31b49 : purge des récents et invalidation des lectures à ON_PAUSE ou perte observée de rôle/permission ; nouvelle vérification avant publication et refus des anciennes générations. Sept tests JVM et suite finale réussis. Révocation/réattribution entièrement entre deux échantillons sans pause : non détectable par le mécanisme d’observation conservé. Aucun test physique exécuté ; voir CALL_HISTORY_ACCESS_FOLLOWUP.md.

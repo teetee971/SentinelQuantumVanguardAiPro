@@ -1,3 +1,5 @@
+> Candidat courant : `Sentinel-D1-debug-d5c31b49.apk`, `Sentinel-D1-androidTest-d5c31b49.apk` ; utiliser ces fichiers pour les commandes d'installation ci-dessous. Les anciens noms conservés dans le texte sont historiques. Ajouter les scénarios de CALL_HISTORY_ACCESS_FOLLOWUP.md et CONTACT_PROFILE_FOLLOWUP.md. Aucun scénario n'est déclaré exécuté.
+
 # Requalification S24+ Android 17 et preuve visuelle
 
 L’installation de l’APK antérieur est rapportée réussie par l’utilisateur. Les essais du **nouveau candidat** ci-dessous restent **À EXÉCUTER** sur le téléphone, sans appel automatique ni numéro inconnu/surtaxé.
