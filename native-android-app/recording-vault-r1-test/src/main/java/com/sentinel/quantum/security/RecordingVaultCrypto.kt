@@ -85,17 +85,25 @@ internal object RecordingVaultCrypto {
         return cipher.doFinal(encrypted)
     }
 
-    private fun aad(directory: String, id: String): ByteArray {
+    private fun aad(directory: String, id: String, domain: String = "sentinel.recording-vault.v2"): ByteArray {
         require(Regex("[A-Za-z0-9_-]{1,64}").matches(directory))
         require(Regex("[A-Za-z0-9_-]{1,64}").matches(id))
-        val domain = "sentinel.recording-vault.v2"
         return "$domain:${directory.length}:$directory:${id.length}:$id"
             .toByteArray(Charsets.UTF_8)
     }
 
     fun encryptV2(data: ByteArray, directory: String, id: String): ByteArray {
+        return encryptBound(data, aad(directory, id))
+    }
+
+    fun encryptCommit(data: ByteArray, directory: String, id: String): ByteArray =
+        encryptBound(data, aad(directory, id, "sentinel.recording-vault.commit.v1"))
+
+    fun decryptCommit(data: ByteArray, directory: String, id: String): ByteArray =
+        decryptBound(data, aad(directory, id, "sentinel.recording-vault.commit.v1"))
+
+    private fun encryptBound(data: ByteArray, associatedData: ByteArray): ByteArray {
         require(data.isNotEmpty())
-        val associatedData = aad(directory, id)
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key())
         cipher.updateAAD(associatedData)
@@ -104,10 +112,12 @@ internal object RecordingVaultCrypto {
         return byteArrayOf(2) + iv + cipher.doFinal(data)
     }
 
-    fun decryptV2(data: ByteArray, directory: String, id: String): ByteArray {
+    fun decryptV2(data: ByteArray, directory: String, id: String): ByteArray =
+        decryptBound(data, aad(directory, id))
+
+    private fun decryptBound(data: ByteArray, associatedData: ByteArray): ByteArray {
         require(data.size >= 1 + IV_BYTES + 16)
         require(data[0] == 2.toByte())
-        val associatedData = aad(directory, id)
         val iv = data.copyOfRange(1, 1 + IV_BYTES)
         val encrypted = data.copyOfRange(1 + IV_BYTES, data.size)
         val cipher = Cipher.getInstance(TRANSFORMATION)

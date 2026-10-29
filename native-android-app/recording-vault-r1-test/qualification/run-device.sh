@@ -26,17 +26,12 @@ sha256sum "$app_apk" "$test_apk"
 adb_cmd install -r -t "$app_apk"
 adb_cmd install -r -t "$test_apk"
 assert_junit() {
-  local log=$1 count=$2
-  if ! grep -Eq "OK \\($count tests?\\)" "$log" ||
-     grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_STATUS_CODE: -[234]|Process crashed' "$log"; then
-    echo "FAILED: instrumentation did not prove $count executed successful tests: $log"
-    exit 1
-  fi
+  python3 "$module/qualification/verify-instrumentation.py" "$1" --single "$2"
 }
 phase() {
   local name=$1
   adb_cmd shell am instrument -w -r -e class "$class" -e vaultRun "$run" -e vaultPhase "$name" "$runner" | tee "$output/$name.log"
-  assert_junit "$output/$name.log" 1
+  assert_junit "$output/$name.log" "$class#persistenceAcrossProcessDeath"
 }
 force_stop() {
   adb_cmd shell am force-stop "$pkg"
@@ -48,10 +43,13 @@ force_stop() {
 adb_cmd logcat -v threadtime -T 1 -s SentinelR3:I SentinelR1KeyAudit:I '*:S' > "$output/logcat.log" 2>&1 &
 logcat_pid=$!
 trap 'kill "$logcat_pid" 2>/dev/null || true' EXIT
-classes='RecordingVaultCryptoInstrumentedTest,RecordingVaultKeySecurityInstrumentedTest,RecordingVaultStoreInstrumentedTest,RecordingVaultSecurityInstrumentedTest,RecordingVaultConcurrencyInstrumentedTest,RecordingVaultRecoveryInstrumentedTest,RecordingVaultR3InstrumentedTest,RecordingVaultProcessConcurrencyInstrumentedTest'
+classes='RecordingVaultCryptoInstrumentedTest,RecordingVaultKeySecurityInstrumentedTest,RecordingVaultStoreInstrumentedTest,RecordingVaultSecurityInstrumentedTest,RecordingVaultConcurrencyInstrumentedTest,RecordingVaultRecoveryInstrumentedTest,RecordingVaultR3InstrumentedTest,RecordingVaultProcessConcurrencyInstrumentedTest,RecordingVaultMigrationInstrumentedTest'
 classes=$(printf '%s' "$classes" | sed 's/\(^\|,\)/\1com.sentinel.quantum.security./g')
+# Discovery is not execution. Match exact test identities and reject every skip.
+adb_cmd shell am instrument -w -r -e class "$classes" -e log true "$runner" | tee "$output/discovery.log"
+python3 "$module/qualification/verify-instrumentation.py" "$output/discovery.log" --discover "$output/expected.json"
 adb_cmd shell am instrument -w -r -e class "$classes" "$runner" | tee "$output/regression.log"
-assert_junit "$output/regression.log" 24
+python3 "$module/qualification/verify-instrumentation.py" "$output/regression.log" --expected "$output/expected.json"
 phase write
 force_stop
 adb_cmd shell am instrument -w -r -e class "$class" -e vaultRun "$run" -e vaultPhase stageInterruptedWrite "$runner" > "$output/interrupted.log" 2>&1 &
@@ -75,4 +73,36 @@ set -e
 printf 'Interrupted instrumentation shell exit=%s (expected interruption, never counted PASS)\n' "$stage_exit"
 phase verify
 phase cleanup
+# Interrupt the real migration, at each durable/publication boundary, in its own process.
+class=com.sentinel.quantum.security.RecordingVaultMigrationPersistenceInstrumentedTest
+migration_phase() {
+  local name=$1 point=$2
+  adb_cmd shell am instrument -w -r -e class "$class" -e vaultRun "$run" -e vaultPhase "$name" -e vaultPoint "$point" "$runner" | tee "$output/migration-$point-$name.log"
+  assert_junit "$output/migration-$point-$name.log" "$class#migrationAcrossProcessDeath"
+}
+for point in prepared required published; do
+  migration_phase setup "$point"
+  force_stop
+  adb_cmd shell am instrument -w -r -e class "$class" -e vaultRun "$run" -e vaultPhase interrupt -e vaultPoint "$point" "$runner" > "$output/migration-$point-interrupted.log" 2>&1 &
+  stage_pid=$!
+  ready=0
+  for ((i=0; i<120; i++)); do
+    if grep -q "MIGRATION_READY run=$run point=$point " "$output/logcat.log"; then ready=1; break; fi
+    sleep 0.25
+  done
+  if [[ $ready != 1 ]]; then
+    force_stop
+    wait "$stage_pid" || true
+    echo "FAILED: no migration readiness evidence at $point; artifacts retained"
+    exit 1
+  fi
+  force_stop
+  set +e
+  wait "$stage_pid"
+  stage_exit=$?
+  set -e
+  printf 'Interrupted migration %s shell exit=%s (NOT a passing test)\n' "$point" "$stage_exit"
+  migration_phase verify "$point"
+  migration_phase cleanup "$point"
+done
 printf 'PROTOCOL_COMPLETED run=%s; inspect logs and device identity before physical qualification\n' "$run"

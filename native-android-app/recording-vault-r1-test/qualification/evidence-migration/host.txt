@@ -1,0 +1,77 @@
+info: kotlinc-jvm 2.2.21 (JRE 17.0.21+9)
+openjdk version "17.0.21" 2026-10-20
+OpenJDK Runtime Environment Temurin-17.0.21+9 (build 17.0.21+9)
+OpenJDK 64-Bit Server VM Temurin-17.0.21+9 (build 17.0.21+9, mixed mode, sharing)
+PASS HOST dangling destination introduced during encryption is not replaced
+PASS HOST decrypt with missing key must not generate one
+PASS HOST roundtrip duplicate and recreate store
+PASS HOST size boundaries and malformed envelopes
+PASS HOST version IV ciphertext and tag corruption
+PASS HOST characterization: legacy valid ciphertext substitution is ACCEPTED
+PASS HOST temporary residue is ignored and preserved
+PASS HOST symbolic file and directory rejected
+PASS HOST invalid identifiers rejected
+PASS HOST store waits for a lock held by another process
+PASS HOST lock file symlink is rejected without touching its target
+PASS HOST eight real JVM processes cannot overwrite one recording
+PASS HOST migration keeps V1 and publishes fresh authenticated immutable V2
+PASS HOST EIO before migration boundary 1/19
+PASS HOST EIO after migration boundary 1/19
+PASS HOST EIO before migration boundary 2/19
+PASS HOST EIO after migration boundary 2/19
+PASS HOST EIO before migration boundary 3/19
+PASS HOST EIO after migration boundary 3/19
+PASS HOST EIO before migration boundary 4/19
+PASS HOST EIO after migration boundary 4/19
+PASS HOST EIO before migration boundary 5/19
+PASS HOST EIO after migration boundary 5/19
+PASS HOST EIO before migration boundary 6/19
+PASS HOST EIO after migration boundary 6/19
+PASS HOST EIO before migration boundary 7/19
+PASS HOST EIO after migration boundary 7/19
+PASS HOST EIO before migration boundary 8/19
+PASS HOST EIO after migration boundary 8/19
+PASS HOST EIO before migration boundary 9/19
+PASS HOST EIO after migration boundary 9/19
+PASS HOST EIO before migration boundary 10/19
+PASS HOST EIO after migration boundary 10/19
+PASS HOST EIO before migration boundary 11/19
+PASS HOST EIO after migration boundary 11/19
+PASS HOST EIO before migration boundary 12/19
+PASS HOST EIO after migration boundary 12/19
+PASS HOST EIO before migration boundary 13/19
+PASS HOST EIO after migration boundary 13/19
+PASS HOST EIO before migration boundary 14/19
+PASS HOST EIO after migration boundary 14/19
+PASS HOST EIO before migration boundary 15/19
+PASS HOST EIO after migration boundary 15/19
+PASS HOST EIO before migration boundary 16/19
+PASS HOST EIO after migration boundary 16/19
+PASS HOST EIO before migration boundary 17/19
+PASS HOST EIO after migration boundary 17/19
+PASS HOST EIO before migration boundary 18/19
+PASS HOST EIO after migration boundary 18/19
+PASS HOST EIO before migration boundary 19/19
+PASS HOST EIO after migration boundary 19/19
+PASS HOST interrupted new save exposes and recovers sole authenticated pending copy
+PASS HOST partial new save is preserved but not falsely recovered
+PASS HOST enrollment forces canonical V2 before publishing required marker
+PASS HOST partial ENOSPC preparation preserves V1 and can resume
+PASS HOST corrupt V1 and truncation never cause migration mutation
+PASS HOST missing or corrupt committed V2 never falls back to preserved V1
+PASS HOST corrupt missing or substituted marker is fail closed
+PASS HOST V2 replacement between identifiers and directories is rejected
+PASS HOST new V2 canonical cannot be downgraded to authentic V1
+PASS HOST valid V2 re-encryption in the same context cannot replace committed bytes
+PASS HOST commit markers cannot be substituted across id or directory
+PASS HOST preexisting V2 canonical is enrolled without ciphertext rewrite
+PASS HOST sidecar and marker symlinks are rejected without touching external data
+PASS HOST migration retains source even with colliding publication destination
+PASS HOST explicit delete removes all versions and allows identifier reuse
+PASS HOST failed deletion retains required marker until all data entries are removed
+PASS HOST missing key during migration does not create a replacement
+PASS HOST process death at prepared resumes in a separate JVM
+PASS HOST process death at required resumes in a separate JVM
+PASS HOST process death at published resumes in a separate JVM
+PASS HOST four real processes migrate one source without overwriting V2
+HOST SUMMARY passed=72 failed=0; Android APIs/KeyStore are simulated, filesystem and AES/GCM are JVM/Linux

@@ -1,5 +1,9 @@
 # Galaxy S24+ Android 16 — protocole reproductible
 
+Mise à jour migration 2026-10-29 : voir [MIGRATION-QUALIFICATION.md](MIGRATION-QUALIFICATION.md).
+Les commandes et critères ci-dessous décrivent aussi la campagne historique ; les
+critères de comptage et d’interruption de migration de la mise à jour prévalent.
+
 **État au 2026-10-28 : procédure préparée et compilée, pas exécutée sur appareil.**
 Ne jamais remplacer cette mention par PASS sans les journaux d'une exécution réelle.
 
@@ -53,7 +57,7 @@ Le script journalise les empreintes, installe systématiquement avec `adb instal
 
 ## Critères d'acceptation des journaux
 
-- `regression.log` : `OK (21 tests)`, aucun échec/ignoré/hypothèse abandonnée. Les 16 tests R1/R2 doivent être présents, plus les 5 nouveaux. Le test qui accepte une substitution valide décrit une faiblesse attendue, pas une propriété sécurisée.
+- `regression.log` : toutes les identités de `expected.json`, découvertes dans `discovery.log`, doivent être terminées avec succès ; résumé JUnit cohérent et code terminal -1, aucun échec/ignoré/hypothèse abandonnée. Aucun nombre figé. Le test qui accepte une substitution valide décrit une faiblesse attendue, pas une propriété sécurisée.
 - `write.log`, `verify.log`, `cleanup.log` : chacun `OK (1 test)`. `logcat.log` contient WRITE, INTERRUPT_READY, VERIFIED et les identités différentes des processus. L'arrêt forcé est accompagné d'un `pidof` vide dans `protocol.log`.
 - `interrupted.log` : interruption attendue après readiness ; **ne pas compter comme test réussi**. Le scénario dépose un temporaire partiel puis le tue ; ce n'est pas une preuve de crash au milieu de la vraie fonction Store.save.
 - Le défi chiffré d'avant arrêt et le premier enregistrement sont déchiffrés après arrêt ; le hash du fichier reste identique. Un alias inchangé seul ne suffit pas.

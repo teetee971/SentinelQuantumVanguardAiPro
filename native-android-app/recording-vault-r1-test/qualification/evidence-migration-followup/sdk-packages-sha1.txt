@@ -1,0 +1,5 @@
+Official repository2-3.xml SHA-1 checksums verified before extraction:
+platform-37.0_r02.zip ed8ebf7f8822a4de5686d427f237d2fa30ff7410
+build-tools_r36_linux.zip b0b6376977657e8ad9b969bacf4093601da2c6fb
+platform-tools_r37.0.1-linux.zip 477254aa5f903c15cf51001717bdf347fb6b53e0
+commandlinetools-linux-16111833_latest.zip e025545c62a8e64c7559119566a569fb1dec5f60

@@ -1,0 +1,13 @@
+test_count_is_discovered_instead_of_fixed_at_24 (__main__.VerificationTests.test_count_is_discovered_instead_of_fixed_at_24) ... ok
+test_duplicate_is_rejected (__main__.VerificationTests.test_duplicate_is_rejected) ... ok
+test_equal_counts_with_wrong_identity_are_rejected (__main__.VerificationTests.test_equal_counts_with_wrong_identity_are_rejected) ... ok
+test_expected_identities_accept_matching_execution (__main__.VerificationTests.test_expected_identities_accept_matching_execution) ... ok
+test_forged_ok_without_execution_is_rejected (__main__.VerificationTests.test_forged_ok_without_execution_is_rejected) ... ok
+test_incomplete_and_incorrect_footer_are_rejected (__main__.VerificationTests.test_incomplete_and_incorrect_footer_are_rejected) ... ok
+test_missing_wrong_duplicate_or_trailing_terminal_is_rejected (__main__.VerificationTests.test_missing_wrong_duplicate_or_trailing_terminal_is_rejected) ... ok
+test_skipped_or_failed_test_is_rejected (__main__.VerificationTests.test_skipped_or_failed_test_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.074s
+
+OK
