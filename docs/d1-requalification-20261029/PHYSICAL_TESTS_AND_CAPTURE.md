@@ -10,7 +10,7 @@ L’installation de l’APK antérieur est rapportée réussie par l’utilisate
 
 ```bash
 sha256sum -c SHA256SUMS.txt
-adb install -r Sentinel-D1-debug-8cc1ad4e.apk
+adb install -r Sentinel-D1-debug-aed338fb.apk
 adb shell getprop ro.product.model
 adb shell getprop ro.build.version.release
 adb shell getprop ro.build.version.sdk
@@ -51,7 +51,7 @@ Examiner chaque fichier avant de l’accepter : bon écran, contenu stable, pas 
 Uniquement sur un runtime de test sans données personnelles, installer l’APK instrumenté puis :
 
 ```bash
-adb install -r Sentinel-D1-androidTest-8cc1ad4e.apk
+adb install -r Sentinel-D1-androidTest-aed338fb.apk
 adb shell am instrument -w -e class com.sentinel.quantum.ui.design.D1CommunicationLayoutInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
 # Opt-in explicite car les PNG peuvent contenir des données privées :
 adb shell am instrument -w -e captureD1Screenshots true -e class com.sentinel.quantum.ui.D1CommunicationCaptureInstrumentationTest,com.sentinel.quantum.ui.AllStaticNavigationSurfacesInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
@@ -90,7 +90,7 @@ Ouvrir séparément un compositeur externe sans destinataire ni envoi automatiqu
 adb shell am start -n com.sentinel.quantum/.SmsComposeActivity -a android.intent.action.SENDTO -d 'smsto:' --es sms_body 'Brouillon de qualification'
 ```
 
-Retour doit quitter ce compositeur vers son appelant, pas imposer une liste intermédiaire. Vérifier également révocation de rôle/permissions et absence d’envoi involontaire. La navigation ne crée pas de stockage durable de brouillons ; les pièces jointes MMS restent non restaurées après recréation dans l’implémentation actuelle.
+Retour doit quitter ce compositeur vers son appelant, pas imposer une liste intermédiaire. Vérifier également révocation de rôle/permissions et absence d’envoi involontaire. La navigation ne crée pas de stockage durable de brouillons ; les images MMS validées sont désormais retenues par ViewModel pendant les changements de configuration de la même session, mais ne sont pas restaurées après la mort du processus.
 
 Quatre tests Activity/Compose ajoutés, compilés mais NON EXÉCUTÉS :
 
@@ -99,3 +99,19 @@ adb shell am instrument -w -e class com.sentinel.quantum.ui.SmsNavigationInstrum
 ```
 
 Le scénario dit « dispatcher » appelle le dispatcher Android dans l’Activity ; il ne remplace pas un essai réel du geste système avec IME ouvert. Aucun SMS ni contact de démonstration n’est injecté dans un provider par ces tests.
+
+## Images MMS : conservation de session et chargement
+
+Statut sur S24+ : NON TESTÉ. Depuis Écrire/MMS, sélectionner une image de test autorisée puis faire pivoter/recréer l’Activity : compteur et image sélectionnée doivent rester présents, sans nouvel accès à un fichier déjà chargé. Retirer l’image puis recréer : elle ne doit pas revenir. Annuler le sélecteur doit conserver la sélection précédente. Remplacer une sélection de huit images doit rester possible.
+
+Pendant un chargement lent, tenter un envoi : il doit rester bloqué jusqu’au résultat ; revenir au mode SMS doit annuler la sélection et empêcher une ancienne lecture de réintroduire ses images. Tester aussi URI devenue illisible, type/format/limites refusés, rotation pendant le chargement puis pendant un envoi de test autorisé. Aucun envoi automatique, aucun numéro inconnu/surtaxé. Vérifier séparément la livraison opérateur et la révocation de rôle/permissions.
+
+La mort du processus n’est pas une rotation : les images ne sont ni écrites dans le Bundle ni dans une base/fichier persistant pour ce brouillon. Après arrêt du processus, les resélectionner ; aucune restauration durable n’est revendiquée.
+
+Deux scénarios supplémentaires, compilés mais NON EXÉCUTÉS :
+
+```bash
+adb shell am instrument -w -e class com.sentinel.quantum.ui.MmsAttachmentRecreationInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Ils utilisent un PNG de test créé dans un chemin cache FileProvider déjà autorisé, le vrai loader et le vrai ViewModel. Le fichier unique est supprimé à la fin. Ils n’exercent ni le sélecteur Samsung et ses grants externes, ni une livraison opérateur, ni la mort du processus. Aucune insertion SMS/contact ni effacement de base dans ces tests.

@@ -1,5 +1,7 @@
 # Livraison courante D.1 — navigation Messages
 
+> Rapport historique des sources 8cc1ad4e. Voir [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md) pour le dernier candidat ; ARTIFACTS.json décrit désormais ce dernier. La limitation des images à la rotation a été traitée dans l’itération MMS suivante, sans restauration après mort du processus.
+
 ## Provenance et périmètre
 
 Sources APK : **8cc1ad4ecad1b95a1542ef6203418cdf0f42101d**, branche `fix/d1-phone-messages-conformity-20261029`, PR brouillon #1748. Le candidat précédent est 70d5cecd (photos), conservé séparément. Les nouveaux fichiers sont dans `/workspace/d1-delivery-sms-navigation/` ; `ARTIFACTS.json` donne les tailles, SHA-256 et chemins exacts. Les commits documentaires ultérieurs ne modifient pas les sources Android de ces APK.

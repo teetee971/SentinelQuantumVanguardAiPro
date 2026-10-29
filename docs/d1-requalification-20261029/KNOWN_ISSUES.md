@@ -20,3 +20,7 @@ Le défaut d’invalidation à URI inchangée et la course de publication après
 ## Itération Messages après candidat 70d5cecd
 
 Navigation interne et externe corrigée dans 8cc1ad4e ; preuves et limites dans MESSAGES_NAVIGATION_FOLLOWUP.md. Les brouillons texte sont conservés en mémoire sauvegardable durant cette Activity, pas dans un nouveau stockage durable. Les pièces jointes MMS sélectionnées restent en remember : elles ne sont pas restaurées après recréation, limitation préexistante non corrigée par cette navigation. Tests réels conversation/IME et tests instrumentés restent NON EXÉCUTÉS.
+
+## Itération MMS après candidat 8cc1ad4e
+
+La limitation de rotation décrite dans la section historique précédente est traitée dans les sources aed338fb : images validées retenues en mémoire par ViewModel durant les changements de configuration de la même session. Le code ne sérialise ni payload ni URI dans le Bundle et ne crée aucun stockage durable. La mort du processus nécessite une nouvelle sélection. Les tests Activity, grants du sélecteur, rotation pendant chargement/envoi et MMS opérateur restent NON EXÉCUTÉS/NON TESTÉS. Voir MMS_DRAFT_FOLLOWUP.md.
