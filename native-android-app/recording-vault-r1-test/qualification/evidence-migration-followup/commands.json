@@ -113,5 +113,6 @@
       "exit_code": 0,
       "output": "jni-unchanged.txt"
     }
-  ]
+  ],
+  "output_format_note": "Trailing empty lines normalized in adb-devices.txt for git diff --check; no device entries removed."
 }
