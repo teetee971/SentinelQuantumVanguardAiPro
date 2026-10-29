@@ -1,6 +1,7 @@
 package com.sentinel.quantum.security
 
 import android.content.Intent
+import android.content.ActivityNotFoundException
 import android.os.Build
 import android.os.IBinder
 import android.os.Handler
@@ -24,18 +25,7 @@ import kotlinx.coroutines.launch
  * the Telecom Call object remains owned by this service.
  */
 class SentinelInCallService : InCallService() {
-    private val connectedEvidenceRecorded = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
-    private val incomingNotificationEvidenceRecorded = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
-    private val connectedEvidenceInFlight = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
-    private val incomingNotificationEvidenceInFlight = java.util.Collections.synchronizedSet(
-        java.util.Collections.newSetFromMap(java.util.IdentityHashMap<Call, Boolean>())
-    )
+    private val evidenceTracker = InCallEvidenceTracker<Call>()
     private val timelineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var currentDirection = "UNKNOWN"
 
@@ -45,6 +35,7 @@ class SentinelInCallService : InCallService() {
     private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
     private var nextCallId = 1L
 
+    private val audioRequestGate = InCallAudioRequestGate()
     private var audioMuted: Boolean? = null
     private var audioRoutes: List<AudioRouteOption> = emptyList()
     private var audioStatus: String? = null
@@ -81,10 +72,13 @@ class SentinelInCallService : InCallService() {
 
     override fun onUnbind(intent: Intent): Boolean {
         if (registry.detach(this)) {
-            trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+            trackedCalls.toList().forEach {
+                evidenceTracker.remove(it)
+                it.unregisterCallback(callback)
+            }
             trackedCalls.clear()
             callIds.clear()
-        callDirections.clear()
+            callDirections.clear()
             currentCall = null
             activeService = null
             currentDirection = "UNKNOWN"
@@ -98,7 +92,9 @@ class SentinelInCallService : InCallService() {
     private fun synchronizePlatformCalls() {
         if (activeService !== this) return
         calls.forEach { call ->
-            if (trackedCalls.add(call)) {
+            val newCall = trackedCalls.add(call)
+            evidenceTracker.track(call)
+            if (newCall) {
                 callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
                 call.registerCallback(callback, Handler(Looper.getMainLooper()))
             }
@@ -109,19 +105,22 @@ class SentinelInCallService : InCallService() {
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         trackedCalls.add(call)
+        evidenceTracker.track(call)
         if (!callIds.containsKey(call)) {
             callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
         }
         call.registerCallback(callback, Handler(Looper.getMainLooper()))
         initializeAudioState()
         refreshForegroundCall()
-        if (call.state != Call.STATE_RINGING) showInCallActivity()
+        if (currentCall === call && resolveDirection(call) == "OUTGOING") {
+            showInCallActivity(InCallActivityLaunchPolicy.Trigger.CALL_ADDED)
+        }
     }
 
     override fun onBringToForeground(showDialpad: Boolean) {
         super.onBringToForeground(showDialpad)
         synchronizePlatformCalls()
-        showInCallActivity()
+        showInCallActivity(InCallActivityLaunchPolicy.Trigger.TELECOM_BRING_TO_FOREGROUND)
     }
 
     override fun onDestroy() {
@@ -134,10 +133,7 @@ class SentinelInCallService : InCallService() {
             currentCall = null
             activeService = null
         }
-        connectedEvidenceRecorded.clear()
-        incomingNotificationEvidenceRecorded.clear()
-        connectedEvidenceInFlight.clear()
-        incomingNotificationEvidenceInFlight.clear()
+        evidenceTracker.destroy()
         timelineScope.cancel()
         currentDirection = "UNKNOWN"
         clearAudioState()
@@ -150,10 +146,7 @@ class SentinelInCallService : InCallService() {
         trackedCalls.remove(call)
         callIds.remove(call)
         callDirections.remove(call)
-        connectedEvidenceRecorded.remove(call)
-        incomingNotificationEvidenceRecorded.remove(call)
-        connectedEvidenceInFlight.remove(call)
-        incomingNotificationEvidenceInFlight.remove(call)
+        evidenceTracker.remove(call)
         if (activeService !== this) {
             super.onCallRemoved(call)
             return
@@ -176,6 +169,7 @@ class SentinelInCallService : InCallService() {
         if (activeService !== this) return
         val selected = selectForegroundCall(trackedCalls)
         if (currentCall !== selected) {
+            audioRequestGate.invalidate()
             currentCall = selected
         }
         currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
@@ -184,14 +178,19 @@ class SentinelInCallService : InCallService() {
 
         if (!updateNotification) return
         if (selected?.state != Call.STATE_RINGING) {
-            SentinelCallNotificationHelper.cancel(this)
+            val snapshot = currentSnapshot()
+            if (snapshot != null && selected != null &&
+                selected.state != Call.STATE_DISCONNECTED && selected.state != Call.STATE_DISCONNECTING) {
+                SentinelCallNotificationHelper.showOngoing(this, snapshot)
+            } else {
+                SentinelCallNotificationHelper.cancel(this)
+            }
             return
         }
 
         currentSnapshot()?.let { snapshot ->
             val posted = SentinelCallNotificationHelper.showIncoming(this, snapshot)
             if (posted) recordIncomingNotificationEvidence()
-            else showInCallActivity()
         }
     }
 
@@ -209,6 +208,7 @@ class SentinelInCallService : InCallService() {
     @RequiresApi(34)
     override fun onCallEndpointChanged(callEndpoint: CallEndpoint) {
         super.onCallEndpointChanged(callEndpoint)
+        audioRequestGate.invalidate()
         currentModernEndpointId = modernEndpointId(callEndpoint)
         audioStatus = null
         rebuildModernAudioRoutes()
@@ -241,10 +241,10 @@ class SentinelInCallService : InCallService() {
 
     private fun recordIncomingNotificationEvidence() {
         val call = currentCall ?: return
-        if (
-            incomingNotificationEvidenceRecorded.contains(call) ||
-            !incomingNotificationEvidenceInFlight.add(call)
-        ) return
+        val token = evidenceTracker.begin(
+            call,
+            InCallEvidenceTracker.Kind.INCOMING_NOTIFICATION
+        ) ?: return
 
         timelineScope.launch {
             val stored = runCatching {
@@ -264,15 +264,50 @@ class SentinelInCallService : InCallService() {
                 )
             }.getOrDefault(false)
 
-            incomingNotificationEvidenceInFlight.remove(call)
-            if (stored) incomingNotificationEvidenceRecorded.add(call)
+            evidenceTracker.complete(token, stored)
         }
     }
 
-    private fun showInCallActivity() {
-        startActivity(
-            Intent(this, SentinelInCallActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    /**
+     * Default-dialer outgoing calls (including external origins) and Telecom foreground
+     * requests may open controls. Incoming calls use the notification path.
+     * REQUESTED means Android accepted startActivity(); it is not proof that the activity was
+     * rendered. Incoming calls use the notification's full-screen PendingIntent instead of a
+     * background-service fallback.
+     */
+    private fun showInCallActivity(
+        trigger: InCallActivityLaunchPolicy.Trigger
+    ): InCallActivityLaunchResult {
+        if (!InCallActivityLaunchPolicy.shouldRequest(
+                trigger, currentCall != null, outgoingCall = currentDirection == "OUTGOING"
+            )) {
+            return InCallActivityLaunchResult.NOT_REQUESTED
+        }
+
+        return try {
+            startActivity(
+                Intent(this, SentinelInCallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+            InCallActivityLaunchResult.REQUESTED
+        } catch (error: ActivityNotFoundException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        } catch (error: SecurityException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        } catch (error: RuntimeException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        }
+    }
+
+    private fun logActivityLaunchFailure(error: RuntimeException) {
+        LocalLogger(this).log(
+            LocalLogger.LogLevel.WARNING,
+            "InCall",
+            "Android a refusé le lancement de l’interface d’appel (" +
+                error::class.java.simpleName + ") ; le service téléphonique continue"
         )
     }
 
@@ -300,6 +335,7 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun clearAudioState() {
+        audioRequestGate.invalidate()
         audioMuted = null
         audioRoutes = emptyList()
         audioStatus = null
@@ -422,6 +458,7 @@ class SentinelInCallService : InCallService() {
     }
 
     private fun publish(call: Call) {
+        evidenceTracker.track(call)
         if (currentDirection == "UNKNOWN") currentDirection = resolveDirection(call)
         registry.publish(
             this,
@@ -429,13 +466,10 @@ class SentinelInCallService : InCallService() {
             trackedCalls.sortedBy { callPriority(it.state) }.mapNotNull(::snapshotFor)
         )
 
-        if (
-            call.state == Call.STATE_ACTIVE &&
-            !connectedEvidenceRecorded.contains(call) &&
-            currentDirection in setOf("INCOMING", "OUTGOING") &&
-            connectedEvidenceInFlight.add(call)
-        ) {
-            val evidenceDirection = currentDirection
+        val evidenceDirection = resolveDirection(call)
+        if (call.state == Call.STATE_ACTIVE && evidenceDirection in setOf("INCOMING", "OUTGOING")) {
+            val token = evidenceTracker.begin(call, InCallEvidenceTracker.Kind.CONNECTED)
+                ?: return
             timelineScope.launch {
                 val stored = runCatching {
                     PhonePrivateTimelineStore(this@SentinelInCallService).append(
@@ -454,8 +488,7 @@ class SentinelInCallService : InCallService() {
                     )
                 }.getOrDefault(false)
 
-                connectedEvidenceInFlight.remove(call)
-                if (stored) connectedEvidenceRecorded.add(call)
+                evidenceTracker.complete(token, stored)
             }
         }
     }
@@ -521,6 +554,8 @@ class SentinelInCallService : InCallService() {
             publishCurrentCall()
             return false
         }
+        val callId = currentCall?.let { callIds[it] } ?: return false
+        val request = audioRequestGate.begin(callId)
         audioStatus = "Changement de sortie audio demandé…"
         publishCurrentCall()
         return runCatching {
@@ -529,11 +564,15 @@ class SentinelInCallService : InCallService() {
                 mainExecutor,
                 object : OutcomeReceiver<Void?, CallEndpointException> {
                     override fun onResult(result: Void?) {
+                        if (activeService !== this@SentinelInCallService ||
+                            !audioRequestGate.accepts(request, currentCall?.let { callIds[it] })) return
                         audioStatus = "Changement audio accepté par Android ; confirmation en cours…"
                         publishCurrentCall()
                     }
 
                     override fun onError(error: CallEndpointException) {
+                        if (activeService !== this@SentinelInCallService ||
+                            !audioRequestGate.accepts(request, currentCall?.let { callIds[it] })) return
                         audioStatus = "Android n’a pas pu changer la sortie audio."
                         publishCurrentCall()
                     }

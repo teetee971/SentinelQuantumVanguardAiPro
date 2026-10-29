@@ -85,3 +85,8 @@ gradle-app.setting
 index-old.html
 index.html.backup
 native-android-app/.kotlin/
+
+# Python qualification tooling and local release evidence archives
+__pycache__/
+release/phone-core-v1/JUNIT_RESULTS.zip
+release/phone-core-v1/Sentinel-PhoneCore-V1-delivery.zip

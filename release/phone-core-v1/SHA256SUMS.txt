@@ -1,0 +1,3 @@
+f425738907548935a306260b0205cd5070ffeb8384173d6a58a50a60ac1b9851  Sentinel-PhoneCore-V1-debug.apk
+0c564b78ef56002246d2f1aa79675d0a3cb58f9555256690b7a6d5e3c601b2e8  Sentinel-PhoneCore-V1-androidTest.apk
+40d1820130ae07bc18e75d76efcaceee01ba2d0ea60af4a434ec8602acdeb788  Sentinel-PhoneCore-V1-release-unsigned.aab

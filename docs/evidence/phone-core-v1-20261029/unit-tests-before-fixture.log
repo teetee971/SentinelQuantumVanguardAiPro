@@ -1,0 +1,2 @@
+292 suites: {'tests': 1353, 'failures': 0, 'errors': 0, 'skipped': 1}
+SKIPPED com.sentinel.quantum.security.ApkSignatureVerifierProofTest.validAndCorruptedApkAreDistinguished

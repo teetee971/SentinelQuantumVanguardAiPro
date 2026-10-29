@@ -64,7 +64,7 @@ class SentinelMissedCallReceiver : BroadcastReceiver() {
             .setContentIntent(openDialer)
             .setNumber(count)
         clearMissedCalls?.let(builder::setDeleteIntent)
-        manager.notify(NOTIFICATION_ID, builder.build())
+        NotificationPermissionRaceGuard.post { manager.notify(NOTIFICATION_ID, builder.build()) }
     }
 
     private fun holdsDialerRole(context: Context): Boolean =

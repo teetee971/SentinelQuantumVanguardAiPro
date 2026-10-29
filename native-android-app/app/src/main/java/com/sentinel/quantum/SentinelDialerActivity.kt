@@ -518,6 +518,12 @@ class SentinelDialerActivity : ComponentActivity() {
         val failure = runCatching {
             telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), extras)
         }.exceptionOrNull()
+        // The user initiated this from a foreground activity. Do not rely on a
+        // background InCallService launch to expose the outgoing call controls.
+        if (failure == null) {
+            runCatching { startActivity(Intent(this, SentinelInCallActivity::class.java)) }
+                .onFailure { android.util.Log.w("SentinelDialer", "In-call UI launch refused", it) }
+        }
         assistedConfirmationBypassNumber = null
         assistedConfirmationBypassExpiresAtMs = 0L
         callActionStatus = if (failure == null) {

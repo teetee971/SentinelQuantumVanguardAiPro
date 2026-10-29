@@ -7,7 +7,7 @@ package com.sentinel.quantum.security
  * No phone number, contact name, message body, URL or subscription identifier is retained.
  */
 object PhoneCorePhysicalValidation {
-    const val CERTIFICATION_SCHEMA_VERSION = 5
+    const val CERTIFICATION_SCHEMA_VERSION = 6
     data class Evidence(
         val incomingCallConnected: Boolean,
         val outgoingCallConnected: Boolean,
@@ -19,7 +19,10 @@ object PhoneCorePhysicalValidation {
         val outgoingSmsDeliveredSuccessfully: Boolean,
         val incomingMmsSafePreview: Boolean,
         val outgoingMmsSentSuccessfully: Boolean,
+        /** Technical fact: Android accepted the notification publication. Not user observation. */
         val incomingCallNotificationPosted: Boolean,
+        /** Separate criterion requiring an independently observed notification surface. */
+        val incomingCallNotificationObserved: Boolean,
         val incomingSmsNotificationPosted: Boolean,
         val callerIdUiShown: Boolean,
         val inCallUiShown: Boolean
@@ -41,7 +44,7 @@ object PhoneCorePhysicalValidation {
                 outgoingSmsDeliveredSuccessfully,
                 incomingMmsSafePreview,
                 outgoingMmsSentSuccessfully,
-                incomingCallNotificationPosted,
+                incomingCallNotificationObserved,
                 incomingSmsNotificationPosted,
                 callerIdUiShown,
                 inCallUiShown
@@ -61,7 +64,7 @@ object PhoneCorePhysicalValidation {
                 if (!outgoingSmsDeliveredSuccessfully) add("outgoing_sms_delivered")
                 if (!incomingMmsSafePreview) add("incoming_mms_safe_preview")
                 if (!outgoingMmsSentSuccessfully) add("outgoing_mms_sent")
-                if (!incomingCallNotificationPosted) add("incoming_call_notification")
+                if (!incomingCallNotificationObserved) add("incoming_call_notification")
                 if (!incomingSmsNotificationPosted) add("incoming_sms_notification")
                 if (!callerIdUiShown) add("caller_id_ui_shown")
                 if (!inCallUiShown) add("in_call_ui_shown")
@@ -197,6 +200,11 @@ object PhoneCorePhysicalValidation {
                 "INCOMING",
                 SIGNAL_CALL_NOTIFICATION_POSTED
             ),
+            incomingCallNotificationObserved = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "INCOMING",
+                SIGNAL_CALL_NOTIFICATION_USER_OBSERVED
+            ),
             incomingSmsNotificationPosted = has(
                 PhonePrivateTimeline.Kind.SMS,
                 "INCOMING",
@@ -221,7 +229,10 @@ object PhoneCorePhysicalValidation {
     const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
     const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
     const val SIGNAL_MMS_SENT_OK = "MMS_SENT_OK"
+    /** Publication is a technical fact and never proves that a user saw the notification. */
     const val SIGNAL_CALL_NOTIFICATION_POSTED = "CALL_NOTIFICATION_POSTED"
+    /** Must be supplied by a separate observation; SentinelInCallService never emits it. */
+    const val SIGNAL_CALL_NOTIFICATION_USER_OBSERVED = "CALL_NOTIFICATION_USER_OBSERVED"
     const val SIGNAL_SMS_NOTIFICATION_POSTED = "SMS_NOTIFICATION_POSTED"
     const val SIGNAL_CALLER_ID_UI_SHOWN = "CALLER_ID_UI_SHOWN"
     const val SIGNAL_INCALL_UI_SHOWN = "INCALL_UI_SHOWN"

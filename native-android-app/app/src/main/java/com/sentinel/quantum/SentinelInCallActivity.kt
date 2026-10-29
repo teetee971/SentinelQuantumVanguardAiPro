@@ -314,7 +314,6 @@ private fun InCallScreen(
                     snapshot.state != Call.STATE_RINGING -> {
                         if (showAudioRoutes) AudioRoutePanel(snapshot)
                         if (showDialpad && snapshot.state == Call.STATE_ACTIVE) DialpadPanel(snapshot)
-                        ConferencePanel(snapshot)
                     }
                 }
 
@@ -608,12 +607,7 @@ private fun OngoingPrimaryControls(
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         selected = true
                     ) { SentinelInCallService.unhold(snapshot.id) }
-                    else -> CallActionCircle(
-                        label = "Attente", icon = Icons.Rounded.Pause,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        enabled = false
-                    ) {}
+                    else -> Unit
                 }
             }
 
@@ -668,30 +662,6 @@ private fun DialpadPanel(snapshot: SentinelInCallService.CallSnapshot) {
         ) {
             Text("Clavier", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             DtmfPad(snapshot.id)
-        }
-    }
-}
-
-@Composable
-private fun ConferencePanel(snapshot: SentinelInCallService.CallSnapshot) {
-    if (!snapshot.canMergeConference && !snapshot.canSwapConference) return
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Conférence", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            if (snapshot.canMergeConference) {
-                OutlinedButton(onClick = { SentinelInCallService.mergeConference(snapshot.id) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Fusionner les appels")
-                }
-            }
-            if (snapshot.canSwapConference) {
-                OutlinedButton(onClick = { SentinelInCallService.swapConference(snapshot.id) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Permuter les appels")
-                }
-            }
         }
     }
 }
@@ -764,17 +734,16 @@ private fun CallActionCircle(
 @Composable
 private fun DtmfPad(callId: String) {
     val scope = rememberCoroutineScope()
+    val tonePlayer = remember(scope) { com.sentinel.quantum.security.DtmfTonePlayer(scope, DTMF_TONE_DURATION_MS) }
     listOf("123", "456", "789", "*0#").forEach { row ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             row.forEach { digit ->
                 FilledTonalButton(
                     onClick = {
-                        scope.launch {
-                            if (SentinelInCallService.startDtmf(callId, digit)) {
-                                delay(DTMF_TONE_DURATION_MS)
-                                SentinelInCallService.stopDtmf(callId)
-                            }
-                        }
+                        tonePlayer.play(
+                            start = { SentinelInCallService.startDtmf(callId, digit) },
+                            stop = { SentinelInCallService.stopDtmf(callId) }
+                        )
                     },
                     modifier = Modifier.size(64.dp).semantics {
                         contentDescription = when (digit) {

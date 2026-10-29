@@ -1,0 +1,9 @@
+native-android-app/app/src/test/java/com/sentinel/quantum/security/NotificationPermissionRaceGuardTest.kt:8:21: error: unresolved reference 'NotificationPermissionRaceGuard'.
+        assertFalse(NotificationPermissionRaceGuard.post { throw SecurityException("revoked") })
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+native-android-app/app/src/test/java/com/sentinel/quantum/security/NotificationPermissionRaceGuardTest.kt:12:20: error: unresolved reference 'NotificationPermissionRaceGuard'.
+        assertTrue(NotificationPermissionRaceGuard.post { posts++ })
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+native-android-app/app/src/test/java/com/sentinel/quantum/security/NotificationPermissionRaceGuardTest.kt:17:13: error: unresolved reference 'NotificationPermissionRaceGuard'.
+            NotificationPermissionRaceGuard.post { throw IllegalStateException("bug") }
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

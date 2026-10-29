@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/workspace/SentinelQuantumVanguardAiPro/scripts/verify-phone-core-v1-release.py", line 22, in <module>
+    assert 'android.permission.CAMERA' not in permissions
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
