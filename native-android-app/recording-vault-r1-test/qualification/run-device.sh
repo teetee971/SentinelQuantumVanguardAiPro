@@ -51,7 +51,7 @@ trap 'kill "$logcat_pid" 2>/dev/null || true' EXIT
 classes='RecordingVaultCryptoInstrumentedTest,RecordingVaultKeySecurityInstrumentedTest,RecordingVaultStoreInstrumentedTest,RecordingVaultSecurityInstrumentedTest,RecordingVaultConcurrencyInstrumentedTest,RecordingVaultRecoveryInstrumentedTest,RecordingVaultR3InstrumentedTest,RecordingVaultProcessConcurrencyInstrumentedTest'
 classes=$(printf '%s' "$classes" | sed 's/\(^\|,\)/\1com.sentinel.quantum.security./g')
 adb_cmd shell am instrument -w -r -e class "$classes" "$runner" | tee "$output/regression.log"
-assert_junit "$output/regression.log" 21
+assert_junit "$output/regression.log" 24
 phase write
 force_stop
 adb_cmd shell am instrument -w -r -e class "$class" -e vaultRun "$run" -e vaultPhase stageInterruptedWrite "$runner" > "$output/interrupted.log" 2>&1 &

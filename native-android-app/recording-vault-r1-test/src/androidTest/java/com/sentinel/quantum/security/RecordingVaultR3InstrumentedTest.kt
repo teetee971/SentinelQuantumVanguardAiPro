@@ -72,10 +72,64 @@ class RecordingVaultR3InstrumentedTest {
     }
 
     @Test fun validCiphertextReplacementIsAnExplicitLegacyLimitation() = withVault { vault, dir ->
-        // Characterization, not a security PASS: v1 has no AAD binding to recording ID.
-        vault.save("a", "first".toByteArray())
-        vault.save("b", "second".toByteArray())
+        // Legacy characterization: V1 has no AAD binding.
+        vault.exists("initialize")
+        File(dir, "a.rv").writeBytes(
+            RecordingVaultCrypto.encrypt("first".toByteArray())
+        )
+        File(dir, "b.rv").writeBytes(
+            RecordingVaultCrypto.encrypt("second".toByteArray())
+        )
         File(dir, "a.rv").writeBytes(File(dir, "b.rv").readBytes())
         assertArrayEquals("second".toByteArray(), vault.read("a"))
+    }
+
+    @Test fun v2RejectsCiphertextReplacementBetweenIds() = withVault { vault, dir ->
+        vault.save("a", "first".toByteArray())
+        vault.save("b", "second".toByteArray())
+
+        assertEquals(2, File(dir, "a.rv").readBytes()[0].toInt())
+        File(dir, "a.rv").writeBytes(File(dir, "b.rv").readBytes())
+
+        assertThrows(AEADBadTagException::class.java) {
+            vault.read("a")
+        }
+    }
+
+    @Test fun v2RejectsCiphertextReplacementBetweenDirectories() {
+        val nameA = "v2a_" + UUID.randomUUID().toString().replace("-", "")
+        val nameB = "v2b_" + UUID.randomUUID().toString().replace("-", "")
+        val dirA = File(context.noBackupFilesDir, nameA)
+        val dirB = File(context.noBackupFilesDir, nameB)
+
+        try {
+            val vaultA = RecordingVaultStore(context, nameA)
+            val vaultB = RecordingVaultStore(context, nameB)
+
+            vaultA.save("item", "first".toByteArray())
+            vaultB.save("item", "second".toByteArray())
+
+            File(dirA, "item.rv").writeBytes(
+                File(dirB, "item.rv").readBytes()
+            )
+
+            assertThrows(AEADBadTagException::class.java) {
+                vaultA.read("item")
+            }
+        } finally {
+            dirA.deleteRecursively()
+            dirB.deleteRecursively()
+        }
+    }
+
+    @Test fun legacyV1RecordRemainsReadable() = withVault { vault, dir ->
+        vault.exists("initialize")
+        val original = "legacy recording".toByteArray()
+        val encrypted = RecordingVaultCrypto.encrypt(original)
+
+        assertEquals(1, encrypted[0].toInt())
+        File(dir, "legacy.rv").writeBytes(encrypted)
+
+        assertArrayEquals(original, vault.read("legacy"))
     }
 }

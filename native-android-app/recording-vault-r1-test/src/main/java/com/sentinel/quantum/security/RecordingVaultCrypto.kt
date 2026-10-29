@@ -84,4 +84,39 @@ internal object RecordingVaultCrypto {
 
         return cipher.doFinal(encrypted)
     }
+
+    private fun aad(directory: String, id: String): ByteArray {
+        require(Regex("[A-Za-z0-9_-]{1,64}").matches(directory))
+        require(Regex("[A-Za-z0-9_-]{1,64}").matches(id))
+        val domain = "sentinel.recording-vault.v2"
+        return "$domain:${directory.length}:$directory:${id.length}:$id"
+            .toByteArray(Charsets.UTF_8)
+    }
+
+    fun encryptV2(data: ByteArray, directory: String, id: String): ByteArray {
+        require(data.isNotEmpty())
+        val associatedData = aad(directory, id)
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, key())
+        cipher.updateAAD(associatedData)
+        val iv = cipher.iv
+        require(iv.size == IV_BYTES)
+        return byteArrayOf(2) + iv + cipher.doFinal(data)
+    }
+
+    fun decryptV2(data: ByteArray, directory: String, id: String): ByteArray {
+        require(data.size >= 1 + IV_BYTES + 16)
+        require(data[0] == 2.toByte())
+        val associatedData = aad(directory, id)
+        val iv = data.copyOfRange(1, 1 + IV_BYTES)
+        val encrypted = data.copyOfRange(1 + IV_BYTES, data.size)
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            key(createIfMissing = false),
+            GCMParameterSpec(TAG_BITS, iv)
+        )
+        cipher.updateAAD(associatedData)
+        return cipher.doFinal(encrypted)
+    }
 }

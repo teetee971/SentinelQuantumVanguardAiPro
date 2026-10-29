@@ -14,7 +14,7 @@ import java.util.UUID
 
 internal class RecordingVaultStore(
     context: Context,
-    directoryName: String = "recording-vault-r2"
+    private val directoryName: String = "recording-vault-r2"
 ) {
     init {
         require(Regex("[A-Za-z0-9_-]{1,64}").matches(directoryName))
@@ -65,7 +65,7 @@ internal class RecordingVaultStore(
         val dir = prepareDirectory()
         val destination = target(dir, id).toPath()
         check(!Files.exists(destination, NOFOLLOW_LINKS))
-        val ciphertext = RecordingVaultCrypto.encrypt(plaintext)
+        val ciphertext = RecordingVaultCrypto.encryptV2(plaintext, directoryName, id)
         val temporary = File(dir, "r2-${UUID.randomUUID()}.part").toPath()
 
         // Create and open in one operation. Never reopen a pre-created temp pathname.
@@ -110,7 +110,11 @@ internal class RecordingVaultStore(
                 check(channel.read(buffer) > 0) { "Recording truncated during read" }
             }
             check(channel.read(ByteBuffer.allocate(1)) == -1) { "Recording grew during read" }
-            RecordingVaultCrypto.decrypt(bytes)
+            when (bytes[0].toInt()) {
+                1 -> RecordingVaultCrypto.decrypt(bytes)
+                2 -> RecordingVaultCrypto.decryptV2(bytes, directoryName, id)
+                else -> throw IllegalArgumentException("Unsupported recording version")
+            }
         }
     }
 
