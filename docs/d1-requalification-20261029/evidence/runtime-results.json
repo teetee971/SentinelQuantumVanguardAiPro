@@ -1,0 +1,7 @@
+[
+  {
+    "step": "runtime",
+    "status": "NON EX\u00c9CUT\u00c9",
+    "reason": "Android 17 software emulator did not complete boot within bounded wait; adb online does not prove Android UI ready"
+  }
+]

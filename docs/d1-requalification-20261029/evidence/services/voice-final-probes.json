@@ -1,0 +1,16 @@
+[
+  {
+    "utc": "2026-10-29T20:08:04.204800+00:00",
+    "endpoint": "live",
+    "http": "200",
+    "exit": 0,
+    "body": "{\"status\":\"ok\"}"
+  },
+  {
+    "utc": "2026-10-29T20:08:04.448044+00:00",
+    "endpoint": "ready",
+    "http": "503",
+    "exit": 0,
+    "body": "{\"detail\":\"Voice service unavailable\"}"
+  }
+]

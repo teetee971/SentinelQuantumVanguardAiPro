@@ -1,0 +1,31 @@
+HTTP/1.1 200 OK
+date: Thu, 29 Oct 2026 18:25:21 GMT
+server: envoy
+
+HTTP/2 200 
+server: envoy
+date: Thu, 29 Oct 2026 18:25:21 GMT
+content-type: application/xml
+content-length: 26115
+x-id-fe: cch1-hw-edge-gc7
+x-shard: cch1-shard0-default
+etag: "1c5e8b43008927e511426bb20a606902"
+last-modified: Thu, 29 Oct 2026 15:34:20 GMT
+x-amz-id-2: txge4e4fa53d0114a179df3-006ae36883
+x-amz-request-id: txge4e4fa53d0114a179df3-006ae36883
+x-id-shield: fr5-hw-edge-gc40
+age: 9998
+x-id: cch1-hw-edge-gc23
+strict-transport-security: max-age=15768000
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+referrer-policy: same-origin
+x-xss-protection: 1; mode=block
+permissions-policy: geolocation=(),midi=(),sync-xhr=(),microphone=(),camera=(),magnetometer=(),gyroscope=(),fullscreen=(self),payment=()
+x-ua-compatible: IE=EDGE
+cache: HIT
+x-cached-since: 2026-10-29T15:39:40+00:00
+accept-ranges: bytes
+traceparent: 00-5fe950b364756717d7b44d5cc50ac59c-97a9450e7c53783b-01
+x-envoy-upstream-service-time: 47
+

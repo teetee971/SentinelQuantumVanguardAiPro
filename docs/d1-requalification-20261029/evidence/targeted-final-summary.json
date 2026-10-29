@@ -1,0 +1,23 @@
+[
+  {
+    "class_name": "com.sentinel.quantum.data.OsintSourceEndpointTest",
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "class_name": "com.sentinel.quantum.voice.VoiceSessionFailurePresentationTest",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "class_name": "com.sentinel.quantum.security.ContactPhotoPolicyTest",
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "url": "https://cert.cyber.gouv.fr/alerte/feed/",
+    "http": "200",
+    "exit": 0,
+    "root": "rss",
+    "items": 40
+  },
+  {
+    "url": "https://cert.cyber.gouv.fr/avis/feed/",
+    "http": "200",
+    "exit": 0,
+    "root": "rss",
+    "items": 40
+  },
+  {
+    "url": "https://cert.cyber.gouv.fr/cti/feed/",
+    "http": "200",
+    "exit": 0,
+    "root": "rss",
+    "items": 40
+  }
+]

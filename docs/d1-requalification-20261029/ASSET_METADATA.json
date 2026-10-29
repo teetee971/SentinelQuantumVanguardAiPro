@@ -1,0 +1,22 @@
+[
+  {
+    "path": "/workspace/d1-assets/d1-orbital-globe.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "bytes": 2170664,
+    "sha256": "1d13c77349f26e7e470c9a19b017ec1211ba7ca4b39392eef0cc07a7765df990"
+  },
+  {
+    "path": "/workspace/d1-assets/d1-unknown-identity.png",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "mode": "RGB",
+    "bytes": 2072984,
+    "sha256": "b00461588d257184d0a2a4bb31f18d2ffcbf5604e53dad12b533a8fcfd756ad2"
+  }
+]

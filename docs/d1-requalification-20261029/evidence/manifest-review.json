@@ -1,0 +1,226 @@
+{
+  "permissions": [
+    "android.permission.INTERNET",
+    "android.permission.WAKE_LOCK",
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.USE_FULL_SCREEN_INTENT",
+    "android.permission.READ_CONTACTS",
+    "android.permission.CALL_PHONE",
+    "android.permission.READ_CALL_LOG",
+    "android.permission.RECORD_AUDIO",
+    "android.permission.SEND_SMS",
+    "android.permission.RECEIVE_SMS",
+    "android.permission.READ_SMS",
+    "android.permission.READ_PHONE_STATE",
+    "android.permission.RECEIVE_MMS",
+    "android.permission.RECEIVE_WAP_PUSH",
+    "android.permission.ACCESS_WIFI_STATE",
+    "android.permission.CHANGE_WIFI_STATE",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.NEARBY_WIFI_DEVICES",
+    "android.permission.BLUETOOTH",
+    "android.permission.BLUETOOTH_ADMIN",
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.BLUETOOTH_CONNECT",
+    "android.permission.RECEIVE_BOOT_COMPLETED",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.USE_BIOMETRIC",
+    "android.permission.USE_FINGERPRINT",
+    "com.sentinel.quantum.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+    "android.permission.MODIFY_AUDIO_SETTINGS"
+  ],
+  "components": [
+    {
+      "name": "com.sentinel.quantum.security.SentinelCallScreeningService",
+      "exported": "true",
+      "permission": "android.permission.BIND_SCREENING_SERVICE"
+    },
+    {
+      "name": "com.sentinel.quantum.MainActivity",
+      "exported": "true",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.VoiceStudioActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.PhoneCoreActivationActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.PhoneCoreDiagnosticActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.SentinelDialerActivity",
+      "exported": "true",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelInCallService",
+      "exported": "true",
+      "permission": "android.permission.BIND_INCALL_SERVICE"
+    },
+    {
+      "name": "com.sentinel.quantum.SentinelInCallActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelCallActionReceiver",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelMissedCallReceiver",
+      "exported": "true",
+      "permission": "android.permission.MODIFY_PHONE_STATE"
+    },
+    {
+      "name": "com.sentinel.quantum.CallerIdActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.SmsComposeActivity",
+      "exported": "true",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelSmsDeliverReceiver",
+      "exported": "true",
+      "permission": "android.permission.BROADCAST_SMS"
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelMmsDeliverReceiver",
+      "exported": "true",
+      "permission": "android.permission.BROADCAST_WAP_PUSH"
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelMmsDownloadReceiver",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelMmsSendStatusReceiver",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelSmsStatusReceiver",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.sentinel.quantum.security.SentinelRespondViaMessageService",
+      "exported": "true",
+      "permission": "android.permission.SEND_RESPOND_VIA_MESSAGE"
+    },
+    {
+      "name": "androidx.core.content.FileProvider",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.compose.ui.tooling.PreviewActivity",
+      "exported": "true",
+      "permission": null
+    },
+    {
+      "name": "androidx.startup.InitializationProvider",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.work.impl.background.systemjob.SystemJobService",
+      "exported": "true",
+      "permission": "android.permission.BIND_JOB_SERVICE"
+    },
+    {
+      "name": "androidx.work.impl.foreground.SystemForegroundService",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.work.impl.background.systemalarm.RescheduleReceiver",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.work.impl.diagnostics.DiagnosticsReceiver",
+      "exported": "true",
+      "permission": "android.permission.DUMP"
+    },
+    {
+      "name": "com.auth0.android.provider.AuthenticationActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.auth0.android.provider.RedirectActivity",
+      "exported": "true",
+      "permission": null
+    },
+    {
+      "name": "androidx.credentials.playservices.CredentialProviderMetadataHolder",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.credentials.playservices.HiddenActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.google.android.gms.auth.api.signin.internal.SignInHubActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "com.google.android.gms.auth.api.signin.RevocationBoundService",
+      "exported": "true",
+      "permission": "com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+    },
+    {
+      "name": "com.google.android.gms.common.api.GoogleApiActivity",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.activity.ComponentActivity",
+      "exported": "true",
+      "permission": null
+    },
+    {
+      "name": "androidx.room3.MultiInstanceInvalidationService",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.room.MultiInstanceInvalidationService",
+      "exported": "false",
+      "permission": null
+    },
+    {
+      "name": "androidx.profileinstaller.ProfileInstallReceiver",
+      "exported": "true",
+      "permission": "android.permission.DUMP"
+    },
+    {
+      "name": "com.wireguard.android.backend.GoBackend$VpnService",
+      "exported": "false",
+      "permission": "android.permission.BIND_VPN_SERVICE"
+    }
+  ]
+}
