@@ -12,3 +12,7 @@
 | Bluetooth, VPN, Voice Studio local, Security Lab | NON TESTÉS sur matériel dans cette reprise | Modules préservés ; requalifier permissions, matériels, tunnel et audio avant revendication. |
 | Émulateur AOSP17 | BLOQUÉ au démarrage | Journaux conservés, pas de segmentation confirmée ici ; ne bloque pas la qualification statique. |
 | Publication Google Play | NON PRÊTE comme version D.1 finale | APK debug non publiable ; qualification physique/visuelle, AAB release signé avec clé autorisée, permissions sensibles, politique de confidentialité/Data Safety et procédure Play à finaliser. Aucun déploiement demandé. |
+
+## Itération photos après audit c3226314
+
+Le défaut d’invalidation à URI inchangée et la course de publication après annulation sont corrigés dans les sources 70d5cecd ; preuve JVM dans PHOTO_REFRESH_FOLLOWUP.md. Validation Compose/provider et S24+ toujours NON EXÉCUTÉE/NON TESTÉE. Cette correction ne clôt pas les écarts de fidélité visuelle ni les autres blocages ci-dessus.

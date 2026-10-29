@@ -10,7 +10,7 @@ L’installation de l’APK antérieur est rapportée réussie par l’utilisate
 
 ```bash
 sha256sum -c SHA256SUMS.txt
-adb install -r Sentinel-D1-qualification-debug.apk
+adb install -r Sentinel-D1-debug-70d5cecd.apk
 adb shell getprop ro.product.model
 adb shell getprop ro.build.version.release
 adb shell getprop ro.build.version.sdk
@@ -51,7 +51,7 @@ Examiner chaque fichier avant de l’accepter : bon écran, contenu stable, pas 
 Uniquement sur un runtime de test sans données personnelles, installer l’APK instrumenté puis :
 
 ```bash
-adb install -r Sentinel-D1-qualification-androidTest.apk
+adb install -r Sentinel-D1-androidTest-70d5cecd.apk
 adb shell am instrument -w -e class com.sentinel.quantum.ui.design.D1CommunicationLayoutInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
 # Opt-in explicite car les PNG peuvent contenir des données privées :
 adb shell am instrument -w -e captureD1Screenshots true -e class com.sentinel.quantum.ui.D1CommunicationCaptureInstrumentationTest,com.sentinel.quantum.ui.AllStaticNavigationSurfacesInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
@@ -67,3 +67,15 @@ Le contrôle de sortie ADB seul ne suffit pas : lire `INSTRUMENTATION_CODE`, nom
 Collecteur expurgé déjà présent : `scripts/capture-phone-core-s24.py` ; aucune archive de données SQLite/SMS privée n’est nécessaire à cette campagne visuelle. Préférer les logs de rôles/erreurs sans numéros/messages ; relire avant partage.
 
 Hors appel, Paramètres → Applications → Applications par défaut → Téléphone → Téléphone Samsung, puis vérifier `adb shell cmd role get-role-holders android.app.role.DIALER`. Ne pas attribuer un package Samsung supposé sans l’observer. Vérifier ensuite les appels entre lignes de test.
+
+## Photos : régression URI inchangée et lecture tardive
+
+Avec un contact de test autorisé ayant une photo : ouvrir sa fiche, utiliser Modifier dans Contacts Android, remplacer la photo et revenir sans redémarrer Sentinel. Vérifier l’image mise à jour dans la liste et la fiche. Répéter si le fournisseur conserve la même URI ou ne fournit pas de révision. Alterner rapidement deux contacts et les filtres, puis mettre l’application en arrière-plan et la reprendre : aucun portrait d’un autre contact ne doit apparaître. Tester READ_CONTACTS révoquée/réaccordée et rotation pendant un chargement. Conserver uniquement des captures autorisées, sans journal de numéros personnels. **NON TESTÉ ici.**
+
+Trois scénarios instrumentés supplémentaires, compilés mais NON EXÉCUTÉS dans cette session :
+
+```bash
+adb shell am instrument -w -e class com.sentinel.quantum.ui.design.ContactPhotoStateInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Ils exercent le vrai producteur d’état utilisé par D1ContactAvatar avec une lecture différée contrôlée ; ils ne valident ni le fournisseur Samsung ni le rendu complet de la fiche.

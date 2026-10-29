@@ -1,5 +1,7 @@
 # Sentinel D.1 — candidat à requalifier sur Galaxy S24+
 
+> Rapport historique du premier candidat (sources 78653c57, 1366 tests). Pour la livraison actuelle et ses 1369 tests, lire [PHOTO_REFRESH_FOLLOWUP.md](PHOTO_REFRESH_FOLLOWUP.md). Le manifeste ARTIFACTS.json décrit désormais le nouveau candidat.
+
 ## Livraison et provenance
 
 Branche `fix/d1-phone-messages-conformity-20261029`, base `92d1c916ebbdf393166fcf2fd904894ebee15661`.
