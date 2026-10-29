@@ -1117,7 +1117,12 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
                         if (phoneTab == 0) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+                                section = "Communications", title = "Composer un appel",
+                                description = "Choisissez votre ligne puis appelez. Les rôles et autorisations restent contrôlés par Android."
+                            )
+                            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedTextField(
                                     value = number,
                                     onValueChange = {
@@ -1126,7 +1131,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         contactStatus = null
                                         reputationStatus = null
                                     },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     label = { Text("Numéro") },
                                     leadingIcon = { Icon(Icons.Default.Search, null) }
@@ -1421,54 +1426,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                 contactItems.sumOf { ContactPresentationPolicy.displayNumbers(it.phoneNumbers).size }
                             }
 
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(18.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                                ) {
-                                    Surface(
-                                        modifier = Modifier.size(64.dp),
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primaryContainer
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Default.Contacts,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(34.dp)
-                                            )
-                                        }
-                                    }
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            "Votre répertoire",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.ExtraBold
-                                        )
-                                        Text(
-                                            "$callableCount contact(s) appelable(s) · $phoneCount numéro(s)",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            "Vos contacts restent sur cet appareil.",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            }
+                            com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+                                section = "Communications", title = "Votre répertoire",
+                                description = "$callableCount contact(s) appelable(s) · $phoneCount numéro(s). Carnet Android local, en lecture seule."
+                            )
 
                             OutlinedTextField(
                                 value = contactQuery,

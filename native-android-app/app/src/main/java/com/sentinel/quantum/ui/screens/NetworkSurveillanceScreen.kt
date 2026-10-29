@@ -227,7 +227,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 onBack = { navController.popBackStack() }
             )
         },
-        floatingActionButton = {
+        bottomBar = {
             ExtendedFloatingActionButton(
                 onClick = { if (!isScanning) startScan() },
                 icon = {
@@ -241,9 +241,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     }
                 },
                 text = { Text(if (isScanning) "Scan en cours…" else "Scanner") },
-                modifier = Modifier.semantics {
-                    stateDescription = if (isScanning) "Analyse en cours" else "Prêt à scanner"
-                }
+                modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)
+                    .testTag("network-scan-action").semantics {
+                        stateDescription = if (isScanning) "Analyse en cours" else "Prêt à scanner"
+                    }
             )
         }
     ) { paddingValues ->

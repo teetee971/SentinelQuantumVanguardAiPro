@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -516,10 +517,12 @@ class SmsComposeActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        PhoneCoreBrand(
-                            context = "Messages",
-                            status = activationModel.title,
-                            modifier = Modifier.fillMaxWidth()
+                        com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+                            section = "Communications · SMS / MMS",
+                            title = selectedThreadId?.let { id ->
+                                threads.firstOrNull { it.threadId == id }?.address?.takeIf { it.isNotBlank() }
+                            } ?: "Messages Sentinel",
+                            description = activationModel.title
                         )
                         TabRow(selectedTabIndex = if (showComposer) 1 else 0) {
                             Tab(selected = !showComposer, onClick = {
@@ -952,11 +955,11 @@ class SmsComposeActivity : ComponentActivity() {
                                         }
                                     }
                                     if (threads.isEmpty()) {
-                                        Text(
-                                            "Aucune conversation SMS disponible. Les nouveaux messages apparaîtront ici après réception ou envoi.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        com.sentinel.quantum.ui.design.SentinelGlassCard(Modifier.fillMaxWidth()) {
+                                            Text("Aucune conversation SMS", style = MaterialTheme.typography.titleMedium)
+                                            Text("Les conversations du téléphone apparaîtront après réception ou envoi. Aucun contenu de démonstration n’est ajouté.",
+                                                style = MaterialTheme.typography.bodyMedium)
+                                        }
                                     } else if (visibleThreads.isEmpty()) {
                                         Text(
                                             "Aucune conversation dans cette catégorie.",
