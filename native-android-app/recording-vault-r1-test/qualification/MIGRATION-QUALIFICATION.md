@@ -1,6 +1,8 @@
 # Qualification migration V1 → V2 — 2026-10-29
 
-**Validation Android / Galaxy S24+ : NON EXÉCUTÉE par Codex.** Les résultats
+**Tests instrumentés Android / Galaxy S24+ : NON EXÉCUTÉS par Codex.**
+La compilation des deux APK et lint sont désormais validés sur Linux x86_64,
+JDK17/Gradle9.8, y compris --offline après mise en cache ; voir MIGRATION-RESULTS.md. Les résultats
 historiques de 24 tests ne qualifient pas ce changement. Dependabot :
 **NON VÉRIFIÉ (HTTP 403)**, aucune conclusion d'absence ou de résolution.
 
@@ -166,8 +168,8 @@ isolé et une méthode bornée approuvée séparément.
   chemins ; NOFOLLOW_LINKS et JNI ne rendent pas ce modèle d'attaque impossible.
 - Après marqueur, perte/corruption du candidat et du final : refus explicite ;
   source conservée pour récupération manuelle, aucun repli automatique.
-- fsync de répertoire, AndroidKeyStore, mémoire, latence et stockage physique
-  Galaxy restent NON EXÉCUTÉS. Aucun succès physique déduit des tests JVM.
+- fsync de répertoire Android, AndroidKeyStore réel, mémoire, latence et stockage
+  physique Galaxy restent NON EXÉCUTÉS. Aucun succès physique déduit des tests JVM.
 - Revue indépendante effectuée : récupération du nouveau save pré-marqueur,
   fsync avant enrôlement, code terminal d'instrumentation, chemins Android
   canoniques et corruption de tag déterministe corrigés.

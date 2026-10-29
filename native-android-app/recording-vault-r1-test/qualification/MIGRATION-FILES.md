@@ -2,6 +2,7 @@
 
 Base : `601f7baedc4e23337fa6b9a595c05c41b7466f53`.
 C JNI et binaire ARM64 inchangés ; aucun autre module modifié.
+La poursuite après 29491eed ajoute uniquement des rapports et preuves.
 
 - `docs/superpowers/plans/2026-10-29-recording-vault-migration.md`
 - `docs/superpowers/specs/2026-10-29-recording-vault-migration-design.md`
@@ -10,6 +11,20 @@ C JNI et binaire ARM64 inchangés ; aucun autre module modifié.
 - `native-android-app/recording-vault-r1-test/qualification/MIGRATION-FILES.md`
 - `native-android-app/recording-vault-r1-test/qualification/MIGRATION-QUALIFICATION.md`
 - `native-android-app/recording-vault-r1-test/qualification/MIGRATION-RESULTS.md`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/README.md`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/adb-devices.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/android-build-offline-verified.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/android-build-resolved.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/android-module-dependencies.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/android-online.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/apk-sha256.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/apk-signature-app.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/apk-signature-tests.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/commands.json`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/jni-unchanged.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/lint-results-debug.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/sdk-manager.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/sdk-packages-sha1.txt`
 - `native-android-app/recording-vault-r1-test/qualification/evidence-migration/android-offline.txt`
 - `native-android-app/recording-vault-r1-test/qualification/evidence-migration/commands.json`
 - `native-android-app/recording-vault-r1-test/qualification/evidence-migration/dependabot.txt`

@@ -1,7 +1,8 @@
 # Résultats réels de la mission — 2026-10-29 UTC
 
-**Implémentation livrée ; qualification Android bloquée, chantier non déclaré
-qualifié pour production.** Aucun résultat physique n'est inventé.
+**Mise à jour après poursuite : compilation Android et lint validés, y compris
+hors ligne après mise en cache. Qualification physique NON EXÉCUTÉE ; chantier
+non déclaré qualifié pour production.** Aucun résultat physique n’est inventé.
 
 Branche : `fix/recording-vault-v2-migration-hardening-20261028`.
 Base : `601f7baedc4e23337fa6b9a595c05c41b7466f53`.
@@ -20,11 +21,16 @@ et la PR brouillon. Aucune fusion demandée ou effectuée.
 | bash -n run-device.sh et run-host-tests.sh (invocations séparées) | codes 0 |
 | git diff --check | code 0 ; contrôle des changements indexés également effectué avant commits |
 | Comparaison du C JNI et du binaire ARM64 avec la base | code 0, inchangés |
-| Gradle 9.8.0/JDK17, assembleDebug, assembleDebugAndroidTest, lintDebug, build isolé --offline | code 1, AGP com.android.application:9.4.1 absent du cache ; **compilation et lint Android NON EXÉCUTÉS au-delà de la résolution du plugin** |
+| Gradle 9.8.0/JDK17, assembleDebug et assembleDebugAndroidTest | **code 0**, APK application et tests construits, Kotlin principal et instrumenté compilés |
+| Reconstruction --offline --rerun-tasks, mêmes APK + lintDebug + testDebugUnitTest | **code 0**, 78 tâches exécutées ; testDebugUnitTest est **NO-SOURCE**, aucun test supplémentaire exécuté par cette tâche |
+| lintDebug | **code 0 : 0 erreur, 2 avertissements** (OldTargetApi, MissingApplicationIcon) |
+| apksigner verify pour les deux APK | codes 0 ; signatures debug cloud, compatibilité avec la clé Galaxy **non vérifiée** |
 | API Dependabot | code 1, HTTP403 Resource not accessible by integration ; **NON VÉRIFIÉ** |
 | Galaxy S24+ SM-S926B, API36, AndroidKeyStore réel, JNI Android, force-stop et redémarrage | **NON EXÉCUTÉS**, aucun ADB/appareil disponible |
 
-Journal machine : [evidence-migration/commands.json](evidence-migration/commands.json).
+Journal initial : [evidence-migration/commands.json](evidence-migration/commands.json).
+Journal de poursuite et résultats Android : [evidence-migration-followup/commands.json](evidence-migration-followup/commands.json).
+Les échecs initiaux sont conservés comme historique, pas comme état final du build.
 Sorties complètes dans ce même répertoire. Les commandes contiennent les chemins
 réels de l'environnement Codex ; les commandes portables pour le Galaxy figurent
 dans [MIGRATION-QUALIFICATION.md](MIGRATION-QUALIFICATION.md).
@@ -51,7 +57,10 @@ prouvent pas la résistance à une coupure électrique du téléphone.
 - Le wrapper Gradle initial ne pouvait pas télécharger sa distribution depuis
   Java. Gradle a ensuite été téléchargé avec curl dans /workspace/tooling, sans
   modification du dépôt ; le build offline atteint maintenant la résolution AGP,
-  où il reste bloqué. Kotlin/JDK17 ont également été installés uniquement dans
+  où il était alors bloqué. La poursuite a résolu AGP via le proxy avec son CA de
+  confiance (TLS maintenu), installé le SDK officiel via sdkmanager dans
+  /workspace/tooling et validé une reconstruction entièrement offline.
+  Kotlin/JDK17 ont également été installés uniquement dans
   ce dossier d'outillage, sans changer les dépendances du projet.
 
 ## Revue et risques résiduels
@@ -74,7 +83,13 @@ local. Le stockage physique, les courses hostiles du même UID, la consommation
 mémoire/latence et le comportement Android de fsync restent des limites décrites
 par la conception. Aucun anti-rollback absolu n'est revendiqué.
 
-Le Galaxy doit encore exécuter le build offline avec ses caches/signature
+Les APK ont été construits sur Linux x86_64, Gradle 9.8.0, JDK17.0.21 ; le C et
+le binaire JNI ARM64 sont inchangés. La compilation n’exécute pas les tests
+instrumentés. ADB a été installé : `adb devices -l` ne liste aucun appareil.
+Le rapport des dépendances runtime de debugAndroidTest a été exporté, sans
+changer de version ni conclure à l’impact des six alertes inaccessibles.
+
+Le Galaxy doit encore exécuter le build offline ARM64 avec ses caches/signature
 existants, la suite instrumentée complète, les phases de migration réelles
 interrompues, puis une campagne redémarrage et les vérifications de stockage.
 Un échec de signature, d'outil ARM64, de dépendance offline ou de fsync est un

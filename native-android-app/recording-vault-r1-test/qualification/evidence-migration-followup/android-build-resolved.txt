@@ -1,0 +1,113 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :recording-vault-r1-test:preBuild UP-TO-DATE
+> Task :recording-vault-r1-test:preDebugBuild UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :recording-vault-r1-test:generateDebugResources
+> Task :recording-vault-r1-test:packageDebugResources
+> Task :recording-vault-r1-test:processDebugNavigationResources
+> Task :recording-vault-r1-test:javaPreCompileDebug
+> Task :recording-vault-r1-test:generateDebugAssets UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAssets
+> Task :recording-vault-r1-test:compressDebugAssets
+> Task :recording-vault-r1-test:parseDebugLocalResources
+> Task :recording-vault-r1-test:generateDebugGlobalSynthetics
+> Task :recording-vault-r1-test:generateDebugRFile
+> Task :recording-vault-r1-test:checkDebugDuplicateClasses
+> Task :recording-vault-r1-test:desugarDebugFileDependencies
+> Task :recording-vault-r1-test:compileDebugKotlin
+> Task :recording-vault-r1-test:compileDebugJavaWithJavac NO-SOURCE
+> Task :recording-vault-r1-test:processDebugJavaRes
+> Task :recording-vault-r1-test:mergeDebugJavaResource
+> Task :recording-vault-r1-test:mergeLibDexDebug
+> Task :recording-vault-r1-test:checkDebugAarMetadata
+> Task :recording-vault-r1-test:mapDebugSourceSetPaths
+> Task :recording-vault-r1-test:mergeExtDexDebug
+> Task :recording-vault-r1-test:compileDebugNavigationResources
+> Task :recording-vault-r1-test:createDebugCompatibleScreenManifests
+> Task :recording-vault-r1-test:mergeDebugResources
+> Task :recording-vault-r1-test:extractDeepLinksDebug
+> Task :recording-vault-r1-test:processDebugMainManifest
+> Task :recording-vault-r1-test:processDebugManifest
+> Task :recording-vault-r1-test:mergeDebugJniLibFolders
+> Task :recording-vault-r1-test:processDebugManifestForPackage
+> Task :recording-vault-r1-test:mergeDebugNativeLibs
+
+> Task :recording-vault-r1-test:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: librecordingvault_r3.so. Run with --info option to learn more.
+
+> Task :recording-vault-r1-test:processDebugResources
+> Task :recording-vault-r1-test:validateSigningDebug
+> Task :recording-vault-r1-test:dexBuilderDebug
+> Task :recording-vault-r1-test:writeDebugAppMetadata
+> Task :recording-vault-r1-test:writeDebugSigningConfigVersions
+> Task :recording-vault-r1-test:mergeProjectDexDebug
+> Task :recording-vault-r1-test:bundleDebugClassesToCompileJar
+> Task :recording-vault-r1-test:preDebugAndroidTestBuild SKIPPED
+> Task :recording-vault-r1-test:generateDebugAndroidTestResources
+> Task :recording-vault-r1-test:packageDebugAndroidTestResources
+> Task :recording-vault-r1-test:processDebugAndroidTestNavigationResources
+> Task :recording-vault-r1-test:parseDebugAndroidTestLocalResources
+> Task :recording-vault-r1-test:generateDebugAndroidTestRFile
+> Task :recording-vault-r1-test:packageDebug
+> Task :recording-vault-r1-test:createDebugApkListingFileRedirect
+> Task :recording-vault-r1-test:assembleDebug
+> Task :recording-vault-r1-test:javaPreCompileDebugAndroidTest
+> Task :recording-vault-r1-test:generateDebugAndroidTestAssets UP-TO-DATE
+> Task :recording-vault-r1-test:mergeDebugAndroidTestAssets
+> Task :recording-vault-r1-test:compressDebugAndroidTestAssets
+> Task :recording-vault-r1-test:generateDebugAndroidTestGlobalSynthetics
+> Task :recording-vault-r1-test:checkDebugAndroidTestDuplicateClasses
+> Task :recording-vault-r1-test:desugarDebugAndroidTestFileDependencies
+
+> Task :recording-vault-r1-test:compileDebugAndroidTestKotlin
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/src/androidTest/java/com/sentinel/quantum/security/RecordingVaultKeySecurityInstrumentedTest.kt:49:22 'val isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java.
+
+> Task :recording-vault-r1-test:compileDebugAndroidTestJavaWithJavac NO-SOURCE
+> Task :recording-vault-r1-test:processDebugAndroidTestJavaRes
+> Task :recording-vault-r1-test:mergeDebugAndroidTestJavaResource
+> Task :recording-vault-r1-test:mergeLibDexDebugAndroidTest
+> Task :recording-vault-r1-test:checkDebugAndroidTestAarMetadata
+> Task :recording-vault-r1-test:mapDebugAndroidTestSourceSetPaths
+> Task :recording-vault-r1-test:compileDebugAndroidTestNavigationResources
+> Task :recording-vault-r1-test:mergeDebugAndroidTestResources
+> Task :recording-vault-r1-test:mergeExtDexDebugAndroidTest
+> Task :recording-vault-r1-test:mergeDebugAndroidTestManifest
+> Task :recording-vault-r1-test:processDebugAndroidTestManifest
+> Task :recording-vault-r1-test:mergeDebugAndroidTestJniLibFolders
+> Task :recording-vault-r1-test:processDebugAndroidTestResources
+> Task :recording-vault-r1-test:mergeDebugAndroidTestNativeLibs NO-SOURCE
+> Task :recording-vault-r1-test:dexBuilderDebugAndroidTest
+> Task :recording-vault-r1-test:stripDebugAndroidTestDebugSymbols NO-SOURCE
+> Task :recording-vault-r1-test:validateSigningDebugAndroidTest
+> Task :recording-vault-r1-test:writeDebugAndroidTestSigningConfigVersions
+> Task :recording-vault-r1-test:mergeProjectDexDebugAndroidTest
+> Task :recording-vault-r1-test:generateDebugAndroidTestLintModel
+> Task :recording-vault-r1-test:extractProguardFiles
+> Task :recording-vault-r1-test:generateDebugLintReportModel
+> Task :recording-vault-r1-test:preDebugUnitTestBuild UP-TO-DATE
+> Task :recording-vault-r1-test:generateDebugUnitTestLintModel
+> Task :recording-vault-r1-test:packageDebugAndroidTest
+> Task :recording-vault-r1-test:createDebugAndroidTestApkListingFileRedirect
+> Task :recording-vault-r1-test:assembleDebugAndroidTest
+> Task :recording-vault-r1-test:lintAnalyzeDebugAndroidTest
+> Task :recording-vault-r1-test:lintAnalyzeDebug
+> Task :recording-vault-r1-test:lintAnalyzeDebugUnitTest
+
+> Task :recording-vault-r1-test:lintReportDebug
+Wrote HTML report to file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/build/reports/lint-results-debug.html
+Wrote SARIF report to file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/build/reports/lint-results-debug.sarif
+
+> Task :recording-vault-r1-test:lintDebug
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/qualification/android-build/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 47s
+76 actionable tasks: 76 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

@@ -1,0 +1,117 @@
+{
+  "tested_commit": "29491eed87e8754580fae2d8850f3e3b22bfc676",
+  "android_online_initial_exit": 1,
+  "android_build_resolved_exit": 0,
+  "sdkmanager_licenses_exit": 0,
+  "sdkmanager_install_exit": 0,
+  "commands": [
+    {
+      "argv": [
+        "/workspace/tooling/android-sdk/platform-tools/adb",
+        "devices",
+        "-l"
+      ],
+      "exit_code": 0,
+      "output": "adb-devices.txt"
+    },
+    {
+      "argv": [
+        "/workspace/tooling/gradle-9.8.0/bin/gradle",
+        "--no-daemon",
+        "--console=plain",
+        "-Dhttps.proxyHost=proxy",
+        "-Dhttps.proxyPort=8080",
+        "-Dhttp.proxyHost=proxy",
+        "-Dhttp.proxyPort=8080",
+        "-Djavax.net.ssl.trustStore=/workspace/tooling/android-truststore",
+        "-Djavax.net.ssl.trustStorePassword=changeit",
+        "-p",
+        "native-android-app/recording-vault-r1-test/qualification/android-build",
+        ":recording-vault-r1-test:assembleDebug",
+        ":recording-vault-r1-test:assembleDebugAndroidTest",
+        ":recording-vault-r1-test:lintDebug"
+      ],
+      "exit_code": 0,
+      "output": "android-build-resolved.txt"
+    },
+    {
+      "argv": [
+        "/workspace/tooling/gradle-9.8.0/bin/gradle",
+        "--no-daemon",
+        "--console=plain",
+        "-Dhttps.proxyHost=proxy",
+        "-Dhttps.proxyPort=8080",
+        "-Dhttp.proxyHost=proxy",
+        "-Dhttp.proxyPort=8080",
+        "-Djavax.net.ssl.trustStore=/workspace/tooling/android-truststore",
+        "-Djavax.net.ssl.trustStorePassword=changeit",
+        "-p",
+        "native-android-app/recording-vault-r1-test/qualification/android-build",
+        "--offline",
+        "--rerun-tasks",
+        ":recording-vault-r1-test:assembleDebug",
+        ":recording-vault-r1-test:assembleDebugAndroidTest",
+        ":recording-vault-r1-test:lintDebug",
+        ":recording-vault-r1-test:testDebugUnitTest"
+      ],
+      "exit_code": 0,
+      "output": "android-build-offline-verified.txt"
+    },
+    {
+      "argv": [
+        "/workspace/tooling/gradle-9.8.0/bin/gradle",
+        "--no-daemon",
+        "--console=plain",
+        "-Dhttps.proxyHost=proxy",
+        "-Dhttps.proxyPort=8080",
+        "-Dhttp.proxyHost=proxy",
+        "-Dhttp.proxyPort=8080",
+        "-Djavax.net.ssl.trustStore=/workspace/tooling/android-truststore",
+        "-Djavax.net.ssl.trustStorePassword=changeit",
+        "-p",
+        "native-android-app/recording-vault-r1-test/qualification/android-build",
+        "--offline",
+        ":recording-vault-r1-test:dependencies",
+        "--configuration",
+        "debugAndroidTestRuntimeClasspath"
+      ],
+      "exit_code": 0,
+      "output": "android-module-dependencies.txt"
+    },
+    {
+      "argv": [
+        "/workspace/tooling/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "native-android-app/recording-vault-r1-test/build/outputs/apk/debug/recording-vault-r1-test-debug.apk"
+      ],
+      "exit_code": 0,
+      "output": "apk-signature-app.txt"
+    },
+    {
+      "argv": [
+        "/workspace/tooling/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "native-android-app/recording-vault-r1-test/build/outputs/apk/androidTest/debug/recording-vault-r1-test-debug-androidTest.apk"
+      ],
+      "exit_code": 0,
+      "output": "apk-signature-tests.txt"
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--exit-code",
+        "601f7baedc4e23337fa6b9a595c05c41b7466f53",
+        "--",
+        "native-android-app/recording-vault-r1-test/src/main/cpp",
+        "native-android-app/recording-vault-r1-test/src/main/jniLibs"
+      ],
+      "exit_code": 0,
+      "output": "jni-unchanged.txt"
+    }
+  ]
+}
