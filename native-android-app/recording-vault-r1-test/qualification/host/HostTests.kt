@@ -14,6 +14,10 @@ private fun rejected(action: () -> Unit) {
 }
 fun main(args: Array<String>) {
     Security.addProvider(HostProvider())
+    if (args.firstOrNull() == "migration-worker") {
+        migrationWorker(args)
+        return
+    }
     if (args.firstOrNull() == "worker") {
         val vault = RecordingVaultStore(Context(File(args[1])))
         while (!File(args[1], "go").exists()) Thread.sleep(5)
@@ -93,8 +97,9 @@ fun main(args: Array<String>) {
         rejected { vault.read("item") }
     }
     test("characterization: legacy valid ciphertext substitution is ACCEPTED") { root, vault ->
-        vault.save("a", "first".toByteArray())
-        vault.save("b", "second".toByteArray())
+        vault.exists("initialize")
+        File(root, "recording-vault-r2/a.rv").writeBytes(RecordingVaultCrypto.encrypt("first".toByteArray()))
+        File(root, "recording-vault-r2/b.rv").writeBytes(RecordingVaultCrypto.encrypt("second".toByteArray()))
         File(root, "recording-vault-r2/a.rv").writeBytes(File(root, "recording-vault-r2/b.rv").readBytes())
         check(vault.read("a").toString(Charsets.UTF_8) == "second")
     }
@@ -176,6 +181,27 @@ fun main(args: Array<String>) {
             check(vault.read("race").toString(Charsets.UTF_8) == output.single { it.startsWith("SAVED ") }.removePrefix("SAVED "))
         } finally { processes.forEach { it.destroyForcibly() } }
     }
+    test("migration keeps V1 and publishes fresh authenticated immutable V2") { root, vault ->
+        vault.exists("initialize")
+        val source = File(root, "recording-vault-r2/item.rv")
+        val payload = "legacy data".toByteArray()
+        val original = RecordingVaultCrypto.encrypt(payload)
+        source.writeBytes(original)
+        check(vault.read("item").contentEquals(payload))
+        val method = vault.javaClass.getDeclaredMethod("migrate", String::class.java)
+        check(method.invoke(vault, "item") == true)
+        check(source.readBytes().contentEquals(original))
+        val final = File(source.parentFile, "item.v2.rv").readBytes()
+        check(final[0] == 2.toByte())
+        check(!final.copyOfRange(1, 13).contentEquals(original.copyOfRange(1, 13)))
+        check(vault.read("item").contentEquals(payload))
+        check(method.invoke(vault, "item") == false)
+        check(File(source.parentFile, "item.v2.rv").readBytes().contentEquals(final))
+        File(source.parentFile, "item.v2.rv").delete()
+        rejected { vault.read("item") }
+        check(source.readBytes().contentEquals(original))
+    }
+    runMigrationTests(::test)
     println("HOST SUMMARY passed=$passed failed=$failed; Android APIs/KeyStore are simulated, filesystem and AES/GCM are JVM/Linux")
     check(failed == 0)
 }
