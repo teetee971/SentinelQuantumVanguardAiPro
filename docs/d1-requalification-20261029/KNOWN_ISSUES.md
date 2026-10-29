@@ -24,3 +24,7 @@ Navigation interne et externe corrigée dans 8cc1ad4e ; preuves et limites dans 
 ## Itération MMS après candidat 8cc1ad4e
 
 La limitation de rotation décrite dans la section historique précédente est traitée dans les sources aed338fb : images validées retenues en mémoire par ViewModel durant les changements de configuration de la même session. Le code ne sérialise ni payload ni URI dans le Bundle et ne crée aucun stockage durable. La mort du processus nécessite une nouvelle sélection. Les tests Activity, grants du sélecteur, rotation pendant chargement/envoi et MMS opérateur restent NON EXÉCUTÉS/NON TESTÉS. Voir MMS_DRAFT_FOLLOWUP.md.
+
+## Itération actions de conversation
+
+Appeler ce numéro et Ajouter aux contacts sont implémentés dans l’en-tête d’une conversation ouverte (sources d7fce52a). Ils ouvrent seulement un composeur prérempli ou l’éditeur Android ; application cible indisponible signalée explicitement. Ouverture réelle sur S24+, Contacts Samsung, grands caractères, TalkBack et comparaison R02 restent NON TESTÉS. L’adresse affichée n’est pas une preuve d’identité, de joignabilité ni d’exhaustivité des participants d’un MMS de groupe.

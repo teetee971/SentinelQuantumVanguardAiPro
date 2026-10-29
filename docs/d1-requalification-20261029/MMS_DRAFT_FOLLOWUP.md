@@ -1,5 +1,7 @@
 # Livraison courante D.1 — images MMS et recréation d’écran
 
+> Rapport historique des sources aed338fb. Voir [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md) pour le candidat actuel ; ARTIFACTS.json décrit désormais ce dernier.
+
 ## Provenance et comportement
 
 Sources des APK : **aed338fbd14ae49cd65a9998f5a8f47d9191edc0**. Branche `fix/d1-phone-messages-conformity-20261029`, PR brouillon #1748 ; candidat précédent 8cc1ad4e. Livraison locale nouvelle et séparée : `/workspace/d1-delivery-mms-draft/`. Tailles, SHA-256 et chemins exacts dans `ARTIFACTS.json`. Un commit documentaire ultérieur ne change pas les sources Android de ces APK.

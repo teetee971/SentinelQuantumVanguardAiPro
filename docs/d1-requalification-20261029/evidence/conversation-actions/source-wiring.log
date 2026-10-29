@@ -1,0 +1,5 @@
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelCommunicationHeader.kt:24:    actions: @Composable () -> Unit = {}) {
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelCommunicationHeader.kt:40:            actions()
+native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:538:                                com.sentinel.quantum.ui.design.ConversationNumberActions(
+native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:541:                                        val request = ConversationNumberIntents.dial(this@SmsComposeActivity, number)
+native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:547:                                        val request = ConversationNumberIntents.contact(number)

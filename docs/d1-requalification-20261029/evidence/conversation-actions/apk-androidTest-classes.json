@@ -1,0 +1,5 @@
+{
+  "ConversationNumberIntentsInstrumentationTest": true,
+  "ConversationNumberActionsInstrumentationTest": true,
+  "MmsAttachmentRecreationInstrumentationTest": true
+}

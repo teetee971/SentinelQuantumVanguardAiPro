@@ -10,7 +10,7 @@ L’installation de l’APK antérieur est rapportée réussie par l’utilisate
 
 ```bash
 sha256sum -c SHA256SUMS.txt
-adb install -r Sentinel-D1-debug-aed338fb.apk
+adb install -r Sentinel-D1-debug-d7fce52a.apk
 adb shell getprop ro.product.model
 adb shell getprop ro.build.version.release
 adb shell getprop ro.build.version.sdk
@@ -51,7 +51,7 @@ Examiner chaque fichier avant de l’accepter : bon écran, contenu stable, pas 
 Uniquement sur un runtime de test sans données personnelles, installer l’APK instrumenté puis :
 
 ```bash
-adb install -r Sentinel-D1-androidTest-aed338fb.apk
+adb install -r Sentinel-D1-androidTest-d7fce52a.apk
 adb shell am instrument -w -e class com.sentinel.quantum.ui.design.D1CommunicationLayoutInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
 # Opt-in explicite car les PNG peuvent contenir des données privées :
 adb shell am instrument -w -e captureD1Screenshots true -e class com.sentinel.quantum.ui.D1CommunicationCaptureInstrumentationTest,com.sentinel.quantum.ui.AllStaticNavigationSurfacesInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
@@ -115,3 +115,19 @@ adb shell am instrument -w -e class com.sentinel.quantum.ui.MmsAttachmentRecreat
 ```
 
 Ils utilisent un PNG de test créé dans un chemin cache FileProvider déjà autorisé, le vrai loader et le vrai ViewModel. Le fichier unique est supprimé à la fin. Ils n’exercent ni le sélecteur Samsung et ses grants externes, ni une livraison opérateur, ni la mort du processus. Aucune insertion SMS/contact ni effacement de base dans ces tests.
+
+## Conversation : raccourcis sur le numéro affiché
+
+Statut : NON TESTÉ sur S24+. Avec une conversation de test autorisée dont l’adresse est numérique, Appeler ce numéro doit ouvrir le composeur Sentinel avec ce numéro, **sans lancer d’appel**. Revenir doit retrouver la conversation. Ne pas appuyer sur Appeler dans le composeur pour un numéro inconnu/surtaxé. Les essais réels d’appel utilisent seulement les deux lignes connues de la procédure initiale.
+
+Ajouter aux contacts doit ouvrir l’éditeur Android avec le numéro modifiable. Annuler ne doit rien enregistrer ; une création réelle éventuelle se fait uniquement dans un profil de test et sur confirmation manuelle. Aucun droit WRITE_CONTACTS ne doit être demandé par Sentinel pour ce raccourci. Vérifier police200%, écran étroit, TalkBack et retour depuis l’éditeur.
+
+Les expéditeurs alphanumériques ou adresses non exploitables doivent montrer un motif et aucun bouton inactif. Si le résumé de conversation n’est plus disponible, ne pas réutiliser arbitrairement le numéro d’un autre message. Pour les MMS de groupe, les actions ciblent uniquement le numéro effectivement affiché : aucune déduction de liste complète de participants ou d’identité n’est revendiquée. Tester aussi révocation SMS/Contacts et application Contacts indisponible sur un environnement de test, sans désactiver l’app Samsung du téléphone personnel.
+
+Cinq scénarios préparés, compilés mais NON EXÉCUTÉS :
+
+```bash
+adb shell am instrument -w -e class com.sentinel.quantum.ui.ConversationNumberIntentsInstrumentationTest,com.sentinel.quantum.ui.design.ConversationNumberActionsInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Les trois premiers inspectent des intents sans les lancer ; les deux Compose rendent le vrai composant et contrôlent ses clics/largeur/source refusée. Ils ne valident pas l’ouverture de Contacts Samsung ni la fidélité aux pixels des maquettes. Aucun appel ou contact de démonstration n’est créé par eux.

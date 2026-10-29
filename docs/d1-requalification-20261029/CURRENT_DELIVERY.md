@@ -1,5 +1,5 @@
 # Livraison courante Sentinel D.1
 
-Sources APK : **aed338fbd14ae49cd65a9998f5a8f47d9191edc0**. Rapport actuel : [MMS_DRAFT_FOLLOWUP.md](MMS_DRAFT_FOLLOWUP.md). Artefacts, tailles et SHA : [ARTIFACTS.json](ARTIFACTS.json).
+Sources APK : **d7fce52a53ed5edfe88415f4bd0d03b3132493b6**. Rapport actuel : [CONVERSATION_ACTIONS_FOLLOWUP.md](CONVERSATION_ACTIONS_FOLLOWUP.md). Artefacts, tailles et SHA : [ARTIFACTS.json](ARTIFACTS.json).
 
-Suite app finale : 1381 tests réussis, aucun échec/erreur/ignoré ; contrats Node 19 réussis. APK debug et APK de tests vérifiés. Instrumentation, S24+ et comparaison visuelle NON EXÉCUTÉS/NON TESTÉS. Les images MMS restent en mémoire pendant les changements de configuration de la même session ; aucune restauration après mort du processus ou stockage durable ajoutée. Les rapports antérieurs conservent leurs résultats historiques.
+1386 tests unitaires app et 19 contrats Node réussis ; aucun échec/erreur/ignoré. Deux APK vérifiés. Les cinq nouveaux scénarios instrumentés sont compilés, NON EXÉCUTÉS. S24+ et fidélité visuelle complète NON TESTÉS/NON VALIDÉS. Les raccourcis sur le numéro affiché ouvrent seulement un composeur prérempli ou un éditeur Contacts nécessitant confirmation. Aucun appel ni sauvegarde de contact automatique. Les rapports précédents restent historiques.
