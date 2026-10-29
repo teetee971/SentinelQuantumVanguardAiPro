@@ -1,0 +1,14 @@
+native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:520:                        com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:847:                    com.sentinel.quantum.ui.design.D1ContactProfileSheet(
+native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1156:                            com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1465:                            com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1610:                                            com.sentinel.quantum.ui.design.D1ContactAvatar(contact, Modifier.size(50.dp))
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:26:import com.sentinel.quantum.security.ContactPhotoSnapshot
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:33:fun D1ContactAvatar(contact: LocalContactLookup.Contact, modifier: Modifier = Modifier) {
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:36:    val photo by produceState<ContactPhotoSnapshot<ImageBitmap>?>(null, contact.contactId, safeUri) {
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:51:        value = if (loaded != null && safeUri != null) ContactPhotoSnapshot(contact.contactId, safeUri, loaded) else null
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:56:        val actualPhoto = photo?.forContact(contact.contactId, safeUri)
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:67:fun D1ContactProfileSheet(
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:78:            SentinelCommunicationHeader("Fiche contact · source locale", contact.displayName,
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt:81:                D1ContactAvatar(contact, Modifier.size(88.dp))
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelCommunicationHeader.kt:23:fun SentinelCommunicationHeader(section: String, title: String, description: String, compact: Boolean = false) {

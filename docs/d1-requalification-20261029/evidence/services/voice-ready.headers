@@ -2,7 +2,7 @@ HTTP/1.1 200 OK
 date: Thu, 29 Oct 2026 18:25:00 GMT
 server: envoy
 
-HTTP/2 503 
+HTTP/2 503
 date: Thu, 29 Oct 2026 18:25:01 GMT
 content-type: application/json
 cf-cache-status: DYNAMIC
