@@ -13,7 +13,8 @@ facultatif**, plutôt qu’un inventaire limité aux observations du téléphone
 Les écrans du build installé fonctionnent et affichent des résultats réels ;
 le bouton Scanner recouvre des informations et doit être repositionné.
 
-Le nom commercial et le modèle de la box ne sont pas connus. Le nom d’un SSID
+L’utilisateur a confirmé une box Orange après validation de la conception.
+Le modèle exact de Livebox et sa version ne sont pas encore connus. Le nom d’un SSID
 observé ne suffit pas à identifier le matériel. Aucun identifiant ou mot de
 passe ne doit être demandé avant de savoir qu’un connecteur compatible existe.
 
