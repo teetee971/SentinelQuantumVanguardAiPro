@@ -89,6 +89,7 @@ import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
+import com.sentinel.quantum.security.CallHistoryReadState
 import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
@@ -579,9 +580,10 @@ class SentinelDialerActivity : ComponentActivity() {
                 ) }
                 var showContacts by remember { mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) }
                 var showRecents by remember { mutableStateOf(false) }
-                var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
+                var recentState by remember { mutableStateOf(CallHistoryReadState()) }
+                val recentItems = recentState.entries
                 var recentVisibleLimit by remember { mutableStateOf(CALL_HISTORY_PAGE_SIZE) }
-                var recentLoading by remember { mutableStateOf(false) }
+                val recentLoading = recentState.loading
                 val recentSummary = remember(recentItems) {
                     CallHistoryInsights.summarize(recentItems)
                 }
@@ -602,6 +604,10 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactPhotoRefreshGeneration by remember { mutableStateOf(0) }
                 DisposableEffect(context) {
                     val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_PAUSE) {
+                            // Settings may revoke and regrant access before the next ON_RESUME.
+                            recentState = recentState.withAccess(false, false, resumed = false)
+                        }
                         if (event == Lifecycle.Event.ON_RESUME) {
                             contactsPermissionGranted = ContextCompat.checkSelfPermission(
                                 context, Manifest.permission.READ_CONTACTS
@@ -612,6 +618,10 @@ class SentinelDialerActivity : ComponentActivity() {
                             phoneStatePermissionGranted = ContextCompat.checkSelfPermission(
                                 context, Manifest.permission.READ_PHONE_STATE
                             ) == PackageManager.PERMISSION_GRANTED
+                            recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
                             callLineRefreshEpoch++
                             resumeEpoch++
                             contactPhotoRefreshGeneration++
@@ -619,6 +629,12 @@ class SentinelDialerActivity : ComponentActivity() {
                     }
                     context.lifecycle.addObserver(observer)
                     onDispose { context.lifecycle.removeObserver(observer) }
+                }
+                LaunchedEffect(callLogPermissionGranted) {
+                    recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
                 }
                 LaunchedEffect(contactsPermissionGranted) {
                     if (!contactsPermissionGranted) {
@@ -632,6 +648,10 @@ class SentinelDialerActivity : ComponentActivity() {
                             contactsPermissionGranted = snapshot.diagnostics.contactsPermission
                             callLogPermissionGranted = snapshot.diagnostics.callLogPermission
                             phoneStatePermissionGranted = snapshot.diagnostics.phoneStatePermission
+                            recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
                             callLineRefreshEpoch++
                             resumeEpoch++
                         }
@@ -651,17 +671,26 @@ class SentinelDialerActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
 
                 fun refreshRecents() {
-                    if (recentLoading || !holdsDialerRole() || !callLogPermissionGranted) return
-                    recentLoading = true
+                    recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
+                    if (!recentState.allowed || recentState.loading) return
+                    recentState = recentState.beginRead()
+                    val readGeneration = recentState.generation
                     scope.launch {
                         val loaded = withContext(Dispatchers.IO) {
                             callLog.recent(CALL_HISTORY_LOAD_LIMIT)
                         }
-                        recentItems = loaded
-                        recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
-                        showRecents = true
-                        showContacts = false
-                        recentLoading = false
+                        val canReadNow = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && callLog.canRead()
+                        val acceptsResult = canReadNow && recentState.allowed &&
+                            recentState.loading && recentState.generation == readGeneration
+                        recentState = recentState.complete(readGeneration, loaded, canReadNow)
+                        if (acceptsResult) {
+                            recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
+                            showRecents = true
+                            showContacts = false
+                        }
                     }
                 }
 
@@ -1342,13 +1371,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        if (phoneTab == 1 && !callLogPermissionGranted) {
-                            Text("Autorisez l’historique des appels pour afficher les récents.", style = MaterialTheme.typography.bodyMedium)
+                        if (phoneTab == 1 && !recentState.allowed) {
+                            Text(
+                                if (!holdsDialerRole()) "Choisissez Sentinel comme application Téléphone pour afficher les récents."
+                                else "Autorisez l’historique des appels pour afficher les récents.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                         if (phoneTab == 2 && !contactsPermissionGranted) {
                             Text("Autorisez les contacts pour ouvrir votre carnet local.", style = MaterialTheme.typography.bodyMedium)
                         }
-                        if (phoneTab == 1 && recentLoading) {
+                        if (phoneTab == 1 && recentState.allowed && recentLoading) {
                             LinearProgressIndicator(Modifier.fillMaxWidth())
                             Text(
                                 "Lecture de l’historique Android…",
@@ -1357,7 +1390,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (phoneTab == 1 && callLogPermissionGranted) {
+                        if (phoneTab == 1 && recentState.allowed) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(18.dp),
