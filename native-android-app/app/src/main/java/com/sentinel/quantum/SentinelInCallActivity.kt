@@ -314,7 +314,6 @@ private fun InCallScreen(
                     snapshot.state != Call.STATE_RINGING -> {
                         if (showAudioRoutes) AudioRoutePanel(snapshot)
                         if (showDialpad && snapshot.state == Call.STATE_ACTIVE) DialpadPanel(snapshot)
-                        ConferencePanel(snapshot)
                     }
                 }
 
@@ -663,30 +662,6 @@ private fun DialpadPanel(snapshot: SentinelInCallService.CallSnapshot) {
         ) {
             Text("Clavier", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             DtmfPad(snapshot.id)
-        }
-    }
-}
-
-@Composable
-private fun ConferencePanel(snapshot: SentinelInCallService.CallSnapshot) {
-    if (!snapshot.canMergeConference && !snapshot.canSwapConference) return
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Conférence", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            if (snapshot.canMergeConference) {
-                OutlinedButton(onClick = { SentinelInCallService.mergeConference(snapshot.id) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Fusionner les appels")
-                }
-            }
-            if (snapshot.canSwapConference) {
-                OutlinedButton(onClick = { SentinelInCallService.swapConference(snapshot.id) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Permuter les appels")
-                }
-            }
         }
     }
 }

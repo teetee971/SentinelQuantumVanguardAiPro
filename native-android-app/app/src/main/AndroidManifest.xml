@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- No camera or screen-sharing path exists in the V1 Android UI. Do not inherit
+         these unused sensitive capabilities from the audio transport dependency. -->
+    <uses-permission android:name="android.permission.CAMERA" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Keeps the screen off near the ear during an active Sentinel-managed call. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -73,6 +78,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SentinelQuantum"
         android:usesCleartextTraffic="false">
+
+        <service android:name="io.livekit.android.room.track.screencapture.ScreenCaptureService"
+            tools:node="remove" />
 
         <service
             android:name=".security.SentinelCallScreeningService"

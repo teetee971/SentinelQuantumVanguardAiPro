@@ -14,7 +14,7 @@ CLASSPATH="$JUNIT_JAR:$HAMCREST_JAR"
 for jar in "$GRADLE_LIB_DIR"/*.jar; do CLASSPATH="$CLASSPATH:$jar"; done
 sources=("$MAIN/PhoneCoreRoleRequestPolicy.kt" "$TEST/PhoneCoreRoleRequestPolicyTest.kt")
 classes=(com.sentinel.quantum.PhoneCoreRoleRequestPolicyTest)
-for name in IncomingCallAlertPolicy InCallAudioRequestGate InCallEvidenceTracker DtmfTonePlayer InCallSessionRegistry InCallDirectionPolicy InCallTruthPolicy InCallAudioUiPolicy InCallPresencePolicy PhoneCorePhysicalValidation PhoneCoreCertificationProvenance PhonePrivateTimeline; do
+for name in NotificationPermissionRaceGuard IncomingCallAlertPolicy InCallAudioRequestGate InCallEvidenceTracker DtmfTonePlayer InCallSessionRegistry InCallDirectionPolicy InCallTruthPolicy InCallAudioUiPolicy InCallPresencePolicy PhoneCorePhysicalValidation PhoneCoreCertificationProvenance PhonePrivateTimeline; do
     sources+=("$MAIN/security/$name.kt" "$TEST/security/${name}Test.kt")
     classes+=("com.sentinel.quantum.security.${name}Test")
 done
