@@ -38,9 +38,8 @@ gradle = ([os.environ['GRADLE_EXECUTABLE']] if os.environ.get('GRADLE_EXECUTABLE
           ['bash', str(ROOT / 'native-android-app/gradlew')])
 source_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
 # Require source/config changes to be committed; allow delivery documents and untracked Room output.
-dirty = subprocess.check_output(['git', 'status', '--porcelain', '--',
-    'native-android-app/app/src', 'native-android-app/app/build.gradle', 'native-android-app/build.gradle'], text=True)
-assert not dirty, 'Commit production and test sources before recording build provenance'
+from phone_core_source_provenance import dirty_build_inputs
+assert not dirty_build_inputs(ROOT), 'Commit all Android modules, build configuration and qualification tools before building'
 run('java-version', [jdk / 'bin/java', '-version'])
 run('gradle-build', gradle + ['-p', 'native-android-app', ':app:compileDebugKotlin',
     ':app:testDebugUnitTest', ':app:assembleDebug', ':app:assembleDebugAndroidTest',
