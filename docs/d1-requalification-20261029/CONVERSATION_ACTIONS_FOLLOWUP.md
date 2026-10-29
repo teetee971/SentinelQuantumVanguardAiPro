@@ -1,3 +1,5 @@
+> Candidat historique d7fce52a. Livraison actuelle : [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md).
+
 # Livraison courante D.1 — actions sur le numéro affiché
 
 ## Provenance et référence

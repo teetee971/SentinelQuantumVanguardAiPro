@@ -28,3 +28,7 @@ La limitation de rotation décrite dans la section historique précédente est t
 ## Itération actions de conversation
 
 Appeler ce numéro et Ajouter aux contacts sont implémentés dans l’en-tête d’une conversation ouverte (sources d7fce52a). Ils ouvrent seulement un composeur prérempli ou l’éditeur Android ; application cible indisponible signalée explicitement. Ouverture réelle sur S24+, Contacts Samsung, grands caractères, TalkBack et comparaison R02 restent NON TESTÉS. L’adresse affichée n’est pas une preuve d’identité, de joignabilité ni d’exhaustivité des participants d’un MMS de groupe.
+
+## Itération relecture de fiche Contacts
+
+Sources 067f0f68 : fiche réconciliée avec le carnet rechargé, fermeture si contact absent ou accès refusé/indisponible ; résultat tardif rejeté si permission révoquée. Quatre tests JVM et suite complète réussis. Fournisseur Contacts Samsung, modification/suppression et révocations sur S24+ NON TESTÉS. Voir CONTACT_PROFILE_FOLLOWUP.md.
