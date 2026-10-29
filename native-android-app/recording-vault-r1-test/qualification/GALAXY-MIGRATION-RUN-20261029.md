@@ -130,3 +130,11 @@ recalculée indépendamment et le contenu brut n’a pas été vérifié. Conser
 transmettre cette archive pour compléter la revue, sans effacer de données Android,
 la clé ou le verrou global. Une campagne de redémarrage sur une nouvelle fixture
 a ensuite réussi selon les captures utilisateur ; voir le compte rendu distinct.
+
+## Mise à jour après réception des preuves
+
+Le 2026-10-29, Codex a reçu l’archive finale, recalculé ses empreintes et
+contrôlé directement les journaux avec le vérificateur du dépôt. Les résultats
+transmis sont confirmés. Les mentions antérieures de fichiers non reçus
+décrivent l’état avant réception et sont désormais levées. Voir
+[le contrôle détaillé et les empreintes](FINAL-HANDOFF.md#contrôle-indépendant-des-archives-reçues--2026-10-29).

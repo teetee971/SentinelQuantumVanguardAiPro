@@ -71,3 +71,11 @@ le cleanup applicatif ne supprime pas ce répertoire de preuves Termux.
 
 Les six alertes Dependabot restent NON VÉRIFIÉES (HTTP403). Aucun changement de
 code, dépendance, branche source, main ou état de fusion n'est lié à ce constat.
+
+## Mise à jour après réception des preuves
+
+Le 2026-10-29, Codex a reçu l’archive finale, recalculé ses empreintes et
+contrôlé directement les journaux avec le vérificateur du dépôt. Les résultats
+transmis sont confirmés. Les mentions antérieures de fichiers non reçus
+décrivent l’état avant réception et sont désormais levées. Voir
+[le contrôle détaillé et les empreintes](FINAL-HANDOFF.md#contrôle-indépendant-des-archives-reçues--2026-10-29).
