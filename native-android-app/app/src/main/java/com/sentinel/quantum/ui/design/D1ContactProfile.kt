@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.sentinel.quantum.data.BoundedInputReader
 import com.sentinel.quantum.security.ContactPhotoPolicy
+import com.sentinel.quantum.security.ContactPhotoSnapshot
 import com.sentinel.quantum.security.LocalContactLookup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,8 +33,8 @@ import kotlinx.coroutines.withContext
 fun D1ContactAvatar(contact: LocalContactLookup.Contact, modifier: Modifier = Modifier) {
     val context = LocalContext.current.applicationContext
     val safeUri = ContactPhotoPolicy.localUri(contact.photoUri)
-    val photo by produceState<ImageBitmap?>(null, safeUri) {
-        value = withContext(Dispatchers.IO) {
+    val photo by produceState<ContactPhotoSnapshot<ImageBitmap>?>(null, contact.contactId, safeUri) {
+        val loaded = withContext(Dispatchers.IO) {
             if (safeUri == null || ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) null
             else runCatching {
                 val bytes = context.contentResolver.openInputStream(Uri.parse(safeUri))?.use {
@@ -47,9 +48,12 @@ fun D1ContactAvatar(contact: LocalContactLookup.Contact, modifier: Modifier = Mo
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)?.asImageBitmap()
             }.getOrNull()
         }
+        value = if (loaded != null && safeUri != null) ContactPhotoSnapshot(contact.contactId, safeUri, loaded) else null
     }
     Surface(modifier.clip(CircleShape), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
-        val actualPhoto = photo
+        // produceState retains its previous value until the new producer runs.
+        // Reject that value synchronously when a list slot changes identity or photo URI.
+        val actualPhoto = photo?.forContact(contact.contactId, safeUri)
         if (actualPhoto != null) Image(actualPhoto, contentDescription = null, contentScale = ContentScale.Crop)
         else Box(contentAlignment = Alignment.Center) {
             Text(contact.displayName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?",
