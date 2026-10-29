@@ -1,0 +1,9 @@
+test_adb_failure_with_ok_footer (__main__.RunnerFailureTests.test_adb_failure_with_ok_footer) ... ok
+test_incomplete_test_count (__main__.RunnerFailureTests.test_incomplete_test_count) ... ok
+test_skipped_test_with_ok_footer (__main__.RunnerFailureTests.test_skipped_test_with_ok_footer) ... ok
+test_zero_exit_instrumentation_failure (__main__.RunnerFailureTests.test_zero_exit_instrumentation_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.684s
+
+OK

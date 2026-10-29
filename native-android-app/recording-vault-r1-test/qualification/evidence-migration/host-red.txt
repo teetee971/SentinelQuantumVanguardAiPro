@@ -1,0 +1,25 @@
+info: kotlinc-jvm 2.2.21 (JRE 17.0.21+9)
+openjdk version "17.0.21" 2026-10-20
+OpenJDK Runtime Environment Temurin-17.0.21+9 (build 17.0.21+9)
+OpenJDK 64-Bit Server VM Temurin-17.0.21+9 (build 17.0.21+9, mixed mode, sharing)
+PASS HOST dangling destination introduced during encryption is not replaced
+PASS HOST decrypt with missing key must not generate one
+PASS HOST roundtrip duplicate and recreate store
+PASS HOST size boundaries and malformed envelopes
+PASS HOST version IV ciphertext and tag corruption
+PASS HOST characterization: legacy valid ciphertext substitution is ACCEPTED
+PASS HOST temporary residue is ignored and preserved
+PASS HOST symbolic file and directory rejected
+PASS HOST invalid identifiers rejected
+PASS HOST store waits for a lock held by another process
+PASS HOST lock file symlink is rejected without touching its target
+PASS HOST eight real JVM processes cannot overwrite one recording
+FAIL HOST migration keeps V1 and publishes fresh authenticated immutable V2: java.lang.NoSuchMethodException: com.sentinel.quantum.security.RecordingVaultStore.migrate(java.lang.String)
+java.lang.NoSuchMethodException: com.sentinel.quantum.security.RecordingVaultStore.migrate(java.lang.String)
+	at java.base/java.lang.Class.getDeclaredMethod(Class.java:2677)
+	at com.sentinel.quantum.security.HostTestsKt.main$lambda$12(HostTests.kt:187)
+	at com.sentinel.quantum.security.HostTestsKt.main$test(HostTests.kt:34)
+	at com.sentinel.quantum.security.HostTestsKt.main(HostTests.kt:180)
+HOST SUMMARY passed=12 failed=1; Android APIs/KeyStore are simulated, filesystem and AES/GCM are JVM/Linux
+Exception in thread "main" java.lang.IllegalStateException: Check failed.
+	at com.sentinel.quantum.security.HostTestsKt.main(HostTests.kt:201)

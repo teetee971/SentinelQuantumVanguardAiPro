@@ -25,21 +25,35 @@ Aucun résultat Android inventé ; Dependabot NON VÉRIFIÉ HTTP403.
 
 Files: spec, qualification/host/HostTests.kt, qualification/run-host-tests.sh.
 Interface: RecordingVaultStore.migrate(id: String): Boolean ; VaultIo injectable.
-- [ ] Écrire les tests source intacte, nouveau IV, idempotence et downgrade.
-- [ ] Exécuter la version initiale pour constater la migration manquante.
-- [ ] Rendre le lanceur hôte capable de construire le vrai JNI Linux.
+- [x] Écrire les tests source intacte, nouveau IV, idempotence et downgrade.
+- [x] Exécuter la version initiale pour constater la migration manquante.
+- [x] Rendre le lanceur hôte capable de construire le vrai JNI Linux.
 
 ### Task 2: implémentation et reprise
 
 Files: RecordingVaultStore.kt, RecordingVaultCrypto.kt, nouveau VaultIo.kt.
-- [ ] Ajouter domaine marqueur et empreintes, opérations fichier injectables.
-- [ ] Implémenter L/P/R/C, reprise et suppression dans l'ordre de la spec.
-- [ ] Exécuter tests fonctionnels, erreurs IO et mort de processus.
+- [x] Ajouter domaine marqueur et empreintes, opérations fichier injectables.
+- [x] Implémenter L/P/R/C, reprise et suppression dans l'ordre de la spec.
+- [x] Exécuter tests fonctionnels, erreurs IO et mort de processus.
 
 ### Task 3: protocole et preuves
 
 Files: tests androidTest migration, qualification/run-device.sh, test-device-runner.py, documentation.
-- [ ] Tester puis remplacer le comptage fixe par découverte et comparaison des identités.
-- [ ] Ajouter migration réelle au protocole d'interruption et commandes Termux.
-- [ ] Exécuter tests hôte, git diff --check et tentative build Android isolé.
-- [ ] Revue indépendante, corrections, journal des résultats ; commits et PR brouillon.
+- [x] Tester puis remplacer le comptage fixe par découverte et comparaison des identités.
+- [x] Ajouter migration réelle au protocole d'interruption et commandes Termux.
+- [x] Exécuter tests hôte, git diff --check et tentative build Android isolé.
+- [x] Revue indépendante, corrections, journal des résultats ; commits et PR brouillon.
+
+## Résultats et décisions
+
+Implémentation et qualification hôte réalisées ; build Android, lint Android et
+qualification physique BLOQUÉS/NON EXÉCUTÉS, voir le rapport et les preuves dans
+qualification/MIGRATION-QUALIFICATION.md et qualification/evidence-migration/.
+Les cases ci-dessus indiquent des actions effectuées, pas des PASS Android.
+
+Décision de revue : récupérer un save pré-marqueur uniquement par authentification
+du candidat lorsqu’aucune source ni autorité n’existe ; préserver tout candidat
+invalide. Coût : un candidat incomplet reste bloqué jusqu’à une décision explicite.
+Décision de revue : forcer un V2 canonique avant enrôlement, même si les anciens
+producteurs forçaient déjà leurs écritures. Coût : E/S supplémentaires aux lectures
+d’enrôlement. Aucune restriction de durabilité relâchée pour Android.

@@ -1,0 +1,123 @@
+{
+  "utc": "2026-10-29T00:37:37.944902+00:00",
+  "baseline": "601f7baedc4e23337fa6b9a595c05c41b7466f53",
+  "commands": [
+    {
+      "name": "host",
+      "argv": [
+        "bash",
+        "/workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/qualification/run-host-tests.sh"
+      ],
+      "exit_code": 0,
+      "output_file": "host.txt"
+    },
+    {
+      "name": "protocol",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "/workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/qualification",
+        "-p",
+        "test*.py",
+        "-v"
+      ],
+      "exit_code": 5,
+      "output_file": "protocol.txt"
+    },
+    {
+      "name": "shell-syntax",
+      "argv": [
+        "bash",
+        "-n",
+        "/workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/qualification/run-device.sh",
+        "/workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/qualification/run-host-tests.sh"
+      ],
+      "exit_code": 0,
+      "output_file": "shell-syntax.txt"
+    },
+    {
+      "name": "android-offline",
+      "argv": [
+        "/workspace/tooling/gradle-9.8.0/bin/gradle",
+        "--offline",
+        "--no-daemon",
+        "--console=plain",
+        "-p",
+        "/workspace/SentinelQuantumVanguardAiPro/native-android-app/recording-vault-r1-test/qualification/android-build",
+        ":recording-vault-r1-test:assembleDebug",
+        ":recording-vault-r1-test:assembleDebugAndroidTest",
+        ":recording-vault-r1-test:lintDebug"
+      ],
+      "exit_code": 1,
+      "output_file": "android-offline.txt"
+    },
+    {
+      "name": "dependabot",
+      "argv": [
+        "gh",
+        "api",
+        "repos/teetee971/SentinelQuantumVanguardAiPro/dependabot/alerts",
+        "--paginate"
+      ],
+      "exit_code": 1,
+      "output_file": "dependabot.txt"
+    },
+    {
+      "name": "jni-unchanged",
+      "argv": [
+        "git",
+        "diff",
+        "--exit-code",
+        "601f7baedc4e23337fa6b9a595c05c41b7466f53",
+        "--",
+        "native-android-app/recording-vault-r1-test/src/main/cpp",
+        "native-android-app/recording-vault-r1-test/src/main/jniLibs"
+      ],
+      "exit_code": 0,
+      "output_file": "jni-unchanged.txt"
+    },
+    {
+      "name": "diff-check",
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output_file": "diff-check.txt"
+    },
+    {
+      "name": "runner-tests",
+      "argv": [
+        "python3",
+        "native-android-app/recording-vault-r1-test/qualification/test-device-runner.py"
+      ],
+      "exit_code": 0,
+      "output_file": "runner-tests.txt"
+    },
+    {
+      "name": "verifier-tests",
+      "argv": [
+        "python3",
+        "native-android-app/recording-vault-r1-test/qualification/test-instrumentation-verifier.py"
+      ],
+      "exit_code": 0,
+      "output_file": "verifier-tests.txt"
+    },
+    {
+      "name": "host-shell-syntax",
+      "argv": [
+        "bash",
+        "-n",
+        "native-android-app/recording-vault-r1-test/qualification/run-host-tests.sh"
+      ],
+      "exit_code": 0,
+      "output_file": "host-shell-syntax.txt"
+    }
+  ],
+  "implementation_commit": "74c3392d3a19d72e9993afb88f63882a1e07eb0d",
+  "log_format_note": "Trailing spaces normalized in android-offline.txt for git diff --check; command output text otherwise unchanged."
+}
