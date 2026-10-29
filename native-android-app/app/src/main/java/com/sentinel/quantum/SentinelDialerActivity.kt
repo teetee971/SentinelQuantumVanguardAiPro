@@ -81,6 +81,7 @@ import com.sentinel.quantum.security.EmergencyNumberOracle
 import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.ContactProfileSelection
 import com.sentinel.quantum.security.ContactDialNumberPolicy
 import com.sentinel.quantum.security.ContactSearchPolicy
 import com.sentinel.quantum.security.ContactPresentationPolicy
@@ -619,6 +620,12 @@ class SentinelDialerActivity : ComponentActivity() {
                     context.lifecycle.addObserver(observer)
                     onDispose { context.lifecycle.removeObserver(observer) }
                 }
+                LaunchedEffect(contactsPermissionGranted) {
+                    if (!contactsPermissionGranted) {
+                        profileContact = null
+                        contactItems = emptyList()
+                    }
+                }
                 LaunchedEffect(lifecycle) {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                         PhoneCoreLiveRefresh.snapshots(applicationContext).collect { snapshot ->
@@ -667,6 +674,20 @@ class SentinelDialerActivity : ComponentActivity() {
                             contacts.listWithState()
                         }
                         contactsLoading = false
+                        // Permission may have changed while the provider query was running.
+                        val accessGranted = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.READ_CONTACTS
+                        ) == PackageManager.PERMISSION_GRANTED
+                        contactsPermissionGranted = accessGranted
+                        profileContact = ContactProfileSelection.reconcile(
+                            profileContact?.contactId, result, accessGranted
+                        )
+                        if (!accessGranted) {
+                            contactItems = emptyList()
+                            showContacts = false
+                            contactListStatus = "Autorisation Contacts requise."
+                            return@launch
+                        }
                         when (result.state) {
                             LocalContactLookup.ContactAccessState.READY -> {
                                 contactItems = result.contacts
