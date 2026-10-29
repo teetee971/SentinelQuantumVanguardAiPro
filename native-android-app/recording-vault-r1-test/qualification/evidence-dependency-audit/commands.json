@@ -1,0 +1,110 @@
+{
+  "timestamp_utc": "2026-10-29T08:38:33.442549+00:00",
+  "default_branch_snapshot": "935344423b2af2a4a57c58123f2c5c178b46ec03",
+  "scratch_directory": "/workspace/tooling/default-branch-audit",
+  "repository_dependency_files_modified": false,
+  "manifest_snapshots": [
+    {
+      "path": "package.json",
+      "git_blob": "d6461a9f80ee95a4f147ecd7e8254d6936440bb7",
+      "sha256": "7ec0f2d1312f653f47e0bbde486715641bba83508db99a9d5c8e261151e3379d"
+    },
+    {
+      "path": "package-lock.json",
+      "git_blob": "84f0f88776ff4adee18a5542c29fb08975d8d669",
+      "sha256": "9dcd5297edfa5142a98ca9883a7d5d875d426eecbb9cc68383be9e70eb75fdd9"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "npm",
+        "audit",
+        "--package-lock-only",
+        "--ignore-scripts",
+        "--json"
+      ],
+      "cwd": "/workspace/tooling/default-branch-audit",
+      "exit_code": 1,
+      "meaning": "vulnerabilities reported, no audit fix and no install performed",
+      "stdout_file": "npm-audit.json",
+      "stderr_file": "npm-audit-stderr.txt"
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "repos/teetee971/SentinelQuantumVanguardAiPro/dependabot/alerts",
+        "--paginate",
+        "--jq",
+        ".[] | select(.state == \"open\") | {number,dependency,security_advisory:{ghsa_id:.security_advisory.ghsa_id,severity:.security_advisory.severity,summary:.security_advisory.summary},security_vulnerability}"
+      ],
+      "exit_code": 1,
+      "http_status": 403,
+      "meaning": "repository alerts remain unverified"
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "/advisories/GHSA-587h-7wmj-h5pm"
+      ],
+      "exit_code": 0,
+      "selected_response_fields_file": "public-advisories.json"
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "/advisories/GHSA-698v-4r3x-3vcv"
+      ],
+      "exit_code": 0,
+      "selected_response_fields_file": "public-advisories.json"
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "/advisories/GHSA-9jrq-w75r-8gcw"
+      ],
+      "exit_code": 0,
+      "selected_response_fields_file": "public-advisories.json"
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "/advisories/GHSA-r825-w8mm-5pxw"
+      ],
+      "exit_code": 0,
+      "selected_response_fields_file": "public-advisories.json"
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "/advisories/GHSA-rq7h-c2jc-7f22"
+      ],
+      "exit_code": 0,
+      "selected_response_fields_file": "public-advisories.json"
+    },
+    {
+      "argv": [
+        "gh",
+        "api",
+        "/advisories/GHSA-vfpm-58rq-9qcg"
+      ],
+      "exit_code": 0,
+      "selected_response_fields_file": "public-advisories.json"
+    }
+  ],
+  "advisory_counts": {
+    "high": 1,
+    "moderate": 4,
+    "low": 1
+  },
+  "affected_package": "vite",
+  "locked_version": "8.3.1",
+  "first_patched_in_8_3_series": "8.3.3",
+  "github_alert_identity_mapping": "NOT VERIFIED: repository API 403"
+}

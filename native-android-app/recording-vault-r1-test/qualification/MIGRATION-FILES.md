@@ -2,13 +2,15 @@
 
 Base : `601f7baedc4e23337fa6b9a595c05c41b7466f53`.
 C JNI et binaire ARM64 inchangés ; aucun autre module modifié.
-Les poursuites ajoutent qualification hôte du protocole, rapports et preuves.
+Les poursuites ajoutent qualification hôte du protocole, rapports, preuves
+et audit public en lecture seule, sans changer de dépendance.
 Les comptes rendus Galaxy distinguent les transcriptions/captures utilisateur
 des logs bruts non encore reçus.
 État final : [FINAL-HANDOFF.md](FINAL-HANDOFF.md).
 
 - `docs/superpowers/plans/2026-10-29-recording-vault-migration.md`
 - `docs/superpowers/specs/2026-10-29-recording-vault-migration-design.md`
+- `native-android-app/recording-vault-r1-test/qualification/DEPENDENCY-AUDIT.md`
 - `native-android-app/recording-vault-r1-test/qualification/FINAL-HANDOFF.md`
 - `native-android-app/recording-vault-r1-test/qualification/GALAXY-MIGRATION-RUN-20261029.md`
 - `native-android-app/recording-vault-r1-test/qualification/GALAXY-REBOOT-RUN-20261029.md`
@@ -18,6 +20,10 @@ des logs bruts non encore reçus.
 - `native-android-app/recording-vault-r1-test/qualification/MIGRATION-QUALIFICATION.md`
 - `native-android-app/recording-vault-r1-test/qualification/MIGRATION-RESULTS.md`
 - `native-android-app/recording-vault-r1-test/qualification/REBOOT-QUALIFICATION.md`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-dependency-audit/commands.json`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-dependency-audit/npm-audit-stderr.txt`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-dependency-audit/npm-audit.json`
+- `native-android-app/recording-vault-r1-test/qualification/evidence-dependency-audit/public-advisories.json`
 - `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/README.md`
 - `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/adb-devices.txt`
 - `native-android-app/recording-vault-r1-test/qualification/evidence-migration-followup/android-build-offline-verified.txt`

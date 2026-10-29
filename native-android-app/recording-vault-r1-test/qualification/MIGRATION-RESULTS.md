@@ -30,6 +30,7 @@ et la PR brouillon. Aucune fusion demandée ou effectuée.
 | Reconstruction --offline --rerun-tasks, mêmes APK + lintDebug + testDebugUnitTest | **code 0**, 78 tâches exécutées ; testDebugUnitTest est **NO-SOURCE**, aucun test supplémentaire exécuté par cette tâche |
 | lintDebug | **code 0 : 0 erreur, 2 avertissements** (OldTargetApi, MissingApplicationIcon) |
 | apksigner verify pour les deux APK | codes 0 ; signatures debug cloud, compatibilité avec la clé Galaxy **non vérifiée** |
+| Audit public indépendant du lockfile frontend de main au SHA 93534442 | npm audit retour 1 : 1 paquet vulnérable (Vite 8.3.1), six avis publics (1 élevé, 4 modérés, 1 faible), six fiches GHSA consultées ; aucun correctif appliqué |
 | API Dependabot | code 1, HTTP403 Resource not accessible by integration ; **NON VÉRIFIÉ** |
 | Galaxy S24+ SM-S926B, API36, AndroidKeyStore réel, JNI ARM64 et force-stop | **EXÉCUTÉS PAR L’UTILISATEUR** : 38 tests vérifiés, phases write/verify/cleanup et 3 points de migration terminés ; transcription reçue, archive brute à collecter |
 | Niveau de clé transmis par l’utilisateur | KeyInfo : **TRUSTED_ENVIRONMENT (TEE), 256 bits, USER_AUTH_REQUIRED=false** ; pas d’attestation indépendante ni de garantie StrongBox |
@@ -118,5 +119,9 @@ blocage, jamais une raison de vider les données ou de déclarer PASS.
 
 Les six alertes Dependabot restent **NON VÉRIFIÉES (HTTP403)**. Aucun changement
 de dépendance, Room, application principale, transport ou autre module.
+
+Analyse bornée du lien avec Recording Vault et preuves :
+[DEPENDENCY-AUDIT.md](DEPENDENCY-AUDIT.md). Cet audit public ne confirme ni
+l’identité ni la résolution des alertes propres au dépôt.
 
 Liste exhaustive des fichiers livrés : [MIGRATION-FILES.md](MIGRATION-FILES.md).
