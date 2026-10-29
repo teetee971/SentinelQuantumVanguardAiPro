@@ -18,6 +18,7 @@ et la PR brouillon. Aucune fusion demandée ou effectuée.
 | run-host-tests.sh, Kotlin 2.2.21, Temurin JDK17.0.21 | code 0, **72 réussis, 0 échoué** |
 | test-device-runner.py | code 0, **4 réussis, 0 échoué**, ADB simulé |
 | test-instrumentation-verifier.py | code 0, **8 réussis, 0 échoué**, traces synthétiques |
+| test-device-protocol.py | code 0, **3 réussis, 0 échoué** ; protocole complet contre ADB simulé, 27 identités fictives, interruptions et arrêt sur échec vérifiés |
 | bash -n run-device.sh et run-host-tests.sh (invocations séparées) | codes 0 |
 | git diff --check | code 0 ; contrôle des changements indexés également effectué avant commits |
 | Comparaison du C JNI et du binaire ARM64 avec la base | code 0, inchangés |
@@ -34,6 +35,12 @@ Les échecs initiaux sont conservés comme historique, pas comme état final du 
 Sorties complètes dans ce même répertoire. Les commandes contiennent les chemins
 réels de l'environnement Codex ; les commandes portables pour le Galaxy figurent
 dans [MIGRATION-QUALIFICATION.md](MIGRATION-QUALIFICATION.md).
+
+Bilan Python actuel : **15 tests réussis**, dont les 3 tests du protocole complet
+contre ADB simulé. Les identités fictives de ces simulations ne sont jamais
+comptées comme tests Android réussis. La tentative de connexion ADB à l’adresse
+LAN fournie a été refusée ; aucune association ou installation sur le téléphone
+n’a eu lieu. Un relais ou accès réseau privé reste nécessaire.
 
 Les tests hôte exécutent le vrai code Store/Crypto, AES-GCM JVM et le vrai JNI
 Linux construit depuis le C inchangé. AndroidKeyStore est simulé. Les fautes

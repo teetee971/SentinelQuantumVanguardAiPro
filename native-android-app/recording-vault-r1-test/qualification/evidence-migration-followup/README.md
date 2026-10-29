@@ -23,8 +23,11 @@ sdkmanager a installé les métadonnées correctes, puis le build a réussi.
 online réussi exécute 76 tâches ; la reconstruction `--offline --rerun-tasks`
 exécute 78 tâches, dont Kotlin principal et instrumenté, les deux APK et lint.
 `testDebugUnitTest` est NO-SOURCE : ne compter aucun test de cette tâche.
-Les 72 tests Kotlin hôte et 12 Python précédents restent les seuls tests exécutés ;
-leur code n'a pas changé et les preuves initiales sont conservées.
+Les 72 tests Kotlin hôte précédents restent valides sur le code applicatif
+inchangé. Les 12 tests Python initiaux et 3 nouveaux tests de protocole complet
+ont été exécutés, soit 15 tests Python réussis ; leurs sorties et codes figurent
+dans commands.json. Les phases et identités ADB simulées ne sont jamais comptées
+comme tests Android réels.
 
 Résultat lint : 0 erreur, 2 avertissements existants de configuration : cible API36
 et icône absente du module de test. Le compilateur signale aussi la dépréciation
@@ -45,3 +48,18 @@ AndroidKeyStore réel, redémarrage et comportement Galaxy : NON EXÉCUTÉS.
 Le graphe de dépendances du seul module est exporté pour faciliter l'audit futur.
 Il ne remplace pas les six alertes Dependabot inaccessibles : NON VÉRIFIÉES,
 HTTP403, aucun avis d'absence ou de résolution.
+
+## Qualification complète du lanceur, strictement simulée
+
+Le nouveau test-device-protocol.py exécute réellement le script Bash avec un
+client ADB fictif : parcours complet, 27 identités découvertes puis vérifiées,
+les trois points de migration interrompus, installations -r -t uniquement,
+rejet d’une identité substituée à nombre égal, et absence de cleanup ou de
+phases ultérieures après vérification en échec. Les trois scénarios passent.
+Les processus clients simulés sont confinés à un groupe de processus de test,
+terminé explicitement même en cas de timeout. Aucun appareil n’est contacté.
+
+La connexion directe ADB au point LAN indiqué par l’utilisateur a été tentée :
+Connection refused, liste de périphériques vide ; aucun appareil qualifié.
+Le cloud ne dispose pas de VPN configuré vers le LAN. L’adresse privée est omise
+de ce rapport public ; aucune suppression ni installation Android n’a eu lieu.

@@ -112,6 +112,33 @@
       ],
       "exit_code": 0,
       "output": "jni-unchanged.txt"
+    },
+    {
+      "argv": [
+        "python3",
+        "native-android-app/recording-vault-r1-test/qualification/test-device-runner.py"
+      ],
+      "exit_code": 0,
+      "output": "runner-tests-current.txt",
+      "scope": "host simulation, no Android execution"
+    },
+    {
+      "argv": [
+        "python3",
+        "native-android-app/recording-vault-r1-test/qualification/test-instrumentation-verifier.py"
+      ],
+      "exit_code": 0,
+      "output": "verifier-tests-current.txt",
+      "scope": "host simulation, no Android execution"
+    },
+    {
+      "argv": [
+        "python3",
+        "native-android-app/recording-vault-r1-test/qualification/test-device-protocol.py"
+      ],
+      "exit_code": 0,
+      "output": "complete-protocol-tests.txt",
+      "scope": "host simulation, no Android execution"
     }
   ],
   "output_format_note": "Trailing empty lines normalized in adb-devices.txt for git diff --check; no device entries removed."

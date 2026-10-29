@@ -52,6 +52,7 @@ export KOTLINC=/chemin/vers/kotlinc/bin/kotlinc
 bash native-android-app/recording-vault-r1-test/qualification/run-host-tests.sh
 PYTHONDONTWRITEBYTECODE=1 python3 native-android-app/recording-vault-r1-test/qualification/test-device-runner.py
 PYTHONDONTWRITEBYTECODE=1 python3 native-android-app/recording-vault-r1-test/qualification/test-instrumentation-verifier.py
+PYTHONDONTWRITEBYTECODE=1 python3 native-android-app/recording-vault-r1-test/qualification/test-device-protocol.py
 ```
 
 Le lanceur construit le vrai JNI pour Linux hôte dans un dossier temporaire.

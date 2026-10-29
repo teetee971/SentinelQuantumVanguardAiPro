@@ -1,0 +1,8 @@
+test_complete_simulated_protocol_exercises_all_points_without_fixed_count (__main__.CompleteProtocolTests.test_complete_simulated_protocol_exercises_all_points_without_fixed_count) ... ok
+test_equal_regression_count_with_wrong_identity_stops_before_data_phases (__main__.CompleteProtocolTests.test_equal_regression_count_with_wrong_identity_stops_before_data_phases) ... ok
+test_failed_verification_never_runs_cleanup_or_later_points (__main__.CompleteProtocolTests.test_failed_verification_never_runs_cleanup_or_later_points) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 5.173s
+
+OK
