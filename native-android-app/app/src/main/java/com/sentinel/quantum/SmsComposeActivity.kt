@@ -72,6 +72,8 @@ import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsCallbackProgress
 import com.sentinel.quantum.security.SmsCallbackFeedback
 import com.sentinel.quantum.security.SmsTimestampOrder
+import com.sentinel.quantum.security.SmsConversationSnapshot
+import com.sentinel.quantum.security.SmsConversationRecipient
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsProviderMessageState
 import com.sentinel.quantum.security.SmsLinkAnalyzer
@@ -258,11 +260,13 @@ class SmsComposeActivity : ComponentActivity() {
                 var selectedThreadId by rememberSaveable { mutableStateOf<Long?>(null) }
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
-                var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
+                var threadSnapshot by remember { mutableStateOf(SmsConversationSnapshot()) }
+                val threadMessages = threadSnapshot.messagesFor(selectedThreadId.takeUnless { showComposer })
                 fun returnToConversations() {
                     showComposer = false
                     selectedThreadId = null
-                    threadMessages = emptyList()
+                    threadSnapshot = SmsConversationSnapshot()
+                    pendingDeleteMessage = null
                     conversationsSectionExpanded = true
                 }
                 val backAction = SmsNavigationPolicy.backAction(
@@ -410,7 +414,7 @@ class SmsComposeActivity : ComponentActivity() {
                             (threadId?.let { conversations.messagesForThread(it, 100) } ?: emptyList())
                     }
                     threads = refreshed.first
-                    threadMessages = refreshed.second
+                    threadSnapshot = SmsConversationSnapshot(threadId, refreshed.second)
                 }
                 LaunchedEffect(selectedThreadId, threadMessages.lastOrNull()?.id) {
                     if (selectedThreadId != null && threadMessages.isNotEmpty()) {
@@ -435,11 +439,6 @@ class SmsComposeActivity : ComponentActivity() {
                             status = SmsCallbackFeedback.message(it, providerPersistenceFailed)
                         }
                         providerEpoch++
-                        selectedThreadId?.let { threadId ->
-                            threadMessages = withContext(Dispatchers.IO) {
-                                conversations.messagesForThread(threadId, 100)
-                            }
-                        }
                     }
                 }
 
@@ -453,8 +452,7 @@ class SmsComposeActivity : ComponentActivity() {
                     },
                     bottomBar = {
                         val threadId = selectedThreadId
-                        val replyAddress = threads.firstOrNull { it.threadId == threadId }?.address
-                            ?: threadMessages.lastOrNull()?.address.orEmpty()
+                        val replyAddress = SmsConversationRecipient.forThread(threadId, threads)
                         val replyVisible = !showComposer && threadId != null
                         if (status != null || replyVisible) {
                             Surface(tonalElevation = 4.dp) {
@@ -534,7 +532,7 @@ class SmsComposeActivity : ComponentActivity() {
                             compact = true
                         ) {
                             if (!showComposer && selectedThreadId != null) {
-                                val displayedAddress = threads.firstOrNull { it.threadId == selectedThreadId }?.address.orEmpty()
+                                val displayedAddress = SmsConversationRecipient.forThread(selectedThreadId, threads)
                                 com.sentinel.quantum.ui.design.ConversationNumberActions(
                                     address = displayedAddress,
                                     onDial = { number ->
@@ -560,7 +558,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 if (!showComposer) {
                                     composerFromConversations = true
                                     selectedThreadId = null
-                                    threadMessages = emptyList()
+                                    threadSnapshot = SmsConversationSnapshot()
                                     showComposer = true
                                 }
                             }, text = { Text("Écrire") })
@@ -1025,7 +1023,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                 else null,
                                                 onOpen = {
                                                     selectedThreadId = thread.threadId
-                                                    threadMessages = emptyList()
+                                                    threadSnapshot = SmsConversationSnapshot()
                                                 },
                                                 onWhatsApp = {
                                                     val uri = WhatsAppClickToChat.uriFor(thread.address)
@@ -1069,16 +1067,14 @@ class SmsComposeActivity : ComponentActivity() {
                                                         onClick = {
                                                             pendingDeleteThread = null
                                                             ioScope.launch {
-                                                                val result = withContext(Dispatchers.IO) {
-                                                                    val deleted = conversations.deleteThread(pending.threadId)
-                                                                    deleted to if (deleted > 0) conversations.recentThreads(50) else emptyList()
+                                                                val deleted = withContext(Dispatchers.IO) {
+                                                                    conversations.deleteThread(pending.threadId)
                                                                 }
-                                                                val (deleted, refreshedThreads) = result
                                                                 if (deleted > 0) {
-                                                                    threads = refreshedThreads
+                                                                    providerEpoch++
                                                                     if (selectedThreadId == pending.threadId) {
                                                                         selectedThreadId = null
-                                                                        threadMessages = emptyList()
+                                                                        threadSnapshot = SmsConversationSnapshot()
                                                                     }
                                                                     status = "Conversation supprimée · $deleted message(s)"
                                                                 } else {
@@ -1101,8 +1097,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     ) {
                                         Text("Retour aux conversations")
                                     }
-                                    val replyAddress = threads.firstOrNull { it.threadId == selectedThreadId }?.address
-                                        ?: threadMessages.lastOrNull()?.address.orEmpty()
+                                    val replyAddress = SmsConversationRecipient.forThread(selectedThreadId, threads)
                                     Text(replyAddress.ifBlank { "Conversation" }, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                     if (threadMessages.isEmpty()) {
                                         Text(
@@ -1183,7 +1178,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         }
                                     }
                                 }
-                                pendingDeleteMessage?.let { pending ->
+                                pendingDeleteMessage?.takeIf { it.threadId == selectedThreadId }?.let { pending ->
                                     Card(
                                         Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(18.dp),
@@ -1202,23 +1197,11 @@ class SmsComposeActivity : ComponentActivity() {
                                                 Button(onClick = {
                                                     pendingDeleteMessage = null
                                                     ioScope.launch {
-                                                        val threadId = selectedThreadId
-                                                        val result = withContext(Dispatchers.IO) {
-                                                            val deleted = conversations.deleteMessage(pending.id)
-                                                            val refreshedMessages = if (deleted && threadId != null) {
-                                                                conversations.messagesForThread(threadId, 100)
-                                                            } else emptyList()
-                                                            val refreshedThreads = if (deleted) {
-                                                                conversations.recentThreads(50)
-                                                            } else emptyList()
-                                                            Triple(deleted, refreshedMessages, refreshedThreads)
+                                                        val deleted = withContext(Dispatchers.IO) {
+                                                            conversations.deleteMessage(pending.id)
                                                         }
-                                                        val (deleted, refreshedMessages, refreshedThreads) = result
                                                         if (deleted) {
-                                                            if (threadId != null && selectedThreadId == threadId) {
-                                                                threadMessages = refreshedMessages
-                                                            }
-                                                            threads = refreshedThreads
+                                                            providerEpoch++
                                                             status = "Message supprimé"
                                                         } else {
                                                             status = "Suppression refusée ou impossible"
