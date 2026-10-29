@@ -36,3 +36,7 @@ Sources 067f0f68 : fiche réconciliée avec le carnet rechargé, fermeture si co
 ## Itération accès au journal Android
 
 Sources d5c31b49 : purge des récents et invalidation des lectures à ON_PAUSE ou perte observée de rôle/permission ; nouvelle vérification avant publication et refus des anciennes générations. Sept tests JVM et suite finale réussis. Révocation/réattribution entièrement entre deux échantillons sans pause : non détectable par le mécanisme d’observation conservé. Aucun test physique exécuté ; voir CALL_HISTORY_ACCESS_FOLLOWUP.md.
+
+## Itération appartenance des messages à leur fil
+
+Sources 4a85b108 : publication centralisée par effet indexé, snapshot limité à son threadId et destinataire provenant du résumé sélectionné uniquement. Six tests JVM et suite complète réussis. Navigation pendant IO, callbacks opérateur, suppressions de fixtures et absence de destinataire sur résumé manquant : NON TESTÉS sur appareil. Voir CONVERSATION_OWNERSHIP_FOLLOWUP.md. Les limitations des autres modules ne sont pas clôturées par cette correction.

@@ -1,18 +1,18 @@
 [
   {
-    "name": "Sentinel-D1-debug-d5c31b49.apk",
-    "path": "/workspace/d1-delivery-call-history-access/Sentinel-D1-debug-d5c31b49.apk",
-    "bytes": 103003495,
-    "sha256": "e7a47ede78164743e3ff2102fed411ebd283ae8ad8b63d4a2aefbf2c90686a3c",
-    "source_commit": "d5c31b49e84901bb62f1be26072c73d36c2f5bb0",
+    "name": "Sentinel-D1-debug-4a85b108.apk",
+    "path": "/workspace/d1-delivery-conversation-ownership/Sentinel-D1-debug-4a85b108.apk",
+    "bytes": 103001738,
+    "sha256": "ef33b81d5b2b9806ddcb2e3643a359cd06abd0235adbd5bf50d1fad1cb130b89",
+    "source_commit": "4a85b10850a350d7b9c9a59e6c5022d79f22429f",
     "configuration": "debug"
   },
   {
-    "name": "Sentinel-D1-androidTest-d5c31b49.apk",
-    "path": "/workspace/d1-delivery-call-history-access/Sentinel-D1-androidTest-d5c31b49.apk",
+    "name": "Sentinel-D1-androidTest-4a85b108.apk",
+    "path": "/workspace/d1-delivery-conversation-ownership/Sentinel-D1-androidTest-4a85b108.apk",
     "bytes": 1188195,
     "sha256": "f0452bb7d7c74db4f4e058cd21189285e7614b0837548294090b6c5628bb7b58",
-    "source_commit": "d5c31b49e84901bb62f1be26072c73d36c2f5bb0",
+    "source_commit": "4a85b10850a350d7b9c9a59e6c5022d79f22429f",
     "configuration": "debug"
   }
 ]

@@ -1,7 +1,7 @@
 # Livraison courante Sentinel D.1
 
-Sources APK **d5c31b49e84901bb62f1be26072c73d36c2f5bb0**. Rapport [CALL_HISTORY_ACCESS_FOLLOWUP.md](CALL_HISTORY_ACCESS_FOLLOWUP.md). [Artefacts, tailles et SHA-256](ARTIFACTS.json).
+Sources APK **4a85b10850a350d7b9c9a59e6c5022d79f22429f**. Rapport [CONVERSATION_OWNERSHIP_FOLLOWUP.md](CONVERSATION_OWNERSHIP_FOLLOWUP.md). [Artefacts, tailles et SHA-256](ARTIFACTS.json).
 
-1 397 tests unitaires Android réussis (302 XML), 0 échec/erreur/ignoré. Kotlin et deux APK réussis, signature/alignement vérifiés. Node : 19 tests du candidat précédent conservés comme historiques, non réexécutés ici. Instrumentation et S24+ NON EXÉCUTÉS/NON TESTÉS. Fidélité graphique D.1 complète NON VALIDÉE.
+1 403 tests unitaires Android réussis, 303 XML, aucun échec/erreur/ignoré. Kotlin et deux APK réussis, signatures/alignement vérifiés. Instrumentation et S24+ NON EXÉCUTÉS/NON TESTÉS. Comparaison visuelle D.1 complète NON VALIDÉE. Node : 19 tests historiques du candidat d7fce52a, non réexécutés ici.
 
-Le cache des récents est désormais lié au rôle Téléphone, à READ_CALL_LOG et au premier plan. Pause/révocation observée invalident les anciennes lectures. Une transition entièrement entre deux échantillons en restant RESUMED peut échapper à l'observation ; voir le rapport. Les correctifs Contacts et Messages précédents sont inclus.
+Chaque snapshot Messages est lié au fil sélectionné ; les callbacks ne publient plus de lectures parallèles. Aucun repli du destinataire vers un ancien message. Les correctifs Contacts et Récents précédents sont conservés, avec leurs limites documentées.

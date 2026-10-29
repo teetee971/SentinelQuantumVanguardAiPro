@@ -1,0 +1,1 @@
+Revue indépendante statique : aucun défaut important dans les trois fichiers. Le callback signale une époque, le LaunchedEffect indexé possède les lectures, les snapshots et destinataires restent liés au fil. Aucune exécution du reviewer. Les événements Compose et la navigation pendant IO suspendue nécessitent encore une validation runtime.

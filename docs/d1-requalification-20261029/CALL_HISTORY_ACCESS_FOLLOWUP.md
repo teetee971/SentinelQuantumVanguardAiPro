@@ -1,3 +1,5 @@
+> Candidat historique d5c31b49. Livraison actuelle : [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md).
+
 # Récents : cache lié au rôle Téléphone et à READ_CALL_LOG
 
 ## Défaut établi dans le code précédent
