@@ -31,7 +31,8 @@ protocole concernent ses fixtures uniques ; aucune purge des V1 existants.
 | Build ARM64 Ubuntu proot | BUILD SUCCESSFUL, 76 tâches exécutées, JDK17.0.20/Gradle9.8 ; journal utilisateur |
 | Suite Galaxy SM-S926B/API36 | **38 tests réellement exécutés et vérifiés**, dont 14 de migration ; journal utilisateur |
 | Phases physiques complémentaires | 3 phases de persistance et 9 setup/verify/cleanup de migration validées ; pas 12 nouveaux cas distincts |
-| Sessions interrompues | 4 interruptions attendues, **jamais comptées comme PASS** |
+| Redémarrage normal après interruption published | **Validé selon captures utilisateur**, run 5c2171ab39644dd8b4f7cb8936760200, compteur 281 → 283, verify et cleanup réussis |
+| Sessions interrompues | 4 dans le premier protocole et 1 avant redémarrage, **jamais comptées comme PASS** |
 | Sécurité de clé | KeyInfo rapporte **TEE, 256 bits, USER_AUTH_REQUIRED=false** ; pas d'attestation indépendante |
 | Git | diff --check réussi ; code/protocole et JNI comparés aux références, sans changement après qualification |
 
@@ -60,7 +61,8 @@ nécessaire pour un changement documentaire seul.
 - [Résultats et journal réel](MIGRATION-RESULTS.md)
 - [Compte rendu physique, APK et provenance](GALAXY-MIGRATION-RUN-20261029.md)
 - [Commandes initiales Termux/proot](MIGRATION-QUALIFICATION.md)
-- [Procédure complète de redémarrage restante](REBOOT-QUALIFICATION.md)
+- [Résultat de redémarrage transmis](GALAXY-REBOOT-RUN-20261029.md)
+- [Procédure de référence de redémarrage](REBOOT-QUALIFICATION.md)
 - [Liste exhaustive des fichiers](MIGRATION-FILES.md)
 - [Commandes hôte initiales](evidence-migration/commands.json)
 - [Commandes de poursuite](evidence-migration-followup/commands.json)
@@ -69,8 +71,7 @@ nécessaire pour un changement documentaire seul.
 
 | Réserve | État exact | Condition pour lever la réserve |
 | --- | --- | --- |
-| Archive Galaxy brute | Créée chez l'utilisateur, non reçue par Codex | Recevoir l'archive et recalculer son SHA-256, puis vérifier logs/identités/commit |
-| Redémarrage complet du téléphone | **NON EXÉCUTÉ / aucun résultat fourni** | Exécuter REBOOT-QUALIFICATION.md et transmettre les journaux |
+| Archives Galaxy brutes | Archive du premier run créée chez l’utilisateur, fichiers de reboot conservés dans Termux ; non reçus par Codex | Recevoir les preuves et recalculer les empreintes, puis vérifier logs/identités/commit |
 | Coupure électrique / vrai disque Android plein | **NON EXÉCUTÉS** | Campagne isolée appropriée ; ne pas provoquer de perte sur le téléphone personnel |
 | Six alertes Dependabot | **NON VÉRIFIÉES, HTTP403** | Accès en lecture ou export des alertes avec GHSA, paquets, versions et manifests ; impact module indéterminé |
 
@@ -78,7 +79,9 @@ Archive annoncée : `vault-migration-c48883da.tar.gz`.
 SHA-256 communiqué :
 `01d1799265059ccbc02a581c612896f18fbb2a7aaf9799d8c5a855273fee03dd`.
 Cette empreinte est enregistrée, **pas vérifiée indépendamment** sans l'archive.
-Ces réserves ne sont ni déclarées réussies, ni abandonnées, ni contournées.
+La réserve du redémarrage normal est levée d’après les captures utilisateur.
+Les réserves encore listées ne sont ni déclarées réussies, ni abandonnées,
+ni contournées.
 
 ## Limites de sécurité permanentes
 

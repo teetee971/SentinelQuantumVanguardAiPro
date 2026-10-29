@@ -3,7 +3,8 @@
 **Tests instrumentés Galaxy : exécutés par l’utilisateur via Termux, selon le
 journal reçu (38 tests et protocole complet). NON EXÉCUTÉS directement par Codex.**
 Voir [compte rendu du run](GALAXY-MIGRATION-RUN-20261029.md) pour la provenance,
-les empreintes APK et les limites ; redémarrage complet restant à qualifier.
+les empreintes APK et les limites. Le [redémarrage normal](GALAXY-REBOOT-RUN-20261029.md)
+a ensuite été validé selon les captures utilisateur (compteur 281 → 283).
 La compilation des deux APK et lint sont désormais validés sur Linux x86_64,
 JDK17/Gradle9.8, y compris --offline après mise en cache ; voir MIGRATION-RESULTS.md. Les résultats
 historiques de 24 tests ne qualifient pas ce changement. Dependabot :
@@ -162,9 +163,9 @@ Une coupure électrique brutale n'est pas couverte. Ne pas remplir le stockage
 personnel du Galaxy : la campagne ENOSPC réelle demande un environnement de test
 isolé et une méthode bornée approuvée séparément.
 
-La procédure restante de redémarrage complet, avec préparation et reprise du
-même run, est disponible dans [REBOOT-QUALIFICATION.md](REBOOT-QUALIFICATION.md).
-Elle est NON EXÉCUTÉE à la livraison.
+La procédure de référence de redémarrage est dans
+[REBOOT-QUALIFICATION.md](REBOOT-QUALIFICATION.md). Le compte rendu distingue
+les contrôles réellement exécutés de cette procédure plus stricte.
 
 ## Risques résiduels / revue
 
@@ -177,8 +178,9 @@ Elle est NON EXÉCUTÉE à la livraison.
 - Après marqueur, perte/corruption du candidat et du final : refus explicite ;
   source conservée pour récupération manuelle, aucun repli automatique.
 - Le protocole transmis exerce fsync Android et AndroidKeyStore réel ; il ne
-  mesure pas la résistance électrique. Mémoire, latence, redémarrage complet et
-  stockage physique restent à qualifier. Aucun succès physique déduit des tests JVM.
+  mesure pas la résistance électrique. Le redémarrage normal est documenté dans
+  une campagne distincte ; mémoire, latence et contraintes de stockage physique
+  restent à qualifier. Aucun succès physique déduit des tests JVM.
 - Revue indépendante effectuée : récupération du nouveau save pré-marqueur,
   fsync avant enrôlement, code terminal d'instrumentation, chemins Android
   canoniques et corruption de tag déterministe corrigés.

@@ -84,7 +84,8 @@ revendiquée pour cette clé.
 ## Limites et vérifications restantes
 
 1. Collecter les logs bruts, `commit.txt`, `expected.json` et leurs empreintes.
-2. Campagne après **redémarrage complet du téléphone : NON EXÉCUTÉE dans ce run**.
+2. Redémarrage absent de ce premier run, puis **validé dans une campagne distincte** :
+   [GALAXY-REBOOT-RUN-20261029.md](GALAXY-REBOOT-RUN-20261029.md).
 3. Coupure d'alimentation, vrai disque Android plein, invalidation matérielle de
    clé : **NON EXÉCUTÉS**. Les injections ENOSPC/EIO ne remplacent pas ces campagnes.
 4. Anti-rollback local limité : la restauration cohérente de tout le stockage
@@ -127,5 +128,5 @@ SHA-256 **communiqué par l’utilisateur** :
 L’archive n’a pas encore été reçue par Codex ; cette empreinte n’a donc pas été
 recalculée indépendamment et le contenu brut n’a pas été vérifié. Conserver et
 transmettre cette archive pour compléter la revue, sans effacer de données Android,
-la clé ou le verrou global. Le test de redémarrage complet reste à effectuer sur
-une nouvelle fixture, distincte du run déjà nettoyé.
+la clé ou le verrou global. Une campagne de redémarrage sur une nouvelle fixture
+a ensuite réussi selon les captures utilisateur ; voir le compte rendu distinct.

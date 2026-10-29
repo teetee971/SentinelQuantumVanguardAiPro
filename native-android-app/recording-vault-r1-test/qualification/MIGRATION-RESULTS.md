@@ -4,7 +4,8 @@ Livraison consolidée et réserves : [FINAL-HANDOFF.md](FINAL-HANDOFF.md).
 
 **Mise à jour : compilation et lint validés sur hôte et build ARM64 transmis ;
 protocole physique Galaxy réussi selon le journal utilisateur (38 tests et
-phases de reprise). Redémarrage complet et coupure électrique NON EXÉCUTÉS.**
+phases de reprise). Redémarrage normal ensuite vérifié par l’utilisateur
+(compteur 281 → 283). Coupure électrique NON EXÉCUTÉE.**
 Provenance détaillée : [GALAXY-MIGRATION-RUN-20261029.md](GALAXY-MIGRATION-RUN-20261029.md).
 
 Branche : `fix/recording-vault-v2-migration-hardening-20261028`.
@@ -33,7 +34,8 @@ et la PR brouillon. Aucune fusion demandée ou effectuée.
 | Galaxy S24+ SM-S926B, API36, AndroidKeyStore réel, JNI ARM64 et force-stop | **EXÉCUTÉS PAR L’UTILISATEUR** : 38 tests vérifiés, phases write/verify/cleanup et 3 points de migration terminés ; transcription reçue, archive brute à collecter |
 | Niveau de clé transmis par l’utilisateur | KeyInfo : **TRUSTED_ENVIRONMENT (TEE), 256 bits, USER_AUTH_REQUIRED=false** ; pas d’attestation indépendante ni de garantie StrongBox |
 | Archive du run Galaxy | SHA-256 communiqué : `01d1799265059ccbc02a581c612896f18fbb2a7aaf9799d8c5a855273fee03dd` ; archive non encore reçue/recalculée par Codex |
-| Redémarrage complet Galaxy et coupure électrique | **NON EXÉCUTÉS** dans le protocole transmis |
+| Redémarrage normal Galaxy après interruption published | **EXÉCUTÉ PAR L’UTILISATEUR**, captures reçues : compteur 281 → 283, verify et cleanup vérifiés, REBOOT_VERIFIED pour le même run |
+| Coupure électrique | **NON EXÉCUTÉE** |
 
 Journal initial : [evidence-migration/commands.json](evidence-migration/commands.json).
 Journal de poursuite et résultats Android : [evidence-migration-followup/commands.json](evidence-migration-followup/commands.json).
@@ -107,8 +109,10 @@ changer de version ni conclure à l’impact des six alertes inaccessibles.
 Le build offline ARM64 et le protocole Galaxy sont désormais documentés par la
 transcription utilisateur : installations -r -t réussies, 38 tests et reprises
 aux trois frontières validés. Le commit, les readiness et le niveau TEE de la clé sont confirmés par les
-extraits transmis ; l’archive brute reste à recevoir et vérifier. Redémarrage
-complet et vérifications de stockage physique restent à effectuer. Aucun résultat de coupure électrique n’est revendiqué.
+extraits transmis ; les archives brutes restent à recevoir et vérifier.
+Le redémarrage normal est ensuite validé d’après les captures utilisateur :
+[compte rendu de reprise](GALAXY-REBOOT-RUN-20261029.md). Les campagnes de coupure
+électrique et de disque Android réellement plein restent NON EXÉCUTÉES.
 Un échec de signature, d'outil ARM64, de dépendance offline ou de fsync est un
 blocage, jamais une raison de vider les données ou de déclarer PASS.
 

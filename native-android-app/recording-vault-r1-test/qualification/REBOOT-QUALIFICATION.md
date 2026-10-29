@@ -1,6 +1,11 @@
-# Qualification après redémarrage complet — NON EXÉCUTÉE
+# Qualification après redémarrage complet — procédure de référence
 
-Procédure restante, pas un résultat PASS. Exécuter dans Termux sur le Galaxy,
+La variante conversationnelle a réussi selon les captures utilisateur :
+[compte rendu](GALAXY-REBOOT-RUN-20261029.md), compteur 281 → 283, verify/cleanup
+réussis. Le contrôle supplémentaire fingerprint avant/après présent ci-dessous
+n’était pas inclus dans cette variante et n’est pas déclaré exécuté.
+
+Cette procédure seule ne constitue pas un résultat PASS. Exécuter dans Termux sur le Galaxy,
 avec les APK déjà qualifiés du commit eea40d4 et la signature existante.
 Aucune réinstallation, suppression globale, suppression de clé ou changement de
 branche nécessaire. Les nouvelles données de test sont distinctes du run réussi.
@@ -95,5 +100,5 @@ processus et l'idempotence du V2. Le cleanup suivant ne supprime que les fixture
 de ce nouveau run. Si verify échoue, set -e empêche cleanup et conserve les preuves.
 Archiver le dossier vault-reboot-published et transmettre ses journaux.
 
-Cette campagne, même réussie, serait une preuve de reprise après redémarrage
+Le succès observé de la variante est une preuve de reprise après redémarrage
 normal, pas de résistance à une coupure électrique ou à un stockage hostile.

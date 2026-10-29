@@ -3,13 +3,15 @@
 Base : `601f7baedc4e23337fa6b9a595c05c41b7466f53`.
 C JNI et binaire ARM64 inchangés ; aucun autre module modifié.
 Les poursuites ajoutent qualification hôte du protocole, rapports et preuves.
-Le compte rendu Galaxy distingue la transcription utilisateur des logs bruts.
+Les comptes rendus Galaxy distinguent les transcriptions/captures utilisateur
+des logs bruts non encore reçus.
 État final : [FINAL-HANDOFF.md](FINAL-HANDOFF.md).
 
 - `docs/superpowers/plans/2026-10-29-recording-vault-migration.md`
 - `docs/superpowers/specs/2026-10-29-recording-vault-migration-design.md`
 - `native-android-app/recording-vault-r1-test/qualification/FINAL-HANDOFF.md`
 - `native-android-app/recording-vault-r1-test/qualification/GALAXY-MIGRATION-RUN-20261029.md`
+- `native-android-app/recording-vault-r1-test/qualification/GALAXY-REBOOT-RUN-20261029.md`
 - `native-android-app/recording-vault-r1-test/qualification/GALAXY-S24-VALIDATION.md`
 - `native-android-app/recording-vault-r1-test/qualification/MIGRATION-AUDIT.md`
 - `native-android-app/recording-vault-r1-test/qualification/MIGRATION-FILES.md`

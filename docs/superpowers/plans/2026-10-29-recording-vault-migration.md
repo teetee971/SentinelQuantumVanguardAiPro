@@ -50,7 +50,9 @@ Implémentation et qualification hôte réalisées ; build Android et lint déso
 réussis sur Linux x86_64, y compris offline après mise en cache.
 Qualification Galaxy via Termux exécutée par l’utilisateur : transcription du
 run c48883da20ff488ba71a09f7b2a57c95 reçue (38 tests et phases complètes).
-Redémarrage complet et coupure électrique NON EXÉCUTÉS, voir le rapport et les preuves dans
+Reprise après redémarrage normal ensuite validée selon captures utilisateur
+(run 5c2171ab39644dd8b4f7cb8936760200, compteur 281 → 283).
+Coupure électrique NON EXÉCUTÉE ; voir le rapport et les preuves dans
 qualification/MIGRATION-QUALIFICATION.md et qualification/evidence-migration/.
 Les cases ci-dessus indiquent des actions effectuées, pas des PASS Android.
 
