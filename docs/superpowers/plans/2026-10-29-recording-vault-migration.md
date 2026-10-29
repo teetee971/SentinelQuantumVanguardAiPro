@@ -48,7 +48,9 @@ Files: tests androidTest migration, qualification/run-device.sh, test-device-run
 
 Implémentation et qualification hôte réalisées ; build Android et lint désormais
 réussis sur Linux x86_64, y compris offline après mise en cache.
-Qualification physique ARM64/Galaxy NON EXÉCUTÉE, voir le rapport et les preuves dans
+Qualification Galaxy via Termux exécutée par l’utilisateur : transcription du
+run c48883da20ff488ba71a09f7b2a57c95 reçue (38 tests et phases complètes).
+Redémarrage complet et coupure électrique NON EXÉCUTÉS, voir le rapport et les preuves dans
 qualification/MIGRATION-QUALIFICATION.md et qualification/evidence-migration/.
 Les cases ci-dessus indiquent des actions effectuées, pas des PASS Android.
 

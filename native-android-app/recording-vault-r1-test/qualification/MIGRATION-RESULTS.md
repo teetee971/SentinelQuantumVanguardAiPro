@@ -1,8 +1,9 @@
 # Résultats réels de la mission — 2026-10-29 UTC
 
-**Mise à jour après poursuite : compilation Android et lint validés, y compris
-hors ligne après mise en cache. Qualification physique NON EXÉCUTÉE ; chantier
-non déclaré qualifié pour production.** Aucun résultat physique n’est inventé.
+**Mise à jour : compilation et lint validés sur hôte et build ARM64 transmis ;
+protocole physique Galaxy réussi selon le journal utilisateur (38 tests et
+phases de reprise). Redémarrage complet et coupure électrique NON EXÉCUTÉS.**
+Provenance détaillée : [GALAXY-MIGRATION-RUN-20261029.md](GALAXY-MIGRATION-RUN-20261029.md).
 
 Branche : `fix/recording-vault-v2-migration-hardening-20261028`.
 Base : `601f7baedc4e23337fa6b9a595c05c41b7466f53`.
@@ -27,7 +28,8 @@ et la PR brouillon. Aucune fusion demandée ou effectuée.
 | lintDebug | **code 0 : 0 erreur, 2 avertissements** (OldTargetApi, MissingApplicationIcon) |
 | apksigner verify pour les deux APK | codes 0 ; signatures debug cloud, compatibilité avec la clé Galaxy **non vérifiée** |
 | API Dependabot | code 1, HTTP403 Resource not accessible by integration ; **NON VÉRIFIÉ** |
-| Galaxy S24+ SM-S926B, API36, AndroidKeyStore réel, JNI Android, force-stop et redémarrage | **NON EXÉCUTÉS**, aucun ADB/appareil disponible |
+| Galaxy S24+ SM-S926B, API36, AndroidKeyStore réel, JNI ARM64 et force-stop | **EXÉCUTÉS PAR L’UTILISATEUR** : 38 tests vérifiés, phases write/verify/cleanup et 3 points de migration terminés ; transcription reçue, archive brute à collecter |
+| Redémarrage complet Galaxy et coupure électrique | **NON EXÉCUTÉS** dans le protocole transmis |
 
 Journal initial : [evidence-migration/commands.json](evidence-migration/commands.json).
 Journal de poursuite et résultats Android : [evidence-migration-followup/commands.json](evidence-migration-followup/commands.json).
@@ -40,7 +42,9 @@ Bilan Python actuel : **15 tests réussis**, dont les 3 tests du protocole compl
 contre ADB simulé. Les identités fictives de ces simulations ne sont jamais
 comptées comme tests Android réussis. La tentative de connexion ADB à l’adresse
 LAN fournie a été refusée ; aucune association ou installation sur le téléphone
-n’a eu lieu. Un relais ou accès réseau privé reste nécessaire.
+n’a eu lieu depuis Codex. L’utilisateur a ensuite exécuté le protocole localement
+dans Termux avec succès selon la transcription reçue ; ce résultat est distinct
+d’une connexion ADB du cloud.
 
 Les tests hôte exécutent le vrai code Store/Crypto, AES-GCM JVM et le vrai JNI
 Linux construit depuis le C inchangé. AndroidKeyStore est simulé. Les fautes
@@ -96,9 +100,11 @@ instrumentés. ADB a été installé : `adb devices -l` ne liste aucun appareil.
 Le rapport des dépendances runtime de debugAndroidTest a été exporté, sans
 changer de version ni conclure à l’impact des six alertes inaccessibles.
 
-Le Galaxy doit encore exécuter le build offline ARM64 avec ses caches/signature
-existants, la suite instrumentée complète, les phases de migration réelles
-interrompues, puis une campagne redémarrage et les vérifications de stockage.
+Le build offline ARM64 et le protocole Galaxy sont désormais documentés par la
+transcription utilisateur : installations -r -t réussies, 38 tests et reprises
+aux trois frontières validés. Les logs bruts et le niveau de sécurité de clé
+restent à collecter ; redémarrage complet et vérifications de stockage physique
+restent à effectuer. Aucun résultat de coupure électrique n’est revendiqué.
 Un échec de signature, d'outil ARM64, de dépendance offline ou de fsync est un
 blocage, jamais une raison de vider les données ou de déclarer PASS.
 

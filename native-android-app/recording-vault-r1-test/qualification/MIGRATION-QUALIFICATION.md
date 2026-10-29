@@ -1,6 +1,9 @@
 # Qualification migration V1 → V2 — 2026-10-29
 
-**Tests instrumentés Android / Galaxy S24+ : NON EXÉCUTÉS par Codex.**
+**Tests instrumentés Galaxy : exécutés par l’utilisateur via Termux, selon le
+journal reçu (38 tests et protocole complet). NON EXÉCUTÉS directement par Codex.**
+Voir [compte rendu du run](GALAXY-MIGRATION-RUN-20261029.md) pour la provenance,
+les empreintes APK et les limites ; redémarrage complet restant à qualifier.
 La compilation des deux APK et lint sont désormais validés sur Linux x86_64,
 JDK17/Gradle9.8, y compris --offline après mise en cache ; voir MIGRATION-RESULTS.md. Les résultats
 historiques de 24 tests ne qualifient pas ce changement. Dependabot :
@@ -59,7 +62,7 @@ Le lanceur construit le vrai JNI pour Linux hôte dans un dossier temporaire.
 AndroidKeyStore reste simulé ; aucun résultat de ces tests n'est un PASS Android.
 Les sorties réellement obtenues sont archivées dans `evidence-migration/`.
 
-## Build Termux + Ubuntu proot ARM64 — NON EXÉCUTÉ
+## Build Termux + Ubuntu proot ARM64 — exécuté par l’utilisateur au commit eea40d4
 
 Réutiliser l'environnement ARM64 qui avait compilé et signé les APK précédents,
 son SDK et ses caches. Ne pas remplacer la clé de signature existante.
@@ -115,7 +118,7 @@ Kotlin embarqué, SDK ou dépendances de tests ne sont pas en cache, le build
 hors ligne est BLOQUÉ. Compatibilité de cet ensemble AGP/JDK17/ARM64 à confirmer
 par ce build, pas à déduire de la compilation JVM.
 
-## Galaxy SM-S926B, Android 16/API36 — NON EXÉCUTÉ
+## Galaxy SM-S926B, Android 16/API36 — protocole exécuté par l’utilisateur
 
 Dans Termux, reprendre l'association ADB sans fil existante (les ports de pairing
 et de connexion sont différents). Ne journaliser aucun code d'association.
@@ -169,8 +172,9 @@ isolé et une méthode bornée approuvée séparément.
   chemins ; NOFOLLOW_LINKS et JNI ne rendent pas ce modèle d'attaque impossible.
 - Après marqueur, perte/corruption du candidat et du final : refus explicite ;
   source conservée pour récupération manuelle, aucun repli automatique.
-- fsync de répertoire Android, AndroidKeyStore réel, mémoire, latence et stockage
-  physique Galaxy restent NON EXÉCUTÉS. Aucun succès physique déduit des tests JVM.
+- Le protocole transmis exerce fsync Android et AndroidKeyStore réel ; il ne
+  mesure pas la résistance électrique. Mémoire, latence, redémarrage complet et
+  stockage physique restent à qualifier. Aucun succès physique déduit des tests JVM.
 - Revue indépendante effectuée : récupération du nouveau save pré-marqueur,
   fsync avant enrôlement, code terminal d'instrumentation, chemins Android
   canoniques et corruption de tag déterministe corrigés.
