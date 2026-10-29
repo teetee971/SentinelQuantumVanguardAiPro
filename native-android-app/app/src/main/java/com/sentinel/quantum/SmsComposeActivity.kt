@@ -532,7 +532,26 @@ class SmsComposeActivity : ComponentActivity() {
                             } ?: "Messages Sentinel",
                             description = activationModel.title,
                             compact = true
-                        )
+                        ) {
+                            if (!showComposer && selectedThreadId != null) {
+                                val displayedAddress = threads.firstOrNull { it.threadId == selectedThreadId }?.address.orEmpty()
+                                com.sentinel.quantum.ui.design.ConversationNumberActions(
+                                    address = displayedAddress,
+                                    onDial = { number ->
+                                        val request = ConversationNumberIntents.dial(this@SmsComposeActivity, number)
+                                        if (request == null) status = "Aucun numéro utilisable. Aucun appel lancé."
+                                        else runCatching { startActivity(request) }
+                                            .onFailure { status = "Impossible d’ouvrir le composeur. Aucun appel lancé." }
+                                    },
+                                    onAddContact = { number ->
+                                        val request = ConversationNumberIntents.contact(number)
+                                        if (request == null) status = "Aucun numéro à ajouter. Aucun contact enregistré."
+                                        else runCatching { startActivity(request) }
+                                            .onFailure { status = "Impossible d’ouvrir l’éditeur Contacts Android. Aucun contact enregistré." }
+                                    }
+                                )
+                            }
+                        }
                         TabRow(selectedTabIndex = if (showComposer) 1 else 0) {
                             Tab(selected = !showComposer, onClick = {
                                 returnToConversations()

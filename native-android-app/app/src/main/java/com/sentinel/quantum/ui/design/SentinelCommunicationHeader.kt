@@ -20,7 +20,8 @@ import com.sentinel.quantum.R
 
 /** D.1-inspired decorative artwork is decorative: it carries no invented protection or identity claim. */
 @Composable
-fun SentinelCommunicationHeader(section: String, title: String, description: String, compact: Boolean = false) {
+fun SentinelCommunicationHeader(section: String, title: String, description: String, compact: Boolean = false,
+    actions: @Composable () -> Unit = {}) {
     Column(Modifier.fillMaxWidth().testTag("d1-communication-header"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (!compact) Image(painterResource(R.drawable.d1_orbital_globe), contentDescription = null,
             modifier = Modifier.fillMaxWidth().height(176.dp), contentScale = ContentScale.Crop)
@@ -36,6 +37,7 @@ fun SentinelCommunicationHeader(section: String, title: String, description: Str
                         color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
                 }
             }
+            actions()
         }
     }
 }
