@@ -1,5 +1,7 @@
 # Résultats réels de la mission — 2026-10-29 UTC
 
+Livraison consolidée et réserves : [FINAL-HANDOFF.md](FINAL-HANDOFF.md).
+
 **Mise à jour : compilation et lint validés sur hôte et build ARM64 transmis ;
 protocole physique Galaxy réussi selon le journal utilisateur (38 tests et
 phases de reprise). Redémarrage complet et coupure électrique NON EXÉCUTÉS.**

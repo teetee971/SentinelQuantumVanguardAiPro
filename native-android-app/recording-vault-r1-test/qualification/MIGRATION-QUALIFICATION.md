@@ -162,6 +162,10 @@ Une coupure électrique brutale n'est pas couverte. Ne pas remplir le stockage
 personnel du Galaxy : la campagne ENOSPC réelle demande un environnement de test
 isolé et une méthode bornée approuvée séparément.
 
+La procédure restante de redémarrage complet, avec préparation et reprise du
+même run, est disponible dans [REBOOT-QUALIFICATION.md](REBOOT-QUALIFICATION.md).
+Elle est NON EXÉCUTÉE à la livraison.
+
 ## Risques résiduels / revue
 
 - Les V1 n'authentifient pas leur attribution historique : substitution préalable
