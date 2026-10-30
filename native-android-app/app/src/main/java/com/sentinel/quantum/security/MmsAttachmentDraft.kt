@@ -28,6 +28,20 @@ internal class MmsAttachmentDraft(
     fun attachmentsForSubmission(): List<MmsAttachmentLoader.LoadedAttachment>? =
         state.value.takeUnless { it.loading }?.attachments
 
+    data class Submission internal constructor(
+        internal val generation: Long,
+        val attachments: List<MmsAttachmentLoader.LoadedAttachment>
+    )
+
+    fun submissionSnapshot(): Submission? =
+        attachmentsForSubmission()?.let { Submission(generation, it.toList()) }
+
+    fun clearIfUnchanged(submitted: Submission): Boolean {
+        if (submitted.generation != generation || state.value.loading) return false
+        clear()
+        return true
+    }
+
     fun select(sources: List<String>): Job? {
         if (sources.isEmpty()) return null // Picker cancellation preserves the previous selection.
         clear()

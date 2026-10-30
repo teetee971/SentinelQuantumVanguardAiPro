@@ -96,4 +96,31 @@ class MmsAttachmentDraftTest {
         assertTrue(draft.state.value.attachments.isEmpty())
         assertFalse(draft.state.value.loading)
     }
+    @Test fun acceptedSubmissionClearsOnlyItsUnchangedImages() = runBlocking {
+        val draft = MmsAttachmentDraft(this) { MmsAttachmentLoader.Result.Loaded(listOf(image(1))) }
+        draft.select(listOf("content://test/one"))!!.join()
+        val submitted = draft.submissionSnapshot()!!
+        assertTrue(draft.clearIfUnchanged(submitted))
+        assertTrue(draft.state.value.attachments.isEmpty())
+    }
+
+    @Test fun replacingImagesBeforeAcceptanceKeepsTheNewSelection() = runBlocking {
+        val draft = MmsAttachmentDraft(this) { sources ->
+            MmsAttachmentLoader.Result.Loaded(listOf(image(if (sources.single().endsWith("one")) 1 else 2)))
+        }
+        draft.select(listOf("content://test/one"))!!.join()
+        val submitted = draft.submissionSnapshot()!!
+        draft.select(listOf("content://test/two"))!!.join()
+        assertFalse(draft.clearIfUnchanged(submitted))
+        assertArrayEquals(byteArrayOf(2), draft.state.value.attachments.single().payload)
+    }
+
+    @Test fun removingAnImageBeforeAcceptanceKeepsTheEditedSelection() = runBlocking {
+        val draft = MmsAttachmentDraft(this) { MmsAttachmentLoader.Result.Loaded(listOf(image(1), image(2))) }
+        draft.select(listOf("content://test/one", "content://test/two"))!!.join()
+        val submitted = draft.submissionSnapshot()!!
+        draft.remove(0)
+        assertFalse(draft.clearIfUnchanged(submitted))
+        assertArrayEquals(byteArrayOf(2), draft.state.value.attachments.single().payload)
+    }
 }

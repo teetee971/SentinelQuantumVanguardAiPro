@@ -90,6 +90,8 @@ import com.sentinel.quantum.security.SmsSubscriptionState
 import com.sentinel.quantum.security.SmsSubmitReadiness
 import com.sentinel.quantum.security.SmsSubmissionGate
 import com.sentinel.quantum.security.SmsThreadOrganizer
+import com.sentinel.quantum.security.MessageDraftCompletion
+import com.sentinel.quantum.security.MessageTextDraft
 import com.sentinel.quantum.security.SmsNavigationPolicy
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -295,11 +297,12 @@ class SmsComposeActivity : ComponentActivity() {
                     submissionGate.release()
                 }
                 fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
+                    val requestedSubscriptionId = selectedSubscriptionId
                     ioScope.launch {
                         if (!beginSubmission()) return@launch
                         try {
                             val result = withContext(Dispatchers.IO) {
-                                sender.send(recipient, message, selectedSubscriptionId)
+                                sender.send(recipient, message, requestedSubscriptionId)
                             }
                             status = when (result.reason) {
                                 "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
@@ -337,9 +340,10 @@ class SmsComposeActivity : ComponentActivity() {
                     message: String,
                     onAccepted: () -> Unit
                 ) {
+                    val requestedSubscriptionId = selectedSubscriptionId
+                    val submittedImages = attachmentDraft.submissionSnapshot()
                     ioScope.launch {
-                        val attachments = attachmentDraft.attachmentsForSubmission()
-                        if (attachments == null) {
+                        if (submittedImages == null) {
                             status = "Attendez la fin du chargement des images avant l’envoi."
                             return@launch
                         }
@@ -349,8 +353,8 @@ class SmsComposeActivity : ComponentActivity() {
                                 mmsSender.send(
                                     destination = recipient,
                                     text = message,
-                                    requestedSubscriptionId = selectedSubscriptionId,
-                                    attachments = attachments.map {
+                                    requestedSubscriptionId = requestedSubscriptionId,
+                                    attachments = submittedImages.attachments.map {
                                         SentinelMmsSender.Attachment(it.mimeType, it.payload)
                                     }
                                 )
@@ -385,6 +389,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 else -> "Échec de préparation ou d’envoi du MMS."
                             }
                             if (result.accepted) {
+                                attachmentDraft.clearIfUnchanged(submittedImages)
                                 onAccepted()
                                 providerEpoch++
                             }
@@ -493,7 +498,11 @@ class SmsComposeActivity : ComponentActivity() {
                                                 maxLines = 3
                                             )
                                             Button(
-                                                onClick = { submitSms(replyAddress, draft) { replyDrafts = replyDrafts - threadId } },
+                                                onClick = {
+                                                    submitSms(replyAddress, draft) {
+                                                        replyDrafts = MessageDraftCompletion.acceptedReply(replyDrafts, threadId, draft)
+                                                    }
+                                                },
                                                 modifier = Modifier.phoneCoreTestId("phone_core_sms_reply_send"),
                                                 enabled = SmsSubmitReadiness.canSubmit(
                                                     activationCanSend = activationSnapshot.canSend,
@@ -786,13 +795,16 @@ class SmsComposeActivity : ComponentActivity() {
 
                             Button(
                                 onClick = {
-                                    if (mmsComposeMode) {
-                                        submitMms(destination, body) {
-                                            body = ""
-                                            attachmentDraft.clear()
-                                        }
+                                    val submitted = MessageTextDraft(destination, body, mmsComposeMode)
+                                    val accepted = {
+                                        body = MessageDraftCompletion.remainingText(
+                                            submitted, MessageTextDraft(destination, body, mmsComposeMode)
+                                        )
+                                    }
+                                    if (submitted.mms) {
+                                        submitMms(submitted.destination, submitted.text, accepted)
                                     } else {
-                                        submitSms(destination, body) { body = "" }
+                                        submitSms(submitted.destination, submitted.text, accepted)
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_send"),
