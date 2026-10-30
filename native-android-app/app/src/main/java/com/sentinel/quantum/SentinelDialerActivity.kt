@@ -115,6 +115,13 @@ private const val CALL_HISTORY_LOAD_LIMIT = 500
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SentinelDialerActivity : ComponentActivity() {
+    override fun onPostResume() {
+        super.onPostResume()
+        // The default dialer/contact entry can bypass MainActivity. Warm only after this UI
+        // resumes; never move disk/Keystore work into Application.onCreate or onScreenCall.
+        (application as SentinelApplication).launchForegroundMaintenance()
+    }
+
     private var pendingNumber: String? = null
     private var callActionStatus by mutableStateOf<String?>(null)
     private var contactsPermissionGranted by mutableStateOf(false)

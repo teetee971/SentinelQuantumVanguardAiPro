@@ -1,0 +1,18 @@
+{
+  "application": {
+    "tests": 1440,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 1440,
+    "xml_files": 308
+  },
+  "wearable": {
+    "tests": 26,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 26,
+    "xml_files": 3
+  }
+}

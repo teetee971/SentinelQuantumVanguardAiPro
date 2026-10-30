@@ -23,11 +23,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.awaitCancellation
 import androidx.navigation.NavController
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallBlockingUiSnapshot
 import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
@@ -47,7 +52,8 @@ fun CallBlockingScreen(navController: NavController) {
     val context = LocalContext.current
     val store = remember(context) { CallBlocklistStore(context) }
     val settingsStore = remember(context) { SettingsStore(context) }
-    var snapshot by remember { mutableStateOf(store.snapshot()) }
+    var rulesUi by remember { mutableStateOf(CallBlockingUiSnapshot(store.snapshot())) }
+    val snapshot = rulesUi.snapshot
     var number by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
     var prefixMenuExpanded by remember { mutableStateOf(false) }
@@ -82,6 +88,19 @@ fun CallBlockingScreen(navController: NavController) {
         contactsAllowed = granted
     }
 
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle, store) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            // Settings may revoke the filtering role or Contacts permission without using our launcher.
+            screeningState = CallScreeningActivationPolicy.read(context)
+            contactsAllowed = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+            val readRevision = rulesUi.revision
+            val loaded = withContext(Dispatchers.IO) { store.snapshot() }
+            rulesUi = rulesUi.afterRefresh(readRevision, loaded)
+            awaitCancellation()
+        }
+    }
+
     Scaffold(
         topBar = {
             SentinelTopBar(
@@ -100,7 +119,7 @@ fun CallBlockingScreen(navController: NavController) {
                 title = "Protégez vos appels",
                 body = stringResource(R.string.call_blocking_intro),
                 badges = listOf(
-                    (if (roleHeld) "Protection active" else "Protection à activer") to
+                    (if (roleHeld) "Sentinel choisi pour filtrer" else "Filtrage à attribuer") to
                         (if (roleHeld) SentinelD1.Success else SentinelD1.Warning),
                     "Règles privées" to SentinelD1.Cyan
                 )
@@ -164,19 +183,22 @@ fun CallBlockingScreen(navController: NavController) {
             )
             Button(
                 onClick = {
-                    status = if (store.addBlockedNumber(number)) addedText else invalidText
-                    snapshot = store.snapshot()
-                    number = ""
+                    val added = store.addBlockedNumber(number)
+                    status = if (added) addedText else invalidText
+                    rulesUi = rulesUi.afterMutation(store.snapshot())
+                    if (added) number = ""
                 },
                 enabled = number.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.call_blocking_add)) }
             Text(stringResource(R.string.call_blocking_exact_count, snapshot.blockedNumberHashes.size))
+            Text("Une règle exacte couvre ce numéro, pas les appels masqués ni les autres numéros. Un préfixe trop large peut aussi bloquer des appels légitimes.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (snapshot.blockedNumberHashes.isNotEmpty()) {
                 TextButton(
                     onClick = {
                         status = if (store.clearBlockedNumbers()) clearedText else clearFailedText
-                        snapshot = store.snapshot()
+                        rulesUi = rulesUi.afterMutation(store.snapshot())
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.call_blocking_clear_exact)) }
@@ -269,9 +291,10 @@ fun CallBlockingScreen(navController: NavController) {
             )
             Button(
                 onClick = {
-                    status = if (store.addBlockedPrefix(prefix)) prefixAddedText else prefixInvalidText
-                    snapshot = store.snapshot()
-                    prefix = ""
+                    val added = store.addBlockedPrefix(prefix)
+                    status = if (added) prefixAddedText else prefixInvalidText
+                    rulesUi = rulesUi.afterMutation(store.snapshot())
+                    if (added) prefix = ""
                 },
                 enabled = prefix.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
@@ -307,7 +330,7 @@ fun CallBlockingScreen(navController: NavController) {
                         TextButton(
                             onClick = {
                                 if (store.removeBlockedPrefix(value)) {
-                                    snapshot = store.snapshot()
+                                    rulesUi = rulesUi.afterMutation(store.snapshot())
                                     status = "Règle de préfixe retirée."
                                 }
                             }
@@ -317,7 +340,7 @@ fun CallBlockingScreen(navController: NavController) {
             }
 
             ArcepVerifiedPrefixSection(store) { updatedSnapshot, message ->
-                snapshot = updatedSnapshot
+                rulesUi = rulesUi.afterMutation(updatedSnapshot)
                 status = message
             }
 
@@ -362,7 +385,7 @@ fun CallBlockingScreen(navController: NavController) {
                                         onFailure = { syncFailedText }
                                     )
                                 }
-                                snapshot = store.snapshot()
+                                rulesUi = rulesUi.afterMutation(store.snapshot())
                             } finally {
                                 isSyncing = false
                             }
