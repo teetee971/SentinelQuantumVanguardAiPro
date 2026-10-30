@@ -1,0 +1,85 @@
+package com.sentinel.quantum.security
+
+import android.content.ContentResolver
+import android.content.Context
+import android.net.Uri
+import android.provider.DocumentsContract
+import android.provider.OpenableColumns
+import android.database.Cursor
+import java.util.ArrayDeque
+
+/**
+ * Read-only APK discovery for a user-selected Storage Access Framework tree.
+ *
+ * Does not request broad storage permissions, install packages, or traverse private app data.
+ * The caller must launch ACTION_OPEN_DOCUMENT_TREE and obtain the user's consent first.
+ */
+internal class UserSelectedApkDiscovery(private val context: Context) {
+    data class ApkDocument(val uri: Uri, val displayName: String, val sizeBytes: Long?)
+
+    fun discover(treeUri: Uri, maxDocuments: Int = 5000, maxDepth: Int = 12): List<ApkDocument> {
+        require(maxDocuments in 1..20000)
+        require(maxDepth in 0..32)
+        val resolver = context.contentResolver
+        val rootId = DocumentsContract.getTreeDocumentId(treeUri)
+        val pending = ArrayDeque<Pair<String, Int>>()
+        pending.add(rootId to 0)
+        val results = ArrayList<ApkDocument>()
+        val visited = HashSet<String>()
+        var scanned = 0
+        while (pending.isNotEmpty() && scanned < maxDocuments) {
+            val (parentId, depth) = pending.removeFirst()
+            if (!visited.add(parentId)) continue
+            val children = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentId)
+            val projection = arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE,
+                DocumentsContract.Document.COLUMN_SIZE
+            )
+            val cursor: Cursor = try {
+                resolver.query(children, projection, null, null, null) ?: continue
+            } catch (_: SecurityException) {
+                continue // User may have revoked the tree grant.
+            } catch (_: IllegalArgumentException) {
+                continue // Provider may no longer expose the directory.
+            }
+            cursor.use {
+                val idIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                val nameIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                val mimeIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                val sizeIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_SIZE)
+                while (it.moveToNext() && scanned < maxDocuments) {
+                    scanned++
+                    val id = it.getString(idIndex) ?: continue
+                    val name = it.getString(nameIndex) ?: continue
+                    val mime = it.getString(mimeIndex)
+                    if (mime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                        if (depth < maxDepth) pending.add(id to depth + 1)
+                    } else if (name.endsWith(".apk", ignoreCase = true)) {
+                        val uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
+                        val size = if (it.isNull(sizeIndex)) null else it.getLong(sizeIndex)
+                        results.add(ApkDocument(uri, name, size))
+                    }
+                }
+            }
+        }
+        return results
+    }
+
+    fun inspectSelectedDocument(uri: Uri): ApkDocument? {
+        val resolver: ContentResolver = context.contentResolver
+        val cursor = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
+            ?: return null
+        return cursor.use {
+            if (!it.moveToFirst()) return@use null
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex < 0) return@use null
+            val name = it.getString(nameIndex) ?: return@use null
+            if (!name.endsWith(".apk", ignoreCase = true)) return@use null
+            val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+            val size = if (sizeIndex < 0 || it.isNull(sizeIndex)) null else it.getLong(sizeIndex)
+            ApkDocument(uri, name, size)
+        }
+    }
+}
