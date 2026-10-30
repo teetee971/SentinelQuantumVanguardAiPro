@@ -10,8 +10,8 @@ Matrice initiale : aucun scénario n'a été exécuté directement depuis le clo
 | P02 | Après autorisation, mise à jour sur place et lancement | Version11 confirmée et plusieurs écrans ouverts ; préférences/toutes données et journal crash non vérifiés | PARTIEL — preuves utilisateur |
 | P03 | Attribution puis refus de ROLE_DIALER | Dialogue système, refus respecté, pas d'appel implicite ; rôle lu et captures | NON TESTÉ |
 | P04 | Appel entrant, écran allumé puis verrouillé | InCallService et UI cohérents, identité disponible seulement, réponse/refus ciblés ; observation des deux lignes autorisées | NON TESTÉ |
-| P05 | Appel sortant et choix SIM | Numéro confirmé, SIM choisie respectée, retour composeur sans appel automatique ; observations côté correspondant connu | NON TESTÉ |
-| P06 | Répondre et raccrocher, côté local/distant | Aucun appel fantôme ni notification persistante après fin ; état opérateur et UI | NON TESTÉ |
+| P05 | Appel sortant et choix SIM | Numéro confirmé, SIM choisie respectée, retour composeur sans appel automatique ; observations côté correspondant connu | PARTIEL — captures propriétaire après procédure18 : Composition puis En communication ; audio/SIM non vérifiés par ces images |
+| P06 | Répondre et raccrocher, côté local/distant | Aucun appel fantôme ni notification persistante après fin ; état opérateur et UI | PARTIEL — écran Appel terminé et entrée sortante des récents observés ; action locale/distante et notifications non vérifiées |
 | P07 | Deux appels : premier actif, second entrant, fin de l'un | Commandes ciblent le bon appel ; le second n'est pas perdu lors du retrait du premier. Tenue/échange uniquement si exposés et autorisés par Telecom/opérateur ; noter toute indisponibilité | NON TESTÉ |
 | P08 | Pavé, effacement, DTMF sur ligne de test connue | Numéro prérempli exact, pas d'appel à l'ouverture, tonalités seulement sur l'appel ciblé | NON TESTÉ |
 | P09 | Appel manqué et notifications | État manqué juste, ouverture correcte, confidentialité, notifications retirées après fin ; tester POST_NOTIFICATIONS / accès plein écran | NON TESTÉ |
