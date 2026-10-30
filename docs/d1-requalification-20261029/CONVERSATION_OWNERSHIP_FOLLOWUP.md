@@ -1,3 +1,5 @@
+> Candidat historique 4a85b108. Livraison actuelle : [CURRENT_DELIVERY.md](CURRENT_DELIVERY.md).
+
 # Messages : appartenance des résultats à la conversation sélectionnée
 
 ## Défaut établi

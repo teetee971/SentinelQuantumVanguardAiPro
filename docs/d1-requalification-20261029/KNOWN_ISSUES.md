@@ -40,3 +40,7 @@ Sources d5c31b49 : purge des récents et invalidation des lectures à ON_PAUSE o
 ## Itération appartenance des messages à leur fil
 
 Sources 4a85b108 : publication centralisée par effet indexé, snapshot limité à son threadId et destinataire provenant du résumé sélectionné uniquement. Six tests JVM et suite complète réussis. Navigation pendant IO, callbacks opérateur, suppressions de fixtures et absence de destinataire sur résumé manquant : NON TESTÉS sur appareil. Voir CONVERSATION_OWNERSHIP_FOLLOWUP.md. Les limitations des autres modules ne sont pas clôturées par cette correction.
+
+## Candidat S24+ du30 octobre
+
+Sources dfd27286 : nettoyage conditionnel des textes/réponses et des images, choix SIM capturé avant IO. 1412 tests Android et19 contrats Node réussis ; aucun test physique. Mise à jour existante NOT READY tant que certificat/version installés non vérifiés et autorisation absente. Une Activity détruite peut conserver un brouillon après soumission Android : vérifier le fil avant renvoi. Écarts visuels, fonctions absentes et Voice sont séparés dans VISUAL_GAPS_D1.md, UNIMPLEMENTED_FEATURES.md et VOICE_LIMITATIONS.md.

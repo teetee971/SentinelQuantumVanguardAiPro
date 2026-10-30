@@ -1,0 +1,8 @@
+{
+  "remote_branch_sha": "df1afc5c1c0683e12909f1d7d316adf8974056f0",
+  "pull_request": 1748,
+  "base": "work/phone-core-v1-20261029",
+  "branch": "fix/d1-phone-messages-conformity-20261029",
+  "draft": true,
+  "head": "df1afc5c1c0683e12909f1d7d316adf8974056f0"
+}

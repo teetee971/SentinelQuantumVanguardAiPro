@@ -1,7 +1,7 @@
 # Livraison courante Sentinel D.1
 
-Sources APK **4a85b10850a350d7b9c9a59e6c5022d79f22429f**. Rapport [CONVERSATION_OWNERSHIP_FOLLOWUP.md](CONVERSATION_OWNERSHIP_FOLLOWUP.md). [Artefacts, tailles et SHA-256](ARTIFACTS.json).
+Sources APK : **dfd272861fd6a428df07f139a2665605d1dc2b2e**. Rapport [S24_CANDIDATE_20261030.md](S24_CANDIDATE_20261030.md), [ARTIFACTS.json](ARTIFACTS.json).
 
-1 403 tests unitaires Android réussis, 303 XML, aucun échec/erreur/ignoré. Kotlin et deux APK réussis, signatures/alignement vérifiés. Instrumentation et S24+ NON EXÉCUTÉS/NON TESTÉS. Comparaison visuelle D.1 complète NON VALIDÉE. Node : 19 tests historiques du candidat d7fce52a, non réexécutés ici.
+1412 tests unitaires Android réussis, 304 XML ; 19 contrats Node réussis ; aucun échec/erreur/ignoré. Kotlin et deux APK réussis, signature/alignement vérifiés. Instrumentation NON EXÉCUTÉE, S24+ NON TESTÉ. Conformité visuelle D.1 complète NON VALIDÉE.
 
-Chaque snapshot Messages est lié au fil sélectionné ; les callbacks ne publient plus de lectures parallèles. Aucun repli du destinataire vers un ancien message. Les correctifs Contacts et Récents précédents sont conservés, avec leurs limites documentées.
+Verdict **NOT READY pour installation sur l'app existante**, signature/version de l'appareil et autorisation non acquises. Candidat disponible pour contrôle préalable en lecture seule ; aucune installation effectuée. Voir SIGNATURE_COMPATIBILITY.md et S24_PHYSICAL_MATRIX_20261030.md.

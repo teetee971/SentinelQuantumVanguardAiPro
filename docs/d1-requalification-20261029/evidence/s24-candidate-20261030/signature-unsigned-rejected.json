@@ -1,0 +1,15 @@
+{
+  "status": "UNVERIFIED",
+  "installed_device_verified": false,
+  "installation_performed": false,
+  "candidate": {
+    "package": "com.sentinel.quantum",
+    "version_code": 10,
+    "certificate_sha256": [
+      "dee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1"
+    ],
+    "sha256": "1e9869c1791bdacbded7ea5adaec4ef4e3bf520cff9edd3403fd78b4f6f99e9d"
+  },
+  "reference_source": "LOCAL_APK_ONLY_NOT_LIVE_DEVICE",
+  "reason": "READ_OR_VERIFICATION_FAILED"
+}
