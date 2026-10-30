@@ -1,3 +1,5 @@
+> **Branche de correction D.1, candidat non publié** : source courante `versionCode 14`, `versionName 1.0.9`. Ce candidat ajoute la recherche sociale assistée via navigateur et les liaisons manuelles confirmées, sans connecteur API de collecte. Signature propriétaire, qualification S24+ et conformité D.1 restent à établir ; les états historiques ci-dessous ne valent pas validation de cette version.
+
 # RELEASE STATUS — CURRENT
 
 This file previously described an old v1.0.0 release attempt, obsolete workflows and a branch that are no longer the current release path. That information is historical and is retired as an operational instruction.

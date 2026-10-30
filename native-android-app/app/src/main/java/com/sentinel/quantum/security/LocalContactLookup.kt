@@ -18,7 +18,8 @@ class LocalContactLookup(private val context: Context) {
         val phoneNumbers: List<String>,
         val providerHasPhoneNumber: Boolean,
         val photoUri: String? = null,
-        val photoRevision: Long? = null
+        val photoRevision: Long? = null,
+        val lookupKey: String? = null
     )
 
     enum class ContactAccessState { READY, PERMISSION_REQUIRED, PROVIDER_UNAVAILABLE }
@@ -40,6 +41,7 @@ class LocalContactLookup(private val context: Context) {
         return try {
             val photoUris = mutableMapOf<Long, String>()
             val photoRevisions = mutableMapOf<Long, Long>()
+            val lookupKeys = mutableMapOf<Long, String>()
             val contactCursor = context.contentResolver.query(
                 ContactsContract.Contacts.CONTENT_URI,
                 arrayOf(
@@ -47,7 +49,8 @@ class LocalContactLookup(private val context: Context) {
                     ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
                     ContactsContract.Contacts.HAS_PHONE_NUMBER,
                     ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
-                    ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP
+                    ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP,
+                    ContactsContract.Contacts.LOOKUP_KEY
                 ),
                 null,
                 null,
@@ -60,8 +63,12 @@ class LocalContactLookup(private val context: Context) {
                 val hasPhoneIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
                 val photoIndex = cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
                 val revisionIndex = cursor.getColumnIndex(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP)
+                val lookupIndex = cursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY)
                 buildList {
                     while (cursor.moveToNext() && size < safeLimit) {
+                        if (lookupIndex >= 0) cursor.getString(lookupIndex)?.takeIf { it.isNotBlank() && it.length <= 1024 }?.let {
+                            lookupKeys[cursor.getLong(idIndex)] = it
+                        }
                         if (revisionIndex >= 0 && !cursor.isNull(revisionIndex)) {
                             cursor.getLong(revisionIndex).takeIf { it > 0L }?.let {
                                 photoRevisions[cursor.getLong(idIndex)] = it
@@ -141,7 +148,8 @@ class LocalContactLookup(private val context: Context) {
                     phoneNumbers = entry.phoneNumbers,
                     providerHasPhoneNumber = entry.providerHasPhoneNumber,
                     photoUri = photoUris[entry.contactId],
-                    photoRevision = photoRevisions[entry.contactId]
+                    photoRevision = photoRevisions[entry.contactId],
+                    lookupKey = lookupKeys[entry.contactId]
                 )
             }.sortedWith(
                 compareBy<Contact> { it.displayName == "Sans nom" }

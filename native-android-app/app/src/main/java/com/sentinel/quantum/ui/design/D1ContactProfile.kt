@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -125,6 +126,7 @@ internal fun D1ContactProfileFrame(
     onShare: () -> Unit,
     photoRefreshGeneration: Int = 0
 ) {
+    val contentState = rememberSaveableStateHolder()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState,
         containerColor = SentinelD1.Background, contentColor = MaterialTheme.colorScheme.onSurface) {
@@ -135,8 +137,12 @@ internal fun D1ContactProfileFrame(
             }
             if (!accessActive) {
                 Text("Accès aux contacts suspendu. Revenez à la fiche après autorisation.", Modifier.padding(16.dp))
-            } else D1ContactProfileContent(contact, details, onCall, onMessage, onEdit, onShare,
-                photoRefreshGeneration, Modifier.weight(1f))
+            } else {
+                contentState.SaveableStateProvider(contact.lookupKey ?: "contact-session:${contact.contactId}") {
+                    D1ContactProfileContent(contact, details, onCall, onMessage, onEdit, onShare,
+                        photoRefreshGeneration, Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -197,6 +203,7 @@ internal fun D1ContactProfileContent(
                 }
             }
         }
+        ContactSocialProfilesCard(contact)
         when (details?.status) {
             null -> { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("Chargement des informations du carnet…") }
             ContactProfileStatus.PERMISSION_REQUIRED -> Text("Autorisation Contacts requise. Aucune information complémentaire affichée.")

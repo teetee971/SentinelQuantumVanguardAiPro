@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.ContactSocialProfilesTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-30T11:59:58.140Z" hostname="f84354b8fd7c" time="0.876">
+  <properties/>
+  <testcase name="encodedDotSegmentsAreNeverInstagramProfiles" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.003"/>
+  <testcase name="fullBookPreservesExistingLinksAndStillAllowsReplacementAndRemoval" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.801"/>
+  <testcase name="lookupOwnerIsRequiredAndDifferentLookupKeysNeverAlias" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.001"/>
+  <testcase name="atomicFileRoundTripIsBoundedAndNeverReplacesOnOversize" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.041"/>
+  <testcase name="networkQueryUsesOnlyExplicitNameCompanyAndCorrectEncoding" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.002"/>
+  <testcase name="malformedOrUnavailableStorageCannotBeOverwrittenByAssociation" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.005"/>
+  <testcase name="corruptNumericTypeAndDuplicateOwnerNetworkFailClosed" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.001"/>
+  <testcase name="failedAtomicReplacementPreservesOldFileAndRemovesTemporaryData" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.002"/>
+  <testcase name="onlyRealProfileRoutesOnExpectedHostsAreAccepted" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.001"/>
+  <testcase name="onlyConfirmedLinksArePersistedAndOtherOwnersAreUntouched" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.001"/>
+  <testcase name="updatesOnlyChosenNetworkAndRejectsBadInputWithoutChangingBook" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.001"/>
+  <testcase name="rejectsNonProfilesCrossDomainsCredentialsAndUnsafeSchemes" classname="com.sentinel.quantum.security.ContactSocialProfilesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

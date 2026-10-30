@@ -1,0 +1,145 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:10:69 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:10:101 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:11:67 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:11:99 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:12:52 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:12:84 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:17:38 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:17:70 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:19:28 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:19:60 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:22:28 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:22:60 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:27:23 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:27:55 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:30:20 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:30:52 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:31:20 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:31:52 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:32:20 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:32:52 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:36:20 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:37:20 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:38:26 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:38:71 Unresolved reference 'length'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:39:25 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:39:69 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:44:21 Unresolved reference 'ContactSocialProfileStore'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:44:64 Unresolved reference 'it'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:45:17 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:46:17 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:47:40 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:49:39 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:50:39 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:51:24 Unresolved reference 'ContactSocialProfileStore'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:51:67 Unresolved reference 'it'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:52:81 Unresolved reference 'url'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:53:75 Unresolved reference 'summary'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:54:60 Unresolved reference 'associatedAtMs'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:55:81 Unresolved reference 'url'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:56:29 Cannot infer type for type parameter 'K'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:56:29 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:56:39 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:63:21 Unresolved reference 'ContactSocialProfileStore'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:63:64 Unresolved reference 'it'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:64:17 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:65:39 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:66:39 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:67:39 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:70:40 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:71:40 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:72:40 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:78:21 Unresolved reference 'ContactSocialProfileStore'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:78:64 Unresolved reference 'it'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:79:17 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:81:40 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:83:22 Unresolved reference 'ContactSocialProfileStore'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:85:28 Cannot infer type for type parameter 'K'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:85:28 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:85:38 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:86:27 Unresolved reference 'ContactSocialProfileStore'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:87:46 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:92:21 Unresolved reference 'ContactSocialProfileStore'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:92:64 Unresolved reference 'it'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:93:55 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:93:101 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:95:37 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:95:84 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:97:21 Unresolved reference 'ContactSocialProfiles'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:98:43 Unresolved reference 'SocialNetwork'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:99:26 Cannot infer type for type parameter 'K'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:99:26 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:99:40 Unresolved reference 'SocialNetwork'.
+
+> Task :app:compileDebugUnitTestKotlin FAILED
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugUnitTestKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Kotlin compiler: UNRESOLVED_REFERENCE
+       Kotlin compiler error
+         Unresolved reference 'ContactSocialProfiles'.
+         Location: /workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactSocialProfilesTest.kt:10
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 20s
+30 actionable tasks: 2 executed, 28 up-to-date
