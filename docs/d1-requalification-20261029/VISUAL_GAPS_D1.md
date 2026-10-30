@@ -1,3 +1,5 @@
+> Depuis ce rapport initial, le propriétaire a fourni des captures réelles de Messages, Téléphone et Contacts. Une revue qualitative et les écarts visibles sont consignés dans [OWNER_RUNTIME_OBSERVATIONS.md](../signature-recovery-20261030/OWNER_RUNTIME_OBSERVATIONS.md). La comparaison complète et l’accessibilité restent non validées. Les phrases suivantes décrivent la situation initiale avant ces captures.
+
 # Écarts visuels D.1 — séparés des tests fonctionnels
 
 Statut global : NON VALIDÉ. Aucune capture runtime du candidat, aucune comparaison de rendu terminée. Les maquettes reçues sont indexées dans VISUAL_REFERENCES.md : originaux dans les pièces jointes de conversation, aucun jeu local de « 13 fichiers » ni empreinte d'originaux inventé.

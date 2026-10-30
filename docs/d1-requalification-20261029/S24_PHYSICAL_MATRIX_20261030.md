@@ -1,11 +1,11 @@
 # Matrice de validation Galaxy S24+ — candidat du 30 octobre 2026
 
-Aucun scénario ci-dessous n'a été exécuté dans cet environnement. Chaque résultat est **NON TESTÉ**, pas PASS. Android17/API37 et modèle S24+ sont déclarés par l'utilisateur, à relever sur le téléphone. Préconditions : propriétaire présent, lignes et contacts de test connus/autorisés, contrôle de signature préalable, autorisation explicite avant toute installation. Aucun appel ou SMS automatisé vers un numéro inconnu/surtaxé.
+Matrice initiale : aucun scénario n'a été exécuté directement depuis le cloud. Des preuves utilisateur ultérieures confirment l'installation version11 et plusieurs ouvertures/lectures ; voir OWNER_RUNTIME_OBSERVATIONS.md dans le dossier signature-recovery-20261030. Les lignes indiquées PARTIEL ne valent pas un PASS global. Android17/API37 et modèle S24+ sont déclarés par l'utilisateur, à relever sur le téléphone. Préconditions : propriétaire présent, lignes et contacts de test connus/autorisés, contrôle de signature préalable, autorisation explicite avant toute installation. Aucun appel ou SMS automatisé vers un numéro inconnu/surtaxé.
 
 | ID | Scénario / action manuelle | Résultat attendu et preuve à conserver | Résultat réel |
 |---|---|---|---|
 | P01 | Précontrôle APK installé et candidat | Package identique, certificats identiques et versionCode non décroissant ; JSON du script en mode appareil, pas une comparaison de fichiers locaux | NON TESTÉ |
-| P02 | Après autorisation, mise à jour sur place et lancement | Données/préférences existantes conservées, aucun crash bloquant ; version, capture expurgée et crash ciblé | NON TESTÉ |
+| P02 | Après autorisation, mise à jour sur place et lancement | Version11 confirmée et plusieurs écrans ouverts ; préférences/toutes données et journal crash non vérifiés | PARTIEL — preuves utilisateur |
 | P03 | Attribution puis refus de ROLE_DIALER | Dialogue système, refus respecté, pas d'appel implicite ; rôle lu et captures | NON TESTÉ |
 | P04 | Appel entrant, écran allumé puis verrouillé | InCallService et UI cohérents, identité disponible seulement, réponse/refus ciblés ; observation des deux lignes autorisées | NON TESTÉ |
 | P05 | Appel sortant et choix SIM | Numéro confirmé, SIM choisie respectée, retour composeur sans appel automatique ; observations côté correspondant connu | NON TESTÉ |
@@ -14,7 +14,7 @@ Aucun scénario ci-dessous n'a été exécuté dans cet environnement. Chaque r�
 | P08 | Pavé, effacement, DTMF sur ligne de test connue | Numéro prérempli exact, pas d'appel à l'ouverture, tonalités seulement sur l'appel ciblé | NON TESTÉ |
 | P09 | Appel manqué et notifications | État manqué juste, ouverture correcte, confidentialité, notifications retirées après fin ; tester POST_NOTIFICATIONS / accès plein écran | NON TESTÉ |
 | P10 | Récents, retrait rôle/READ_CALL_LOG puis réattribution | Cache purgé à pause/perte observée, anciennes générations non republiées ; relire après retour. Transition entièrement entre deux échantillons sans pause : limite connue | NON TESTÉ |
-| P11 | Répertoire : recherche, filtres, photo présente/absente | Aucun portrait d'un autre contact, pas d'identité certifiée fictive, données du bon profil Android | NON TESTÉ |
+| P11 | Répertoire : recherche, filtres, photo présente/absente | Liste et fiche accessibles ; recherche/filtres et cas avec photo pas validés | PARTIEL — preuves utilisateur |
 | P12 | Fiche ouverte, modifier nom/numéro/photo puis supprimer une fixture | Fiche actualisée au retour ; fermeture si identifiant disparu ; révision photo à URI identique et révocation READ_CONTACTS | NON TESTÉ |
 | P13 | Message > Appeler/Ajouter aux contacts > annuler | Composeur prérempli sans appel, éditeur Contacts sans écriture automatique, aucune entrée créée après annulation | NON TESTÉ |
 | P14 | Attribution/refus/retrait du rôle SMS et READ_SMS/SEND_SMS | Parcours système explicite, envoi/lecture non autorisés bloqués, réattribution cohérente | NON TESTÉ |
@@ -29,7 +29,7 @@ Aucun scénario ci-dessous n'a été exécuté dans cet environnement. Chaque r�
 | P23 | Retirer/réattribuer contacts, téléphone, journal, SMS, micro | Pas de crash ni d'action non autorisée ; pas de restauration d'une ancienne identité sur un autre écran | NON TESTÉ |
 | P24 | Navigation rapide, retour système, clavier, texte 200 %, TalkBack | Aucun mauvais fil/contact ni commande superposée ; cible tactile lisible et parcours retour cohérent | NON TESTÉ |
 | P25 | Retour Téléphone Samsung et application SMS précédente | Choix via Paramètres > Applications > Applications par défaut ; ne pas désactiver les apps système ; données Sentinel conservées | NON TESTÉ |
-| P26 | Comparaison visuelle avec références D.1 | Captures runtime annotées par référence/état, jamais décorations seules ; voir VISUAL_GAPS_D1.md | NON TESTÉ |
+| P26 | Comparaison visuelle avec références D.1 | Captures utilisateur examinées qualitativement, écarts visibles ; voir OWNER_RUNTIME_OBSERVATIONS.md et VISUAL_GAPS_D1.md | PARTIEL — conformité NON VALIDÉE |
 
 Pour chaque essai : ID, date UTC, build Android/One UI, SHA de l'APK, préconditions, observations, PASS/FAIL/NON TESTÉ et chemins de preuves expurgées. Ne pas transformer l'absence de crash dans un court journal en preuve d'absence de crash générale.
 
