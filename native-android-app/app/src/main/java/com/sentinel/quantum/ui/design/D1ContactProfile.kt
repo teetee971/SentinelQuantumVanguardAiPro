@@ -205,6 +205,11 @@ internal fun D1ContactProfileContent(
                     FilledTonalButton(onClick = { onCall(number) }, colors = buttonColors, modifier = Modifier.heightIn(min = 48.dp)) { Text("Appeler") }
                     OutlinedButton(onClick = { onMessage(number) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Message") }
                     ContactPhoneWebSearchButton(contact, number)
+                    val context = LocalContext.current.applicationContext
+                    val guard = remember(context) { com.sentinel.quantum.security.LocalContactPhoneWebGuard(context) }
+                    NumberCallBlockButton("contact:${contact.contactId}:${contact.lookupKey}", number) {
+                        guard.isCurrent(contact.contactId, contact.lookupKey, number)
+                    }
                 }
             }
         }

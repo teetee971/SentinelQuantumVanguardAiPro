@@ -4,6 +4,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ContactPhotoPolicyTest {
+    @Test fun localFullPhotoIsUsedOnlyWhenThumbnailIsMissingOrUnsafe() {
+        val thumb = "content://com.android.contacts/contacts/12/photo"
+        val full = "content://com.android.contacts/display_photo/12"
+        assertEquals(thumb, ContactPhotoPolicy.preferredLocalUri(thumb, full))
+        assertEquals(full, ContactPhotoPolicy.preferredLocalUri(null, full))
+        assertEquals(full, ContactPhotoPolicy.preferredLocalUri("https://example.invalid/photo", full))
+        assertNull(ContactPhotoPolicy.preferredLocalUri(null, "https://example.invalid/photo"))
+        assertNull(ContactPhotoPolicy.preferredLocalUri(null, null))
+    }
     @Test fun loadedPhotoNeverCrossesContactIdentityWhenAListSlotIsReused() {
         val identity = ContactPhotoIdentity(12, "content://com.android.contacts/photo/12")
         val loaded = ContactPhotoSnapshot(identity, "photo pixels")

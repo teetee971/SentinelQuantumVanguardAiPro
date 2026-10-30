@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -1667,11 +1668,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth().clickable(
+                                                onClickLabel = "Ouvrir la fiche contact",
+                                                role = androidx.compose.ui.semantics.Role.Button,
+                                                onClick = { profileContact = contact }
+                                            ),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            com.sentinel.quantum.ui.design.D1ContactAvatar(contact, Modifier.size(50.dp), contactPhotoRefreshGeneration)
+                                            com.sentinel.quantum.ui.design.D1ContactAvatar(contact, Modifier.size(64.dp), contactPhotoRefreshGeneration)
                                             Column(Modifier.weight(1f)) {
                                                 Text(
                                                     contact.displayName,

@@ -1111,6 +1111,18 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                     val replyAddress = SmsConversationRecipient.forThread(selectedThreadId, threads)
                                     Text(replyAddress.ifBlank { "Conversation" }, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    selectedThreadId?.let { blockingThreadId ->
+                                        com.sentinel.quantum.ui.design.NumberCallBlockButton(
+                                            "sms-thread:$blockingThreadId", replyAddress
+                                        ) {
+                                            val normalized = com.sentinel.quantum.security.CallRuleEngine.normalizeNumber(replyAddress)
+                                            selectedThreadId == blockingThreadId && conversations.canRead() && normalized != null &&
+                                                SmsConversationRecipient.forThread(selectedThreadId, threads) == replyAddress &&
+                                                conversations.messagesForThread(blockingThreadId, 1).any {
+                                                    com.sentinel.quantum.security.CallRuleEngine.normalizeNumber(it.address) == normalized
+                                                } && conversations.canRead()
+                                        }
+                                    }
                                     if (threadMessages.isEmpty()) {
                                         Text(
                                             "Aucun message disponible dans cette conversation.",

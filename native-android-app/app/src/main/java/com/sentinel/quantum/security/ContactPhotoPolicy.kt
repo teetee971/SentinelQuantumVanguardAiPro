@@ -17,6 +17,9 @@ internal data class ContactPhotoSnapshot<T>(val identity: ContactPhotoIdentity, 
 
 /** Never fetch remote avatars or use a photo URI from another content provider. */
 internal object ContactPhotoPolicy {
+    fun preferredLocalUri(thumbnail: String?, fullPhoto: String?): String? =
+        localUri(thumbnail) ?: localUri(fullPhoto)
+
     fun localUri(raw: String?): String? {
         if (raw.isNullOrBlank() || raw.length > 2048) return null
         val uri = runCatching { URI(raw) }.getOrNull() ?: return null

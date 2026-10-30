@@ -49,6 +49,7 @@ class LocalContactLookup(private val context: Context) {
                     ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
                     ContactsContract.Contacts.HAS_PHONE_NUMBER,
                     ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
+                    ContactsContract.Contacts.PHOTO_URI,
                     ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP,
                     ContactsContract.Contacts.LOOKUP_KEY
                 ),
@@ -62,6 +63,7 @@ class LocalContactLookup(private val context: Context) {
                 val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
                 val hasPhoneIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
                 val photoIndex = cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
+                val fullPhotoIndex = cursor.getColumnIndex(ContactsContract.Contacts.PHOTO_URI)
                 val revisionIndex = cursor.getColumnIndex(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP)
                 val lookupIndex = cursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY)
                 buildList {
@@ -74,7 +76,10 @@ class LocalContactLookup(private val context: Context) {
                                 photoRevisions[cursor.getLong(idIndex)] = it
                             }
                         }
-                        if (photoIndex >= 0) ContactPhotoPolicy.localUri(cursor.getString(photoIndex))?.let {
+                        ContactPhotoPolicy.preferredLocalUri(
+                            if (photoIndex >= 0) cursor.getString(photoIndex) else null,
+                            if (fullPhotoIndex >= 0) cursor.getString(fullPhotoIndex) else null
+                        )?.let {
                             photoUris[cursor.getLong(idIndex)] = it
                         }
                         add(
