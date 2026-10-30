@@ -12,7 +12,7 @@ android {
         applicationId "com.sentinel.quantum"
         minSdk 24
         targetSdk 36
-        versionCode 10
+        versionCode 11
         versionName "1.0.9"
         buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'
         manifestPlaceholders = [
@@ -70,6 +70,14 @@ android {
             // on a developer/CI machine where production signing variables are present.
             signingConfig = null
             matchingFallbacks = ['release']
+        }
+
+        // Same debug behavior as qualified D.1; signing is performed only with the
+        // historical key in its original secure environment. Never install unsigned.
+        d1UpdateUnsigned {
+            initWith debug
+            signingConfig = null
+            matchingFallbacks = ['debug']
         }
 
         debug {
