@@ -129,6 +129,10 @@ internal fun D1ContactProfileFrame(
     val contentState = rememberSaveableStateHolder()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState,
+        // Owner reports content scrolling stalls at the bottom while Close remains responsive.
+        // Isolate the sheet's nested-scroll/drag handler; content scrolling stays enabled.
+        // Physical S24+ confirmation is required before calling this mitigation effective.
+        sheetGesturesEnabled = false,
         containerColor = SentinelD1.Background, contentColor = MaterialTheme.colorScheme.onSurface) {
         Column(Modifier.fillMaxWidth().fillMaxHeight(0.96f)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {

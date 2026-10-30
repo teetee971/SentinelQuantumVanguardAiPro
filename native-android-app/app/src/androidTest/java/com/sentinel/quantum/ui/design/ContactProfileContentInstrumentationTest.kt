@@ -88,6 +88,27 @@ class ContactProfileContentInstrumentationTest {
         rule.runOnIdle { assertEquals(true, dismissed) }
     }
 
+    @Test fun draggingProfileHeaderDoesNotMoveOrDismissSheet() {
+        val shown = androidx.compose.runtime.mutableStateOf(true)
+        rule.setContent {
+            MaterialTheme(colorScheme = SentinelColorScheme) {
+                if (shown.value) {
+                    D1ContactProfileFrame(contact, null, true, { shown.value = false }, {}, {}, {}, {})
+                }
+            }
+        }
+        val header = rule.onNodeWithText("Sentinel · Contacts")
+        val before = header.fetchSemanticsNode().boundsInRoot.top
+        header.performTouchInput {
+            swipe(center, center + androidx.compose.ui.geometry.Offset(0f, 500f), durationMillis = 400)
+        }
+        header.assertIsDisplayed()
+        val after = header.fetchSemanticsNode().boundsInRoot.top
+        assertTrue("Header drag must not move the profile panel", kotlin.math.abs(after - before) <= 1f)
+        rule.onNodeWithText("Fermer").performTouchInput { click() }
+        rule.onNodeWithTag("contact-profile-scroll").assertDoesNotExist()
+    }
+
     /** Diagnostic regression for the owner's end-of-page freeze report. Requires a real runtime. */
     @Test fun repeatedBottomGesturesAllowTouchCloseWithoutScrollingBack() {
         val snapshot = ContactProfileSnapshot(ContactProfileRequest(7, null, 0), ContactProfileStatus.READY, listOf(
