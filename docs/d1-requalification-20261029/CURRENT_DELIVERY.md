@@ -1,3 +1,5 @@
+> **Candidat15 — recherche web explicite d’un numéro** : [rapport et livraison](../contact-phone-web-search-20261030/REPORT.md), source7c679377e4f509870dd55e6745d8e8cf8422e472. Aperçu numéro/DuckDuckGo puis confirmation ; aucun résultat associé automatiquement. APK unsigned, signature et autorisation requises. Validation physique et gel restent ouverts ;13/14 conservés comme livraisons historiques séparées.
+
 > **Candidat14 — profils sociaux assistés, pas de collecte API** : [rapport et livraison](../contact-social-enrichment-20261030/REPORT.md), source cba8767ac46710f432781430b6bf524cee74f510. Recherche externe et liens confirmés manuellement ; APK unsigned. Validation physique14 et résolution du gel restent ouvertes.13 est conservé pour comparaison de défilement isolée.
 
 > **Candidat13, mitigation ciblée NON VALIDÉE physiquement** : [rapport](../contact-profile-scroll-mitigation-20261030/REPORT.md), source fd32445e80a8966f0020dcddcf0d0f5a65c41468. Rebond du contenu Contacts désactivé ; gel12 toujours ouvert jusqu’à comparaison S24+. APK13 unsigned, signature propriétaire et autorisation de mise à jour nécessaires.
