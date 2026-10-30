@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.ContactPhotoPolicyTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-30T15:31:43.442Z" hostname="f84354b8fd7c" time="0.002">
+  <properties/>
+  <testcase name="returningFromEditorInvalidatesEvenWhenProviderRevisionIsUnavailable" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.0"/>
+  <testcase name="localFullPhotoIsUsedOnlyWhenThumbnailIsMissingOrUnsafe" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.001"/>
+  <testcase name="missingPhotoRemainsMissingRatherThanInventingAPortrait" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.0"/>
+  <testcase name="changedOrRemovedPhotoHidesThePreviousResultImmediately" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.0"/>
+  <testcase name="malformedOrCredentialBearingUrisAreRejected" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.0"/>
+  <testcase name="onlyTheLocalAndroidContactsProviderMaySupplyAnAvatar" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.0"/>
+  <testcase name="sameUriWithNewProviderRevisionRejectsTheOldPixels" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.0"/>
+  <testcase name="loadedPhotoNeverCrossesContactIdentityWhenAListSlotIsReused" classname="com.sentinel.quantum.security.ContactPhotoPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

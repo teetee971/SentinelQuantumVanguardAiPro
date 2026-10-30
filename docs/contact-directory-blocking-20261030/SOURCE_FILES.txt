@@ -1,0 +1,16 @@
+M	RELEASE_STATUS.md
+A	docs/contact-directory-blocking-20261030/DESIGN.md
+A	docs/contact-directory-blocking-20261030/PLAN.md
+M	native-android-app/app/build.gradle
+A	native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/design/NumberCallBlockInstrumentationTest.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt
+A	native-android-app/app/src/main/java/com/sentinel/quantum/security/ConfirmedCallBlockMutation.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/security/ContactPhotoPolicy.kt
+A	native-android-app/app/src/main/java/com/sentinel/quantum/security/ExactCallBlockState.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalContactLookup.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt
+A	native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/NumberCallBlockButton.kt
+A	native-android-app/app/src/test/java/com/sentinel/quantum/security/ConfirmedCallBlockMutationTest.kt
+M	native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactPhotoPolicyTest.kt
+A	native-android-app/app/src/test/java/com/sentinel/quantum/security/ExactCallBlockStateTest.kt
