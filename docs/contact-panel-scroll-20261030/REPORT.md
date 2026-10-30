@@ -1,6 +1,6 @@
 # Contacts — candidat17 de mitigation à qualifier
 
-**NOT READY pour déclarer le gel corrigé ou D.1 conforme.** Le propriétaire confirme que Fermer réagit immédiatement pendant le gel16. Cela oriente vers le défilement, sans prouver la cause. Test physique17 requis.
+**Premier essai physique17 favorable : le propriétaire rapporte que le défilement ne bloque plus en bas de fiche.** Voir [OWNER_RUNTIME_V17.md](OWNER_RUNTIME_V17.md) pour la portée et les limites. NOT READY pour déclarer D.1 conforme ou le problème définitivement résolu dans tous les parcours. Le propriétaire confirmait que Fermer réagissait immédiatement pendant le gel16 ; cause non démontrée indépendamment.
 
 ## Modification et provenance
 
@@ -33,4 +33,4 @@ Prochaine étape : téléchargement, hash unsigned exact, signature locale avec 
 
 Après mise à jour autorisée : ouvrir fiche longue ; descendre au bas, rester quelques secondes et répéter trois gestes ; remonter immédiatement ; refaire puis Fermer directement en bas ; tester Retour/réouverture/texte agrandi. Relever chaque résultat sans publier les coordonnées/photos réelles. Confirmer la version installée. Si gel persiste, conserver FAIL et rechercher une trace avant un nouveau changement.
 
-Les26scénarios physiques restent distincts. Écarts visuels D.1 non intégralement comparés ; interactions tactile et navigation17 non validées. Filtrage des appels traversants non résolu par preuve ; premier appel froid encore fail-open. Enrichissement social : associations manuelles assistées navigateur, aucune collecte API automatique. Voice : pas de changement ni nouvelle validation, limitations historiques maintenues.
+Les26scénarios physiques restent distincts. Écarts visuels D.1 non intégralement comparés ; seul le défilement en bas de fiche bénéficie du retour favorable décrit ci-dessus, sans qualification complète des interactions et navigation17. Filtrage des appels traversants non résolu par preuve ; premier appel froid encore fail-open. Enrichissement social : associations manuelles assistées navigateur, aucune collecte API automatique. Voice : pas de changement ni nouvelle validation, limitations historiques maintenues.
