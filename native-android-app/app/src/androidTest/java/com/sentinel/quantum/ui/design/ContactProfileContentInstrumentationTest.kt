@@ -89,6 +89,31 @@ class ContactProfileContentInstrumentationTest {
     }
 
     /** Diagnostic regression for the owner's end-of-page freeze report. Requires a real runtime. */
+    @Test fun repeatedBottomGesturesAllowTouchCloseWithoutScrollingBack() {
+        val snapshot = ContactProfileSnapshot(ContactProfileRequest(7, null, 0), ContactProfileStatus.READY, listOf(
+            ContactProfileField(ContactProfileKind.NOTE, "", "Synthetic fixture line\n".repeat(100))
+        ))
+        val shown = androidx.compose.runtime.mutableStateOf(true)
+        rule.setContent {
+            MaterialTheme(colorScheme = SentinelColorScheme) {
+                if (shown.value) {
+                    D1ContactProfileFrame(contact, snapshot, true, { shown.value = false }, {}, {}, {}, {})
+                }
+            }
+        }
+        val scroll = rule.onNodeWithTag("contact-profile-scroll")
+        rule.onNodeWithText("Source : carnet Android", substring = true).performScrollTo()
+        repeat(3) { scroll.performTouchInput { swipeUp(durationMillis = 150) } }
+        val range = scroll.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue("Must stay at the content end before closing", range.value() >= range.maxValue() - 1f)
+        // Touch injection exercises hit testing; performClick alone invokes the semantics action.
+        // Compose synchronizes before input: this does not measure immediate response during a stall.
+        rule.onNodeWithText("Fermer").assertIsDisplayed().performTouchInput { click() }
+        rule.onNodeWithTag("contact-profile-scroll").assertDoesNotExist()
+        rule.runOnIdle { assertEquals(false, shown.value) }
+    }
+
+    /** Diagnostic regression for the owner's end-of-page freeze report. Requires a real runtime. */
     @Test fun repeatedBottomGesturesStillAllowScrollingBackAndClosing() {
         val snapshot = ContactProfileSnapshot(ContactProfileRequest(7, null, 0), ContactProfileStatus.READY, listOf(
             ContactProfileField(ContactProfileKind.NOTE, "", "Synthetic fixture line\n".repeat(100))

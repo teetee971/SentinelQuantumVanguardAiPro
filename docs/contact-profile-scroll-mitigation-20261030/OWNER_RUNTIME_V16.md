@@ -17,3 +17,9 @@ Après autorisation explicite de mise à jour manuelle, le propriétaire rapport
 - Aucun appareil ADB disponible dans l'environnement cloud lors de cette investigation. Tests instrumentés NON EXÉCUTÉS. Aucun nouvel APK, changement de gestes, installation, désinstallation ou effacement effectué pour ce retour.
 
 Les tests unitaires précédents ne valident pas cette interaction tactile physique. Projet et défilement restent NOT READY pour une déclaration de conformité complète.
+
+## Contrôle diagnostic ajouté
+
+`ContactProfileContentInstrumentationTest.repeatedBottomGesturesAllowTouchCloseWithoutScrollingBack` utilise une note synthétique, atteint la fin, répète trois gestes vers le bas de contenu, confirme la position finale puis injecte un toucher sur Fermer sans remonter. Il vérifie la disparition de la fiche, pas seulement l'appel du callback. Aucun contact réel ni accès radio.
+
+Compilation `:app:compileDebugAndroidTestKotlin` : exit0, journal `contact-bottom-close-diagnostic.log`. **Exécution du nouveau test : NON EXÉCUTÉE**, aucun appareil ADB. La synchronisation Compose précède l'injection ; le test ne démontre pas une réponse immédiate pendant un gel transitoire. Il complète le contrôle précédent, sans établir la cause du gel et sans modification fonctionnelle ni nouvel APK de livraison. Les nombres de tests unitaires du candidat16 ne sont pas des exécutions de ce test instrumenté.
