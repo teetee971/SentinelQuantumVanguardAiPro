@@ -1,3 +1,5 @@
+> **Candidat14 — profils sociaux assistés, pas de collecte API** : [rapport et livraison](../contact-social-enrichment-20261030/REPORT.md), source cba8767ac46710f432781430b6bf524cee74f510. Recherche externe et liens confirmés manuellement ; APK unsigned. Validation physique14 et résolution du gel restent ouvertes.13 est conservé pour comparaison de défilement isolée.
+
 > **Candidat13, mitigation ciblée NON VALIDÉE physiquement** : [rapport](../contact-profile-scroll-mitigation-20261030/REPORT.md), source fd32445e80a8966f0020dcddcf0d0f5a65c41468. Rebond du contenu Contacts désactivé ; gel12 toujours ouvert jusqu’à comparaison S24+. APK13 unsigned, signature propriétaire et autorisation de mise à jour nécessaires.
 
 > **Anomalie de navigation ouverte** : [blocage en bas de la nouvelle fiche](../contact-profile-completion-20261030/OWNER_RUNTIME_V12.md) signalé après autorisation de mise à jour12. Ne pas considérer la signature comme un PASS physique. Cause/reproduction à préciser ; aucun correctif applicatif livré pour ce signalement.
