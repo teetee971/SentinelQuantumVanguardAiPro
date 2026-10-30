@@ -1,3 +1,5 @@
+> Mise à jour Contacts : le [correctif12](../contact-profile-completion-20261030/REPORT.md) remplace localement la fiche (photo intégrée, détails, ouverture étendue, palette locale). Aucun rendu physique de ce correctif encore fourni ; écarts des autres écrans et conformité D.1 restent ouverts.
+
 > Depuis ce rapport initial, le propriétaire a fourni des captures réelles de Messages, Téléphone et Contacts. Une revue qualitative et les écarts visibles sont consignés dans [OWNER_RUNTIME_OBSERVATIONS.md](../signature-recovery-20261030/OWNER_RUNTIME_OBSERVATIONS.md). La comparaison complète et l’accessibilité restent non validées. Les phrases suivantes décrivent la situation initiale avant ces captures.
 
 # Écarts visuels D.1 — séparés des tests fonctionnels

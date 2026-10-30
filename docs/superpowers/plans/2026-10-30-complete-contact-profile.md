@@ -34,7 +34,7 @@
 
 ### Task 3: Review and delivery
 - [x] Fresh reviewer checks privacy, permission/lifecycle, layout and source wiring; address important defects with regression tests.
-- [ ] Commit with skip-ci, build unsigned APK from committed source, hash/align/package controls, document counts and limitations.
+- [x] Commit with skip-ci, build unsigned APK from committed source, hash/align/package controls, document counts and limitations.
 - [ ] Push only the correction branch, keep PR1748 draft. Signed APK compatibility remains owner-side verification; physical and visual comparison pending.
 
 ## Execution ledger
@@ -48,3 +48,5 @@
 - Mapping/phone freshness/large-text sheet tests compiled, NOT EXECUTED without Android runtime. No claim of physical or visual pass.
 - Ruling: common Android data MIME fields supported; proprietary provider columns, account groups, verified social integration and communication history remain outside this contact-sheet change. Cost: not a universal complete export of every third-party address-book field; disclosed in design/report.
 - Ruling: keep phone fields inactive while details reload/fail, with no stale directory fallback. Cost: brief loading delay rather than actions on removed numbers.
+
+- Delivery source commit:06f913c057b9b1814f4dea7c436047df3dd2dfd4. Post-commit compile/test/build exit0 (application incremental), wearable suite26/26 newly executed. APK unsigned e0d779cf5601fae9ceeecb609d5d38bc497d09a671f47d2c6a73d3f33efa021b, alignment4/16KiB exit0, package/code12 correct. Owner signing/physical validation pending.

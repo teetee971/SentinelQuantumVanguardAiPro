@@ -1,0 +1,17 @@
+A	docs/contact-profile-completion-20261030/DESIGN.md
+A	docs/contact-profile-completion-20261030/evidence/ContactProfileDetailsTest.xml
+A	docs/contact-profile-completion-20261030/evidence/contact-profile-cancel-red.exit
+A	docs/contact-profile-completion-20261030/evidence/contact-profile-final-precommit.exit
+A	docs/contact-profile-completion-20261030/evidence/contact-profile-fresh-numbers-red.exit
+A	docs/contact-profile-completion-20261030/evidence/contact-profile-green-2.exit
+A	docs/contact-profile-completion-20261030/evidence/contact-profile-green.exit
+A	docs/contact-profile-completion-20261030/evidence/contact-profile-red.exit
+A	docs/contact-profile-completion-20261030/evidence/unit-test-summary.json
+A	docs/superpowers/plans/2026-10-30-complete-contact-profile.md
+M	native-android-app/app/build.gradle
+A	native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/LocalContactProfileReaderInstrumentationTest.kt
+A	native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/design/ContactProfileContentInstrumentationTest.kt
+A	native-android-app/app/src/main/java/com/sentinel/quantum/security/ContactProfileDetails.kt
+A	native-android-app/app/src/main/java/com/sentinel/quantum/security/LocalContactProfileReader.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt
+A	native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt

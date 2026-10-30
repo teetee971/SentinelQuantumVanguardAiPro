@@ -1,0 +1,49 @@
+{
+  "source_git_sha": "06f913c057b9b1814f4dea7c436047df3dd2dfd4",
+  "base_git_sha": "1be459199c5171ddf716b0002a91edac620b0ba5",
+  "package": "com.sentinel.quantum",
+  "versionCode": 12,
+  "versionName": "1.0.9",
+  "artifacts": {
+    "unsigned": {
+      "name": "Sentinel-D1-v12-UNSIGNED-06f913c0.apk",
+      "bytes": 102260778,
+      "sha256": "e0d779cf5601fae9ceeecb609d5d38bc497d09a671f47d2c6a73d3f33efa021b",
+      "checks": {
+        "signature": 1,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "cloud_debug": {
+      "name": "Sentinel-D1-v12-CLOUD-debug-06f913c0.apk",
+      "bytes": 101428857,
+      "sha256": "5680e7dc8df1baf826366943c866e312ddb748264f6b65a1fce99aa8bac10b36",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "instrumentation": {
+      "name": "Sentinel-D1-v12-androidTest-06f913c0.apk",
+      "bytes": 1225537,
+      "sha256": "5ff3ba77f9db666bf1450bc7e5d23ba9e9d931001890fb03dfc1532f4219136f",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    }
+  },
+  "installed_original_certificate_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "update_signing": "UNSIGNED: original key remains on owner phone; cloud debug certificate incompatible",
+  "instrumentation": "NOT EXECUTED; no Android device connected",
+  "physical": "NOT EXECUTED for version12",
+  "unsigned_drive_url": "https://drive.google.com/file/d/1nCVx-urn3rpHufaOfHaJdlKrWM2Tgozv/view?usp=drivesdk",
+  "source_native_tree_sha": "d0ffdd263bfc35ee5d1416e97980d4f6fda436fe",
+  "original_debug_cloud_certificate_sha256": "dee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1"
+}

@@ -1,3 +1,5 @@
+> **Correctif Contacts ultérieur — candidat12 NON SIGNÉ** : [rapport](../contact-profile-completion-20261030/REPORT.md), source `06f913c057b9b1814f4dea7c436047df3dd2dfd4`. Cette version n’est pas installée/qualifiée physiquement. La version11 observée ci-dessous reste la seule version confirmée installée. Aucune conformité D.1 globale déclarée.
+
 # État courant Sentinel D.1
 
 Mise à jour autorisée par le propriétaire, version installée11/1.0.9 confirmée par sa sortie ADB. Signature68915958…17b3fe2 contrôlée sur son téléphone. [Signature et provenance](../signature-recovery-20261030/OWNER_SIGNING_RESULT.md).
