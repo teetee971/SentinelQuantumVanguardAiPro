@@ -2,7 +2,7 @@
 
 ## Résultat et limites
 
-Correctif implémenté et vérifié par compilation/tests JVM. **NOT READY pour installation : l’APK de mise à jour est volontairement NON SIGNÉ.** Il doit être signé sur le téléphone avec la clé originale, puis contrôlé (certificat, package, version, alignement, SHA) avant une mise à jour expressément autorisée. Aucune installation, désinstallation, suppression de données ou changement de clé réalisé par le cloud. Le S24+ reste en version11 selon les preuves utilisateur précédentes.
+Correctif implémenté et vérifié par compilation/tests JVM. **Mise à jour des preuves : signature locale version12 réussie selon la capture propriétaire**, certificat original6891, package/code12 et intégrité contrôlés ; voir [OWNER_SIGNING_V12.md](OWNER_SIGNING_V12.md). Compatibilité de mise à jour établie selon ces preuves locales ; **installation expressément autorisée encore en attente**. Le binaire signé n’a pas été reçu/revérifié dans le cloud. Les téléchargements Drive ci-dessous restent NON SIGNÉS et non installables. Aucune installation, désinstallation, suppression de données ou changement de clé réalisé par le cloud. Le S24+ reste en version11 selon les dernières preuves d’installation.
 
 **Conformité D.1 complète : NON VALIDÉE. Tests instrumentés : NON EXÉCUTÉS. Tests physiques de la version12 : NON EXÉCUTÉS.** Les observations physiques antérieures concernent uniquement la version11. Les appels/SMS/MMS réseau restent à tester avec une seconde ligne disponible.
 

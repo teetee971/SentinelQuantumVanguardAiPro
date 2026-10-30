@@ -1,3 +1,5 @@
+> **Preuve propriétaire ultérieure** : [signature locale version12](../contact-profile-completion-20261030/OWNER_SIGNING_V12.md) avec le certificat historique6891, contrôles réussis selon capture. APK signé uniquement sur le téléphone ; installation12 en attente d’autorisation. Le lien Drive reste unsigned.
+
 > **Correctif Contacts ultérieur — candidat12 NON SIGNÉ** : [rapport](../contact-profile-completion-20261030/REPORT.md), source `06f913c057b9b1814f4dea7c436047df3dd2dfd4`. Cette version n’est pas installée/qualifiée physiquement. La version11 observée ci-dessous reste la seule version confirmée installée. Aucune conformité D.1 globale déclarée.
 
 # État courant Sentinel D.1
