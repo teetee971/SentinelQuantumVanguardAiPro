@@ -1,5 +1,7 @@
 # Matrice de validation Galaxy S24+ — candidat du 30 octobre 2026
 
+> Nouvelle fiche candidat12 observée après autorisation ; [blocage au bas de page signalé](../contact-profile-completion-20261030/OWNER_RUNTIME_V12.md). Les preuves11 restent historiques ; aucun nouveau code installé confirmé par ADB. P24 indique le signalement utilisateur, pas une reproduction cloud.
+
 Matrice initiale : aucun scénario n'a été exécuté directement depuis le cloud. Des preuves utilisateur ultérieures confirment l'installation version11 et plusieurs ouvertures/lectures ; voir OWNER_RUNTIME_OBSERVATIONS.md dans le dossier signature-recovery-20261030. Les lignes indiquées PARTIEL ne valent pas un PASS global. Android17/API37 et modèle S24+ sont déclarés par l'utilisateur, à relever sur le téléphone. Préconditions : propriétaire présent, lignes et contacts de test connus/autorisés, contrôle de signature préalable, autorisation explicite avant toute installation. Aucun appel ou SMS automatisé vers un numéro inconnu/surtaxé.
 
 | ID | Scénario / action manuelle | Résultat attendu et preuve à conserver | Résultat réel |
@@ -14,7 +16,7 @@ Matrice initiale : aucun scénario n'a été exécuté directement depuis le clo
 | P08 | Pavé, effacement, DTMF sur ligne de test connue | Numéro prérempli exact, pas d'appel à l'ouverture, tonalités seulement sur l'appel ciblé | NON TESTÉ |
 | P09 | Appel manqué et notifications | État manqué juste, ouverture correcte, confidentialité, notifications retirées après fin ; tester POST_NOTIFICATIONS / accès plein écran | NON TESTÉ |
 | P10 | Récents, retrait rôle/READ_CALL_LOG puis réattribution | Cache purgé à pause/perte observée, anciennes générations non republiées ; relire après retour. Transition entièrement entre deux échantillons sans pause : limite connue | NON TESTÉ |
-| P11 | Répertoire : recherche, filtres, photo présente/absente | Liste et fiche accessibles ; recherche/filtres et cas avec photo pas validés | PARTIEL — preuves utilisateur |
+| P11 | Répertoire : recherche, filtres, photo présente/absente | Liste, recherche renseignée et photo dans liste/fiche observées ; filtres/exhaustivité et changement de photo non validés | PARTIEL — preuves utilisateur11 puis nouvel écran |
 | P12 | Fiche ouverte, modifier nom/numéro/photo puis supprimer une fixture | Fiche actualisée au retour ; fermeture si identifiant disparu ; révision photo à URI identique et révocation READ_CONTACTS | NON TESTÉ |
 | P13 | Message > Appeler/Ajouter aux contacts > annuler | Composeur prérempli sans appel, éditeur Contacts sans écriture automatique, aucune entrée créée après annulation | NON TESTÉ |
 | P14 | Attribution/refus/retrait du rôle SMS et READ_SMS/SEND_SMS | Parcours système explicite, envoi/lecture non autorisés bloqués, réattribution cohérente | NON TESTÉ |
@@ -27,7 +29,7 @@ Matrice initiale : aucun scénario n'a été exécuté directement depuis le clo
 | P21 | Fermeture puis arrêt forcé/redémarrage, sans effacement de stockage | Préférences conservées ; images de session non promises après mort du processus ; pas de renvoi automatique. Vérifier statut provider avant de réessayer | NON TESTÉ |
 | P22 | Notifications SMS/MMS, aperçu masqué/activé, permission retirée | Confidentialité conforme au choix, aucun contenu personnel dans les preuves partagées, état explicite en cas de blocage | NON TESTÉ |
 | P23 | Retirer/réattribuer contacts, téléphone, journal, SMS, micro | Pas de crash ni d'action non autorisée ; pas de restauration d'une ancienne identité sur un autre écran | NON TESTÉ |
-| P24 | Navigation rapide, retour système, clavier, texte 200 %, TalkBack | Aucun mauvais fil/contact ni commande superposée ; cible tactile lisible et parcours retour cohérent | NON TESTÉ |
+| P24 | Navigation rapide, retour système, clavier, texte 200 %, TalkBack | Aucun mauvais fil/contact ni commande superposée ; cible tactile lisible et parcours retour cohérent | FAIL SIGNALÉ — blocage en fin de fiche, cause non établie ; autres sous-cas NON TESTÉS |
 | P25 | Retour Téléphone Samsung et application SMS précédente | Choix via Paramètres > Applications > Applications par défaut ; ne pas désactiver les apps système ; données Sentinel conservées | NON TESTÉ |
 | P26 | Comparaison visuelle avec références D.1 | Captures utilisateur examinées qualitativement, écarts visibles ; voir OWNER_RUNTIME_OBSERVATIONS.md et VISUAL_GAPS_D1.md | PARTIEL — conformité NON VALIDÉE |
 

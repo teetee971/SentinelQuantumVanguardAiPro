@@ -5,6 +5,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.semantics.SemanticsProperties
+import org.junit.Assert.assertTrue
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -82,6 +84,34 @@ class ContactProfileContentInstrumentationTest {
             }
         }
         rule.onNodeWithText("Source : carnet Android", substring = true).performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Fermer").assertIsDisplayed().performClick()
+        rule.runOnIdle { assertEquals(true, dismissed) }
+    }
+
+    /** Diagnostic regression for the owner's end-of-page freeze report. Requires a real runtime. */
+    @Test fun repeatedBottomGesturesStillAllowScrollingBackAndClosing() {
+        val snapshot = ContactProfileSnapshot(ContactProfileRequest(7, null, 0), ContactProfileStatus.READY, listOf(
+            ContactProfileField(ContactProfileKind.NOTE, "", "Synthetic fixture line\n".repeat(100))
+        ))
+        var dismissed = false
+        rule.setContent {
+            MaterialTheme(colorScheme = SentinelColorScheme) {
+                D1ContactProfileFrame(contact, snapshot, true, { dismissed = true }, {}, {}, {}, {})
+            }
+        }
+        val scroll = rule.onNodeWithTag("contact-profile-scroll")
+        rule.onNodeWithText("Source : carnet Android", substring = true).performScrollTo()
+        repeat(3) {
+            scroll.performTouchInput { swipeUp(durationMillis = 150) }
+            rule.waitForIdle()
+        }
+        val endRange = scroll.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        val bottom = endRange.value()
+        assertTrue("Must reach the content end", bottom >= endRange.maxValue() - 1f)
+        scroll.performTouchInput { swipeDown(durationMillis = 400) }
+        rule.waitForIdle()
+        val afterRange = scroll.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue("A reverse gesture at the bottom must scroll back", afterRange.value() < bottom)
         rule.onNodeWithText("Fermer").assertIsDisplayed().performClick()
         rule.runOnIdle { assertEquals(true, dismissed) }
     }
