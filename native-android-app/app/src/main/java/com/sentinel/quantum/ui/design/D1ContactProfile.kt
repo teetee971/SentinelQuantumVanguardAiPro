@@ -200,6 +200,7 @@ internal fun D1ContactProfileContent(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilledTonalButton(onClick = { onCall(number) }, colors = buttonColors, modifier = Modifier.heightIn(min = 48.dp)) { Text("Appeler") }
                     OutlinedButton(onClick = { onMessage(number) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Message") }
+                    ContactPhoneWebSearchButton(contact, number)
                 }
             }
         }
