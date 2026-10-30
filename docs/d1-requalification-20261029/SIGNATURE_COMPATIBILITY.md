@@ -1,3 +1,5 @@
+> Rapport historique : le certificat installé a depuis été confirmé différent par l’utilisateur. Voir [réparation de signature](../signature-recovery-20261030/README.md). Aucun MATCH contre une référence locale ne démontre une mise à jour compatible du S24+.
+
 # Signature : candidat et com.sentinel.quantum installé
 
 **Signature installée sur S24+ : NON VÉRIFIÉE. Aucun appareil connecté. Aucune installation effectuée.**

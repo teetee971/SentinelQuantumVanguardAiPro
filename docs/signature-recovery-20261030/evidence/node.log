@@ -1,0 +1,27 @@
+✔ production Android releases require the protected environment and current main head (1.057416ms)
+✔ release integrity records APK and AAB signer evidence and verifies checksums (0.209044ms)
+✔ the workflow creates a draft rather than a publicly downloadable release (0.213ms)
+✔ production signing never falls back to a debug keystore (0.175323ms)
+✔ releaseUnsigned explicitly clears any signing config inherited from release (0.305358ms)
+✔ the next Android update exceeds installed versionCode 10 (0.227271ms)
+✔ Auth0 Android dependency is pinned to the exact qualified version (0.379189ms)
+✔ current intelligence integration respects product truth boundaries (2.614514ms)
+✔ rejects general intelligence access before respondToCall (0.383936ms)
+✔ rejects community or UI risk fields entering ScreeningProjection (0.284957ms)
+✔ rejects raw PII storage slots in the intelligence persistence boundary (0.449094ms)
+✔ rejects a general snapshot being used as direct automatic blocking authority (0.320641ms)
+✔ physical evidence collector rejects PII sources and automatic physical validation (0.305298ms)
+✔ physical evidence collector has valid bash syntax (4.017378ms)
+✔ Phone Core roadmap and diagnostic copy match certification schema v6 (3.635185ms)
+✔ Phone Core readiness no longer owns the Wi-Fi scanner capability (0.534982ms)
+✔ counter-free customer Phone Core resources cover every supported Android version (1.407752ms)
+✔ Phone Core activation uses the shared version-aware call-screening truth (0.691057ms)
+✔ legacy call-screening implementation, CI scope and customer copy stay truthfully separated (0.544717ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 305.752661

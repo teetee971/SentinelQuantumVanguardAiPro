@@ -44,3 +44,7 @@ Sources 4a85b108 : publication centralisée par effet indexé, snapshot limité 
 ## Candidat S24+ du30 octobre
 
 Sources dfd27286 : nettoyage conditionnel des textes/réponses et des images, choix SIM capturé avant IO. 1412 tests Android et19 contrats Node réussis ; aucun test physique. Mise à jour existante NOT READY tant que certificat/version installés non vérifiés et autorisation absente. Une Activity détruite peut conserver un brouillon après soumission Android : vérifier le fil avant renvoi. Écarts visuels, fonctions absentes et Voice sont séparés dans VISUAL_GAPS_D1.md, UNIMPLEMENTED_FEATURES.md et VOICE_LIMITATIONS.md.
+
+## Signature installée désormais confirmée différente
+
+Utilisateur : certificat68915958…17b3fe2/version10 ; ancien candidatdee0…632e1 incompatible sans lignée autorisée démontrée. Sources fonctionnelles préservées ; APK non signé version11 prêt pour signature sur place si la clé historique est retrouvée. Aucun APK compatible signé ni installation produits. Voir ../signature-recovery-20261030/README.md.

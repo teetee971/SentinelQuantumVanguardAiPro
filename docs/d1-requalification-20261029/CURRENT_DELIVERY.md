@@ -1,7 +1,7 @@
-# Livraison courante Sentinel D.1
+# État courant Sentinel D.1
 
-Sources APK : **dfd272861fd6a428df07f139a2665605d1dc2b2e**. Rapport [S24_CANDIDATE_20261030.md](S24_CANDIDATE_20261030.md), [ARTIFACTS.json](ARTIFACTS.json).
+**Blocage de signature confirmé par l’utilisateur.** Certificat installé68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2 ; ancien candidatdee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1. Ne pas utiliser cet ancien APK comme mise à jour du S24+ principal.
 
-1412 tests unitaires Android réussis, 304 XML ; 19 contrats Node réussis ; aucun échec/erreur/ignoré. Kotlin et deux APK réussis, signature/alignement vérifiés. Instrumentation NON EXÉCUTÉE, S24+ NON TESTÉ. Conformité visuelle D.1 complète NON VALIDÉE.
+Réparation actuelle : [README](../signature-recovery-20261030/README.md), [APK non signé préparé](../signature-recovery-20261030/ARTIFACTS.json), [audit local de clé](../signature-recovery-20261030/LOCAL_KEY_AUDIT.md). Source50c66852c13d6ed4354d2a818277a7241ef45c4b ; versionCode11, aucun changement de fonction D.1. Aucune clé historique6891 trouvée ici, aucune signature compatible produite. **NOT READY.**
 
-Verdict **NOT READY pour installation sur l'app existante**, signature/version de l'appareil et autorisation non acquises. Candidat disponible pour contrôle préalable en lecture seule ; aucune installation effectuée. Voir SIGNATURE_COMPATIBILITY.md et S24_PHYSICAL_MATRIX_20261030.md.
+1412 tests Android,19 contrats Node et3 tests de sécurité du rapport réussis ; journaux dans le dossier de réparation. Les résultats S24+,26 scénarios et fidélité visuelle restent NON TESTÉS/NON VALIDÉS. Les anciens rapports/artefacts conservent leur propre provenance historique.

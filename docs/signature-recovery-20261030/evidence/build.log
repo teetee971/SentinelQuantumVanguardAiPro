@@ -1,0 +1,162 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:preD1UpdateUnsignedBuild UP-TO-DATE
+> Task :app:mergeD1UpdateUnsignedNativeDebugMetadata NO-SOURCE
+> Task :app:generateD1UpdateUnsignedBuildConfig
+> Task :app:generateD1UpdateUnsignedResources FROM-CACHE
+> Task :app:packageD1UpdateUnsignedResources
+> Task :app:processD1UpdateUnsignedNavigationResources FROM-CACHE
+> Task :app:parseD1UpdateUnsignedLocalResources FROM-CACHE
+> Task :app:generateD1UpdateUnsignedRFile FROM-CACHE
+> Task :app:kspDebugKotlin
+> Task :app:kspD1UpdateUnsignedKotlin
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080
+
+> Task :app:compileD1UpdateUnsignedKotlin
+> Task :app:javaPreCompileD1UpdateUnsigned FROM-CACHE
+> Task :app:generateD1UpdateUnsignedAssets UP-TO-DATE
+> Task :app:mergeD1UpdateUnsignedAssets
+> Task :app:compressD1UpdateUnsignedAssets FROM-CACHE
+> Task :app:generateD1UpdateUnsignedGlobalSynthetics FROM-CACHE
+> Task :app:l8DexDesugarLibD1UpdateUnsigned FROM-CACHE
+> Task :app:checkD1UpdateUnsignedDuplicateClasses
+> Task :app:desugarD1UpdateUnsignedFileDependencies FROM-CACHE
+> Task :app:mergeExtDexD1UpdateUnsigned
+> Task :app:mergeLibDexD1UpdateUnsigned FROM-CACHE
+> Task :app:checkD1UpdateUnsignedAarMetadata
+> Task :app:mapD1UpdateUnsignedSourceSetPaths
+> Task :app:compileD1UpdateUnsignedNavigationResources FROM-CACHE
+> Task :app:mergeD1UpdateUnsignedResources
+> Task :app:createD1UpdateUnsignedCompatibleScreenManifests
+> Task :app:extractDeepLinksD1UpdateUnsigned FROM-CACHE
+> Task :app:processD1UpdateUnsignedMainManifest
+> Task :app:processD1UpdateUnsignedManifest
+> Task :app:processD1UpdateUnsignedManifestForPackage
+> Task :app:processD1UpdateUnsignedResources
+> Task :app:mergeD1UpdateUnsignedJniLibFolders
+> Task :app:mergeD1UpdateUnsignedNativeLibs
+
+> Task :app:stripD1UpdateUnsignedDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libjnidispatch.so, liblivekit_uniffi.so, liblkjingle_peerconnection_so.so, libwg-go.so, libwg-quick.so, libwg.so. Run with --info option to learn more.
+
+> Task :app:writeD1UpdateUnsignedAppMetadata
+> Task :app:writeD1UpdateUnsignedSigningConfigVersions
+
+> Task :app:compileD1UpdateUnsignedKotlin
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:78:66 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:743:56 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:771:43 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:839:56 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:108:84 'val isVoiceCapable: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:857:33 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1069:60 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1107:25 'fun ScrollableTabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., edgePadding: Dp = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryScrollableTabRow and SecondaryScrollableTabRow tab variants.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1775:79 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt:579:42 'val Icons.Rounded.VolumeUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.VolumeUp.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:515:68 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:562:25 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:820:52 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsAttachmentDraft.kt:31:27 Non-public primary constructor is exposed via the generated 'copy()' method of the 'data' class.
+
+The generated 'copy()' will change its visibility in future releases.
+
+To suppress the warning do one of the following:
+- Annotate the data class with the '@ConsistentCopyVisibility' annotation.
+- Use the '-Xconsistent-data-class-copy-visibility' compiler flag.
+- Annotate the data class with the '@ExposedCopyVisibility' annotation 
+  (Discouraged, but can be used to keep binary compatibility).
+
+To learn more, see the documentation of the '@ConsistentCopyVisibility' and '@ExposedCopyVisibility' annotations.
+
+This will become an error in language version 2.5. See https://youtrack.jetbrains.com/issue/KT-11914.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/OwnerDeviceKeyManager.kt:71:52 'val isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelApkManager.kt:23:36 'static field ACTION_INSTALL_PACKAGE: String' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:180:23 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:183:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:183:71 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:198:45 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:235:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:438:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:442:45 Redundant call of conversion method.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:466:53 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:470:18 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:505:28 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:658:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:658:63 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:663:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:668:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:673:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:679:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:703:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelVpnController.kt:262:24 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelVpnController.kt:280:29 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiScanner.kt:173:51 'field SSID: String!' is deprecated. Deprecated in Java.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/PhoneCoreWorkspace.kt:95:24 'fun rememberSwipeToDismissBoxState(initialValue: SwipeToDismissBoxValue = ..., confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = ..., positionalThreshold: (Float) -> Float = ...): SwipeToDismissBoxState' is deprecated. confirmValueChange is deprecated without replacement. Rather than relying on a callback to veto state changes, the anchor set should not include disallowed anchors. See androidx.compose.foundation.samples.AnchoredDraggableDynamicAnchorsSample for an example of using dynamic anchors over confirmValueChange.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/EmailSecurityScreen.kt:36:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt:257:13 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt:459:40 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+
+> Task :app:compileD1UpdateUnsignedJavaWithJavac
+> Task :app:processD1UpdateUnsignedJavaRes
+> Task :app:mergeD1UpdateUnsignedJavaResource
+> Task :app:dexBuilderD1UpdateUnsigned
+> Task :app:mergeProjectDexD1UpdateUnsigned
+> Task :app:packageD1UpdateUnsigned
+> Task :app:createD1UpdateUnsignedApkListingFileRedirect
+> Task :app:assembleD1UpdateUnsigned
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2m 45s
+71 actionable tasks: 41 executed, 12 from cache, 18 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

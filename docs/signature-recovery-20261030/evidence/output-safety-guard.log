@@ -1,0 +1,5 @@
+usage: audit-sentinel-keystore.py [-h] --keystore KEYSTORE [--keytool KEYTOOL]
+                                  [--alias ALIAS] [--expected EXPECTED]
+                                  (--debug-default-password | --password-env PASSWORD_ENV)
+                                  --output OUTPUT
+audit-sentinel-keystore.py: error: output must be a JSON report distinct from the keystore and not a symlink
