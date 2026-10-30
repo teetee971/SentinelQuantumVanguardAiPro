@@ -1,0 +1,26 @@
+HTTP/1.1 200 OK
+date: Thu, 29 Oct 2026 18:25:00 GMT
+server: envoy
+
+HTTP/2 302
+server: envoy
+date: Thu, 29 Oct 2026 18:25:01 GMT
+content-type: text/html
+content-length: 138
+location: https://cert.cyber.gouv.fr/avis/feed/
+x-id-fe: cch1-hw-edge-gc26
+x-id-shield: fr5-hw-edge-gc39
+x-id: cch1-hw-edge-gc26
+traceparent: 00-e459aafddd44c1a924c84848ef350f65-5f39342b2268a3fe-01
+age: 205079
+strict-transport-security: max-age=15768000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+referrer-policy: same-origin
+permissions-policy: geolocation=(),midi=(),sync-xhr=(),microphone=(),camera=(),magnetometer=(),gyroscope=(),fullscreen=(self),payment=()
+x-ua-compatible: IE=EDGE
+cache: HIT
+x-cached-since: 2026-10-27T09:27:02+00:00
+x-envoy-upstream-service-time: 88
+

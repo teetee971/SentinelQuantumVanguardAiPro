@@ -1,0 +1,23 @@
+{
+  "app": {
+    "xml_files": 308,
+    "tests": 1440,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "wearable-contract": {
+    "xml_files": 1,
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "wearable-security": {
+    "xml_files": 3,
+    "tests": 26,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

@@ -1,0 +1,78 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin FAILED
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:11:25 Unresolved reference 'CallHistoryReadState'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:19:23 Unresolved reference 'CallHistoryReadState'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:32:23 Unresolved reference 'CallHistoryReadState'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:42:23 Unresolved reference 'CallHistoryReadState'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:50:23 Unresolved reference 'CallHistoryReadState'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:57:23 Unresolved reference 'CallHistoryReadState'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:62:73 Cannot infer type for type parameter 'T'. Specify it explicitly.
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugUnitTestKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Kotlin compiler: UNRESOLVED_REFERENCE
+       Kotlin compiler error
+         Unresolved reference 'CallHistoryReadState'.
+         Location: /workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallHistoryReadStateTest.kt:11
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 18s
+30 actionable tasks: 2 executed, 28 up-to-date

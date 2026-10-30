@@ -1,0 +1,47 @@
+{
+  "source_git_sha": "7c679377e4f509870dd55e6745d8e8cf8422e472",
+  "base_git_sha": "c8c740cdc6ea1f3dfec47571d28b0ab1e6682fcd",
+  "package": "com.sentinel.quantum",
+  "versionCode": 15,
+  "versionName": "1.0.9",
+  "artifacts": {
+    "unsigned": {
+      "name": "Sentinel-D1-v15-UNSIGNED-7c679377.apk",
+      "bytes": 101374983,
+      "sha256": "a6dbf298c10c7e16adafb940128a069ea9defecef7aa174f263f0aed8550263c",
+      "checks": {
+        "signature": 1,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "cloud_debug": {
+      "name": "Sentinel-D1-v15-CLOUD-debug-7c679377.apk",
+      "bytes": 101494393,
+      "sha256": "4459e381b2cf8f791eda7eb1fa0a6eacdb49864e5bf67fa6c6b045dfd1efe010",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "instrumentation": {
+      "name": "Sentinel-D1-v15-androidTest-7c679377.apk",
+      "bytes": 1239931,
+      "sha256": "16ae14b9c72da03f91518f88c6eab3962c645348f0b06fd11f77c735e0561146",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    }
+  },
+  "capability": "Explicit one-number public web search via browser after number/destination confirmation; no automatic association or API collection",
+  "instrumentation": "NOT EXECUTED",
+  "physical": "NOT EXECUTED for v15; bottom-scroll freeze remains open",
+  "update_signing": "UNSIGNED; original owner key6891 required, cloud dee0 incompatible",
+  "unsigned_drive_url": "https://drive.google.com/file/d/15rE9RM0LNXTUBPAPb6r9cqSOCZMDZEMN/view?usp=drivesdk"
+}

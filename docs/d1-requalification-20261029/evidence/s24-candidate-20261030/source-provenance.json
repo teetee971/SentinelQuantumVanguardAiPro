@@ -1,0 +1,9 @@
+{
+  "source_commit": "dfd272861fd6a428df07f139a2665605d1dc2b2e",
+  "native_android_tree": "1e64708a7971a0ce2c5cb9515eed6cb361adc389",
+  "remote_qualified_baseline": "df1afc5c1c0683e12909f1d7d316adf8974056f0",
+  "build_command": "python /workspace/d1-evidence/run-gradle.py physical-candidate-final :app:compileDebugKotlin :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest",
+  "configuration": "debug",
+  "signature_fixture": "/workspace/phone-core-v1-delivery/Sentinel-PhoneCore-V1-debug.apk",
+  "fixture_sha256": "0d6bdb4f22184c7a417fb82e6d77c15fccb5727f993c3c36a2c97d1a4d7d633a"
+}

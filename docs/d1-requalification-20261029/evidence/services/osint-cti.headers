@@ -1,0 +1,26 @@
+HTTP/1.1 200 OK
+date: Thu, 29 Oct 2026 18:25:00 GMT
+server: envoy
+
+HTTP/2 302
+server: envoy
+date: Thu, 29 Oct 2026 18:25:01 GMT
+content-type: text/html
+content-length: 138
+location: https://cert.cyber.gouv.fr/cti/feed/
+x-id-fe: cch1-hw-edge-gc9
+x-id-shield: am3-hw-edge-gc11
+x-id: cch1-hw-edge-gc9
+traceparent: 00-e30bb06c132eeaf74b3c5db4440d755a-ab7a2666c132bf14-01
+age: 204019
+strict-transport-security: max-age=15768000
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+referrer-policy: same-origin
+permissions-policy: geolocation=(),midi=(),sync-xhr=(),microphone=(),camera=(),magnetometer=(),gyroscope=(),fullscreen=(self),payment=()
+x-ua-compatible: IE=EDGE
+cache: HIT
+x-cached-since: 2026-10-27T09:44:42+00:00
+x-envoy-upstream-service-time: 8
+

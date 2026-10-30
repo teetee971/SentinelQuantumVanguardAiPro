@@ -1,0 +1,1 @@
+Les journaux .log sont conservés explicitement malgré le gitignore global. Les copies des en-têtes HTTP sont normalisées LF et sans espaces terminaux pour Git ; les originaux bruts restent dans /workspace/d1-evidence/services et dans le dossier raw-services de la livraison. Aucun secret ni journal SMS personnel n’est requis.

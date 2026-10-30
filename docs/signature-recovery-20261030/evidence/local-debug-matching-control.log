@@ -1,0 +1,10 @@
+{
+  "status": "MATCH_PRIVATE_ENTRY",
+  "private_key_copied": false,
+  "private_key_exported": false,
+  "signing_performed": false,
+  "expected_certificate_sha256": "dee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1",
+  "keytool_exit": 0,
+  "certificate_sha256": "dee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1",
+  "private_key_entry_present": true
+}

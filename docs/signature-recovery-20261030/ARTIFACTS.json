@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Sentinel-D1-v11-UNSIGNED-50c66852.apk",
+    "path": "/workspace/d1-signature-recovery-delivery/Sentinel-D1-v11-UNSIGNED-50c66852.apk",
+    "bytes": 101293063,
+    "sha256": "854e61e38bfafe0ec8f1871c0833b68c07fcc42485683f6e872f562def1958d9",
+    "source_commit": "50c66852c13d6ed4354d2a818277a7241ef45c4b",
+    "qualified_functional_source": "dfd272861fd6a428df07f139a2665605d1dc2b2e",
+    "main_sources_unchanged": true,
+    "package": "com.sentinel.quantum",
+    "versionCode": 11,
+    "versionName": "1.0.9",
+    "configuration": "d1UpdateUnsigned",
+    "signature_state": "UNSIGNED",
+    "installable": false,
+    "expected_signed_certificate_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+    "readiness": "NOT_READY"
+  }
+]

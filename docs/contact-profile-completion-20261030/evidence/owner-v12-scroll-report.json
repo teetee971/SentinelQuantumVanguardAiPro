@@ -1,0 +1,17 @@
+{
+  "evidence_type": "owner_runtime_screenshots_and_freeze_report",
+  "raw_private_screenshots_published": false,
+  "candidate_source_git_sha": "06f913c057b9b1814f4dea7c436047df3dd2dfd4",
+  "version12_installation_authorized": true,
+  "new_profile_layout_observed": true,
+  "installed_versionCode_confirmed_by_new_adb_output": false,
+  "observed": "Local photo, phone row, detail sections and content footer rendered; user reports freeze on reaching bottom",
+  "scroll_freeze_status": "OPEN, owner-reported FAIL; not reproduced in cloud",
+  "cause": "NOT ESTABLISHED",
+  "anr_or_crash_log": "NOT PROVIDED",
+  "diagnostic_test": "repeatedBottomGesturesStillAllowScrollingBackAndClosing",
+  "diagnostic_test_compile": "PASS :app:assembleDebugAndroidTest exit0",
+  "diagnostic_test_execution": "NOT EXECUTED",
+  "main_source_changed": false,
+  "new_application_apk_generated": false
+}

@@ -1,0 +1,27 @@
+{
+  "evidence_source": "screenshots explicitly provided by owner in current conversation; no direct cloud runtime capture",
+  "installed_versionCode_owner_adb_confirmed": 11,
+  "versionName": "1.0.9",
+  "package": "com.sentinel.quantum",
+  "installation_authorization": "explicit owner Oui before manual installation",
+  "installation_method_not_independently_observed": true,
+  "screens_observed": [
+    "Messages thread with prior provider messages",
+    "Messages conversations list",
+    "Phone configuration/settings",
+    "Contacts list",
+    "Contact detail sheet in two displayed positions"
+  ],
+  "historical_messages_accessible": true,
+  "contacts_list_and_sheet_accessible": true,
+  "complete_private_data_preservation_verified": false,
+  "preferences_preservation_verified": false,
+  "contact_photo_present_case_tested": false,
+  "new_sms_or_mms_transport_tested": false,
+  "inbound_or_outbound_call_tested": false,
+  "runtime_logs_received": false,
+  "crash_absence_claim": "no crash visible in these captured states only; no general crash-free proof",
+  "raw_screenshots_committed": false,
+  "personal_message_text_names_and_numbers_in_public_record": false,
+  "visual_conformity": "NOT VALIDATED; visible structural and palette gaps remain"
+}

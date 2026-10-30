@@ -160,7 +160,7 @@
 
     <string name="call_blocking_title">Protection des appels</string>
     <string name="call_blocking_intro">Choisissez simplement les numéros ou préfixes que Sentinel doit filtrer. Vos règles restent sur cet appareil.</string>
-    <string name="call_blocking_role_on">Protection système activée</string>
+    <string name="call_blocking_role_on">Sentinel est sélectionné pour le filtrage des appels Android.</string>
     <string name="call_blocking_role_off">Protection système non activée</string>
     <string name="call_blocking_enable_role">Activer le filtrage Android</string>
     <string name="call_blocking_role_unsupported">L\'activation guidée nécessite Android 10 ou une version ultérieure.</string>
@@ -174,7 +174,7 @@
     <string name="call_blocking_number_label">Numéro</string>
     <string name="call_blocking_add">Ajouter</string>
     <string name="call_blocking_added">Numéro ajouté sous forme d\'empreinte.</string>
-    <string name="call_blocking_invalid">Numéro invalide ou limite atteinte.</string>
+    <string name="call_blocking_invalid">Numéro non enregistré : vérifiez le format, la limite ou la disponibilité du stockage.</string>
     <string name="call_blocking_exact_count">%1$d règle(s) exacte(s) locale(s)</string>
     <string name="call_blocking_clear_exact">Effacer toutes les règles exactes</string>
     <string name="call_blocking_cleared">Toutes les règles exactes ont été effacées.</string>

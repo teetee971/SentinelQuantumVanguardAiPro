@@ -1,0 +1,9 @@
+# Répertoire et actions de blocage — périmètre retenu
+
+L'utilisateur demande photos dans la liste et deux propositions d'amélioration, puis Continue après propositions détaillées : nom/photo ouvrant fiche, récupération photo locale alternative, action Bloquer depuis fiche et conversation, confirmation et état factuel utilisant liste existante. Mise en œuvre native Kotlin/Compose dans les écrans réels.
+
+Approche retenue : réutiliser D1ContactAvatar et lire PHOTO_URI comme repli si PHOTO_THUMBNAIL_URI absent/invalide ; pas de portraits distants. En-tête de ligne cliquable et avatar64dp, bouton existant conservé pour accessibilité. Action de blocage commune keyée propriétaire/numéro, confirmation non sauvegardée, IO hors UI, état relu à RESUMED et après ajout, annulation des effets au changement d'identité. Dans fiche : vérifier contact/numéro/permission via garde actuelle ; dans conversation ouverte : vérifier permission et destinataire encore présent au thread courant avant mutation. Aucun envoi/appel/suppression ou blocage SMS.
+
+Alternative écartée : ajouter un store parallèle ou changer le moteur Telecom, ce qui dépasse l'amélioration d'accès et risque de diverger des règles existantes. Aucun blocage système, débloquage global ni migration HMAC. Les limites fail-open premier appel froid et fiabilité physique non établie restent déclarées.
+
+Tests : sélection URI locale miniature/principale/absence ; règle exacte distincte préfixe ; confirmation tactile/cancel/changement propriétaire sans mutation et affichage état enregistré. Instrumentation compilée, NON EXÉCUTÉE faute appareil. Kotlin, unités complètes, politiques Node et génération APK ; signature propriétaire uniquement locale après livraison, installation distinctement autorisée. Aucun Room, secret, workflow payant, fusion main ou effacement.

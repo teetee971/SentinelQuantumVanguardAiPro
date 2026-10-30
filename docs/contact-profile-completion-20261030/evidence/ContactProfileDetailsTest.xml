@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.ContactProfileDetailsTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-30T06:21:16.504Z" hostname="f84354b8fd7c" time="0.105">
+  <properties/>
+  <testcase name="cancelledOldProviderReadCannotPublishOverCurrentContact" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.057"/>
+  <testcase name="revocationDuringReadDiscardsPrivateFields" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.001"/>
+  <testcase name="cancelledPermissionFailureCannotPublishOverCurrentContact" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.036"/>
+  <testcase name="duplicateRowsAreCollapsedButDifferentLabelsAndValuesRemain" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.001"/>
+  <testcase name="unavailableOrDeniedSnapshotsCannotSupplyActionNumbers" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.0"/>
+  <testcase name="unavailableProviderIsDistinctFromEmptyContact" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.001"/>
+  <testcase name="boundsProviderContentWithoutChangingSourceRows" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.0"/>
+  <testcase name="snapshotCannotBeUsedForAnotherContactRevisionOrResume" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.001"/>
+  <testcase name="readyNumbersComeOnlyFromFreshProviderRows" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.002"/>
+  <testcase name="deniedPermissionNeverReadsProvider" classname="com.sentinel.quantum.security.ContactProfileDetailsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

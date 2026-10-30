@@ -1,3 +1,5 @@
+> **Branche de correction D.1, candidat non publié** : source courante `versionCode 18`, `versionName 1.0.9`. Photos locales de répertoire avec repli PHOTO_URI, ouverture par nom/photo, blocage d’appels confirmé depuis fiche/conversation avec liste existante et état de rôle distinct. Mitigation du défilement17 conservée, premier essai propriétaire favorable. Nouveaux parcours18 non validés physiquement ; filtrage à froid, Voice et conformité D.1 non établis. Signature historique et autorisation nécessaires avant mise à jour18.
+
 # RELEASE STATUS — CURRENT
 
 This file previously described an old v1.0.0 release attempt, obsolete workflows and a branch that are no longer the current release path. That information is historical and is retired as an operational instruction.

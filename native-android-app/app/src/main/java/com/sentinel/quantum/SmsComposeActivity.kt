@@ -7,6 +7,7 @@ import android.os.Looper
 import android.database.ContentObserver
 import android.provider.Telephony
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -37,6 +39,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,12 +67,13 @@ import androidx.compose.ui.unit.dp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SentinelMmsSender
-import com.sentinel.quantum.security.MmsAttachmentLoader
 import com.sentinel.quantum.security.MmsSendEligibilityPolicy
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
 import com.sentinel.quantum.security.SmsCallbackProgress
 import com.sentinel.quantum.security.SmsCallbackFeedback
 import com.sentinel.quantum.security.SmsTimestampOrder
+import com.sentinel.quantum.security.SmsConversationSnapshot
+import com.sentinel.quantum.security.SmsConversationRecipient
 import com.sentinel.quantum.security.SmsConversationStore
 import com.sentinel.quantum.security.SmsProviderMessageState
 import com.sentinel.quantum.security.SmsLinkAnalyzer
@@ -86,8 +90,12 @@ import com.sentinel.quantum.security.SmsSubscriptionState
 import com.sentinel.quantum.security.SmsSubmitReadiness
 import com.sentinel.quantum.security.SmsSubmissionGate
 import com.sentinel.quantum.security.SmsThreadOrganizer
+import com.sentinel.quantum.security.MessageDraftCompletion
+import com.sentinel.quantum.security.MessageTextDraft
+import com.sentinel.quantum.security.SmsNavigationPolicy
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ViewModelProvider
 import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
@@ -114,6 +122,10 @@ import kotlinx.coroutines.flow.collectLatest
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SmsComposeActivity : ComponentActivity() {
+    private val attachmentDraftViewModel by lazy(LazyThreadSafetyMode.NONE) {
+        ViewModelProvider(this)[MmsAttachmentDraftViewModel::class.java]
+    }
+
     private fun sanitizeSmsDestination(raw: String): String? {
         val value = raw.trim()
         if (value.isEmpty() || value.length > 32) return null
@@ -154,9 +166,9 @@ class SmsComposeActivity : ComponentActivity() {
                 var destination by rememberSaveable { mutableStateOf(initialDestination) }
                 var body by rememberSaveable { mutableStateOf(initialBody) }
                 var mmsComposeMode by rememberSaveable { mutableStateOf(initialMmsIntent) }
-                var selectedMmsAttachments by remember {
-                    mutableStateOf(emptyList<MmsAttachmentLoader.LoadedAttachment>())
-                }
+                val attachmentDraft = attachmentDraftViewModel.draft
+                val attachmentState by attachmentDraft.state.collectAsState()
+                val selectedMmsAttachments = attachmentState.attachments
                 var status by remember { mutableStateOf<String?>(null) }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
@@ -172,6 +184,7 @@ class SmsComposeActivity : ComponentActivity() {
                 var showComposer by rememberSaveable {
                     mutableStateOf(initialDestination.isNotBlank() || initialBody.isNotBlank() || initialMmsIntent)
                 }
+                var composerFromConversations by rememberSaveable { mutableStateOf(false) }
                 var threadCategoryFilter by remember { mutableStateOf(SmsThreadOrganizer.Category.ALL) }
                 val settingsStore = remember { SettingsStore(applicationContext) }
                 var notificationPreviewEnabled by remember {
@@ -223,33 +236,11 @@ class SmsComposeActivity : ComponentActivity() {
                 val conversations = remember { SmsConversationStore(applicationContext) }
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val ioScope = rememberCoroutineScope()
-                val attachmentLoader = remember { MmsAttachmentLoader(applicationContext) }
                 val mmsAttachmentLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.GetMultipleContents()
                 ) { uris ->
                     if (uris.isEmpty()) return@rememberLauncherForActivityResult
-                    ioScope.launch {
-                        when (val loaded = withContext(Dispatchers.IO) { attachmentLoader.load(uris) }) {
-                            is MmsAttachmentLoader.Result.Loaded -> {
-                                selectedMmsAttachments = loaded.attachments
-                                val total = loaded.attachments.sumOf { it.sizeBytes }
-                                status = "${loaded.attachments.size} image(s) prête(s) · $total octets"
-                            }
-                            is MmsAttachmentLoader.Result.Rejected -> {
-                                selectedMmsAttachments = emptyList()
-                                status = when (loaded.reason) {
-                                    "TOO_MANY_ATTACHMENTS" -> "Trop de pièces jointes sélectionnées."
-                                    "UNSUPPORTED_MIME_TYPE" -> "Type d’image non pris en charge."
-                                    "ATTACHMENT_FORMAT_MISMATCH" -> "Le contenu du fichier ne correspond pas au type d’image annoncé."
-                                    "ATTACHMENT_EMPTY" -> "Une image sélectionnée est vide."
-                                    "TOTAL_ATTACHMENT_SIZE_REJECTED" -> "La taille cumulée des images dépasse la limite MMS."
-                                    "ATTACHMENT_READ_FAILED" -> "Impossible de lire une image sélectionnée."
-                                    "ATTACHMENT_URI_REJECTED" -> "Source de pièce jointe refusée par sécurité."
-                                    else -> "Pièce jointe MMS refusée."
-                                }
-                            }
-                        }
-                    }
+                    attachmentDraft.select(uris.map { it.toString() })
                 }
                 val mmsDirectory = remember { File(applicationContext.filesDir, "mms-inbox") }
                 var mmsItems by remember { mutableStateOf(emptyList<MmsLocalInbox.Item>()) }
@@ -271,7 +262,25 @@ class SmsComposeActivity : ComponentActivity() {
                 var selectedThreadId by rememberSaveable { mutableStateOf<Long?>(null) }
                 var pendingDeleteThread by remember { mutableStateOf<SmsConversationStore.ThreadSummary?>(null) }
                 var pendingDeleteMessage by remember { mutableStateOf<SmsConversationStore.Message?>(null) }
-                var threadMessages by remember { mutableStateOf(emptyList<SmsConversationStore.Message>()) }
+                var threadSnapshot by remember { mutableStateOf(SmsConversationSnapshot()) }
+                val threadMessages = threadSnapshot.messagesFor(selectedThreadId.takeUnless { showComposer })
+                fun returnToConversations() {
+                    showComposer = false
+                    selectedThreadId = null
+                    threadSnapshot = SmsConversationSnapshot()
+                    pendingDeleteMessage = null
+                    conversationsSectionExpanded = true
+                }
+                val backAction = SmsNavigationPolicy.backAction(
+                    showComposer, selectedThreadId != null, composerFromConversations
+                )
+                fun handleBack() {
+                    when (backAction) {
+                        SmsNavigationPolicy.BackAction.CONVERSATIONS -> returnToConversations()
+                        SmsNavigationPolicy.BackAction.FINISH -> finish()
+                    }
+                }
+                BackHandler(enabled = backAction == SmsNavigationPolicy.BackAction.CONVERSATIONS) { handleBack() }
                 val visibleThreads = remember(threads, threadCategoryFilter) {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
@@ -288,11 +297,12 @@ class SmsComposeActivity : ComponentActivity() {
                     submissionGate.release()
                 }
                 fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
+                    val requestedSubscriptionId = selectedSubscriptionId
                     ioScope.launch {
                         if (!beginSubmission()) return@launch
                         try {
                             val result = withContext(Dispatchers.IO) {
-                                sender.send(recipient, message, selectedSubscriptionId)
+                                sender.send(recipient, message, requestedSubscriptionId)
                             }
                             status = when (result.reason) {
                                 "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
@@ -328,18 +338,23 @@ class SmsComposeActivity : ComponentActivity() {
                 fun submitMms(
                     recipient: String,
                     message: String,
-                    attachments: List<MmsAttachmentLoader.LoadedAttachment>,
                     onAccepted: () -> Unit
                 ) {
+                    val requestedSubscriptionId = selectedSubscriptionId
+                    val submittedImages = attachmentDraft.submissionSnapshot()
                     ioScope.launch {
+                        if (submittedImages == null) {
+                            status = "Attendez la fin du chargement des images avant l’envoi."
+                            return@launch
+                        }
                         if (!beginSubmission()) return@launch
                         try {
                             val result = withContext(Dispatchers.IO) {
                                 mmsSender.send(
                                     destination = recipient,
                                     text = message,
-                                    requestedSubscriptionId = selectedSubscriptionId,
-                                    attachments = attachments.map {
+                                    requestedSubscriptionId = requestedSubscriptionId,
+                                    attachments = submittedImages.attachments.map {
                                         SentinelMmsSender.Attachment(it.mimeType, it.payload)
                                     }
                                 )
@@ -374,6 +389,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 else -> "Échec de préparation ou d’envoi du MMS."
                             }
                             if (result.accepted) {
+                                attachmentDraft.clearIfUnchanged(submittedImages)
                                 onAccepted()
                                 providerEpoch++
                             }
@@ -396,14 +412,14 @@ class SmsComposeActivity : ComponentActivity() {
                         if (registeredUris.isNotEmpty()) runCatching { contentResolver.unregisterContentObserver(observer) }
                     }
                 }
-                LaunchedEffect(providerEpoch, activationEpoch, selectedThreadId) {
-                    val threadId = selectedThreadId
+                LaunchedEffect(providerEpoch, activationEpoch, selectedThreadId, showComposer) {
+                    val threadId = selectedThreadId.takeUnless { showComposer }
                     val refreshed = withContext(Dispatchers.IO) {
                         conversations.recentThreads(50) to
                             (threadId?.let { conversations.messagesForThread(it, 100) } ?: emptyList())
                     }
                     threads = refreshed.first
-                    threadMessages = refreshed.second
+                    threadSnapshot = SmsConversationSnapshot(threadId, refreshed.second)
                 }
                 LaunchedEffect(selectedThreadId, threadMessages.lastOrNull()?.id) {
                     if (selectedThreadId != null && threadMessages.isNotEmpty()) {
@@ -428,26 +444,20 @@ class SmsComposeActivity : ComponentActivity() {
                             status = SmsCallbackFeedback.message(it, providerPersistenceFailed)
                         }
                         providerEpoch++
-                        selectedThreadId?.let { threadId ->
-                            threadMessages = withContext(Dispatchers.IO) {
-                                conversations.messagesForThread(threadId, 100)
-                            }
-                        }
                     }
                 }
 
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
-                            title = "Messages Sentinel",
+                            title = "Sentinel · Messages",
                             subtitle = "SMS/MMS Android · confidentialité locale",
-                            onBack = { finish() }
+                            onBack = { handleBack() }
                         )
                     },
                     bottomBar = {
                         val threadId = selectedThreadId
-                        val replyAddress = threads.firstOrNull { it.threadId == threadId }?.address
-                            ?: threadMessages.lastOrNull()?.address.orEmpty()
+                        val replyAddress = SmsConversationRecipient.forThread(threadId, threads)
                         val replyVisible = !showComposer && threadId != null
                         if (status != null || replyVisible) {
                             Surface(tonalElevation = 4.dp) {
@@ -488,7 +498,11 @@ class SmsComposeActivity : ComponentActivity() {
                                                 maxLines = 3
                                             )
                                             Button(
-                                                onClick = { submitSms(replyAddress, draft) { replyDrafts = replyDrafts - threadId } },
+                                                onClick = {
+                                                    submitSms(replyAddress, draft) {
+                                                        replyDrafts = MessageDraftCompletion.acceptedReply(replyDrafts, threadId, draft)
+                                                    }
+                                                },
                                                 modifier = Modifier.phoneCoreTestId("phone_core_sms_reply_send"),
                                                 enabled = SmsSubmitReadiness.canSubmit(
                                                     activationCanSend = activationSnapshot.canSend,
@@ -516,25 +530,49 @@ class SmsComposeActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        PhoneCoreBrand(
-                            context = "Messages",
-                            status = activationModel.title,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+                            section = "Communications · SMS / MMS",
+                            title = if (showComposer) {
+                                if (mmsComposeMode) "Nouveau MMS" else "Nouveau SMS"
+                            } else selectedThreadId?.let { id ->
+                                threads.firstOrNull { it.threadId == id }?.address?.takeIf { it.isNotBlank() }
+                            } ?: "Messages Sentinel",
+                            description = activationModel.title,
+                            compact = true
+                        ) {
+                            if (!showComposer && selectedThreadId != null) {
+                                val displayedAddress = SmsConversationRecipient.forThread(selectedThreadId, threads)
+                                com.sentinel.quantum.ui.design.ConversationNumberActions(
+                                    address = displayedAddress,
+                                    onDial = { number ->
+                                        val request = ConversationNumberIntents.dial(this@SmsComposeActivity, number)
+                                        if (request == null) status = "Aucun numéro utilisable. Aucun appel lancé."
+                                        else runCatching { startActivity(request) }
+                                            .onFailure { status = "Impossible d’ouvrir le composeur. Aucun appel lancé." }
+                                    },
+                                    onAddContact = { number ->
+                                        val request = ConversationNumberIntents.contact(number)
+                                        if (request == null) status = "Aucun numéro à ajouter. Aucun contact enregistré."
+                                        else runCatching { startActivity(request) }
+                                            .onFailure { status = "Impossible d’ouvrir l’éditeur Contacts Android. Aucun contact enregistré." }
+                                    }
+                                )
+                            }
+                        }
                         TabRow(selectedTabIndex = if (showComposer) 1 else 0) {
                             Tab(selected = !showComposer, onClick = {
-                                showComposer = false
-                                selectedThreadId = null
-                                conversationsSectionExpanded = true
+                                returnToConversations()
                             }, text = { Text("Conversations") })
-                            Tab(selected = showComposer, onClick = { showComposer = true }, text = { Text("Écrire") })
+                            Tab(selected = showComposer, onClick = {
+                                if (!showComposer) {
+                                    composerFromConversations = true
+                                    selectedThreadId = null
+                                    threadSnapshot = SmsConversationSnapshot()
+                                    showComposer = true
+                                }
+                            }, text = { Text("Écrire") })
                         }
                         if (showComposer) {
-                            Text(
-                                if (mmsComposeMode) "Nouveau MMS" else "Nouveau SMS",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
-                            )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -544,7 +582,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     onClick = {
                                         if (!initialMmsIntent) {
                                             mmsComposeMode = false
-                                            selectedMmsAttachments = emptyList()
+                                            attachmentDraft.clear()
                                         }
                                     },
                                     enabled = !initialMmsIntent,
@@ -558,7 +596,7 @@ class SmsComposeActivity : ComponentActivity() {
                             }
                             Text(
                                 if (mmsComposeMode)
-                                    "MMS opérateur · PDU local borné · résultat réseau distinct de la soumission"
+                                    "Envoi via votre opérateur. Le résultat d’envoi dépend du réseau."
                                 else
                                     "Analyse locale · SMS opérateur sans chiffrement de bout en bout",
                                 style = MaterialTheme.typography.bodySmall
@@ -582,7 +620,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Text(
-                                        "Sentinel compose un PDU borné puis le confie à la pile MMS Android sur la SIM sélectionnée. Les images sont lues localement depuis le sélecteur Android, bornées et validées avant envoi. La prise en charge logicielle ne vaut pas preuve de livraison.",
+                                        "Choisissez des images et une SIM. Les fichiers sont vérifiés sur l’appareil avant leur transmission à Android. Cette prise en charge ne confirme pas la livraison par votre opérateur.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -639,7 +677,7 @@ class SmsComposeActivity : ComponentActivity() {
                             OutlinedTextField(
                                 value = destination,
                                 onValueChange = { destination = it.take(32) },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_destination"),
                                 label = { Text("Destinataire") },
                                 supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -655,7 +693,7 @@ class SmsComposeActivity : ComponentActivity() {
                                     }
                                     body = it.take(maxChars)
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_body"),
                                 label = { Text("Message") },
                                 supportingText = {
                                     val maxChars = if (mmsComposeMode) {
@@ -672,7 +710,7 @@ class SmsComposeActivity : ComponentActivity() {
                                 OutlinedButton(
                                     onClick = { mmsAttachmentLauncher.launch("image/*") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    enabled = selectedMmsAttachments.size < MmsSendEligibilityPolicy.MAX_ATTACHMENTS
+                                    enabled = !attachmentState.loading && !submissionInFlight
                                 ) {
                                     Text(
                                         if (selectedMmsAttachments.isEmpty()) "Ajouter des images"
@@ -681,8 +719,25 @@ class SmsComposeActivity : ComponentActivity() {
                                 }
                                 Text(
                                     "${selectedMmsAttachments.size} / ${MmsSendEligibilityPolicy.MAX_ATTACHMENTS} pièce(s) jointe(s)",
+                                    modifier = Modifier.phoneCoreTestId("phone_core_mms_attachment_count"),
                                     style = MaterialTheme.typography.bodySmall
                                 )
+                                if (attachmentState.loading) {
+                                    Text("Chargement des images…", modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                                }
+                                attachmentState.errorCode?.let { reason ->
+                                    Text(when (reason) {
+                                        "TOO_MANY_ATTACHMENTS" -> "Trop de pièces jointes sélectionnées."
+                                        "UNSUPPORTED_MIME_TYPE" -> "Type d’image non pris en charge."
+                                        "ATTACHMENT_FORMAT_MISMATCH" -> "Le contenu du fichier ne correspond pas au type d’image annoncé."
+                                        "ATTACHMENT_EMPTY" -> "Une image sélectionnée est vide."
+                                        "TOTAL_ATTACHMENT_SIZE_REJECTED" -> "La taille cumulée des images dépasse la limite MMS."
+                                        "ATTACHMENT_READ_FAILED" -> "Impossible de lire une image sélectionnée. Sélectionnez-la à nouveau."
+                                        "ATTACHMENT_URI_REJECTED" -> "Source de pièce jointe refusée par sécurité."
+                                        else -> "Pièce jointe MMS refusée."
+                                    }, color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                                }
                                 selectedMmsAttachments.forEachIndexed { index, attachment ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -696,9 +751,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         )
                                         TextButton(
                                             onClick = {
-                                                selectedMmsAttachments = selectedMmsAttachments.filterIndexed { itemIndex, _ ->
-                                                    itemIndex != index
-                                                }
+                                                attachmentDraft.remove(index)
                                             }
                                         ) { Text("Retirer") }
                                     }
@@ -742,13 +795,16 @@ class SmsComposeActivity : ComponentActivity() {
 
                             Button(
                                 onClick = {
-                                    if (mmsComposeMode) {
-                                        submitMms(destination, body, selectedMmsAttachments) {
-                                            body = ""
-                                            selectedMmsAttachments = emptyList()
-                                        }
+                                    val submitted = MessageTextDraft(destination, body, mmsComposeMode)
+                                    val accepted = {
+                                        body = MessageDraftCompletion.remainingText(
+                                            submitted, MessageTextDraft(destination, body, mmsComposeMode)
+                                        )
+                                    }
+                                    if (submitted.mms) {
+                                        submitMms(submitted.destination, submitted.text, accepted)
                                     } else {
-                                        submitSms(destination, body) { body = "" }
+                                        submitSms(submitted.destination, submitted.text, accepted)
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_send"),
@@ -758,13 +814,14 @@ class SmsComposeActivity : ComponentActivity() {
                                     selectedSubscriptionId = selectedSubscriptionId,
                                     destinationPresent = destination.isNotBlank(),
                                     bodyPresent = body.isNotBlank() || (mmsComposeMode && selectedMmsAttachments.isNotEmpty()),
-                                    submissionInFlight = submissionInFlight
+                                    submissionInFlight = submissionInFlight || attachmentState.loading
                                 )
                             ) {
                                 Icon(Icons.Default.Send, contentDescription = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     when {
+                                        attachmentState.loading -> "Chargement des images…"
                                         mmsComposeMode && body.isBlank() && selectedMmsAttachments.isEmpty() -> "Ajouter un message ou une image"
                                         mmsComposeMode -> stringResource(R.string.phone_core_send_mms)
                                         body.isBlank() -> "Écrire un message"
@@ -952,11 +1009,11 @@ class SmsComposeActivity : ComponentActivity() {
                                         }
                                     }
                                     if (threads.isEmpty()) {
-                                        Text(
-                                            "Aucune conversation SMS disponible. Les nouveaux messages apparaîtront ici après réception ou envoi.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        com.sentinel.quantum.ui.design.SentinelGlassCard(Modifier.fillMaxWidth()) {
+                                            Text("Aucune conversation SMS", style = MaterialTheme.typography.titleMedium)
+                                            Text("Les conversations du téléphone apparaîtront après réception ou envoi. Aucun contenu de démonstration n’est ajouté.",
+                                                style = MaterialTheme.typography.bodyMedium)
+                                        }
                                     } else if (visibleThreads.isEmpty()) {
                                         Text(
                                             "Aucune conversation dans cette catégorie.",
@@ -978,7 +1035,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                 else null,
                                                 onOpen = {
                                                     selectedThreadId = thread.threadId
-                                                    threadMessages = emptyList()
+                                                    threadSnapshot = SmsConversationSnapshot()
                                                 },
                                                 onWhatsApp = {
                                                     val uri = WhatsAppClickToChat.uriFor(thread.address)
@@ -1022,16 +1079,14 @@ class SmsComposeActivity : ComponentActivity() {
                                                         onClick = {
                                                             pendingDeleteThread = null
                                                             ioScope.launch {
-                                                                val result = withContext(Dispatchers.IO) {
-                                                                    val deleted = conversations.deleteThread(pending.threadId)
-                                                                    deleted to if (deleted > 0) conversations.recentThreads(50) else emptyList()
+                                                                val deleted = withContext(Dispatchers.IO) {
+                                                                    conversations.deleteThread(pending.threadId)
                                                                 }
-                                                                val (deleted, refreshedThreads) = result
                                                                 if (deleted > 0) {
-                                                                    threads = refreshedThreads
+                                                                    providerEpoch++
                                                                     if (selectedThreadId == pending.threadId) {
                                                                         selectedThreadId = null
-                                                                        threadMessages = emptyList()
+                                                                        threadSnapshot = SmsConversationSnapshot()
                                                                     }
                                                                     status = "Conversation supprimée · $deleted message(s)"
                                                                 } else {
@@ -1048,16 +1103,26 @@ class SmsComposeActivity : ComponentActivity() {
                                 } else {
                                     OutlinedButton(
                                         onClick = {
-                                            selectedThreadId = null
-                                            threadMessages = emptyList()
+                                            returnToConversations()
                                         },
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
                                         Text("Retour aux conversations")
                                     }
-                                    val replyAddress = threads.firstOrNull { it.threadId == selectedThreadId }?.address
-                                        ?: threadMessages.lastOrNull()?.address.orEmpty()
+                                    val replyAddress = SmsConversationRecipient.forThread(selectedThreadId, threads)
                                     Text(replyAddress.ifBlank { "Conversation" }, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    selectedThreadId?.let { blockingThreadId ->
+                                        com.sentinel.quantum.ui.design.NumberCallBlockButton(
+                                            "sms-thread:$blockingThreadId", replyAddress
+                                        ) {
+                                            val normalized = com.sentinel.quantum.security.CallRuleEngine.normalizeNumber(replyAddress)
+                                            selectedThreadId == blockingThreadId && conversations.canRead() && normalized != null &&
+                                                SmsConversationRecipient.forThread(selectedThreadId, threads) == replyAddress &&
+                                                conversations.messagesForThread(blockingThreadId, 1).any {
+                                                    com.sentinel.quantum.security.CallRuleEngine.normalizeNumber(it.address) == normalized
+                                                } && conversations.canRead()
+                                        }
+                                    }
                                     if (threadMessages.isEmpty()) {
                                         Text(
                                             "Aucun message disponible dans cette conversation.",
@@ -1111,11 +1176,18 @@ class SmsComposeActivity : ComponentActivity() {
                                                     )
                                                 }
                                                 if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                    Text(
-                                                        "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
+                                                    com.sentinel.quantum.ui.design.SentinelGlassCard(Modifier.fillMaxWidth()) {
+                                                        Text(
+                                                            if (messageRisk.linksInspected > 0) "Lien à examiner" else "Message à examiner",
+                                                            style = MaterialTheme.typography.titleSmall,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                        Text("Analyse locale : ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score indicatif ${messageRisk.score}/100",
+                                                            style = MaterialTheme.typography.bodyMedium)
+                                                        Text(messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) },
+                                                            style = MaterialTheme.typography.bodySmall)
+                                                    }
                                                 }
                                                 OutlinedButton(
                                                     onClick = {
@@ -1130,7 +1202,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         }
                                     }
                                 }
-                                pendingDeleteMessage?.let { pending ->
+                                pendingDeleteMessage?.takeIf { it.threadId == selectedThreadId }?.let { pending ->
                                     Card(
                                         Modifier.fillMaxWidth(),
                                         shape = RoundedCornerShape(18.dp),
@@ -1149,23 +1221,11 @@ class SmsComposeActivity : ComponentActivity() {
                                                 Button(onClick = {
                                                     pendingDeleteMessage = null
                                                     ioScope.launch {
-                                                        val threadId = selectedThreadId
-                                                        val result = withContext(Dispatchers.IO) {
-                                                            val deleted = conversations.deleteMessage(pending.id)
-                                                            val refreshedMessages = if (deleted && threadId != null) {
-                                                                conversations.messagesForThread(threadId, 100)
-                                                            } else emptyList()
-                                                            val refreshedThreads = if (deleted) {
-                                                                conversations.recentThreads(50)
-                                                            } else emptyList()
-                                                            Triple(deleted, refreshedMessages, refreshedThreads)
+                                                        val deleted = withContext(Dispatchers.IO) {
+                                                            conversations.deleteMessage(pending.id)
                                                         }
-                                                        val (deleted, refreshedMessages, refreshedThreads) = result
                                                         if (deleted) {
-                                                            if (threadId != null && selectedThreadId == threadId) {
-                                                                threadMessages = refreshedMessages
-                                                            }
-                                                            threads = refreshedThreads
+                                                            providerEpoch++
                                                             status = "Message supprimé"
                                                         } else {
                                                             status = "Suppression refusée ou impossible"

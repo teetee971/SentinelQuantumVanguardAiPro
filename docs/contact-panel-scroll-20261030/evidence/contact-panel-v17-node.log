@@ -1,0 +1,28 @@
+✔ unsigned AAB archive integrity is checked before artifact upload (0.751457ms)
+✔ optional bundletool does not silently claim semantic validation or mask failure (0.181943ms)
+✔ unsigned validation AAB cannot be mistaken for a publishable release artifact (0.333731ms)
+Built APK: SentinelQuantumVanguard-vtest-fixture-debug.apk
+-rw------- 1 agent agent 8 Oct 30 13:33 SentinelQuantumVanguard-vtest-fixture-debug.apk
+SentinelQuantumVanguard-vtest-fixture-debug.apk: OK
+SentinelQuantumVanguard-vtest-fixture-debug.apk: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+✔ debug APK is verified before artifact upload (0.777987ms)
+✔ debug APK verification checks package, alignment and signature (0.222684ms)
+✔ delivered APK checksum and identity describe actual build and PR source (56.765013ms)
+✔ APK artifacts are named with exact PR source head when available (0.180881ms)
+✔ APK delivery uploads the APK, its checksum and its build identity (1.339399ms)
+✔ production Android releases require the protected environment and current main head (1.082604ms)
+✔ release integrity records APK and AAB signer evidence and verifies checksums (0.216394ms)
+✔ the workflow creates a draft rather than a publicly downloadable release (0.496234ms)
+✔ production signing never falls back to a debug keystore (0.173641ms)
+✔ releaseUnsigned explicitly clears any signing config inherited from release (0.301733ms)
+✔ the next Android update exceeds installed versionCode 10 (0.211918ms)
+✔ Auth0 Android dependency is pinned to the exact qualified version (0.260911ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 243.228188

@@ -1,0 +1,11 @@
+# D.1 — actions sur le numéro affiché dans une conversation
+
+Référence : maquette officielle R02 « Messages sécurisés », registre VISUAL_REFERENCES.md. Mission existante : rendre Téléphone/Contacts/Messages navigables, sans faux états ni commandes inactives. Ce complément n’ajoute aucune analyse distante ou identité vérifiée.
+
+Approche retenue pour cette itération : Appeler préremplit le composeur Sentinel par ACTION_DIAL explicite ; Ajouter aux contacts délègue un numéro modifiable à l’éditeur Android par ACTION_INSERT_OR_EDIT. Le choix d’utiliser les parcours existants est technique, motivé par la confirmation utilisateur et la conservation des permissions/données. Appel direct automatique et écriture Contacts silencieuse sont exclus par les contraintes de la mission ; un nouveau carnet indépendant est hors périmètre.
+
+Les actions portent uniquement sur l’adresse affichée du résumé de conversation, pas sur un nombre de participants ou une identité déduits. Aucun fallback à une autre personne si ce résumé n’est plus disponible. Chiffres ASCII et + initial après suppression des séparateurs visuels ; expéditeurs alphanumériques, adresses multiples délimitées, retours ligne, URI, pauses/attentes et codes *# refusés. Ne pas deviner de pays. L’éligibilité de format ne prouve ni identité ni joignabilité.
+
+Les boutons réels se trouvent dans le composant d’en-tête partagé via un slot optionnel, utilisé seulement pour une conversation ouverte. Ils se réorganisent à largeur étroite/police agrandie. Si aucun numéro n’est exploitable, un motif remplace les commandes ; une application cible indisponible donne une erreur explicite. Aucun READ/WRITE_CONTACTS ni autre droit ajouté.
+
+Tests : cinq cas JVM de politique, trois vérifications d’intents Android sans lancement, deux scénarios Compose pour clics/largeur et source refusée. Compilation et suite app complètes, signatures APK et journaux conservés. Tests instrumentés, application Contacts Samsung et comparaison visuelle restent NON EXÉCUTÉS sans runtime/appareil utilisable. Les visuels reçus et les consignes d’exécution autonome constituent le périmètre déjà autorisé ; cette note décrit les choix de mise en œuvre, pas une nouvelle approbation visuelle.

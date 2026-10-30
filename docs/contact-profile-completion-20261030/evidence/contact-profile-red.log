@@ -1,0 +1,131 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:8:27 Unresolved reference 'ContactProfileRequest'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:11:22 Unresolved reference 'ContactProfileDetails'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:11:54 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:12:13 Unresolved reference 'ContactProfileField'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:12:33 Unresolved reference 'ContactProfileKind'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:13:13 Unresolved reference 'ContactProfileField'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:13:33 Unresolved reference 'ContactProfileKind'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:14:13 Unresolved reference 'ContactProfileField'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:14:33 Unresolved reference 'ContactProfileKind'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:15:13 Unresolved reference 'ContactProfileField'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:15:33 Unresolved reference 'ContactProfileKind'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:16:13 Unresolved reference 'ContactProfileField'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:16:33 Unresolved reference 'ContactProfileKind'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:18:114 Unresolved reference 'it'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:19:33 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:19:43 Unresolved reference 'label'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:23:22 Unresolved reference 'ContactProfileField'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:23:42 Unresolved reference 'ContactProfileKind'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:24:22 Unresolved reference 'ContactProfileDetails'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:24:54 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:25:36 Unresolved reference 'value'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:26:33 Unresolved reference 'label'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:32:22 Unresolved reference 'loadContactProfile'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:32:72 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:33:22 Unresolved reference 'ContactProfileStatus'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:40:22 Unresolved reference 'loadContactProfile'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:42:13 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:42:20 Unresolved reference 'ContactProfileField'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:42:40 Unresolved reference 'ContactProfileKind'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:44:22 Unresolved reference 'ContactProfileStatus'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:48:65 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:49:22 Unresolved reference 'ContactProfileStatus'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:49:56 Unresolved reference 'loadContactProfile'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:50:22 Unresolved reference 'ContactProfileStatus'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:50:50 Unresolved reference 'loadContactProfile'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:50:90 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:54:22 Unresolved reference 'loadContactProfile'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:54:62 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:56:46 Cannot infer type for type parameter 'K'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:56:46 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:56:46 This declaration needs opt-in. Its usage must be marked with '@kotlin.ExperimentalStdlibApi' or '@OptIn(kotlin.ExperimentalStdlibApi::class)'
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:57:46 Cannot infer type for type parameter 'K'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:57:46 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:57:46 This declaration needs opt-in. Its usage must be marked with '@kotlin.ExperimentalStdlibApi' or '@OptIn(kotlin.ExperimentalStdlibApi::class)'
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:58:46 Cannot infer type for type parameter 'K'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:58:46 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:58:46 This declaration needs opt-in. Its usage must be marked with '@kotlin.ExperimentalStdlibApi' or '@OptIn(kotlin.ExperimentalStdlibApi::class)'
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:63:24 Unresolved reference 'ContactProfileSnapshot'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:65:25 Unresolved reference 'loadContactProfile'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:66:17 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:66:17 Suspension functions can only be called within coroutine body.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:66:63 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:70:31 Cannot infer type for type parameter 'K'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:70:31 Cannot infer type for type parameter 'V'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:70:31 This declaration needs opt-in. Its usage must be marked with '@kotlin.ExperimentalStdlibApi' or '@OptIn(kotlin.ExperimentalStdlibApi::class)'
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:71:21 Unresolved reference 'loadContactProfile'.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:71:61 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:74:34 Unresolved reference 'forRequest'.
+
+> Task :app:compileDebugUnitTestKotlin FAILED
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugUnitTestKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Kotlin compiler: UNRESOLVED_REFERENCE
+       Kotlin compiler error
+         Unresolved reference 'ContactProfileRequest'.
+         Location: /workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/test/java/com/sentinel/quantum/security/ContactProfileDetailsTest.kt:8
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 18s
+30 actionable tasks: 2 executed, 28 up-to-date

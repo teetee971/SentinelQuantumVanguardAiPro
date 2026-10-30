@@ -1,0 +1,9 @@
+{
+  "status": "UNVERIFIED",
+  "private_key_copied": false,
+  "private_key_exported": false,
+  "signing_performed": false,
+  "expected_certificate_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "keytool_exit": 1,
+  "reason": "STORE_OR_ALIAS_UNREADABLE_WITH_PROVIDED_LOCAL_CREDENTIAL"
+}

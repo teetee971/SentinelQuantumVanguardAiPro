@@ -1,0 +1,35 @@
+{
+  "installed_identity_user_confirmed": {
+    "package": "com.sentinel.quantum",
+    "versionName": "1.0.9",
+    "versionCode": 10,
+    "certificate_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2"
+  },
+  "qualified_source": "dfd272861fd6a428df07f139a2665605d1dc2b2e",
+  "previous_head": "9109dde2c58ac7dce0e7165999ef1d6c0c15d8d1",
+  "accessible_store_identifiers": [
+    "local-default-debug"
+  ],
+  "matching_original_key_found_locally": false,
+  "unreadable_directories": [
+    "/root/.android"
+  ],
+  "no_signing_environment_bindings_present": true,
+  "codemagic_connector_available": false,
+  "github_secret_metadata_http_status": 403,
+  "codemagic_historical_config": {
+    "ref": "origin/backup/non-validee-phone-role-diagnostics-20261027",
+    "ref_sha": "9d093badf024a6834075ed9c593aa3b6b81b4aff",
+    "blob": "60efd80373bbfddb7ace4f880b6a930f6be42d5a",
+    "group_reference": "sentinel_production",
+    "remote_group_contents_accessed": false
+  },
+  "historical_termux_public_identity_references": [
+    "scripts/termux-security-lab-preview-update.sh:22",
+    "scripts/termux-security-lab-preview-v15.sh:22"
+  ],
+  "lineage_file_found_in_accessible_inventory": false,
+  "candidate_v3_v31_signature_verified": false,
+  "private_key_copied_or_exported": false,
+  "installation_performed": false
+}

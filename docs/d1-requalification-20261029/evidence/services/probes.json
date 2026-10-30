@@ -1,0 +1,37 @@
+[
+  {
+    "name": "osint-alertes",
+    "url": "https://www.cert.ssi.gouv.fr/alerte/feed/",
+    "exit": 0,
+    "http": "302",
+    "error": ""
+  },
+  {
+    "name": "osint-avis",
+    "url": "https://www.cert.ssi.gouv.fr/avis/feed/",
+    "exit": 0,
+    "http": "302",
+    "error": ""
+  },
+  {
+    "name": "osint-cti",
+    "url": "https://www.cert.ssi.gouv.fr/cti/feed/",
+    "exit": 0,
+    "http": "302",
+    "error": ""
+  },
+  {
+    "name": "voice-live",
+    "url": "https://sentinel-voice-api.onrender.com/health/live",
+    "exit": 0,
+    "http": "200",
+    "error": ""
+  },
+  {
+    "name": "voice-ready",
+    "url": "https://sentinel-voice-api.onrender.com/health/ready",
+    "exit": 0,
+    "http": "503",
+    "error": ""
+  }
+]

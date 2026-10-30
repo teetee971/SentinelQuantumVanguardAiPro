@@ -1,0 +1,10 @@
+{
+  "tests": 1422,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "passed": 1422,
+  "xml_files": 305,
+  "suite": ":app:testDebugUnitTest",
+  "source": "precommit working tree later committed without source changes"
+}

@@ -1,0 +1,43 @@
+{
+  "source_git_sha": "76911552583432a776ddcfda7a64bc161c0035d7",
+  "package": "com.sentinel.quantum",
+  "versionCode": 17,
+  "versionName": "1.0.9",
+  "artifacts": {
+    "unsigned": {
+      "name": "Sentinel-D1-v17-UNSIGNED-76911552.apk",
+      "bytes": 101391451,
+      "sha256": "ae616eda1219bf97c80f2742c965142343746af6df3476d0d651a80baec47185",
+      "checks": {
+        "signature": 1,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "cloud_debug": {
+      "name": "Sentinel-D1-v17-CLOUD-debug-76911552.apk",
+      "bytes": 101494481,
+      "sha256": "d1c6ed6424fcb7f0ae955d408d922abc8bdca20bc6916f476fa664e0687aec83",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "instrumentation": {
+      "name": "Sentinel-D1-v17-androidTest-76911552.apk",
+      "bytes": 1245766,
+      "sha256": "a5ed59a8478ac4367db3cf0f6497060619272603b67104777cfdf5e43d34be87",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    }
+  },
+  "unsigned_drive_url": "https://drive.google.com/file/d/1ihvAxU_IJmxwg5HK9VsirdetQC62Xg3y/view?usp=drivesdk",
+  "instrumentation": "NON EX\u00c9CUT\u00c9S"
+}

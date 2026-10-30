@@ -1,0 +1,5 @@
+M	RELEASE_STATUS.md
+A	docs/contact-panel-scroll-20261030/DESIGN.md
+M	native-android-app/app/build.gradle
+M	native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/design/ContactProfileContentInstrumentationTest.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt

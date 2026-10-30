@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallRuleEngineTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-30T12:36:13.202Z" hostname="f84354b8fd7c" time="0.01">
+  <properties/>
+  <testcase name="signedReputationRuleSilencesButDoesNotBlock" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <testcase name="shortInternationalCountryPrefixNormalizesOnlyWhenExplicit" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.0"/>
+  <testcase name="malformedOrUnavailableNumberFailsOpen" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.0"/>
+  <testcase name="frenchNationalAndInternationalFormsMatchTheSameExactRule" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <testcase name="unavailableDeviceFingerprintFailsOpen" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <testcase name="versionedAndLegacyFingerprintsCanCoexistDuringRotation" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <testcase name="explicitPrefixRuleBlocks" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <testcase name="unknownValidNumberIsAllowed" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <testcase name="corruptedPersistedRulesAreIgnored" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <testcase name="internationalCountryCallingCodeCanBeBlockedExplicitly" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.002"/>
+  <testcase name="explicitExactRuleBlocks" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.0"/>
+  <testcase name="frenchAndInternationalPrefixesCanonicalizeConsistently" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.0"/>
+  <testcase name="unsignedDefaultReputationIsEmpty" classname="com.sentinel.quantum.security.CallRuleEngineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

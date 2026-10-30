@@ -1,0 +1,20 @@
+{
+  "evidence_source": "user-provided screenshot of commands executed in Ubuntu proot on the S24+; not directly executed or reverified in cloud",
+  "unsigned_apk_sha256_previously_confirmed": "854e61e38bfafe0ec8f1871c0833b68c07fcc42485683f6e872f562def1958d9",
+  "signed_apk_filename": "Sentinel-D1-v11-SIGNED-68915958.apk",
+  "signed_apk_sha256_transcribed_from_screenshot": "3bf4d10ab8cadd0cf4d38968f51f68478fa1efdf4e907d4d3569d689b992fff8",
+  "certificate_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "single_signer_check_passed": true,
+  "package": "com.sentinel.quantum",
+  "versionCode": 11,
+  "versionName": "1.0.9",
+  "signature_verify_and_alignment_checks_passed_in_owner_command": true,
+  "copy_hash_comparison_passed": true,
+  "owner_marker": "SIGNATURE_ET_ALIGNEMENT_VERIFIES — NON INSTALLE",
+  "installation_performed": false,
+  "cloud_has_signed_apk": false,
+  "private_key_copied_or_exported": false,
+  "source_commit": "50c66852c13d6ed4354d2a818277a7241ef45c4b",
+  "physical_scenarios": "26 NON TESTÉS",
+  "authorization_for_installation": "NOT YET GIVEN"
+}

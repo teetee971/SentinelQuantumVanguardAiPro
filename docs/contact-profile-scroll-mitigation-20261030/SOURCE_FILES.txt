@@ -1,0 +1,8 @@
+M	docs/contact-profile-completion-20261030/OWNER_RUNTIME_V12.md
+A	docs/contact-profile-scroll-mitigation-20261030/evidence/contact-profile-no-bounce-node.log
+A	docs/contact-profile-scroll-mitigation-20261030/evidence/contact-profile-no-bounce.exit
+A	docs/contact-profile-scroll-mitigation-20261030/evidence/contact-profile-no-bounce.log
+A	docs/contact-profile-scroll-mitigation-20261030/evidence/framework-investigation.json
+A	docs/contact-profile-scroll-mitigation-20261030/evidence/test-summary.json
+M	native-android-app/app/build.gradle
+M	native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/D1ContactProfile.kt

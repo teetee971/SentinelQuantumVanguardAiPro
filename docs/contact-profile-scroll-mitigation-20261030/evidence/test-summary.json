@@ -1,0 +1,19 @@
+{
+  "android_app": {
+    "tests": 1422,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 1422,
+    "xml_files": 305
+  },
+  "wearable": {
+    "tests": 26,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 26,
+    "xml_files": 3
+  },
+  "instrumentation": "NOT EXECUTED; diagnostic gesture test compiled only"
+}

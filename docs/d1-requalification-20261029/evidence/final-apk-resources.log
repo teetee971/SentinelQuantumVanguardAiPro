@@ -1,0 +1,4 @@
+    resource 0x7f08006a drawable/d1_orbital_globe
+      (nodpi) (file) res/drawable-nodpi-v4/d1_orbital_globe.png type=PNG
+    resource 0x7f08006b drawable/d1_unknown_identity
+      (nodpi) (file) res/drawable-nodpi-v4/d1_unknown_identity.png type=PNG

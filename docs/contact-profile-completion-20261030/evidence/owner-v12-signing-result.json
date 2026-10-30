@@ -1,0 +1,21 @@
+{
+  "evidence_type": "owner_terminal_screenshot_not_cloud_execution",
+  "source_git_sha": "06f913c057b9b1814f4dea7c436047df3dd2dfd4",
+  "unsigned_sha256": "e0d779cf5601fae9ceeecb609d5d38bc497d09a671f47d2c6a73d3f33efa021b",
+  "signed_file_name": "Sentinel-D1-v12-SIGNED-68915958.apk",
+  "signed_sha256_transcribed_from_screenshot": "261d85b479d58256135d9b79b319c5564b17453a728d4ca915e7578c1315f255",
+  "certificate_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "package": "com.sentinel.quantum",
+  "versionCode": 12,
+  "versionName": "1.0.9",
+  "success_marker": "SIGNATURE_ET_INTEGRITE_VERIFIEES — NON INSTALLE",
+  "observed_checks": "Local guarded script reached success marker after signature, one-signer certificate, alignment, package/version, ZIP-entry content and exclusive output copy checks",
+  "signed_apk_received_in_cloud": false,
+  "private_key_copied_or_exported": false,
+  "installation": "NOT PERFORMED; explicit version12 update authorization pending",
+  "instrumentation": "NOT EXECUTED",
+  "physical_version12": "NOT EXECUTED",
+  "proot_warning": "cannot sanitize binding /proc/self/fd/0; warning precedes success marker and completed outputs",
+  "crypto_update_compatibility": "Matches previously established installed certificate and package; versionCode12 exceeds installed11, according to owner evidence",
+  "raw_screenshot_published": false
+}

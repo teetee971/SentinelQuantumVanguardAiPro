@@ -1,0 +1,48 @@
+{
+  "source_git_sha": "0e5df74e482f91a1fe3048385dfcd161ad93fb14",
+  "base_git_sha": "4bce5eccfab78b3e348fc3e3a0ed0f4bf302f5c6",
+  "package": "com.sentinel.quantum",
+  "versionCode": 16,
+  "versionName": "1.0.9",
+  "artifacts": {
+    "unsigned": {
+      "name": "Sentinel-D1-v16-UNSIGNED-0e5df74e.apk",
+      "bytes": 102511998,
+      "sha256": "c74f72491552df4a9ae1009c769dc54927d4c8334d5adb0963142a3561bf43f6",
+      "checks": {
+        "signature": 1,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "cloud_debug": {
+      "name": "Sentinel-D1-v16-CLOUD-debug-0e5df74e.apk",
+      "bytes": 102615024,
+      "sha256": "4a3ad04633cf23cef7afc1d806e1d455a349c09b311345c187c3c864e04e55cd",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    },
+    "instrumentation": {
+      "name": "Sentinel-D1-v16-androidTest-0e5df74e.apk",
+      "bytes": 1239931,
+      "sha256": "16ae14b9c72da03f91518f88c6eab3962c645348f0b06fd11f77c735e0561146",
+      "checks": {
+        "signature": 0,
+        "alignment4": 0,
+        "alignment16": 0,
+        "badging": 0
+      }
+    }
+  },
+  "scope": "Direct dialer foreground preparation + resumed role facts + revision-guarded UI refresh; screening engine/storage/keys/service unchanged",
+  "reported_unblocked_calls": "UNRESOLVED; owner cannot recall example; no physical reproduction",
+  "cold_first_call_limit": "REMAINS: process-only caches can fail open before preparation",
+  "instrumentation": "NOT EXECUTED",
+  "update_signing": "UNSIGNED; original owner key6891 required, cloud dee0 incompatible",
+  "unsigned_drive_url": "https://drive.google.com/file/d/1CcQvo-0J9Gc-hbBNc6bJOxNaMz1PBa1p/view?usp=drivesdk"
+}

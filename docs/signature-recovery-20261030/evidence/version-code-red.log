@@ -1,0 +1,35 @@
+✔ production Android releases require the protected environment and current main head (0.858907ms)
+✔ release integrity records APK and AAB signer evidence and verifies checksums (0.170255ms)
+✔ the workflow creates a draft rather than a publicly downloadable release (0.209294ms)
+✔ production signing never falls back to a debug keystore (0.168612ms)
+✔ releaseUnsigned explicitly clears any signing config inherited from release (0.234501ms)
+✖ the next Android update exceeds installed versionCode 10 (0.572719ms)
+✔ Auth0 Android dependency is pinned to the exact qualified version (0.253179ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 63.071728
+
+✖ failing tests:
+
+test at scripts/android-release-policy.test.js:45:1
+✖ the next Android update exceeds installed versionCode 10 (0.572719ms)
+  AssertionError [ERR_ASSERTION]: normal update must exceed installed versionCode 10
+      at TestContext.<anonymous> (file:///workspace/SentinelQuantumVanguardAiPro/scripts/android-release-policy.test.js:47:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

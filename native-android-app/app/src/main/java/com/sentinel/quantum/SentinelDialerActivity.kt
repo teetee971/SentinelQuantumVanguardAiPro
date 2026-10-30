@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -81,6 +82,7 @@ import com.sentinel.quantum.security.EmergencyNumberOracle
 import com.sentinel.quantum.security.FamilySafetyPolicy
 import com.sentinel.quantum.security.PhoneNumberRiskRules
 import com.sentinel.quantum.security.LocalContactLookup
+import com.sentinel.quantum.security.ContactProfileSelection
 import com.sentinel.quantum.security.ContactDialNumberPolicy
 import com.sentinel.quantum.security.ContactSearchPolicy
 import com.sentinel.quantum.security.ContactPresentationPolicy
@@ -88,6 +90,7 @@ import com.sentinel.quantum.security.WhatsAppClickToChatPolicy
 import com.sentinel.quantum.security.PhonePrivacyFirewall
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.RtrDirectoryClient
+import com.sentinel.quantum.security.CallHistoryReadState
 import com.sentinel.quantum.security.SystemCallLogReader
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
@@ -113,6 +116,13 @@ private const val CALL_HISTORY_LOAD_LIMIT = 500
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class SentinelDialerActivity : ComponentActivity() {
+    override fun onPostResume() {
+        super.onPostResume()
+        // The default dialer/contact entry can bypass MainActivity. Warm only after this UI
+        // resumes; never move disk/Keystore work into Application.onCreate or onScreenCall.
+        (application as SentinelApplication).launchForegroundMaintenance()
+    }
+
     private var pendingNumber: String? = null
     private var callActionStatus by mutableStateOf<String?>(null)
     private var contactsPermissionGranted by mutableStateOf(false)
@@ -578,9 +588,10 @@ class SentinelDialerActivity : ComponentActivity() {
                 ) }
                 var showContacts by remember { mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) }
                 var showRecents by remember { mutableStateOf(false) }
-                var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
+                var recentState by remember { mutableStateOf(CallHistoryReadState()) }
+                val recentItems = recentState.entries
                 var recentVisibleLimit by remember { mutableStateOf(CALL_HISTORY_PAGE_SIZE) }
-                var recentLoading by remember { mutableStateOf(false) }
+                val recentLoading = recentState.loading
                 val recentSummary = remember(recentItems) {
                     CallHistoryInsights.summarize(recentItems)
                 }
@@ -588,6 +599,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactFilter by rememberSaveable { mutableStateOf(0) }
                 var favoriteRefreshEpoch by remember { mutableStateOf(0) }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
+                var profileContact by remember { mutableStateOf<LocalContactLookup.Contact?>(null) }
                 var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
                 var contactsLoading by remember { mutableStateOf(false) }
                 var contactListStatus by remember { mutableStateOf<String?>(null) }
@@ -597,8 +609,13 @@ class SentinelDialerActivity : ComponentActivity() {
                 val favorites = remember { PhoneFavoriteStore(context) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 var resumeEpoch by remember { mutableStateOf(0) }
+                var contactPhotoRefreshGeneration by remember { mutableStateOf(0) }
                 DisposableEffect(context) {
                     val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_PAUSE) {
+                            // Settings may revoke and regrant access before the next ON_RESUME.
+                            recentState = recentState.withAccess(false, false, resumed = false)
+                        }
                         if (event == Lifecycle.Event.ON_RESUME) {
                             contactsPermissionGranted = ContextCompat.checkSelfPermission(
                                 context, Manifest.permission.READ_CONTACTS
@@ -609,12 +626,29 @@ class SentinelDialerActivity : ComponentActivity() {
                             phoneStatePermissionGranted = ContextCompat.checkSelfPermission(
                                 context, Manifest.permission.READ_PHONE_STATE
                             ) == PackageManager.PERMISSION_GRANTED
+                            recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
                             callLineRefreshEpoch++
                             resumeEpoch++
+                            contactPhotoRefreshGeneration++
                         }
                     }
                     context.lifecycle.addObserver(observer)
                     onDispose { context.lifecycle.removeObserver(observer) }
+                }
+                LaunchedEffect(callLogPermissionGranted) {
+                    recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
+                }
+                LaunchedEffect(contactsPermissionGranted) {
+                    if (!contactsPermissionGranted) {
+                        profileContact = null
+                        contactItems = emptyList()
+                    }
                 }
                 LaunchedEffect(lifecycle) {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -622,6 +656,10 @@ class SentinelDialerActivity : ComponentActivity() {
                             contactsPermissionGranted = snapshot.diagnostics.contactsPermission
                             callLogPermissionGranted = snapshot.diagnostics.callLogPermission
                             phoneStatePermissionGranted = snapshot.diagnostics.phoneStatePermission
+                            recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
                             callLineRefreshEpoch++
                             resumeEpoch++
                         }
@@ -641,17 +679,26 @@ class SentinelDialerActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
 
                 fun refreshRecents() {
-                    if (recentLoading || !holdsDialerRole() || !callLogPermissionGranted) return
-                    recentLoading = true
+                    recentState = recentState.withAccess(
+                                holdsDialerRole(), callLogPermissionGranted,
+                                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                            )
+                    if (!recentState.allowed || recentState.loading) return
+                    recentState = recentState.beginRead()
+                    val readGeneration = recentState.generation
                     scope.launch {
                         val loaded = withContext(Dispatchers.IO) {
                             callLog.recent(CALL_HISTORY_LOAD_LIMIT)
                         }
-                        recentItems = loaded
-                        recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
-                        showRecents = true
-                        showContacts = false
-                        recentLoading = false
+                        val canReadNow = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && callLog.canRead()
+                        val acceptsResult = canReadNow && recentState.allowed &&
+                            recentState.loading && recentState.generation == readGeneration
+                        recentState = recentState.complete(readGeneration, loaded, canReadNow)
+                        if (acceptsResult) {
+                            recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
+                            showRecents = true
+                            showContacts = false
+                        }
                     }
                 }
 
@@ -664,6 +711,20 @@ class SentinelDialerActivity : ComponentActivity() {
                             contacts.listWithState()
                         }
                         contactsLoading = false
+                        // Permission may have changed while the provider query was running.
+                        val accessGranted = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.READ_CONTACTS
+                        ) == PackageManager.PERMISSION_GRANTED
+                        contactsPermissionGranted = accessGranted
+                        profileContact = ContactProfileSelection.reconcile(
+                            profileContact?.contactId, result, accessGranted
+                        )
+                        if (!accessGranted) {
+                            contactItems = emptyList()
+                            showContacts = false
+                            contactListStatus = "Autorisation Contacts requise."
+                            return@launch
+                        }
                         when (result.state) {
                             LocalContactLookup.ContactAccessState.READY -> {
                                 contactItems = result.contacts
@@ -842,6 +903,42 @@ class SentinelDialerActivity : ComponentActivity() {
                     }
                 )
 
+                profileContact?.takeIf { contactsPermissionGranted }?.let { contact ->
+                    com.sentinel.quantum.ui.design.D1ContactProfileSheet(
+                        contact = contact,
+                        photoRefreshGeneration = contactPhotoRefreshGeneration,
+                        onDismiss = { profileContact = null },
+                        onCall = { candidate ->
+                            profileContact = null
+                            val safe = sanitizeDialNumber(candidate)
+                            if (safe != null) {
+                                number = safe
+                                phoneTab = 0
+                                if (holdsDialerRole()) placeCallIfReady(safe) else requestDialerRole(safe)
+                            } else callActionStatus = "Numéro non appelable. Aucun appel n’a été lancé."
+                        },
+                        onMessage = { candidate ->
+                            profileContact = null
+                            val safe = sanitizeDialNumber(candidate)
+                            if (safe != null) startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe)))
+                                .setClass(context, SmsComposeActivity::class.java))
+                        },
+                        onEdit = {
+                            profileContact = null
+                            runCatching { startActivity(Intent(Intent.ACTION_EDIT,
+                                android.content.ContentUris.withAppendedId(android.provider.ContactsContract.Contacts.CONTENT_URI, contact.contactId))) }
+                                .onFailure { contactListStatus = "Impossible d’ouvrir l’éditeur Contacts Android." }
+                        },
+                        onShare = {
+                            profileContact = null
+                            runCatching { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND)
+                                .setType("text/plain").putExtra(Intent.EXTRA_TEXT,
+                                    contact.displayName + "\n" + contact.phoneNumbers.joinToString("\n")), "Partager ce contact")) }
+                                .onFailure { contactListStatus = "Aucune application de partage disponible." }
+                        }
+                    )
+                }
+
                 pendingBlockNumber?.let { candidate ->
                     AlertDialog(
                         onDismissRequest = { pendingBlockNumber = null },
@@ -919,7 +1016,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {
                         SentinelTopBar(
-                            title = "Téléphone Sentinel",
+                            title = if (phoneTab == 2) "Sentinel · Contacts" else "Sentinel · Téléphone",
                             subtitle = if (protectionReady) {
                                 pluralStringResource(
                                     R.plurals.phone_core_ready_validation_count,
@@ -1117,7 +1214,12 @@ class SentinelDialerActivity : ComponentActivity() {
                             }
                         }
                         if (phoneTab == 0) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+                                section = "Communications", title = "Composer un appel",
+                                description = "Choisissez votre ligne puis appelez. Les rôles et autorisations restent contrôlés par Android."
+                            )
+                            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlinedTextField(
                                     value = number,
                                     onValueChange = {
@@ -1126,7 +1228,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         contactStatus = null
                                         reputationStatus = null
                                     },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     label = { Text("Numéro") },
                                     leadingIcon = { Icon(Icons.Default.Search, null) }
@@ -1277,13 +1379,17 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        if (phoneTab == 1 && !callLogPermissionGranted) {
-                            Text("Autorisez l’historique des appels pour afficher les récents.", style = MaterialTheme.typography.bodyMedium)
+                        if (phoneTab == 1 && !recentState.allowed) {
+                            Text(
+                                if (!holdsDialerRole()) "Choisissez Sentinel comme application Téléphone pour afficher les récents."
+                                else "Autorisez l’historique des appels pour afficher les récents.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                         if (phoneTab == 2 && !contactsPermissionGranted) {
                             Text("Autorisez les contacts pour ouvrir votre carnet local.", style = MaterialTheme.typography.bodyMedium)
                         }
-                        if (phoneTab == 1 && recentLoading) {
+                        if (phoneTab == 1 && recentState.allowed && recentLoading) {
                             LinearProgressIndicator(Modifier.fillMaxWidth())
                             Text(
                                 "Lecture de l’historique Android…",
@@ -1292,7 +1398,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (phoneTab == 1 && callLogPermissionGranted) {
+                        if (phoneTab == 1 && recentState.allowed) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(18.dp),
@@ -1421,54 +1527,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                 contactItems.sumOf { ContactPresentationPolicy.displayNumbers(it.phoneNumbers).size }
                             }
 
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(18.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                                ) {
-                                    Surface(
-                                        modifier = Modifier.size(64.dp),
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.primaryContainer
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Default.Contacts,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(34.dp)
-                                            )
-                                        }
-                                    }
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            "Votre répertoire",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.ExtraBold
-                                        )
-                                        Text(
-                                            "$callableCount contact(s) appelable(s) · $phoneCount numéro(s)",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            "Vos contacts restent sur cet appareil.",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            }
+                            com.sentinel.quantum.ui.design.SentinelCommunicationHeader(
+                                section = "Communications", title = "Votre répertoire",
+                                description = "$callableCount contact(s) appelable(s) · $phoneCount numéro(s). Carnet Android local, en lecture seule."
+                            )
 
                             OutlinedTextField(
                                 value = contactQuery,
@@ -1606,24 +1668,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier.fillMaxWidth().clickable(
+                                                onClickLabel = "Ouvrir la fiche contact",
+                                                role = androidx.compose.ui.semantics.Role.Button,
+                                                onClick = { profileContact = contact }
+                                            ),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            Surface(
-                                                modifier = Modifier.size(50.dp),
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.primaryContainer
-                                            ) {
-                                                Box(contentAlignment = Alignment.Center) {
-                                                    Text(
-                                                        initial,
-                                                        style = MaterialTheme.typography.titleMedium,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                                    )
-                                                }
-                                            }
+                                            com.sentinel.quantum.ui.design.D1ContactAvatar(contact, Modifier.size(64.dp), contactPhotoRefreshGeneration)
                                             Column(Modifier.weight(1f)) {
                                                 Text(
                                                     contact.displayName,
@@ -1641,6 +1694,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
+                                        }
+
+                                        TextButton(onClick = { profileContact = contact }, modifier = Modifier.heightIn(min = 48.dp)) {
+                                            Text("Ouvrir la fiche contact")
                                         }
 
                                         if (displayNumbers.isEmpty()) {

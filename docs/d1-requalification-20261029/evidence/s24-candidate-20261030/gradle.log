@@ -1,0 +1,15 @@
+
+------------------------------------------------------------
+Gradle 9.8.0
+------------------------------------------------------------
+
+Build time:    2026-09-24 13:40:00 UTC
+Revision:      a927be5e08efe79e0b87ada06c762dde6bb9f8b8
+
+Kotlin:        2.4.10
+Groovy:        4.0.33
+Ant:           Apache Ant(TM) version 1.10.17 compiled on April 6 2026
+Launcher JVM:  21.0.12.1 (Debian 21.0.12.1+1-1-deb13u1-Debian)
+Daemon JVM:    /usr/lib/jvm/java-21-openjdk-amd64 (no Daemon JVM specified, using current Java home)
+OS:            Linux 6.18.55 amd64
+

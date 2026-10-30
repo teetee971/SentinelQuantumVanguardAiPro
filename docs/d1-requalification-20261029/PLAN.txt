@@ -1,0 +1,10 @@
+Reference: approved docs/superpowers/specs/2026-10-14-sentinel-full-visual-refactor-design.md, base92d1c916.
+Preserve SQLite/Room/preferences/roles/transports. No new dependencies in the app, no backend deploy/cost, no main changes.
+1 Inventory all NavGraph routes and standalone activities; separate source implementation from runtime/backend proof.
+2 Locate 13 approved visual references (pending user link), capture real app if runtime available; no invented D1 fidelity.
+3 Apply shared D1 communication section hierarchy to Phone/Contacts/Messages; responsive actions and accessible empty states.
+4 Fix bounded layout overlap in WiFi/Bluetooth; retain Android-controlled scan/pair semantics.
+5 Fix closed OSINT canonical source allowlist verified by actual HTTP and parsed RSS; retain no-redirect policy.
+6 Human-readable PTT unavailable state, retain fail-closed audio/SIM boundaries; probe liveness vs readiness, no invented backend availability.
+7 Unit/instrumentation compilation + screenshot capture if runtime possible, debug APK + signing/hash proofs, data schema hash preserved.
+8 Draft PR on dedicated branch, per-screen compliance matrix with explicit missing refs and screenshot/device limitations.

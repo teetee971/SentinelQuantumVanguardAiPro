@@ -1,0 +1,21 @@
+F.F
+======================================================================
+FAIL: test_existing_report_is_not_overwritten_on_failure (__main__.AuditReportSafetyTest.test_existing_report_is_not_overwritten_on_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/SentinelQuantumVanguardAiPro/scripts/test-audit-sentinel-keystore.py", line 36, in test_existing_report_is_not_overwritten_on_failure
+    self.assertEqual(b'previous evidence', report.read_bytes())
+AssertionError: b'previous evidence' != b'{\n  "status": "UNVERIFIED",\n  "private_[225 chars]n}\n'
+
+======================================================================
+FAIL: test_hard_link_cannot_overwrite_the_input_file (__main__.AuditReportSafetyTest.test_hard_link_cannot_overwrite_the_input_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/SentinelQuantumVanguardAiPro/scripts/test-audit-sentinel-keystore.py", line 28, in test_hard_link_cannot_overwrite_the_input_file
+    self.assertEqual(b'public fixture, not signing material', source.read_bytes())
+AssertionError: b'public fixture, not signing material' != b'{\n  "status": "UNVERIFIED",\n  "private_[225 chars]n}\n'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.110s
+
+FAILED (failures=2)

@@ -172,7 +172,7 @@ class VoiceStudioActivity : ComponentActivity() {
                             },
                             onFailure = { failure ->
                                 sessionBusy = false
-                                sessionStatus = "Session vocale refusée : ${failure.message.orEmpty()}"
+                                sessionStatus = com.sentinel.quantum.voice.VoiceSessionFailurePresentation.message(failure)
                             }
                         )
                     }

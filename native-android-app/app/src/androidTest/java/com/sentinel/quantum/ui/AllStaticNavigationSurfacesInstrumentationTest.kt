@@ -1,6 +1,11 @@
 package com.sentinel.quantum.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.asAndroidBitmap
+import android.graphics.Bitmap
+import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import androidx.compose.ui.test.onRoot
 import androidx.navigation.compose.rememberNavController
 import com.sentinel.quantum.navigation.NavGraph
@@ -52,5 +57,13 @@ class AllStaticNavigationSurfacesInstrumentationTest {
         }
         composeRule.waitForIdle()
         composeRule.onRoot(useUnmergedTree = true).fetchSemanticsNode()
+        if (InstrumentationRegistry.getArguments().getString("captureD1Screenshots") == "true") {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val directory = File(context.getExternalFilesDir(null), "d1-captures/routes").apply { mkdirs() }
+            val name = route.substringBefore('/').replace(Regex("[^a-zA-Z0-9_-]"), "_")
+            File(directory, "$name.png").outputStream().use { output ->
+                check(composeRule.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
+            }
+        }
     }
 }

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Sentinel-D1-S24-debug-dfd27286.apk",
+    "path": "/workspace/d1-delivery-s24-candidate-20261030/Sentinel-D1-S24-debug-dfd27286.apk",
+    "bytes": 103002082,
+    "sha256": "1e9869c1791bdacbded7ea5adaec4ef4e3bf520cff9edd3403fd78b4f6f99e9d",
+    "source_commit": "dfd272861fd6a428df07f139a2665605d1dc2b2e",
+    "configuration": "debug",
+    "certificate_sha256": "dee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1"
+  },
+  {
+    "name": "Sentinel-D1-S24-androidTest-dfd27286.apk",
+    "path": "/workspace/d1-delivery-s24-candidate-20261030/Sentinel-D1-S24-androidTest-dfd27286.apk",
+    "bytes": 1188195,
+    "sha256": "f0452bb7d7c74db4f4e058cd21189285e7614b0837548294090b6c5628bb7b58",
+    "source_commit": "dfd272861fd6a428df07f139a2665605d1dc2b2e",
+    "configuration": "debug",
+    "certificate_sha256": "dee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1"
+  }
+]
