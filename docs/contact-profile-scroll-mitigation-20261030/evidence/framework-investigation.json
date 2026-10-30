@@ -1,0 +1,14 @@
+{
+  "dependency": "androidx.compose.foundation:foundation-android:1.12.1",
+  "source_url": "https://dl.google.com/dl/android/maven2/androidx/compose/foundation/foundation-android/1.12.1/foundation-android-1.12.1-sources.jar",
+  "sources_jar_sha256": "5b58cea5db2583142e4b4b39dce10cbd75722bd06ab35161f06f987be90a53f1",
+  "observations": [
+    "Scroll.kt default verticalScroll uses local overscroll factory; explicit null overload bypasses it",
+    "AndroidOverscroll.android.kt applyToScroll consumes inverse deltas to relax stretch before content scroll",
+    "Framework notes small residual deltas can lock scrolling (b/265363356); not proof of this S24+ occurrence"
+  ],
+  "owner_report": "Transient freeze at bottom; recovers after seconds when scrolling back, recurs when staying at bottom",
+  "cause_status": "PLAUSIBLE MECHANISM, NOT PROVEN ON DEVICE",
+  "mitigation": "Disable elastic overscroll only in contact profile content; versionCode13",
+  "physical_comparison": "PENDING"
+}

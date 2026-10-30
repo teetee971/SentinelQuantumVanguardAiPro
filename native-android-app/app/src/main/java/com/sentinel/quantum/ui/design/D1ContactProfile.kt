@@ -155,7 +155,10 @@ internal fun D1ContactProfileContent(
 ) {
     val numbers = remember(details) { ContactProfileDetails.phoneNumbers(details) }
     val buttonColors = ButtonDefaults.filledTonalButtonColors(containerColor = SentinelD1.Cyan.copy(alpha = 0.16f), contentColor = SentinelD1.Cyan)
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).testTag("contact-profile-scroll")
+    // At the content boundary, Android's elastic overscroll can consume reverse drags
+    // while releasing its stretch. Keep this profile's scroll direct, including in the modal sheet.
+    // This is a scoped mitigation candidate; S24+ end-of-page validation is still required.
+    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState(), overscrollEffect = null).testTag("contact-profile-scroll")
         .padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
             Image(painterResource(R.drawable.d1_orbital_globe), contentDescription = null,
