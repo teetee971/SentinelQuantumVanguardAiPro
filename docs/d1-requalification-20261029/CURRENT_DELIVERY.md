@@ -1,3 +1,5 @@
+> **Candidat16 — préparation du filtrage et état UI** : [rapport](../call-blocking-audit-20261030/REPORT.md), source0e5df74e482f91a1fe3048385dfcd161ad93fb14. Les appels traversants signalés ne sont pas reproduits/résolus ; premier appel à froid toujours susceptible de passer. Source/1440tests/limites/unsigned documentés, validation physique et autorisation/signature nécessaires.
+
 > **Candidat15 — recherche web explicite d’un numéro** : [rapport et livraison](../contact-phone-web-search-20261030/REPORT.md), source7c679377e4f509870dd55e6745d8e8cf8422e472. Aperçu numéro/DuckDuckGo puis confirmation ; aucun résultat associé automatiquement. APK unsigned, signature et autorisation requises. Validation physique et gel restent ouverts ;13/14 conservés comme livraisons historiques séparées.
 
 > **Candidat14 — profils sociaux assistés, pas de collecte API** : [rapport et livraison](../contact-social-enrichment-20261030/REPORT.md), source cba8767ac46710f432781430b6bf524cee74f510. Recherche externe et liens confirmés manuellement ; APK unsigned. Validation physique14 et résolution du gel restent ouvertes.13 est conservé pour comparaison de défilement isolée.
