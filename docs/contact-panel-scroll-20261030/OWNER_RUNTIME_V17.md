@@ -9,3 +9,11 @@ Source du candidat : `76911552583432a776ddcfda7a64bc161c0035d7`. Le terminal pro
 Le SHA du fichier unsigned a été confirmé sur le téléphone. Le SHA signé n'est pas retranscrit ici : la réponse précédente de l'assistant en a donné une chaîne tronquée, qui ne doit pas servir de référence. Une sortie textuelle sha256sum complète du SIGNED sera nécessaire pour figer cette empreinte propriétaire ; aucune nouvelle signature requise pour cela.
 
 Suites statiques/JVM inchangées, aucun nouveau build nécessaire pour ce compte rendu documentaire. Tests instrumentés toujours NON EXÉCUTÉS. Conformité D.1 complète et fiabilité du filtrage non établies. Aucune nouvelle installation, désinstallation, suppression de données, clé exportée ou fusion main.
+
+## Captures complémentaires du lot Contacts/navigation
+
+Le propriétaire transmet ensuite des vues du haut, du milieu et du bas d'une fiche sans photo (avatar initiale), une autre fiche avec photo, et l'écran Communications. Les deux fiches présentent des noms et coordonnées distincts ; aucun mélange manifeste d'identité n'est visible sur ces images. La fiche sans photo montre aussi les rubriques nom structuré, e-mail, entreprise et date importées, ainsi que les états non renseignés. Aucun nom, numéro, adresse, date personnelle, portrait ou capture brute publié dans ce rapport.
+
+P11 reste PARTIEL : affichage de photo/initiale et de champs supplémentaires observé sur ces exemples, sans comparaison exhaustive avec le provider Android, ni validation d'une succession rapide A/B/A. P24 reste PARTIEL : écran Communications observé, mais captures statiques insuffisantes pour prouver les actions Retour/Fermer/réouverture ou la transition Contacts vers Messages (Communications est un écran différent). La déclaration précédente d'absence de gel reste la preuve utilisateur du sous-cas défilement17 ; ces images seules ne mesurent pas sa fluidité.
+
+Les canaux externes indiqués non raccordés ne deviennent pas des connecteurs actifs parce que la carte Profils liés est visible : celle-ci demeure une association manuelle assistée navigateur, sans collecte API. Aucune action de recherche ni transmission effective n'est prouvée par ces captures.
