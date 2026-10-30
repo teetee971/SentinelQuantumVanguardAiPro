@@ -1,0 +1,15 @@
+{
+  "feature": "Contact social enrichment with assisted discovery and manual confirmation",
+  "owner_approved_flow": true,
+  "native_social_connectors_implemented": false,
+  "operational_api_access_established": false,
+  "audit_scope": "current native source and matching environment variable names only; no remote secret store inspection",
+  "session_linkedin_tool_is_native_app_api": false,
+  "live_person_search_performed": false,
+  "cost_incurred": false,
+  "required_input": "Which developer/API services and profile-search permissions are available for Sentinel; no credentials in chat",
+  "fallback": "User-initiated external search and manually confirmed links; must be explicitly selected and not misrepresented as API enrichment",
+  "android_application_changed": false,
+  "v13_scroll_mitigation_status": "Separate unchanged unsigned candidate; owner file absent in Downloads per latest output",
+  "status": "DESIGN_CAPTURED; API_CAPABILITY_INFORMATION_PENDING"
+}
