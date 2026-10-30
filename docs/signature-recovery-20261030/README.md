@@ -1,3 +1,5 @@
+> Étape ultérieure : le propriétaire a maintenant signé et vérifié sur place le candidat. Voir [résultat de signature fourni](OWNER_SIGNING_RESULT.md). Le présent rapport décrit la préparation antérieure et les limites du cloud. Installation toujours non exécutée.
+
 # Réparation de signature D.1 — état vérifié
 
 **Verdict : NOT READY. Aucun APK compatible signé avec la clé installée n'a été produit. Aucune installation, désinstallation, suppression de données, rotation de clé ou CI distante déclenchée.**

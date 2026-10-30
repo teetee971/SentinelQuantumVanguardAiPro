@@ -1,7 +1,7 @@
 # État courant Sentinel D.1
 
-**Blocage de signature confirmé par l’utilisateur.** Certificat installé68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2 ; ancien candidatdee0d0f14e3a211d5ce9adca0280acde443e2312857d33da2258bef0f1b632e1. Ne pas utiliser cet ancien APK comme mise à jour du S24+ principal.
+Le propriétaire a signé sur place la préparation version11 avec le certificat installé68915958…17b3fe2. Sa capture confirme signature, signataire unique, package/version, alignement et identité de copie. [Preuve et limites](../signature-recovery-20261030/OWNER_SIGNING_RESULT.md). Le binaire signé n'a pas été transmis au cloud, aucune revérification indépendante du fichier ici.
 
-Réparation actuelle : [README](../signature-recovery-20261030/README.md), [APK non signé préparé](../signature-recovery-20261030/ARTIFACTS.json), [audit local de clé](../signature-recovery-20261030/LOCAL_KEY_AUDIT.md). Source50c66852c13d6ed4354d2a818277a7241ef45c4b ; versionCode11, aucun changement de fonction D.1. Aucune clé historique6891 trouvée ici, aucune signature compatible produite. **NOT READY.**
+READY technique pour envisager la mise à jour sur place, **sous réserve d'autorisation explicite**. Aucune installation effectuée.26 scénarios S24+ NON TESTÉS ; conformité D.1 complète NON VALIDÉE. Source50c66852c13d6ed4354d2a818277a7241ef45c4b ; aucun changement fonctionnel D.1 depuis dfd272861fd6a428df07f139a2665605d1dc2b2e. Aucun nouveau build.
 
-1412 tests Android,19 contrats Node et3 tests de sécurité du rapport réussis ; journaux dans le dossier de réparation. Les résultats S24+,26 scénarios et fidélité visuelle restent NON TESTÉS/NON VALIDÉS. Les anciens rapports/artefacts conservent leur propre provenance historique.
+Le fichier signé est dans Downloads/Sentinel-D1-v11-SIGNED-68915958.apk sur le téléphone. Aucun lien Drive signé inventé ; les fichiers précédents restent historiques. Clé restée dans Ubuntu, aucune désinstallation ni suppression de données.
