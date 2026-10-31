@@ -20,6 +20,8 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
     fun discover(treeUri: Uri, maxDocuments: Int = 5000, maxDepth: Int = 12): List<ApkDocument> {
         require(maxDocuments in 1..20000)
         require(maxDepth in 0..32)
+        require(treeUri.scheme == ContentResolver.SCHEME_CONTENT) { "Only content URI trees are supported" }
+        require(DocumentsContract.isTreeUri(treeUri)) { "A SAF tree URI is required" }
         val resolver = context.contentResolver
         val rootId = DocumentsContract.getTreeDocumentId(treeUri)
         val pending = ArrayDeque<Pair<String, Int>>()
