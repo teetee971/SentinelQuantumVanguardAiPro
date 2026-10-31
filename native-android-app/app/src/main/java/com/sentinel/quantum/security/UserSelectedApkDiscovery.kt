@@ -35,6 +35,7 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
         var scanned = 0
         var inaccessibleFolders = 0
         var depthLimited = false
+        var documentLimitReached = false
         while (pending.isNotEmpty() && scanned < maxDocuments) {
             val (parentId, depth) = pending.removeFirst()
             if (!visited.add(parentId)) continue
@@ -59,7 +60,11 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                 val nameIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                 val mimeIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
                 val sizeIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_SIZE)
-                while (it.moveToNext() && scanned < maxDocuments) {
+                while (it.moveToNext()) {
+                    if (scanned >= maxDocuments) {
+                        documentLimitReached = true
+                        break
+                    }
                     scanned++
                     val id = it.getString(idIndex) ?: continue
                     val name = it.getString(nameIndex) ?: continue
@@ -83,7 +88,7 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                 continue // Malformed provider cursor.
             }
         }
-        return ScanResult(results, pending.isEmpty() && !depthLimited && inaccessibleFolders == 0 && scanned < maxDocuments, scanned, inaccessibleFolders)
+        return ScanResult(results, pending.isEmpty() && !documentLimitReached && !depthLimited && inaccessibleFolders == 0, scanned, inaccessibleFolders)
     }
 
     fun inspectSelectedDocument(uri: Uri): ApkDocument? {
