@@ -69,6 +69,28 @@ fun SecurityLabProScreen(navController: NavController) {
     var uninstallPending by remember { mutableStateOf<String?>(null) }
     var uninstallInput by remember { mutableStateOf("") }
     var managerError by remember { mutableStateOf<String?>(null) }
+    var foundApks by remember { mutableStateOf<List<UserSelectedApkDiscovery.ApkDocument>>(emptyList()) }
+    var folderBusy by remember { mutableStateOf(false) }
+    var folderMessage by remember { mutableStateOf<String?>(null) }
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) scope.launch {
+            folderBusy = true
+            foundApks = emptyList()
+            try {
+                foundApks = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    UserSelectedApkDiscovery(context.applicationContext).discover(uri)
+                }
+                folderMessage = "${foundApks.size} fichier(s) APK trouvé(s) dans le dossier autorisé."
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                folderMessage = "Recherche impossible : ${e.message ?: "accès refusé"}"
+            } finally {
+                folderBusy = false
+            }
+        }
+    }
+
     var auditRevision by remember { mutableIntStateOf(0) }
     val installPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
@@ -335,6 +357,40 @@ fun SecurityLabProScreen(navController: NavController) {
                 Button(enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
                     Text("Analyser puis demander l'installation")
                 }
+                HorizontalDivider()
+                Text("Rechercher des APK dans un dossier", style = MaterialTheme.typography.titleMedium)
+                Button(enabled = !folderBusy && !selectionBusy, onClick = { folderPicker.launch(null) }) {
+                    Text(if (folderBusy) "Recherche en cours…" else "Choisir un dossier")
+                }
+                folderMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                foundApks.take(100).forEach { document ->
+                    TextButton(enabled = !selectionBusy, onClick = {
+                        scope.launch {
+                            selectionBusy = true
+                            managerError = null
+                            try {
+                                val evidence = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    SelectedApkInspector(context.applicationContext).inspect(document.uri)
+                                }
+                                when {
+                                    evidence.signatureVerified != true ->
+                                        managerError = "Signature non vérifiée : installation refusée."
+                                    evidence.packageName == "com.sentinel.quantum" ||
+                                        evidence.packageName == "com.sentinel.quantum.labpreview" ->
+                                        managerError = "Mise à jour Sentinel interdite depuis le laboratoire."
+                                    else -> installPending = document.uri to evidence
+                                }
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                managerError = "Analyse impossible : ${e.message ?: "fichier inaccessible"}"
+                            } finally {
+                                selectionBusy = false
+                            }
+                        }
+                    }) { Text(document.displayName, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                }
+                if (foundApks.size > 100) Text("Affichage limité aux 100 premiers APK.")
                 HorizontalDivider()
                 Text("Désinstallation avec confirmation Android", style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(value = uninstallInput, onValueChange = { uninstallInput = it.trim() },
