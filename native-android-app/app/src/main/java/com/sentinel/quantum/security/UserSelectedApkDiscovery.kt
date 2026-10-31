@@ -91,11 +91,14 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                 continue // Malformed provider cursor.
             }
         }
-        val complete = scanned < maxDocuments &&
-            pending.isEmpty() &&
-            !documentLimitReached &&
-            !depthLimited &&
-            inaccessibleFolders == 0
+        val complete = SafScanCompletionPolicy.isComplete(
+            scanned = scanned,
+            maxDocuments = maxDocuments,
+            pendingFolders = pending.size,
+            documentLimitReached = documentLimitReached,
+            depthLimited = depthLimited,
+            inaccessibleFolders = inaccessibleFolders
+        )
         return ScanResult(results, complete, scanned, inaccessibleFolders)
     }
 
