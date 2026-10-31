@@ -70,6 +70,9 @@ fun SecurityLabProScreen(navController: NavController) {
     var uninstallInput by remember { mutableStateOf("") }
     var managerError by remember { mutableStateOf<String?>(null) }
     var foundApks by remember { mutableStateOf<List<UserSelectedApkDiscovery.ApkDocument>>(emptyList()) }
+    val apkPageSize = 25
+    var apkPage by remember(foundApks) { mutableIntStateOf(0) }
+    val apkPageCount = (foundApks.size + apkPageSize - 1) / apkPageSize
     var folderBusy by remember { mutableStateOf(false) }
     var folderMessage by remember { mutableStateOf<String?>(null) }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -369,7 +372,7 @@ fun SecurityLabProScreen(navController: NavController) {
                     Text(if (folderBusy) "Recherche en cours…" else "Choisir un dossier")
                 }
                 folderMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                foundApks.take(100).forEach { document ->
+                foundApks.drop(apkPage * apkPageSize).take(apkPageSize).forEach { document ->
                     TextButton(enabled = !selectionBusy && !folderBusy, onClick = {
                         scope.launch {
                             selectionBusy = true
@@ -396,7 +399,19 @@ fun SecurityLabProScreen(navController: NavController) {
                         }
                     }) { Text(document.displayName, maxLines = 2, overflow = TextOverflow.Ellipsis) }
                 }
-                if (foundApks.size > 100) Text("Affichage limité aux 100 premiers APK sur ${foundApks.size} résultats.")
+                if (foundApks.isNotEmpty()) {
+                    Text("Page ${apkPage + 1} / $apkPageCount — ${foundApks.size} APK trouvés.")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            enabled = apkPage > 0 && !folderBusy && !selectionBusy,
+                            onClick = { apkPage-- }
+                        ) { Text("Précédent") }
+                        OutlinedButton(
+                            enabled = apkPage + 1 < apkPageCount && !folderBusy && !selectionBusy,
+                            onClick = { apkPage++ }
+                        ) { Text("Suivant") }
+                    }
+                }
                 HorizontalDivider()
                 Text("Désinstallation avec confirmation Android", style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(value = uninstallInput, onValueChange = { uninstallInput = it.trim() },
