@@ -1,7 +1,7 @@
 package com.sentinel.quantum.security
 
-import android.content.ContentResolver
 import android.content.Context
+import android.content.ContentResolver
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
@@ -68,9 +68,16 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
     }
 
     fun inspectSelectedDocument(uri: Uri): ApkDocument? {
-        val resolver: ContentResolver = context.contentResolver
-        val cursor = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
-            ?: return null
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return null
+        val cursor = try {
+            context.contentResolver.query(
+                uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null
+            ) ?: return null
+        } catch (_: SecurityException) {
+            return null
+        } catch (_: IllegalArgumentException) {
+            return null
+        }
         return cursor.use {
             if (!it.moveToFirst()) return@use null
             val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
