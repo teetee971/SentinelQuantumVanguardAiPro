@@ -75,6 +75,7 @@ fun SecurityLabProScreen(navController: NavController) {
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) scope.launch {
             folderBusy = true
+            folderMessage = null
             foundApks = emptyList()
             try {
                 val scanResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -359,7 +360,7 @@ fun SecurityLabProScreen(navController: NavController) {
                 Text("FICHIERS APK", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
                 Text("Analyse, installation contrôlée et comparaison", style = MaterialTheme.typography.titleMedium)
 
-                Button(enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
+                Button(enabled = !selectionBusy && !folderBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
                     Text("Analyser puis demander l'installation")
                 }
                 HorizontalDivider()
@@ -369,7 +370,7 @@ fun SecurityLabProScreen(navController: NavController) {
                 }
                 folderMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 foundApks.take(100).forEach { document ->
-                    TextButton(enabled = !selectionBusy, onClick = {
+                    TextButton(enabled = !selectionBusy && !folderBusy, onClick = {
                         scope.launch {
                             selectionBusy = true
                             managerError = null
@@ -395,7 +396,7 @@ fun SecurityLabProScreen(navController: NavController) {
                         }
                     }) { Text(document.displayName, maxLines = 2, overflow = TextOverflow.Ellipsis) }
                 }
-                if (foundApks.size > 100) Text("Affichage limité aux 100 premiers APK.")
+                if (foundApks.size > 100) Text("Affichage limité aux 100 premiers APK sur ${foundApks.size} résultats.")
                 HorizontalDivider()
                 Text("Désinstallation avec confirmation Android", style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(value = uninstallInput, onValueChange = { uninstallInput = it.trim() },
