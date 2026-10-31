@@ -54,6 +54,9 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
             } catch (_: IllegalArgumentException) {
                 inaccessibleFolders++
                 continue // Provider may no longer expose the directory.
+            } catch (_: android.database.sqlite.SQLiteException) {
+                inaccessibleFolders++
+                continue // Provider query failed before returning a cursor.
             }
             try { cursor.use {
                 val idIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
@@ -100,6 +103,8 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
         } catch (_: SecurityException) {
             return null
         } catch (_: IllegalArgumentException) {
+            return null
+        } catch (_: android.database.sqlite.SQLiteException) {
             return null
         }
         return try { cursor.use {
