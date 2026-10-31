@@ -77,10 +77,15 @@ fun SecurityLabProScreen(navController: NavController) {
             folderBusy = true
             foundApks = emptyList()
             try {
-                foundApks = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    UserSelectedApkDiscovery(context.applicationContext).discover(uri)
+                val scanResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    UserSelectedApkDiscovery(context.applicationContext).scan(uri)
                 }
-                folderMessage = "${foundApks.size} fichier(s) APK trouvé(s) dans le dossier autorisé."
+                foundApks = scanResult.documents
+                folderMessage = if (scanResult.complete) {
+                    "${foundApks.size} APK trouvé(s) dans les dossiers accessibles."
+                } else {
+                    "Recherche partielle : ${foundApks.size} APK trouvé(s), ${scanResult.inaccessibleFolders} dossier(s) inaccessible(s). Limite : 5 000 documents / 12 niveaux."
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
