@@ -46,7 +46,7 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
             } catch (_: IllegalArgumentException) {
                 continue // Provider may no longer expose the directory.
             }
-            cursor.use {
+            try { cursor.use {
                 val idIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
                 val nameIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                 val mimeIndex = it.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
@@ -64,6 +64,12 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                         results.add(ApkDocument(uri, name, size))
                     }
                 }
+            } } catch (_: SecurityException) {
+                continue // Permission revoked during cursor iteration.
+            } catch (_: IllegalArgumentException) {
+                continue // Provider returned invalid or inconsistent columns.
+            } catch (_: android.database.sqlite.SQLiteException) {
+                continue // Malformed provider cursor.
             }
         }
         return results
@@ -80,7 +86,7 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
         } catch (_: IllegalArgumentException) {
             return null
         }
-        return cursor.use {
+        return try { cursor.use {
             if (!it.moveToFirst()) return@use null
             val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (nameIndex < 0) return@use null
@@ -89,6 +95,12 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
             val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
             val size = if (sizeIndex < 0 || it.isNull(sizeIndex)) null else it.getLong(sizeIndex)
             ApkDocument(uri, name, size)
+        } } catch (_: SecurityException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        } catch (_: android.database.sqlite.SQLiteException) {
+            null
         }
     }
 }
