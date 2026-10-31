@@ -17,5 +17,12 @@
         <receiver android:name=".security.SentinelMmsDeliverReceiver" tools:node="remove" />
         <activity android:name=".SentinelDialerActivity" tools:node="remove" />
         <activity android:name=".SmsComposeActivity" tools:node="remove" />
+        <!-- Exclude SMS/MMS status components from the isolated preview. -->
+        <receiver android:name=".security.SentinelSmsStatusReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelMmsDownloadReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelMmsSendStatusReceiver" tools:node="remove" />
+
+        <!-- WireGuard is not required by the APK inspection preview. -->
+        <service android:name="com.wireguard.android.backend.GoBackend$VpnService" tools:node="remove" />
     </application>
 </manifest>
