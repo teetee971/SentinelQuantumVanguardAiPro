@@ -91,7 +91,12 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                 continue // Malformed provider cursor.
             }
         }
-        return ScanResult(results, pending.isEmpty() && !documentLimitReached && !depthLimited && inaccessibleFolders == 0, scanned, inaccessibleFolders)
+        val complete = scanned < maxDocuments &&
+            pending.isEmpty() &&
+            !documentLimitReached &&
+            !depthLimited &&
+            inaccessibleFolders == 0
+        return ScanResult(results, complete, scanned, inaccessibleFolders)
     }
 
     fun inspectSelectedDocument(uri: Uri): ApkDocument? {
