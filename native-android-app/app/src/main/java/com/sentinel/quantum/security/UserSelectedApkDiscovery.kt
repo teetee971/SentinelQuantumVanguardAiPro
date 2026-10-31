@@ -16,8 +16,12 @@ import java.util.ArrayDeque
  */
 internal class UserSelectedApkDiscovery(private val context: Context) {
     data class ApkDocument(val uri: Uri, val displayName: String, val sizeBytes: Long?)
+    data class ScanResult(val documents: List<ApkDocument>, val complete: Boolean, val scanned: Int, val inaccessibleFolders: Int)
 
-    fun discover(treeUri: Uri, maxDocuments: Int = 5000, maxDepth: Int = 12): List<ApkDocument> {
+    fun discover(treeUri: Uri, maxDocuments: Int = 5000, maxDepth: Int = 12): List<ApkDocument> =
+        scan(treeUri, maxDocuments, maxDepth).documents
+
+    fun scan(treeUri: Uri, maxDocuments: Int = 5000, maxDepth: Int = 12): ScanResult {
         require(maxDocuments in 1..20000)
         require(maxDepth in 0..32)
         require(treeUri.scheme == ContentResolver.SCHEME_CONTENT) { "Only content URI trees are supported" }
@@ -29,6 +33,8 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
         val results = ArrayList<ApkDocument>()
         val visited = HashSet<String>()
         var scanned = 0
+        var inaccessibleFolders = 0
+        var depthLimited = false
         while (pending.isNotEmpty() && scanned < maxDocuments) {
             val (parentId, depth) = pending.removeFirst()
             if (!visited.add(parentId)) continue
@@ -40,10 +46,12 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                 DocumentsContract.Document.COLUMN_SIZE
             )
             val cursor: Cursor = try {
-                resolver.query(children, projection, null, null, null) ?: continue
+                resolver.query(children, projection, null, null, null).also { if (it == null) inaccessibleFolders++ } ?: continue
             } catch (_: SecurityException) {
+                inaccessibleFolders++
                 continue // User may have revoked the tree grant.
             } catch (_: IllegalArgumentException) {
+                inaccessibleFolders++
                 continue // Provider may no longer expose the directory.
             }
             try { cursor.use {
@@ -57,7 +65,7 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                     val name = it.getString(nameIndex) ?: continue
                     val mime = it.getString(mimeIndex)
                     if (mime == DocumentsContract.Document.MIME_TYPE_DIR) {
-                        if (depth < maxDepth) pending.add(id to depth + 1)
+                        if (depth < maxDepth) pending.add(id to depth + 1) else depthLimited = true
                     } else if (name.endsWith(".apk", ignoreCase = true)) {
                         val uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
                         val size = if (it.isNull(sizeIndex)) null else it.getLong(sizeIndex)
@@ -65,14 +73,17 @@ internal class UserSelectedApkDiscovery(private val context: Context) {
                     }
                 }
             } } catch (_: SecurityException) {
+                inaccessibleFolders++
                 continue // Permission revoked during cursor iteration.
             } catch (_: IllegalArgumentException) {
+                inaccessibleFolders++
                 continue // Provider returned invalid or inconsistent columns.
             } catch (_: android.database.sqlite.SQLiteException) {
+                inaccessibleFolders++
                 continue // Malformed provider cursor.
             }
         }
-        return results
+        return ScanResult(results, pending.isEmpty() && !depthLimited && inaccessibleFolders == 0 && scanned < maxDocuments, scanned, inaccessibleFolders)
     }
 
     fun inspectSelectedDocument(uri: Uri): ApkDocument? {
