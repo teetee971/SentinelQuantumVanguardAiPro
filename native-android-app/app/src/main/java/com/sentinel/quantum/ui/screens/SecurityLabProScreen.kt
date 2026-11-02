@@ -65,48 +65,10 @@ fun SecurityLabProScreen(navController: NavController) {
     val inventoryPageCount = (filteredApps.size + inventoryPageSize - 1) / inventoryPageSize
     var labTab by remember { mutableStateOf(0) }
     var volumetricEnabled by remember { mutableStateOf(false) }
-    var installPending by remember { mutableStateOf<Pair<Uri, ApkEvidence>?>(null) }
     var uninstallPending by remember { mutableStateOf<String?>(null) }
     var uninstallInput by remember { mutableStateOf("") }
     var managerError by remember { mutableStateOf<String?>(null) }
     var auditRevision by remember { mutableIntStateOf(0) }
-    val installPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) scope.launch {
-            selectionBusy = true
-            managerError = null
-            try {
-                val evidence = SelectedApkInspector(context.applicationContext).inspect(uri)
-                if (evidence.signatureVerified != true) {
-                    managerError = "Signature APK non vérifiée : installation refusée."
-                } else if (evidence.packageName == "com.sentinel.quantum" || evidence.packageName == "com.sentinel.quantum.labpreview") {
-                    managerError = "APK Sentinel protégé : utiliser le parcours de mise à jour dédié, hors du laboratoire."
-                } else {
-                    installPending = uri to evidence
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                managerError = "Analyse préalable impossible : ${e.message ?: "erreur"}"
-            } finally {
-                selectionBusy = false
-            }
-        }
-    }
-    installPending?.let { pending ->
-        AlertDialog(
-            onDismissRequest = { installPending = null },
-            title = { Text("Confirmer la demande d'installation") },
-            text = { Text("APK : ${pending.second.packageName ?: "inconnu"}. Android demandera une confirmation supplémentaire. Aucun résultat d'installation n'est encore connu.") },
-            confirmButton = { TextButton(onClick = {
-                try {
-                    apkManager.installUserSelected(pending.first, pending.second)
-                    auditRevision++
-                } catch (e: Exception) { managerError = e.message ?: "Installateur indisponible" }
-                installPending = null
-            }) { Text("Ouvrir l'installateur Android") } },
-            dismissButton = { TextButton(onClick = { installPending = null }) { Text("Annuler") } }
-        )
-    }
     uninstallPending?.let { packageName ->
         AlertDialog(
             onDismissRequest = { uninstallPending = null },
@@ -176,7 +138,7 @@ fun SecurityLabProScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text("Analyse locale des applications. Toute installation ou désinstallation nécessite votre confirmation Android.",
+                Text("Analyse locale des applications. Installation APK désactivée ; désinstallation avec confirmation Android.",
                     style = MaterialTheme.typography.bodyMedium)
                 if (selfInspection.loading || selectionBusy) CircularProgressIndicator()
                 selfInspection.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -330,11 +292,8 @@ fun SecurityLabProScreen(navController: NavController) {
                 }
                 if (labTab == 1) {
                 Text("FICHIERS APK", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
-                Text("Analyse, installation contrôlée et comparaison", style = MaterialTheme.typography.titleMedium)
+                Text("Analyse et comparaison sans installation", style = MaterialTheme.typography.titleMedium)
 
-                Button(enabled = !selectionBusy, onClick = { installPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*")) }) {
-                    Text("Analyser puis demander l'installation")
-                }
                 HorizontalDivider()
                 Text("Désinstallation avec confirmation Android", style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(value = uninstallInput, onValueChange = { uninstallInput = it.trim() },
@@ -349,7 +308,7 @@ fun SecurityLabProScreen(navController: NavController) {
                 }
                 if (labTab == 2) {
                 Text("HISTORIQUE LOCAL", color = Color(0xFF53CFFF), style = MaterialTheme.typography.labelLarge)
-                Text("Demandes envoyées à Android ; aucun succès n'est présumé.", style = MaterialTheme.typography.bodySmall)
+                Text("Demandes de désinstallation envoyées à Android ; aucun succès n'est présumé.", style = MaterialTheme.typography.bodySmall)
                 @Suppress("UNUSED_VARIABLE") val refreshAudit = auditRevision
                 val recentEntries = apkManager.entries()
                 if (recentEntries.isEmpty()) {
@@ -357,7 +316,7 @@ fun SecurityLabProScreen(navController: NavController) {
                         colors = CardDefaults.cardColors(containerColor = Color(0xFF111C30))) {
                         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Aucune demande enregistrée", style = MaterialTheme.typography.titleMedium)
-                            Text("Les demandes d'installation et de désinstallation apparaîtront ici après ouverture de leur confirmation Android. Une demande ne prouve pas sa réussite.",
+                            Text("Les demandes de désinstallation apparaîtront ici après confirmation Android. Une demande ne prouve pas sa réussite.",
                                 style = MaterialTheme.typography.bodyMedium, color = Color(0xFFA9B9D4))
                         }
                     }
