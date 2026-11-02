@@ -3,7 +3,6 @@ package com.sentinel.quantum.security
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.Settings
 import java.text.DateFormat
 import java.util.Date
 
@@ -15,18 +14,10 @@ internal class SentinelApkManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("sentinel_apk_manager_audit", Context.MODE_PRIVATE)
     private val protectedIds = setOf("com.sentinel.quantum", "com.sentinel.quantum.labpreview")
 
-    fun installUserSelected(uri: Uri, evidence: ApkEvidence) {
-        require(evidence.signatureVerified == true) { "Signature APK non validée : installation bloquée" }
-        val packageName = evidence.packageName ?: throw IllegalArgumentException("Identifiant APK indéterminé")
-        require(packageName !in protectedIds) { "Mise à jour de Sentinel interdite depuis le laboratoire" }
-        require(uri.scheme == "content") { "Seuls les documents sélectionnés par Android sont acceptés" }
-        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
-            data = uri
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        require(intent.resolveActivity(context.packageManager) != null) { "Aucun installateur Android disponible" }
-        record("INSTALLATION_DEMANDEE", packageName)
-        context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    /** Installation disabled in Phone Core V1: inspected URI content is not pinned to the installer input. */
+    @Suppress("UNUSED_PARAMETER")
+    fun installUserSelected(uri: Uri, evidence: ApkEvidence): Nothing {
+        throw UnsupportedOperationException("Installation APK désactivée dans Phone Core V1")
     }
 
     fun requestUninstall(packageName: String) {
