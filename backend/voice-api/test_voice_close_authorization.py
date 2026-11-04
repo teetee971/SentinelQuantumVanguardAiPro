@@ -55,7 +55,7 @@ class CloseAuthorizationTests(unittest.TestCase):
             "status": "open",
             "room": "test-room",
         })
-        settings = voice.Settings(enabled=True, livekit_url="wss://example.invalid")
+        settings = voice.Settings(enabled=True, livekit_url="wss://example.invalid", redis_url="redis://example.invalid")
         app = voice.create_app(
             settings=settings,
             redis_client=store,
