@@ -28,14 +28,32 @@ class ConnectedServiceAccessPolicyTest {
     @Test fun entitlementIsRequired() {
         assertEquals(
             ConnectedAccessDecision.ENTITLEMENT_REQUIRED,
-            ConnectedServiceAccessPolicy.evaluate(ConnectedAccessSnapshot(true, true, true, false))
+            ConnectedServiceAccessPolicy.evaluate(ConnectedAccessSnapshot(true, true, true, false, premiumFeature = true))
         )
     }
 
     @Test fun verifiedValidEntitledUserCanSeeConnectedFeature() {
         assertEquals(
             ConnectedAccessDecision.ALLOW_PRESENTATION,
-            ConnectedServiceAccessPolicy.evaluate(ConnectedAccessSnapshot(true, true, true, true))
+            ConnectedServiceAccessPolicy.evaluate(ConnectedAccessSnapshot(true, true, true, true, premiumFeature = true))
+        )
+    }
+
+    @Test fun freeConnectedFeaturesDoNotRequirePremiumEntitlement() {
+        assertEquals(
+            ConnectedAccessDecision.ALLOW_PRESENTATION,
+            ConnectedServiceAccessPolicy.evaluate(
+                ConnectedAccessSnapshot(true, true, true, false, premiumFeature = false)
+            )
+        )
+    }
+
+    @Test fun premiumFeatureRequiresEntitlement() {
+        assertEquals(
+            ConnectedAccessDecision.ENTITLEMENT_REQUIRED,
+            ConnectedServiceAccessPolicy.evaluate(
+                ConnectedAccessSnapshot(true, true, true, false, premiumFeature = true)
+            )
         )
     }
 
