@@ -101,6 +101,17 @@ class CloseAuthorizationTests(unittest.TestCase):
         self.assertEqual(403, self.close(client).status_code)
         self.assertIn("voice:session:v1:test-session", store.records)
 
+    def test_malformed_device_claim_is_denied_without_server_error(self):
+        for malformed in (None, 123, {"device": "device-a"}, [None]):
+            with self.subTest(malformed=malformed):
+                client, store = self.make_client({
+                    "subject": "owner",
+                    "device_ids": malformed,
+                    "email_verified": True,
+                })
+                self.assertEqual(403, self.close(client).status_code)
+                self.assertIn("voice:session:v1:test-session", store.records)
+
     def test_empty_subject_cannot_close(self):
         client, store = self.make_client({
             "subject": "",
