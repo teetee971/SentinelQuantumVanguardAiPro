@@ -26,8 +26,8 @@ internal data class ConnectedAccessSnapshot(
 internal object ConnectedServiceAccessPolicy {
     fun evaluate(snapshot: ConnectedAccessSnapshot): ConnectedAccessDecision = when {
         !snapshot.authenticated -> ConnectedAccessDecision.SIGN_IN_REQUIRED
-        !snapshot.emailVerified -> ConnectedAccessDecision.EMAIL_VERIFICATION_REQUIRED
         !snapshot.sessionValid -> ConnectedAccessDecision.SESSION_REVALIDATION_REQUIRED
+        !snapshot.emailVerified -> ConnectedAccessDecision.EMAIL_VERIFICATION_REQUIRED
         snapshot.premiumFeature && !snapshot.entitlementGranted -> ConnectedAccessDecision.ENTITLEMENT_REQUIRED
         else -> ConnectedAccessDecision.ALLOW_PRESENTATION
     }
