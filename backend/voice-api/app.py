@@ -56,6 +56,7 @@ class Settings:
     auth_issuer: str = ""
     auth_audience: str = ""
     entitlement_claim: str = "sentinel_voice_entitled"
+    email_verified_claim: str = "https://sentinelquantumvanguardaipro.pages.dev/claims/email_verified"
     device_claim: str = "device_ids"
     token_ttl_seconds: int = MAX_TOKEN_TTL_SECONDS
     rate_limit_per_minute: int = 30
@@ -75,6 +76,10 @@ class Settings:
                 "VOICE_ENTITLEMENT_CLAIM", "sentinel_voice_entitled"
             ),
             device_claim=os.getenv("VOICE_DEVICE_CLAIM", "device_ids"),
+            email_verified_claim=os.getenv(
+                "VOICE_EMAIL_VERIFIED_CLAIM",
+                "https://sentinelquantumvanguardaipro.pages.dev/claims/email_verified",
+            ),
             token_ttl_seconds=_int_env(
                 "VOICE_TOKEN_TTL_SECONDS", MAX_TOKEN_TTL_SECONDS
             ),
@@ -111,6 +116,8 @@ class Settings:
             ):
                 if not value:
                     missing.append(name)
+        if not self.email_verified_claim.startswith("https://"):
+            missing.append("VOICE_EMAIL_VERIFIED_CLAIM must be namespaced with https://")
         if not self.livekit_url.startswith("wss://"):
             missing.append("LIVEKIT_URL must use wss://")
         if not 1 <= self.token_ttl_seconds <= MAX_TOKEN_TTL_SECONDS:
@@ -179,7 +186,7 @@ class OidcIdentityVerifier:
             "subject": subject,
             "device_ids": device_ids,
             "entitled": claims.get(self._settings.entitlement_claim) is True,
-            "email_verified": claims.get("email_verified") is True,
+            "email_verified": claims.get(self._settings.email_verified_claim) is True,
             "revoked": claims.get("sentinel_voice_revoked") is True,
         }
 
