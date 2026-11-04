@@ -4,7 +4,7 @@
 
 The voice API now rejects a principal without `email_verified is True` on both session creation and close. The OIDC verifier reads this claim from the cryptographically validated JWT (signature, issuer, audience, expiry).
 
-**Critical deployment dependency:** Auth0 access tokens do not automatically contain the standard ID-token `email_verified` claim. Do not copy a decoded, unverified ID token into an access token or trust a client-provided boolean. Configure a trusted Auth0 Action to add a namespaced verified-email claim to the API access token, then change the verifier to read that exact namespaced claim; alternatively resolve verified status server-side from Auth0 Management API with suitable permissions and caching/revocation rules. Until this is done, legitimate sessions may receive 403.
+**Critical deployment dependency:** Auth0 access tokens do not automatically contain the standard ID-token `email_verified` claim. The verifier now requires the namespaced claim `https://sentinelquantumvanguardaipro.pages.dev/claims/email_verified` by default, configurable through `VOICE_EMAIL_VERIFIED_CLAIM`. An example Auth0 Post Login Action is provided at `backend/voice-api/auth0-post-login-action.example.js`. Configure `SENTINEL_VOICE_API_AUDIENCE` as an Action secret and deploy/attach the Action to the Login flow. Confirm the custom claim appears only in access tokens for the correct audience. The namespace is an identifier, not an endpoint to call. Do not copy a decoded, unverified ID token into an access token or trust a client-provided boolean. Until claim provisioning is tested, legitimate sessions may receive 403.
 
 Security tests required before merge:
 - Valid JWT, verified true, valid device and entitlement -> permitted.
