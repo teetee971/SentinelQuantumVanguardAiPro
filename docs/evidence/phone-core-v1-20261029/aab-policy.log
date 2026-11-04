@@ -1,0 +1,15 @@
+
+> sentinel-quantum-vanguard-ai-pro@2.0.0-pro test:android-aab-artifact-policy
+> node --test scripts/android-aab-artifact-policy.test.js
+
+✔ unsigned AAB archive integrity is checked before artifact upload (0.77995ms)
+✔ optional bundletool does not silently claim semantic validation or mask failure (0.254322ms)
+✔ unsigned validation AAB cannot be mistaken for a publishable release artifact (0.296044ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 162.021597

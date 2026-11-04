@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-test('Phone Core roadmap and diagnostic copy match certification schema v5', () => {
+test('Phone Core roadmap and diagnostic copy match certification schema v6', () => {
   const source = readFileSync(
     resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneCorePhysicalValidation.kt'),
     'utf8'
@@ -28,11 +28,11 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
   const registry = readFileSync(resolve('config/product-capabilities.json'), 'utf8');
   const publicRoadmap = readFileSync(resolve('public/roadmap.html'), 'utf8');
 
-  assert.match(source, /CERTIFICATION_SCHEMA_VERSION\s*=\s*5/);
+  assert.match(source, /CERTIFICATION_SCHEMA_VERSION\s*=\s*6/);
   const required = source.match(/requiredCount:\s*Int\s*get\(\)\s*=\s*(\d+)/)?.[1];
   assert.equal(required, '14');
 
-  assert.match(roadmap, /certificat Phone Core v5 comporte \*\*exactement 14 preuves\*\*/);
+  assert.match(roadmap, /certificat Phone Core v6 comporte \*\*exactement 14 preuves\*\*/);
   assert.match(roadmap, /Wi-Fi reste un diagnostic réseau indépendant/);
   assert.match(roadmap, /ne modifie jamais le compteur 14\/14/);
 
@@ -43,7 +43,7 @@ test('Phone Core roadmap and diagnostic copy match certification schema v5', () 
   assert.equal(phoneCore.physically_validated, false);
   assert.equal(phoneCore.customer_available, false);
 
-  assert.match(publicRoadmap, /certificat Phone Core v5 porte sur 14 preuves distinctes/);
+  assert.match(publicRoadmap, /certificat Phone Core v6 porte sur 14 preuves distinctes/);
   assert.match(publicRoadmap, /scanner Wi-Fi reste un diagnostic réseau séparé/);
   assert.match(publicRoadmap, /Validation physique 14\/14 requise/);
   assert.doesNotMatch(publicRoadmap, /--progress:\d+%/);

@@ -117,6 +117,23 @@ class PhoneCoreManifestContractInstrumentationTest {
     }
 
     @Test
+    fun dialerCandidateResolvesBothDialIntentsAndDeclaresInCallUi() {
+        val pm = context.packageManager
+        for (uri in listOf<android.net.Uri?>(null, android.net.Uri.parse("tel:5550100"))) {
+            val intent = android.content.Intent(android.content.Intent.ACTION_DIAL, uri)
+                .addCategory(android.content.Intent.CATEGORY_DEFAULT)
+                .setPackage(context.packageName)
+            val matches = pm.queryIntentActivities(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            assertTrue("ROLE_DIALER needs ACTION_DIAL with and without tel:",
+                matches.any { it.activityInfo.name == context.packageName + ".SentinelDialerActivity" })
+        }
+        val service = pm.getServiceInfo(component(".security.SentinelInCallService"),
+            android.content.pm.PackageManager.GET_META_DATA)
+        assertTrue(service.enabled)
+        assertTrue(service.metaData.getBoolean("android.telecom.IN_CALL_SERVICE_UI", false))
+    }
+
+    @Test
     fun fileProviderRemainsPrivateAndGrantScoped() {
         val provider = context.packageManager.resolveContentProvider(
             "${context.packageName}.fileprovider",

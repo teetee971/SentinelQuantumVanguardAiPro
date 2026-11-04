@@ -1,0 +1,35 @@
+PASS merged releaseUnsigned manifest: non-debuggable, no backup, no cleartext, min24/target36, protected InCallService UI
+Merged permissions: 32
+android.permission.ACCESS_COARSE_LOCATION
+android.permission.ACCESS_FINE_LOCATION
+android.permission.ACCESS_NETWORK_STATE
+android.permission.ACCESS_WIFI_STATE
+android.permission.BLUETOOTH
+android.permission.BLUETOOTH_ADMIN
+android.permission.BLUETOOTH_CONNECT
+android.permission.BLUETOOTH_SCAN
+android.permission.CALL_PHONE
+android.permission.CAMERA
+android.permission.CHANGE_WIFI_STATE
+android.permission.FOREGROUND_SERVICE
+android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION
+android.permission.INTERNET
+android.permission.MODIFY_AUDIO_SETTINGS
+android.permission.NEARBY_WIFI_DEVICES
+android.permission.POST_NOTIFICATIONS
+android.permission.READ_CALL_LOG
+android.permission.READ_CONTACTS
+android.permission.READ_PHONE_STATE
+android.permission.READ_SMS
+android.permission.RECEIVE_BOOT_COMPLETED
+android.permission.RECEIVE_MMS
+android.permission.RECEIVE_SMS
+android.permission.RECEIVE_WAP_PUSH
+android.permission.RECORD_AUDIO
+android.permission.SEND_SMS
+android.permission.USE_BIOMETRIC
+android.permission.USE_FINGERPRINT
+android.permission.USE_FULL_SCREEN_INTENT
+android.permission.WAKE_LOCK
+com.sentinel.quantum.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+Declared VPN services: [('com.wireguard.android.backend.GoBackend$VpnService', 'android.permission.BIND_VPN_SERVICE')]

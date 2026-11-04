@@ -147,7 +147,7 @@ class PhoneCoreDiagnosticActivity : ComponentActivity() {
                         "outgoing_sms_delivered" to certificationEvidence.outgoingSmsDeliveredSuccessfully,
                         "incoming_mms_safe_preview" to certificationEvidence.incomingMmsSafePreview,
                         "outgoing_mms_sent" to certificationEvidence.outgoingMmsSentSuccessfully,
-                        "incoming_call_notification" to certificationEvidence.incomingCallNotificationPosted,
+                        "incoming_call_notification" to certificationEvidence.incomingCallNotificationObserved,
                         "incoming_sms_notification" to certificationEvidence.incomingSmsNotificationPosted,
                         "caller_id_ui_shown" to certificationEvidence.callerIdUiShown,
                         "in_call_ui_shown" to certificationEvidence.inCallUiShown

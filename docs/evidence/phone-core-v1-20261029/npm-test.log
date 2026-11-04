@@ -1,0 +1,5 @@
+npm error Missing script: "test"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-10-29T14_50_05_718Z-debug-0.log
