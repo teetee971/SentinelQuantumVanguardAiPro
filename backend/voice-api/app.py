@@ -569,11 +569,9 @@ def create_app(
         principal = await app.state.voice_identity.verify(
             _authorization_required(authorization)
         )
-        if (
-            not principal
-            or not isinstance(principal.get("subject"), str)
-            or principal.get("email_verified") is not True
-        ):
+        # Closing an existing session is cleanup, not a grant of new access.
+        # Ownership and device binding are checked against the stored session below.
+        if not principal or not isinstance(principal.get("subject"), str):
             raise HTTPException(status_code=401, detail="Authentication required")
         session_key = f"voice:session:v1:{session_id}"
         closed_key = f"voice:closed:v1:{session_id}"
