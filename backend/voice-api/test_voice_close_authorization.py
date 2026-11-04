@@ -112,6 +112,34 @@ class CloseAuthorizationTests(unittest.TestCase):
                 self.assertEqual(403, self.close(client).status_code)
                 self.assertIn("voice:session:v1:test-session", store.records)
 
+    def test_empty_subject_cannot_create_session(self):
+        for subject in ("", None, 123):
+            with self.subTest(subject=subject):
+                client, store = self.make_client({
+                    "subject": subject,
+                    "device_ids": ["device-a"],
+                    "email_verified": True,
+                    "entitled": True,
+                })
+                response = client.post(
+                    "/v1/voice/sessions",
+                    headers={
+                        "Authorization": "Bearer test-token",
+                        "Idempotency-Key": "1234567890abcdef",
+                    },
+                    json={
+                        "channel": "PTT_ROOM",
+                        "destination": {"type": "sentinel_room", "room_id": "test-room"},
+                        "client": {
+                            "device_id": "device-a",
+                            "app_version": "1.0.9",
+                            "platform": "android",
+                        },
+                    },
+                )
+                self.assertEqual(403, response.status_code, response.text)
+                self.assertEqual(1, len(store.records))
+
     def test_empty_subject_cannot_close(self):
         client, store = self.make_client({
             "subject": "",
