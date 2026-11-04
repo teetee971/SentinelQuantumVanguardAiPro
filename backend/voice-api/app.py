@@ -179,6 +179,7 @@ class OidcIdentityVerifier:
             "subject": subject,
             "device_ids": device_ids,
             "entitled": claims.get(self._settings.entitlement_claim) is True,
+            "email_verified": claims.get("email_verified") is True,
             "revoked": claims.get("sentinel_voice_revoked") is True,
         }
 
@@ -420,6 +421,7 @@ def create_app(
             not isinstance(subject, str)
             or not subject
             or principal.get("revoked")
+            or principal.get("email_verified") is not True
             or not principal.get("entitled")
             or device_id not in _principal_device_ids(principal)
             or revoked
@@ -560,7 +562,11 @@ def create_app(
         principal = await app.state.voice_identity.verify(
             _authorization_required(authorization)
         )
-        if not principal or not isinstance(principal.get("subject"), str):
+        if (
+            not principal
+            or not isinstance(principal.get("subject"), str)
+            or principal.get("email_verified") is not True
+        ):
             raise HTTPException(status_code=401, detail="Authentication required")
         session_key = f"voice:session:v1:{session_id}"
         closed_key = f"voice:closed:v1:{session_id}"
