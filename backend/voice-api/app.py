@@ -411,6 +411,9 @@ def create_app(
         if not principal:
             raise HTTPException(status_code=401, detail="Authentication required")
         subject = principal.get("subject")
+        # Validate the identity before using it in a Redis revocation key.
+        if not isinstance(subject, str) or not subject:
+            raise HTTPException(status_code=403, detail="Voice access denied")
         try:
             revoked = await _is_revoked(client, subject, device_id)
         except (RedisError, TimeoutError, OSError) as exc:
