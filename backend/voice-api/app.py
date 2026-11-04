@@ -263,8 +263,10 @@ async def _is_revoked(client: Any, subject: str, device_id: str) -> bool:
 def _principal_device_ids(principal: dict[str, Any]) -> list[str]:
     device_ids = principal.get("device_ids", principal.get("device_id", []))
     if isinstance(device_ids, str):
-        return [device_ids]
-    return [item for item in device_ids if isinstance(item, str)]
+        return [device_ids] if device_ids else []
+    if not isinstance(device_ids, (list, tuple)):
+        return []
+    return [item for item in device_ids if isinstance(item, str) and item]
 
 
 def _load_state_record(raw: str, required_keys: tuple[str, ...]) -> dict[str, Any]:
