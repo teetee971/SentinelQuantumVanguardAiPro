@@ -19,7 +19,8 @@ internal data class ConnectedAccessSnapshot(
     val authenticated: Boolean,
     val emailVerified: Boolean,
     val sessionValid: Boolean,
-    val entitlementGranted: Boolean
+    val entitlementGranted: Boolean,
+    val premiumFeature: Boolean = false
 )
 
 internal object ConnectedServiceAccessPolicy {
@@ -27,7 +28,7 @@ internal object ConnectedServiceAccessPolicy {
         !snapshot.authenticated -> ConnectedAccessDecision.SIGN_IN_REQUIRED
         !snapshot.emailVerified -> ConnectedAccessDecision.EMAIL_VERIFICATION_REQUIRED
         !snapshot.sessionValid -> ConnectedAccessDecision.SESSION_REVALIDATION_REQUIRED
-        !snapshot.entitlementGranted -> ConnectedAccessDecision.ENTITLEMENT_REQUIRED
+        snapshot.premiumFeature && !snapshot.entitlementGranted -> ConnectedAccessDecision.ENTITLEMENT_REQUIRED
         else -> ConnectedAccessDecision.ALLOW_PRESENTATION
     }
 }
