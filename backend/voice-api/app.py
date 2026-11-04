@@ -305,19 +305,10 @@ async def _reserve_session(
             raise RedisError("atomic voice session reservation failed")
         return result == 1
 
-    stored = await client.set(
-        idempotency_key,
-        idempotency_value,
-        ex=idempotency_ttl,
-        nx=True,
-    )
-    if stored:
-        await client.set(
-            session_key,
-            session_value,
-            ex=session_ttl,
-        )
-    return bool(stored)
+    # A two-command fallback can reserve an idempotency key without creating
+    # its session record. Require Redis Lua atomicity instead of silently
+    # committing partial state under network failure or concurrent requests.
+    raise RedisError("atomic voice session reservation unavailable")
 
 
 def extract_device_ids(claims: dict[str, Any], claim_name: str = "device_ids") -> list[str]:
