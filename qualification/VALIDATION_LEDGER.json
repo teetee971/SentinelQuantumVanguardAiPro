@@ -38,5 +38,21 @@
     "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailPolicyTest.kt": "36b055aaa21f01304f13c7007ad3e8f016e65b5704e7bfb2c1d8cd5ac7e0cc54",
     "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsImagePartContractTest.kt": "f6d530c588077351505c3605ddaa0451c6e91d209b3356953a7c66fd8110dec4"
   },
-  "reuse_policy": "Historical PASS is reusable only while relevant source, tests and build configuration remain compatible. Changed dependencies require impact analysis."
+  "reuse_policy": "Historical PASS is reusable only while relevant source, tests and build configuration remain compatible. Changed dependencies require impact analysis.",
+  "additional_validations": [
+    {
+      "suite": "MmsThumbnailDecoderTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-05T11:25:45.624023+00:00",
+      "file_sha256": {
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsThumbnailDecoder.kt": "c1082c10f08031656f592c17d9a3ce7d5593197bf1518d2529533c202e23ad0e",
+        "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailDecoderTest.kt": "50cfa5712c2ffb7bc71398cc9129acce353105145ab0751239371592ad762779"
+      },
+      "scope": "JVM signature tests and Kotlin compilation; Android bitmap decoding not physically validated"
+    }
+  ]
 }
