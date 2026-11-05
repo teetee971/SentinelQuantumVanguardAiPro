@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-05T11:14:09.502050+00:00",
+  "branch": "fix/mms-received-thumbnails-20261105",
+  "base_commit": "f5a39e1efd9544ee7f8fb1796e9c49930c9c6fed",
+  "validation": {
+    "target": "MMS received thumbnails",
+    "unit_tests": {
+      "MmsThumbnailPolicyTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "status": "PASS",
+        "report_sha256": "50d59e8e2d2d4802be05a4280bd1b0a12793b84656b191a51e9a3308b9d7d0ed"
+      },
+      "MmsImagePartContractTest": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "status": "PASS",
+        "report_sha256": "94fe9490e0a5976a632b130c0c4504cf673aceb37d04e3f539daa9ebd66866ee"
+      }
+    },
+    "total_tests": 13,
+    "unit_tests_status": "PASS",
+    "kotlin_compilation": "PASS_REPORTED",
+    "repository_runtime": "NOT_TESTED",
+    "thumbnail_decode": "NOT_IMPLEMENTED",
+    "compose_display": "NOT_IMPLEMENTED",
+    "physical_s24_plus": "NOT_TESTED"
+  },
+  "file_sha256": {
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsThumbnailPolicy.kt": "c448fa7f5ddf01efbc86abf5c53cbf22f1aa90226d1e854e39d6c08c0f8d70f2",
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsImagePartContract.kt": "0fcb796194a8061d766120dfc683f7c2b010577d9c3d6c3c64dd10f7cd9faacf",
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsImagePartRepository.kt": "b1131fd4b6abded201eb104b897315b9e2db6f80aed60fe7e5aa870feb54508d",
+    "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailPolicyTest.kt": "36b055aaa21f01304f13c7007ad3e8f016e65b5704e7bfb2c1d8cd5ac7e0cc54",
+    "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsImagePartContractTest.kt": "f6d530c588077351505c3605ddaa0451c6e91d209b3356953a7c66fd8110dec4"
+  },
+  "reuse_policy": "Historical PASS is reusable only while relevant source, tests and build configuration remain compatible. Changed dependencies require impact analysis."
+}
