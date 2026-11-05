@@ -79,6 +79,67 @@ internal class MmsImagePartRepository(
         return results
     }
 
+    /**
+     * Loads one validated image part. This is a blocking provider operation and must be called
+     * from Dispatchers.IO by the lifecycle owner. Provider reads are revalidated around the
+     * stream because ContentResolver does not provide a cross-query atomic snapshot.
+     */
+    fun loadThumbnail(
+        syntheticMessageId: Long,
+        threadId: Long,
+        partId: Long,
+        targetDimension: Int = 256
+    ): android.graphics.Bitmap? {
+        val identity = MmsImagePartContract.resolveMessage(syntheticMessageId, threadId)
+            ?: return null
+        if (!MmsThumbnailPolicy.validKey(
+                MmsThumbnailPolicy.PartKey(identity.providerMessageId, threadId, partId)
+            ) || !conversations.canRead() || !parentMatchesThread(identity)
+        ) return null
+
+        val partUri = ContentUris.withAppendedId(
+            partsUri(identity.providerMessageId),
+            partId
+        )
+        val metadata = try {
+            appContext.contentResolver.query(
+                partUri,
+                arrayOf("_id", "mid", Telephony.Mms.Part.CONTENT_TYPE),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                val idColumn = cursor.getColumnIndexOrThrow("_id")
+                val parentColumn = cursor.getColumnIndexOrThrow("mid")
+                val mimeColumn = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE)
+                if (!cursor.moveToFirst() || cursor.moveToNext()) return null
+                MmsImagePartContract.PartMetadata(
+                    cursor.getLong(idColumn), cursor.getLong(parentColumn), cursor.getString(mimeColumn)
+                )
+            }
+        } catch (_: SecurityException) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        } ?: return null
+
+        val key = MmsImagePartContract.acceptPart(identity, metadata) ?: return null
+        if (key.partId != partId || !conversations.canRead()) return null
+
+        val bytes = try {
+            appContext.contentResolver.openInputStream(partUri)?.use { input ->
+                MmsBoundedImageReader.read(input, isPermissionGranted = conversations::canRead)
+            }
+        } catch (_: SecurityException) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        } ?: return null
+
+        if (!conversations.canRead() || !parentMatchesThread(identity)) return null
+        return MmsThumbnailDecoder.decode(bytes, metadata.mimeType ?: return null, targetDimension)
+    }
+
     private fun parentMatchesThread(
         identity: MmsImagePartContract.MessageIdentity
     ): Boolean {

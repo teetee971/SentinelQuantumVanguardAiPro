@@ -39,6 +39,19 @@
     "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsImagePartContractTest.kt": "f6d530c588077351505c3605ddaa0451c6e91d209b3356953a7c66fd8110dec4"
   },
   "reuse_policy": "Historical PASS is reusable only while relevant source, tests and build configuration remain compatible. Changed dependencies require impact analysis.",
+  "codex_session_2026_11_05": {
+    "branch": "codex/sentinel-audit-20261105",
+    "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
+    "changes": [
+      "MmsBoundedImageReader added",
+      "MmsImagePartRepository.loadThumbnail added",
+      "MmsBoundedImageReaderTest added"
+    ],
+    "gradle_tests": "BLOCKED_BEFORE_EXECUTION_CONNECTION_REFUSED_DOWNLOADING_GRADLE_9_8",
+    "compilation": "BLOCKED",
+    "physical_s24_plus": "NOT_TESTED",
+    "historical_pass_rewritten": false
+  },
   "additional_validations": [
     {
       "suite": "MmsThumbnailDecoderTest",
