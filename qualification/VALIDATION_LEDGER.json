@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "8efb37196",
+    "current_sha": "7d3caa962",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -56,8 +56,8 @@
       "errors": 0,
       "warnings": 216,
       "hints": 19,
-      "sarif_sha256": "66566e8894fd241c90bf4ec2c269609fd95ee087ee819ab3763581ce3e7a7a32",
-      "text_report_sha256": "d09be9a80777300b3279e7bd49dad07e09bdf16477e056ba65d6ea8ce7a3686d",
+      "sarif_sha256": "a0277494509914259f0f22b91b4767af6cc1128ad520c877a2ce96df4073929a",
+      "text_report_sha256": "3c90502423830b29e49fbb26e9438d12876aade962c254a8e795baa359fe3689",
       "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
     },
       "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
@@ -83,7 +83,7 @@
       }
     },
       "full_unit_regression": {
-      "tests": 1396,
+      "tests": 1397,
       "failures": 0,
       "errors": 0,
       "skipped": 1,
@@ -105,7 +105,7 @@
       "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-      "sha256": "9892fdb57001efacfbc99b1598c0dcb462c213df96af332c025fa927033657a3",
+        "sha256": "8df5c7ab0f4fab8658331b53e86f07b7a80032a8960502901884faed101cbb46",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
     ,"release_unsigned": {
@@ -188,6 +188,17 @@
       "validated_at_utc": "2026-11-06T13:00:00+00:00",
       "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.VpnVisualDashboardSourceContractTest --no-daemon",
       "scope": "Source contract for the VPN visual dashboard; no real gateway or physical-device validation"
+    },
+    {
+      "suite": "SmsSecureVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T13:30:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.SmsSecureVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for secure SMS conversation presentation; Android provider and physical-device behavior remain separately untested"
     }
   ]
 }
