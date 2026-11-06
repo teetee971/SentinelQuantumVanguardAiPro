@@ -1,0 +1,32 @@
+{
+  "source_commit": "0ce9deef226f22a971c3781ef95e1d9f87c8999f",
+  "by_id": {
+    "ApplySharedPref": 8,
+    "InlinedApi": 24,
+    "UnusedAttribute": 6,
+    "QueryPermissionsNeeded": 3,
+    "AndroidGradlePluginVersion": 1,
+    "ModifierParameter": 1,
+    "Typos": 1,
+    "PluralsCandidate": 8,
+    "HardwareIds": 2,
+    "DataExtractionRules": 1,
+    "ObsoleteSdkInt": 3,
+    "AutoboxingStateCreation": 19,
+    "UnusedResources": 62,
+    "TypographyEllipsis": 2,
+    "IconLauncherShape": 10,
+    "IconDuplicates": 5,
+    "ViewConstructor": 1,
+    "UseKtx": 83
+  },
+  "by_category_and_severity": {
+    "performance:Warning": 8,
+    "compatibilite_android:Warning": 36,
+    "maintenance:Warning": 163,
+    "accessibilite_localisation:Warning": 11,
+    "securite_confidentialite:Warning": 3,
+    "performance:Hint": 19
+  },
+  "full_reports": "LINT_REPORTS.zip"
+}

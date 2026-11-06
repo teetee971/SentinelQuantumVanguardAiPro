@@ -1,0 +1,146 @@
+{
+  "local-signing-report.json": {
+    "evidence_origin": "USER_REPORTED_TERMUX_UBUNTU_SIGNING_REPORT",
+    "status": "SIGNED_NOT_INSTALLED",
+    "source_commit": "2a12faa631af63e5e912edd3a3d511eb616558e9",
+    "qualified_delivery_commit": "d1c541ba32c42ab3f9042dbb2a5b7626ca504aea",
+    "package": "com.sentinel.quantum",
+    "candidate_versionCode": 20,
+    "installed_versionCode_before_upgrade": 19,
+    "signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+    "artifacts": [
+      {
+        "file": "app-s24-v20.apk",
+        "cloud_sha256": "9c39e96069a95eb77c119e1892664b15f3a1ecd2d70c588250885447f2d99be7",
+        "signed_sha256": "b07b917a5a8b3ac3f33e7d48508c11de4692c4d39740fbfa44695b78b7417bfb",
+        "zip_entries": 608,
+        "payload_identical": true,
+        "native_offsets_preserved": true,
+        "signature_v2_verified": true
+      },
+      {
+        "file": "app-s24-androidTest-v20.apk",
+        "cloud_sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+        "signed_sha256": "db7215b5b9124cf5f0bca9b5e8c5c85f0cfb30591c6ee120ede41e194d5a78b7",
+        "zip_entries": 56,
+        "payload_identical": true,
+        "native_offsets_preserved": true,
+        "signature_v2_verified": true
+      }
+    ],
+    "physical_s24_plus": "NOT_TESTED",
+    "recorded_at_utc": "2026-11-06T23:01:18.240927+00:00"
+  },
+  "ui-prerequisites-observation.json": {
+    "evidence_origin": "USER_PROVIDED_DEVICE_SCREENSHOTS",
+    "source_payload_commit": "2a12faa631af63e5e912edd3a3d511eb616558e9",
+    "qualified_delivery_commit": "d1c541ba32c42ab3f9042dbb2a5b7626ca504aea",
+    "device_model_previously_observed": "SM-S926B",
+    "installation_update": "PASS_USER_REPORTED_ADB_SUCCESS",
+    "installed_version_readback": "PENDING",
+    "home_rendering": "OBSERVED",
+    "phone_core_activation_rendering": "OBSERVED",
+    "displayed_prerequisites": {
+      "dialer": "CONFIGURATION_PRETE",
+      "call_screening": "FILTRAGE_SYSTEME_ACTIF",
+      "sms_default": "SMS_PRET",
+      "active_sim_count": 1,
+      "mms": "PRET_LOGICIELLEMENT",
+      "contacts_and_history": "ACCES_LOCAL_PRET"
+    },
+    "messages_button_source_review": "OutlinedButton has default enabled=true and opens SmsComposeActivity; device click not tested",
+    "functional_tests": {
+      "calls": "NOT_TESTED",
+      "sms_send_receive": "NOT_TESTED",
+      "mms_send_receive": "NOT_TESTED",
+      "contacts_data_preservation": "NOT_TESTED",
+      "old_conversation_visibility": "NOT_TESTED",
+      "room_data_preservation": "NOT_TESTED"
+    },
+    "overall_status": "BLOCKED",
+    "physical_s24_plus_functional": "NOT_TESTED",
+    "recorded_at_utc": "2026-11-06T23:13:08.309582+00:00"
+  },
+  "provider-read-observation.json": {
+    "evidence_origin": "USER_PROVIDED_DEVICE_SCREENSHOTS",
+    "source_payload_commit": "2a12faa631af63e5e912edd3a3d511eb616558e9",
+    "qualified_delivery_commit": "d1c541ba32c42ab3f9042dbb2a5b7626ca504aea",
+    "device_model_previously_observed": "SM-S926B",
+    "observed_after_upgrade": {
+      "contacts_screen": {
+        "local_contacts_displayed_count": 5968,
+        "callable_contacts_displayed_count": 2436,
+        "phone_numbers_displayed_count": 2645,
+        "list_display_limit": 50,
+        "status": "OBSERVED"
+      },
+      "recent_calls_screen": {
+        "records_read": 500,
+        "limit": 500,
+        "status": "OBSERVED"
+      },
+      "messages_screen": {
+        "conversation_count_displayed": 37,
+        "received_mms_count_displayed": 1,
+        "existing_conversation_preview_visible": true,
+        "status": "OBSERVED"
+      }
+    },
+    "privacy": "No contact names, phone numbers, message bodies or screenshots copied to this record",
+    "data_preservation": "Existing provider records accessible; exhaustive before/after preservation NOT_TESTED (no pre-upgrade baseline)",
+    "remaining": {
+      "sms_send_receive": "NOT_TESTED",
+      "mms_send_receive_and_thumbnail": "NOT_TESTED",
+      "calls_inbound_outbound_audio": "NOT_TESTED",
+      "room_upgrade_data_preservation": "NOT_TESTED",
+      "instrumented_execution": "NOT_TESTED"
+    },
+    "physical_s24_plus_status": "PARTIAL",
+    "overall_status": "BLOCKED",
+    "recorded_at_utc": "2026-11-06T23:16:07.409715+00:00"
+  },
+  "sms-basic-observation.json": {
+    "evidence_origin": "USER_PROVIDED_DEVICE_SCREENSHOT",
+    "source_payload_commit": "2a12faa631af63e5e912edd3a3d511eb616558e9",
+    "qualified_delivery_commit": "d1c541ba32c42ab3f9042dbb2a5b7626ca504aea",
+    "observed": {
+      "received_sms_visible": true,
+      "delivery_receipt_all_parts_displayed": true,
+      "sending_sim_displayed": "SIM 1",
+      "notification_banner_visible": true
+    },
+    "not_established": {
+      "independent_receiver_observation": "NOT_CONFIRMED",
+      "background_notification": "NOT_CONFIRMED",
+      "unicode_multipart_sms": "NOT_TESTED",
+      "second_sim": "NOT_TESTED"
+    },
+    "privacy": "No phone number, message body, correspondent name or raw screenshot stored",
+    "mms_functional": "NOT_TESTED",
+    "calls_functional": "NOT_TESTED",
+    "physical_s24_plus_status": "PARTIAL",
+    "overall_status": "BLOCKED",
+    "recorded_at_utc": "2026-11-06T23:18:41.650320+00:00"
+  },
+  "mms-thumbnail-failure.json": {
+    "origin": "USER_PROVIDED_SCREENSHOTS",
+    "versionCode_under_test": 20,
+    "device_signed_apk_sha256": "b07b917a5a8b3ac3f33e7d48508c11de4692c4d39740fbfa44695b78b7417bfb",
+    "observed": {
+      "outgoing_mms_row": true,
+      "incoming_mms_row": true,
+      "outgoing_thumbnail": "UNAVAILABLE",
+      "incoming_thumbnail": "UNAVAILABLE",
+      "selected_attachment_mime": "image/jpeg",
+      "selected_attachment_bytes": 483388,
+      "new_raw_pdu_bytes": 483524,
+      "raw_local_mms_count": 2
+    },
+    "carrier_attachment_delivery": "NOT_INDEPENDENTLY_CONFIRMED",
+    "image_decoding": "FAILED_OR_BLOCKED",
+    "quarantine_label": "Generic raw-PDU text, not evidence that the JPEG was classified malicious",
+    "no_private_content_recorded": true,
+    "overall_status": "BLOCKED",
+    "recorded_at_utc": "2026-11-06T23:29:01.469710+00:00"
+  }
+}

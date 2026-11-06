@@ -1,0 +1,30 @@
+{
+  "source_commit": "0ce9deef226f22a971c3781ef95e1d9f87c8999f",
+  "tests": {
+    "targeted": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "unit": {
+      "tests": 1421,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "unit-with-fixture": {
+      "tests": 1421,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "Warning": 221,
+    "Hint": 19
+  },
+  "cloud_apk_sha256": "0055e96acef36c1e7ea83c4049e4cc8aa2a0af88078f062dca4b07694557e4a5",
+  "test_apk_sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+  "android_tree": "5b6794f346073a983fc8ae2cd5231f82279a799d"
+}
