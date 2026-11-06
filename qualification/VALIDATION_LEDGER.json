@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "7a520a804",
+    "current_sha": "b866bc45e",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -54,10 +54,11 @@
     "lint": {
       "status": "PASS",
       "errors": 0,
-      "warnings": 218,
+      "warnings": 216,
       "hints": 19,
-      "sarif_sha256": "4475b592d0d4355bb59501cdb6c004d4c6e4b02f6ed056f4152d7c9fcb604603",
-      "text_report_sha256": "9f2d3fee646cd18a5483eed18b62a60ce04fe7ae7effc46a85317393716579bc"
+      "sarif_sha256": "66566e8894fd241c90bf4ec2c269609fd95ee087ee819ab3763581ce3e7a7a32",
+      "text_report_sha256": "d09be9a80777300b3279e7bd49dad07e09bdf16477e056ba65d6ea8ce7a3686d",
+      "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
     },
     "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
     "physical_s24_plus": "NOT_TESTED",
@@ -92,7 +93,7 @@
     "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-      "sha256": "b12c34108d79d0c2565c369043c36aab26cf0201fb0125b0518be9672085d05d",
+      "sha256": "7d171bb240e67291dbe78d9696029e31663198f836660b73770b8e1956ed55fc",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
   },
