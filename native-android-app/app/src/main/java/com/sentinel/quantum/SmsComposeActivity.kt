@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -51,12 +53,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.sentinel.quantum.ui.design.phoneCoreTestId
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -98,6 +102,10 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import com.sentinel.quantum.ui.design.PhoneCoreConversationRow
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.ui.semantics.semantics
@@ -127,6 +135,71 @@ class SmsComposeActivity : ComponentActivity() {
         if (!value.all { it.isDigit() || it in "+*#" }) return null
         return value
     }
+
+@Composable
+private fun SecureConversationHeader(address: String, messageCount: Int, activationReady: Boolean) {
+    SentinelGlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("secure-conversation-header")
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(
+                modifier = Modifier.size(54.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = SentinelD1.Cyan.copy(alpha = 0.14f)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Text("?", style = MaterialTheme.typography.headlineSmall, color = SentinelD1.Cyan, fontWeight = FontWeight.Bold)
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("Messages sécurisés", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(address.ifBlank { "Expéditeur inconnu" }, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    if (messageCount == 0) "Aucun message chargé" else "$messageCount message(s) chargé(s)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            SentinelStatusChip(
+                status = if (activationReady) SentinelStatus.OK else SentinelStatus.LIMITED,
+                label = if (activationReady) "Local" else "Permissions"
+            )
+        }
+        Text(
+            "Analyse locale du message · aucun contenu n’est envoyé pour enrichissement distant.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
+    SentinelGlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("message-risk-card")
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Default.Security, contentDescription = null, tint = SentinelD1.Danger)
+            Column(Modifier.weight(1f)) {
+                Text("Analyse locale du message", fontWeight = FontWeight.Bold)
+                Text("Risque $level · score $score/100", color = SentinelD1.Danger, style = MaterialTheme.typography.bodySmall)
+            }
+            SentinelStatusChip(SentinelStatus.BAD, label = level)
+        }
+        if (findings.isNotEmpty()) {
+            Text(
+                findings.joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            "Ce résultat est une analyse locale du contenu disponible, pas une preuve d’identité de l’expéditeur.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -1106,6 +1179,11 @@ class SmsComposeActivity : ComponentActivity() {
                                     val replyAddress = threads.firstOrNull { it.threadId == selectedThreadId }?.address
                                         ?: threadMessages.lastOrNull()?.address.orEmpty()
                                     Text(replyAddress.ifBlank { "Conversation" }, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    SecureConversationHeader(
+                                        address = replyAddress,
+                                        messageCount = threadMessages.size,
+                                        activationReady = activationSnapshot.state == SmsActivationDiagnostics.State.READY
+                                    )
                                     if (threadMessages.isEmpty()) {
                                         Text(
                                             "Aucun message disponible dans cette conversation.",
@@ -1176,10 +1254,10 @@ class SmsComposeActivity : ComponentActivity() {
                                                     )
                                                 }
                                                 if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                    Text(
-                                                        "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.error
+                                                    MessageRiskCard(
+                                                        score = messageRisk.score,
+                                                        level = PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name),
+                                                        findings = messageRisk.findings.map { PhoneCoreFrenchLabels.smsFinding(it.code) }
                                                     )
                                                 }
                                                 OutlinedButton(
