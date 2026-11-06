@@ -1,3 +1,5 @@
+> Qualification historique. État courant : [reprise API 24/25](NOTIFICATION_SETTINGS_FOLLOWUP_20261106.md) et `VALIDATION_LEDGER.json`.
+
 # SENTINEL — qualification et gel fonctionnel
 
 **Statut global : BLOCKED. Contrôles techniques locaux : PASS. Galaxy S24+ : NOT_TESTED.**

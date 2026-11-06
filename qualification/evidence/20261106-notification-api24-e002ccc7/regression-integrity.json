@@ -1,0 +1,13 @@
+{
+  "source_commit": "e002ccc7927ec9df533c54d6707254bf0a71f7ab",
+  "changes_since_previous_qualification": [
+    "native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt",
+    "native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreNotificationSettingsPolicy.kt",
+    "native-android-app/app/src/test/java/com/sentinel/quantum/PhoneCoreNotificationSettingsPolicyTest.kt"
+  ],
+  "room_schema_unchanged": true,
+  "dependencies_and_wrapper_unchanged": true,
+  "new_screens": false,
+  "physical_s24_plus": "NOT_TESTED",
+  "dependabot_rest_http_status": 403
+}

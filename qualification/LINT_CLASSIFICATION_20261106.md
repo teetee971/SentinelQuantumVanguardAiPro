@@ -1,3 +1,5 @@
+> Qualification historique. État courant : [reprise API 24/25](NOTIFICATION_SETTINGS_FOLLOWUP_20261106.md) et `VALIDATION_LEDGER.json`.
+
 # Classification lint — qualification du 2026-11-06
 
 Source exécutée : `1ac8bd5e325416bdb5ba1bca59566a561393b45b` ; arbre Android `0547bb2780ec041a204bac8ad7ebf1b4925ee34e`.
