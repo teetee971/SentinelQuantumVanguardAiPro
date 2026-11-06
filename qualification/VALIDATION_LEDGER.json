@@ -108,6 +108,22 @@
       "sha256": "7d171bb240e67291dbe78d9696029e31663198f836660b73770b8e1956ed55fc",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
+    ,"release_unsigned": {
+      "assemble_command": ":app:assembleReleaseUnsigned --no-daemon",
+      "bundle_command": ":app:bundleReleaseUnsigned --no-daemon",
+      "assemble_status": "PASS",
+      "bundle_status": "PASS",
+      "apk": {
+        "path": "native-android-app/app/build/outputs/apk/releaseUnsigned/app-releaseUnsigned-unsigned.apk",
+        "sha256": "c3c882d3517ab6b324c6f363d6d3d6582b176ab53a9b67045079e96a98e1913e",
+        "signature": "UNSIGNED_EXPECTED; apksigner does not verify; not publishable"
+      },
+      "aab": {
+        "path": "native-android-app/app/build/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+        "sha256": "78abf53e2ea52797de513cd3f6fafe51d05e79ed450ea135b74238733f64e316",
+        "signature": "unsigned validation bundle; not publishable"
+      }
+    }
   },
   "additional_validations": [
     {

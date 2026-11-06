@@ -41,6 +41,8 @@ Ces changements ne prouvent pas le comportement réel de `ContentResolver`, de
 | APK debug | PASS | APK v2 vérifié; SHA-256 dans le ledger; non-release |
 | compilation APK instrumenté | PASS | `:app:assembleDebugAndroidTest` |
 | exécution instrumentée | BLOCKED | Aucun appareil/émulateur connecté |
+| APK release unsigned | PASS | Produit volontairement non signé, non publiable |
+| AAB release unsigned | PASS | Bundle de validation volontairement non signé, non publiable |
 | BitmapFactory/ContentResolver | NOT TESTED | aucun SDK/émulateur/appareil attaché |
 | Galaxy S24+ | NOT TESTED | appareil physique absent |
 
