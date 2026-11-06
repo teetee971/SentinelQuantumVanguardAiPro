@@ -48,11 +48,44 @@
       "MmsBoundedImageReaderTest added",
       "SmsComposeActivity asynchronous thumbnail wiring added"
     ],
-    "gradle_tests": "BLOCKED_SDK_LOCATION_NOT_FOUND_AFTER_GRADLE_9_8_PROXY_BOOTSTRAP",
-    "compilation": "BLOCKED_ANDROID_SDK_MISSING",
+    "gradle_tests": "PASS",
+    "compilation": "PASS",
     "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
     "physical_s24_plus": "NOT_TESTED",
-    "historical_pass_rewritten": false
+    "historical_pass_rewritten": false,
+    "commands": {
+      "targeted": ":app:testDebugUnitTest --tests MmsBoundedImageReaderTest --tests MmsThumbnailPolicyTest --tests MmsImagePartContractTest --tests MmsThumbnailDecoderTest --tests SmsComposeMmsThumbnailSourceContractTest --no-daemon",
+      "regression": ":app:testDebugUnitTest --no-daemon",
+      "artifact": ":app:assembleDebug --no-daemon"
+    },
+    "targeted_tests": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "report_sha256": {
+        "SmsComposeMmsThumbnailSourceContractTest.xml": "610d0487445a4be552f97c2f139029979a7b2dcf324b6226569a6ca595fb37ed",
+        "MmsBoundedImageReaderTest.xml": "1fa22556d0a55ca9796f00d77424cf623cc1dee370031827f03dbe33a6ad2c5f",
+        "MmsThumbnailPolicyTest.xml": "a229b4f40643c9c31c95f9bade037a7ab78192708d15ef93ff5f5f9da29d4f92",
+        "MmsImagePartContractTest.xml": "30984e602e2429009b706cf9d62290b6d8e0c8d3b6470411f12ccf2fdf0514ec",
+        "MmsThumbnailDecoderTest.xml": "d2c452d2aa98f311b07b1323c3bb3329e9a8a4ae260fb16c590c8bfc7bb17cc6"
+      }
+    },
+    "full_unit_regression": {
+      "tests": 1391,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "status": "PASS_WITH_EXPLICIT_SKIP",
+      "skip_reason": "SIGNED_APK_FIXTURE_REQUIRED"
+    },
+    "debug_apk": {
+      "status": "PASS",
+      "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "f70714b84f8f613c0942465c8cbfb7bed3af210db0d74d95052c8adfd62b9ccf",
+      "signature": "debug keystore; APK v2 verified; not a release artifact"
+    }
   },
   "additional_validations": [
     {

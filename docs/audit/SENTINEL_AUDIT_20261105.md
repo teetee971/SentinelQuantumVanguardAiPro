@@ -34,8 +34,10 @@ Ces changements ne prouvent pas le comportement réel de `ContentResolver`, de
 |---|---|---|
 | `git diff --check` | PASS | exécuté dans cette session |
 | inspection statique des permissions/manifeste | OBSERVÉ | `READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, rôles/services inspectés |
-| tests Gradle MMS | BLOCKED | Gradle 9.8 lancé manuellement avec proxy; arrêt sur `SDK location not found` |
-| compilation Kotlin/Android | BLOCKED | aucun Android SDK local; `ANDROID_HOME` et `ANDROID_SDK_ROOT` vides |
+| tests Gradle MMS ciblés | PASS | 25 tests, 0 échec, 0 erreur, 0 skip |
+| régression `:app:testDebugUnitTest` | PASS avec skip explicite | 1 391 tests, 0 échec, 0 erreur, 1 skip `SIGNED_APK_FIXTURE_REQUIRED` |
+| compilation Kotlin/Android | PASS | JDK 17, SDK Android Platform 37.0, Gradle 9.8 |
+| APK debug | PASS | APK v2 vérifié; SHA-256 dans le ledger; non-release |
 | BitmapFactory/ContentResolver | NOT TESTED | aucun SDK/émulateur/appareil attaché |
 | Galaxy S24+ | NOT TESTED | appareil physique absent |
 
