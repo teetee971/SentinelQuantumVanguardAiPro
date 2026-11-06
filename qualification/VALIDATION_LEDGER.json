@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "b02d43c15",
+    "current_sha": "ef896be20",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -83,7 +83,7 @@
       }
     },
       "full_unit_regression": {
-      "tests": 1394,
+      "tests": 1395,
       "failures": 0,
       "errors": 0,
       "skipped": 1,
@@ -105,7 +105,7 @@
       "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-      "sha256": "2c24928a9fd8de6fe8078fcaa14433a306c519c82c1f02bec886ac0def41202d",
+      "sha256": "8af0fb4bbc79eb727f971111abe86b4d9d8165a7faadd9f5bff335005518bb07",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
     ,"release_unsigned": {
@@ -166,6 +166,17 @@
       "validated_at_utc": "2026-11-06T12:32:42+00:00",
       "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.AppPermissionVisualDashboardSourceTest --no-daemon",
       "scope": "Source contract for the applications-risk visual dashboard; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "HomeCommandCenterSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:40:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.HomeCommandCenterSourceContractTest --no-daemon",
+      "scope": "Source contract for the home command center; not an Android screenshot or physical-device validation"
     }
   ]
 }
