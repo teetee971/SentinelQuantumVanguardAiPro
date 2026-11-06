@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "d128bd7c7",
+    "current_sha": "62a4aabb9",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -83,7 +83,7 @@
       }
     },
       "full_unit_regression": {
-      "tests": 1395,
+      "tests": 1396,
       "failures": 0,
       "errors": 0,
       "skipped": 1,
@@ -105,7 +105,7 @@
       "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-      "sha256": "8af0fb4bbc79eb727f971111abe86b4d9d8165a7faadd9f5bff335005518bb07",
+      "sha256": "9892fdb57001efacfbc99b1598c0dcb462c213df96af332c025fa927033657a3",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
     ,"release_unsigned": {
@@ -177,6 +177,17 @@
       "validated_at_utc": "2026-11-06T12:40:00+00:00",
       "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.HomeCommandCenterSourceContractTest --no-daemon",
       "scope": "Source contract for the home command center; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "VpnVisualDashboardSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T13:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.VpnVisualDashboardSourceContractTest --no-daemon",
+      "scope": "Source contract for the VPN visual dashboard; no real gateway or physical-device validation"
     }
   ]
 }
