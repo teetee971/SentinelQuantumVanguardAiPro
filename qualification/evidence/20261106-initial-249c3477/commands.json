@@ -1,0 +1,68 @@
+[
+  {
+    "name": "targeted",
+    "source_commit": "249c347768932b73a958bb3dd953958f152a1ac8",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:testDebugUnitTest",
+      "--tests",
+      "com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:04:53.221122+00:00",
+    "finished_at_utc": "2026-11-06T18:07:35.698076+00:00",
+    "exit_code": 1
+  },
+  {
+    "name": "unit",
+    "source_commit": "249c347768932b73a958bb3dd953958f152a1ac8",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:testDebugUnitTest",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:07:35.698366+00:00",
+    "finished_at_utc": "2026-11-06T18:08:30.192467+00:00",
+    "exit_code": 1
+  },
+  {
+    "name": "lint",
+    "source_commit": "249c347768932b73a958bb3dd953958f152a1ac8",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:lintDebug",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:08:30.192872+00:00",
+    "finished_at_utc": "2026-11-06T18:09:18.902441+00:00",
+    "exit_code": 1
+  },
+  {
+    "name": "assemble",
+    "source_commit": "249c347768932b73a958bb3dd953958f152a1ac8",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:assembleDebug",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:09:18.902724+00:00",
+    "finished_at_utc": "2026-11-06T18:12:42.218265+00:00",
+    "exit_code": 1
+  }
+]

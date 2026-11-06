@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import android.content.ContentUris
 import android.content.Context
+import android.database.Cursor
 import android.os.Build
 import android.net.Uri
 import android.provider.Telephony
@@ -109,13 +110,7 @@ internal class MmsImagePartRepository(
                 null,
                 null
             )?.use { cursor ->
-                val idColumn = cursor.getColumnIndexOrThrow("_id")
-                val parentColumn = cursor.getColumnIndexOrThrow("mid")
-                val mimeColumn = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE)
-                if (!cursor.moveToFirst() || cursor.moveToNext()) return null
-                MmsImagePartContract.PartMetadata(
-                    cursor.getLong(idColumn), cursor.getLong(parentColumn), cursor.getString(mimeColumn)
-                )
+                readUniqueMmsPartMetadata(cursor)
             }
         } catch (_: SecurityException) {
             null
@@ -196,4 +191,16 @@ internal class MmsImagePartRepository(
                 "content://mms/$providerMessageId/part"
             )
         }
+}
+
+/** Reads exactly one provider row; ambiguous part identities fail closed. */
+internal fun readUniqueMmsPartMetadata(cursor: Cursor): MmsImagePartContract.PartMetadata? {
+    val idColumn = cursor.getColumnIndexOrThrow("_id")
+    val parentColumn = cursor.getColumnIndexOrThrow("mid")
+    val mimeColumn = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE)
+    if (!cursor.moveToFirst()) return null
+    val metadata = MmsImagePartContract.PartMetadata(
+        cursor.getLong(idColumn), cursor.getLong(parentColumn), cursor.getString(mimeColumn)
+    )
+    return if (cursor.moveToNext()) null else metadata
 }

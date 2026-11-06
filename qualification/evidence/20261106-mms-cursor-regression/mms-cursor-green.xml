@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsPartCursorReaderTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-06T18:15:49.817Z" hostname="d7e516aeea20" time="0.021">
+  <properties/>
+  <testcase name="missingMimeIsPreservedForContractRejection" classname="com.sentinel.quantum.security.MmsPartCursorReaderTest" time="0.016"/>
+  <testcase name="singleProviderRowReturnsMetadataBeforeCursorPassesEnd" classname="com.sentinel.quantum.security.MmsPartCursorReaderTest" time="0.001"/>
+  <testcase name="duplicateProviderRowsAreRejectedEvenWhenIdentical" classname="com.sentinel.quantum.security.MmsPartCursorReaderTest" time="0.0"/>
+  <testcase name="emptyProviderResultHasNoMetadata" classname="com.sentinel.quantum.security.MmsPartCursorReaderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
