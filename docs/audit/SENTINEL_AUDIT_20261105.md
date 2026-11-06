@@ -39,6 +39,8 @@ Ces changements ne prouvent pas le comportement réel de `ContentResolver`, de
 | compilation Kotlin/Android | PASS | JDK 17, SDK Android Platform 37.0, Gradle 9.8 |
 | `:app:lintDebug` | PASS | 0 erreurs, 216 warnings, 19 hints; classification détaillée dans `LINT_CLASSIFICATION_20261106.md` |
 | APK debug | PASS | APK v2 vérifié; SHA-256 dans le ledger; non-release |
+| compilation APK instrumenté | PASS | `:app:assembleDebugAndroidTest` |
+| exécution instrumentée | BLOCKED | Aucun appareil/émulateur connecté |
 | BitmapFactory/ContentResolver | NOT TESTED | aucun SDK/émulateur/appareil attaché |
 | Galaxy S24+ | NOT TESTED | appareil physique absent |
 

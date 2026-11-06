@@ -90,6 +90,18 @@
       "status": "PASS_WITH_EXPLICIT_SKIP",
       "skip_reason": "SIGNED_APK_FIXTURE_REQUIRED"
     },
+    "instrumented": {
+      "compile_command": ":app:assembleDebugAndroidTest --no-daemon",
+      "compile_status": "PASS",
+      "connected_command": ":app:connectedDebugAndroidTest --no-daemon",
+      "connected_status": "BLOCKED_NO_CONNECTED_DEVICES",
+      "connected_error": "com.android.builder.testing.api.DeviceException: No connected devices!",
+      "test_apk": {
+        "path": "native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+        "sha256": "95eb7b17abb666004fc238358f106f046408233191a0e3935f6be4a28cee48d5",
+        "signature": "debug keystore; APK v2 verified"
+      }
+    },
     "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
