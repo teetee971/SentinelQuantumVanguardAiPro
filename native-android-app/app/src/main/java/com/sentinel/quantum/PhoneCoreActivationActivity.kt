@@ -399,11 +399,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 setupPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             } else {
                                 settingsLauncher.launch(
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !fullScreenIntentReady) {
-                                        Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))
-                                    } else {
-                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-                                    }
+                                    PhoneCoreNotificationSettingsPolicy.intent(packageName, fullScreenIntentReady)
                                 )
                             }
                         }
@@ -640,8 +636,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                         OutlinedButton(
                                             onClick = {
                                                 settingsLauncher.launch(
-                                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                                    PhoneCoreNotificationSettingsPolicy.intent(packageName)
                                                 )
                                             },
                                             modifier = Modifier.fillMaxWidth()
