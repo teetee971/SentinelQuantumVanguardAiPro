@@ -37,6 +37,7 @@ Ces changements ne prouvent pas le comportement réel de `ContentResolver`, de
 | tests Gradle MMS ciblés | PASS | 25 tests, 0 échec, 0 erreur, 0 skip |
 | régression `:app:testDebugUnitTest` | PASS avec skip explicite | 1 391 tests, 0 échec, 0 erreur, 1 skip `SIGNED_APK_FIXTURE_REQUIRED` |
 | compilation Kotlin/Android | PASS | JDK 17, SDK Android Platform 37.0, Gradle 9.8 |
+| `:app:lintDebug` | PASS | 0 erreurs, 218 warnings, 19 hints; rapports hashés dans le ledger |
 | APK debug | PASS | APK v2 vérifié; SHA-256 dans le ledger; non-release |
 | BitmapFactory/ContentResolver | NOT TESTED | aucun SDK/émulateur/appareil attaché |
 | Galaxy S24+ | NOT TESTED | appareil physique absent |
