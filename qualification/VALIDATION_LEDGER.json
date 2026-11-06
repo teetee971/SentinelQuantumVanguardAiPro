@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "recorded_at_utc": "2026-11-05T11:14:09.502050+00:00",
-  "branch": "fix/mms-received-thumbnails-20261105",
+  "recorded_at_utc": "2026-11-06T12:05:00+00:00",
+  "branch": "codex/sentinel-audit-20261105",
   "base_commit": "f5a39e1efd9544ee7f8fb1796e9c49930c9c6fed",
   "validation": {
     "target": "MMS received thumbnails",
@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "b866bc45e",
+    "current_sha": "b151a0130",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -60,10 +60,10 @@
       "text_report_sha256": "d09be9a80777300b3279e7bd49dad07e09bdf16477e056ba65d6ea8ce7a3686d",
       "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
     },
-    "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
+      "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
     "physical_s24_plus": "NOT_TESTED",
     "historical_pass_rewritten": false,
-    "commands": {
+      "commands": {
       "targeted": ":app:testDebugUnitTest --tests MmsBoundedImageReaderTest --tests MmsThumbnailPolicyTest --tests MmsImagePartContractTest --tests MmsThumbnailDecoderTest --tests SmsComposeMmsThumbnailSourceContractTest --no-daemon",
       "regression": ":app:testDebugUnitTest --no-daemon",
       "artifact": ":app:assembleDebug --no-daemon"
@@ -102,10 +102,10 @@
         "signature": "debug keystore; APK v2 verified"
       }
     },
-    "debug_apk": {
+      "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-      "sha256": "7d171bb240e67291dbe78d9696029e31663198f836660b73770b8e1956ed55fc",
+      "sha256": "38fb60c1316ac4ccc77e967fa226a201987f1f613c0c5a50682df41af08b6ab0",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
     ,"release_unsigned": {
@@ -144,6 +144,17 @@
         "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailDecoderTest.kt": "50cfa5712c2ffb7bc71398cc9129acce353105145ab0751239371592ad762779"
       },
       "scope": "JVM signature tests and Kotlin compilation; Android bitmap decoding not physically validated"
+    },
+    {
+      "suite": "NumberSearchVisualSourceContractTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:05:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.NumberSearchVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for the reference-inspired number profile; not an Android screenshot or physical-device validation"
     }
   ]
 }
