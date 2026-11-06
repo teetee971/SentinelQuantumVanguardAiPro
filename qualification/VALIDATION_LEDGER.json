@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "67fd0b3df",
+    "current_sha": "b1aa04e1d",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -83,7 +83,7 @@
       }
     },
       "full_unit_regression": {
-      "tests": 1398,
+      "tests": 1399,
       "failures": 0,
       "errors": 0,
       "skipped": 1,
@@ -105,7 +105,7 @@
       "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-        "sha256": "7381e358e6bbcf603ad61d0b7e2477870c8db00978eedf551052bf4244fe9c3f",
+        "sha256": "0ee89e8cbaf4b28186b30ecc9c69ff38b75c6e1b2afeced36f557b2827087e18",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
     ,"release_unsigned": {
@@ -210,6 +210,17 @@
       "validated_at_utc": "2026-11-06T14:00:00+00:00",
       "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ContactVisualSourceContractTest --no-daemon",
       "scope": "Source contract for local contacts presentation; no physical contact-provider validation"
+    },
+    {
+      "suite": "SystemDoctorVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T14:30:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.SystemDoctorVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for device analysis dashboard; no physical Android diagnostic validation"
     }
   ]
 }
