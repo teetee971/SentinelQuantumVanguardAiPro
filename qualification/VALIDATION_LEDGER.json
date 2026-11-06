@@ -122,6 +122,11 @@
         "path": "native-android-app/app/build/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
         "sha256": "78abf53e2ea52797de513cd3f6fafe51d05e79ed450ea135b74238733f64e316",
         "signature": "unsigned validation bundle; not publishable"
+      },
+      "apk_checks": {
+        "zipalign": "PASS",
+        "badging": "PASS; package com.sentinel.quantum, compileSdk 37, targetSdk 36, minSdk 24",
+        "manifest_security_flags": "INSPECTED; allowBackup=false, usesCleartextTraffic=false"
       }
     }
   },
