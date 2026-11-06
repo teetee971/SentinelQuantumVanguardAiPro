@@ -5,6 +5,7 @@
     <!-- No camera or screen-sharing path exists in the V1 Android UI. Do not inherit
          these unused sensitive capabilities from the audio transport dependency. -->
     <uses-permission android:name="android.permission.CAMERA" tools:node="remove" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Keeps the screen off near the ear during an active Sentinel-managed call. -->
