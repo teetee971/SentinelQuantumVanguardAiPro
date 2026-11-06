@@ -2,9 +2,22 @@ package com.sentinel.quantum.security
 
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.io.IOException
 
 /** Reads an MMS part without allowing an unbounded provider stream into memory. */
 internal object MmsBoundedImageReader {
+    fun readFromProvider(openStream: () -> InputStream?, isPermissionGranted: () -> Boolean): ByteArray? =
+        try {
+            if (Thread.currentThread().isInterrupted || !isPermissionGranted()) null
+            else openStream()?.let { read(it, isPermissionGranted = isPermissionGranted) }
+        } catch (_: IOException) {
+            null
+        } catch (_: SecurityException) {
+            null
+        } catch (_: RuntimeException) {
+            null
+        }
+
     fun read(
         input: InputStream,
         maxBytes: Int = MmsThumbnailPolicy.MAX_COMPRESSED_BYTES,

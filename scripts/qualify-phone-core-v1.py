@@ -108,7 +108,7 @@ for source, name, task in artifacts:
                  'source_artifact_path': str(ROOT / source), 'download_url': None})
 (OUT / 'ARTIFACTS.json').write_text(json.dumps({'generated_at_utc': datetime.now(timezone.utc).isoformat(),
     'source_commit': source_commit, 'configuration': {'applicationId': 'com.sentinel.quantum',
-    'versionCode': 20, 'versionName': '1.0.9', 'minSdk': 24, 'targetSdk': 36, 'compileSdk': 37,
+    'versionCode': 21, 'versionName': '1.0.9', 'minSdk': 24, 'targetSdk': 36, 'compileSdk': 37,
     'release_signing': 'unsigned', 'debug_signing': 'Android Debug'}, 'artifacts': rows}, indent=2) + '\n')
 (OUT / 'SHA256SUMS.txt').write_text(''.join(r['sha256'] + '  ' + r['file'] + '\n' for r in rows))
 run('adb-devices', [sdk / 'platform-tools/adb', 'devices', '-l'])

@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.os.Build
 import android.net.Uri
 import android.provider.Telephony
+import androidx.core.net.toUri
 
 internal class MmsImagePartRepository(
     context: Context
@@ -98,41 +99,45 @@ internal class MmsImagePartRepository(
             ) || !conversations.canRead() || !parentMatchesThread(identity)
         ) return null
 
-        val partUri = ContentUris.withAppendedId(
-            partsUri(identity.providerMessageId),
-            partId
-        )
-        val metadata = try {
-            appContext.contentResolver.query(
-                partUri,
-                arrayOf("_id", "mid", Telephony.Mms.Part.CONTENT_TYPE),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                readUniqueMmsPartMetadata(cursor)
-            }
-        } catch (_: SecurityException) {
-            null
-        } catch (_: RuntimeException) {
-            null
-        } ?: return null
+        val partUri = MmsImagePartContract.partContentUri(
+            MmsThumbnailPolicy.PartKey(identity.providerMessageId, threadId, partId)
+        )?.toUri() ?: return null
+        val metadata = readPartMetadata(partUri) ?: return null
 
         val key = MmsImagePartContract.acceptPart(identity, metadata) ?: return null
         if (key.partId != partId || !conversations.canRead()) return null
 
-        val bytes = try {
-            appContext.contentResolver.openInputStream(partUri)?.use { input ->
-                MmsBoundedImageReader.read(input, isPermissionGranted = conversations::canRead)
-            }
-        } catch (_: SecurityException) {
-            null
-        } catch (_: RuntimeException) {
-            null
-        } ?: return null
+        val bytes = MmsBoundedImageReader.readFromProvider(
+            openStream = { appContext.contentResolver.openInputStream(partUri) },
+            isPermissionGranted = conversations::canRead
+        ) ?: return null
 
-        if (!conversations.canRead() || !parentMatchesThread(identity)) return null
-        return MmsThumbnailDecoder.decode(bytes, metadata.mimeType ?: return null, targetDimension)
+        if (!conversations.canRead() || !parentMatchesThread(identity) ||
+            !MmsImagePartContract.samePartSnapshot(identity, metadata, readPartMetadata(partUri))
+        ) return null
+        val bitmap = MmsThumbnailDecoder.decode(bytes, metadata.mimeType ?: return null, targetDimension)
+            ?: return null
+        if (!conversations.canRead() || !parentMatchesThread(identity) ||
+            !MmsImagePartContract.samePartSnapshot(identity, metadata, readPartMetadata(partUri))
+        ) {
+            bitmap.recycle()
+            return null
+        }
+        return bitmap
+    }
+
+    private fun readPartMetadata(partUri: Uri): MmsImagePartContract.PartMetadata? = try {
+        appContext.contentResolver.query(
+            partUri,
+            arrayOf("_id", "mid", Telephony.Mms.Part.CONTENT_TYPE),
+            null,
+            null,
+            null
+        )?.use(::readUniqueMmsPartMetadata)
+    } catch (_: SecurityException) {
+        null
+    } catch (_: RuntimeException) {
+        null
     }
 
     private fun parentMatchesThread(

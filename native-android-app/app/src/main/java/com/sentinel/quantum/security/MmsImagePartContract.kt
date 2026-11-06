@@ -21,6 +21,20 @@ internal object MmsImagePartContract {
         val mimeType: String?
     )
 
+    // /<message>/part is a collection route; a single part uses /part/<id>.
+    // The URI alone does not bind a parent: metadata validation below remains mandatory.
+    fun partContentUri(key: MmsThumbnailPolicy.PartKey): String? =
+        if (MmsThumbnailPolicy.validKey(key))
+            "content://mms/part/${key.partId}"
+        else null
+
+    fun samePartSnapshot(message: MessageIdentity, expected: PartMetadata, current: PartMetadata?): Boolean {
+        val expectedKey = acceptPart(message, expected) ?: return false
+        val observed = current ?: return false
+        return acceptPart(message, observed) == expectedKey &&
+            expected.mimeType?.trim()?.lowercase() == observed.mimeType?.trim()?.lowercase()
+    }
+
     fun resolveMessage(
         syntheticMessageId: Long,
         threadId: Long
