@@ -48,8 +48,8 @@
       "MmsBoundedImageReaderTest added",
       "SmsComposeActivity asynchronous thumbnail wiring added"
     ],
-    "gradle_tests": "BLOCKED_BEFORE_EXECUTION_CONNECTION_REFUSED_DOWNLOADING_GRADLE_9_8",
-    "compilation": "BLOCKED",
+    "gradle_tests": "BLOCKED_SDK_LOCATION_NOT_FOUND_AFTER_GRADLE_9_8_PROXY_BOOTSTRAP",
+    "compilation": "BLOCKED_ANDROID_SDK_MISSING",
     "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
     "physical_s24_plus": "NOT_TESTED",
     "historical_pass_rewritten": false

@@ -34,8 +34,8 @@ Ces changements ne prouvent pas le comportement réel de `ContentResolver`, de
 |---|---|---|
 | `git diff --check` | PASS | exécuté dans cette session |
 | inspection statique des permissions/manifeste | OBSERVÉ | `READ_SMS`, `RECEIVE_SMS`, `SEND_SMS`, rôles/services inspectés |
-| tests Gradle MMS | BLOCKED | wrapper Gradle 9.8 : téléchargement refusé par `ConnectException: Connection refused` |
-| compilation Kotlin/Android | BLOCKED | même blocage, aucun Gradle local disponible |
+| tests Gradle MMS | BLOCKED | Gradle 9.8 lancé manuellement avec proxy; arrêt sur `SDK location not found` |
+| compilation Kotlin/Android | BLOCKED | aucun Android SDK local; `ANDROID_HOME` et `ANDROID_SDK_ROOT` vides |
 | BitmapFactory/ContentResolver | NOT TESTED | aucun SDK/émulateur/appareil attaché |
 | Galaxy S24+ | NOT TESTED | appareil physique absent |
 
