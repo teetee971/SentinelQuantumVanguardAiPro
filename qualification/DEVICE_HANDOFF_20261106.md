@@ -1,3 +1,5 @@
+> État courant de mise à niveau : [versionCode 20 et signature locale](V20_UPGRADE_20261106.md). Les résultats ci-dessous sont historiques.
+
 # Passage aux essais Android réels
 
 **Statut : BLOCKED. Galaxy S24+ : NOT_TESTED.** Aucun appareil connecté, aucun émulateur installé, pas de /dev/kvm dans cet environnement. Aucun téléchargement d’image système, workflow externe ou installation sur appareil déclenché.

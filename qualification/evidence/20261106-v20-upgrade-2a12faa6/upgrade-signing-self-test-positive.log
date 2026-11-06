@@ -1,0 +1,31 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+{
+  "status": "SIGNED_NOT_INSTALLED",
+  "source_commit": "2a12faa631af63e5e912edd3a3d511eb616558e9",
+  "package": "com.sentinel.quantum",
+  "candidate_versionCode": 20,
+  "installed_versionCode": 19,
+  "signer_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6",
+  "artifacts": [
+    {
+      "file": "app-s24-v20.apk",
+      "cloud_sha256": "9c39e96069a95eb77c119e1892664b15f3a1ecd2d70c588250885447f2d99be7",
+      "signed_sha256": "a5ced004693c442037653e26c3e2dfda407782447c155f5daa6cf3a8f21512fe",
+      "zip_entries": 608,
+      "payload_identical": true,
+      "signature_v2_verified": true
+    },
+    {
+      "file": "app-s24-androidTest-v20.apk",
+      "cloud_sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+      "signed_sha256": "6739e2a64115f9f6001b984ce4dacbaf91524c6d0b3c7d0c81a872e73d46ac4f",
+      "zip_entries": 56,
+      "payload_identical": true,
+      "signature_v2_verified": true
+    }
+  ],
+  "physical_s24_plus": "NOT_TESTED"
+}

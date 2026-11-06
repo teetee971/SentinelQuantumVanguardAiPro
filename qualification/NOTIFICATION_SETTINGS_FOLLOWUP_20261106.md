@@ -1,3 +1,5 @@
+> État courant de mise à niveau : [versionCode 20 et signature locale](V20_UPGRADE_20261106.md). Les résultats ci-dessous sont historiques.
+
 # Reprise — réglages de notifications Android 24/25
 
 **BLOCKED global ; PASS technique local. Galaxy S24+ : NOT_TESTED.**

@@ -1,0 +1,35 @@
+✔ production Android releases require the protected environment and current main head (5.239348ms)
+✔ release integrity records APK and AAB signer evidence and verifies checksums (0.202456ms)
+✔ the workflow creates a draft rather than a publicly downloadable release (0.181625ms)
+✔ production signing never falls back to a debug keystore (0.243448ms)
+✔ releaseUnsigned explicitly clears any signing config inherited from release (0.268165ms)
+✖ the next Android release is version 1.0.9 with a monotonic version code (0.722392ms)
+✔ Auth0 Android dependency is pinned to the exact qualified version (0.293744ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 89.001164
+
+✖ failing tests:
+
+test at scripts/android-release-policy.test.js:45:1
+✖ the next Android release is version 1.0.9 with a monotonic version code (0.722392ms)
+  AssertionError [ERR_ASSERTION]: Upgrade must exceed versionCode 19 observed on the Galaxy S24+
+      at TestContext.<anonymous> (file:///workspace/SentinelQuantumVanguardAiPro/scripts/android-release-policy.test.js:47:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,500 @@
+openjdk version "17.0.21" 2026-10-20
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+
+------------------------------------------------------------
+Gradle 9.8.0
+------------------------------------------------------------
+
+Build time:    2026-09-24 13:40:00 UTC
+Revision:      a927be5e08efe79e0b87ada06c762dde6bb9f8b8
+
+Kotlin:        2.4.10
+Groovy:        4.0.33
+Ant:           Apache Ant(TM) version 1.10.17 compiled on April 6 2026
+Launcher JVM:  17.0.21 (Eclipse Adoptium 17.0.21+9)
+Daemon JVM:    /workspace/toolchains/jdk-17.0.21+9 (no Daemon JVM specified, using current Java home)
+OS:            Linux 6.18.57 amd64
+
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :app:preBuild UP-TO-DATE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 40s
+32 actionable tasks: 14 executed, 18 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :app:preBuild UP-TO-DATE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 18s
+32 actionable tasks: 1 executed, 31 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:generateDebugLintReportModel
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebug
+> Task :app:lintAnalyzeDebugUnitTest
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/reports/lint-results-debug.html
+Wrote SARIF report to file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/reports/lint-results-debug.sarif
+
+> Task :app:lintDebug
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 3m
+34 actionable tasks: 8 executed, 26 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :app:preBuild UP-TO-DATE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:generateDebugGlobalSynthetics UP-TO-DATE
+> Task :app:l8DexDesugarLibDebug UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 18s
+42 actionable tasks: 4 executed, 38 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: C=US, O=Android, CN=Android Debug
+Signer #1 certificate SHA-256 digest: fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6
+Signer #1 certificate SHA-1 digest: ca073cf665123150a28fdceb2a92e1497a28fc66
+Signer #1 certificate MD5 digest: a1e2d059adaafef46e31cc6c1bb0c803
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 2048
+Signer #1 public key SHA-256 digest: ff2f3537e1c1f4f40ea5a4190284a621aee8ca3d17672b3a84fcfac94aa816b2
+Signer #1 public key SHA-1 digest: 882dc857757aceb86257d5003102b5fe4bb3b754
+Signer #1 public key MD5 digest: b74222c2b037914733b4537f7fe411a7
+package: name='com.sentinel.quantum' versionCode='20' versionName='1.0.9' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+minSdkVersion:'24'
+targetSdkVersion:'36'
+uses-permission: name='android.permission.INTERNET'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.USE_FULL_SCREEN_INTENT'
+uses-permission: name='android.permission.READ_CONTACTS'
+uses-permission: name='android.permission.CALL_PHONE'
+uses-permission: name='android.permission.READ_CALL_LOG'
+uses-permission: name='android.permission.RECORD_AUDIO'
+uses-permission: name='android.permission.SEND_SMS'
+uses-permission: name='android.permission.RECEIVE_SMS'
+uses-permission: name='android.permission.READ_SMS'
+uses-permission: name='android.permission.READ_PHONE_STATE'
+uses-permission: name='android.permission.RECEIVE_MMS'
+uses-permission: name='android.permission.RECEIVE_WAP_PUSH'
+uses-permission: name='android.permission.ACCESS_WIFI_STATE'
+uses-permission: name='android.permission.CHANGE_WIFI_STATE'
+uses-permission: name='android.permission.ACCESS_FINE_LOCATION'
+uses-permission: name='android.permission.ACCESS_COARSE_LOCATION' maxSdkVersion='32'
+uses-permission: name='android.permission.NEARBY_WIFI_DEVICES' usesPermissionFlags='neverForLocation'
+uses-permission: name='android.permission.BLUETOOTH' maxSdkVersion='30'
+uses-permission: name='android.permission.BLUETOOTH_ADMIN' maxSdkVersion='30'
+uses-permission: name='android.permission.BLUETOOTH_SCAN' usesPermissionFlags='neverForLocation'
+uses-permission: name='android.permission.BLUETOOTH_CONNECT'
+uses-permission: name='android.permission.RECEIVE_BOOT_COMPLETED'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+uses-permission: name='android.permission.USE_BIOMETRIC'
+uses-permission: name='android.permission.USE_FINGERPRINT'
+uses-permission: name='com.sentinel.quantum.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+uses-permission: name='android.permission.MODIFY_AUDIO_SETTINGS'
+application-label:'Sentinel Quantum Vanguard'
+application-label-af:'Sentinel Quantum Vanguard'
+application-label-am:'Sentinel Quantum Vanguard'
+application-label-ar:'Sentinel Quantum Vanguard'
+application-label-as:'Sentinel Quantum Vanguard'
+application-label-az:'Sentinel Quantum Vanguard'
+application-label-be:'Sentinel Quantum Vanguard'
+application-label-bg:'Sentinel Quantum Vanguard'
+application-label-bn:'Sentinel Quantum Vanguard'
+application-label-bs:'Sentinel Quantum Vanguard'
+application-label-ca:'Sentinel Quantum Vanguard'
+application-label-cs:'Sentinel Quantum Vanguard'
+application-label-da:'Sentinel Quantum Vanguard'
+application-label-de:'Sentinel Quantum Vanguard'
+application-label-el:'Sentinel Quantum Vanguard'
+application-label-en-AU:'Sentinel Quantum Vanguard'
+application-label-en-CA:'Sentinel Quantum Vanguard'
+application-label-en-GB:'Sentinel Quantum Vanguard'
+application-label-en-IN:'Sentinel Quantum Vanguard'
+application-label-en-XC:'Sentinel Quantum Vanguard'
+application-label-es:'Sentinel Quantum Vanguard'
+application-label-es-US:'Sentinel Quantum Vanguard'
+application-label-et:'Sentinel Quantum Vanguard'
+application-label-eu:'Sentinel Quantum Vanguard'
+application-label-fa:'Sentinel Quantum Vanguard'
+application-label-fi:'Sentinel Quantum Vanguard'
+application-label-fr:'Sentinel Quantum Vanguard'
+application-label-fr-CA:'Sentinel Quantum Vanguard'
+application-label-gl:'Sentinel Quantum Vanguard'
+application-label-gu:'Sentinel Quantum Vanguard'
+application-label-hi:'Sentinel Quantum Vanguard'
+application-label-hr:'Sentinel Quantum Vanguard'
+application-label-hu:'Sentinel Quantum Vanguard'
+application-label-hy:'Sentinel Quantum Vanguard'
+application-label-in:'Sentinel Quantum Vanguard'
+application-label-is:'Sentinel Quantum Vanguard'
+application-label-it:'Sentinel Quantum Vanguard'
+application-label-iw:'Sentinel Quantum Vanguard'
+application-label-ja:'Sentinel Quantum Vanguard'
+application-label-ka:'Sentinel Quantum Vanguard'
+application-label-kk:'Sentinel Quantum Vanguard'
+application-label-km:'Sentinel Quantum Vanguard'
+application-label-kn:'Sentinel Quantum Vanguard'
+application-label-ko:'Sentinel Quantum Vanguard'
+application-label-ky:'Sentinel Quantum Vanguard'
+application-label-lo:'Sentinel Quantum Vanguard'
+application-label-lt:'Sentinel Quantum Vanguard'
+application-label-lv:'Sentinel Quantum Vanguard'
+application-label-mk:'Sentinel Quantum Vanguard'
+application-label-ml:'Sentinel Quantum Vanguard'
+application-label-mn:'Sentinel Quantum Vanguard'
+application-label-mr:'Sentinel Quantum Vanguard'
+application-label-ms:'Sentinel Quantum Vanguard'
+application-label-my:'Sentinel Quantum Vanguard'
+application-label-nb:'Sentinel Quantum Vanguard'
+application-label-ne:'Sentinel Quantum Vanguard'
+application-label-nl:'Sentinel Quantum Vanguard'
+application-label-or:'Sentinel Quantum Vanguard'
+application-label-pa:'Sentinel Quantum Vanguard'
+application-label-pl:'Sentinel Quantum Vanguard'
+application-label-pt:'Sentinel Quantum Vanguard'
+application-label-pt-BR:'Sentinel Quantum Vanguard'
+application-label-pt-PT:'Sentinel Quantum Vanguard'
+application-label-ro:'Sentinel Quantum Vanguard'
+application-label-ru:'Sentinel Quantum Vanguard'
+application-label-si:'Sentinel Quantum Vanguard'
+application-label-sk:'Sentinel Quantum Vanguard'
+application-label-sl:'Sentinel Quantum Vanguard'
+application-label-sq:'Sentinel Quantum Vanguard'
+application-label-sr:'Sentinel Quantum Vanguard'
+application-label-sr-Latn:'Sentinel Quantum Vanguard'
+application-label-sv:'Sentinel Quantum Vanguard'
+application-label-sw:'Sentinel Quantum Vanguard'
+application-label-ta:'Sentinel Quantum Vanguard'
+application-label-te:'Sentinel Quantum Vanguard'
+application-label-th:'Sentinel Quantum Vanguard'
+application-label-tl:'Sentinel Quantum Vanguard'
+application-label-tr:'Sentinel Quantum Vanguard'
+application-label-uk:'Sentinel Quantum Vanguard'
+application-label-ur:'Sentinel Quantum Vanguard'
+application-label-uz:'Sentinel Quantum Vanguard'
+application-label-vi:'Sentinel Quantum Vanguard'
+application-label-zh-CN:'Sentinel Quantum Vanguard'
+application-label-zh-HK:'Sentinel Quantum Vanguard'
+application-label-zh-TW:'Sentinel Quantum Vanguard'
+application-label-zu:'Sentinel Quantum Vanguard'
+application-icon-120:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application-icon-160:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application-icon-240:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application-icon-320:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application-icon-480:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application-icon-640:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application-icon-65534:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application-icon-65535:'res/mipmap-anydpi-v26/ic_launcher.xml'
+application: label='Sentinel Quantum Vanguard' icon='res/mipmap-anydpi-v26/ic_launcher.xml'
+application-debuggable
+launchable-activity: name='com.sentinel.quantum.MainActivity'  label='' icon=''
+uses-library-not-required:'androidx.window.extensions'
+uses-library-not-required:'androidx.window.sidecar'
+feature-group: label=''
+  uses-feature-not-required: name='android.hardware.bluetooth_le'
+  uses-feature-not-required: name='android.hardware.camera'
+  uses-feature-not-required: name='android.hardware.telephony'
+  uses-feature-not-required: name='android.hardware.wifi'
+  uses-feature: name='android.hardware.bluetooth'
+  uses-implied-feature: name='android.hardware.bluetooth' reason='requested android.permission.BLUETOOTH permission, requested android.permission.BLUETOOTH_ADMIN permission, and targetSdkVersion > 4'
+  uses-feature: name='android.hardware.faketouch'
+  uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'
+  uses-feature: name='android.hardware.location'
+  uses-implied-feature: name='android.hardware.location' reason='requested android.permission.ACCESS_COARSE_LOCATION permission, and requested android.permission.ACCESS_FINE_LOCATION permission'
+  uses-feature: name='android.hardware.microphone'
+  uses-implied-feature: name='android.hardware.microphone' reason='requested android.permission.RECORD_AUDIO permission'
+main
+other-activities
+other-receivers
+other-services
+supports-screens: 'small' 'normal' 'large' 'xlarge'
+supports-any-density: 'true'
+locales: '--_--' 'af' 'am' 'ar' 'as' 'az' 'be' 'bg' 'bn' 'bs' 'ca' 'cs' 'da' 'de' 'el' 'en-AU' 'en-CA' 'en-GB' 'en-IN' 'en-XC' 'es' 'es-US' 'et' 'eu' 'fa' 'fi' 'fr' 'fr-CA' 'gl' 'gu' 'hi' 'hr' 'hu' 'hy' 'in' 'is' 'it' 'iw' 'ja' 'ka' 'kk' 'km' 'kn' 'ko' 'ky' 'lo' 'lt' 'lv' 'mk' 'ml' 'mn' 'mr' 'ms' 'my' 'nb' 'ne' 'nl' 'or' 'pa' 'pl' 'pt' 'pt-BR' 'pt-PT' 'ro' 'ru' 'si' 'sk' 'sl' 'sq' 'sr' 'sr-Latn' 'sv' 'sw' 'ta' 'te' 'th' 'tl' 'tr' 'uk' 'ur' 'uz' 'vi' 'zh-CN' 'zh-HK' 'zh-TW' 'zu'
+densities: '120' '160' '240' '320' '480' '640' '65534' '65535'
+native-code: 'arm64-v8a' 'armeabi' 'armeabi-v7a' 'mips' 'mips64' 'x86' 'x86_64'
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+
+[Incubating] Problems report is available at: file:///workspace/SentinelQuantumVanguardAiPro/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 17s
+32 actionable tasks: 1 executed, 31 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+Local commands completed. Inspect test counts/skips, lint, artifact metadata and device/Dependabot gates before declaring readiness.

@@ -1,0 +1,104 @@
+{
+  "status": "BLOCKED",
+  "technical_local_status": "PASS",
+  "qualified_source_commit": "2a12faa631af63e5e912edd3a3d511eb616558e9",
+  "qualified_android_tree": "33f64f1bb9729941180a431ec7b9667fb0a036ca",
+  "evidence": "qualification/evidence/20261106-v20-upgrade-2a12faa6",
+  "change": "versionCode 10 -> 20 to exceed the user-observed installed versionCode 19; no new functionality",
+  "tests": {
+    "targeted": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "unit": {
+      "tests": 1409,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "unit-with-fixture": {
+      "tests": 1409,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 221,
+    "hints": 19,
+    "classification": "qualification/evidence/20261106-v20-upgrade-2a12faa6/lint-classification.json"
+  },
+  "assemble_debug": "PASS",
+  "instrumented_compilation": "PASS",
+  "instrumented_execution": "NOT_TESTED",
+  "apk": {
+    "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+    "sha256": "9c39e96069a95eb77c119e1892664b15f3a1ecd2d70c588250885447f2d99be7",
+    "package": "com.sentinel.quantum",
+    "versionCode": 20,
+    "versionName": "1.0.9",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "compileSdk": 37,
+    "signature": "v2 debug verified",
+    "cloud_signer_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6",
+    "direct_install_on_user_device": "BLOCKED_SIGNER_MISMATCH",
+    "zipalign": "PASS",
+    "decompressed_secret_pattern_findings": 0
+  },
+  "test_apk": {
+    "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+    "package": "com.sentinel.quantum.test",
+    "runner": "androidx.test.runner.AndroidJUnitRunner"
+  },
+  "device_preflight": {
+    "evidence_origin": "USER_REPORTED_ADB_AND_UBUNTU_OUTPUTS",
+    "model": "SM-S926B",
+    "api": 37,
+    "installed_versionCode": 19,
+    "installed_versionName": "1.0.9",
+    "installed_apk_sha256": "2f3aee6958d24c1d94cd5b6aaf51273ae44dc8a21d09a9a2ffa29c7f1ca4037f",
+    "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+    "signature_v2": "PASS_USER_REPORTED",
+    "ubuntu_local_debug_key_matches_installed_certificate": "PASS_USER_REPORTED",
+    "local_repository_head": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
+    "local_repository_dirty": "MmsImagePartRepository.kt; preserved; not used for this build"
+  },
+  "local_signing": {
+    "procedure": "qualification/prepare-device-upgrade.sh",
+    "input_manifest": "qualification/V20_UPGRADE_INPUT.json",
+    "status": "PENDING_USER_EXECUTION",
+    "self_test": "PASS; cloud debug-key fixture only",
+    "negative_tests": [
+      "wrong input SHA",
+      "wrong key certificate",
+      "existing outputs",
+      "changed ZIP payload with valid signature"
+    ],
+    "device_signed_apk_sha256": null,
+    "installation": "NOT_PERFORMED",
+    "helper_sha256": "0f4abce1581eb915340b16dcf912d36c02bbf6cb8ad5ef3a85fd4009727e61b1"
+  },
+  "room_unchanged": true,
+  "npm_audit_total": 0,
+  "dependabot": "Detail access unavailable; no alert closure asserted",
+  "physical_s24_plus": "NOT_TESTED",
+  "blockers": [
+    "Local signing with user key not yet executed; cloud APK signer differs",
+    "No physical functional or instrumented tests yet",
+    "Dependabot alert details inaccessible"
+  ],
+  "report": "qualification/V20_UPGRADE_20261106.md",
+  "recorded_at_utc": "2026-11-06T22:43:01.129527+00:00",
+  "publication": {
+    "url": "https://drive.google.com/file/d/1LFIWIvTTIlOHzKTwJU02K4MRsryI4K27/view?usp=drivesdk",
+    "file_id": "1LFIWIvTTIlOHzKTwJU02K4MRsryI4K27",
+    "kit_sha256": "a936cfb3c307ea2a09290f4827c39930d88c6a8ff75fb43c89a27fd5dd46b70c",
+    "bytes": 60112899,
+    "metadata_readback": "PASS",
+    "shared": false
+  }
+}
