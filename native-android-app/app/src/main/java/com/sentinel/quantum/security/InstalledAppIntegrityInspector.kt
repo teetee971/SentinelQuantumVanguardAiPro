@@ -19,7 +19,13 @@ class InstalledAppIntegrityInspector(private val context: Context) {
             )))
         }
         val pm = context.packageManager
-        val flags = PackageManager.GET_SIGNING_CERTIFICATES or
+        @Suppress("DEPRECATION")
+        val signingFlags = if (Build.VERSION.SDK_INT >= 28) {
+            PackageManager.GET_SIGNING_CERTIFICATES
+        } else {
+            PackageManager.GET_SIGNATURES
+        }
+        val flags = signingFlags or
             PackageManager.GET_PERMISSIONS or PackageManager.GET_ACTIVITIES or
             PackageManager.GET_SERVICES or PackageManager.GET_RECEIVERS or PackageManager.GET_PROVIDERS
         val info: PackageInfo = try {
