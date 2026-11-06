@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "71669f0c0",
+    "current_sha": "9784bd402",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -56,8 +56,8 @@
       "errors": 0,
       "warnings": 216,
       "hints": 19,
-      "sarif_sha256": "a0277494509914259f0f22b91b4767af6cc1128ad520c877a2ce96df4073929a",
-      "text_report_sha256": "3c90502423830b29e49fbb26e9438d12876aade962c254a8e795baa359fe3689",
+      "sarif_sha256": "e9a1f8a18a0af56e5f5149ece11438b6d57f1c7999ebef48cdd3cb2a7c94f3a3",
+      "text_report_sha256": "a04a5608ef9b9f1eae3462a610b65d581307af680f7f189648577712722806cd",
       "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
     },
       "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
@@ -83,7 +83,7 @@
       }
     },
       "full_unit_regression": {
-      "tests": 1397,
+      "tests": 1398,
       "failures": 0,
       "errors": 0,
       "skipped": 1,
@@ -105,7 +105,7 @@
       "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-        "sha256": "8df5c7ab0f4fab8658331b53e86f07b7a80032a8960502901884faed101cbb46",
+        "sha256": "7381e358e6bbcf603ad61d0b7e2477870c8db00978eedf551052bf4244fe9c3f",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
     ,"release_unsigned": {
@@ -199,6 +199,17 @@
       "validated_at_utc": "2026-11-06T13:30:00+00:00",
       "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.SmsSecureVisualSourceContractTest --no-daemon",
       "scope": "Source contract for secure SMS conversation presentation; Android provider and physical-device behavior remain separately untested"
+    },
+    {
+      "suite": "ContactVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T14:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ContactVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for local contacts presentation; no physical contact-provider validation"
     }
   ]
 }
