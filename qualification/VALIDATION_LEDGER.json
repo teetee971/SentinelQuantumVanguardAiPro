@@ -42,7 +42,7 @@
   "codex_session_2026_11_05": {
     "branch": "codex/sentinel-audit-20261105",
     "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
-    "current_sha": "e7ce630bc",
+    "current_sha": "218edb5d2",
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
@@ -82,8 +82,8 @@
         "MmsThumbnailDecoderTest.xml": "d2c452d2aa98f311b07b1323c3bb3329e9a8a4ae260fb16c590c8bfc7bb17cc6"
       }
     },
-    "full_unit_regression": {
-      "tests": 1391,
+      "full_unit_regression": {
+      "tests": 1394,
       "failures": 0,
       "errors": 0,
       "skipped": 1,
@@ -105,7 +105,7 @@
       "debug_apk": {
       "status": "PASS",
       "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
-      "sha256": "38fb60c1316ac4ccc77e967fa226a201987f1f613c0c5a50682df41af08b6ab0",
+      "sha256": "2c24928a9fd8de6fe8078fcaa14433a306c519c82c1f02bec886ac0def41202d",
       "signature": "debug keystore; APK v2 verified; not a release artifact"
     }
     ,"release_unsigned": {
@@ -155,6 +155,17 @@
       "validated_at_utc": "2026-11-06T12:05:00+00:00",
       "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.NumberSearchVisualSourceContractTest --no-daemon",
       "scope": "Source contract for the reference-inspired number profile; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "AppPermissionVisualDashboardSourceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:32:42+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.AppPermissionVisualDashboardSourceTest --no-daemon",
+      "scope": "Source contract for the applications-risk visual dashboard; not an Android screenshot or physical-device validation"
     }
   ]
 }
