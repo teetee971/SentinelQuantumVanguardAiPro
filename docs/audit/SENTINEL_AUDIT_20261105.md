@@ -44,10 +44,10 @@ modifié dans cette session.
 
 ## Risques restants classés
 
-- **P1** : le chemin Compose n’est toujours pas raccordé à `loadThumbnail`; l’utilisateur ne
-  voit donc pas encore les miniatures MMS reçues dans la conversation.
 - **P1** : tests repository avec `ContentResolver` (Robolectric/instrumentés), tests Android
   de décodage réel et scénarios de révocation restent à exécuter.
+- **P1** : le raccordement Compose est présent mais non qualifié sur Android; les erreurs de
+  provider et les bitmaps tardifs doivent encore être vérifiés sur appareil/émulateur.
 - **P2** : l’interruption d’un thread ne garantit pas l’arrêt d’un provider bloquant; le cycle
   de vie doit annuler le job et ignorer le résultat tardif.
 - **P2** : la revalidation encadre la fenêtre TOCTOU mais ne fournit pas d’atomicité provider.

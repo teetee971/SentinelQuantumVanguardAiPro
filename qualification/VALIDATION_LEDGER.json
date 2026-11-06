@@ -45,10 +45,12 @@
     "changes": [
       "MmsBoundedImageReader added",
       "MmsImagePartRepository.loadThumbnail added",
-      "MmsBoundedImageReaderTest added"
+      "MmsBoundedImageReaderTest added",
+      "SmsComposeActivity asynchronous thumbnail wiring added"
     ],
     "gradle_tests": "BLOCKED_BEFORE_EXECUTION_CONNECTION_REFUSED_DOWNLOADING_GRADLE_9_8",
     "compilation": "BLOCKED",
+    "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
     "physical_s24_plus": "NOT_TESTED",
     "historical_pass_rewritten": false
   },

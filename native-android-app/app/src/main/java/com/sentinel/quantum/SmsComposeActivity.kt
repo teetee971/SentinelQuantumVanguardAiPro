@@ -48,6 +48,7 @@ import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.asImageBitmap
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SentinelMmsSender
@@ -78,6 +80,9 @@ import com.sentinel.quantum.security.WhatsAppClickToChat
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.MmsLocalInbox
+import com.sentinel.quantum.security.MmsImagePartRepository
+import com.sentinel.quantum.security.MmsThumbnailState
+import com.sentinel.quantum.security.UnifiedProviderMessage
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
@@ -105,6 +110,7 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.ensureActive
 
 /**
  * SENDTO composer and conversation surface for the default SMS/MMS role.
@@ -224,6 +230,10 @@ class SmsComposeActivity : ComponentActivity() {
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val ioScope = rememberCoroutineScope()
                 val attachmentLoader = remember { MmsAttachmentLoader(applicationContext) }
+                val thumbnailRepository = remember { MmsImagePartRepository(applicationContext) }
+                var thumbnailStates by remember {
+                    mutableStateOf<Map<Long, MmsThumbnailState>>(emptyMap())
+                }
                 val mmsAttachmentLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.GetMultipleContents()
                 ) { uris ->
@@ -404,6 +414,44 @@ class SmsComposeActivity : ComponentActivity() {
                     }
                     threads = refreshed.first
                     threadMessages = refreshed.second
+                }
+                LaunchedEffect(selectedThreadId, threadMessages) {
+                    val threadId = selectedThreadId ?: return@LaunchedEffect
+                    if (!conversations.canRead()) {
+                        thumbnailStates = emptyMap()
+                        return@LaunchedEffect
+                    }
+
+                    thumbnailStates = emptyMap()
+                    threadMessages
+                        .asSequence()
+                        .filter { UnifiedProviderMessage.decodeMmsId(it.id) != null }
+                        .take(MMS_THUMBNAIL_MESSAGE_LIMIT)
+                        .forEach { message ->
+                            ensureActive()
+                            thumbnailStates = thumbnailStates +
+                                (message.id to MmsThumbnailState.Loading)
+                            val part = withContext(Dispatchers.IO) {
+                                thumbnailRepository.findImages(message.id, threadId).firstOrNull()
+                            }
+                            val bitmap = part?.let {
+                                withContext(Dispatchers.IO) {
+                                    thumbnailRepository.loadThumbnail(
+                                        syntheticMessageId = message.id,
+                                        threadId = threadId,
+                                        partId = it.partId
+                                    )
+                                }
+                            }
+                            ensureActive()
+                            thumbnailStates = thumbnailStates + (
+                                message.id to if (bitmap == null) {
+                                    MmsThumbnailState.Unavailable
+                                } else {
+                                    MmsThumbnailState.Ready(bitmap)
+                                }
+                            )
+                        }
                 }
                 LaunchedEffect(selectedThreadId, threadMessages.lastOrNull()?.id) {
                     if (selectedThreadId != null && threadMessages.isNotEmpty()) {
@@ -1101,6 +1149,23 @@ class SmsComposeActivity : ComponentActivity() {
                                                     style = MaterialTheme.typography.bodySmall
                                                 )
                                                 Text(message.body.take(1000))
+                                                when (val thumbnail = thumbnailStates[message.id]) {
+                                                    MmsThumbnailState.Loading -> Text(
+                                                        "Miniature MMS en chargement…",
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                    is MmsThumbnailState.Ready -> Image(
+                                                        bitmap = thumbnail.bitmap.asImageBitmap(),
+                                                        contentDescription = "Miniature MMS reçue",
+                                                        modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp)
+                                                    )
+                                                    MmsThumbnailState.Unavailable -> Text(
+                                                        "Miniature MMS indisponible",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    null -> Unit
+                                                }
                                                 val messageRisk = remember(message.id, message.body) { smsAnalyzer.analyze(message.body) }
                                                 val otpPrivacy = remember(message.id, message.body) { SmsOtpPrivacy.inspect(message.body) }
                                                 if (otpPrivacy.containsOtp) {
@@ -1191,6 +1256,7 @@ class SmsComposeActivity : ComponentActivity() {
     }
     companion object {
         const val EXTRA_OPEN_CONVERSATIONS = "com.sentinel.quantum.extra.OPEN_SMS_CONVERSATIONS"
+        private const val MMS_THUMBNAIL_MESSAGE_LIMIT = 20
     }
 
 }
