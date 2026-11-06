@@ -1,0 +1,27 @@
+{
+  "source_commit": "a94d6d0131e69c0398d6ad1e8e8d4c3118280a09",
+  "android_tree": "95943bbbe3b03980ece7348ef3d1866eb809f891",
+  "command": "bash native-android-app/gradlew -p native-android-app :app:assembleDebugAndroidTest --no-daemon --console=plain --max-workers=2",
+  "exit_code": 0,
+  "compilation": "PASS",
+  "instrumented_execution": "NOT_TESTED",
+  "test_apk": {
+    "path": "native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+    "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+    "package": "com.sentinel.quantum.test",
+    "target_package": "com.sentinel.quantum",
+    "runner": "androidx.test.runner.AndroidJUnitRunner",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "signature": "v2 verified",
+    "certificate_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6"
+  },
+  "test_source_files": 17,
+  "executed_instrumented_tests": null,
+  "connected_devices": [],
+  "kvm_available": false,
+  "emulator_installed": false,
+  "physical_s24_plus": "NOT_TESTED",
+  "evidence": "qualification/evidence/20261106-instrumented-a94d6d01",
+  "recorded_at_utc": "2026-11-06T19:04:32.220542+00:00"
+}
