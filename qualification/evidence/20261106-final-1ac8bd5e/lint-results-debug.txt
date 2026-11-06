@@ -1,0 +1,980 @@
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshNodeCredentialStore.kt:32: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshNodeCredentialStore.kt:67: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        prefs.edit().clear().commit()
+                             ~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshWireGuardIdentityStore.kt:97: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        prefs.edit().clear().commit()
+                             ~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:34: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:41: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:70: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:85: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/VpnWireGuardIdentityStore.kt:96: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        prefs.edit().clear().commit()
+                             ~~~~~~~~
+
+   Explanation for issues of type "ApplySharedPref":
+   Consider using apply() instead of commit on shared preferences. Whereas
+   commit blocks and writes its data to persistent storage immediately, apply
+   will handle it in the background.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt:210: Warning: Field requires API level 31 (current min is 24): android.Manifest.permission#BLUETOOTH_CONNECT [InlinedApi]
+                arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt:210: Warning: Field requires API level 31 (current min is 24): android.Manifest.permission#BLUETOOTH_SCAN [InlinedApi]
+                arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSubscriptionResolver.kt:19: Warning: Field requires API level 26 (current min is 24): android.telephony.SubscriptionManager#EXTRA_SUBSCRIPTION_INDEX [InlinedApi]
+        explicitSubscriptionId(intent, SubscriptionManager.EXTRA_SUBSCRIPTION_INDEX)?.let {
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSubscriptionResolver.kt:53: Warning: Field requires API level 30 (current min is 24): android.telephony.SubscriptionManager#EXTRA_SLOT_INDEX [InlinedApi]
+        val platform = slotIndexFromNumber(numericExtra(intent, SubscriptionManager.EXTRA_SLOT_INDEX))
+                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:92: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+                role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+                        ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:92: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_SMS [InlinedApi]
+                role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+                                                           ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:365: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+                        PhoneCoreSetupWizardStore.Step.DIALER_ROLE -> requestRole(RoleManager.ROLE_DIALER)
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:367: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_CALL_SCREENING [InlinedApi]
+                            roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) ?: run { epoch++ }
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:405: Warning: Field requires API level 26 (current min is 24): android.provider.Settings#ACTION_APP_NOTIFICATION_SETTINGS [InlinedApi]
+                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:405: Warning: Field requires API level 26 (current min is 24): android.provider.Settings#EXTRA_APP_PACKAGE [InlinedApi]
+                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:643: Warning: Field requires API level 26 (current min is 24): android.provider.Settings#ACTION_APP_NOTIFICATION_SETTINGS [InlinedApi]
+                                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:644: Warning: Field requires API level 26 (current min is 24): android.provider.Settings#EXTRA_APP_PACKAGE [InlinedApi]
+                                                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:715: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+                                !state.dialerRole -> requestRole(RoleManager.ROLE_DIALER)
+                                                                 ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:733: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_CALL_SCREENING [InlinedApi]
+                        ) { roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) }
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:862: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+        val dialer = holdsRole(RoleManager.ROLE_DIALER)
+                               ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:63: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+                    role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:63: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_SMS [InlinedApi]
+                    role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+                                                               ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:109: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+            dialerRoleAvailable = roleAvailable(RoleManager.ROLE_DIALER),
+                                                ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:110: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+            dialerRoleHeld = roleHeld(RoleManager.ROLE_DIALER),
+                                      ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:113: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_SMS [InlinedApi]
+            smsRoleAvailable = roleAvailable(RoleManager.ROLE_SMS),
+                                             ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:114: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_SMS [InlinedApi]
+            smsRoleHeld = roleHeld(RoleManager.ROLE_SMS),
+                                   ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt:43: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+            dialerRoleHeld = holdsRole(context, RoleManager.ROLE_DIALER),
+                                                ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt:44: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+            dialerRoleAvailable = isRoleAvailable(context, RoleManager.ROLE_DIALER),
+                                                           ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt:87: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_DIALER [InlinedApi]
+                role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+                        ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt:87: Warning: Field requires API level 29 (current min is 24): android.app.role.RoleManager#ROLE_SMS [InlinedApi]
+                role == RoleManager.ROLE_DIALER || role == RoleManager.ROLE_SMS
+                                                           ~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "InlinedApi":
+   This check scans through all the Android API field references in the
+   application and flags certain constants, such as static final integers and
+   Strings, which were introduced in later versions. These will actually be
+   copied into the class files rather than being referenced, which means that
+   the value is available even when running on older devices. In some cases
+   that's fine, and in other cases it can result in a runtime crash or
+   incorrect behavior. It depends on the context, so consider the code
+   carefully and decide whether it's safe and can be suppressed or whether the
+   code needs to be guarded.
+
+   If you really want to use this API and don't need to support older devices
+   just set the minSdkVersion in your build.gradle or AndroidManifest.xml
+   files.
+
+   If your code is deliberately accessing newer APIs, and you have ensured
+   (e.g. with conditional execution) that this code will only ever be called
+   on a supported platform, then you can annotate your class or method with
+   the @TargetApi annotation specifying the local minimum SDK to apply, such
+   as @TargetApi(11), such that this check considers 11 rather than your
+   manifest file's minimum SDK as the required API level.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/AndroidManifest.xml:53: Warning: Attribute usesPermissionFlags is only used in API level 31 and higher (current min is 24) [UnusedAttribute]
+        android:usesPermissionFlags="neverForLocation" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/AndroidManifest.xml:58: Warning: Attribute usesPermissionFlags is only used in API level 31 and higher (current min is 24) [UnusedAttribute]
+        android:usesPermissionFlags="neverForLocation" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/AndroidManifest.xml:152: Warning: Attribute showWhenLocked is only used in API level 27 and higher (current min is 24) [UnusedAttribute]
+            android:showWhenLocked="true"
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/AndroidManifest.xml:153: Warning: Attribute turnScreenOn is only used in API level 27 and higher (current min is 24) [UnusedAttribute]
+            android:turnScreenOn="true" />
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/AndroidManifest.xml:177: Warning: Attribute showWhenLocked is only used in API level 27 and higher (current min is 24) [UnusedAttribute]
+            android:showWhenLocked="true"
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/AndroidManifest.xml:178: Warning: Attribute turnScreenOn is only used in API level 27 and higher (current min is 24) [UnusedAttribute]
+            android:turnScreenOn="true" />
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedAttribute":
+   This check finds attributes set in XML files that were introduced in a
+   version newer than the oldest version targeted by your application (with
+   the minSdkVersion attribute).
+
+   This is not an error; the application will simply ignore the attribute.
+   However, if the attribute is important to the appearance or functionality
+   of your application, you should consider finding an alternative way to
+   achieve the same result with only available attributes, and then you can
+   optionally create a copy of the layout in a layout-vNN folder which will be
+   used on API NN or higher where you can take advantage of the newer
+   attribute.
+
+   Note: This check does not only apply to attributes. For example, some tags
+   can be unused too, such as the new <tag> element in layouts introduced in
+   API 21.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/AppPermissionAnalyzer.kt:75: Warning: As of Android 11, this method no longer returns information about all apps; see https://g.co/dev/packagevisibility for details [QueryPermissionsNeeded]
+        packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+                       ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/InstalledAppScanner.kt:17: Warning: As of Android 11, this method no longer returns information about all apps; see https://g.co/dev/packagevisibility for details [QueryPermissionsNeeded]
+            pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0))
+               ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/InstalledAppScanner.kt:20: Warning: As of Android 11, this method no longer returns information about all apps; see https://g.co/dev/packagevisibility for details [QueryPermissionsNeeded]
+            pm.getInstalledApplications(0)
+               ~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "QueryPermissionsNeeded":
+   Apps that target Android 11 cannot query or interact with other installed
+   apps by default. If you need to query or interact with other installed
+   apps, you may need to add a <queries> declaration in your manifest.
+
+   As a corollary, the methods PackageManager#getInstalledPackages and
+   PackageManager#getInstalledApplications will no longer return information
+   about all installed apps. To query specific apps or types of apps, you can
+   use methods like PackageManager#getPackageInfo or
+   PackageManager#queryIntentActivities.
+
+   https://g.co/dev/packagevisibility
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 9.8.0 is available: 9.9.0 [AndroidGradlePluginVersion]
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.8.0-bin.zip
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AndroidGradlePluginVersion":
+   This detector looks for usage of the Android Gradle Plugin where the
+   version you are using is not the current stable release. Using older
+   versions is fine, and there are cases where you deliberately want to stick
+   with an older version. However, you may simply not be aware that a more
+   recent version is available, and that is what this lint check helps find.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelGlassComponents.kt:150: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+    modifier: Modifier = Modifier,
+    ~~~~~~~~
+
+   Explanation for issues of type "ModifierParameter":
+   The first (or only) Modifier parameter in a Composable function should
+   follow the following rules:
+   - Be named modifier
+   - Have a type of Modifier
+   - Either have no default value, or have a default value of Modifier
+   - If optional, be the first optional parameter in the parameter list
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.ui
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings_phone_lists.xml:14: Warning: "correspondants" is a common misspelling; did you mean "correspondents"? [Typos]
+    <string name="phone_lists_prefix_details">Règles explicitement créées sur cet appareil. Elles peuvent bloquer les appels correspondants.</string>
+                                                                                                                             ~~~~~~~~~~~~~~
+
+   Explanation for issues of type "Typos":
+   This check looks through the string definitions, and if it finds any words
+   that look like likely misspellings, they are flagged.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:76: Warning: Formatting %d followed by words ("nouvelles"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="osint_notification_title_multiple">%1$d nouvelles alertes OSINT</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:152: Warning: Formatting %d followed by words ("entrées"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="local_logs_count">%1$d entrées enregistrées</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:178: Warning: Formatting %d followed by words ("règle"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="call_blocking_exact_count">%1$d règle(s) exacte(s) locale(s)</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:188: Warning: Formatting %d followed by words ("règle"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="call_blocking_signed_active">%1$d règle(s) de vigilance signée(s) active(s)</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:327: Warning: Formatting %d followed by words ("signaux"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="collective_defense_notification_title_multiple">%1$d signaux surveillés ont évolué</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings_osint_truth.xml:4: Warning: Formatting %d followed by words ("sources"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="osint_partial_coverage">Actualisation partielle : %1$d/%2$d sources ont répondu.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings_phone_lists.xml:23: Warning: Formatting %d followed by words ("élément"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="phone_lists_item_count">%1$d élément(s)</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings_phone_lists.xml:29: Warning: Formatting %d followed by words ("préfixe"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="phone_lists_arcep_count">%1$d préfixe(s) officiel(s)</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "PluralsCandidate":
+   This lint check looks for potential errors in internationalization where
+   you have translated a message which involves a quantity and it looks like
+   other parts of the string may need grammatical changes.
+
+   For example, rather than something like this:
+     <string name="try_again">Try again in %d seconds.</string>
+   you should be using a plural:
+      <plurals name="try_again">
+           <item quantity="one">Try again in %d second</item>
+           <item quantity="other">Try again in %d seconds</item>
+       </plurals>
+   This will ensure that in other languages the right set of translations are
+   provided for the different quantity classes.
+
+   (This check depends on some heuristics, so it may not accurately determine
+   whether a string really should be a quantity. You can use tools:ignore to
+   filter out false positives.
+
+   https://developer.android.com/guide/topics/resources/string-resource.html#Plurals
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsConversationStore.kt:495: Warning: Using getLine1Number to get device identifiers is not recommended [HardwareIds]
+            telephonyManager.createForSubscriptionId(subscriptionId).line1Number
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelDeviceIdentity.kt:16: Warning: Using getString to get device identifiers is not recommended [HardwareIds]
+        Settings.Secure.getString(
+        ^
+
+   Explanation for issues of type "HardwareIds":
+   Using these device identifiers is not recommended other than for high value
+   fraud prevention and advanced telephony use-cases. For advertising
+   use-cases, use AdvertisingIdClient$Info#getId and for analytics, use
+   InstanceId#getId.
+
+   https://developer.android.com/training/articles/user-data-ids.html
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/AndroidManifest.xml:74: Warning: The attribute android:dataExtractionRules only applies for Android 12 and higher; since minSdkVersion is API 24 you should also set android:fullBackupContent [DataExtractionRules]
+        android:dataExtractionRules="@xml/data_extraction_rules"
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "DataExtractionRules":
+   Before Android 12, the attributes android:allowBackup and
+   android:fullBackupContent were used to configure all forms of backup,
+   including cloud backups, device-to-device transfers and adb backup.
+
+   In Android 12 and higher, these attributes have been deprecated and will
+   only apply to cloud backups. You should instead use the attribute
+   android:dataExtractionRules, specifying an @xml resource that configures
+   which files to back up, for cloud backups and for device-to-device
+   transfers, separately. If your minSdkVersion supports older versions,
+   you'll still want to specify an android:fullBackupContent resource if the
+   default behavior is not right for your app.
+
+   https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   https://goo.gle/DataExtractionRules
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:665: Warning: Unnecessary; SDK_INT is always >= 34 [ObsoleteSdkInt]
+                                if (!fullScreenIntentReady && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelOwnSensitiveCapabilityCollector.kt:22: Warning: Unnecessary; SDK_INT is always >= 24 [ObsoleteSdkInt]
+                observation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values-v24: Warning: This folder configuration (v24) is unnecessary; minSdkVersion is 24. Merge all the resources in this folder into values. [ObsoleteSdkInt]
+
+   Explanation for issues of type "ObsoleteSdkInt":
+   This check flags version checks that are not necessary, because the
+   minSdkVersion (or surrounding known API level) is already at least as high
+   as the version checked for.
+
+   Similarly, it also looks for resources in -vNN folders, such as values-v14
+   where the version qualifier is less than or equal to the minSdkVersion,
+   where the contents should be merged into the best folder.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CollectiveDefenseScreen.kt:57: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+        mutableStateOf(watchPreferences.refreshIntervalHours)
+        ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CollectiveDefenseScreen.kt:531: Hint: Prefer mutableLongStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var displayNow by remember(item.lastCheckedAtMs) { mutableStateOf(System.currentTimeMillis()) }
+                                                       ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CommunicationsHubScreen.kt:32: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var runtimeEpoch by remember { mutableStateOf(0) }
+                                   ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt:122: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var postureEpoch by remember { mutableStateOf(0) }
+                                   ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:143: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var epoch by remember { mutableStateOf(0) }
+                                        ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt:138: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var lookupGeneration by remember { mutableStateOf(0) }
+                                       ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt:139: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var postureEpoch by remember { mutableStateOf(0) }
+                                   ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SecurityLabProScreen.kt:56: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var appsFilter by remember { mutableStateOf(0) }
+                                 ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SecurityLabProScreen.kt:66: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var labTab by remember { mutableStateOf(0) }
+                             ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:125: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    private var callLineRefreshEpoch by mutableStateOf(0)
+                                        ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:580: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var phoneTab by rememberSaveable { mutableStateOf(
+                                                   ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:586: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var recentVisibleLimit by remember { mutableStateOf(CALL_HISTORY_PAGE_SIZE) }
+                                                     ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:592: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var contactFilter by rememberSaveable { mutableStateOf(0) }
+                                                        ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:593: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var favoriteRefreshEpoch by remember { mutableStateOf(0) }
+                                                       ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:595: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
+                                                      ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:603: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var resumeEpoch by remember { mutableStateOf(0) }
+                                              ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt:71: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
+                                    ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:248: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var activationEpoch by remember { mutableStateOf(0) }
+                                                  ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:350: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+                var providerEpoch by remember { mutableStateOf(0) }
+                                                ~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AutoboxingStateCreation":
+   Calling mutableStateOf<T>() when T is either backed by a primitive type on
+   the JVM or is a value class results in a state implementation that requires
+   all state values to be boxed. This usually causes an additional allocation
+   for each state write, and adds some additional work to auto-unbox values
+   when reading the value of the state. Instead, prefer to use a specialized
+   primitive state implementation for Int, Long, Float, and Double when the
+   state does not need to track null values and does not override the default
+   SnapshotMutationPolicy. See mutableIntStateOf(), mutableLongStateOf(),
+   mutableFloatStateOf(), and mutableDoubleStateOf() for more information.
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.runtime
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:4: Warning: The resource R.color.primary appears to be unused [UnusedResources]
+    <color name="primary">#1A1D29</color>
+           ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:6: Warning: The resource R.color.accent appears to be unused [UnusedResources]
+    <color name="accent">#3A7CA5</color>
+           ~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:7: Warning: The resource R.color.accent_light appears to be unused [UnusedResources]
+    <color name="accent_light">#5B9BC7</color>
+           ~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:8: Warning: The resource R.color.background appears to be unused [UnusedResources]
+    <color name="background">#0F1116</color>
+           ~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:9: Warning: The resource R.color.surface appears to be unused [UnusedResources]
+    <color name="surface">#1A1D29</color>
+           ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:10: Warning: The resource R.color.surface_variant appears to be unused [UnusedResources]
+    <color name="surface_variant">#252834</color>
+           ~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:11: Warning: The resource R.color.on_primary appears to be unused [UnusedResources]
+    <color name="on_primary">#E8E9ED</color>
+           ~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:12: Warning: The resource R.color.on_surface appears to be unused [UnusedResources]
+    <color name="on_surface">#E8E9ED</color>
+           ~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:13: Warning: The resource R.color.on_background appears to be unused [UnusedResources]
+    <color name="on_background">#E8E9ED</color>
+           ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:14: Warning: The resource R.color.text_primary appears to be unused [UnusedResources]
+    <color name="text_primary">#E8E9ED</color>
+           ~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:15: Warning: The resource R.color.text_secondary appears to be unused [UnusedResources]
+    <color name="text_secondary">#A8AAB3</color>
+           ~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:16: Warning: The resource R.color.divider appears to be unused [UnusedResources]
+    <color name="divider">#2D3038</color>
+           ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:17: Warning: The resource R.color.error appears to be unused [UnusedResources]
+    <color name="error">#CF6679</color>
+           ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:18: Warning: The resource R.color.success appears to be unused [UnusedResources]
+    <color name="success">#4CAF50</color>
+           ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:21: Warning: The resource R.color.white appears to be unused [UnusedResources]
+    <color name="white">#FFFFFF</color>
+           ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:22: Warning: The resource R.color.black appears to be unused [UnusedResources]
+    <color name="black">#000000</color>
+           ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:25: Warning: The resource R.color.ic_launcher_background appears to be unused [UnusedResources]
+    <color name="ic_launcher_background">#0F1116</color>
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/colors.xml:26: Warning: The resource R.color.ic_launcher_foreground appears to be unused [UnusedResources]
+    <color name="ic_launcher_foreground">#3A7CA5</color>
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:17: Warning: The resource R.string.settings_auth_error appears to be unused [UnusedResources]
+    <string name="settings_auth_error">Connexion impossible. Aucun jeton n’a été conservé.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:18: Warning: The resource R.string.launcher_phone_name appears to be unused [UnusedResources]
+    <string name="launcher_phone_name">Sentinel Téléphone</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:19: Warning: The resource R.string.launcher_sms_name appears to be unused [UnusedResources]
+    <string name="launcher_sms_name">Sentinel Messages</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:20: Warning: The resource R.string.home_title appears to be unused [UnusedResources]
+    <string name="home_title">Sentinel Quantum Vanguard AI Pro</string>
+            ~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:24: Warning: The resource R.string.home_subtitle appears to be unused [UnusedResources]
+    <string name="home_subtitle">Plateforme de veille OSINT et d\'information sécurité</string>
+            ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:26: Warning: The resource R.string.nav_calls appears to be unused [UnusedResources]
+    <string name="nav_calls">Appels</string>
+            ~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:27: Warning: The resource R.string.nav_messages appears to be unused [UnusedResources]
+    <string name="nav_messages">Messages</string>
+            ~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:39: Warning: The resource R.string.action_back appears to be unused [UnusedResources]
+    <string name="action_back">Retour</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:44: Warning: The resource R.string.home_description appears to be unused [UnusedResources]
+    <string name="home_description">Application de consultation de flux OSINT publics et de contrôles locaux en lecture seule. Les données saisies dans l\'application ne sont pas envoyées par les fonctions locales de vérification.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:45: Warning: The resource R.string.home_features_title appears to be unused [UnusedResources]
+    <string name="home_features_title">Fonctionnalités</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:46: Warning: The resource R.string.home_feature_osint appears to be unused [UnusedResources]
+    <string name="home_feature_osint">Consultation de flux OSINT publics</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:47: Warning: The resource R.string.home_feature_readonly appears to be unused [UnusedResources]
+    <string name="home_feature_readonly">Fonctions de consultation et de vérification en lecture seule</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:48: Warning: The resource R.string.home_feature_no_auth appears to be unused [UnusedResources]
+    <string name="home_feature_no_auth">Aucune authentification applicative requise pour les fonctions locales</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:49: Warning: The resource R.string.home_feature_no_data appears to be unused [UnusedResources]
+    <string name="home_feature_no_data">Aucun stockage distant n\'est utilisé par les fonctions locales</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:53: Warning: The resource R.string.osint_loading appears to be unused [UnusedResources]
+    <string name="osint_loading">Chargement des flux OSINT…</string>
+            ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:56: Warning: The resource R.string.osint_date appears to be unused [UnusedResources]
+    <string name="osint_date">Date :</string>
+            ~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:120: Warning: The resource R.string.security_audit_heading appears to be unused [UnusedResources]
+    <string name="security_audit_heading">Audit local</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:121: Warning: The resource R.string.security_audit_description appears to be unused [UnusedResources]
+    <string name="security_audit_description">Contrôle des permissions réellement déclarées par l\'application et de ses informations de package.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:127: Warning: The resource R.string.security_audit_permissions appears to be unused [UnusedResources]
+    <string name="security_audit_permissions">Permissions présentes</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:128: Warning: The resource R.string.security_audit_permissions_note appears to be unused [UnusedResources]
+    <string name="security_audit_permissions_note">Les permissions normales Android sont disponibles à l’installation ; seules les permissions runtime nécessitent une décision de l’utilisateur.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:129: Warning: The resource R.string.security_audit_warnings appears to be unused [UnusedResources]
+    <string name="security_audit_warnings">Avertissements (%1$d)</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:137: Warning: The resource R.string.phone_security_heading appears to be unused [UnusedResources]
+    <string name="phone_security_heading">Protection Android locale</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:138: Warning: The resource R.string.phone_security_description appears to be unused [UnusedResources]
+    <string name="phone_security_description">Tableau de bord local des protections Android réellement présentes : filtrage d’appels, identification d’appel, exposition numérique, analyse des autorisations, réseau local et analyse SMS. L’enrichissement distant de l’identification d’appel reste facultatif.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:182: Warning: The resource R.string.call_blocking_prefix_title appears to be unused [UnusedResources]
+    <string name="call_blocking_prefix_title">Bloquer un préfixe personnalisé</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:276: Warning: The resource R.string.home_security_section appears to be unused [UnusedResources]
+    <string name="home_security_section">Fonctionnalités de Sécurité</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:277: Warning: The resource R.string.home_other_section appears to be unused [UnusedResources]
+    <string name="home_other_section">Autres</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:278: Warning: The resource R.string.home_button_audit appears to be unused [UnusedResources]
+    <string name="home_button_audit">🔍 Audit Sécurité</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:279: Warning: The resource R.string.home_button_logs appears to be unused [UnusedResources]
+    <string name="home_button_logs">📋 Journal SOC Local</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:280: Warning: The resource R.string.home_button_phone appears to be unused [UnusedResources]
+    <string name="home_button_phone">📱 Protection mobile</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:281: Warning: The resource R.string.home_button_call_blocking appears to be unused [UnusedResources]
+    <string name="home_button_call_blocking">🛡️ Blocage d\'appels local</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:282: Warning: The resource R.string.home_button_digital_exposure appears to be unused [UnusedResources]
+    <string name="home_button_digital_exposure">🔐 Exposition numérique</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:283: Warning: The resource R.string.home_button_email appears to be unused [UnusedResources]
+    <string name="home_button_email">✉️ Analyse Email Locale</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:284: Warning: The resource R.string.home_button_sms_scanner appears to be unused [UnusedResources]
+    <string name="home_button_sms_scanner">Scanner SMS et liens</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:285: Warning: The resource R.string.home_button_call_history appears to be unused [UnusedResources]
+    <string name="home_button_call_history">Historique du filtrage</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:286: Warning: The resource R.string.home_button_permission_analyzer appears to be unused [UnusedResources]
+    <string name="home_button_permission_analyzer">Analyseur de permissions</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:287: Warning: The resource R.string.home_button_settings appears to be unused [UnusedResources]
+    <string name="home_button_settings">⚙️ Paramètres</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:303: Warning: The resource R.string.sms_scanner_intro appears to be unused [UnusedResources]
+    <string name="sms_scanner_intro">Collez le texte du SMS suspect. L’analyse reste sur l’appareil, n’accède pas à la messagerie et n’ouvre aucun lien.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:306: Warning: The resource R.string.sms_scanner_result appears to be unused [UnusedResources]
+    <string name="sms_scanner_result">Résultat</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:308: Warning: The resource R.string.sms_scanner_risk appears to be unused [UnusedResources]
+    <string name="sms_scanner_risk">Risque indicatif : %1$s</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:309: Warning: The resource R.string.sms_scanner_score appears to be unused [UnusedResources]
+    <string name="sms_scanner_score">Score heuristique : %1$d/100</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:310: Warning: The resource R.string.sms_scanner_links appears to be unused [UnusedResources]
+    <string name="sms_scanner_links">Liens inspectés : %1$d</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:313: Warning: The resource R.string.sms_scanner_disclaimer appears to be unused [UnusedResources]
+    <string name="sms_scanner_disclaimer">Ce score local est explicable mais indicatif ; il ne constitue ni une preuve de fraude ni une décision automatique.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings_phone_lists.xml:18: Warning: The resource R.string.phone_lists_type_silence appears to be unused [UnusedResources]
+    <string name="phone_lists_type_silence">SILENCIER</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings_product_truth.xml:4: Warning: The resource R.string.product_capability_unverified appears to be unused [UnusedResources]
+    <string name="product_capability_unverified">Service non validé</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
+
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests=true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests=true.
+
+   Available options:
+
+   **skip-libraries** (default is true):
+   Whether the unused resource check should skip reporting unused resources in libraries.
+
+   Many libraries will declare resources that are part of the library surface; other modules depending on the library will also reference the resources. To avoid reporting all these resources as unused (in the context of a library), the unused resource check normally skips reporting unused resources in libraries. Instead, run the unused resource check on the consuming app module (along with `checkDependencies=true`).
+
+   However, there are cases where you want to check that all the resources declared in a library are used; in that case, you can disable the skip option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UnusedResources">
+           <option name="skip-libraries" value="true" />
+       </issue>
+   </lint>
+   ```
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:123: Warning: Replace "..." with ellipsis character (…, &#8230;) ? [TypographyEllipsis]
+    <string name="security_audit_running">Audit en cours...</string>
+                                          ~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/values/strings.xml:192: Warning: Replace "..." with ellipsis character (…, &#8230;) ? [TypographyEllipsis]
+    <string name="call_blocking_sync_checking">Vérification en cours...</string>
+                                               ~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "TypographyEllipsis":
+   You can replace the string "..." with a dedicated ellipsis character,
+   ellipsis character (u2026, &#8230;). This can help make the text more
+   readable.
+
+   https://en.wikipedia.org/wiki/Ellipsis
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-hdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-mdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xhdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xxhdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-hdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-mdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+
+   Explanation for issues of type "IconLauncherShape":
+   According to the Android Design Guide
+   (https://d.android.com/r/studio-ui/designer/material/iconography) your
+   launcher icons should "use a distinct silhouette", a "three-dimensional,
+   front view, with a slight perspective as if viewed from above, so that
+   users perceive some depth."
+
+   The unique silhouette implies that your launcher icon should not be a
+   filled square.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-hdpi/ic_launcher_round.png: Warning: The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png [IconDuplicates]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-mdpi/ic_launcher_round.png: Warning: The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png [IconDuplicates]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png: Warning: The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png [IconDuplicates]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png: Warning: The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png [IconDuplicates]
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png: Warning: The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png [IconDuplicates]
+
+   Explanation for issues of type "IconDuplicates":
+   If an icon is repeated under different names, you can consolidate and just
+   use one of the icons and delete the others to make your application
+   smaller. However, duplicated icons usually are not intentional and can
+   sometimes point to icons that were accidentally overwritten or accidentally
+   not updated.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/D1VolumetricRenderer.kt:16: Warning: Custom view D1VolumetricView is missing constructor used by tools: (Context) or (Context,AttributeSet) or (Context,AttributeSet,int) [ViewConstructor]
+internal class D1VolumetricView(context: Context, animate: Boolean) : GLSurfaceView(context) {
+               ~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "ViewConstructor":
+   Some layout tools (such as the Android layout editor) need to find a
+   constructor with one of the following signatures:
+   * View(Context context)
+   * View(Context context, AttributeSet attrs)
+   * View(Context context, AttributeSet attrs, int defStyle)
+
+   If your custom view needs to perform initialization which does not apply
+   when used in a layout editor, you can surround the given code with a check
+   to see if View#isInEditMode() is false, since that method will return false
+   at runtime but true within a user interface editor.
+
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/CallBlocklistStore.kt:144: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        if (!preferences.edit().putStringSet(EXACT_HASHES, hashes).putStringSet(EXACT_METADATA, metadata).commit()) return 0
+             ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/CallerIdActivity.kt:620: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(whatsappUrl)))
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/background/CollectiveDefensePreferences.kt:12: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            preferences.edit().putInt(INTERVAL_HOURS, sanitizeInterval(value)).apply()
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/background/CollectiveDefensePreferences.kt:18: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            preferences.edit().putBoolean(NOTIFICATIONS_ENABLED, value).apply()
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseWatchStore.kt:70: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseWatchStore.kt:99: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/CollectiveDefenseWatchStore.kt:111: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/EmergencyCallHandoff.kt:23: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("tel:" + Uri.encode(number))
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsConversationStore.kt:560: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("content://mms/$providerMessageId/addr")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsConversationStore.kt:567: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("content://mms/$providerMessageId/part")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsProviderJournal.kt:91: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        validDigest(digestHex) && preferences.edit().remove(key(digestHex)).commit()
+                                  ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/IncomingMmsProviderJournal.kt:189: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        return preferences.edit().putString(key(record.digestHex), encoded).commit()
+               ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/InstalledAppScanner.kt:30: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("package:$packageName")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshActivationStore.kt:23: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putBoolean(KEY_ENABLED, enabled).commit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshNodeCredentialStore.kt:28: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshNodeCredentialStore.kt:67: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().clear().commit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MeshWireGuardIdentityStore.kt:97: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().clear().commit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsConversationStore.kt:322: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("content://mms/$providerMessageId/addr")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsConversationStore.kt:329: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("content://mms/$providerMessageId/part")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadCoordinator.kt:93: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                .setData(Uri.parse("sentinel-mms-download://result/$token"))
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadRecoveryJournal.kt:48: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        return preferences.edit().putString(recordKey, encoded).commit()
+               ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadRecoveryJournal.kt:60: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            preferences.edit().remove(key(fileName)).commit()
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsDownloadRecoveryJournal.kt:87: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        val editor = preferences.edit()
+                     ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsImagePartRepository.kt:190: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse(
+            ^
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsProviderJournal.kt:89: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        validToken(token) && preferences.edit().remove(key(token)).commit()
+                             ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsProviderJournal.kt:121: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        return preferences.edit().putString(key(record.token), encoded).commit()
+               ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsSendCallbackReplayGuard.kt:16: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        val editor = preferences.edit()
+                     ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/NetworkTrustStore.kt:37: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/NetworkTrustStore.kt:45: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/OsintDetailScreen.kt:149: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                            Intent(Intent.ACTION_VIEW, Uri.parse(item.link))
+                                                       ~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintFeedCache.kt:96: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintFeedCache.kt:112: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit().clear().apply()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintFeedCache.kt:123: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit().putStringSet(READ_IDS, ids).apply()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:403: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                        Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:$packageName"))
+                                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:562: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                            onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                                                                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:670: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                                    .setData(Uri.parse("package:$packageName"))
+                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:818: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                    onClick = { settingsLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                                                                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:31: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:38: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:65: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:82: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneDecisionJournalStore.kt:28: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().remove(KEY).apply()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneDecisionJournalStore.kt:62: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putString(KEY, array.toString()).apply()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/PhoneFavoriteStore.kt:31: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        return preferences.edit().putStringSet(NUMBERS, values).commit()
+               ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt:44: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().remove(KEY).commit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/PhonePrivateTimelineStore.kt:81: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        return prefs.edit().putString(KEY, array.toString()).commit()
+               ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelApkManager.kt:36: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+        val intent = Intent(Intent.ACTION_DELETE, Uri.parse("package:$packageName")).apply {
+                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelApkManager.kt:50: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putString("entries", all.joinToString("\n")).apply()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallNotificationHelper.kt:94: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                        Uri.parse(
+                        ^
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:418: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), Bundle())
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:523: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), extras)
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:977: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                                Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(safe)))
+                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1729: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                                                            Uri.parse("smsto:" + Uri.encode(dialable))
+                                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1754: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                                                        Uri.parse(whatsappUrl)
+                                                                        ~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSender.kt:172: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                .setData(Uri.parse("sentinel-mms-send://result/${staged.token}"))
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelSmsSender.kt:139: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                            Uri.parse(
+                            ^
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelVpnRuntimeCoordinator.kt:223: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            return prefs.edit().putLong(KEY_SEQUENCE, sequence).commit()
+                   ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt:94: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                                                                       ~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SettingsScreen.kt:145: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                                Uri.parse("package:${context.packageName}")
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:32: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit().putString(THEME_MODE, mode.name).apply()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:38: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit().putBoolean(RULE_SYNC_ENABLED, enabled).apply()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:52: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+                preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+                ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:60: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+                    appContext.getSharedPreferences(
+                    ^
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:84: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+                preferences.edit().putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, true).apply()
+                ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:94: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+                    appContext.getSharedPreferences(
+                    ^
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:119: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            preferences.edit().putString(FAMILY_SAFETY_PROFILE, value.name).apply()
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:137: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:160: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            preferences.edit().putInt(OSINT_INTERVAL_HOURS, sanitizeInterval(value)).apply()
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:167: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            preferences.edit().putBoolean(OSINT_NOTIFICATIONS_ENABLED, value).apply()
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/data/SettingsStore.kt:177: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            preferences.edit().putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value).apply()
+            ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SharedPreferencesCommunicationReputationStorage.kt:39: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        check(preferences.edit().putString(persistedKey, value).commit()) {
+              ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SharedPreferencesCommunicationReputationStorage.kt:45: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        check(preferences.edit().remove(storageKey(key)).commit()) {
+              ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SharedPreferencesCommunicationReputationStorage.kt:86: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+                check(keyPreferences.edit().putString(SECRET_PREF_KEY, encoded).commit()) {
+                      ~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsCallbackProgressStore.kt:55: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        if (!preferences.edit().putString(key, encode(persisted)).commit()) {
+             ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsCallbackProgressStore.kt:86: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        preferences.edit().putString(storageKey, encode(current.copy(providerApplied = true))).commit()
+        ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsCallbackProgressStore.kt:96: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            val editor = preferences.edit()
+                         ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsCallbackProgressStore.kt:111: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        val editor = preferences.edit()
+                     ~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt:564: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("content://mms/$providerMessageId/addr")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/SmsConversationStore.kt:571: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+            Uri.parse("content://mms/$providerMessageId/part")
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/VpnActivationStore.kt:18: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putBoolean(KEY_ENABLED, enabled).commit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/VpnWireGuardIdentityStore.kt:96: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().clear().commit()
+        ~~~~~~~~~~~~
+/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/src/main/java/com/sentinel/quantum/security/VpnWireGuardIdentityStore.kt:118: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            prefs.edit()
+            ~~~~~~~~~~~~
+
+   Explanation for issues of type "UseKtx":
+   The Android KTX libraries decorates the Android platform SDK as well as
+   various libraries with more convenient extension functions available from
+   Kotlin, allowing you to use default parameters, named parameters, and
+   more.
+
+   Available options:
+
+   **remove-defaults** (default is true):
+   Whether to skip arguments that match the defaults provided by the extension.
+
+   Extensions often provide default values for some of the parameters. For example:
+   ```kotlin
+   fun Path.readLines(charset: Charset = Charsets.UTF_8): List<String> { return Files.readAllLines(this, charset) }
+   ```
+   This lint check will by default automatically omit parameters that match the default, so if your code was calling
+
+   ```kotlin
+   Files.readAllLines(file, Charset.UTF_8)
+   ```
+   lint would replace this with
+   ```kotlin
+   file.readLines()
+   ```
+   rather than
+
+   ```kotlin
+   file.readLines(Charset.UTF_8
+   ```
+   You can turn this behavior off using this option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="remove-defaults" value="true" />
+       </issue>
+   </lint>
+   ```
+
+   **require-present** (default is true):
+   Whether to only offer extensions already available.
+
+   This option lets you only have lint suggest extension replacements if those extensions are already available on the class path (in other words, you're already depending on the library containing the extension method.)
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="require-present" value="true" />
+       </issue>
+   </lint>
+   ```
+
+0 errors, 221 warnings, 19 hints

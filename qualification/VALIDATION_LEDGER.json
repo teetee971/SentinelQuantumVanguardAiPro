@@ -247,13 +247,171 @@
   ],
   "final_sha_qualification": {
     "status": "BLOCKED",
+    "technical_local_status": "PASS",
     "requested_sha": "249c347768932b73a958bb3dd953958f152a1ac8",
     "requested_sha_result": "REJECTED_COMPILATION_ERROR",
-    "reason": "PhoneSecurityScreen.kt:840 unresolved reference Alignment; all four required commands exited 1 before tests/lint could execute",
-    "initial_evidence": "qualification/evidence/20261106-initial-249c3477",
-    "corrected_sha": "PENDING",
+    "qualified_source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+    "qualified_android_tree": "0547bb2780ec041a204bac8ad7ebf1b4925ee34e",
+    "source_commit_note": "Subsequent evidence-only commits must preserve this Android tree; report their own final verification separately.",
+    "evidence": "qualification/evidence/20261106-final-1ac8bd5e",
+    "commands": [
+      {
+        "name": "targeted",
+        "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+        "command": [
+          "bash",
+          "gradlew",
+          ":app:testDebugUnitTest",
+          "--tests",
+          "com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest",
+          "--no-daemon",
+          "--console=plain",
+          "--max-workers=2"
+        ],
+        "cwd": "native-android-app",
+        "started_at_utc": "2026-11-06T18:22:29.338724+00:00",
+        "finished_at_utc": "2026-11-06T18:22:43.280217+00:00",
+        "exit_code": 0
+      },
+      {
+        "name": "unit",
+        "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+        "command": [
+          "bash",
+          "gradlew",
+          ":app:testDebugUnitTest",
+          "--no-daemon",
+          "--console=plain",
+          "--max-workers=2"
+        ],
+        "cwd": "native-android-app",
+        "started_at_utc": "2026-11-06T18:22:43.281086+00:00",
+        "finished_at_utc": "2026-11-06T18:22:56.833178+00:00",
+        "exit_code": 0
+      },
+      {
+        "name": "lint",
+        "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+        "command": [
+          "bash",
+          "gradlew",
+          ":app:lintDebug",
+          "--no-daemon",
+          "--console=plain",
+          "--max-workers=2"
+        ],
+        "cwd": "native-android-app",
+        "started_at_utc": "2026-11-06T18:22:56.848960+00:00",
+        "finished_at_utc": "2026-11-06T18:23:11.173836+00:00",
+        "exit_code": 0
+      },
+      {
+        "name": "assemble",
+        "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+        "command": [
+          "bash",
+          "gradlew",
+          ":app:assembleDebug",
+          "--no-daemon",
+          "--console=plain",
+          "--max-workers=2"
+        ],
+        "cwd": "native-android-app",
+        "started_at_utc": "2026-11-06T18:23:11.175007+00:00",
+        "finished_at_utc": "2026-11-06T18:23:26.404455+00:00",
+        "exit_code": 0
+      },
+      {
+        "name": "unit-with-fixture",
+        "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+        "command": [
+          "bash",
+          "gradlew",
+          ":app:testDebugUnitTest",
+          "--rerun",
+          "-PsentinelSignatureFixture=/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+          "--no-daemon",
+          "--console=plain",
+          "--max-workers=2"
+        ],
+        "cwd": "native-android-app",
+        "exit_code": 0,
+        "fixture_sha256": "2460b1643bec1137a4a78a18816f3db6cce328c2b94f0434de7c192fae6aa346",
+        "time_provenance": "JUnit timestamps and log filesystem mtime; shell start timestamp not separately recorded"
+      }
+    ],
+    "targeted_tests": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "unit_tests_without_fixture": {
+      "tests": 1405,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "skip_reason": "SIGNED_APK_FIXTURE_REQUIRED"
+    },
+    "unit_tests_with_new_apk_fixture": {
+      "tests": 1405,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint": {
+      "status": "PASS",
+      "errors": 0,
+      "warnings": 221,
+      "hints": 19,
+      "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
+    },
+    "assemble_debug": "PASS",
+    "apk": {
+      "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "2460b1643bec1137a4a78a18816f3db6cce328c2b94f0434de7c192fae6aa346",
+      "signature": "debug; APK v2 verified",
+      "signer_certificate_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6",
+      "package": "com.sentinel.quantum",
+      "versionCode": 10,
+      "versionName": "1.0.9",
+      "minSdk": 24,
+      "targetSdk": 36,
+      "compileSdk": 37,
+      "zipalign": "PASS",
+      "static_secret_patterns": "no findings, including decompressed entries",
+      "upgrade_certificate_continuity": "NOT_TESTED; new environment debug key, not a release key"
+    },
+    "room": {
+      "version": 1,
+      "identity_hash": "21617aeab12bfb29ee9bec17bc238d62",
+      "schema_and_database_source_unchanged_vs_pr_base": true,
+      "on_device_migration": "NOT_TESTED"
+    },
+    "dependabot": {
+      "status": "UNVERIFIED",
+      "rest_http_status": 403,
+      "graphql_alert_count": 0,
+      "reported_alert_count": 6,
+      "npm_advisories_identified": 6,
+      "dependency": "vite",
+      "before": "8.3.1",
+      "after": "8.3.3",
+      "npm_audit_after_total": 0,
+      "review": "qualification/DEPENDENCY_REVIEW_20261106.md"
+    },
+    "blockers": [
+      "Dependabot alert state inaccessible; REST 403 conflicts with empty GraphQL listing",
+      "Physical Android behavior and Galaxy S24+ not tested; API24/25 notification settings fallback remains unverified",
+      "Certificate continuity for an existing installation is not qualified"
+    ],
     "physical_s24_plus": "NOT_TESTED",
-    "dependabot": "UNVERIFIED: REST 403; GraphQL returns zero inconsistent with six reported alerts",
-    "recorded_at_utc": "2026-11-06T18:15:42.106360+00:00"
+    "pr": {
+      "number": 1754,
+      "required_state": "DRAFT",
+      "automatic_merge": false
+    },
+    "github_actions_dispatched": false,
+    "recorded_at_utc": "2026-11-06T18:26:02.509220+00:00"
   }
 }

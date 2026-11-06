@@ -1,50 +1,33 @@
-# Classification lint — 2026-11-06
+# Classification lint — qualification du 2026-11-06
 
-Source : `:app:lintDebug` sur le commit de code `b866bc45e`.
+Source exécutée : `1ac8bd5e325416bdb5ba1bca59566a561393b45b` ; arbre Android `0547bb2780ec041a204bac8ad7ebf1b4925ee34e`.
+`:app:lintDebug` : **PASS**, **0 erreur, 221 warnings, 19 hints**. Aucun avertissement supprimé pour obtenir ce résultat.
+Le rapport précédent mentionnant 216 warnings ne décrit pas cette exécution. Les 240 diagnostics et leurs emplacements sont archivés dans `qualification/evidence/20261106-final-1ac8bd5e/lint-classification.json`, avec les rapports XML, SARIF et texte.
 
-Résultat terminal : **PASS**, 0 erreur, 216 warnings, 19 hints.
+| Catégorie principale | Diagnostics | Warnings | Hints |
+| --- | --- | ---: | ---: |
+| Sécurité / confidentialité | HardwareIds 2 ; DataExtractionRules 1 | 3 | 0 |
+| Compatibilité Android | InlinedApi 25 ; QueryPermissionsNeeded 3 ; UnusedAttribute 6 ; ObsoleteSdkInt 3 | 37 | 0 |
+| Accessibilité / localisation | PluralsCandidate 8 ; TypographyEllipsis 2 ; Typos 1 | 11 | 0 |
+| Performance | ApplySharedPref 8 ; AutoboxingStateCreation 19 | 8 | 19 |
+| Maintenance | UseKtx 82 ; UnusedResources 62 ; IconLauncherShape 10 ; IconDuplicates 5 ; AndroidGradlePluginVersion 1 ; ModifierParameter 1 ; ViewConstructor 1 | 162 | 0 |
+| Total | | 221 | 19 |
 
-## Priorité P1 — compatibilité à surveiller
+## Risques à examiner en priorité
 
-- `InlinedApi` : 25 occurrences restantes. Les accès les plus dangereux identifiés
-  (`SigningInfo` et les flags de signature API 28) ont été corrigés avec des branches
-  API explicites. Les occurrences restantes concernent surtout les constantes RoleManager,
-  Bluetooth, Settings et SubscriptionManager; elles doivent rester derrière leurs garde-fous
-  runtime existants et méritent des tests API 24/28/29/31.
-- `QueryPermissionsNeeded` : 3 occurrences. Android 11+ peut retourner une liste partielle
-  des applications visibles. Le produit doit présenter cette liste comme partielle, jamais
-  comme un inventaire exhaustif.
+- **Compatibilité, 25 InlinedApi** : les permissions Bluetooth sont sélectionnées selon l’API ; les opérations RoleManager utilisent des branches API et des chemins hérités. Les constantes SubscriptionManager sont des clés de broadcast inlinées, avec validation numérique et repli hérité. Cela ne prouve pas le comportement des providers/OEM. Les deux chemins `ACTION_APP_NOTIFICATION_SETTINGS` de `PhoneCoreActivationActivity` (API 26) restent à vérifier sur API 24/25 ; le repli vers les détails de l’application n’est pas établi pour ces chemins. Essais API 24/28/29/31/37 encore requis. Pas de suppression globale de ces avertissements.
+- **Visibilité des applications, 3 QueryPermissionsNeeded** : résultat Android 11+ partiel. Les textes de l’analyseur parlent des applications visibles ; ne pas présenter ces résultats comme un inventaire exhaustif ou un antivirus.
+- **Confidentialité, 2 HardwareIds** : le numéro de ligne est lu localement pour l’identité de la SIM MMS, avec échec fermé si accès refusé ; ANDROID_ID est haché pour la liaison d’identité backend. Un identifiant haché persistant reste une donnée pseudonyme, pas un secret ni une preuve de nouvelle inscription.
+- **Sauvegarde, 1 DataExtractionRules** : `allowBackup=false` limite le risque. L’exclusion effective et les transferts OEM sur API 24+ restent à tester ; ne pas déduire une qualification backup d’un résultat lint.
+- **Performance, 8 ApplySharedPref** : `commit()` peut bloquer son thread ; plusieurs écritures portent sur l’identité, le rôle ou le nettoyage. Aucun remplacement automatique par `apply()` sans analyse de durabilité et tests crash/reprise.
+- **Accessibilité** : 8 PluralsCandidate, 2 TypographyEllipsis et 1 Typos restent une dette de localisation. Les 19 hints d’autoboxing Compose concernent les allocations. TalkBack, grossissement et contraste n’ont pas été qualifiés physiquement.
 
-## Priorité P2 — sécurité, confidentialité ou robustesse
+## Maintenance et limites
 
-- `HardwareIds` : 2 occurrences (`ANDROID_ID` et numéro de ligne). `ANDROID_ID` est haché;
-  le numéro de ligne est utilisé localement pour associer une MMS à la bonne souscription.
-  Aucun secret ni identifiant brut n’est envoyé par ces chemins dans cette qualification.
-- `DataExtractionRules` : 1 occurrence. `allowBackup=false` et les règles d’exclusion racine
-  réduisent déjà le risque; la compatibilité d’une règle `fullBackupContent` API 24 reste à
-  vérifier dans une qualification backup dédiée.
-- `ApplySharedPref` : 8 occurrences. Aucun remplacement automatique par `apply()` : plusieurs
-  écritures concernent des états d’identité, de rôle ou de nettoyage où la durabilité synchrone
-  peut être intentionnelle. Toute conversion exige un test de crash/reprise.
+Les 162 warnings de maintenance ne démontrent pas à eux seuls un défaut bloquant. Les 62 ressources dites inutilisées demandent une vérification des variantes et références indirectes avant suppression. L’avis AndroidGradlePluginVersion ne justifie pas une migration du toolchain pendant ce gel. Les 6 UnusedAttribute sont ignorés sur d’anciennes API ; les 3 ObsoleteSdkInt concernent des gardes devenues redondantes.
 
-## Priorité P3 — qualité ou maintenance
+Les warnings du compilateur Kotlin, notamment les API Telecom dépréciées et les annotations nullables de `InetAddress.hostAddress`, sont conservés dans les journaux ; ils ne font pas partie du décompte lint 221/19.
 
-- `UseKtx` : 82 — style/API idiomatique, pas de défaut de sécurité démontré.
-- `UnusedResources` : 57 — nettoyage à faire après vérification des flavors et ressources
-  référencées indirectement.
-- `IconLauncherShape` et `IconDuplicates` : 15 — qualité visuelle/package, sans impact
-  fonctionnel démontré.
-- `PluralsCandidate` : 8, `UnusedAttribute` : 6, `TypographyEllipsis` : 2,
-  `ObsoleteSdkInt` : 3, `ViewConstructor` : 1, `Typos` : 1 — dette de qualité faible.
-- `AndroidGradlePluginVersion` : 1 — suggestion de version Gradle 9.8.2, non appliquée pour
-  éviter une migration non qualifiée.
+Les corrections prioritaires réalisées sont l’import manquant bloquant la compilation, la lecture après-fin du curseur MMS (4 tests, échec reproduit avant correction) et les six avis npm de Vite (8.3.1 → 8.3.3). Aucune nouvelle surface UI, refactorisation esthétique ou mise à jour majeure.
 
-## Hints
-
-19 hints sont informatifs, principalement liés à l’autoboxing Compose et ne constituent pas
-un défaut bloquant établi.
-
-## Limites
-
-Cette classification est statique. Elle ne remplace pas les tests instrumentés, l’émulateur,
-le provider MMS Android réel ou la qualification Galaxy S24+.
+**Galaxy S24+ : NOT_TESTED.** Lint PASS ne signifie pas READY, ni absence de vulnérabilités Android transitives.
