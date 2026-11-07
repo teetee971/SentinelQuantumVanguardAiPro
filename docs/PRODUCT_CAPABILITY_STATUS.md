@@ -10,7 +10,7 @@ This file is generated. Do not promote a capability by editing this document; up
 | Sentinel VPN | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | Voice Studio transformed calls | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
 | GeoIntel USGS earthquakes | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
-| GeoIntel conflicts/hotspots/sanctions/weather/outages | NOT_IMPLEMENTED | NO | 1 | Not attested | Not observed |
+| GeoIntel conflicts/hotspots/sanctions/weather/outages | IMPLEMENTED_NOT_VERIFIED | NO | 3 | Not attested | Not observed |
 | Collective Defense API | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
 | Collective Defense Android center | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
 | Signed Phone Intelligence reputation feed | IMPLEMENTED_NOT_CONFIGURED | NO | 3 | Not attested | Not observed |
@@ -70,11 +70,15 @@ Evidence:
 
 ### GeoIntel conflicts/hotspots/sanctions/weather/outages
 
-- Verified production sources are not wired for conflicts, hotspots, sanctions, weather or outages
+- Fixed-source Cloudflare relay is implemented but not deployed or observed on the public origin
+- UN/OFAC are publication signals, not confirmed conflict incidents or consolidated worldwide sanctions; NWS is US coverage and IODA observations are partial/unlocated
+- Real browser tests use captured official provider responses; production browser end-to-end acceptance remains unverified
 
 Evidence:
-- `public/geointel.html`
-- `public/geointel-core.js`
+- `public/geointel-multisource.js`
+- `public/geointel-multisource.test.js`
+- `public/geointel-proxy.test.js`
+- `_worker.js`
 
 ### Collective Defense API
 

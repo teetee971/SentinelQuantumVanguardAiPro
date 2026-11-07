@@ -45,8 +45,8 @@
     {
       "id": "geointel_multisource",
       "surface": "GeoIntel conflicts/hotspots/sanctions/weather/outages",
-      "status": "NOT_IMPLEMENTED",
-      "implemented": false,
+      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "implemented": true,
       "customer_available": false,
       "evidence_sha": null,
       "evidence_at": null,

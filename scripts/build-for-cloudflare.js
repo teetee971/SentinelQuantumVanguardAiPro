@@ -82,6 +82,7 @@ mkdirSync(outputDir, { recursive: true });
  * the root URLs would fall through to another route.
  */
 const filesToCopy = [
+  { src: '_worker.js', dest: '_worker.js', required: true },
   { src: 'index.html', dest: 'index.html', required: true },
   { src: 'robots.txt', dest: 'robots.txt', required: true },
   { src: 'sitemap.xml', dest: 'sitemap.xml', required: true },

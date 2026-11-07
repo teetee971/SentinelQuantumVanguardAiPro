@@ -7,8 +7,9 @@ export function normalizeEvent(raw) {
   if (!GEOINTEL_LAYERS.includes(raw.layer)) throw new RangeError("Unsupported GeoIntel layer");
   const {lat,lon,severity}=raw;
   const confidence=raw.confidence==null?null:raw.confidence;
-  if (typeof lat!=="number"||!Number.isFinite(lat)||lat < -90||lat > 90||typeof lon!=="number"||!Number.isFinite(lon)||lon < -180||lon > 180) throw new RangeError("Invalid coordinates");
-  if (typeof severity!=="number"||!Number.isFinite(severity)||severity < 1||severity > 5) throw new RangeError("Severity must be 1..5");
+  const unlocated=raw.locationStatus==="UNLOCATED"&&lat===null&&lon===null;
+  if (!unlocated && (typeof lat!=="number"||!Number.isFinite(lat)||lat < -90||lat > 90||typeof lon!=="number"||!Number.isFinite(lon)||lon < -180||lon > 180)) throw new RangeError("Invalid coordinates");
+  if (!(severity===null&&raw.severityBasis==="NOT_PROVIDED") && (typeof severity!=="number"||!Number.isFinite(severity)||severity < 1||severity > 5)) throw new RangeError("Severity must be 1..5");
   if (confidence!==null&&(typeof confidence!=="number"||!Number.isFinite(confidence)||confidence < 0||confidence > 1)) throw new RangeError("Confidence must be null or 0..1");
   if (raw.occurredAt==null) throw new RangeError("occurredAt required");
   const occurredAt=new Date(raw.occurredAt);
@@ -25,7 +26,9 @@ export function normalizeEvent(raw) {
     : (typeof raw.sourceEventId==="number"&&Number.isFinite(raw.sourceEventId)?String(raw.sourceEventId):null);
   const sourceName=typeof raw.sourceName==="string"&&raw.sourceName.trim()?raw.sourceName.trim():"Source non renseignée";
   const sourceUrl=typeof raw.sourceUrl==="string"&&raw.sourceUrl.trim()?raw.sourceUrl.trim():null;
-  return Object.freeze({id:raw.id.trim(),sourceEventId,layer:raw.layer,title:raw.title.trim(),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName,sourceUrl,collectorState,status:raw.status==="verified"?"verified":"unverified"});
+  const endsAt=raw.endsAt==null?null:new Date(raw.endsAt);
+  if(endsAt&&(Number.isNaN(endsAt.getTime())||endsAt.getTime()<occurredAt.getTime()))throw new RangeError("Invalid end time");
+  return Object.freeze({locationStatus:unlocated?"UNLOCATED":"POINT",locationLabel:typeof raw.locationLabel==="string"?raw.locationLabel.slice(0,4000):null,severityBasis:raw.severityBasis==="NOT_PROVIDED"?"NOT_PROVIDED":raw.severityBasis||"SENTINEL",endsAt:endsAt?endsAt.toISOString():null,id:raw.id.trim(),sourceEventId,layer:raw.layer,title:raw.title.trim(),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName,sourceUrl,collectorState,status:raw.status==="verified"?"verified":"unverified"});
 }
 
 export function provenanceKey(event) {
@@ -49,7 +52,7 @@ export function deduplicateEvents(events) {
 
 export function riskScore(event) {
   const e=normalizeEvent(event);
-  if (e.confidence===null) return null;
+  if (e.confidence===null||e.severity===null) return null;
   return Math.round((e.severity/5)*e.confidence*100);
 }
 
@@ -60,7 +63,7 @@ export function filterEvents(events,{layers=GEOINTEL_LAYERS,timeRangeDays=7,now=
   if (!Number.isFinite(now)) throw new RangeError("now must be finite");
   const allowed=new Set(layers);
   const cutoff=now-(timeRangeDays*86400000);
-  return events.map(normalizeEvent).filter(e=>allowed.has(e.layer)&&Date.parse(e.occurredAt)>=cutoff&&Date.parse(e.occurredAt)<=now);
+  return events.map(normalizeEvent).filter(e=>allowed.has(e.layer)&&(Date.parse(e.occurredAt)>=cutoff||(e.endsAt&&Date.parse(e.endsAt)>=cutoff))&&Date.parse(e.occurredAt)<=now);
 }
 
 export function projectEquirectangular(lat,lon,width,height) {

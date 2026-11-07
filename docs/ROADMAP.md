@@ -54,7 +54,7 @@ Les vues OSINT doivent conserver trois propriétés : fraîcheur explicite, couv
 GeoIntel reste séparé en deux niveaux :
 
 - couche séismes USGS effectivement câblée dans le code ;
-- couches conflits, points chauds, sanctions, météo et coupures non disponibles tant que leurs sources de production ne sont pas vérifiées et branchées.
+- couches multisources désormais implémentées : NASA EONET (événements naturels), NWS (alertes américaines), IODA (observations réseau), ONU et OFAC (publications sans coordonnées inventées). Le relais Cloudflare doit encore être déployé et vérifié sur l’origine publique avant disponibilité client. Il ne s’agit ni d’un recensement exhaustif des conflits, ni d’un registre consolidé des sanctions ; voir `qualification/geointel/REPORT.md`.
 
 Chaque nouvelle couche doit fournir provenance, fraîcheur, limites de taille/temps, comportement dégradé et tests de source avant promotion dans le registre produit.
 

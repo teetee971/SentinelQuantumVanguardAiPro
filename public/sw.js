@@ -2,10 +2,10 @@
  * Sentinel Quantum Vanguard AI Pro - Service Worker
  * Cache strategy: cache-first for immutable media, network-first for pages and
  * unversioned code/styles so a deployment cannot keep an obsolete interface.
- * Cache schema: 2.4.0
+ * Cache schema: 2.4.1
  */
 
-const CACHE_VERSION = 'sentinel-v2.4.0';
+const CACHE_VERSION = 'sentinel-v2.4.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const MAX_DYNAMIC_CACHE_ENTRIES = 100;
@@ -56,6 +56,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
+  // A cached API response must never masquerade as a healthy fresh acquisition.
+  if (url.pathname.startsWith('/api/geointel/')) return;
 
   if (isImmutableAsset(url.pathname)) {
     event.respondWith(cacheFirst(request));
@@ -97,6 +99,7 @@ async function networkFirst(request) {
 }
 
 async function cacheDynamicResponse(request, response) {
+  if (new URL(typeof request === 'string' ? request : request.url).pathname.startsWith('/api/geointel/')) return;
   const cache = await caches.open(DYNAMIC_CACHE);
   const existing = await cache.match(request);
   await cache.put(request, response.clone());
