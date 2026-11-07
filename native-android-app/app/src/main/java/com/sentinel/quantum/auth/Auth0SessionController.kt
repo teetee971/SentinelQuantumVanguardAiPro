@@ -10,6 +10,7 @@ import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.result.Credentials
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.R
 
 data class Auth0UserSummary(
@@ -84,6 +85,10 @@ class Auth0SessionController(context: Context) {
         onSuccess: (Auth0UserSummary) -> Unit,
         onFailure: (String?) -> Unit
     ) {
+        if (!AccountLifecyclePolicy.canStartLogin(BuildConfig.ACCOUNT_DELETION_URL)) {
+            onFailure("ACCOUNT_LOGIN_UNAVAILABLE")
+            return
+        }
         WebAuthProvider.login(account)
             .withScheme(configuration.scheme)
             .withAudience(configuration.audience)

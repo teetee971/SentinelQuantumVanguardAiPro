@@ -196,6 +196,7 @@ jobs:
       - name: Build signed APK and AAB
         working-directory: native-android-app
         env:
+          SENTINEL_ACCOUNT_DELETION_URL: ${{ vars.SENTINEL_ACCOUNT_DELETION_URL }}
           KEYSTORE_FILE: /tmp/release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -203,7 +204,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew assembleRelease bundleRelease exportReleaseDependencyInventory --no-daemon --stacktrace
+          ./gradlew assembleRelease bundleRelease exportReleaseDependencyInventory \
+            -PsentinelAccountDeletionUrl="$SENTINEL_ACCOUNT_DELETION_URL" --no-daemon --stacktrace
 
       - name: Verify signed APK and AAB integrity and contents
         shell: bash

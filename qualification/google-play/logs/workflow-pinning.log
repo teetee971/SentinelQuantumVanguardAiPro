@@ -1,0 +1,5 @@
+::error file=/workspace/sentinel-play-ready/.github/workflows/security-lab-emulator.yml,line=23::Unpinned GitHub Action: actions/checkout@v4. Require a full 40-character commit SHA.
+::error file=/workspace/sentinel-play-ready/.github/workflows/security-lab-emulator.yml,line=24::Unpinned GitHub Action: actions/setup-java@v4. Require a full 40-character commit SHA.
+::error file=/workspace/sentinel-play-ready/.github/workflows/security-lab-emulator.yml,line=33::Unpinned GitHub Action: reactivecircus/android-emulator-runner@v2. Require a full 40-character commit SHA.
+::error file=/workspace/sentinel-play-ready/.github/workflows/security-lab-emulator.yml,line=50::Unpinned GitHub Action: actions/upload-artifact@v4. Require a full 40-character commit SHA.
+GitHub Actions pinning gate failed: 4 violation(s).

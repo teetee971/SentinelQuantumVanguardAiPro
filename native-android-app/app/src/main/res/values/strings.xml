@@ -335,4 +335,6 @@
     </plurals>
     <string name="phone_core_open_validations">Ouvrir les validations</string>
 
+    <string name="settings_auth_delete_account">Demander la suppression du compte et des données</string>
+    <string name="settings_auth_unavailable">Connexion au compte temporairement indisponible. Les fonctions locales restent accessibles.</string>
 </resources>

@@ -1,6 +1,6 @@
 # Roadmap — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : 3 octobre 2026**
+**Dernière mise à jour : 7 novembre 2026**
 
 La source canonique des états produit est désormais `config/product-capabilities.json`. Le fichier généré `docs/PRODUCT_CAPABILITY_STATUS.md` donne la lecture humaine correspondante. Cette roadmap décrit l’ordre de finalisation ; elle ne duplique plus les statuts de déploiement ou de disponibilité qui vieillissaient sans preuve.
 
@@ -11,6 +11,10 @@ Une capacité ne devient jamais « disponible client » parce que son code exist
 `implémentation → configuration → déploiement → vérification runtime → validation physique → signature de release → disponibilité client`
 
 Les étapes non applicables sont déclarées explicitement dans le registre canonique. Un bloqueur ouvert interdit la promotion `customer_available=true`.
+
+## Qualification Google Play courante
+
+La candidate, les contrôles effectivement exécutés et les blocages externes sont suivis dans [GOOGLE_PLAY_QUALIFICATION_20261107.md](GOOGLE_PLAY_QUALIFICATION_20261107.md). Aucune capacité n’est promue par cette mise à jour documentaire. API cible 36 : conforme au minimum publié pour les nouvelles soumissions depuis le 31 août 2026 ; cela ne vaut pas approbation Play. Signature d’upload, déclarations des permissions restreintes, suppression de compte/données, politique publique et essais sur appareil restent des gates séparées. Les branches expérimentales MMS JPEG et Doctor ne font pas partie de cette candidate.
 
 ## Priorité 1 — Phone Core Android
 

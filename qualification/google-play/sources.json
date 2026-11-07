@@ -1,0 +1,38 @@
+[
+  {
+    "id": "target",
+    "url": "https://support.google.com/googleplay/android-developer/answer/11926878?hl=en",
+    "status": 200,
+    "bytes": 1677114
+  },
+  {
+    "id": "sms",
+    "url": "https://support.google.com/googleplay/android-developer/answer/10208820?hl=en",
+    "status": 200,
+    "bytes": 1673228
+  },
+  {
+    "id": "deletion",
+    "url": "https://support.google.com/googleplay/android-developer/answer/13327111?hl=en",
+    "status": 200,
+    "bytes": 1674781
+  },
+  {
+    "id": "data",
+    "url": "https://support.google.com/googleplay/android-developer/answer/10787469?hl=en",
+    "status": 200,
+    "bytes": 1743876
+  },
+  {
+    "id": "page16k",
+    "url": "https://developer.android.com/guide/practices/page-sizes",
+    "status": 200,
+    "bytes": 317665
+  },
+  {
+    "id": "testing",
+    "url": "https://support.google.com/googleplay/android-developer/answer/14151465?hl=en",
+    "status": 200,
+    "bytes": 1676740
+  }
+]

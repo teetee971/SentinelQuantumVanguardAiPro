@@ -12,8 +12,11 @@ android {
         applicationId "com.sentinel.quantum"
         minSdk 24
         targetSdk 36
-        versionCode 22
-        versionName "1.0.9"
+        versionCode 24
+        versionName "1.0.10"
+        // Public URL only: never pass credentials or tokens in this property.
+        def deletionUrl = providers.gradleProperty('sentinelAccountDeletionUrl').getOrElse('')
+        buildConfigField "String", "ACCOUNT_DELETION_URL", groovy.json.JsonOutput.toJson(deletionUrl)
         buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'
         manifestPlaceholders = [
             auth0Domain: "@string/com_auth0_domain",
@@ -102,6 +105,22 @@ gradle.taskGraph.whenReady { graph ->
     // (assembleReleaseUnsigned, bundleReleaseUnsigned, ...) are intentionally exempt
     // because that variant never applies a signingConfig and is not publishable.
     def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
+    if (requiresSignedRelease) {
+        def deletionUrl = providers.gradleProperty('sentinelAccountDeletionUrl').getOrElse('')
+        def validDeletionUrl = false
+        try {
+            def uri = new java.net.URI(deletionUrl)
+            validDeletionUrl = deletionUrl == deletionUrl.trim() && uri.scheme == 'https' &&
+                uri.host && uri.rawUserInfo == null && uri.rawFragment == null &&
+                (uri.port == -1 || (uri.port >= 1 && uri.port <= 65535)) &&
+                uri.rawPath && uri.rawPath != '/' &&
+                !deletionUrl.any { Character.isISOControl(it as char) } &&
+                !(deletionUrl =~ /(?i)%(?:0[0-9a-f]|1[0-9a-f]|7f)/).find()
+        } catch (java.net.URISyntaxException ignored) { }
+        if (!validDeletionUrl) {
+            throw new GradleException('Signed release requires -PsentinelAccountDeletionUrl=https://.../delete-account and separate verification of the real account/data deletion service.')
+        }
+    }
     if (requiresSignedRelease && !releaseSigningConfigured) {
         throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
     }

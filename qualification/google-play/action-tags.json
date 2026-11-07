@@ -1,0 +1,18 @@
+{
+  "actions/checkout": {
+    "tag": "v4",
+    "sha": "11d5960a326750d5838078e36cf38b85af677262"
+  },
+  "actions/setup-java": {
+    "tag": "v4",
+    "sha": "cf277c60eb25467037889841efdb72551f06f6c3"
+  },
+  "actions/upload-artifact": {
+    "tag": "v4",
+    "sha": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+  },
+  "ReactiveCircus/android-emulator-runner": {
+    "tag": "v2",
+    "sha": "a421e43855164a8197daf9d8d40fe71c6996bb0d"
+  }
+}

@@ -16,7 +16,9 @@ This checklist describes the current release path. It must not be used to infer 
 - [ ] Package/application configuration matches the current project.
 - [ ] No legacy Android source tree or obsolete flavor is required.
 - [ ] `minSdk` is 24, `targetSdk` is 36 and `compileSdk` is 37.
-- [ ] `versionCode` is 22 and `versionName` is 1.0.9.
+- [ ] `versionCode` is 24 and `versionName` is 1.0.10; confirm code 24 exceeds every used Play Console code.
+- [ ] Account/data deletion URL is configured with `-PsentinelAccountDeletionUrl`, reachable and operational; logout alone is insufficient.
+- [ ] Public privacy policy identifies the responsible contact and actual retention/egress.
 - [ ] Build uses JDK 17, AGP 9.4.1, Kotlin 2.4.20 and Gradle 9.8.0.
 - [ ] Release signing uses only the current secrets:
   - `KEYSTORE_BASE64`

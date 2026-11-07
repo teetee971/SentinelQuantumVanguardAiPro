@@ -1,29 +1,16 @@
-# Feuille de route réaliste — Sentinel Quantum Vanguard AI Pro
+# Feuille de route réaliste — Sentinel
 
-**Révision :** 1 octobre 2026  
-**Statut :** plan de finalisation consolidé ; validation terrain et release à démontrer
+Révision : 7 novembre 2026. **Publication Google Play : BLOQUÉE**, pas de déclaration « Production Ready ».
 
-La référence détaillée est [docs/ROADMAP.md](docs/ROADMAP.md). La version publique est [public/roadmap.html](public/roadmap.html). Ces documents distinguent code présent, contrôles exécutés, infrastructure requise et preuve physique.
+La référence détaillée reste [docs/ROADMAP.md](docs/ROADMAP.md), les états produit [config/product-capabilities.json](config/product-capabilities.json). Le dossier courant est [docs/GOOGLE_PLAY_QUALIFICATION_20261107.md](docs/GOOGLE_PLAY_QUALIFICATION_20261107.md). Les anciennes références PR #1435/#1497 et Phone Core v5 ne décrivent plus cette candidate.
 
-## Ordre de réalisation
+1. **Candidate isolée** : préserver la v22 installée ; candidate 24 / 1.0.10 issue de la v22 et des tests isolés. Confirmer le maximum versionCode dans toutes les pistes Play avant dépôt. Le nom du dossier ou un build debug ne prouve pas la version publiée.
+2. **Compte et vie privée** : fournir le parcours HTTPS réel de suppression de compte/données et l'URL publique de confidentialité avec contact responsable et rétentions. La connexion optionnelle est bloquée sans route configurée ; la déconnexion et Phone Core local restent accessibles. Un lien configuré ne prouve pas l'exécution de la suppression serveur.
+3. **Qualification technique exacte** : tests JVM, manifeste fusionné release, lint, AndroidTest compilé, AAB et bibliothèques natives 16 Ko. Conserver commandes, résultats, SHA et limites. Aucun test opérateur n'est déduit d'un build.
+4. **Acceptation Phone Core v6** : exactement 14 preuves sur l'installation courante, plus double-SIM, notifications, révocation et erreurs. Les tests destructifs ne doivent pas tourner sur le S24+ stable. Les observations v22 historiques ne deviennent pas des preuves de la candidate.
+5. **Play Console** : signature d'upload existante, versionCode inédit, déclarations SMS/journal d'appels et plein écran, Data Safety, App Access, questionnaire de contenu, captures exactes, tests internes puis fermés selon le compte. Le compte développeur et l'accord Google ne sont pas vérifiables par le dépôt.
+6. **MMS JPEG v23** : conserver à part jusqu'à correction du test de JPEG tronqué accepté par le décodeur Android. Ne pas intégrer ce défaut connu dans la candidate Play. La v22 conserve son refus des MMS trop volumineux.
+7. **Nettoyeur Doctor** : branche isolée expérimentale ; ne pas annoncer sa présence dans cette candidate. Qualifier l'interface et la suppression bornée avant intégration.
+8. **Services distants** : VPN, LiveKit/PSTN, réputation communautaire et autres fonctions conditionnelles restent indisponibles tant que configuration, backend, consentement, autorisation et tests réels manquent. Pas de refonte ni de mise à jour de dépendances sans défaut démontré.
 
-1. **Clôturer le logiciel Phone Core v5.** Examiner et finaliser la PR #1497, corriger le nom de test obsolète et résoudre la divergence du contrôle Android. Exiger les contrôles requis réussis sur le dernier commit avant intégration.
-2. **Prouver Phone Core sur appareil.** Obtenir les 14 preuves de l’installation courante ; vérifier aussi multi-SIM, variantes Android/constructeur, notifications, retrait des rôles/permissions et réversibilité. Le scanner Wi-Fi reste entièrement hors certificat.
-3. **Préparer la distribution signée.** Suivre [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) et [RELEASE_STATUS.md](RELEASE_STATUS.md), vérifier APK/AAB, signatures, SHA-256, SBOM et preuves de release. Décider la stratégie Play/canal direct avant distribution.
-4. **Valider le diagnostic Wi-Fi séparément.** Documenter scan frais, cache, permissions, localisation et throttling sur appareil, sans impact sur le compteur Phone Core 14/14.
-5. **Rendre le VPN démontrable.** Une passerelle réelle et les essais tunnel/DNS/IPv4/IPv6/MTU/coupures sont requis avant toute disponibilité revendiquée.
-6. **Étendre les programmes selon leurs preuves.** Signature Ed25519 de production pour la veille ; périmètre, sources autorisées et critères de sortie explicites pour les autres modules. CTEM attend la validation physique Phone Core.
-
-## Maintenance transversale
-
-Maintenir `native-android-app/` comme unique source Android, le pinning SHA des Actions, l’isolation Sentinel, les tests de gouvernance et le fuzzing autorisé. Vérifier le frontend et ses liens, l’interface mobile et les contrôles réellement utilisables. Ne jamais affaiblir un gate pour obtenir un résultat vert.
-
-## État des blocages
-
-Les runners exécutent désormais les workflows : l’ancien blocage général des runners n’est plus le jalon courant. Au commit `9f7103d227f3a5bd8ca0afbdcd1019dffe0e262a` de la PR #1435, 17 contrôles sont réussis et un contrôle Android reste en échec malgré un build natif ensuite réussi. Cette divergence reste à examiner. Les preuves physiques, la release signée et la passerelle VPN ne sont pas attestées par cette revue.
-
-## Critère de clôture
-
-Chaque jalon conserve le commit, la date, l’environnement, le scénario, le résultat observé et les liens vers les preuves. Il est terminé après examen de ces éléments, jamais parce qu’une interface ou un workflow existe.
-
-Aucun ancien arbre Android, artefact APK committé, secret, keystore, pipeline supprimé ou dépendance d’un autre projet ne doit être réintroduit. Aucune promesse de production, conformité ou sécurité absolue sans preuve actuelle.
+La clôture requiert une preuve datée liée au SHA, à l'environnement et à l'artefact. Une étape non exécutée reste NON EXÉCUTÉE ; un blocage reste ouvert. Ni fusion dans main, ni publication, ni installation de cette candidate sur la v22 stable.

@@ -1,6 +1,6 @@
 # Politique de confidentialité — Sentinel Quantum Vanguard AI Pro
 
-**Dernière mise à jour : septembre 2026**
+**Dernière mise à jour : 7 novembre 2026 — document de préparation, non validé pour une soumission Play**
 
 ## Périmètre
 
@@ -35,7 +35,7 @@ L'application Android actuelle traite principalement les données Phone Core loc
 - l'analyse locale des liens contenus dans les SMS reçus par Sentinel ou dans des e-mails/messages explicitement partagés reste sur l'appareil ;
 - les notifications d'appels et de messages respectent la permission `POST_NOTIFICATIONS` lorsqu'elle est requise par la version Android et l'état des canaux de notification ;
 - le scanner Wi-Fi est local et passif. Il dépend des permissions et services de localisation imposés par Android ; les résultats mis en cache ou limités par le throttling Android ne doivent pas être présentés comme un nouveau scan physique ;
-- les consultations de sources OSINT publiques se font uniquement en HTTPS et ne transmettent pas de données utilisateur à ces sources ;
+- les consultations de sources OSINT publiques se font en HTTPS, sans transmission du contenu des SMS, contacts ou historique par ce composant ; les serveurs consultés reçoivent néanmoins les métadonnées ordinaires de connexion, dont l’adresse IP ;
 - les journaux locaux ne sont exportables que par l'utilisateur, de manière bornée, via le fournisseur de fichiers sécurisé de l'application.
 - le Studio voix demande `RECORD_AUDIO` uniquement après une action explicite de l’utilisateur. Pour l’aperçu local, un court échantillon est conservé dans le cache privé de l’application, n’est pas téléversé et est supprimé à la fermeture de l’écran ;
 - le moteur de transformation temps réel et le client WebRTC sont intégrés, mais le service d’appel Sentinel n’est pas encore provisionné comme service public. Tant que ce service n’est pas activé, aucun appel VoIP/PSTN de production n’est acheminé par Sentinel ;
@@ -46,6 +46,14 @@ L'application Android actuelle traite principalement les données Phone Core loc
 Les rôles et permissions Phone Core sont demandés au moment où la fonction correspondante est activée et restent révocables depuis Android. Leur présence dans le manifeste ne signifie pas qu'ils sont accordés automatiquement. Les fonctions dépendantes doivent rester limitées ou verrouillées lorsque le rôle, la permission, la SIM, le service système ou une autre condition Android requise manque.
 
 Ces descriptions ne valent que pour le code actuellement présent dans le dépôt et doivent être revérifiées sur tout artefact réellement publié et sur appareil physique.
+
+## Compte optionnel et suppression
+
+Les fonctions locales Téléphone/SMS/filtrage ne nécessitent pas de compte Sentinel. Le parcours de compte Android utilise Auth0 lorsqu'il est activé : le fournisseur d'identité traite les informations saisies sur sa page de connexion et les métadonnées de connexion ; le client peut recevoir l'identifiant du compte et l'adresse e-mail. Les identifiants d'accès/rafraîchissement sont gérés par le stockage chiffré du SDK. Ils ne doivent pas être exportés dans les journaux ou les sauvegardes utilisateur.
+
+La candidate 24 bloque l'ouverture d'une nouvelle connexion tant qu'un parcours HTTPS public de demande de suppression de compte et de données n'est pas configuré. La déconnexion reste possible pour une session existante ; elle ne supprime pas le compte ni les données du fournisseur. Une fois configurée et opérationnelle, l'action de demande de suppression est accessible depuis les réglages et le lien web doit également être fourni dans Play Console.
+
+**Prérequis de publication non remplis :** l'exploitant doit fournir son identité et contact, l'URL effective de suppression, le périmètre des données supprimées, les délais, les éventuelles rétentions obligatoires et les modalités applicables chez ses sous-traitants. Aucune durée ni suppression serveur n'est inventée ici. Le fonctionnement réel doit être testé avant diffusion.
 
 ## Sécurité et confidentialité
 
