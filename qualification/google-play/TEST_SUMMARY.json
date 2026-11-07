@@ -1,0 +1,14 @@
+{
+  "app": {
+    "tests": 1449,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "wearable": {
+    "tests": 26,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

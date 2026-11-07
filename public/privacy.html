@@ -15,7 +15,7 @@
   <section class="hero">
     <span class="eyebrow">Confidentialité</span>
     <h1>Politique de confidentialité.</h1>
-    <p class="hero-lead">Cette page décrit le modèle de données actuellement documenté pour la vitrine : traitement local, minimisation, et absence de backend applicatif dans le périmètre actuel.</p>
+    <p class="hero-lead">Cette page distingue les traitements du site et ceux de l’application Android. Les fonctions locales restent séparées des services distants facultatifs.</p>
   </section>
 
   <p class="hero-lead">Dernière mise à jour : septembre 2026.</p>
@@ -36,7 +36,17 @@
     </div>
   </section>
 
-  <section class="notice info"><strong>Absence de backend :</strong> le site peut être publié sur une plateforme externe et certains modules de veille peuvent consulter des sources publiques. Une absence de transfert de données ne doit donc pas être affirmée sans vérification de la configuration effectivement déployée.</section>
+  <section class="section" aria-labelledby="android-privacy-title">
+    <div class="section-heading"><span class="eyebrow">Application Android</span><h2 id="android-privacy-title">Téléphone, messages et compte optionnel.</h2></div>
+    <div class="content-card">
+      <p>Lorsque vous choisissez Sentinel comme application Téléphone ou SMS par défaut, les autorisations correspondantes permettent de gérer appels, historique et messages via Android. L’accès au répertoire est facultatif. Ces rôles et autorisations restent révocables dans les réglages Android. Les SMS/MMS utilisent votre opérateur ; leurs contenus et états sont enregistrés dans le fournisseur Android.</p>
+      <p>La veille consulte des sources publiques en HTTPS ; ces serveurs reçoivent les métadonnées habituelles de connexion, dont l’adresse IP. Le contenu des SMS, contacts et historique n’est pas envoyé par le module de veille. L’enrichissement distant de réputation téléphonique reste distinct et facultatif : son activation explicite peut transmettre le numéro recherché au service concerné.</p>
+      <p>Les fonctions locales ne nécessitent pas de compte. Lorsqu’il est activé, le compte optionnel utilise Auth0 pour l’authentification ; le client peut recevoir l’identifiant et l’adresse e-mail du compte et conserve les jetons dans le stockage chiffré du SDK. Se déconnecter ne supprime pas le compte.</p>
+      <p>La candidate Android en préparation bloque une nouvelle connexion sans parcours de demande de suppression configuré. Le contact responsable, les délais et rétentions, ainsi que le parcours effectif de suppression du compte et des données associées doivent être renseignés et vérifiés avant publication Google Play. Cette page ne constitue pas encore une politique validée pour cette soumission.</p>
+    </div>
+  </section>
+
+  <section class="notice info"><strong>Connexions externes du site :</strong> le site peut être publié sur une plateforme externe et certains modules de veille peuvent consulter des sources publiques. Une absence de transfert de données ne doit donc pas être affirmée sans vérification de la configuration effectivement déployée.</section>
 
   <section aria-labelledby="independance-title">
     <div class="section-heading"><span class="eyebrow">Indépendance</span><h2 id="independance-title">Isolation vis-à-vis des projets interdits.</h2></div>

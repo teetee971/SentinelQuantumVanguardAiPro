@@ -1,0 +1,83 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/ApkInspectionProcessGuardTest.kt:14:64 Expression is unused.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/BoundedPostResponseExecutorTest.kt:36:32 Expression is unused.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/BoundedPostResponseExecutorTest.kt:40:36 Expression is unused.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallScreeningResponseBoundaryTest.kt:26:36 Expression is unused.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallScreeningResponseBoundaryTest.kt:88:33 Expression is unused.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SmsCallbackProgressTest.kt:266:25 Unnecessary non-null assertion (!!) on a non-null receiver of type 'SmsCallbackProgress.State'.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/VpnGatewayCatalogTransportTest.kt:68:20 Check for instance is always 'true'.
+
+> Task :app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:packageDebugUnitTestForUnitTest
+
+> Task :app:mergeDebugUnitTestManifest
+/workspace/sentinel-play-ready/native-android-app/app/src/main/AndroidManifest.xml:7:5-85 Warning:
+	uses-permission#android.permission.CAMERA was tagged at AndroidManifest.xml:7 to remove other declarations but no other declaration present
+/workspace/sentinel-play-ready/native-android-app/app/src/main/AndroidManifest.xml:9:5-114 Warning:
+	uses-permission#android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION was tagged at AndroidManifest.xml:9 to remove other declarations but no other declaration present
+/workspace/sentinel-play-ready/native-android-app/app/src/main/AndroidManifest.xml:83:9-84:35 Warning:
+	service#io.livekit.android.room.track.screencapture.ScreenCaptureService was tagged at AndroidManifest.xml:83 to remove other declarations but no other declaration present
+
+> Task :app:processDebugUnitTestManifest
+> Task :app:generateDebugUnitTestConfig
+> Task :app:processDebugJavaRes
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-play-ready/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 5s
+37 actionable tasks: 28 executed, 1 from cache, 8 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

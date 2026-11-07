@@ -1,0 +1,29 @@
+[
+  {
+    "file": "Sentinel-24-DEBUG-DO-NOT-INSTALL.apk",
+    "source_path": "/workspace/sentinel-play-ready/native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+    "path": "/workspace/qualification-evidence/play-20261107/Sentinel-24-DEBUG-DO-NOT-INSTALL.apk",
+    "bytes": 97201926,
+    "sha256": "1316a4f0414d1b99ae48682cf972658e940d86f74fd78e38b4b79d3930ef0273",
+    "source_commit": "3d5753ee3effaa713baadb07abecdf3d8f5aecc1",
+    "android_tree": "c7567f174acd8881bc5b84d1b9d1bbdb08d174ff"
+  },
+  {
+    "file": "Sentinel-24-androidTest-NOT-RUN.apk",
+    "source_path": "/workspace/sentinel-play-ready/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+    "path": "/workspace/qualification-evidence/play-20261107/Sentinel-24-androidTest-NOT-RUN.apk",
+    "bytes": 1142022,
+    "sha256": "baa4f3406e46344e876dfe0463f368ae43d17e7863062756efaa1627b79fd96a",
+    "source_commit": "3d5753ee3effaa713baadb07abecdf3d8f5aecc1",
+    "android_tree": "c7567f174acd8881bc5b84d1b9d1bbdb08d174ff"
+  },
+  {
+    "file": "Sentinel-24-UNSIGNED-NOT-FOR-UPLOAD.aab",
+    "source_path": "/workspace/sentinel-play-ready/native-android-app/app/build/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+    "path": "/workspace/qualification-evidence/play-20261107/Sentinel-24-UNSIGNED-NOT-FOR-UPLOAD.aab",
+    "bytes": 40128161,
+    "sha256": "188cffa618f16cd8949c6ce8923c189300c200b873eeb28fe1b434a7d69e3e3b",
+    "source_commit": "3d5753ee3effaa713baadb07abecdf3d8f5aecc1",
+    "android_tree": "c7567f174acd8881bc5b84d1b9d1bbdb08d174ff"
+  }
+]

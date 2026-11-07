@@ -1,0 +1,195 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:packageDebugUnitTestForUnitTest UP-TO-DATE
+> Task :app:mergeDebugUnitTestManifest UP-TO-DATE
+> Task :app:processDebugUnitTestManifest UP-TO-DATE
+> Task :app:generateDebugUnitTestConfig UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+
+IsolatedPreferencesContextTest > actualConsentRevocationAndHmacWritesLeaveProductionPreferencesUntouched FAILED
+    java.lang.RuntimeException at TempDirectory.java:121
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+IsolatedPreferencesContextTest > closeClearsOnlyItsOwnNamespaceAndPreventsReuse FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+IsolatedPreferencesContextTest > separateTestContextsNeverShareConsentOrSecrets FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+IsolatedPreferencesContextTest > applicationContextCannotEscapeTheNamespace FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+IsolatedPreferencesContextTest > unexpectedPreferenceNameFailsInsteadOfReachingProduction FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+IntelligenceSnapshotStoreTest > retention_enforces_maximum_age_and_count FAILED
+    java.nio.file.FileSystemException at IntelligenceSnapshotStoreTest.kt:41
+
+IntelligenceSnapshotStoreTest > duplicate_event_id_is_an_idempotent_no_op FAILED
+    java.nio.file.FileSystemException at IntelligenceSnapshotStoreTest.kt:41
+
+IntelligenceSnapshotStoreTest > serialized_storage_contains_no_raw_sensitive_fixtures FAILED
+    java.nio.file.FileSystemException at IntelligenceSnapshotStoreTest.kt:41
+
+IntelligenceSnapshotStoreTest > unknown_future_schema_fails_safely FAILED
+    java.nio.file.FileSystemException at IntelligenceSnapshotStoreTest.kt:41
+
+IntelligenceSnapshotStoreTest > restart_rebuild_reproduces_snapshot_from_same_retained_evidence FAILED
+    java.nio.file.FileSystemException at IntelligenceSnapshotStoreTest.kt:41
+
+IntelligenceSnapshotStoreTest > corrupted_payload_returns_empty_state_instead_of_fabricated_facts FAILED
+    java.nio.file.FileSystemException at IntelligenceSnapshotStoreTest.kt:41
+
+ApkInspectionProcessGuardTest > exceptionDoesNotStrandLock FAILED
+    java.nio.file.FileSystemException at ApkInspectionProcessGuardTest.kt:22
+
+ApkInspectionProcessGuardTest > concurrentAccessIsRejectedAndLockReleased FAILED
+    java.nio.file.FileSystemException at ApkInspectionProcessGuardTest.kt:9
+
+ApkSignatureVerifierProofTest > validAndCorruptedApkAreDistinguished FAILED
+    java.nio.file.FileSystemException at ApkSignatureVerifierProofTest.kt:22
+
+CommunicationReputationStorageRobolectricTest > reputationSurvivesStorageRecreationWithoutPersistingPhoneNumber FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+CommunicationReputationStorageRobolectricTest > secretIsSeparatedFromReputationEntries FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+CommunicationReputationStorageRobolectricTest > revokedConsentPreventsNewReputationPersistence FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+CommunicationReputationStorageRobolectricTest > persistedStorageKeyIsSecretDerivedNotBarePhoneDigest FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+CommunicationReputationStorageRobolectricTest > revokingConsentPurgesPersistedReputationButKeepsInstallSecret FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+CommunicationReputationStorageRobolectricTest > removeDeletesThePersistedOpaqueEntry FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+CommunicationReputationStorageRobolectricTest > leavingEnhancedModePurgesPersistedReputationButKeepsInstallSecret FAILED
+    java.lang.RuntimeException at TempDirectory.java:63
+        Caused by: java.nio.file.FileSystemException at UnixException.java:100
+
+IncomingMmsPrivateStoreTest > corruptStableIdentityFailsClosedWithoutOverwrite FAILED
+    java.nio.file.FileSystemException at IncomingMmsPrivateStoreTest.kt:104
+
+IncomingMmsPrivateStoreTest > replayUsesOneStableFile FAILED
+    java.nio.file.FileSystemException at IncomingMmsPrivateStoreTest.kt:104
+
+IncomingMmsPrivateStoreTest > concurrentSamePduCreatesExactlyOneCommittedFile FAILED
+    java.nio.file.FileSystemException at IncomingMmsPrivateStoreTest.kt:104
+
+IncomingMmsPrivateStoreTest > retentionNeverExceedsBound FAILED
+    java.nio.file.FileSystemException at IncomingMmsPrivateStoreTest.kt:104
+
+IncomingMmsPrivateStoreTest > stalePartialIsRemovedBeforeCommittedWrite FAILED
+    java.nio.file.FileSystemException at IncomingMmsPrivateStoreTest.kt:104
+
+MmsLocalInboxTest > rejectsEmptyAndOversizedPdusAndBoundsLimit FAILED
+    java.nio.file.FileSystemException at MmsLocalInboxTest.kt:21
+
+MmsLocalInboxTest > listsOnlyBoundedPduFilesNewestFirst FAILED
+    java.nio.file.FileSystemException at MmsLocalInboxTest.kt:10
+
+TemporaryApkInventoryTest > onlyOldMatchingFilesAreListedWithoutModification FAILED
+    java.nio.file.FileSystemException at TemporaryApkInventoryTest.kt:10
+
+TemporaryApkInventoryTest > unknownAndFutureTimestampsAreNotMarkedAbandoned FAILED
+    java.nio.file.FileSystemException at TemporaryApkInventoryTest.kt:34
+
+TemporaryApkInventoryTest > activeFileIsExcludedEvenWhenOld FAILED
+    java.nio.file.FileSystemException at TemporaryApkInventoryTest.kt:47
+
+TemporaryApkInventoryTest > missingFolderReturnsNoCandidates FAILED
+    java.nio.file.FileSystemException at TemporaryApkInventoryTest.kt:61
+
+TemporaryApkScopeTest > cleansAfterSuccess FAILED
+    java.nio.file.FileSystemException at TemporaryApkScopeTest.kt:11
+
+TemporaryApkScopeTest > cleansAfterCancellation FAILED
+    java.nio.file.FileSystemException at TemporaryApkScopeTest.kt:11
+
+TemporaryApkScopeTest > cleansAfterFailure FAILED
+    java.nio.file.FileSystemException at TemporaryApkScopeTest.kt:11
+
+1449 tests completed, 35 failed
+
+> Task :app:testDebugUnitTest FAILED
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-play-ready/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///workspace/sentinel-play-ready/native-android-app/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 26s
+37 actionable tasks: 3 executed, 34 up-to-date

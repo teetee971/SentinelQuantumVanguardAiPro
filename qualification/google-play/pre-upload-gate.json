@@ -1,0 +1,19 @@
+{
+  "source": "/workspace/sentinel-play-ready",
+  "checks": {
+    "package": "com.sentinel.quantum",
+    "versionCode": "24",
+    "versionName": "1.0.10",
+    "targetSdk": "36",
+    "release_signing_gate": true,
+    "source_manifest_xml": "PARSE_OK",
+    "signed_aab": "NOT_PROVIDED"
+  },
+  "warnings": [
+    "Source manifest is not the merged release manifest.",
+    "This script does not execute Gradle, Android lint, physical tests or Play policy checks.",
+    "Auth0 email verification and backend authorization remain unverified.",
+    "Do not upload releaseUnsigned artifacts to Google Play."
+  ],
+  "release_ready": false
+}

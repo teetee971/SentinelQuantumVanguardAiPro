@@ -1,0 +1,90 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseUnsignedBuild UP-TO-DATE
+> Task :app:mapReleaseUnsignedSourceSetPaths UP-TO-DATE
+> Task :app:processReleaseUnsignedNavigationResources UP-TO-DATE
+> Task :app:compileReleaseUnsignedNavigationResources UP-TO-DATE
+> Task :app:generateReleaseUnsignedResources UP-TO-DATE
+> Task :app:mergeReleaseUnsignedResources UP-TO-DATE
+> Task :app:createReleaseUnsignedCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksReleaseUnsigned UP-TO-DATE
+> Task :app:processReleaseUnsignedMainManifest UP-TO-DATE
+> Task :app:processReleaseUnsignedManifest UP-TO-DATE
+> Task :app:processApplicationManifestReleaseUnsignedForBundle UP-TO-DATE
+> Task :app:checkReleaseUnsignedAarMetadata UP-TO-DATE
+> Task :app:packageReleaseUnsignedResources UP-TO-DATE
+> Task :app:parseReleaseUnsignedLocalResources UP-TO-DATE
+> Task :app:processReleaseUnsignedManifestForPackage UP-TO-DATE
+> Task :app:processReleaseUnsignedResources UP-TO-DATE
+> Task :app:bundleReleaseUnsignedResources UP-TO-DATE
+> Task :app:extractReleaseUnsignedVersionControlInfo UP-TO-DATE
+> Task :app:mergeReleaseUnsignedArtProfile UP-TO-DATE
+> Task :app:expandReleaseUnsignedL8ArtProfileWildcards UP-TO-DATE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :app:checkReleaseUnsignedDuplicateClasses UP-TO-DATE
+> Task :app:generateReleaseUnsignedBuildConfig UP-TO-DATE
+> Task :app:generateReleaseUnsignedRFile UP-TO-DATE
+> Task :app:kspReleaseUnsignedKotlin UP-TO-DATE
+> Task :app:compileReleaseUnsignedKotlin UP-TO-DATE
+> Task :app:javaPreCompileReleaseUnsigned UP-TO-DATE
+> Task :app:compileReleaseUnsignedJavaWithJavac UP-TO-DATE
+> Task :app:expandReleaseUnsignedArtProfileWildcards UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:mergeReleaseUnsignedGeneratedProguardFiles UP-TO-DATE
+> Task :app:processReleaseUnsignedJavaRes UP-TO-DATE
+> Task :app:mergeReleaseUnsignedJavaResource UP-TO-DATE
+> Task :app:mergeReleaseUnsignedStartupProfile UP-TO-DATE
+> Task :app:minifyReleaseUnsignedWithR8 UP-TO-DATE
+> Task :app:l8DexDesugarLibReleaseUnsigned UP-TO-DATE
+> Task :app:generateReleaseUnsignedAssets UP-TO-DATE
+> Task :app:mergeReleaseUnsignedAssets UP-TO-DATE
+> Task :app:mergeReleaseUnsignedJniLibFolders UP-TO-DATE
+> Task :app:mergeReleaseUnsignedNativeLibs UP-TO-DATE
+> Task :app:stripReleaseUnsignedDebugSymbols UP-TO-DATE
+> Task :app:writeReleaseUnsignedAppMetadata UP-TO-DATE
+> Task :app:buildReleaseUnsignedPreBundle UP-TO-DATE
+> Task :app:produceReleaseUnsignedComposeMapping
+> Task :app:reportReleaseUnsignedComposeMappingErrors
+> Task :app:mergeReleaseUnsignedComposeMapping
+> Task :app:compileReleaseUnsignedArtProfile
+> Task :app:collectReleaseUnsignedDependencies
+> Task :app:configureReleaseUnsignedDependencies
+> Task :app:extractReleaseUnsignedNativeSymbolTables
+> Task :app:generateReleaseUnsignedLintVitalReportModel
+> Task :app:lintVitalAnalyzeReleaseUnsigned
+> Task :app:lintVitalReportReleaseUnsigned SKIPPED
+> Task :app:lintVitalReleaseUnsigned SKIPPED
+> Task :app:parseReleaseUnsignedIntegrityConfig
+> Task :app:packageReleaseUnsignedBundle
+> Task :app:signReleaseUnsignedBundle
+> Task :app:produceReleaseUnsignedBundleIdeListingFile FAILED
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-play-ready/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:produceReleaseUnsignedBundleIdeListingFile' (registered by plugin 'com.android.internal.application').
+> Failed to create parent directory '/workspace/sentinel-play-ready/native-android-app/app/build/intermediates/bundle_ide_model' when creating directory '/workspace/sentinel-play-ready/native-android-app/app/build/intermediates/bundle_ide_model/releaseUnsigned/produceReleaseUnsignedBundleIdeListingFile'
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1m 29s
+55 actionable tasks: 13 executed, 42 up-to-date

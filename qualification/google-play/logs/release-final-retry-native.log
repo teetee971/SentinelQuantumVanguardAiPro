@@ -1,0 +1,92 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseUnsignedBuild UP-TO-DATE
+> Task :app:mapReleaseUnsignedSourceSetPaths UP-TO-DATE
+> Task :app:processReleaseUnsignedNavigationResources UP-TO-DATE
+> Task :app:compileReleaseUnsignedNavigationResources UP-TO-DATE
+> Task :app:generateReleaseUnsignedResources UP-TO-DATE
+> Task :app:mergeReleaseUnsignedResources UP-TO-DATE
+> Task :app:createReleaseUnsignedCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksReleaseUnsigned UP-TO-DATE
+> Task :app:processReleaseUnsignedMainManifest UP-TO-DATE
+> Task :app:processReleaseUnsignedManifest UP-TO-DATE
+> Task :app:processApplicationManifestReleaseUnsignedForBundle UP-TO-DATE
+> Task :app:checkReleaseUnsignedAarMetadata UP-TO-DATE
+> Task :app:packageReleaseUnsignedResources UP-TO-DATE
+> Task :app:parseReleaseUnsignedLocalResources UP-TO-DATE
+> Task :app:processReleaseUnsignedManifestForPackage UP-TO-DATE
+> Task :app:processReleaseUnsignedResources UP-TO-DATE
+> Task :app:bundleReleaseUnsignedResources UP-TO-DATE
+> Task :app:extractReleaseUnsignedVersionControlInfo UP-TO-DATE
+> Task :app:mergeReleaseUnsignedArtProfile UP-TO-DATE
+> Task :app:expandReleaseUnsignedL8ArtProfileWildcards UP-TO-DATE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :app:checkReleaseUnsignedDuplicateClasses UP-TO-DATE
+> Task :app:generateReleaseUnsignedBuildConfig UP-TO-DATE
+> Task :app:generateReleaseUnsignedRFile UP-TO-DATE
+> Task :app:kspReleaseUnsignedKotlin UP-TO-DATE
+> Task :app:compileReleaseUnsignedKotlin UP-TO-DATE
+> Task :app:javaPreCompileReleaseUnsigned UP-TO-DATE
+> Task :app:compileReleaseUnsignedJavaWithJavac UP-TO-DATE
+> Task :app:expandReleaseUnsignedArtProfileWildcards UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:mergeReleaseUnsignedGeneratedProguardFiles UP-TO-DATE
+> Task :app:processReleaseUnsignedJavaRes UP-TO-DATE
+> Task :app:mergeReleaseUnsignedJavaResource UP-TO-DATE
+> Task :app:mergeReleaseUnsignedStartupProfile UP-TO-DATE
+> Task :app:minifyReleaseUnsignedWithR8 UP-TO-DATE
+> Task :app:l8DexDesugarLibReleaseUnsigned UP-TO-DATE
+> Task :app:generateReleaseUnsignedAssets UP-TO-DATE
+> Task :app:mergeReleaseUnsignedAssets UP-TO-DATE
+> Task :app:mergeReleaseUnsignedJniLibFolders UP-TO-DATE
+> Task :app:mergeReleaseUnsignedNativeLibs UP-TO-DATE
+> Task :app:stripReleaseUnsignedDebugSymbols UP-TO-DATE
+> Task :app:writeReleaseUnsignedAppMetadata UP-TO-DATE
+> Task :app:buildReleaseUnsignedPreBundle UP-TO-DATE
+> Task :app:produceReleaseUnsignedComposeMapping UP-TO-DATE
+> Task :app:reportReleaseUnsignedComposeMappingErrors
+> Task :app:mergeReleaseUnsignedComposeMapping UP-TO-DATE
+> Task :app:compileReleaseUnsignedArtProfile UP-TO-DATE
+> Task :app:collectReleaseUnsignedDependencies UP-TO-DATE
+> Task :app:configureReleaseUnsignedDependencies UP-TO-DATE
+> Task :app:extractReleaseUnsignedNativeSymbolTables UP-TO-DATE
+> Task :app:generateReleaseUnsignedLintVitalReportModel UP-TO-DATE
+> Task :app:lintVitalAnalyzeReleaseUnsigned
+> Task :app:lintVitalReportReleaseUnsigned SKIPPED
+> Task :app:lintVitalReleaseUnsigned SKIPPED
+> Task :app:parseReleaseUnsignedIntegrityConfig UP-TO-DATE
+> Task :app:packageReleaseUnsignedBundle UP-TO-DATE
+> Task :app:signReleaseUnsignedBundle UP-TO-DATE
+> Task :app:produceReleaseUnsignedBundleIdeListingFile
+> Task :app:createReleaseUnsignedBundleListingFileRedirect
+> Task :app:bundleReleaseUnsigned UP-TO-DATE
+> Task :app:generateReleaseUnsignedLintReportModel
+> Task :app:lintAnalyzeReleaseUnsigned
+
+> Task :app:lintReportReleaseUnsigned
+Wrote HTML report to file:///workspace/sentinel-play-ready/native-android-app/app/build/reports/lint-results-releaseUnsigned.html
+Wrote SARIF report to file:///workspace/sentinel-play-ready/native-android-app/app/build/reports/lint-results-releaseUnsigned.sarif
+
+> Task :app:lintReleaseUnsigned
+
+> Task :app:exportReleaseDependencyInventory
+Release dependency graph: /workspace/sentinel-play-ready/native-android-app/app/build/reports/release-dependencies.json (187 components, 1031 relationships)
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-play-ready/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 3m
+61 actionable tasks: 9 executed, 52 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

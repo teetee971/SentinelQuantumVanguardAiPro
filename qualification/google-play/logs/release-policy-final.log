@@ -1,0 +1,18 @@
+✔ unsigned AAB archive integrity is checked before artifact upload (0.816207ms)
+✔ optional bundletool does not silently claim semantic validation or mask failure (0.431098ms)
+✔ unsigned validation AAB cannot be mistaken for a publishable release artifact (0.368093ms)
+✔ production Android releases require the protected environment and current main head (3.932851ms)
+✔ release integrity records APK and AAB signer evidence and verifies checksums (0.312399ms)
+✔ the workflow creates a draft rather than a publicly downloadable release (0.199771ms)
+✔ production signing never falls back to a debug keystore (0.172539ms)
+✔ releaseUnsigned explicitly clears any signing config inherited from release (0.231068ms)
+✔ the Play candidate is version 1.0.10 and exceeds the stable v22 code (0.253822ms)
+✔ Auth0 Android dependency is pinned to the exact qualified version (0.215905ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 259.246551
