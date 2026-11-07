@@ -9,6 +9,7 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int) {
     object Search : Screen("search", R.string.nav_search)
     object OsintFeed : Screen("osint_feed", R.string.nav_osint)
     object SecurityAudit : Screen("security_audit", R.string.nav_audit)
+    object SystemCleaner : Screen("system_cleaner", R.string.system_cleaner_title)
     object SystemDoctor : Screen("system_doctor", R.string.nav_audit)
     object LocalLogs : Screen("local_logs", R.string.nav_logs)
     object PhoneSecurity : Screen("phone_security", R.string.phone_security_title)

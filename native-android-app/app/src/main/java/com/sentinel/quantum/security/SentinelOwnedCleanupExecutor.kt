@@ -7,8 +7,8 @@ import java.io.File
  * Executes cleanup only inside Sentinel-owned cache roots and verifies the
  * post-condition before reporting success.
  */
-class SentinelOwnedCleanupExecutor(context: Context) {
-    private val appContext = context.applicationContext
+class SentinelOwnedCleanupExecutor internal constructor(private val roots: List<File>, private val clockMillis: () -> Long) {
+    constructor(context: Context) : this(listOfNotNull(context.applicationContext.cacheDir, context.applicationContext.externalCacheDir), System::currentTimeMillis)
 
     fun execute(candidate: SentinelCleanupPolicy.Candidate): SentinelCleanupPolicy.Result {
         if (!SentinelCleanupPolicy.canExecuteDirectly(candidate)) {
@@ -19,7 +19,7 @@ class SentinelOwnedCleanupExecutor(context: Context) {
         }
 
         val target = File(candidate.stableId)
-        if (!isInsideAllowedCacheRoot(target)) {
+        if (!isInsideAllowedCacheRoot(target) || !SentinelCleanupEligibility.isAllowedPath(target, roots)) {
             return SentinelCleanupPolicy.Result(
                 candidate,
                 candidate.copy(state = SentinelCleanupPolicy.ActionState.NOT_ACCESSIBLE)
@@ -46,7 +46,7 @@ class SentinelOwnedCleanupExecutor(context: Context) {
 
         val currentBytes = runCatching { target.length() }.getOrNull()
         val currentModified = runCatching { target.lastModified() }.getOrNull()
-        val isFresh = SentinelCleanupFreshnessPolicy.isFresh(
+        val isFresh = currentModified != null && SentinelCleanupEligibility.isOldEnough(currentModified, clockMillis()) && SentinelCleanupFreshnessPolicy.isFresh(
             discovered = SentinelCleanupFreshnessPolicy.Observation(
                 bytes = candidate.bytes,
                 lastModifiedEpochMillis = candidate.observedLastModifiedEpochMillis
@@ -94,8 +94,5 @@ class SentinelOwnedCleanupExecutor(context: Context) {
     internal fun isInsideAllowedCacheRoot(target: File): Boolean =
         allowedRoots().any { root -> SentinelCleanupPathPolicy.isStrictChild(target, root) }
 
-    private fun allowedRoots(): List<File> = listOfNotNull(
-        appContext.cacheDir,
-        appContext.externalCacheDir
-    ).distinctBy { runCatching { it.canonicalPath }.getOrDefault(it.absolutePath) }
+    private fun allowedRoots(): List<File> = roots.distinctBy { runCatching { it.canonicalPath }.getOrDefault(it.absolutePath) }
 }
