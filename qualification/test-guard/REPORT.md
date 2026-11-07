@@ -1,3 +1,5 @@
+> Historical guard-stage report (de4b281d / b7af566). Current continuation isolates the seven reputation cases; only the Activity case retains the destructive rule. See ISOLATION.md. Full continuation qualification pending.
+
 # Revue des tests destructifs — arbre vérifié
 
 Base réellement accessible : fafe9f5b1c57b21f276ca62189acab625a490ec9.

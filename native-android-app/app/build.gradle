@@ -140,6 +140,7 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.16.1'
     testImplementation testFixtures(project(':wearable-security'))
     // JVM implementation used by local unit tests; Android's org.json classes are runtime stubs on the host JVM.
     testImplementation 'org.json:json:20260814'
@@ -298,4 +299,13 @@ tasks.withType(Test).configureEach {
 android.sourceSets {
     test.kotlin.srcDir(project.file('src/sharedTest/java'))
     androidTest.kotlin.srcDir(project.file('src/sharedTest/java'))
+}
+
+// Host-only Android preference verification. Runtime SDK resolution can be fully offline.
+android.testOptions.unitTests.includeAndroidResources = true
+tasks.withType(Test).configureEach {
+    if (project.hasProperty('sentinelRobolectricSdkDir')) {
+        systemProperty 'robolectric.offline', 'true'
+        systemProperty 'robolectric.dependency.dir', project.property('sentinelRobolectricSdkDir').toString()
+    }
 }
