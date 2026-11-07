@@ -3,44 +3,68 @@ package com.sentinel.quantum.security
 import android.content.Context
 import java.io.File
 
-/**
- * Discovers only Sentinel-owned cache/temp files. It does not traverse another
- * application's private sandbox.
- */
-class SentinelOwnedCleanupCollector(context: Context) {
-    private val appContext = context.applicationContext
+/** Bounded discovery of allowlisted disposable copies; no MMS cache traversal. */
+class SentinelOwnedCleanupCollector internal constructor(
+    private val roots: List<File>,
+    private val directoryEntries: SentinelCleanupDirectoryEntries = SentinelCleanupDirectoryEntries.streaming(),
+    private val clockMillis: () -> Long
+) {
+    constructor(context: Context) : this(listOfNotNull(context.applicationContext.cacheDir, context.applicationContext.externalCacheDir), SentinelCleanupDirectoryEntries.forAndroid(android.os.Build.VERSION.SDK_INT), System::currentTimeMillis)
 
-    fun discover(): List<SentinelCleanupPolicy.Candidate> {
-        val roots = listOfNotNull(
-            appContext.cacheDir,
-            appContext.externalCacheDir
-        ).distinctBy { runCatching { it.canonicalPath }.getOrDefault(it.absolutePath) }
+    data class Discovery(val candidates: List<SentinelCleanupPolicy.Candidate>, val coverageComplete: Boolean, val limitReached: Boolean)
 
-        return roots.flatMap { root -> discoverFiles(root) }
-    }
+    fun discover(): List<SentinelCleanupPolicy.Candidate> = scan().candidates
 
-    private fun discoverFiles(root: File): List<SentinelCleanupPolicy.Candidate> {
-        if (!root.exists() || !root.isDirectory) return emptyList()
-        val rootCanonical = runCatching { root.canonicalFile }.getOrNull() ?: return emptyList()
-        return runCatching {
-            root.walkTopDown()
-                .filter { it.isFile }
-                .mapNotNull { file ->
-                    val canonical = runCatching { file.canonicalFile }.getOrNull() ?: return@mapNotNull null
-                    if (!SentinelCleanupPathPolicy.isStrictChild(canonical, rootCanonical)) {
-                        return@mapNotNull null
+    fun scan(maxEntries: Int = 2000): Discovery {
+        require(maxEntries in 1..5000)
+        val found = linkedMapOf<String, SentinelCleanupPolicy.Candidate>()
+        var complete = true
+        var limit = false
+        var visited = 0
+        val now = clockMillis()
+        fun entries(directory: File, visitor: (File) -> Boolean) {
+            try { directoryEntries.forEach(directory, visitor) }
+            catch (_: Exception) { complete = false }
+        }
+        fun visit(file: File) {
+            if (visited >= maxEntries || Thread.currentThread().isInterrupted) { complete = false; limit = true; return }
+            visited++
+            when (SentinelCleanupEligibility.assess(file, roots)) {
+                SentinelCleanupEligibility.Assessment.INSPECTION_FAILED -> { complete = false; return }
+                SentinelCleanupEligibility.Assessment.PROTECTED -> return
+                SentinelCleanupEligibility.Assessment.ALLOWED -> Unit
+            }
+            runCatching {
+                if (!file.isFile) return
+                val modified = file.lastModified()
+                if (!SentinelCleanupEligibility.isOldEnough(modified, now)) return
+                found[file.absolutePath] = SentinelCleanupPolicy.Candidate(
+                    stableId = file.absolutePath, scope = SentinelCleanupPolicy.Scope.SENTINEL_CACHE,
+                    displayName = file.name, bytes = file.length(), state = SentinelCleanupPolicy.ActionState.EXECUTABLE,
+                    observedLastModifiedEpochMillis = modified
+                )
+            }.onFailure { complete = false }
+        }
+        for (rawRoot in roots.distinctBy { it.absolutePath }) {
+            val root = try {
+                if (!rawRoot.exists()) continue
+                rawRoot.canonicalFile
+            } catch (_: SecurityException) { complete = false; continue }
+              catch (_: java.io.IOException) { complete = false; continue }
+            entries(root) { file ->
+                visit(file)
+                if (limit) return@entries false
+                if (file.name in SentinelCleanupEligibility.exportDirectories) {
+                    val accessible = runCatching { file.absoluteFile == file.canonicalFile && file.isDirectory }
+                    if (accessible.isFailure) complete = false
+                    if (accessible.getOrDefault(false)) {
+                        entries(file) { copy -> visit(copy); !limit }
                     }
-
-                    SentinelCleanupPolicy.Candidate(
-                        stableId = canonical.absolutePath,
-                        scope = SentinelCleanupPolicy.Scope.SENTINEL_CACHE,
-                        displayName = file.name,
-                        bytes = runCatching { canonical.length() }.getOrNull(),
-                        state = SentinelCleanupPolicy.ActionState.EXECUTABLE,
-                        observedLastModifiedEpochMillis = runCatching { canonical.lastModified() }.getOrNull()
-                    )
                 }
-                .toList()
-        }.getOrDefault(emptyList())
+                !limit
+            }
+            if (limit) break
+        }
+        return Discovery(found.values.sortedBy { it.stableId }, complete, limit)
     }
 }

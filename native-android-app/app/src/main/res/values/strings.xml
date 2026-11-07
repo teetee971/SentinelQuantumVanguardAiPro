@@ -337,4 +337,5 @@
 
     <string name="settings_auth_delete_account">Demander la suppression du compte et des données</string>
     <string name="settings_auth_unavailable">Connexion au compte temporairement indisponible. Les fonctions locales restent accessibles.</string>
+    <string name="system_cleaner_title">Nettoyeur Sentinel</string>
 </resources>

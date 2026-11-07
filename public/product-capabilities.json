@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-10-05",
+  "updated_at": "2026-11-07",
   "capabilities": [
     {
       "id": "phone_core_android",
@@ -165,6 +165,16 @@
     {
       "id": "osint_android_feeds",
       "surface": "Android public-source OSINT feeds",
+      "status": "IMPLEMENTED_NOT_VERIFIED",
+      "implemented": true,
+      "customer_available": false,
+      "evidence_sha": null,
+      "evidence_at": null,
+      "expires_at_ms": null
+    },
+    {
+      "id": "android_doctor_cleaner",
+      "surface": "Android Doctor bounded local cleaner",
       "status": "IMPLEMENTED_NOT_VERIFIED",
       "implemented": true,
       "customer_available": false,

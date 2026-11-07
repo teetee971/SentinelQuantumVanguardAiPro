@@ -1,6 +1,6 @@
 # Product capability status — generated
 
-Source: `config/product-capabilities.json` · updated 2026-10-05.
+Source: `config/product-capabilities.json` · updated 2026-11-07.
 
 This file is generated. Do not promote a capability by editing this document; update the canonical registry with evidence and let CI validate the invariants.
 
@@ -23,6 +23,7 @@ This file is generated. Do not promote a capability by editing this document; up
 | Independent monotonic VPN lease sequence authority | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
 | Mesh control plane and relay runtime | IMPLEMENTED_NOT_CONFIGURED | NO | 1 | Not attested | Not observed |
 | Android public-source OSINT feeds | IMPLEMENTED_NOT_VERIFIED | NO | 1 | Not attested | Not observed |
+| Android Doctor bounded local cleaner | IMPLEMENTED_NOT_VERIFIED | NO | 2 | Not attested | Not observed |
 
 ## Blocking details
 
@@ -192,3 +193,12 @@ Evidence:
 
 Evidence:
 - `native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintRepository.kt`
+
+### Android Doctor bounded local cleaner
+
+- Physical UI validation of the exact candidate is not executed
+- Signed public Android release and Play qualification are not demonstrated
+
+Evidence:
+- `native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SystemCleanerScreen.kt`
+- `native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt`

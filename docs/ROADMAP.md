@@ -14,7 +14,7 @@ Les étapes non applicables sont déclarées explicitement dans le registre cano
 
 ## Qualification Google Play courante
 
-La candidate, les contrôles effectivement exécutés et les blocages externes sont suivis dans [GOOGLE_PLAY_QUALIFICATION_20261107.md](GOOGLE_PLAY_QUALIFICATION_20261107.md). Aucune capacité n’est promue par cette mise à jour documentaire. API cible 36 : conforme au minimum publié pour les nouvelles soumissions depuis le 31 août 2026 ; cela ne vaut pas approbation Play. Signature d’upload, déclarations des permissions restreintes, suppression de compte/données, politique publique et essais sur appareil restent des gates séparées. Les branches expérimentales MMS JPEG et Doctor ne font pas partie de cette candidate.
+La candidate, les contrôles effectivement exécutés et les blocages externes sont suivis dans [GOOGLE_PLAY_QUALIFICATION_20261107.md](GOOGLE_PLAY_QUALIFICATION_20261107.md). Aucune capacité n’est promue par cette mise à jour documentaire. API cible 36 : conforme au minimum publié pour les nouvelles soumissions depuis le 31 août 2026 ; cela ne vaut pas approbation Play. Signature d’upload, déclarations des permissions restreintes, suppression de compte/données, politique publique et essais sur appareil restent des gates séparées. La compression MMS JPEG reste isolée car son test de corruption échoue. Doctor est intégré à la candidate de finalisation, avec qualification physique encore requise ; voir [résultats de finalisation](../qualification/roadmap/RESULTS.md).
 
 ## Priorité 1 — Phone Core Android
 
@@ -42,6 +42,10 @@ Le pipeline doit conserver la distinction entre :
 - AAB de validation ;
 - artefact public signé ;
 - preuve de publication.
+
+## Nettoyeur Doctor — intégration logicielle
+
+Le nettoyage ne vise que les exports temporaires et copies d’inspection APK de Sentinel datant d’au moins 24 h, jamais les conversations, bases ou fichiers MMS de transport. Scan sans suppression, sélection, confirmation puis rapport par fichier. La lecture en flux borne aussi l’énumération des dossiers à partir d’Android 8 ; le nettoyage est indisponible sur Android 7. Le registre conserve `customer_available=false` tant que les quatre critères Doctor et la release signée ne sont pas attestés ; ils n’ajoutent aucune preuve aux 14 critères Phone Core.
 
 ## Priorité 3 — Vérité OSINT et GeoIntel
 
