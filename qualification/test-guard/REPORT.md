@@ -64,3 +64,8 @@ Les trois sorties demandées restent conservées comme snapshots de la base : 01
 Pas de nouvelle compilation APK principale, de merge main, de release ou de changement de clé. Les worktrees initial, nettoyeur et MMS v23 restent propres et à leurs SHA précédents. Leur ancien APK ne reçoit pas automatiquement ce correctif ; intégration/reconstruction nécessaires. L'APK AndroidTest courant est dans /workspace/qualification-evidence/test-guard-2add1102/androidTest.apk ; empreinte exacte dans VALIDATION_LEDGER.json. Il cible le package principal et ne constitue pas un laboratoire autonome autorisé à installer sur le S24+.
 
 La continuation fournit aussi un diagnostic Termux en lecture seule (DIAGNOSTIC.md), vérifié par neuf tests hôte. Les ajouts restent hors sources Android ; cet arbre reste identique au code exécuté 2add1102. Validation hôte réussie ; validation Android instrumentée toujours NON EXÉCUTÉE.
+
+
+## Installed legacy APK identified; test-only preparation
+
+The user diagnostic now confirms exact legacy/unguarded test APK db7215b5…, with tests_executed=false. TEST_ONLY_DELIVERY.md documents a test-only replacement ZIP, local signing gates and eight executed host checks. The kit includes no main APK and never installs/runs tests. Main exact hash and local signing remain pending on the device. Android sources are unchanged.
