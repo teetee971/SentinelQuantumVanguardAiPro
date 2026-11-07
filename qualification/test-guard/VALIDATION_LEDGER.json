@@ -26,5 +26,16 @@
     "sha256": "9defb9f68a40b2ce2554159e844ed32b3aab42a1aef0c1a84a9094b01924f748"
   },
   "instrumented_tests": "NOT_EXECUTED",
-  "production_installation": "NOT_PERFORMED"
+  "production_installation": "NOT_PERFORMED",
+  "readonly_diagnostic_host_tests": {
+    "tests": 9,
+    "failures": 0,
+    "skipped": 0
+  },
+  "reported_by_user": {
+    "adb_connection": "192.168.11.173:38703 connected",
+    "installed_main_versionCode": 22,
+    "installed_main_versionName": "1.0.9",
+    "installed_test_payload": "NOT_IDENTIFIED"
+  }
 }

@@ -63,4 +63,4 @@ Les trois sorties demandées restent conservées comme snapshots de la base : 01
 
 Pas de nouvelle compilation APK principale, de merge main, de release ou de changement de clé. Les worktrees initial, nettoyeur et MMS v23 restent propres et à leurs SHA précédents. Leur ancien APK ne reçoit pas automatiquement ce correctif ; intégration/reconstruction nécessaires. L'APK AndroidTest courant est dans /workspace/qualification-evidence/test-guard-2add1102/androidTest.apk ; empreinte exacte dans VALIDATION_LEDGER.json. Il cible le package principal et ne constitue pas un laboratoire autonome autorisé à installer sur le S24+.
 
-Le dernier commit ajoute uniquement les preuves ; son arbre Android reste identique au code exécuté 2add1102. Validation hôte réussie ; validation Android instrumentée toujours NON EXÉCUTÉE.
+La continuation fournit aussi un diagnostic Termux en lecture seule (DIAGNOSTIC.md), vérifié par neuf tests hôte. Les ajouts restent hors sources Android ; cet arbre reste identique au code exécuté 2add1102. Validation hôte réussie ; validation Android instrumentée toujours NON EXÉCUTÉE.
