@@ -618,6 +618,13 @@ private fun homeTools(context: Context, navController: NavController): List<Home
         HomeDomain.NETWORK
     ) { navController.navigate(Screen.NetworkSurveillance.route) },
     HomeTool(
+        "Nettoyeur Sentinel",
+        "Scanner et supprimer les copies temporaires sélectionnées",
+        Icons.Default.Security,
+        setOf("nettoyage", "nettoyeur", "cache", "temporaire", "cleaner"),
+        HomeDomain.PROTECTION
+    ) { navController.navigate(Screen.SystemCleaner.route) },
+    HomeTool(
         "Diagnostic de l’appareil",
         "Stockage, correctifs et signaux de sécurité observables",
         Icons.Default.Security,

@@ -168,6 +168,7 @@ class MainActivity : ComponentActivity() {
                                             Screen.PhoneSecurity.route,
                                             Screen.SecurityAudit.route,
                                             Screen.SystemDoctor.route,
+                                            Screen.SystemCleaner.route,
                                             Screen.CallBlocking.route,
                                             Screen.PhoneLists.route,
                                             Screen.CallFilterHistory.route,
