@@ -1,0 +1,24 @@
+native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:100:            wizard.markCompleted()
+native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:105:            wizard.markDeferred()
+native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:268:            wizard.markCompleted()
+native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:272:        if (!PhoneCoreSetupWizardStore.shouldAutoOpenSetup(lifecycleState, runtimeFacts)) return
+native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:280:            wizard.markOffered()
+native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:282:        wizard.markInProgress()
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/CommunicationsHubScreen.kt:48:        phoneFacts.corePermissionsReady,
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/HomeScreen.kt:137:        phoneCoreFacts.corePermissionsReady,
+native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt:206:        phoneCoreFacts.corePermissionsReady &&
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:55:    fun markOffered() = setLifecycleState(LifecycleState.OFFERED)
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:57:    fun markInProgress() = setLifecycleState(LifecycleState.IN_PROGRESS)
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:59:    fun markDeferred() {
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:64:    fun markCompleted() {
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:73:    fun isCompleted(): Boolean = lifecycleState() == LifecycleState.COMPLETED
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:77:            "COMPLETED must be persisted through markCompleted()"
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:101:        val corePermissionsReady: Boolean,
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:142:            !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:159:            facts.dialerRoleHeld && !facts.corePermissionsReady -> Step.CORE_PERMISSIONS
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:179:        fun shouldOpenSetup(persistedCompleted: Boolean, facts: Facts): Boolean =
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreSetupWizardStore.kt:190:        fun shouldAutoOpenSetup(state: LifecycleState, facts: Facts): Boolean = when (state) {
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreRuntimeFacts.kt:40:            corePermissionsReady =
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:406:                        PhoneCoreSetupWizardStore.Step.COMPLETE -> setupWizard.markCompleted()
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:413:                        setupWizard.markCompleted()
+native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreDiagnosticActivity.kt:99:                        PhoneCoreSetupWizardStore.Step.CORE_PERMISSIONS to runtimeFacts.corePermissionsReady,

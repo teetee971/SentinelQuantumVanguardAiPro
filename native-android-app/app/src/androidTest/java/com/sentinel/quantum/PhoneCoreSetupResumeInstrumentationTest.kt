@@ -12,6 +12,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Before
+import org.junit.Rule
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -24,6 +26,9 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class PhoneCoreSetupResumeInstrumentationTest {
+    // Rule runs before the production-preference reset in @Before (and gates @After too).
+    @get:Rule val disposableDevice = DestructiveTestRule()
+
     private val instrumentation
         get() = InstrumentationRegistry.getInstrumentation()
     private val context: Context
@@ -33,7 +38,7 @@ class PhoneCoreSetupResumeInstrumentationTest {
 
     @Before
     fun clearWizardHistory() {
-        prefs.edit().clear().commit()
+        assertTrue("Wizard history reset must be durable", prefs.edit().clear().commit())
     }
 
     @After
@@ -41,7 +46,7 @@ class PhoneCoreSetupResumeInstrumentationTest {
         runCatching {
             dismissSystemSetupDialog()
         }
-        prefs.edit().clear().commit()
+        assertTrue("Wizard history reset must be durable", prefs.edit().clear().commit())
     }
 
     @Test

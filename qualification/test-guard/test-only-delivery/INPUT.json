@@ -1,0 +1,12 @@
+{
+  "package": "com.sentinel.quantum.test",
+  "target_package": "com.sentinel.quantum",
+  "source_commit": "2add1102b76cd920f71e15887e7d25a088382f1b",
+  "cloud_sha256": "9defb9f68a40b2ce2554159e844ed32b3aab42a1aef0c1a84a9094b01924f748",
+  "payload_sha256": "7240ba552a7c96aa34a167079adc48ce25742187ab11efd704df02ad6219e21a",
+  "installed_reference_sha256": "db7215b5b9124cf5f0bca9b5e8c5c85f0cfb30591c6ee120ede41e194d5a78b7",
+  "installed_reference_payload_sha256": "5368c3e3b8ba67e31ad56804dea532132f4b437cd46ebdeece552c8d9c2f9420",
+  "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "installed_main_versionCode_reported": 22,
+  "allowed_test_class": "com.sentinel.quantum.security.CommunicationReputationStorageInstrumentationTest"
+}

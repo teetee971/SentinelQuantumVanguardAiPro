@@ -1,0 +1,51 @@
+{
+  "executed_sha": "2add1102b76cd920f71e15887e7d25a088382f1b",
+  "android_tree": "8394d5c6acecdcebde8bc85d541cd1ea8a9d5d0f",
+  "unit": {
+    "tests": 1446,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "targeted": {
+    "tests": 43,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "shared_storage_cases": 7,
+  "production_sources_unchanged": true,
+  "android_test_compilation": "SUCCESS",
+  "lint": {
+    "errors": 0,
+    "warnings": 220,
+    "hints": 19
+  },
+  "android_test_apk": {
+    "bytes": 1156905,
+    "sha256": "9defb9f68a40b2ce2554159e844ed32b3aab42a1aef0c1a84a9094b01924f748"
+  },
+  "instrumented_tests": "NOT_EXECUTED",
+  "production_installation": "NOT_PERFORMED",
+  "readonly_diagnostic_host_tests": {
+    "tests": 9,
+    "failures": 0,
+    "skipped": 0
+  },
+  "reported_by_user": {
+    "adb_connection": "192.168.11.173:38703 connected",
+    "installed_main_versionCode": 22,
+    "installed_main_versionName": "1.0.9",
+    "installed_test_payload": "LEGACY_UNGUARDED_DO_NOT_RUN",
+    "installed_test_apk_sha256": "db7215b5b9124cf5f0bca9b5e8c5c85f0cfb30591c6ee120ede41e194d5a78b7"
+  },
+  "test_only_delivery": {
+    "zip_sha256": "1b598384342130897d37a402b88a1ad8509fb3183942dd01e36057c6a2e33045",
+    "host_tests": 8,
+    "failures": 0,
+    "skipped": 0,
+    "s24_signing": "NOT_EXECUTED",
+    "installation": "NOT_PERFORMED",
+    "main_exact_hash": "NOT_VERIFIED"
+  }
+}
