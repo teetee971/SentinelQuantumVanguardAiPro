@@ -1,11 +1,12 @@
 cd /workspace/sentinel-test-guard
 source /workspace/toolchains/env.sh
-bash native-android-app/gradlew -p native-android-app :app:testDebugUnitTest --tests '*DisposableDeviceGuardTest' --offline --no-daemon --max-workers=1 --console=plain
-bash native-android-app/gradlew -p native-android-app :app:testDebugUnitTest --tests '*DisposableDeviceGuardTest' --tests '*PhoneCoreSetupWizardStoreTest' --offline --no-daemon --max-workers=1 --console=plain
-bash native-android-app/gradlew -p native-android-app :app:testDebugUnitTest --rerun -PsentinelSignatureFixture=/workspace/qualification-evidence/fafe9f5b1c57b21f276ca62189acab625a490ec9/app-debug.apk --offline --no-daemon --max-workers=1 --console=plain
-bash native-android-app/gradlew -p native-android-app :app:assembleDebugAndroidTest :app:lintDebug --offline --no-daemon --max-workers=1 --console=plain
+bash native-android-app/gradlew -p native-android-app :app:testDebugUnitTest --tests '*IsolatedPreferencesContextTest' -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks --offline --no-daemon --max-workers=1 --console=plain
+bash native-android-app/gradlew -p native-android-app :app:testDebugUnitTest --tests '*IsolatedPreferencesContextTest' --tests '*CommunicationReputationStorageRobolectricTest' --tests '*DisposableDeviceGuardTest' --tests '*PhoneCoreSetupWizardStoreTest' -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks --offline --no-daemon --max-workers=1 --console=plain
+bash native-android-app/gradlew -p native-android-app :app:testDebugUnitTest --rerun -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks -PsentinelSignatureFixture=/workspace/qualification-evidence/fafe9f5b1c57b21f276ca62189acab625a490ec9/app-debug.apk --offline --no-daemon --max-workers=1 --console=plain
+bash native-android-app/gradlew -p native-android-app :app:assembleDebugAndroidTest :app:lintDebug -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks --offline --no-daemon --max-workers=1 --console=plain
 $ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose --print-certs native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 $ANDROID_HOME/build-tools/36.0.0/zipalign -c -P 16 4 native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+$ANDROID_HOME/build-tools/36.0.0/aapt2 dump badging /workspace/qualification-evidence/test-guard-2add1102/androidTest.apk
 node --test scripts/android-release-policy.test.js
 npm run test:android-product-truth
 npm run test:credential-hygiene

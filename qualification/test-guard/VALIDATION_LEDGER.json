@@ -1,12 +1,20 @@
 {
-  "executed_sha": "de4b281dc9ec4bb214ac9dece4aacea2a5295602",
-  "android_tree": "faf200c29f2dc162422280b48180d326b9ac864e",
+  "executed_sha": "2add1102b76cd920f71e15887e7d25a088382f1b",
+  "android_tree": "8394d5c6acecdcebde8bc85d541cd1ea8a9d5d0f",
   "unit": {
-    "tests": 1434,
+    "tests": 1446,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
+  "targeted": {
+    "tests": 43,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "shared_storage_cases": 7,
+  "production_sources_unchanged": true,
   "android_test_compilation": "SUCCESS",
   "lint": {
     "errors": 0,
@@ -14,10 +22,9 @@
     "hints": 19
   },
   "android_test_apk": {
-    "sha256": "e52afebb41f9430cb3ac93c333f77512411893783c129237045a9a1ebefd83a9",
-    "bytes": 1139950
+    "bytes": 1156905,
+    "sha256": "9defb9f68a40b2ce2554159e844ed32b3aab42a1aef0c1a84a9094b01924f748"
   },
-  "production_sources_unchanged": true,
   "instrumented_tests": "NOT_EXECUTED",
   "production_installation": "NOT_PERFORMED"
 }

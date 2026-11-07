@@ -1,64 +1,66 @@
-> Historical guard-stage report (de4b281d / b7af566). Current continuation isolates the seven reputation cases; only the Activity case retains the destructive rule. See ISOLATION.md. Full continuation qualification pending.
+# Revue des tests — garde Activity et isolation réelle du stockage réputation
 
-# Revue des tests destructifs — arbre vérifié
+Code exécuté : `2add1102b76cd920f71e15887e7d25a088382f1b`.
+Branche `fix/disposable-instrumentation-guard`, base v22 `fafe9f5b1c57b21f276ca62189acab625a490ec9`.
+PR : https://github.com/teetee971/SentinelQuantumVanguardAiPro/pull/1757
 
-Base réellement accessible : fafe9f5b1c57b21f276ca62189acab625a490ec9.
-Code corrigé/exécuté : de4b281dc9ec4bb214ac9dece4aacea2a5295602.
-Branche : fix/disposable-instrumentation-guard, worktree /workspace/sentinel-test-guard.
+## Résultat de la continuation
 
-## Différence avec le retour reçu
+Les sept cas de réputation utilisent maintenant des préférences isolées par test : paramètres, cache et secret HMAC. Le helper test-only IsolatedPreferencesContext renvoie lui-même pour applicationContext ; les appels imbriqués de SettingsStore et de l'adaptateur ne retrouvent donc pas les préférences par défaut. Seuls les trois magasins connus en MODE_PRIVATE sont acceptés, avec préfixe UUID ; nom inattendu refusé ; fermeture vérifiée et limitée aux alias ouverts, réutilisation interdite.
 
-Le worktree Termux ~/sentinel-phone-core-release-20261102 n'est pas accessible depuis cet hôte. L'utilisateur ne connaît pas le SHA de la version commentée. Sur la base accessible : aucun des deux @Ignore n'existe, preferencesName/isolatedPrefs sont absents, le test de reprise ne contient qu'un @Test. Ses @Before et @After effacent les préférences de production. La classe réputation possède sept tests qui modifient paramètres de consentement et stockage réels.
+Les sept méthodes @Test originales ont été déplacées **sans modification de leur corps**, dans CommunicationReputationStorageCases. Elles sont héritées par AndroidJUnit4 et par un runner hôte Robolectric. CASE_MOVE_CHECK.json enregistre l'empreinte de ces corps. La garde globale de cette classe est retirée : ces tests ne dépendent plus d'un effacement des paramètres ou du cache de production. Ils ne lisent, n'initialisent ni ne restaurent les préférences réelles. Le test d'Activity conserve sa règle avant @Before, car lui efface l'historique de l'assistant et ouvre les écrans Android réels.
 
-D1 « couverture supprimée par @Ignore » n'est donc pas reproduit sur cet arbre. Le défaut vérifié ici est une exécution destructive possible des huit tests actifs sur un appareil utilisé. Aucun défaut READY du store de production n'a été démontré par cette vérification. Aucun code de production ni API de préférences n'a été reconstruit à partir d'un autre diff inconnu.
+Les sources main, manifeste, permissions, mécanismes de stockage et API de production restent strictement inchangés. Aucun preferencesName ajouté au store et aucune option par Intent. Robolectric4.16.1 est uniquement testImplementation ; contrôle DEX confirmé : il n'est pas embarqué dans l'APK AndroidTest. Le wrapper de préférences n'est pas présenté comme une sandbox pour des API Android arbitraires : les chemins actuels SettingsStore/purge/HMAC ont été inspectés et testés.
 
-## Correctif
+## Preuves exécutées
 
-Deux règles DestructiveTestRule, une dans chaque classe, enveloppent toute l'exécution JUnit avant @Before et @After. Une hypothèse refusée produit SKIP. Une garde en première ligne de la méthode aurait été trop tard sur cet arbre : @Before écrit déjà en production.
+Linux x86_64, JDK17.0.21+9, Gradle9.8.0, SDK37/build-tools36.0.0. Robolectric exécute les API Android35 sur l'hôte ; ce n'est pas Samsung/API37. Dépendances et JAR runtime pré-cachés, commandes finales --offline --no-daemon --max-workers=1, tests forcés --rerun.
 
-La politique reconnaît les marqueurs émulateur proposés : fingerprint generic/emulator, hardware goldfish/ranchu, produit sdk_gphone, ou argument instrumentation exactement sentinelAllowDestructive=true. Aucun Intent applicatif ne sert à cet opt-in. C'est une heuristique de qualification, pas une certification qu'un appareil ne contient aucune donnée : utiliser un émulateur réellement jetable. Aucune utilisation de cet opt-in ni installation sur le S24+ n'a été exécutée.
-
-La politique et la règle générique sont partagées entre JVM et AndroidTest via src/sharedTest/java ; elles ne font pas partie des sources main. Le raccord Build/InstrumentationRegistry existe uniquement dans androidTest/DestructiveTestGuard.kt. Les deux remises à zéro des préférences de l'assistant assertent désormais le succès de commit() dans le test.
-
-Six tests hôte exécutent la politique et de vrais cycles JUnit : refus Samsung, marqueurs émulateur, opt-in exact ; refus avant tous les hooks avec émission d'une hypothèse de SKIP ; hooks réels sur autorisation ; erreur de garde en échec sans écriture. Le cas refusé interne a1 assumption failure,0 ignore,0 failure et ne crée aucun fichier before/body/after. Le cas autorisé crée bien les trois fichiers. Ce résultat hôte n'est pas une exécution instrumentée S24+.
-
-Les contrats purement logiques existaient déjà pour READY/révocation, rôle indisponible, ordre des permissions et absence de boucle. Un seul cas manquant a été ajouté à PhoneCoreSetupWizardStoreTest : READ_CONTACTS optionnel ne bloque pas les permissions essentielles. Aucun doublon de test de store isolé n'a été inventé.
-
-## Vérifications de production demandées
-
-- isCompleted() et shouldOpenSetup() : définitions présentes, aucun appel de production observé par la recherche demandée. MainActivity relit PhoneCoreRuntimeFacts et utilise softwarePrerequisitesReady/shouldAutoOpenSetup ; markCompleted est conditionné aux faits.
-- corePermissionsReady : CALL_PHONE et READ_PHONE_STATE seulement. READ_CONTACTS et POST_NOTIFICATIONS n'y figurent pas. Les notifications ont leur propre étape. Sur cette base firstMissingPermission ignore READ_CONTACTS, pas arbitrairement POST_NOTIFICATIONS.
-- Même cible refusée : PhoneCoreActivationActivity propose Réessayer cette étape via clearAttempted/epoch et les paramètres Android. L'absence d'action explicite n'est pas reproduite.
-- Correction factuelle : lifecycleState inconnu retombe sur le bit historique completed ; s'il vaut true, le résultat est COMPLETED, sinon NOT_STARTED. Ce n'est donc pas toujours NOT_STARTED. Les faits Android restent néanmoins nécessaires pour READY et pour garder l'assistant fermé. Aucun changement de migration sans contrat et preuve supplémentaires.
-- commit() ignoré en production : confirmé par lecture, mais aucun échec disque n'a été injecté. Pas de modification de production sur cette hypothèse.
-- markDeferred : lecture/écriture non verrouillée confirmée ; seul appelant observé, callback de résultat de MainActivity. Aucune concurrence démontrée.
-- README de main lu au SHA935344423b2af2a4a57c58123f2c5c178b46ec03 : annonce développement actif ; ni Production Ready ni enregistrement d'appels non inclus. Écart documentaire allégué non reproduit, README inchangé. La présence d'un fixture recordings ne prouve pas à elle seule une fonctionnalité de production.
-
-Les trois sorties demandées sont conservées : 01-production-usage.txt, 02-resume-test-base.txt (fichier entier, pas seulement les extraits), 03-reputation-test-base.txt. Elles sont liées à la base indiquée ci-dessus, pas à un worktree Termux supposé synchronisé.
-
-## Exécution réelle
-
-Linux x86_64, JDK17.0.21+9, Gradle9.8.0, SDK37/build-tools36.0.0. --offline --no-daemon --max-workers=1. Commandes dans COMMANDS.txt et preuves dans EXECUTION_PROOFS.zip.
-
-| Vérification | Résultat |
+| Vérification | Résultat réel |
 |---|---|
-| Tests de garde RED |6 tests,4 échecs reproduits avant correction|
-| Ciblés garde + assistant |31 tests,0 échec/erreur/ignoré|
-| Suite unitaire complète avec fixture APK signé v22 explicite |1434 tests,0 échec/erreur/ignoré|
-| assembleDebugAndroidTest |Réussi : existants et ajouts compilés|
-| lintDebug |Réussi :0 erreur,220 avertissements/19 hints conservés|
-| Signature APK AndroidTest et alignement16KiB |Vérifiés|
-| Tests instrumentés sur émulateur |NON EXÉCUTÉS|
-| Tests instrumentés sur S24+ / SKIP Android réellement observé |NON EXÉCUTÉS|
+| Isolation RED |5 tests,5 échecs avec ContextWrapper transférant les préférences|
+| Ciblés isolation + stockage réel + garde + logique assistant |43 tests,0 échec/erreur/ignoré|
+| Suite applicative complète |1446 tests,0 échec/erreur/ignoré|
+| Politique Android / contrats produit / hygiène identifiants |7 +69 +6 tests réussis|
+| assembleDebugAndroidTest |Réussi : cas et helpers compilés|
+| lintDebug |0 erreur,220 avertissements/19 hints conservés|
+| Signature v2 et alignement16KiB AndroidTest |Vérifiés|
+| Classes DEX attendues / absence de Robolectric dans cet APK |Vérifiées|
+| Tests instrumentés sur émulateur ou S24+ |NON EXÉCUTÉS|
 
-Le résultat de SKIP est prouvé dans le cycle JUnit hôte contrôlé ; on ne le présente pas comme un SKIP exécuté sur le S24+. Les anciens résultats historiques ne remplacent pas cette qualification.
+Les cinq cas d'isolation vérifient applicationContext, les vrais setters de consentement/purge et l'adaptateur HMAC non modifiés, l'indépendance des contextes, les noms inattendus et la fermeture. Des sentinelles de « production » sont initialisées **uniquement dans la sandbox Robolectric hôte**, pour vérifier que ces cartes restent identiques avant/après. Aucun tel ensemencement n'est présent dans AndroidTest. Les sept cas métier réels tournent sur l'hôte avec ces mêmes sources partagées. La simulation JUnit précédente vérifie aussi qu'un refus de la garde émet une hypothèse de SKIP avant @Before/corps/@After ; aucun SKIP réellement observé sur S24+ n'est revendiqué.
 
-APK AndroidTest effectivement construit : native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk, SHA256 e52afebb41f9430cb3ac93c333f77512411893783c129237045a9a1ebefd83a9. Aucun APK de production nouvellement assemblé ni installé. La fixture de signature du test hôte est l'APK v22 déjà construit sous /workspace/qualification-evidence/fafe9f5b1c57b21f276ca62189acab625a490ec9/app-debug.apk ; elle sert à l'apksig, pas à une preuve de code ou d'appareil actuel.
+Revue indépendante en lecture seule : aucun problème concret Critical/Important trouvé dans l'isolation, les purges imbriquées, le secret et le retrait de la garde réputation. Le reviewer n'a exécuté aucun test ni accédé à un appareil ; les résultats ci-dessus sont ceux exécutés par l'implémenteur.
 
-## Procédure restante et préservation
+Commandes exactes : COMMANDS.txt. Ledger : VALIDATION_LEDGER.json. Journaux/JUnit des étapes : EXECUTION_PROOFS.zip. La fixture du test de signature est l'APK v22 déjà construit, explicitement choisi ; elle vérifie l'apksig, pas un nouveau build de production ou une livraison sur appareil.
 
-Sur émulateur jetable uniquement, après installation autorisée des APK correspondants, exécuter les deux classes ciblées avec AndroidJUnitRunner. Vérifier tous les statuts, pas uniquement le code final. Sur appareil personnel, l'absence d'opt-in doit produire des assumptions SKIP avant les hooks ; cette observation physique reste à faire. Ne pas utiliser l'opt-in sur le S24+ stable et ne pas lancer une suite instrumentée complète : ce correctif ne qualifie pas les autres tests potentiellement sensibles.
+## Blocage Android précis
 
-Aucune installation/émission MMS/révocation de rôle/écriture de préférences de production sur un appareil, aucune modification main, secret ou keystore. Branches nettoyeur et MMS v23 préservées ; leurs anciens APK ne reçoivent pas rétroactivement ce correctif isolé. La garde doit être intégrée et les APK reconstruits avant de qualifier une autre branche.
+Aucun appareil ADB connecté, aucun émulateur ou system image installé, aucun /dev/kvm disponible dans cet environnement. Les tests instrumentés n'ont donc pas été lancés. Aucun APK installé, aucune utilisation de sentinelAllowDestructive=true, aucun changement de rôle ou de données du téléphone. La v22 stable reste intacte.
 
-Le commit final ajoute uniquement les preuves ; son arbre Android est identique à celui du code exécuté. Ces conclusions ne valident pas les fichiers non identifiés du retour initial.
+Sur un environnement Android de test autorisé et compatible avec les signatures, les sept cas isolés peuvent être ciblés avec :
+
+```bash
+adb -s TEST_DEVICE shell am instrument -w -r -e class com.sentinel.quantum.security.CommunicationReputationStorageInstrumentationTest com.sentinel.quantum.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Le test PhoneCoreSetupResumeInstrumentationTest reste réservé à un émulateur réellement jetable ou à l'opt-in instrumentation explicitement décidé par l'utilisateur. Ne pas installer le package expérimental sur le S24+ stable ni lancer toute la suite instrumentée : ce travail ne qualifie pas les autres tests sensibles du dépôt. Aucun résultat physique n'est déduit de la compilation.
+
+## Conclusions de la revue initiale, liées à l'arbre vérifié
+
+Le retour reçu faisait référence à deux @Ignore, isolatedPrefs et preferencesName absents de la base accessible. L'utilisateur ne connaît pas le SHA correspondant ; le worktree Termux n'est pas accessible ici. Nous avons corrigé les tests réellement présents, sans reconstruire une autre version de production.
+
+- Aucun appel de production observé d'isCompleted/shouldOpenSetup comme preuve de READY ; les appelants vérifiés relisent les faits Android.
+- corePermissionsReady utilise CALL_PHONE et READ_PHONE_STATE ; pas READ_CONTACTS ni POST_NOTIFICATIONS. Les contrats logiques préexistants sont conservés ; seul le cas READ_CONTACTS manquant a été ajouté.
+- La même cible refusée possède les actions Réessayer cette étape et Paramètres Android.
+- Correction factuelle : un cycle de vie inconnu peut retomber sur l'ancien bit completed=true et donc COMPLETED, pas toujours NOT_STARTED. Les garde-fous runtime restent nécessaires ; aucun faux READY démontré ni migration modifiée.
+- commit() ignoré en production : confirmé en lecture, échec disque non injecté, aucune correction spéculative. markDeferred non verrouillé : seul appelant observé dans le callback MainActivity, concurrence non démontrée.
+- README main au SHA935344423b2af2a4a57c58123f2c5c178b46ec03 : développement actif ; pas les deux annonces documentaires alléguées. README inchangé.
+
+Les trois sorties demandées restent conservées comme snapshots de la base : 01-production-usage.txt, 02-resume-test-base.txt, 03-reputation-test-base.txt. Historique de la première phase garde : https://github.com/teetee971/SentinelQuantumVanguardAiPro/blob/b7af566975482f9b67065713c0c3cfe744892096/qualification/test-guard/REPORT.md
+
+## Préservation et artefact
+
+Pas de nouvelle compilation APK principale, de merge main, de release ou de changement de clé. Les worktrees initial, nettoyeur et MMS v23 restent propres et à leurs SHA précédents. Leur ancien APK ne reçoit pas automatiquement ce correctif ; intégration/reconstruction nécessaires. L'APK AndroidTest courant est dans /workspace/qualification-evidence/test-guard-2add1102/androidTest.apk ; empreinte exacte dans VALIDATION_LEDGER.json. Il cible le package principal et ne constitue pas un laboratoire autonome autorisé à installer sur le S24+.
+
+Le dernier commit ajoute uniquement les preuves ; son arbre Android reste identique au code exécuté 2add1102. Validation hôte réussie ; validation Android instrumentée toujours NON EXÉCUTÉE.
