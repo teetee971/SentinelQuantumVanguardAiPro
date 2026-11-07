@@ -1,0 +1,23 @@
+{
+  "executed_sha": "de4b281dc9ec4bb214ac9dece4aacea2a5295602",
+  "android_tree": "faf200c29f2dc162422280b48180d326b9ac864e",
+  "unit": {
+    "tests": 1434,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "android_test_compilation": "SUCCESS",
+  "lint": {
+    "errors": 0,
+    "warnings": 220,
+    "hints": 19
+  },
+  "android_test_apk": {
+    "sha256": "e52afebb41f9430cb3ac93c333f77512411893783c129237045a9a1ebefd83a9",
+    "bytes": 1139950
+  },
+  "production_sources_unchanged": true,
+  "instrumented_tests": "NOT_EXECUTED",
+  "production_installation": "NOT_PERFORMED"
+}
