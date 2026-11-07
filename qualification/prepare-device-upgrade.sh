@@ -18,11 +18,11 @@ python3 - "$kit_dir" "$metadata" <<'PY'
 from pathlib import Path
 import hashlib,json,sys
 root=Path(sys.argv[1]);r=json.loads(Path(sys.argv[2]).read_text())
-assert r['candidate_versionCode']==21 and r['candidate_versionCode']>r['installed_versionCode'], 'STOP: downgrade or unexpected version'
-assert set(r['artifact_sha256'])=={'app-debug-v21.apk','app-debug-androidTest-v21.apk'}
+assert r['candidate_versionCode']==22 and r['candidate_versionCode']>r['installed_versionCode'], 'STOP: downgrade or unexpected version'
+assert set(r['artifact_sha256'])=={'app-debug-v22.apk','app-debug-androidTest-v22.apk'}
 for name,digest in r['artifact_sha256'].items():
  assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest, 'STOP: input APK digest mismatch: '+name
-for name in ('app-s24-v21.apk','app-s24-androidTest-v21.apk','DEVICE_SIGNING_REPORT.json'):
+for name in ('app-s24-v22.apk','app-s24-androidTest-v22.apk','DEVICE_SIGNING_REPORT.json'):
  assert not (root/name).exists(), 'STOP: output already exists: '+name
 PY
 scratch=$(mktemp -d "$kit_dir/.local-signing.XXXXXX")
@@ -34,7 +34,7 @@ import hashlib,json,sys
 r=json.loads(Path(sys.argv[1]).read_text())
 assert hashlib.sha256(Path(sys.argv[2]).read_bytes()).hexdigest()==r['installed_signer_sha256'], 'STOP: local key does not match installed certificate'
 PY
-for input in app-debug-v21.apk app-debug-androidTest-v21.apk; do
+for input in app-debug-v22.apk app-debug-androidTest-v22.apk; do
   java -jar "$APKSIGNER_JAR" sign --ks "$keystore" --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android \
     --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled false --v4-signing-enabled false \
     --out "$scratch/$input" "$kit_dir/$input"
@@ -56,7 +56,7 @@ def native_offsets(path):
     f.seek(i.header_offset+26);name_len,extra_len=struct.unpack('<HH',f.read(4))
     offsets[i.filename]=i.header_offset+30+name_len+extra_len
   return offsets
-for source,output in [('app-debug-v21.apk','app-s24-v21.apk'),('app-debug-androidTest-v21.apk','app-s24-androidTest-v21.apk')]:
+for source,output in [('app-debug-v22.apk','app-s24-v22.apk'),('app-debug-androidTest-v22.apk','app-s24-androidTest-v22.apk')]:
  original=root/source;signed=scratch/source
  assert hashlib.sha256(original.read_bytes()).hexdigest()==r['artifact_sha256'][source], 'STOP: input changed during signing'
  report=(scratch/(source+'.signature.txt')).read_text()
@@ -70,9 +70,9 @@ for source,output in [('app-debug-v21.apk','app-s24-v21.apk'),('app-debug-androi
 result={'status':'SIGNED_NOT_INSTALLED','source_commit':r['source_commit'],'package':'com.sentinel.quantum','candidate_versionCode':21,'installed_versionCode':r['installed_versionCode'],'signer_sha256':r['installed_signer_sha256'],'artifacts':rows,'physical_s24_plus':'NOT_TESTED'}
 (scratch/'DEVICE_SIGNING_REPORT.json').write_text(json.dumps(result,indent=2)+'\n')
 PY
-mv -- "$scratch/app-debug-v21.apk" "$kit_dir/app-s24-v21.apk"
-mv -- "$scratch/app-debug-androidTest-v21.apk" "$kit_dir/app-s24-androidTest-v21.apk"
-cp -- "$scratch/app-debug-v21.apk.signature.txt" "$kit_dir/app-s24-v21.signature.txt"
-cp -- "$scratch/app-debug-androidTest-v21.apk.signature.txt" "$kit_dir/app-s24-androidTest-v21.signature.txt"
+mv -- "$scratch/app-debug-v22.apk" "$kit_dir/app-s24-v22.apk"
+mv -- "$scratch/app-debug-androidTest-v22.apk" "$kit_dir/app-s24-androidTest-v22.apk"
+cp -- "$scratch/app-debug-v22.apk.signature.txt" "$kit_dir/app-s24-v22.signature.txt"
+cp -- "$scratch/app-debug-androidTest-v22.apk.signature.txt" "$kit_dir/app-s24-androidTest-v22.signature.txt"
 mv -- "$scratch/DEVICE_SIGNING_REPORT.json" "$kit_dir/DEVICE_SIGNING_REPORT.json"
 cat "$kit_dir/DEVICE_SIGNING_REPORT.json"

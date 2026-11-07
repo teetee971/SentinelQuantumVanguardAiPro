@@ -1,7 +1,7 @@
 {
   "status": "NOT_TESTED",
-  "source_commit": null,
-  "android_tree": "5b6794f346073a983fc8ae2cd5231f82279a799d",
+  "source_commit": "fafe9f5b1c57b21f276ca62189acab625a490ec9",
+  "android_tree": "00d1a0295ba57334c9421c81ff52bda204d7ca29",
   "device": {
     "model": null,
     "api": null,
@@ -31,8 +31,8 @@
   },
   "physical_s24_plus": "NOT_TESTED",
   "notes": [],
-  "cloud_apk_sha256": "0055e96acef36c1e7ea83c4049e4cc8aa2a0af88078f062dca4b07694557e4a5",
+  "cloud_apk_sha256": "9256d99f91b85c4f9e78539b9ce478b905c82f893782aea3c1f90f6938eb8f6a",
   "device_signed_apk_sha256": null,
-  "candidate_versionCode": 21,
-  "installed_versionCode": 20
+  "candidate_versionCode": 22,
+  "installed_versionCode": 21
 }
