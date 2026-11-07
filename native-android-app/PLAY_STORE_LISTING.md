@@ -11,43 +11,56 @@ Sentinel Quantum Vanguard
 ## Short description (80 characters max)
 
 ```text
-Veille OSINT et informations de sécurité, traitées localement sur l'appareil.
+Téléphone et SMS/MMS locaux, filtrage d’appels et veille cybersécurité.
 ```
 
 ## Full description (4000 characters max)
 
 ```text
-Sentinel Quantum Vanguard AI Pro est une application de veille et d'information en cybersécurité. Les vérifications locales restent sur votre appareil ; les modules distants facultatifs, comme Caller Reputation, ne transmettent des données qu'après activation explicite.
+Sentinel Quantum Vanguard réunit un téléphone, une messagerie SMS/MMS et des outils de veille en cybersécurité.
 
-Fonctionnalités :
+Téléphone et messages
+• Composez et recevez vos appels dans Sentinel après l’avoir choisi comme application Téléphone par défaut.
+• Consultez vos contacts et votre historique sur l’appareil, avec les autorisations Android correspondantes.
+• Envoyez et recevez des SMS/MMS après avoir choisi Sentinel comme application SMS par défaut. Les coûts, la disponibilité et les limites de taille dépendent de votre opérateur et de votre SIM. Une image trop volumineuse est refusée avec une explication.
+• Appliquez vos règles locales de filtrage d’appels avec le rôle de filtrage Android. Aucun système ne peut garantir le blocage de tous les appels indésirables.
 
-• Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache local hors-ligne, recherche texte, filtre par source et marquage lu/non lu.
-• Filtrage d'appels via le rôle système Android Call Screening : blocage local par règles définies par l'utilisateur. Un enrichissement Caller Reputation distant peut être activé séparément par l'utilisateur ; il reste facultatif et ne doit jamais ralentir le chemin critique de filtrage.
-• Analyse locale d'un e-mail brut : en-têtes, résultat d'authentification observé, domaines et liens — sans accès à votre boîte mail.
-• Analyse des permissions des applications installées, présentée à titre informatif.
-• Journal de sécurité local, consultable et exportable uniquement par l'utilisateur via le sélecteur de partage Android.
-• Studio voix : aperçu local et moteur de transformation temps réel intégré pour le chemin média des futurs appels Sentinel contrôlés. Aucun flux audio d’appel SIM natif n’est capturé ou modifié. L’activation commerciale reste verrouillée jusqu’au raccordement et à la validation du transport VoIP/PSTN réel.
+Outils complémentaires
+• Veille publique CERT-FR, ANSSI et CVE/NVD avec cache local et recherche.
+• Analyse locale d’un e-mail fourni volontairement : en-têtes, domaines et liens, sans connexion à votre boîte mail.
+• Diagnostic informatif des permissions et journal local exportable à votre demande.
+• Aperçu vocal local : ne modifie pas les appels téléphoniques de votre opérateur.
 
-Confidentialité :
+Vos choix et vos données
+Les fonctions locales Téléphone, SMS et filtrage ne nécessitent pas de compte Sentinel. Vous choisissez les rôles et autorisations Android et pouvez les retirer dans les réglages système. L’accès au répertoire et les notifications sont facultatifs selon les fonctions utilisées.
 
-• Aucune authentification requise.
-• Aucun backend propriétaire n’est requis pour le filtrage local d’appels ; certaines fonctions optionnelles, comme l’enrichissement Caller Reputation, utilisent un service Sentinel distinct après opt-in.
-• Aucune analytique comportementale n’est annoncée.
-• Les consultations de sources publiques se font uniquement en HTTPS.
-• Le manifeste interdit le trafic HTTP en clair et désactive la sauvegarde Android.
+Les consultations de sources publiques utilisent Internet. L’enrichissement distant de réputation téléphonique est facultatif : son activation explicite peut transmettre le numéro à vérifier au service indiqué dans le parcours de consentement. Consultez la politique de confidentialité pour les données et services concernés.
 
-Permissions et rôles présents dans le code : INTERNET, ACCESS_NETWORK_STATE, notifications optionnelles, permissions Wi-Fi/Bluetooth pour les scans locaux et accès optionnel au répertoire pour le Caller ID. Le filtrage requiert le rôle CallScreeningService. Le composeur peut demander `CALL_PHONE` et `READ_CALL_LOG` uniquement après attribution explicite du rôle Téléphone et des permissions Android correspondantes. `READ_PHONE_STATE` sert à la sélection multi-SIM ; les permissions SMS/MMS restent verrouillées tant qu’Android n’a pas attribué `ROLE_SMS` et les autorisations nécessaires. Leur présence dans le code ne constitue pas une validation physique de l’envoi/réception sur tous les appareils. Phone Core n’utilise pas le microphone pour gérer un appel SIM natif. `RECORD_AUDIO` est demandé uniquement après une action explicite pour l’aperçu local du Studio voix ou, lorsque le service d’appel Sentinel sera réellement activé, pour transmettre le microphone transformé pendant un appel Sentinel VoIP. L’aperçu local est supprimé du cache à la fermeture et n’est jamais injecté dans un appel SIM natif.
+Les MMS passent par les services Android et votre opérateur. L’acceptation de la demande par Android ne garantit pas sa livraison. Les fonctions dépendent des capacités de l’appareil, de la SIM et du réseau.
 
-Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client WireGuard Android, mais aucun service VPN public ne doit être revendiqué tant qu’aucune passerelle Sentinel n’est provisionnée et validée. Le client SMS par défaut est intégré derrière le rôle Android correspondant, mais ne doit pas être présenté comme validé en production avant les tests physiques SMS/MMS et la vérification Play Console.
+Sentinel ne garantit pas la détection des logiciels malveillants et ne remplace pas un antivirus. Cette version ne fournit pas de service VPN public ni d’appels VoIP/PSTN transformés.
 ```
+
+
+## Permission declaration preparation (not store copy)
+
+- `ROLE_DIALER`: `CALL_PHONE` and `READ_CALL_LOG` only after the default Phone role and runtime consent. Primary use case: user-initiated/default phone and call history.
+- `ROLE_SMS`: `SEND_SMS`, `RECEIVE_SMS`, `READ_SMS`, `RECEIVE_MMS`, `RECEIVE_WAP_PUSH` only for the user-selected default messaging handler. Primary use case: SMS/MMS conversations and composition.
+- `READ_PHONE_STATE`: selected SIM/subscription, including multi-SIM. No unrestricted identifier access claim.
+- `USE_FULL_SCREEN_INTENT`: incoming call UI of the default dialer; eligibility and declaration must be verified in Play Console.
+- `RECORD_AUDIO`: explicit local Voice Studio preview, never an appel SIM. The code foundation for microphone transformé during an appel Sentinel VoIP is not an available service in this candidate. Declare only the actual submitted behavior and traffic.
+- `READ_CONTACTS`, notifications, Wi-Fi/Bluetooth/location: contextual requests for their corresponding optional features. The merged release manifest and every SDK must be reviewed, not this list alone.
+
+Google approval for restricted permissions is **NOT VERIFIED**. Prominent listing of a feature does not grant permission eligibility by itself.
 
 ## Feature bullets (Play Console "key features" style)
 
-1. Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache hors-ligne local.
-2. Filtrage d'appels via le rôle Android Call Screening, avec enrichissement Caller Reputation distant optionnel et séparé ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
-3. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
-4. Analyseur informatif des permissions des applications installées.
-5. Journal de sécurité local exportable uniquement par l'utilisateur.
+1. Téléphone et messagerie SMS/MMS par défaut, après choix explicite des rôles Android.
+2. Veille OSINT publique (CERT-FR, ANSSI, CVE/NVD) avec cache hors-ligne local.
+3. Filtrage d'appels via le rôle Android Call Screening, avec enrichissement Caller Reputation distant optionnel et séparé ; activation guidée officiellement supportée à partir d’Android 10 (API 29).
+4. Analyse locale d'e-mails bruts : en-têtes, authentification, liens.
+5. Analyseur informatif des permissions des applications installées.
+6. Journal de sécurité local exportable uniquement par l'utilisateur.
 
 ## Store settings suggestions
 
@@ -58,6 +71,8 @@ Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client W
 
 ## Screenshots checklist
 
+- [ ] Téléphone : clavier, appel entrant/sortant, répertoire, historique (données fictives).
+- [ ] Messages : conversations, composition SMS/MMS et statut transport (données fictives).
 - [ ] Home screen (feature overview).
 - [ ] OSINT feed with offline cache banner and read/unread state.
 - [ ] Call blocking screen (local rules).
@@ -67,10 +82,11 @@ Sentinel ne remplace pas un antivirus ni un EDR. Le dépôt contient un client W
 
 ## Privacy policy URL
 
-- [ ] Publish a reachable rendering of `PRIVACY_POLICY.md` (e.g. GitHub Pages or the repository blob URL) and set it in the Play Console before submission.
+- [ ] Verify the actual public page `https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html`, its responsible contact, retention and network disclosures. HTTP 403 observed from qualification environment: public availability NOT VERIFIED.
+- [ ] Provide the working account/data deletion page in Play Console and `-PsentinelAccountDeletionUrl`. Never substitute a logout or an informational placeholder.
 
 ## Non-goals for this listing
 
-- No antivirus, firewall or broad active-protection claims. Do not market the VPN or default-SMS mode as operational until their production acceptance gates are met.
+- No antivirus, firewall or broad active-protection claims. Do not market a public VPN. This draft describes implemented Phone Core behavior; publish only after the exact submitted artifact passes physical acceptance and restricted-permission review.
 - No claim of certification (RGPD, ANSSI, ISO 27001, SecNumCloud).
 - No production-readiness or zero-vulnerability claims.

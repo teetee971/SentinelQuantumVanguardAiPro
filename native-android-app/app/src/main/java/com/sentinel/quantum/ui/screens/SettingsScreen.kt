@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.core.content.ContextCompat
+import com.sentinel.quantum.BuildConfig
+import com.sentinel.quantum.auth.AccountLifecyclePolicy
 import com.sentinel.quantum.R
 import com.sentinel.quantum.auth.Auth0SessionController
 import com.sentinel.quantum.auth.Auth0UserSummary
@@ -58,6 +60,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
+    val accountLoginAvailable = AccountLifecyclePolicy.canStartLogin(BuildConfig.ACCOUNT_DELETION_URL)
     val authController = remember(context) { Auth0SessionController(context) }
     val voiceDeviceId = remember(context) { SentinelDeviceIdentity.current(context) }
     val settingsStore = remember(context) { SettingsStore(context) }
@@ -282,7 +285,7 @@ fun SettingsScreen(
                                 }
                             )
                         },
-                        enabled = activity != null,
+                        enabled = activity != null && accountLoginAvailable,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(stringResource(R.string.settings_auth_login))
@@ -333,6 +336,16 @@ fun SettingsScreen(
                         Text(stringResource(R.string.settings_auth_logout))
                     }
                 }
+            }
+            if (accountLoginAvailable) {
+                OutlinedButton(
+                    onClick = { openExternalPage(BuildConfig.ACCOUNT_DELETION_URL) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.settings_auth_delete_account))
+                }
+            } else {
+                Text(stringResource(R.string.settings_auth_unavailable))
             }
             authErrorMessage?.let { message ->
                 Text(
