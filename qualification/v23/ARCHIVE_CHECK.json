@@ -1,0 +1,15 @@
+{
+  "archive_sha256": "138aa86bfcce3d1d0221178b0b347a697f0991a1642dab4b8a7d4a68f9998e8d",
+  "manifest_valid": true,
+  "base_commit": "fafe9f5b1c57b21f276ca62189acab625a490ec9",
+  "changed_files": [
+    "native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/MmsOutgoingJpegCompressorInstrumentationTest.kt",
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsOutgoingJpegCompressor.kt",
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsOutgoingPreparation.kt",
+    "native-android-app/mms-compression-lab/build.gradle",
+    "native-android-app/mms-compression-lab/src/main/AndroidManifest.xml",
+    "native-android-app/settings.gradle"
+  ],
+  "paths_and_types": "VALID_REGULAR_FILES_ONLY",
+  "file_hashes": "ALL_MATCH"
+}

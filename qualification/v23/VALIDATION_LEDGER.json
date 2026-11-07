@@ -1,0 +1,157 @@
+{
+  "source_sha": "7ef494b3606842f4be60c47ff8fbde8e2b8cfd99",
+  "android_tree": "9e9a1b12d1c6985ac173b5daeff65d72cc871d2c",
+  "commands_exit_status": {
+    "java": 0,
+    "gradle-version": 0,
+    "compile-kotlin": 0,
+    "targeted": 0,
+    "app-unit": 1,
+    "lab-unit": 1,
+    "wearable-unit": 0,
+    "lint": 0,
+    "assemble": 0,
+    "android-test": 0,
+    "app-signature": 0,
+    "app-badging": 0,
+    "app-align": 0,
+    "app-test-signature": 0,
+    "app-test-badging": 0,
+    "app-test-align": 0,
+    "lab-signature": 0,
+    "lab-badging": 0,
+    "lab-align": 0,
+    "lab-test-signature": 0,
+    "lab-test-badging": 0,
+    "lab-test-align": 0,
+    "app-unit-fixture": 1,
+    "node-policy": 0,
+    "node-products": 0,
+    "node-credentials": 0,
+    "diff-check": 0
+  },
+  "tests": {
+    "app-unit-fixture-junit": {
+      "counts": {
+        "tests": 1495,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failing_cases": [
+        "com.sentinel.quantum.security.MmsOutgoingJpegCompressorRobolectricTest.truncatedEntropyWithAnAppendedEndMarkerIsRejected"
+      ]
+    },
+    "app-unit-junit": {
+      "counts": {
+        "tests": 1495,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 1
+      },
+      "failing_cases": [
+        "com.sentinel.quantum.security.MmsOutgoingJpegCompressorRobolectricTest.truncatedEntropyWithAnAppendedEndMarkerIsRejected"
+      ]
+    },
+    "lab-unit-junit": {
+      "counts": {
+        "tests": 32,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failing_cases": [
+        "com.sentinel.quantum.security.MmsOutgoingJpegCompressorRobolectricTest.truncatedEntropyWithAnAppendedEndMarkerIsRejected"
+      ]
+    },
+    "targeted-junit": {
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failing_cases": []
+    },
+    "wearable-contract-junit": {
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failing_cases": []
+    },
+    "wearable-security-junit": {
+      "counts": {
+        "tests": 26,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failing_cases": []
+    }
+  },
+  "lint": {
+    "app-lint": {
+      "by_severity": {
+        "Warning": 223,
+        "Hint": 19
+      },
+      "by_id": {
+        "ApplySharedPref": 8,
+        "InlinedApi": 25,
+        "UnusedAttribute": 6,
+        "QueryPermissionsNeeded": 3,
+        "ModifierParameter": 1,
+        "UseRequiresApi": 1,
+        "Typos": 1,
+        "PluralsCandidate": 8,
+        "HardwareIds": 2,
+        "DataExtractionRules": 1,
+        "ObsoleteSdkInt": 3,
+        "AutoboxingStateCreation": 19,
+        "UnusedResources": 62,
+        "TypographyEllipsis": 2,
+        "IconLauncherShape": 10,
+        "IconDuplicates": 5,
+        "ViewConstructor": 1,
+        "UseKtx": 84
+      }
+    },
+    "mms-compression-lab-lint": {
+      "by_severity": {
+        "Warning": 7
+      },
+      "by_id": {
+        "OldTargetApi": 1,
+        "UseRequiresApi": 1,
+        "DataExtractionRules": 1,
+        "ObsoleteSdkInt": 3,
+        "MissingApplicationIcon": 1
+      }
+    }
+  },
+  "artifacts": {
+    "app.apk": {
+      "bytes": 98206671,
+      "sha256": "7da0279e3a8dfd274e26d01a9dfc96b9a541181eade9c80f190659f72619dc4a"
+    },
+    "lab-test.apk": {
+      "bytes": 2273127,
+      "sha256": "4ab28d5ac78edabff14748fab2078d142eed7513b03a0e074b07e6360233317a"
+    },
+    "app-test.apk": {
+      "bytes": 1144538,
+      "sha256": "c4d6da27abdd028fb6c91a0706934d8dc307ab0f7d62eec270ae8f3a76570e3f"
+    },
+    "lab.apk": {
+      "bytes": 2959019,
+      "sha256": "b51da4031005a8e14d2daf4d70a60449b17e8cd6f66dce5d70ee4328dab33a2f"
+    }
+  },
+  "automated_status": "FAIL",
+  "delivery_status": "BLOCKED",
+  "physical_v23": "NOT_EXECUTED",
+  "production_installation": "NOT_PERFORMED"
+}
