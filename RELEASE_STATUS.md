@@ -1,5 +1,7 @@
 # RELEASE STATUS — CURRENT
 
+> This v23 work branch is EXPERIMENTAL / BLOCKED by the active JPEG entropy-corruption regression. See [qualification/v23/README.md](qualification/v23/README.md). No release readiness or device validation is claimed.
+
 This file previously described an old v1.0.0 release attempt, obsolete workflows and a branch that are no longer the current release path. That information is historical and is retired as an operational instruction.
 
 ## Current release path

@@ -15,3 +15,6 @@
 - Shared source discovery fixed through Android Kotlin variant directories. First complete host run app1478/0fail/1skip fixture, lab28/0fail/0skip. Later entropy regression FAILS despite ImageDecoder partial refusal. Active blocker retained.
 - Review found role-revocation READY journal defect. Real preferences/provider-denial red tests5/3fail; durable result precedes role-dependent provider access. Journal/sender/preparation/PDU neighbors54/0fail/0skip.
 - Draft snapshot red4/3fail: captures SIM and preserves edits made during asynchronous preparation.
+
+- First exact-SHA reproduction8dd0ab28: app1495/1fail/0skip with signed APK fixture; lab32/1fail/0skip. Sole test failure is retained entropy blocker. Lint found MissingPermission in Android SIM adapter; explicitly catches platform SecurityException and refuses with empty active SIMs. No suppression/baseline added.
+- AndroidTest first build missing two cached lab transitive dependencies (lifecycle2.3.1/coroutines1.8.1). Bootstrap from configured Maven repositories, then repeat qualification offline. No phone connection/installation.

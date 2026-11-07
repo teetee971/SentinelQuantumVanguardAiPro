@@ -289,9 +289,14 @@ class SentinelMmsSender internal constructor(private val context: Context, priva
         override fun roleHeld() = context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
         override fun permissionGranted(permission: String) = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
         override fun permissionEffective(permission: String) = PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
-        override fun activeSubscriptionIds() = context.getSystemService(SubscriptionManager::class.java)
-            .activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }
-            .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }.toSet()
+        override fun activeSubscriptionIds(): Set<Int> = try {
+            context.getSystemService(SubscriptionManager::class.java)
+                .activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }
+                .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }.toSet()
+        } catch (_: SecurityException) {
+            // Permission can be revoked between the sender gate and this platform call.
+            emptySet()
+        }
         override fun defaultSubscriptionId() = SubscriptionManager.getDefaultSmsSubscriptionId()
             .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
         override fun carrier(subscriptionId: Int): Carrier {

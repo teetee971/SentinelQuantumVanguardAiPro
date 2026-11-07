@@ -42,6 +42,12 @@ run compile-kotlin "${gradle[@]}" :app:compileDebugKotlin :mms-compression-lab:c
 run_test targeted app --tests com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest
 run_test app-unit app
 run_test lab-unit mms-compression-lab
+run wearable-unit "${gradle[@]}" :wearable-contract:test --rerun :wearable-security:test --rerun "${common[@]}"
+for module in wearable-contract wearable-security; do
+    if [[ -d "$repo/native-android-app/$module/build/test-results/test" ]]; then
+        cp -R "$repo/native-android-app/$module/build/test-results/test" "$out/$module-junit"
+    fi
+done
 run lint "${gradle[@]}" :app:lintDebug :mms-compression-lab:lintDebug "${common[@]}"
 run assemble "${gradle[@]}" :app:assembleDebug :mms-compression-lab:assembleDebug "${common[@]}"
 run android-test "${gradle[@]}" :app:assembleDebugAndroidTest :mms-compression-lab:assembleDebugAndroidTest "${common[@]}"
