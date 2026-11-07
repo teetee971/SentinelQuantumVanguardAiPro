@@ -18,3 +18,5 @@
 
 - First exact-SHA reproduction8dd0ab28: app1495/1fail/0skip with signed APK fixture; lab32/1fail/0skip. Sole test failure is retained entropy blocker. Lint found MissingPermission in Android SIM adapter; explicitly catches platform SecurityException and refuses with empty active SIMs. No suppression/baseline added.
 - AndroidTest first build missing two cached lab transitive dependencies (lifecycle2.3.1/coroutines1.8.1). Bootstrap from configured Maven repositories, then repeat qualification offline. No phone connection/installation.
+
+- Second reproductionbb2acff5: all4 APKs built, signatures/badging/16KiB alignment passed; app1495/1fail/0skip, lab32/1fail/0skip, wearable28/0fail/0skip. App lint0errors/223warnings/19hints. Lab lint incorrectly inspected unrelated telephony sources because lint ignores Java include filters on a shared source root. Replaced parent roots with generated Sync subsets of exactly4 production files and selected test wrappers; no permission added or lint rule suppressed.

@@ -2,6 +2,19 @@ plugins {
     id 'com.android.application'
 }
 
+// Lint does not honor Java include filters when inspecting a shared source root.
+// Materialize only the exact production/test files used by this role-free lab.
+def mainFiles = ['**/MmsOutgoingJpegCompressor.kt', '**/MmsOutgoingPreparation.kt', '**/SentinelMmsSendPduComposer.kt', '**/MmsOutgoingLimits.kt']
+def testFiles = ['**/MmsOutgoingJpegCompressorRobolectricTest.kt', '**/MmsOutgoingPreparationTest.kt', '**/MmsOutgoingPreparationNativeTest.kt']
+def androidTestFiles = ['**/MmsOutgoingJpegCompressorInstrumentationTest.kt', '**/MmsOutgoingPreparationInstrumentationTest.kt']
+def isolatedSources = [:]
+[main: mainFiles, test: testFiles, androidTest: androidTestFiles].each { kind, patterns ->
+    isolatedSources[kind] = tasks.register("isolate${kind.capitalize()}Sources", Sync) {
+        from("../app/src/${kind}/java") { include patterns }
+        into(layout.buildDirectory.dir("generated/mmsCompression/${kind}"))
+    }
+}
+
 android {
     namespace 'com.sentinel.quantum.mmslab'
     compileSdk 37
@@ -30,23 +43,19 @@ android {
 
     sourceSets {
         main {
-            java.srcDirs += [
-                '../app/src/main/java'
-            ]
+            java.srcDirs = [layout.buildDirectory.dir('generated/mmsCompression/main').get().asFile]
             java.includes = [
                 '**/MmsOutgoingJpegCompressor.kt', '**/MmsOutgoingPreparation.kt', '**/SentinelMmsSendPduComposer.kt', '**/MmsOutgoingLimits.kt'
             ]
         }
 
         test {
-            java.srcDirs += ['../app/src/test/java', 'src/sharedTest/java']
+            java.srcDirs = [layout.buildDirectory.dir('generated/mmsCompression/test').get().asFile, 'src/sharedTest/java']
             java.includes = ['**/MmsOutgoingJpegCompressorRobolectricTest.kt', '**/MmsOutgoingPreparationTest.kt', '**/MmsOutgoingJpegCases.kt', '**/MmsOutgoingPreparationNativeTest.kt', '**/MmsOutgoingPreparationNativeCases.kt']
         }
 
         androidTest {
-            java.srcDirs += [
-                '../app/src/androidTest/java', 'src/sharedTest/java'
-            ]
+            java.srcDirs = [layout.buildDirectory.dir('generated/mmsCompression/androidTest').get().asFile, 'src/sharedTest/java']
             java.includes = [
                 '**/MmsOutgoingJpegCompressorInstrumentationTest.kt', '**/MmsOutgoingPreparationInstrumentationTest.kt', '**/MmsOutgoingJpegCases.kt', '**/MmsOutgoingPreparationNativeCases.kt'
             ]
@@ -73,3 +82,5 @@ tasks.withType(Test).configureEach {
         systemProperty 'robolectric.dependency.dir', project.property('sentinelRobolectricSdkDir').toString()
     }
 }
+
+tasks.named('preBuild') { dependsOn isolatedSources.values() }
