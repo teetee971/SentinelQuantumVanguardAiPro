@@ -1,0 +1,3 @@
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+AssertionError: STOP: local key does not match installed certificate

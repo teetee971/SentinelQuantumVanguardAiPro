@@ -1,0 +1,6 @@
+{
+  "endpoint": "GET /repos/teetee971/SentinelQuantumVanguardAiPro/dependabot/alerts",
+  "http_status": 403,
+  "message": "Resource not accessible by integration",
+  "github_state": "UNVERIFIED"
+}

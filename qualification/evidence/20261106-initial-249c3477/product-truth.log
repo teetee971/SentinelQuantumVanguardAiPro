@@ -1,0 +1,88 @@
+
+> sentinel-quantum-vanguard-ai-pro@2.0.0-pro test:android-product-truth
+> node scripts/check-android-product-truth.js && node scripts/intelligence-product-truth.js && node --test scripts/check-android-product-truth.test.js scripts/intelligence-product-truth.test.js scripts/vpn-documentation-truth.test.js scripts/phone-core-certification-truth.test.js scripts/release-documentation-truth.test.js scripts/phone-core-emulator-api37-no-double-answer.test.js scripts/phone-core-emulator-api37-limited-evidence.test.js scripts/phone-core-emulator-api36-hold-recovery-deadline.test.js
+
+Android product truth contract: OK
+Intelligence product truth contract: OK
+✔ current Android user-facing claims match declared role-gated capabilities (5.509491ms)
+✔ local runtime certificate cannot authorize a physical-device claim (1.38888ms)
+✔ detects obsolete unconditional call-log denial (1.393848ms)
+✔ detects obsolete unconditional SMS denial (1.641242ms)
+✔ detects outdated architecture claiming unavailable READ_CALL_LOG (1.781484ms)
+✔ requires Play listing to disclose role-gated system call-log access (3.848699ms)
+✔ detects false denial of multi-SIM phone-state permission (5.865704ms)
+✔ requires explicit opt-in remote Caller Reputation wording (4.559424ms)
+✔ rejects a premature paid carrier-call voice claim (2.725672ms)
+✔ requires disclosure for the local Voice Studio microphone path (1.920815ms)
+✔ requires Play disclosure for live Sentinel VoIP microphone transmission (2.299487ms)
+✔ rejects a LiveKit transport that removes the microphone permission gate (2.249582ms)
+✔ rejects room creation before the microphone permission gate (3.172221ms)
+✔ rejects LiveKit teardown that can skip release after disconnect failure (1.145432ms)
+✔ rejects LiveKit failure cleanup that stops disposing the pending room (6.175057ms)
+✔ rejects LiveKit failure cleanup that stops disposing the active room (1.207736ms)
+✔ rejects explicit disconnect that stops disposing the connected room (1.123409ms)
+✔ requires privacy disclosure for WebRTC media transport (1.226705ms)
+✔ requires privacy disclosure for the VoIP/PSTN gateway (1.339876ms)
+✔ requires privacy disclosure that LiveKit credentials are not persisted or logged (1.133013ms)
+✔ rejects a LiveKit capture path that bypasses the Sentinel VoIP pipeline (1.050839ms)
+✔ rejects architecture docs that claim WebRTC capture floats are normalized (1.545386ms)
+✔ rejects a multi-channel capture contract that could leave voice untransformed (1.815465ms)
+✔ rejects invalid LiveKit callback shapes that bypass transformation instead of silencing (1.353516ms)
+✔ rejects malformed LiveKit frame-shape handling that stops failing closed (1.172923ms)
+✔ requires non-finite DSP samples to be neutralized before state mutation (2.558118ms)
+✔ rejects a premature runnable Sentinel call-flow claim in Voice Studio (1.663225ms)
+✔ rejects treating LiveKit native Float32 audio as PCM16 (0.926421ms)
+✔ rejects asynchronous persistence for physical Phone Core evidence (0.995986ms)
+✔ rejects unscoped physical evidence when certification provenance is unavailable (1.940324ms)
+✔ rejects instance-only locking of the shared Phone Core evidence timeline (1.806221ms)
+✔ rejects asynchronous timeline clearing (1.252494ms)
+✔ rejects call-screening post-response persistence on the callback thread (1.062777ms)
+✔ requires serialized local-log file access and async callback logging (1.935426ms)
+✔ README describes the implemented bounded MMS decoder without claiming physical completion (0.508389ms)
+✔ current intelligence integration respects product truth boundaries (2.97579ms)
+✔ rejects general intelligence access before respondToCall (0.564924ms)
+✔ rejects community or UI risk fields entering ScreeningProjection (0.427787ms)
+✔ rejects raw PII storage slots in the intelligence persistence boundary (0.834621ms)
+✔ rejects a general snapshot being used as direct automatic blocking authority (0.378953ms)
+✔ physical evidence collector rejects PII sources and automatic physical validation (0.282867ms)
+✔ physical evidence collector has valid bash syntax (5.104855ms)
+✔ Phone Core roadmap and diagnostic copy match certification schema v6 (4.027259ms)
+✔ Phone Core readiness no longer owns the Wi-Fi scanner capability (0.703103ms)
+✔ counter-free customer Phone Core resources cover every supported Android version (2.83705ms)
+✔ Phone Core activation uses the shared version-aware call-screening truth (0.424171ms)
+✔ legacy call-screening implementation, CI scope and customer copy stay truthfully separated (0.6279ms)
+✔ API 36 hold recovery gets a fresh bounded observation window (2.350144ms)
+✔ API 37 exact incoming-answer emulator limitation produces LIMITED while later evidence remains required (45.719682ms)
+✔ API 37 full causal ACTIVE evidence remains PASS rather than LIMITED (37.118256ms)
+✔ API 37 host modem acceptance cannot be certified as a limited app-answer observation (42.430598ms)
+✔ API 37 UID SEND_SMS ignore remains authoritative when package mode is allow (7.286197ms)
+✔ the incoming flow arms the transport bridge before the answer tap (1.027113ms)
+✔ the incoming flow waits for ADB to return online before injecting gsm call (3.166129ms)
+✔ API 37 never races REQUEST_ACCEPT with a host gsm accept (0.371472ms)
+✔ API 37 never turns Telecom ANSWERED into a host modem acceptance (0.135214ms)
+✔ the bridge keeps the normal same-call ACTIVE path (0.156807ms)
+✔ API 37 records the causal emulator limitation instead of accepting a replacement Telecom call (0.552746ms)
+✔ API 37 limited incoming-answer path is explicit and still tears down before later probes (0.431823ms)
+✔ composer acquires the process submission gate only after its lifecycle scope starts (0.203308ms)
+✔ API 24 instrumentation enforces a hard wall-clock timeout instead of a detached watchdog (0.332133ms)
+✔ legacy Android instrumentation keeps a bounded 30 minute connected-test watchdog (0.602205ms)
+✔ legacy Android instrumentation API 24 keeps a bounded 30 minute adb watchdog (0.650253ms)
+✔ API 24 APK installs are hard-bounded and use non-streaming transport in both instrumentation workflows (0.314425ms)
+✔ runtime APK installation is bounded and non-streaming on API 24 so a wedged ADB transport cannot consume the whole emulator job (0.19868ms)
+✔ release documentation follows the executable Android build baseline (3.039215ms)
+✔ release documentation preserves evidence boundaries and historical PR truth (0.315978ms)
+✔ VPN architecture does not deny the implemented Android WireGuard client (0.986231ms)
+✔ multi-region documentation separates implemented client foundations from production infrastructure (1.132172ms)
+ℹ tests 69
+ℹ suites 0
+ℹ pass 69
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 853.478304
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

@@ -1,0 +1,119 @@
+{
+  "status": "BLOCKED",
+  "technical_local_status": "PASS",
+  "qualified_source_commit": "fafe9f5b1c57b21f276ca62189acab625a490ec9",
+  "qualified_android_tree": "00d1a0295ba57334c9421c81ff52bda204d7ca29",
+  "evidence": "qualification/evidence/20261107-mms-carrier-v22-fafe9f5b",
+  "change": "Subscription-specific SmsManager carrier configuration; complete composed PDU size check before staging/provider persistence/submission; fail closed on missing limit; versionCode22",
+  "tests": {
+    "targeted": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "unit": {
+      "tests": 1427,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "unit-with-fixture": {
+      "tests": 1427,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "regressions": {
+    "new_tests": 6,
+    "red_tests": 11,
+    "red_failures": 5,
+    "green_focused_tests": 11
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 221,
+    "hints": 19,
+    "classification": "qualification/evidence/20261107-mms-carrier-v22-fafe9f5b/lint-classification.json"
+  },
+  "assemble_debug": "PASS",
+  "instrumented_compilation": "PASS",
+  "instrumented_execution": "NOT_TESTED",
+  "apk": {
+    "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+    "sha256": "9256d99f91b85c4f9e78539b9ce478b905c82f893782aea3c1f90f6938eb8f6a",
+    "package": "com.sentinel.quantum",
+    "versionCode": 22,
+    "versionName": "1.0.9",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "compileSdk": 37,
+    "signature": "v2 debug verified",
+    "zipalign": "PASS",
+    "cloud_signer_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6"
+  },
+  "test_apk": {
+    "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e"
+  },
+  "local_signing": {
+    "status": "PENDING_USER_EXECUTION",
+    "helper": "qualification/prepare-device-upgrade.sh",
+    "manifest": "qualification/V22_UPGRADE_INPUT.json",
+    "self_test": "PASS with cloud-key fixture only; not the user private key",
+    "device_signed_apk_sha256": null
+  },
+  "device_history": {
+    "origin": "USER_PROVIDED_ADB_AND_SCREENSHOTS",
+    "model": "SM-S926B",
+    "api": 37,
+    "installed_versionCode": 21,
+    "installed_versionName": "1.0.9",
+    "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+    "installed_signed_apk_sha256": "adfecfdf62a3ab6d48950ae956060b3b78d40e0cce35716f4b47aefb3b361ad6",
+    "v21_installation": "PASS_USER_REPORTED",
+    "v21_existing_sent_and_received_thumbnails": "OBSERVED_POSITIVE",
+    "v21_new_mms_send": {
+      "status": "FAILED",
+      "code": 5,
+      "state": "io_error",
+      "http": null,
+      "subscription": 1,
+      "provider": "applied"
+    },
+    "failed_image_bytes": null,
+    "root_cause_of_specific_failure": "NOT_ESTABLISHED",
+    "carrier_limits_observed": [
+      307200,
+      614400
+    ],
+    "effective_limit_from_flat_dump": "NOT_CONFIRMED",
+    "full_data_preservation": "NOT_TESTED"
+  },
+  "publication": {
+    "url": "https://drive.google.com/file/d/10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf/view?usp=drivesdk",
+    "file_id": "10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf",
+    "sha256": "409ef6dc80a750cd7e6bda84d12a61c6595471e6ecd394b0d6db23117ce401f9",
+    "bytes": 60113120,
+    "shared": false,
+    "metadata_readback": "PASS"
+  },
+  "room_unchanged": true,
+  "dependencies_and_wrapper_unchanged": true,
+  "apk_high_signal_secret_scan_matches": 0,
+  "secret_scan_exhaustive": false,
+  "npm_audit_total": 0,
+  "product_truth_tests_passed": 69,
+  "credential_hygiene_tests_passed": 6,
+  "release_policy_tests_passed": 7,
+  "dependabot": "Alert details inaccessible; no closure asserted",
+  "physical_s24_plus": "NOT_TESTED",
+  "blockers": [
+    "Actual selected-SIM carrier-config read and MMS behavior on v22 not tested",
+    "Specific v21 failed-image/PDU size unknown; incident root cause not established",
+    "Calls, multipart SMS, notifications, permissions/OEM and full data preservation incomplete",
+    "Dependabot details inaccessible"
+  ],
+  "report": "qualification/MMS_CARRIER_LIMIT_V22_20261107.md",
+  "recorded_at_utc": "2026-11-07T00:19:03.765051+00:00"
+}

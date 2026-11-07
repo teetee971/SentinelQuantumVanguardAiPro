@@ -1,0 +1,21 @@
+✔ mobile navigation exposes its controlled region and expanded state (1.282389ms)
+✔ mobile navigation closes with Escape and restores focus (0.214083ms)
+✔ the current page link exposes aria-current (0.14574ms)
+✔ shared navigation adds a keyboard-visible skip link when main content exists (0.319303ms)
+✔ skip link stays before the injected navigation in keyboard order (0.355538ms)
+✔ primary navigation stays concise and switches before desktop labels wrap (0.298151ms)
+✔ fixed shared navigation styles are scoped to the injected top-nav component (0.274135ms)
+✔ comparison table has an accessible caption and scoped column headers (0.144809ms)
+✔ threat refresh state is announced as a status (0.377682ms)
+✔ produces stable bytewise ordering and coherent raw/gzip totals (34.48814ms)
+✔ fails closed when the distribution directory is absent (1.679229ms)
+✔ rejects symbolic links instead of following them (1.949018ms)
+✔ isolates concurrent atomic writes and leaves no temporary entries (14.448216ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 181.479216

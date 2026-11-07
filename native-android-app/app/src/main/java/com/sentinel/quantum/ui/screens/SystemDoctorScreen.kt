@@ -3,11 +3,18 @@ package com.sentinel.quantum.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +38,7 @@ import kotlinx.coroutines.withContext
 import com.sentinel.quantum.security.SentinelDeviceDiagnostic
 import com.sentinel.quantum.security.SentinelSystemDoctor
 import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -65,6 +74,7 @@ fun SystemDoctorScreen(navController: NavController) {
                     "Fail-closed" to SentinelD1.Cyan
                 )
             )
+            SystemAnalysisDashboard(scan = scan, isScanning = isScanning)
             Button(
                 onClick = {
                     if (!isScanning) {
@@ -132,6 +142,60 @@ private fun EvidenceCard(evidence: SentinelDeviceDiagnostic.Evidence) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SystemAnalysisDashboard(
+    scan: SentinelSystemDoctor.Scan?,
+    isScanning: Boolean
+) {
+    val stateLabel = when {
+        isScanning -> "Analyse en cours"
+        scan == null -> "En attente"
+        else -> "Analyse terminée"
+    }
+    SentinelGlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("device-analysis-dashboard")
+    ) {
+        Text("Analyse de l’appareil", style = MaterialTheme.typography.headlineSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+        Text(
+            "Observation locale des signaux exposés par Android · $stateLabel",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DeviceMetric("Applications", if (scan == null) "—" else scan.evidence.size.toString(), Icons.Default.Apps, Modifier.weight(1f))
+            DeviceMetric("Système", if (scan == null) "—" else diagnosticStatusLabel(scan.report.highestObservedRisk), Icons.Default.Security, Modifier.weight(1f))
+            DeviceMetric("Réseau", "Observé", Icons.Default.Wifi, Modifier.weight(1f))
+            DeviceMetric("Mémoire", "Non exposée", Icons.Default.Memory, Modifier.weight(1f))
+        }
+        SentinelSectionHeader(title = "Résumé des détections", trailing = "Preuves locales")
+        Text(
+            if (scan == null) "Aucun résultat de scan disponible. Lancez l’analyse pour afficher les observations Android."
+            else "${scan.evidence.size} observation(s) produite(s) · aucune classification malware déduite.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "Analyse IA indisponible : aucun moteur de classification comportementale n’est raccordé à cet écran.",
+            style = MaterialTheme.typography.labelSmall,
+            color = SentinelD1.Warning
+        )
+    }
+}
+
+@Composable
+private fun DeviceMetric(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier
+) {
+    Column(modifier, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        androidx.compose.material3.Icon(icon, contentDescription = null, tint = SentinelD1.Cyan, modifier = Modifier.size(24.dp))
+        Text(value, style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

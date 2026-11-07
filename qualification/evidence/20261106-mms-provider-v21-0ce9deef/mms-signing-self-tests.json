@@ -1,0 +1,26 @@
+{
+  "helper_sha256": "571733d4227c4a54cf8c295efc49f684bd302e6efa72b6a2121839562c4cad81",
+  "positive": "PASS with cloud debug-key fixture only; user key not accessed",
+  "negative_cases": [
+    {
+      "case": "wrong-input",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    },
+    {
+      "case": "wrong-signer",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    },
+    {
+      "case": "existing-output",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    },
+    {
+      "case": "payload-mutation",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    }
+  ]
+}

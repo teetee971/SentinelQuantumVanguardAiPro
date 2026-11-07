@@ -1,0 +1,25 @@
+{
+  "source_commit": "249c347768932b73a958bb3dd953958f152a1ac8",
+  "initial_git_status": "clean",
+  "branch": "codex/sentinel-audit-20261105",
+  "pr": {
+    "number": 1754,
+    "draft": true,
+    "merged": false,
+    "head": "249c347768932b73a958bb3dd953958f152a1ac8"
+  },
+  "room": {
+    "schema_version": 1,
+    "schema_identity_hash": "21617aeab12bfb29ee9bec17bc238d62",
+    "schema_and_database_source_diff_vs_pr_base": "none",
+    "runtime_migration": "NOT_TESTED"
+  },
+  "provenance_tests": {
+    "command": "python scripts/phone_core_source_provenance_test.py",
+    "tests": 6,
+    "failures": 0,
+    "status": "PASS",
+    "invocation_note": "unittest discovery first failed with NameError because this existing test loads its helper only in __main__; direct documented-style execution passed, without editing the script"
+  },
+  "galaxy_s24_plus": "NOT_TESTED"
+}

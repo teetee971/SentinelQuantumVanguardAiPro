@@ -8,15 +8,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -173,6 +179,15 @@ fun AppPermissionAnalyzerScreen(navController: NavController) {
             }
 
             item {
+                ApplicationRiskDashboard(
+                    installed = profiles.size,
+                    risky = highRiskApps,
+                    sensitive = sensitiveApps,
+                    loading = isLoading
+                )
+            }
+
+            item {
                 Button(onClick = { navController.navigate(Screen.SecurityLabPro.route) },
                     modifier = Modifier.fillMaxWidth()) {
                     Text("Ouvrir Security Lab Pro")
@@ -263,6 +278,92 @@ private fun PermissionSummaryCard(profiles: List<InstalledAppPermissionProfile>)
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun ApplicationRiskDashboard(
+    installed: Int,
+    risky: Int,
+    sensitive: Int,
+    loading: Boolean
+) {
+    SentinelGlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("applications-risk-dashboard")
+    ) {
+        Text(
+            "Applications sous surveillance",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Text(
+            if (loading) "Analyse locale en cours des applications visibles"
+            else "Analyse locale des permissions déclarées",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "Score de comportement des apps",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            "Indisponible : aucun historique comportemental n’est fourni par ce contrôle.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ApplicationMetric(
+                label = "Applications installées",
+                value = if (loading) "—" else installed.toString(),
+                icon = Icons.Default.Apps,
+                accent = com.sentinel.quantum.ui.design.SentinelD1.Cyan,
+                modifier = Modifier.weight(1f)
+            )
+            ApplicationMetric(
+                label = "Risque heuristique",
+                value = if (loading) "—" else risky.toString(),
+                icon = Icons.Default.Warning,
+                accent = com.sentinel.quantum.ui.design.SentinelD1.Warning,
+                modifier = Modifier.weight(1f)
+            )
+            ApplicationMetric(
+                label = "Autorisations sensibles",
+                value = if (loading) "—" else sensitive.toString(),
+                icon = Icons.Default.CheckCircle,
+                accent = com.sentinel.quantum.ui.design.SentinelD1.Success,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.Sync, contentDescription = null, tint = com.sentinel.quantum.ui.design.SentinelD1.Cyan)
+            Text(
+                "Aucune menace, quarantaine ou protection temps réel n’est déduite de ces permissions seules.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ApplicationMetric(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    accent: androidx.compose.ui.graphics.Color,
+    modifier: Modifier
+) {
+    ElevatedCard(
+        modifier = modifier,
+        colors = CardDefaults.elevatedCardColors(containerColor = com.sentinel.quantum.ui.design.SentinelD1.Card.copy(alpha = 0.9f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(24.dp))
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = accent)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

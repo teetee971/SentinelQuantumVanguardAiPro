@@ -33,7 +33,7 @@ Configuration exécutable actuelle :
 - `compileSdk 37`
 - `targetSdk 36`
 - `minSdk 24`
-- `versionCode 10`
+- `versionCode 22`
 - `versionName 1.0.9`
 - JDK 17
 - AGP 9.4.1

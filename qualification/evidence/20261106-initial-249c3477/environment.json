@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-11-06T18:08:24.695210+00:00",
+  "network_policy": "unrestricted/enforced",
+  "configured_credentials": [],
+  "toolchains_outside_repository": true,
+  "gradle_version": "9.8.0",
+  "gradle_distribution_sha256": "bafd5ce9cfaea0fbccfdc8439a1ac42fbd4cd9c89dc9a988228d8a2639a58e6c",
+  "jdk": "Temurin 17.0.21+9",
+  "sdk_platform": "platforms;android-37.0",
+  "build_tools": "36.0.0",
+  "tls": "enabled; Java system truststore /etc/ssl/certs/java/cacerts",
+  "proxy": "inherited HTTP(S)_PROXY mapped to Java proxy properties",
+  "prior_environment": "Previous RESUME describes temporary /tmp tools; none of the previous caches/toolchains available in this session. Previous connection refusal cannot be attributed conclusively without its runtime. Exact wrapper URL works in current session.",
+  "checks": [
+    {
+      "url": "https://services.gradle.org/distributions/gradle-9.8.0-bin.zip.sha256",
+      "curl_exit": 0,
+      "http_code_and_ssl_verify_result": "200 0",
+      "error": ""
+    },
+    {
+      "url": "https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/9.4.1/gradle-9.4.1.pom",
+      "curl_exit": 0,
+      "http_code_and_ssl_verify_result": "200 0",
+      "error": ""
+    },
+    {
+      "url": "https://repo.maven.apache.org/maven2/junit/junit/4.13.2/junit-4.13.2.pom",
+      "curl_exit": 0,
+      "http_code_and_ssl_verify_result": "200 0",
+      "error": ""
+    },
+    {
+      "url": "https://plugins.gradle.org/m2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.3.12/com.google.devtools.ksp.gradle.plugin-2.3.12.pom",
+      "curl_exit": 0,
+      "http_code_and_ssl_verify_result": "200 0",
+      "error": ""
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+
+------------------------------------------------------------
+Gradle 9.8.0
+------------------------------------------------------------
+
+Build time:    2026-09-24 13:40:00 UTC
+Revision:      a927be5e08efe79e0b87ada06c762dde6bb9f8b8
+
+Kotlin:        2.4.10
+Groovy:        4.0.33
+Ant:           Apache Ant(TM) version 1.10.17 compiled on April 6 2026
+Launcher JVM:  17.0.21 (Eclipse Adoptium 17.0.21+9)
+Daemon JVM:    /workspace/toolchains/jdk-17.0.21+9 (no Daemon JVM specified, using current Java home)
+OS:            Linux 6.18.57 amd64

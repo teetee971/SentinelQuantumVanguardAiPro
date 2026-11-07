@@ -1,0 +1,86 @@
+[
+  {
+    "name": "targeted",
+    "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:testDebugUnitTest",
+      "--tests",
+      "com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:22:29.338724+00:00",
+    "finished_at_utc": "2026-11-06T18:22:43.280217+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "unit",
+    "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:testDebugUnitTest",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:22:43.281086+00:00",
+    "finished_at_utc": "2026-11-06T18:22:56.833178+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "lint",
+    "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:lintDebug",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:22:56.848960+00:00",
+    "finished_at_utc": "2026-11-06T18:23:11.173836+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "assemble",
+    "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:assembleDebug",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "started_at_utc": "2026-11-06T18:23:11.175007+00:00",
+    "finished_at_utc": "2026-11-06T18:23:26.404455+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "unit-with-fixture",
+    "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+    "command": [
+      "bash",
+      "gradlew",
+      ":app:testDebugUnitTest",
+      "--rerun",
+      "-PsentinelSignatureFixture=/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+      "--no-daemon",
+      "--console=plain",
+      "--max-workers=2"
+    ],
+    "cwd": "native-android-app",
+    "exit_code": 0,
+    "fixture_sha256": "2460b1643bec1137a4a78a18816f3db6cce328c2b94f0434de7c192fae6aa346",
+    "time_provenance": "JUnit timestamps and log filesystem mtime; shell start timestamp not separately recorded"
+  }
+]

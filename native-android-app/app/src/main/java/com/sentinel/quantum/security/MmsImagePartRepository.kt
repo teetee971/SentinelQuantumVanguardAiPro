@@ -2,9 +2,11 @@ package com.sentinel.quantum.security
 
 import android.content.ContentUris
 import android.content.Context
+import android.database.Cursor
 import android.os.Build
 import android.net.Uri
 import android.provider.Telephony
+import androidx.core.net.toUri
 
 internal class MmsImagePartRepository(
     context: Context
@@ -79,6 +81,65 @@ internal class MmsImagePartRepository(
         return results
     }
 
+    /**
+     * Loads one validated image part. This is a blocking provider operation and must be called
+     * from Dispatchers.IO by the lifecycle owner. Provider reads are revalidated around the
+     * stream because ContentResolver does not provide a cross-query atomic snapshot.
+     */
+    fun loadThumbnail(
+        syntheticMessageId: Long,
+        threadId: Long,
+        partId: Long,
+        targetDimension: Int = 256
+    ): android.graphics.Bitmap? {
+        val identity = MmsImagePartContract.resolveMessage(syntheticMessageId, threadId)
+            ?: return null
+        if (!MmsThumbnailPolicy.validKey(
+                MmsThumbnailPolicy.PartKey(identity.providerMessageId, threadId, partId)
+            ) || !conversations.canRead() || !parentMatchesThread(identity)
+        ) return null
+
+        val partUri = MmsImagePartContract.partContentUri(
+            MmsThumbnailPolicy.PartKey(identity.providerMessageId, threadId, partId)
+        )?.toUri() ?: return null
+        val metadata = readPartMetadata(partUri) ?: return null
+
+        val key = MmsImagePartContract.acceptPart(identity, metadata) ?: return null
+        if (key.partId != partId || !conversations.canRead()) return null
+
+        val bytes = MmsBoundedImageReader.readFromProvider(
+            openStream = { appContext.contentResolver.openInputStream(partUri) },
+            isPermissionGranted = conversations::canRead
+        ) ?: return null
+
+        if (!conversations.canRead() || !parentMatchesThread(identity) ||
+            !MmsImagePartContract.samePartSnapshot(identity, metadata, readPartMetadata(partUri))
+        ) return null
+        val bitmap = MmsThumbnailDecoder.decode(bytes, metadata.mimeType ?: return null, targetDimension)
+            ?: return null
+        if (!conversations.canRead() || !parentMatchesThread(identity) ||
+            !MmsImagePartContract.samePartSnapshot(identity, metadata, readPartMetadata(partUri))
+        ) {
+            bitmap.recycle()
+            return null
+        }
+        return bitmap
+    }
+
+    private fun readPartMetadata(partUri: Uri): MmsImagePartContract.PartMetadata? = try {
+        appContext.contentResolver.query(
+            partUri,
+            arrayOf("_id", "mid", Telephony.Mms.Part.CONTENT_TYPE),
+            null,
+            null,
+            null
+        )?.use(::readUniqueMmsPartMetadata)
+    } catch (_: SecurityException) {
+        null
+    } catch (_: RuntimeException) {
+        null
+    }
+
     private fun parentMatchesThread(
         identity: MmsImagePartContract.MessageIdentity
     ): Boolean {
@@ -135,4 +196,16 @@ internal class MmsImagePartRepository(
                 "content://mms/$providerMessageId/part"
             )
         }
+}
+
+/** Reads exactly one provider row; ambiguous part identities fail closed. */
+internal fun readUniqueMmsPartMetadata(cursor: Cursor): MmsImagePartContract.PartMetadata? {
+    val idColumn = cursor.getColumnIndexOrThrow("_id")
+    val parentColumn = cursor.getColumnIndexOrThrow("mid")
+    val mimeColumn = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE)
+    if (!cursor.moveToFirst()) return null
+    val metadata = MmsImagePartContract.PartMetadata(
+        cursor.getLong(idColumn), cursor.getLong(parentColumn), cursor.getString(mimeColumn)
+    )
+    return if (cursor.moveToNext()) null else metadata
 }

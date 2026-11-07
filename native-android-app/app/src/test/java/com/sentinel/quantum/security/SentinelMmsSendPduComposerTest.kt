@@ -58,4 +58,43 @@ class SentinelMmsSendPduComposerTest {
         val pdu = (result as SentinelMmsSendPduComposer.Result.Composed).pdu
         assertTrue(pdu.toString(Charsets.ISO_8859_1).contains("image/webp"))
     }
+
+    // Without a transport-size check these requests were accepted then failed in Android.
+    @Test fun rejectsPayloadAboveSelectedCarrierLimit() {
+        val result = composeForCarrier(700_000, 614_400)
+        assertEquals("MMS_CARRIER_SIZE_EXCEEDED", (result as? SentinelMmsSendPduComposer.Result.Rejected)?.reason)
+    }
+
+    @Test fun countsHeadersRatherThanOnlyImageBytes() {
+        val result = composeForCarrier(614_400, 614_400)
+        assertEquals("MMS_CARRIER_SIZE_EXCEEDED", (result as? SentinelMmsSendPduComposer.Result.Rejected)?.reason)
+    }
+
+    @Test fun usesSelectedCarrierLimitInsteadOfAnotherSimLimit() {
+        assertTrue(composeForCarrier(483_388, 614_400) is SentinelMmsSendPduComposer.Result.Composed)
+        assertEquals("MMS_CARRIER_SIZE_EXCEEDED", (composeForCarrier(483_388, 307_200) as? SentinelMmsSendPduComposer.Result.Rejected)?.reason)
+    }
+
+    @Test fun unavailableCarrierLimitCannotApproveTransport() {
+        for (limit in listOf(0, -1)) {
+            assertEquals("MMS_CARRIER_CONFIG_UNAVAILABLE", (composeForCarrier(1, limit) as? SentinelMmsSendPduComposer.Result.Rejected)?.reason)
+        }
+    }
+
+    @Test fun acceptsExactPduBoundaryAndRejectsOneByteLess() {
+        val composed = composeForCarrier(100, 614_400) as SentinelMmsSendPduComposer.Result.Composed
+        assertTrue(composeForCarrier(100, composed.pdu.size) is SentinelMmsSendPduComposer.Result.Composed)
+        assertEquals("MMS_CARRIER_SIZE_EXCEEDED", (composeForCarrier(100, composed.pdu.size - 1) as? SentinelMmsSendPduComposer.Result.Rejected)?.reason)
+    }
+
+    @Test fun carrierLimitDoesNotBypassLocalSafetyLimit() {
+        assertEquals("INVALID_PART_SIZE", (composeForCarrier(5 * 1024 * 1024 + 1, Int.MAX_VALUE) as? SentinelMmsSendPduComposer.Result.Rejected)?.reason)
+    }
+
+    private fun composeForCarrier(payloadBytes: Int, carrierLimit: Int) =
+        SentinelMmsSendPduComposer.compose(
+            "+33612345678", "carrier-test", "test",
+            listOf(SentinelMmsSendPduComposer.Part("image/jpeg", ByteArray(payloadBytes))),
+            maxPduBytes = carrierLimit
+        )
 }

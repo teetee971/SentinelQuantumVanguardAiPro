@@ -1,0 +1,21 @@
+FF
+======================================================================
+FAIL: test_report_uses_verified_input_version_instead_of_a_literal (test_device_signing_report.SigningReportTest.test_report_uses_verified_input_version_instead_of_a_literal) (version=22)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/SentinelQuantumVanguardAiPro/qualification/test_device_signing_report.py", line 26, in test_report_uses_verified_input_version_instead_of_a_literal
+    self.assertEqual(version, namespace['result']['candidate_versionCode'])
+AssertionError: 22 != 21
+
+======================================================================
+FAIL: test_report_uses_verified_input_version_instead_of_a_literal (test_device_signing_report.SigningReportTest.test_report_uses_verified_input_version_instead_of_a_literal) (version=23)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/SentinelQuantumVanguardAiPro/qualification/test_device_signing_report.py", line 26, in test_report_uses_verified_input_version_instead_of_a_literal
+    self.assertEqual(version, namespace['result']['candidate_versionCode'])
+AssertionError: 23 != 21
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=2)

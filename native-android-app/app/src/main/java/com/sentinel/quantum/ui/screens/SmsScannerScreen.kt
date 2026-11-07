@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +44,7 @@ import com.sentinel.quantum.security.PhonePrivateTimelineStore
 import com.sentinel.quantum.security.SmsLinkAnalyzer
 import com.sentinel.quantum.security.SmsTimelineMapper
 import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelMotionPolicy
 import com.sentinel.quantum.ui.design.SentinelSectionHeader
 import com.sentinel.quantum.ui.design.SentinelStatus
@@ -141,77 +146,71 @@ fun SmsScannerScreen(navController: NavController) {
 
             result?.let { analysis ->
                 val view = SmsThreatPresentation.from(analysis)
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("sms-threat-result"),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
-                ) {
-                    Column(
-                        Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                stringResource(R.string.sms_scanner_result),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            SentinelStatusChip(status = view.status)
-                        }
-                        Text(view.label, fontWeight = FontWeight.Bold)
+                SmsThreatDetailCard(analysis = analysis, view = view)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmsThreatDetailCard(
+    analysis: SmsLinkAnalyzer.Analysis,
+    view: SmsThreatPresentation
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("sms-threat-detail")) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            androidx.compose.material3.Icon(
+                if (analysis.accepted) Icons.Default.WarningAmber else Icons.Default.Security,
+                contentDescription = null,
+                tint = if (analysis.accepted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            )
+            Column(Modifier.weight(1f)) {
+                Text("Menace détectée", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                Text(view.label, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            SentinelStatusChip(view.status)
+        }
+        Text(view.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!analysis.accepted) {
+            Text(
+                stringResource(R.string.sms_scanner_rejected, PhoneCoreFrenchLabels.analysisRejection(analysis.reason)),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ThreatMetric("Niveau de risque", PhoneCoreFrenchLabels.riskLevel(analysis.riskLevel.name), Modifier.weight(1f))
+                ThreatMetric("Score", "${analysis.score}/100", Modifier.weight(1f))
+                ThreatMetric("Liens inspectés", analysis.linksInspected.toString(), Modifier.weight(1f))
+            }
+            SentinelSectionHeader(title = "Comportement suspect", subtitle = "Signaux observés localement")
+            if (analysis.findings.isEmpty()) {
+                Text(stringResource(R.string.sms_scanner_no_findings), style = MaterialTheme.typography.bodySmall)
+            } else {
+                analysis.findings.forEach { finding ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.material3.Icon(Icons.Default.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                         Text(
-                            view.detail,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            stringResource(R.string.sms_scanner_finding, PhoneCoreFrenchLabels.riskLevel(finding.severity.name), findingLabel(finding.code)),
+                            style = MaterialTheme.typography.bodySmall
                         )
-                        if (!analysis.accepted) {
-                            Text(
-                                stringResource(
-                                    R.string.sms_scanner_rejected,
-                                    PhoneCoreFrenchLabels.analysisRejection(analysis.reason)
-                                )
-                            )
-                        } else {
-                            Text(
-                                stringResource(
-                                    R.string.sms_scanner_risk,
-                                    PhoneCoreFrenchLabels.riskLevel(analysis.riskLevel.name)
-                                )
-                            )
-                            Text(stringResource(R.string.sms_scanner_score, analysis.score))
-                            Text(stringResource(R.string.sms_scanner_links, analysis.linksInspected))
-                            if (analysis.findings.isEmpty()) {
-                                Text(stringResource(R.string.sms_scanner_no_findings))
-                            } else {
-                                SentinelSectionHeader(
-                                    title = "Signaux observés",
-                                    subtitle = "Chaque élément correspond à une heuristique locale explicable."
-                                )
-                                analysis.findings.forEach { finding ->
-                                    Text(
-                                        stringResource(
-                                            R.string.sms_scanner_finding,
-                                            PhoneCoreFrenchLabels.riskLevel(finding.severity.name),
-                                            findingLabel(finding.code)
-                                        )
-                                    )
-                                }
-                            }
-                            Text(
-                                stringResource(R.string.sms_scanner_disclaimer),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
             }
+            Text(
+                "Aucune action externe automatique : le lien n’est pas ouvert et aucune donnée n’est envoyée.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThreatMetric(label: String, value: String, modifier: Modifier) {
+    ElevatedCard(modifier = modifier, colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

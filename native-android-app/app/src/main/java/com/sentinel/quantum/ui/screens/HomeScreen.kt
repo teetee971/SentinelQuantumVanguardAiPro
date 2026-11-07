@@ -239,6 +239,14 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.testTag("home_security_hero")
             )
 
+            HomeCommandCenter(
+                modules = homeState.modules,
+                onAnalyze = { navController.navigate(Screen.SystemDoctor.route) },
+                onVpn = { navController.navigate(Screen.Vpn.route) },
+                onApps = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                onNetwork = { navController.navigate(Screen.NetworkSurveillance.route) }
+            )
+
             SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                 Text("Priorité", style = MaterialTheme.typography.labelLarge, color = SentinelD1.Cyan)
                 Text(homeState.priorityMessage, fontWeight = FontWeight.Bold)
@@ -378,6 +386,79 @@ private fun HomeModuleCard(
 }
 
 @Composable
+private fun HomeCommandCenter(
+    modules: List<HomeModulePresentation>,
+    onAnalyze: () -> Unit,
+    onVpn: () -> Unit,
+    onApps: () -> Unit,
+    onNetwork: () -> Unit
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth().testTag("home_command_center")) {
+        Text("Protection Sentinel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+        Text(
+            "État observé des modules locaux · validation physique distincte",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            modules.take(4).forEach { module ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Icon(moduleIcon(module.id), contentDescription = null, tint = moduleAccent(module.status))
+                    Text(module.title, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    SentinelStatusChip(module.status, label = module.statusLabel)
+                }
+            }
+        }
+        SentinelSectionHeader(title = "Actions rapides", trailing = "Tous les outils")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CommandAction("Analyse complète", Icons.Default.Security, onAnalyze, Modifier.weight(1f))
+            CommandAction("Activer le VPN", Icons.Default.VpnLock, onVpn, Modifier.weight(1f))
+            CommandAction("Contrôle des applications", Icons.Default.Apps, onApps, Modifier.weight(1f))
+            CommandAction("Réseau sécurisé", Icons.Default.Wifi, onNetwork, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun CommandAction(title: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 96.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card.copy(alpha = 0.9f))
+    ) {
+        Column(Modifier.fillMaxWidth().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(icon, contentDescription = null, tint = SentinelD1.Cyan)
+            Text(title, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+        }
+    }
+}
+
+private val HomeModulePresentation.statusLabel: String
+    get() = when (status) {
+        SentinelStatus.OK -> "OK"
+        SentinelStatus.WARN -> "Surveillance"
+        SentinelStatus.BAD -> "Critique"
+        SentinelStatus.UNKNOWN -> "Inconnu"
+        SentinelStatus.LIMITED -> "Limité"
+        SentinelStatus.LOCKED -> "Verrouillé"
+    }
+
+private fun moduleIcon(id: HomeModuleId): ImageVector = when (id) {
+    HomeModuleId.PHONE_CORE -> Icons.Default.Shield
+    HomeModuleId.VPN -> Icons.Default.VpnLock
+    HomeModuleId.NETWORK -> Icons.Default.Wifi
+    HomeModuleId.COLLECTIVE_DEFENSE -> Icons.Default.Groups
+}
+
+private fun moduleAccent(status: SentinelStatus) = when (status) {
+    SentinelStatus.OK -> SentinelD1.Success
+    SentinelStatus.WARN, SentinelStatus.LIMITED -> SentinelD1.Warning
+    SentinelStatus.BAD -> SentinelD1.Danger
+    SentinelStatus.UNKNOWN, SentinelStatus.LOCKED -> SentinelD1.Unknown
+}
+
+@Composable
 private fun QuickToolCard(
     title: String,
     subtitle: String,
@@ -498,7 +579,7 @@ private fun homeTools(context: Context, navController: NavController): List<Home
         setOf("numero", "numéro", "recherche", "chercher", "identifier", "identification"),
         HomeDomain.COMMUNICATIONS,
         featured = true
-    ) { context.startActivity(Intent(context, SentinelDialerActivity::class.java)) },
+    ) { navController.navigate(Screen.Search.route) },
     HomeTool(
         "Bloquer un appel",
         "Gérer les règles locales de blocage et d’identification",

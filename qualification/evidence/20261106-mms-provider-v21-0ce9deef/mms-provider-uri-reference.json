@@ -1,0 +1,9 @@
+{
+  "url": "https://android.googlesource.com/platform/packages/providers/TelephonyProvider/+/refs/heads/main/src/com/android/providers/telephony/MmsProvider.java?format=TEXT",
+  "source_sha256": "ffc4ca58efdb4e7f3c2caf6d6063426f6d74f8272c7202af49d4ab495bf03f9d",
+  "routes": [
+    "sURLMatcher.addURI(\"mms\", \"part\",       MMS_ALL_PART);",
+    "sURLMatcher.addURI(\"mms\", \"#/part\",     MMS_MSG_PART);",
+    "sURLMatcher.addURI(\"mms\", \"part/#\",     MMS_PART_ID);"
+  ]
+}

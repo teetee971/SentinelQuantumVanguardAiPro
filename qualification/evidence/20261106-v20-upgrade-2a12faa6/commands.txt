@@ -1,0 +1,8 @@
+bash gradlew --version
+bash gradlew :app:testDebugUnitTest --rerun --tests com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest --no-daemon --console=plain --max-workers=2
+bash gradlew :app:testDebugUnitTest --rerun --no-daemon --console=plain --max-workers=2
+bash gradlew :app:lintDebug --no-daemon --console=plain --max-workers=2
+bash gradlew :app:assembleDebug --no-daemon --console=plain --max-workers=2
+/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner verify --verbose --print-certs /workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2 dump badging /workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+bash gradlew :app:testDebugUnitTest --rerun -PsentinelSignatureFixture=/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/debug/app-debug.apk --no-daemon --console=plain --max-workers=2

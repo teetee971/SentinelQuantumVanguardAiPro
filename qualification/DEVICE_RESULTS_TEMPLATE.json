@@ -1,0 +1,38 @@
+{
+  "status": "NOT_TESTED",
+  "source_commit": "fafe9f5b1c57b21f276ca62189acab625a490ec9",
+  "android_tree": "00d1a0295ba57334c9421c81ff52bda204d7ca29",
+  "device": {
+    "model": null,
+    "api": null,
+    "system_build": null,
+    "isolated_test_profile": null
+  },
+  "test_apk_sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+  "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "observed_at_utc": null,
+  "instrumented": {
+    "status": "NOT_TESTED",
+    "tests": null,
+    "failures": null,
+    "errors": null,
+    "skipped": null,
+    "logs": []
+  },
+  "manual": {
+    "notification_settings": "NOT_TESTED",
+    "roles_permissions_and_resume": "NOT_TESTED",
+    "calls_and_dual_sim": "NOT_TESTED",
+    "sms_mms_thumbnails": "NOT_TESTED",
+    "contacts": "NOT_TESTED",
+    "room_data_preservation": "NOT_TESTED",
+    "backup_oem_transfer": "NOT_TESTED",
+    "accessibility": "NOT_TESTED"
+  },
+  "physical_s24_plus": "NOT_TESTED",
+  "notes": [],
+  "cloud_apk_sha256": "9256d99f91b85c4f9e78539b9ce478b905c82f893782aea3c1f90f6938eb8f6a",
+  "device_signed_apk_sha256": "10e70d21409daabcee0ba898703a1cb60897d127d22afffc84b6ca79f94390c8",
+  "candidate_versionCode": 22,
+  "installed_versionCode": 21
+}

@@ -23,8 +23,10 @@ object SentinelMmsSendPduComposer {
         destination: String,
         transactionId: String,
         text: String,
-        attachments: List<Part>
+        attachments: List<Part>,
+        maxPduBytes: Int = Int.MAX_VALUE
     ): Result {
+        if (maxPduBytes <= 0) return Result.Rejected("MMS_CARRIER_CONFIG_UNAVAILABLE")
         if (destination.isBlank() || destination.length > 32) return Result.Rejected("INVALID_DESTINATION")
         if (!destination.all { it.isDigit() || it in "+*#" }) return Result.Rejected("INVALID_DESTINATION")
         if (transactionId.isBlank() || transactionId.length > 40 ||
@@ -70,7 +72,10 @@ object SentinelMmsSendPduComposer {
                 out.write(header)
                 out.write(part.payload)
             }
-            Result.Composed(out.toByteArray())
+            val pdu = out.toByteArray()
+            // Android reads the complete PDU, including its headers, against this SIM's limit.
+            if (pdu.size > maxPduBytes) Result.Rejected("MMS_CARRIER_SIZE_EXCEEDED")
+            else Result.Composed(pdu)
         }.getOrElse { Result.Rejected("PDU_COMPOSITION_FAILED") }
     }
 

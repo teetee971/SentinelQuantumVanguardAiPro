@@ -41,7 +41,12 @@ class SelectedApkInspector(private val context: Context) {
             inspectionJob?.ensureActive()
             ApkArchiveValidator.validate(file)
             val signatureVerified = ApkSignatureVerifier.verify(file)
-            val flags = PackageManager.GET_SIGNING_CERTIFICATES
+            @Suppress("DEPRECATION")
+            val flags = if (Build.VERSION.SDK_INT >= 28) {
+                PackageManager.GET_SIGNING_CERTIFICATES
+            } else {
+                PackageManager.GET_SIGNATURES
+            }
             val info = if (Build.VERSION.SDK_INT >= 33) {
                 context.packageManager.getPackageArchiveInfo(
                     file.absolutePath, PackageManager.PackageInfoFlags.of(flags.toLong())
@@ -50,15 +55,17 @@ class SelectedApkInspector(private val context: Context) {
                 @Suppress("DEPRECATION")
                 context.packageManager.getPackageArchiveInfo(file.absolutePath, flags)
             }
-            val signing = if (Build.VERSION.SDK_INT >= 28) info?.signingInfo else null
-            val signers = if (signing == null) null else {
-                val certificates = if (signing.hasMultipleSigners())
-                    signing.apkContentsSigners else signing.signingCertificateHistory
-                certificates?.map { cert ->
-                    MessageDigest.getInstance("SHA-256").digest(cert.toByteArray())
-                        .joinToString("") { "%02x".format(it.toInt() and 0xff) }
-                }?.toSet()
-            }
+            val signers = if (Build.VERSION.SDK_INT >= 28) {
+                val signing = info?.signingInfo
+                if (signing == null) null else {
+                    val certificates = if (signing.hasMultipleSigners())
+                        signing.apkContentsSigners else signing.signingCertificateHistory
+                    certificates?.map { cert ->
+                        MessageDigest.getInstance("SHA-256").digest(cert.toByteArray())
+                            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+                    }?.toSet()
+                }
+            } else null
             val versionCode = info?.let {
                 if (Build.VERSION.SDK_INT >= 28) it.longVersionCode else {
                     @Suppress("DEPRECATION")

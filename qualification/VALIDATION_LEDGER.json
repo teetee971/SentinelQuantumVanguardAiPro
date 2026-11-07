@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "recorded_at_utc": "2026-11-05T11:14:09.502050+00:00",
-  "branch": "fix/mms-received-thumbnails-20261105",
+  "recorded_at_utc": "2026-11-06T12:05:00+00:00",
+  "branch": "codex/sentinel-audit-20261105",
   "base_commit": "f5a39e1efd9544ee7f8fb1796e9c49930c9c6fed",
   "validation": {
     "target": "MMS received thumbnails",
@@ -38,7 +38,98 @@
     "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailPolicyTest.kt": "36b055aaa21f01304f13c7007ad3e8f016e65b5704e7bfb2c1d8cd5ac7e0cc54",
     "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsImagePartContractTest.kt": "f6d530c588077351505c3605ddaa0451c6e91d209b3356953a7c66fd8110dec4"
   },
-  "reuse_policy": "Historical PASS is reusable only while relevant source, tests and build configuration remain compatible. Changed dependencies require impact analysis.",
+  "reuse_policy": "Historical PASS is never evidence for a different SHA. Each qualification records its exact commit, commands, logs, source digests and artifact digest; evidence-only commits must be distinguished from build-source commits.",
+  "codex_session_2026_11_05": {
+    "branch": "codex/sentinel-audit-20261105",
+    "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
+    "current_sha": "fb0b4e61a",
+    "changes": [
+      "MmsBoundedImageReader added",
+      "MmsImagePartRepository.loadThumbnail added",
+      "MmsBoundedImageReaderTest added",
+      "SmsComposeActivity asynchronous thumbnail wiring added"
+    ],
+    "gradle_tests": "PASS",
+    "compilation": "PASS",
+    "lint": {
+      "status": "PASS",
+      "errors": 0,
+      "warnings": 221,
+      "hints": 19,
+      "sarif_sha256": "5b03bb745a4966011cbfba99321061ea4218d6b7e17fd3f6f4f45f6c6ec23b20",
+      "text_report_sha256": "068cdeca0688aa888b638d91a95ff6f6516deed7e34f491520580a0904cd65e6",
+      "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
+    },
+    "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
+    "physical_s24_plus": "NOT_TESTED",
+    "historical_pass_rewritten": false,
+    "commands": {
+      "targeted": ":app:testDebugUnitTest --tests MmsBoundedImageReaderTest --tests MmsThumbnailPolicyTest --tests MmsImagePartContractTest --tests MmsThumbnailDecoderTest --tests SmsComposeMmsThumbnailSourceContractTest --no-daemon",
+      "regression": ":app:testDebugUnitTest --no-daemon",
+      "artifact": ":app:assembleDebug --no-daemon"
+    },
+    "targeted_tests": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "report_sha256": {
+        "SmsComposeMmsThumbnailSourceContractTest.xml": "610d0487445a4be552f97c2f139029979a7b2dcf324b6226569a6ca595fb37ed",
+        "MmsBoundedImageReaderTest.xml": "1fa22556d0a55ca9796f00d77424cf623cc1dee370031827f03dbe33a6ad2c5f",
+        "MmsThumbnailPolicyTest.xml": "a229b4f40643c9c31c95f9bade037a7ab78192708d15ef93ff5f5f9da29d4f92",
+        "MmsImagePartContractTest.xml": "30984e602e2429009b706cf9d62290b6d8e0c8d3b6470411f12ccf2fdf0514ec",
+        "MmsThumbnailDecoderTest.xml": "d2c452d2aa98f311b07b1323c3bb3329e9a8a4ae260fb16c590c8bfc7bb17cc6"
+      }
+    },
+    "full_unit_regression": {
+      "tests": 1400,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "status": "PASS_WITH_EXPLICIT_SKIP",
+      "skip_reason": "SIGNED_APK_FIXTURE_REQUIRED"
+    },
+    "instrumented": {
+      "compile_command": ":app:assembleDebugAndroidTest --no-daemon",
+      "compile_status": "PASS",
+      "connected_command": ":app:connectedDebugAndroidTest --no-daemon",
+      "connected_status": "BLOCKED_NO_CONNECTED_DEVICES",
+      "connected_error": "com.android.builder.testing.api.DeviceException: No connected devices!",
+      "test_apk": {
+        "path": "native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+        "sha256": "95eb7b17abb666004fc238358f106f046408233191a0e3935f6be4a28cee48d5",
+        "signature": "debug keystore; APK v2 verified"
+      }
+    },
+    "debug_apk": {
+      "status": "PASS",
+      "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "d166ee4cd548fa9b99c44054afe654be6933b7afe68e79b96fca910f79eeb505",
+      "signature": "debug keystore; APK v2 verified; not a release artifact"
+    },
+    "release_unsigned": {
+      "assemble_command": ":app:assembleReleaseUnsigned --no-daemon",
+      "bundle_command": ":app:bundleReleaseUnsigned --no-daemon",
+      "assemble_status": "PASS",
+      "bundle_status": "PASS",
+      "apk": {
+        "path": "native-android-app/app/build/outputs/apk/releaseUnsigned/app-releaseUnsigned-unsigned.apk",
+        "sha256": "c3c882d3517ab6b324c6f363d6d3d6582b176ab53a9b67045079e96a98e1913e",
+        "signature": "UNSIGNED_EXPECTED; apksigner does not verify; not publishable"
+      },
+      "aab": {
+        "path": "native-android-app/app/build/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+        "sha256": "78abf53e2ea52797de513cd3f6fafe51d05e79ed450ea135b74238733f64e316",
+        "signature": "unsigned validation bundle; not publishable"
+      },
+      "apk_checks": {
+        "zipalign": "PASS",
+        "badging": "PASS; package com.sentinel.quantum, compileSdk 37, targetSdk 36, minSdk 24",
+        "manifest_security_flags": "INSPECTED; allowBackup=false, usesCleartextTraffic=false"
+      }
+    }
+  },
   "additional_validations": [
     {
       "suite": "MmsThumbnailDecoderTest",
@@ -53,6 +144,762 @@
         "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailDecoderTest.kt": "50cfa5712c2ffb7bc71398cc9129acce353105145ab0751239371592ad762779"
       },
       "scope": "JVM signature tests and Kotlin compilation; Android bitmap decoding not physically validated"
+    },
+    {
+      "suite": "NumberSearchVisualSourceContractTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:05:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.NumberSearchVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for the reference-inspired number profile; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "AppPermissionVisualDashboardSourceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:32:42+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.AppPermissionVisualDashboardSourceTest --no-daemon",
+      "scope": "Source contract for the applications-risk visual dashboard; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "HomeCommandCenterSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:40:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.HomeCommandCenterSourceContractTest --no-daemon",
+      "scope": "Source contract for the home command center; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "VpnVisualDashboardSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T13:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.VpnVisualDashboardSourceContractTest --no-daemon",
+      "scope": "Source contract for the VPN visual dashboard; no real gateway or physical-device validation"
+    },
+    {
+      "suite": "SmsSecureVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T13:30:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.SmsSecureVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for secure SMS conversation presentation; Android provider and physical-device behavior remain separately untested"
+    },
+    {
+      "suite": "ContactVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T14:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ContactVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for local contacts presentation; no physical contact-provider validation"
+    },
+    {
+      "suite": "SystemDoctorVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T14:30:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.SystemDoctorVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for device analysis dashboard; no physical Android diagnostic validation"
+    },
+    {
+      "suite": "SmsThreatDetailVisualSourceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T15:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.SmsThreatDetailVisualSourceTest --no-daemon",
+      "scope": "Source contract for local SMS threat detail; no external link opening or physical-device validation"
+    },
+    {
+      "suite": "PhoneSecurityVisualDashboardSourceContractTest",
+      "tests": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "BLOCKED",
+      "validated_at_utc": "2026-11-06T17:38:11Z",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest",
+      "scope": "Source contract added for the realtime protection dashboard; execution blocked because Gradle 9.8 distribution download was refused and only an incomplete .part file is present"
+    }
+  ],
+  "final_sha_qualification": {
+    "status": "BLOCKED",
+    "technical_local_status": "PASS",
+    "qualified_source_commit": "fafe9f5b1c57b21f276ca62189acab625a490ec9",
+    "qualified_android_tree": "00d1a0295ba57334c9421c81ff52bda204d7ca29",
+    "evidence": "qualification/evidence/20261107-mms-carrier-v22-fafe9f5b",
+    "change": "Subscription-specific SmsManager carrier configuration; complete composed PDU size check before staging/provider persistence/submission; fail closed on missing limit; versionCode22",
+    "tests": {
+      "targeted": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "unit": {
+        "tests": 1427,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "unit-with-fixture": {
+        "tests": 1427,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "regressions": {
+      "new_tests": 6,
+      "red_tests": 11,
+      "red_failures": 5,
+      "green_focused_tests": 11
+    },
+    "lint": {
+      "errors": 0,
+      "warnings": 221,
+      "hints": 19,
+      "classification": "qualification/evidence/20261107-mms-carrier-v22-fafe9f5b/lint-classification.json"
+    },
+    "assemble_debug": "PASS",
+    "instrumented_compilation": "PASS",
+    "instrumented_execution": "NOT_TESTED",
+    "apk": {
+      "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "9256d99f91b85c4f9e78539b9ce478b905c82f893782aea3c1f90f6938eb8f6a",
+      "package": "com.sentinel.quantum",
+      "versionCode": 22,
+      "versionName": "1.0.9",
+      "minSdk": 24,
+      "targetSdk": 36,
+      "compileSdk": 37,
+      "signature": "v2 debug verified",
+      "zipalign": "PASS",
+      "cloud_signer_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6"
+    },
+    "test_apk": {
+      "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e"
+    },
+    "local_signing": {
+      "status": "USER_REPORTED_SIGNATURE_VERIFIED_NOT_INSTALLED",
+      "helper": "qualification/prepare-device-upgrade.sh",
+      "manifest": "qualification/V22_UPGRADE_INPUT.json",
+      "self_test": "PASS with cloud-key fixture only; not the user private key",
+      "device_signed_apk_sha256": "10e70d21409daabcee0ba898703a1cb60897d127d22afffc84b6ca79f94390c8",
+      "original_report_candidate_versionCode": 21,
+      "verified_apk_manifest_versionCode": 22,
+      "report_erratum": "qualification/SIGNING_REPORT_ERRATUM_20261107.md",
+      "helper_sha256": "54bde3af5c24c8827932cd5079297df4c5a7755863ed7cdefca0d7859a2a5bd1"
+    },
+    "device_history": {
+      "origin": "USER_PROVIDED_ADB_AND_SCREENSHOTS",
+      "model": "SM-S926B",
+      "api": 37,
+      "installed_versionCode": 21,
+      "installed_versionName": "1.0.9",
+      "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+      "installed_signed_apk_sha256": "adfecfdf62a3ab6d48950ae956060b3b78d40e0cce35716f4b47aefb3b361ad6",
+      "v21_installation": "PASS_USER_REPORTED",
+      "v21_existing_sent_and_received_thumbnails": "OBSERVED_POSITIVE",
+      "v21_new_mms_send": {
+        "status": "FAILED",
+        "code": 5,
+        "state": "io_error",
+        "http": null,
+        "subscription": 1,
+        "provider": "applied"
+      },
+      "failed_image_bytes": null,
+      "root_cause_of_specific_failure": "NOT_ESTABLISHED",
+      "carrier_limits_observed": [
+        307200,
+        614400
+      ],
+      "effective_limit_from_flat_dump": "NOT_CONFIRMED",
+      "full_data_preservation": "NOT_TESTED"
+    },
+    "publication": {
+      "url": "https://drive.google.com/file/d/1omdhxF5sOVQ1Xo_sKnMHKwRMTal7oQOn/view?usp=drivesdk",
+      "file_id": "1omdhxF5sOVQ1Xo_sKnMHKwRMTal7oQOn",
+      "sha256": "269b0209b3134a6006d565712aa7e2708e100cae6f5f39f9d24ade9d90dff527",
+      "bytes": 60113286,
+      "shared": false,
+      "metadata_readback": "PASS",
+      "change": "Report helper and README only; APK hashes unchanged"
+    },
+    "room_unchanged": true,
+    "dependencies_and_wrapper_unchanged": true,
+    "apk_high_signal_secret_scan_matches": 0,
+    "secret_scan_exhaustive": false,
+    "npm_audit_total": 0,
+    "product_truth_tests_passed": 69,
+    "credential_hygiene_tests_passed": 6,
+    "release_policy_tests_passed": 7,
+    "dependabot": "Alert details inaccessible; no closure asserted",
+    "physical_s24_plus": "NOT_TESTED",
+    "blockers": [
+      "Actual selected-SIM carrier-config read and MMS behavior on v22 not tested",
+      "Specific v21 failed-image/PDU size unknown; incident root cause not established",
+      "Calls, multipart SMS, notifications, permissions/OEM and full data preservation incomplete",
+      "Dependabot details inaccessible"
+    ],
+    "report": "qualification/MMS_CARRIER_LIMIT_V22_20261107.md",
+    "recorded_at_utc": "2026-11-07T00:19:03.765051+00:00",
+    "superseded_kit_publication": {
+      "url": "https://drive.google.com/file/d/10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf/view?usp=drivesdk",
+      "file_id": "10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf",
+      "sha256": "409ef6dc80a750cd7e6bda84d12a61c6595471e6ecd394b0d6db23117ce401f9",
+      "bytes": 60113120,
+      "shared": false,
+      "metadata_readback": "PASS"
+    }
+  },
+  "qualification_history": [
+    {
+      "status": "BLOCKED",
+      "technical_local_status": "PASS",
+      "requested_sha": "249c347768932b73a958bb3dd953958f152a1ac8",
+      "requested_sha_result": "REJECTED_COMPILATION_ERROR",
+      "qualified_source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+      "qualified_android_tree": "0547bb2780ec041a204bac8ad7ebf1b4925ee34e",
+      "source_commit_note": "Subsequent evidence-only commits must preserve this Android tree; report their own final verification separately.",
+      "evidence": "qualification/evidence/20261106-final-1ac8bd5e",
+      "commands": [
+        {
+          "name": "targeted",
+          "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+          "command": [
+            "bash",
+            "gradlew",
+            ":app:testDebugUnitTest",
+            "--tests",
+            "com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest",
+            "--no-daemon",
+            "--console=plain",
+            "--max-workers=2"
+          ],
+          "cwd": "native-android-app",
+          "started_at_utc": "2026-11-06T18:22:29.338724+00:00",
+          "finished_at_utc": "2026-11-06T18:22:43.280217+00:00",
+          "exit_code": 0
+        },
+        {
+          "name": "unit",
+          "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+          "command": [
+            "bash",
+            "gradlew",
+            ":app:testDebugUnitTest",
+            "--no-daemon",
+            "--console=plain",
+            "--max-workers=2"
+          ],
+          "cwd": "native-android-app",
+          "started_at_utc": "2026-11-06T18:22:43.281086+00:00",
+          "finished_at_utc": "2026-11-06T18:22:56.833178+00:00",
+          "exit_code": 0
+        },
+        {
+          "name": "lint",
+          "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+          "command": [
+            "bash",
+            "gradlew",
+            ":app:lintDebug",
+            "--no-daemon",
+            "--console=plain",
+            "--max-workers=2"
+          ],
+          "cwd": "native-android-app",
+          "started_at_utc": "2026-11-06T18:22:56.848960+00:00",
+          "finished_at_utc": "2026-11-06T18:23:11.173836+00:00",
+          "exit_code": 0
+        },
+        {
+          "name": "assemble",
+          "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+          "command": [
+            "bash",
+            "gradlew",
+            ":app:assembleDebug",
+            "--no-daemon",
+            "--console=plain",
+            "--max-workers=2"
+          ],
+          "cwd": "native-android-app",
+          "started_at_utc": "2026-11-06T18:23:11.175007+00:00",
+          "finished_at_utc": "2026-11-06T18:23:26.404455+00:00",
+          "exit_code": 0
+        },
+        {
+          "name": "unit-with-fixture",
+          "source_commit": "1ac8bd5e325416bdb5ba1bca59566a561393b45b",
+          "command": [
+            "bash",
+            "gradlew",
+            ":app:testDebugUnitTest",
+            "--rerun",
+            "-PsentinelSignatureFixture=/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+            "--no-daemon",
+            "--console=plain",
+            "--max-workers=2"
+          ],
+          "cwd": "native-android-app",
+          "exit_code": 0,
+          "fixture_sha256": "2460b1643bec1137a4a78a18816f3db6cce328c2b94f0434de7c192fae6aa346",
+          "time_provenance": "JUnit timestamps and log filesystem mtime; shell start timestamp not separately recorded"
+        }
+      ],
+      "targeted_tests": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "unit_tests_without_fixture": {
+        "tests": 1405,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "skip_reason": "SIGNED_APK_FIXTURE_REQUIRED"
+      },
+      "unit_tests_with_new_apk_fixture": {
+        "tests": 1405,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint": {
+        "status": "PASS",
+        "errors": 0,
+        "warnings": 221,
+        "hints": 19,
+        "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
+      },
+      "assemble_debug": "PASS",
+      "apk": {
+        "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+        "sha256": "2460b1643bec1137a4a78a18816f3db6cce328c2b94f0434de7c192fae6aa346",
+        "signature": "debug; APK v2 verified",
+        "signer_certificate_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6",
+        "package": "com.sentinel.quantum",
+        "versionCode": 10,
+        "versionName": "1.0.9",
+        "minSdk": 24,
+        "targetSdk": 36,
+        "compileSdk": 37,
+        "zipalign": "PASS",
+        "static_secret_patterns": "no findings, including decompressed entries",
+        "upgrade_certificate_continuity": "NOT_TESTED; new environment debug key, not a release key"
+      },
+      "room": {
+        "version": 1,
+        "identity_hash": "21617aeab12bfb29ee9bec17bc238d62",
+        "schema_and_database_source_unchanged_vs_pr_base": true,
+        "on_device_migration": "NOT_TESTED"
+      },
+      "dependabot": {
+        "status": "UNVERIFIED",
+        "rest_http_status": 403,
+        "graphql_alert_count": 0,
+        "reported_alert_count": 6,
+        "npm_advisories_identified": 6,
+        "dependency": "vite",
+        "before": "8.3.1",
+        "after": "8.3.3",
+        "npm_audit_after_total": 0,
+        "review": "qualification/DEPENDENCY_REVIEW_20261106.md"
+      },
+      "blockers": [
+        "Dependabot alert state inaccessible; REST 403 conflicts with empty GraphQL listing",
+        "Physical Android behavior and Galaxy S24+ not tested; API24/25 notification settings fallback remains unverified",
+        "Certificate continuity for an existing installation is not qualified"
+      ],
+      "physical_s24_plus": "NOT_TESTED",
+      "pr": {
+        "number": 1754,
+        "required_state": "DRAFT",
+        "automatic_merge": false
+      },
+      "github_actions_dispatched": false,
+      "recorded_at_utc": "2026-11-06T18:26:02.509220+00:00"
+    },
+    {
+      "status": "BLOCKED",
+      "technical_local_status": "PASS",
+      "qualified_source_commit": "e002ccc7927ec9df533c54d6707254bf0a71f7ab",
+      "qualified_android_tree": "95943bbbe3b03980ece7348ef3d1866eb809f891",
+      "evidence": "qualification/evidence/20261106-notification-api24-e002ccc7",
+      "change": "Notification settings API24/25 fallback; both existing launch sites share a tested destination policy",
+      "tests": {
+        "targeted": {
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "unit": {
+          "tests": 1409,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 1
+        },
+        "unit-with-fixture": {
+          "tests": 1409,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      "notification_settings_regression": {
+        "tests": 4,
+        "red_failures": 1,
+        "green_failures": 0
+      },
+      "lint": {
+        "status": "PASS",
+        "errors": 0,
+        "warnings": 221,
+        "hints": 19,
+        "ids": {
+          "ApplySharedPref": 8,
+          "InlinedApi": 24,
+          "UnusedAttribute": 6,
+          "QueryPermissionsNeeded": 3,
+          "AndroidGradlePluginVersion": 1,
+          "ModifierParameter": 1,
+          "Typos": 1,
+          "PluralsCandidate": 8,
+          "HardwareIds": 2,
+          "DataExtractionRules": 1,
+          "ObsoleteSdkInt": 3,
+          "AutoboxingStateCreation": 19,
+          "UnusedResources": 62,
+          "TypographyEllipsis": 2,
+          "IconLauncherShape": 10,
+          "IconDuplicates": 5,
+          "ViewConstructor": 1,
+          "UseKtx": 83
+        }
+      },
+      "assemble_debug": "PASS",
+      "apk": {
+        "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+        "sha256": "2f2ef6e25da6ebe74f098eab5b15e5b5a210ed72edf2c022e0b485969bebff89",
+        "signature": "v2 debug verified",
+        "signer_certificate_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6",
+        "certificate_matches_previous_5454f5a6_artifact": true,
+        "original_installed_certificate_continuity": "NOT_TESTED",
+        "package": "com.sentinel.quantum",
+        "versionCode": 10,
+        "versionName": "1.0.9",
+        "minSdk": 24,
+        "targetSdk": 36,
+        "compileSdk": 37,
+        "zipalign": "PASS",
+        "decompressed_secret_pattern_findings": 0
+      },
+      "room_unchanged": true,
+      "npm_audit_total": 0,
+      "dependabot": "REST 403; GitHub alert details still unavailable; no closure asserted",
+      "physical_s24_plus": "NOT_TESTED",
+      "blockers": [
+        "No physical Android / Galaxy S24+ tests",
+        "Dependabot details inaccessible (HTTP 403)",
+        "Original installed signing certificate continuity unknown"
+      ],
+      "report": "qualification/NOTIFICATION_SETTINGS_FOLLOWUP_20261106.md",
+      "pr": {
+        "number": 1754,
+        "required_state": "DRAFT",
+        "automatic_merge": false
+      },
+      "recorded_at_utc": "2026-11-06T18:56:53.335248+00:00",
+      "instrumented_build": {
+        "source_commit": "a94d6d0131e69c0398d6ad1e8e8d4c3118280a09",
+        "android_tree": "95943bbbe3b03980ece7348ef3d1866eb809f891",
+        "command": "bash native-android-app/gradlew -p native-android-app :app:assembleDebugAndroidTest --no-daemon --console=plain --max-workers=2",
+        "exit_code": 0,
+        "compilation": "PASS",
+        "instrumented_execution": "NOT_TESTED",
+        "test_apk": {
+          "path": "native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+          "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+          "package": "com.sentinel.quantum.test",
+          "target_package": "com.sentinel.quantum",
+          "runner": "androidx.test.runner.AndroidJUnitRunner",
+          "minSdk": 24,
+          "targetSdk": 36,
+          "signature": "v2 verified",
+          "certificate_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6"
+        },
+        "test_source_files": 17,
+        "executed_instrumented_tests": null,
+        "connected_devices": [],
+        "kvm_available": false,
+        "emulator_installed": false,
+        "physical_s24_plus": "NOT_TESTED",
+        "evidence": "qualification/evidence/20261106-instrumented-a94d6d01",
+        "recorded_at_utc": "2026-11-06T19:04:32.220542+00:00"
+      }
+    },
+    {
+      "status": "BLOCKED",
+      "technical_local_status": "PASS",
+      "qualified_source_commit": "2a12faa631af63e5e912edd3a3d511eb616558e9",
+      "qualified_android_tree": "33f64f1bb9729941180a431ec7b9667fb0a036ca",
+      "evidence": "qualification/evidence/20261106-v20-upgrade-2a12faa6",
+      "change": "versionCode 10 -> 20 to exceed the user-observed installed versionCode 19; no new functionality",
+      "tests": {
+        "targeted": {
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "unit": {
+          "tests": 1409,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 1
+        },
+        "unit-with-fixture": {
+          "tests": 1409,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      "lint": {
+        "errors": 0,
+        "warnings": 221,
+        "hints": 19,
+        "classification": "qualification/evidence/20261106-v20-upgrade-2a12faa6/lint-classification.json"
+      },
+      "assemble_debug": "PASS",
+      "instrumented_compilation": "PASS",
+      "instrumented_execution": "NOT_TESTED",
+      "apk": {
+        "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+        "sha256": "9c39e96069a95eb77c119e1892664b15f3a1ecd2d70c588250885447f2d99be7",
+        "package": "com.sentinel.quantum",
+        "versionCode": 20,
+        "versionName": "1.0.9",
+        "minSdk": 24,
+        "targetSdk": 36,
+        "compileSdk": 37,
+        "signature": "v2 debug verified",
+        "cloud_signer_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6",
+        "direct_install_on_user_device": "BLOCKED_SIGNER_MISMATCH",
+        "zipalign": "PASS",
+        "decompressed_secret_pattern_findings": 0
+      },
+      "test_apk": {
+        "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+        "package": "com.sentinel.quantum.test",
+        "runner": "androidx.test.runner.AndroidJUnitRunner"
+      },
+      "device_preflight": {
+        "evidence_origin": "USER_REPORTED_ADB_AND_UBUNTU_OUTPUTS",
+        "model": "SM-S926B",
+        "api": 37,
+        "installed_versionCode": 19,
+        "installed_versionName": "1.0.9",
+        "installed_apk_sha256": "2f3aee6958d24c1d94cd5b6aaf51273ae44dc8a21d09a9a2ffa29c7f1ca4037f",
+        "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+        "signature_v2": "PASS_USER_REPORTED",
+        "ubuntu_local_debug_key_matches_installed_certificate": "PASS_USER_REPORTED",
+        "local_repository_head": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
+        "local_repository_dirty": "MmsImagePartRepository.kt; preserved; not used for this build"
+      },
+      "local_signing": {
+        "procedure": "qualification/prepare-device-upgrade.sh",
+        "input_manifest": "qualification/V20_UPGRADE_INPUT.json",
+        "status": "PENDING_USER_EXECUTION",
+        "self_test": "PASS; cloud debug-key fixture only",
+        "negative_tests": [
+          "wrong input SHA",
+          "wrong key certificate",
+          "existing outputs",
+          "changed ZIP payload with valid signature"
+        ],
+        "device_signed_apk_sha256": null,
+        "installation": "NOT_PERFORMED",
+        "helper_sha256": "0f4abce1581eb915340b16dcf912d36c02bbf6cb8ad5ef3a85fd4009727e61b1"
+      },
+      "room_unchanged": true,
+      "npm_audit_total": 0,
+      "dependabot": "Detail access unavailable; no alert closure asserted",
+      "physical_s24_plus": "NOT_TESTED",
+      "blockers": [
+        "Local signing with user key not yet executed; cloud APK signer differs",
+        "No physical functional or instrumented tests yet",
+        "Dependabot alert details inaccessible"
+      ],
+      "report": "qualification/V20_UPGRADE_20261106.md",
+      "recorded_at_utc": "2026-11-06T22:43:01.129527+00:00",
+      "publication": {
+        "url": "https://drive.google.com/file/d/1LFIWIvTTIlOHzKTwJU02K4MRsryI4K27/view?usp=drivesdk",
+        "file_id": "1LFIWIvTTIlOHzKTwJU02K4MRsryI4K27",
+        "kit_sha256": "a936cfb3c307ea2a09290f4827c39930d88c6a8ff75fb43c89a27fd5dd46b70c",
+        "bytes": 60112899,
+        "metadata_readback": "PASS",
+        "shared": false
+      }
+    },
+    {
+      "status": "BLOCKED",
+      "technical_local_status": "PASS",
+      "qualified_source_commit": "0ce9deef226f22a971c3781ef95e1d9f87c8999f",
+      "qualified_android_tree": "5b6794f346073a983fc8ae2cd5231f82279a799d",
+      "evidence": "qualification/evidence/20261106-mms-provider-v21-0ce9deef",
+      "change": "Canonical MMS part URI; parent/id/MIME revalidation before and after decoding; fail-closed provider opening; versionCode 21 > installed 20",
+      "tests": {
+        "targeted": {
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "unit": {
+          "tests": 1421,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 1
+        },
+        "unit-with-fixture": {
+          "tests": 1421,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      "targeted_regressions": {
+        "initial_tests": 10,
+        "red_failures": 3,
+        "regression_tests_in_full_suite": 12
+      },
+      "lint": {
+        "errors": 0,
+        "warnings": 221,
+        "hints": 19,
+        "classification": "qualification/evidence/20261106-mms-provider-v21-0ce9deef/lint-classification.json"
+      },
+      "assemble_debug": "PASS",
+      "instrumented_compilation": "PASS",
+      "instrumented_execution": "NOT_TESTED",
+      "apk": {
+        "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+        "sha256": "0055e96acef36c1e7ea83c4049e4cc8aa2a0af88078f062dca4b07694557e4a5",
+        "package": "com.sentinel.quantum",
+        "versionCode": 21,
+        "versionName": "1.0.9",
+        "minSdk": 24,
+        "targetSdk": 36,
+        "compileSdk": 37,
+        "signature": "v2 debug verified",
+        "cloud_signer_sha256": "fb90f8db77aff2e470ecbd9162b7308b550fdffdf9cd7c9c9daaa37c3812d7b6",
+        "direct_install_on_user_device": "BLOCKED_SIGNER_MISMATCH",
+        "zipalign": "PASS"
+      },
+      "test_apk": {
+        "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e",
+        "package": "com.sentinel.quantum.test"
+      },
+      "device_history": {
+        "evidence_origin": "USER_PROVIDED_ADB_AND_SCREENSHOTS",
+        "model": "SM-S926B",
+        "api": 37,
+        "installed_versionCode": 20,
+        "installed_signed_apk_sha256": "b07b917a5a8b3ac3f33e7d48508c11de4692c4d39740fbfa44695b78b7417bfb",
+        "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+        "v20_installation": "PASS_USER_REPORTED",
+        "v20_contacts_and_history": "OBSERVED",
+        "v20_sms_simple": "OBSERVED_POSITIVE",
+        "v20_mms_thumbnail": "FAIL",
+        "quarantine_label": "Generic raw-PDU retention label; not an image malware verdict",
+        "full_data_preservation": "NOT_TESTED"
+      },
+      "local_signing": {
+        "status": "PENDING_USER_EXECUTION",
+        "procedure": "qualification/prepare-device-upgrade.sh",
+        "input_manifest": "qualification/V21_UPGRADE_INPUT.json",
+        "helper_sha256": "571733d4227c4a54cf8c295efc49f684bd302e6efa72b6a2121839562c4cad81",
+        "self_tests": "PASS with cloud-key fixture only; 4 negative cases rejected",
+        "device_signed_apk_sha256": null,
+        "installation": "NOT_PERFORMED"
+      },
+      "publication": {
+        "url": "https://drive.google.com/file/d/1t7p33naiCAZyITq6qlGG_UAHFWwV4J-d/view?usp=drivesdk",
+        "file_id": "1t7p33naiCAZyITq6qlGG_UAHFWwV4J-d",
+        "kit_sha256": "b699528e49887be30a62de5875a8b0062ca1514a8c762c5b8f54f886cb394895",
+        "bytes": 60113637,
+        "metadata_readback": "PASS",
+        "shared": false
+      },
+      "room_unchanged": true,
+      "dependencies_and_wrapper_unchanged": true,
+      "npm_audit_total": 0,
+      "product_truth": "69 PASS after synchronizing current release documentation to versionCode 21; initial documentation failure retained in logs",
+      "dependabot": "Alert details inaccessible; no closure asserted",
+      "physical_s24_plus": "NOT_TESTED",
+      "blockers": [
+        "On-device MMS miniature retest for v21",
+        "Physical calls, multipart SMS, MMS and data-preservation qualification incomplete",
+        "Dependabot alert details inaccessible"
+      ],
+      "report": "qualification/MMS_PROVIDER_FIX_V21_20261106.md",
+      "recorded_at_utc": "2026-11-06T23:46:29.638460+00:00",
+      "v21_device_followup": {
+        "origin": "USER_PROVIDED_ADB_AND_SCREENSHOTS",
+        "model": "SM-S926B",
+        "api": 37,
+        "installed_versionCode": 21,
+        "installed_versionName": "1.0.9",
+        "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+        "installed_signed_apk_sha256": "adfecfdf62a3ab6d48950ae956060b3b78d40e0cce35716f4b47aefb3b361ad6",
+        "v21_installation": "PASS_USER_REPORTED",
+        "v21_existing_sent_and_received_thumbnails": "OBSERVED_POSITIVE",
+        "v21_new_mms_send": {
+          "status": "FAILED",
+          "code": 5,
+          "state": "io_error",
+          "http": null,
+          "subscription": 1,
+          "provider": "applied"
+        },
+        "failed_image_bytes": null,
+        "root_cause_of_specific_failure": "NOT_ESTABLISHED",
+        "carrier_limits_observed": [
+          307200,
+          614400
+        ],
+        "effective_limit_from_flat_dump": "NOT_CONFIRMED",
+        "full_data_preservation": "NOT_TESTED"
+      }
     }
   ]
 }

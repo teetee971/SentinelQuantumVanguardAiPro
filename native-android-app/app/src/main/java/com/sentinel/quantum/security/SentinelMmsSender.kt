@@ -107,6 +107,24 @@ class SentinelMmsSender(private val context: Context) {
                 return SendResult(false, eligibility.reason)
         }
 
+        // Query the same subscription-specific SmsManager used for the actual transport.
+        // Do not guess from another SIM or a global default when its configuration is unavailable.
+        @Suppress("DEPRECATION")
+        val manager = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                context.getSystemService(SmsManager::class.java)
+                    .createForSubscriptionId(subscriptionId)
+            } else {
+                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
+            }
+        }.getOrElse { return SendResult(false, "MMS_CARRIER_CONFIG_UNAVAILABLE", subscriptionId) }
+        val maxPduBytes = runCatching {
+            manager.carrierConfigValues?.getInt(SmsManager.MMS_CONFIG_MAX_MESSAGE_SIZE, 0) ?: 0
+        }.getOrDefault(0)
+        if (maxPduBytes <= 0) {
+            return SendResult(false, "MMS_CARRIER_CONFIG_UNAVAILABLE", subscriptionId)
+        }
+
         val parts = attachments.map {
             SentinelMmsSendPduComposer.Part(it.mimeType.lowercase(), it.payload)
         }
@@ -118,7 +136,8 @@ class SentinelMmsSender(private val context: Context) {
             destination = normalizedDestination,
             transactionId = transactionId,
             text = text,
-            attachments = parts
+            attachments = parts,
+            maxPduBytes = maxPduBytes
         )
         val pdu = (composed as? SentinelMmsSendPduComposer.Result.Composed)?.pdu
             ?: return SendResult(
@@ -179,14 +198,6 @@ class SentinelMmsSender(private val context: Context) {
                 callbackIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-
-            @Suppress("DEPRECATION")
-            val manager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                context.getSystemService(SmsManager::class.java)
-                    .createForSubscriptionId(subscriptionId)
-            } else {
-                SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
-            }
 
             // From this instruction onward, a synchronous exception cannot prove that the platform
             // accepted no MMS bytes. Only callbacks may resolve that uncertainty.

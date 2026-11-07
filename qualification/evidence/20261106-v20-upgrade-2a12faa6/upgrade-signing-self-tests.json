@@ -1,0 +1,32 @@
+{
+  "helper_sha256": "0f4abce1581eb915340b16dcf912d36c02bbf6cb8ad5ef3a85fd4009727e61b1",
+  "positive": {
+    "status": "PASS",
+    "fixture": "cloud debug key only; user key not accessed",
+    "payload_identical": true,
+    "native_offsets_preserved": true,
+    "zipalign_16k": "PASS"
+  },
+  "negative_cases": [
+    {
+      "case": "wrong-input",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    },
+    {
+      "case": "wrong-signer",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    },
+    {
+      "case": "existing-output",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    },
+    {
+      "case": "payload-mutation-with-valid-signature",
+      "expected_rejection_verified": true,
+      "exit_code": 1
+    }
+  ]
+}

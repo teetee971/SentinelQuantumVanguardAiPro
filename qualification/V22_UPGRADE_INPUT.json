@@ -1,0 +1,11 @@
+{
+  "source_commit": "fafe9f5b1c57b21f276ca62189acab625a490ec9",
+  "package": "com.sentinel.quantum",
+  "candidate_versionCode": 22,
+  "installed_versionCode": 21,
+  "installed_signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "artifact_sha256": {
+    "app-debug-v22.apk": "9256d99f91b85c4f9e78539b9ce478b905c82f893782aea3c1f90f6938eb8f6a",
+    "app-debug-androidTest-v22.apk": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e"
+  }
+}

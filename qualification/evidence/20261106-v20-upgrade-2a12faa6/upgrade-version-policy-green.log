@@ -1,0 +1,15 @@
+✔ production Android releases require the protected environment and current main head (5.582366ms)
+✔ release integrity records APK and AAB signer evidence and verifies checksums (0.735732ms)
+✔ the workflow creates a draft rather than a publicly downloadable release (0.22495ms)
+✔ production signing never falls back to a debug keystore (2.004469ms)
+✔ releaseUnsigned explicitly clears any signing config inherited from release (0.268366ms)
+✔ the next Android release is version 1.0.9 with a monotonic version code (0.246333ms)
+✔ Auth0 Android dependency is pinned to the exact qualified version (0.298341ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 96.392204
