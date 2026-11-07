@@ -428,6 +428,10 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                                 )
                             }
                             status = when (result.reason) {
+                                "MMS_CARRIER_SIZE_EXCEEDED" ->
+                                    "MMS trop volumineux pour cette SIM. Choisissez une image plus petite ou moins de pièces jointes. Aucun envoi effectué."
+                                "MMS_CARRIER_CONFIG_UNAVAILABLE" ->
+                                    "Impossible de vérifier la limite MMS de cette SIM. Aucun envoi effectué ; réessayez lorsque la ligne est disponible."
                                 "MMS_SUBMITTED_TO_ANDROID" ->
                                     "MMS confié à Android ; le résultat opérateur arrivera par callback."
                                 "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" ->
