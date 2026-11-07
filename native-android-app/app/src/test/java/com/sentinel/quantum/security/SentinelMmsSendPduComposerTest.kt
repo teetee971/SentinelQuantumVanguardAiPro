@@ -97,4 +97,12 @@ class SentinelMmsSendPduComposerTest {
             listOf(SentinelMmsSendPduComposer.Part("image/jpeg", ByteArray(payloadBytes))),
             maxPduBytes = carrierLimit
         )
+
+    @Test fun countedSizeMatchesActualEncoderAcrossUintvarBoundaries() {
+        for(size in listOf(1,127,128,16383,16384))for(mime in listOf("image/jpeg","image/png","image/webp")) {
+            val parts=listOf(SentinelMmsSendPduComposer.Part(mime,ByteArray(size)))
+            val encoded=SentinelMmsSendPduComposer.compose("+33612345678","count-case","texte é",parts) as SentinelMmsSendPduComposer.Result.Composed
+            assertEquals(encoded.pdu.size,SentinelMmsSendPduComposer.measuredSize("+33612345678","count-case","texte é",parts))
+        }
+    }
 }

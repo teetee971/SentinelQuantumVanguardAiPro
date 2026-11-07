@@ -1,0 +1,75 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.sentinel.quantum.mmslab'
+    compileSdk 37
+
+    defaultConfig {
+        applicationId 'com.sentinel.quantum.mmslab.v23'
+        minSdk 28
+        targetSdk 36
+        versionCode 1
+        versionName '0.23-test'
+
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    testOptions { unitTests.includeAndroidResources = true }
+
+    sourceSets {
+        test.kotlin.srcDir(project.file('src/sharedTest/java'))
+        androidTest.kotlin.srcDir(project.file('src/sharedTest/java'))
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs += [
+                '../app/src/main/java'
+            ]
+            java.includes = [
+                '**/MmsOutgoingJpegCompressor.kt', '**/MmsOutgoingPreparation.kt', '**/SentinelMmsSendPduComposer.kt', '**/MmsOutgoingLimits.kt'
+            ]
+        }
+
+        test {
+            java.srcDirs += ['../app/src/test/java', 'src/sharedTest/java']
+            java.includes = ['**/MmsOutgoingJpegCompressorRobolectricTest.kt', '**/MmsOutgoingPreparationTest.kt', '**/MmsOutgoingJpegCases.kt', '**/MmsOutgoingPreparationNativeTest.kt', '**/MmsOutgoingPreparationNativeCases.kt']
+        }
+
+        androidTest {
+            java.srcDirs += [
+                '../app/src/androidTest/java', 'src/sharedTest/java'
+            ]
+            java.includes = [
+                '**/MmsOutgoingJpegCompressorInstrumentationTest.kt', '**/MmsOutgoingPreparationInstrumentationTest.kt', '**/MmsOutgoingJpegCases.kt', '**/MmsOutgoingPreparationNativeCases.kt'
+            ]
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.exifinterface:exifinterface:1.4.1'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.16.1'
+    androidTestImplementation 'androidx.test:runner:1.7.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.3.0'
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty 'robolectric.dependency.repo.url', 'https://repo.maven.apache.org/maven2'
+}
+
+// The reproduction script can guarantee offline Robolectric SDK resolution after bootstrap.
+tasks.withType(Test).configureEach {
+    if (project.hasProperty('sentinelRobolectricSdkDir')) {
+        systemProperty 'robolectric.offline', 'true'
+        systemProperty 'robolectric.dependency.dir', project.property('sentinelRobolectricSdkDir').toString()
+    }
+}
