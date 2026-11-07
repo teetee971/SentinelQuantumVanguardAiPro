@@ -1,0 +1,78 @@
+{
+  "source_sha": "7f0db2921b0fb4405e18c421468668f1782787f7",
+  "android_tree": "3538eb0eb353ac6f50bb0432b62d265c015ec773",
+  "exit_codes": {
+    "java": 0,
+    "gradle-version": 0,
+    "kotlin": 0,
+    "unit": 0,
+    "wearable": 0,
+    "lint": 0,
+    "assemble": 0,
+    "app-signature": 0,
+    "app-align": 0,
+    "app-badging": 0,
+    "test-signature": 0,
+    "test-align": 0,
+    "test-badging": 0,
+    "unit-fixture": 0,
+    "policy": 0,
+    "products": 0,
+    "credentials": 0,
+    "git-check": 0
+  },
+  "tests": {
+    "wearable-security-junit": {
+      "counts": {
+        "tests": 26,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    "wearable-contract-junit": {
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    "unit-fixture-junit": {
+      "counts": {
+        "tests": 1446,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    "unit-junit": {
+      "counts": {
+        "tests": 1446,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "failed": []
+    }
+  },
+  "lint": {
+    "Warning": 220,
+    "Hint": 19
+  },
+  "artifacts": {
+    "app.apk": {
+      "bytes": 97234166,
+      "sha256": "9d154746f470e98edfc72aeec6804306c38372b76cf8b5c2f5f3fec545f5bb71"
+    },
+    "test.apk": {
+      "bytes": 1137862,
+      "sha256": "95429ff0e49872d6d43727ca7399908883abf0b7bd501b29169fa86987de03f5"
+    }
+  },
+  "physical": "NOT_EXECUTED",
+  "installation": "NOT_PERFORMED"
+}

@@ -1,0 +1,18 @@
+/workspace/toolchains/jdk-17.0.21+9/bin/java -version
+bash /workspace/sentinel-cleaner/native-android-app/gradlew -p /workspace/sentinel-cleaner/native-android-app --version
+bash /workspace/sentinel-cleaner/native-android-app/gradlew -p /workspace/sentinel-cleaner/native-android-app :app:compileDebugKotlin --offline --no-daemon --max-workers=1 --console=plain
+bash /workspace/sentinel-cleaner/native-android-app/gradlew -p /workspace/sentinel-cleaner/native-android-app :app:testDebugUnitTest --rerun --offline --no-daemon --max-workers=1 --console=plain
+bash /workspace/sentinel-cleaner/native-android-app/gradlew -p /workspace/sentinel-cleaner/native-android-app :wearable-contract:test --rerun :wearable-security:test --rerun --offline --no-daemon --max-workers=1 --console=plain
+bash /workspace/sentinel-cleaner/native-android-app/gradlew -p /workspace/sentinel-cleaner/native-android-app :app:lintDebug --offline --no-daemon --max-workers=1 --console=plain
+bash /workspace/sentinel-cleaner/native-android-app/gradlew -p /workspace/sentinel-cleaner/native-android-app :app:assembleDebug :app:assembleDebugAndroidTest --offline --no-daemon --max-workers=1 --console=plain
+/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner verify --verbose --print-certs /workspace/sentinel-cleaner/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign -c -P 16 4 /workspace/sentinel-cleaner/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2 dump badging /workspace/sentinel-cleaner/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner verify --verbose --print-certs /workspace/sentinel-cleaner/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign -c -P 16 4 /workspace/sentinel-cleaner/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2 dump badging /workspace/sentinel-cleaner/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+bash /workspace/sentinel-cleaner/native-android-app/gradlew -p /workspace/sentinel-cleaner/native-android-app :app:testDebugUnitTest --rerun -PsentinelSignatureFixture=/workspace/sentinel-cleaner/native-android-app/app/build/outputs/apk/debug/app-debug.apk --offline --no-daemon --max-workers=1 --console=plain
+node --test scripts/android-release-policy.test.js
+npm run test:android-product-truth
+npm run test:credential-hygiene
+git diff --check

@@ -1,0 +1,14 @@
+{
+  "SentinelQuantumVanguardAiPro": {
+    "head": "5dbb6190f758da92145ce08bfbf3c2823cb728c5",
+    "clean": true
+  },
+  "sentinel-mms-v23": {
+    "head": "708b7a208fd93efc9a4198802fa093603af6f7b9",
+    "clean": true
+  },
+  "keystore_unchanged": true,
+  "manifest_permissions_unchanged": true,
+  "production_installation": "NOT_PERFORMED",
+  "physical_tests": "NOT_EXECUTED"
+}
