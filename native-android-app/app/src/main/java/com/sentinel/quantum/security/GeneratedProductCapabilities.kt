@@ -23,6 +23,7 @@ object GeneratedProductCapabilities {
         "voice_call_infrastructure" to State(false, false, null),
         "vpn_sequence_authority" to State(true, false, null),
         "mesh_runtime" to State(true, false, null),
-        "osint_android_feeds" to State(true, false, null)
+        "osint_android_feeds" to State(true, false, null),
+        "android_doctor_cleaner" to State(true, false, null)
     )
 }

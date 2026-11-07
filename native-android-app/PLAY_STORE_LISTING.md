@@ -29,6 +29,7 @@ Outils complémentaires
 • Veille publique CERT-FR, ANSSI et CVE/NVD avec cache local et recherche.
 • Analyse locale d’un e-mail fourni volontairement : en-têtes, domaines et liens, sans connexion à votre boîte mail.
 • Diagnostic informatif des permissions et journal local exportable à votre demande.
+• Nettoyeur local à partir d’Android 8 : choisissez et confirmez la suppression de copies temporaires Sentinel anciennes. Les conversations, bases et données des autres applications sont exclues.
 • Aperçu vocal local : ne modifie pas les appels téléphoniques de votre opérateur.
 
 Vos choix et vos données

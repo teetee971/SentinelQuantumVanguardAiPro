@@ -1,0 +1,42 @@
+[
+  {
+    "file": "Sentinel-Doctor-24-DEBUG-DO-NOT-INSTALL.apk",
+    "path": "/workspace/qualification-evidence/roadmap-finalization/Sentinel-Doctor-24-DEBUG-DO-NOT-INSTALL.apk",
+    "original_build_output": "/workspace/sentinel-play-ready/native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+    "bytes": 98323493,
+    "sha256": "946ce4a15b2e3e95f25233f3569aada4b834c9d830abc1ed101eaed64c6fccd2",
+    "source_commit": "b3c420bbe29c7207853ce4896e3431dea6c6921b",
+    "android_tree": "f720a25df5cb375a726d5795644a291c7cec509d",
+    "signing": "cloud-debug"
+  },
+  {
+    "file": "Sentinel-Doctor-24-LABPREVIEW.apk",
+    "path": "/workspace/qualification-evidence/roadmap-finalization/Sentinel-Doctor-24-LABPREVIEW.apk",
+    "original_build_output": "/workspace/sentinel-play-ready/native-android-app/app/build/outputs/apk/labPreview/app-labPreview.apk",
+    "bytes": 97140411,
+    "sha256": "8912cdaf2c027759b2e011546ec538c4034d30a5c13004f99881e0b2fc77f2b1",
+    "source_commit": "b3c420bbe29c7207853ce4896e3431dea6c6921b",
+    "android_tree": "f720a25df5cb375a726d5795644a291c7cec509d",
+    "signing": "cloud-debug"
+  },
+  {
+    "file": "Sentinel-Doctor-24-LABPREVIEW-androidTest.apk",
+    "path": "/workspace/qualification-evidence/roadmap-finalization/Sentinel-Doctor-24-LABPREVIEW-androidTest.apk",
+    "original_build_output": "/workspace/sentinel-play-ready/native-android-app/app/build/outputs/apk/androidTest/labPreview/app-labPreview-androidTest.apk",
+    "bytes": 1143855,
+    "sha256": "77be9cace1657e6d9b425bf95ec72c7d98fde7977e1597ef9dfe41d60419d09f",
+    "source_commit": "b3c420bbe29c7207853ce4896e3431dea6c6921b",
+    "android_tree": "f720a25df5cb375a726d5795644a291c7cec509d",
+    "signing": "cloud-debug"
+  },
+  {
+    "file": "Sentinel-Doctor-24-UNSIGNED-NOT-FOR-UPLOAD.aab",
+    "path": "/workspace/qualification-evidence/roadmap-finalization/Sentinel-Doctor-24-UNSIGNED-NOT-FOR-UPLOAD.aab",
+    "original_build_output": "/workspace/sentinel-play-ready/native-android-app/app/build/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+    "bytes": 40186718,
+    "sha256": "caa92f2a8852df812248077a2882b3e7815f4a1a20728ffcebd4e4555cdfbf3a",
+    "source_commit": "b3c420bbe29c7207853ce4896e3431dea6c6921b",
+    "android_tree": "f720a25df5cb375a726d5795644a291c7cec509d",
+    "signing": "unsigned"
+  }
+]

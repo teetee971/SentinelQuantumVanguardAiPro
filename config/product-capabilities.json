@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-10-05",
+  "updated_at": "2026-11-07",
   "capabilities": [
     {
       "id": "phone_core_android",
@@ -662,6 +662,55 @@
         "native-android-app/app/src/main/java/com/sentinel/quantum/data/OsintRepository.kt"
       ],
       "required_physical_criteria": [],
+      "evidence_sha": null,
+      "evidence_at": null,
+      "verification_evidence": {},
+      "dependencies": [
+        {
+          "id": "public_android_release",
+          "required_stages": [
+            "release_signed",
+            "deployed"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "android_doctor_cleaner",
+      "surface": "Android Doctor bounded local cleaner",
+      "implemented": true,
+      "configured": true,
+      "requires_deployment": false,
+      "deployed": false,
+      "runtime_verified": false,
+      "requires_physical_validation": true,
+      "physically_validated": false,
+      "requires_signed_release": true,
+      "release_signed": false,
+      "customer_available": false,
+      "blockers": [
+        "Physical UI validation of the exact candidate is not executed",
+        "Signed public Android release and Play qualification are not demonstrated"
+      ],
+      "evidence": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SystemCleanerScreen.kt",
+        "native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt"
+      ],
+      "source_scope": [
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCleanupEligibility.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCleanupDirectoryEntries.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelOwnedCleanupCollector.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelOwnedCleanupExecutor.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCleanerSession.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SystemCleanerScreen.kt",
+        "native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/SystemCleanerViewModel.kt"
+      ],
+      "required_physical_criteria": [
+        "scan_does_not_delete",
+        "confirmation_and_cancellation",
+        "protected_files_unchanged",
+        "rotation_navigation_and_partial_report"
+      ],
       "evidence_sha": null,
       "evidence_at": null,
       "verification_evidence": {},

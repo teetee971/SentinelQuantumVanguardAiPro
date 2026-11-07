@@ -1,0 +1,8 @@
+{
+  "application_id": "com.sentinel.quantum.labpreview",
+  "label": "Sentinel Lab Preview",
+  "removed_phone_core_permissions": true,
+  "removed_phone_core_handlers": true,
+  "optional_telephony": true,
+  "wizard_method_returns_immediately": true
+}

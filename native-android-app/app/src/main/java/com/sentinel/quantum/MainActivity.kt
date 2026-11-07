@@ -168,6 +168,7 @@ class MainActivity : ComponentActivity() {
                                             Screen.PhoneSecurity.route,
                                             Screen.SecurityAudit.route,
                                             Screen.SystemDoctor.route,
+                                            Screen.SystemCleaner.route,
                                             Screen.CallBlocking.route,
                                             Screen.PhoneLists.route,
                                             Screen.CallFilterHistory.route,
@@ -252,6 +253,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun maybeOpenPhoneCoreFirstRunSetup() {
+        // The isolated preview removes default-handler components. Do not request roles
+        // or write a wizard lifecycle there; production builds retain the normal flow.
+        if (!BuildConfig.PHONE_CORE_SETUP_AUTOLAUNCH_ALLOWED) return
         if (intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
         val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)

@@ -1,0 +1,124 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preLabPreviewBuild UP-TO-DATE
+> Task :app:mergeLabPreviewNativeDebugMetadata NO-SOURCE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :app:generateLabPreviewBuildConfig UP-TO-DATE
+> Task :app:generateLabPreviewResources UP-TO-DATE
+> Task :app:packageLabPreviewResources UP-TO-DATE
+> Task :app:processLabPreviewNavigationResources UP-TO-DATE
+> Task :app:parseLabPreviewLocalResources UP-TO-DATE
+> Task :app:generateLabPreviewRFile UP-TO-DATE
+> Task :app:kspLabPreviewKotlin UP-TO-DATE
+> Task :app:compileLabPreviewKotlin UP-TO-DATE
+> Task :app:javaPreCompileLabPreview UP-TO-DATE
+> Task :app:compileLabPreviewJavaWithJavac UP-TO-DATE
+> Task :app:generateLabPreviewAssets UP-TO-DATE
+> Task :app:mergeLabPreviewAssets UP-TO-DATE
+> Task :app:compressLabPreviewAssets UP-TO-DATE
+> Task :app:generateLabPreviewGlobalSynthetics UP-TO-DATE
+> Task :app:l8DexDesugarLibLabPreview UP-TO-DATE
+> Task :app:checkLabPreviewDuplicateClasses UP-TO-DATE
+> Task :app:desugarLabPreviewFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexLabPreview UP-TO-DATE
+> Task :app:processLabPreviewJavaRes UP-TO-DATE
+> Task :app:mergeLabPreviewJavaResource UP-TO-DATE
+> Task :app:mergeLibDexLabPreview UP-TO-DATE
+> Task :app:checkLabPreviewAarMetadata UP-TO-DATE
+> Task :app:mapLabPreviewSourceSetPaths UP-TO-DATE
+> Task :app:compileLabPreviewNavigationResources UP-TO-DATE
+> Task :app:mergeLabPreviewResources UP-TO-DATE
+> Task :app:createLabPreviewCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksLabPreview UP-TO-DATE
+> Task :app:processLabPreviewMainManifest
+> Task :app:processLabPreviewManifest
+> Task :app:processLabPreviewManifestForPackage
+> Task :app:processLabPreviewResources
+> Task :app:dexBuilderLabPreview UP-TO-DATE
+> Task :app:mergeProjectDexLabPreview UP-TO-DATE
+> Task :app:mergeLabPreviewJniLibFolders UP-TO-DATE
+> Task :app:mergeLabPreviewNativeLibs UP-TO-DATE
+> Task :app:stripLabPreviewDebugSymbols UP-TO-DATE
+> Task :app:validateSigningLabPreview UP-TO-DATE
+> Task :app:writeLabPreviewAppMetadata UP-TO-DATE
+> Task :app:writeLabPreviewSigningConfigVersions UP-TO-DATE
+> Task :app:packageLabPreview
+> Task :app:createLabPreviewApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleLabPreview
+> Task :app:bundleLabPreviewClassesToCompileJar UP-TO-DATE
+> Task :app:preLabPreviewAndroidTestBuild SKIPPED
+> Task :app:mergeLabPreviewAndroidTestManifest UP-TO-DATE
+> Task :app:processLabPreviewAndroidTestManifest UP-TO-DATE
+> Task :app:generateLabPreviewAndroidTestBuildConfig UP-TO-DATE
+> Task :app:generateLabPreviewAndroidTestResources UP-TO-DATE
+> Task :app:packageLabPreviewAndroidTestResources UP-TO-DATE
+> Task :app:processLabPreviewAndroidTestNavigationResources UP-TO-DATE
+> Task :app:parseLabPreviewAndroidTestLocalResources UP-TO-DATE
+> Task :app:generateLabPreviewAndroidTestRFile UP-TO-DATE
+> Task :app:kspLabPreviewAndroidTestKotlin UP-TO-DATE
+> Task :app:compileLabPreviewAndroidTestKotlin UP-TO-DATE
+> Task :app:javaPreCompileLabPreviewAndroidTest UP-TO-DATE
+> Task :app:compileLabPreviewAndroidTestJavaWithJavac UP-TO-DATE
+> Task :app:generateLabPreviewAndroidTestAssets UP-TO-DATE
+> Task :app:mergeLabPreviewAndroidTestAssets UP-TO-DATE
+> Task :app:compressLabPreviewAndroidTestAssets UP-TO-DATE
+> Task :app:generateLabPreviewAndroidTestGlobalSynthetics UP-TO-DATE
+> Task :app:checkLabPreviewAndroidTestDuplicateClasses UP-TO-DATE
+> Task :app:desugarLabPreviewAndroidTestFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexLabPreviewAndroidTest UP-TO-DATE
+> Task :app:processLabPreviewAndroidTestJavaRes UP-TO-DATE
+> Task :app:mergeLabPreviewAndroidTestJavaResource UP-TO-DATE
+> Task :app:mergeLibDexLabPreviewAndroidTest UP-TO-DATE
+> Task :app:checkLabPreviewAndroidTestAarMetadata UP-TO-DATE
+> Task :app:mapLabPreviewAndroidTestSourceSetPaths UP-TO-DATE
+> Task :app:compileLabPreviewAndroidTestNavigationResources UP-TO-DATE
+> Task :app:mergeLabPreviewAndroidTestResources UP-TO-DATE
+> Task :app:processLabPreviewAndroidTestResources UP-TO-DATE
+> Task :app:dexBuilderLabPreviewAndroidTest UP-TO-DATE
+> Task :app:mergeProjectDexLabPreviewAndroidTest UP-TO-DATE
+> Task :app:mergeLabPreviewAndroidTestJniLibFolders UP-TO-DATE
+> Task :app:mergeLabPreviewAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripLabPreviewAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningLabPreviewAndroidTest UP-TO-DATE
+> Task :app:writeLabPreviewAndroidTestSigningConfigVersions UP-TO-DATE
+> Task :app:packageLabPreviewAndroidTest UP-TO-DATE
+> Task :app:createLabPreviewAndroidTestApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleLabPreviewAndroidTest UP-TO-DATE
+> Task :app:generateLabPreviewAndroidTestLintModel
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:generateLabPreviewLintReportModel
+> Task :app:preLabPreviewUnitTestBuild UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:generateLabPreviewUnitTestLintModel
+> Task :app:lintAnalyzeLabPreview
+> Task :app:lintAnalyzeLabPreviewAndroidTest
+> Task :app:lintAnalyzeLabPreviewUnitTest
+
+> Task :app:lintReportLabPreview
+Wrote HTML report to file:///workspace/sentinel-play-ready/native-android-app/app/build/reports/lint-results-labPreview.html
+Wrote SARIF report to file:///workspace/sentinel-play-ready/native-android-app/app/build/reports/lint-results-labPreview.sarif
+
+> Task :app:lintLabPreview
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-play-ready/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2m 57s
+87 actionable tasks: 13 executed, 74 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

@@ -1,0 +1,55 @@
+✔ lab preview has a separate identity and refuses production instrumentation build types (0.923669ms)
+✖ lab preview never automatically offers default-handler setup while production retains it (1.91586ms)
+✔ lab preview removes privileged Phone Core handlers and declares optional telephony hardware (0.283476ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 90.005804
+
+✖ failing tests:
+
+test at scripts/android-lab-preview-policy.test.js:15:1
+✖ lab preview never automatically offers default-handler setup while production retains it (1.91586ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /buildConfigField "boolean", "PHONE_CORE_SETUP_AUTOLAUNCH_ALLOWED", 'true'/. Input:
+
+  'defaultConfig {\n' +
+    '        applicationId "com.sentinel.quantum"\n' +
+    '        minSdk 24\n' +
+    '        targetSdk 36\n' +
+    '        versionCode 24\n' +
+    '        versionName "1.0.10"\n' +
+    '        // Public URL only: never pass credentials or tokens in this property.\n' +
+    "        def deletionUrl = providers.gradleProperty('sentinelAccountDeletionUrl').getOrElse('')\n" +
+    '        buildConfigField "String", "ACCOUNT_DELETION_URL", groovy.json.JsonOutput.toJson(deletionUrl)\n' +
+    `        buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'\n` +
+    '        manifestPlaceholders = [\n' +
+    '            auth0Domain: "@string/com_auth0_domain",\n' +
+    '            auth0Scheme: "@string/com_auth0_scheme"\n' +
+    '        ]\n' +
+    '\n' +
+    '        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"\n' +
+    '        vectorDrawables {\n' +
+    '            useSupportLibrary = true\n' +
+    '        }\n' +
+    '    }\n' +
+    '\n' +
+    '    '
+
+      at TestContext.<anonymous> (file:///workspace/sentinel-play-ready/scripts/android-lab-preview-policy.test.js:18:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: `defaultConfig {\n        applicationId "com.sentinel.quantum"\n        minSdk 24\n        targetSdk 36\n        versionCode 24\n        versionName "1.0.10"\n        // Public URL only: never pass credentials or tokens in this property.\n        def deletionUrl = providers.gradleProperty('sentinelAccountDeletionUrl').getOrElse('')\n        buildConfigField "String", "ACCOUNT_DELETION_URL", groovy.json.JsonOutput.toJson(deletionUrl)\n        buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'\n        manifestPlaceholders = [\n            auth0Domain: "@string/com_auth0_domain",\n            auth0Scheme: "@string/com_auth0_scheme"\n        ]\n\n        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"\n        vectorDrawables {\n            useSupportLibrary = true\n        }\n    }\n\n    `,
+    expected: /buildConfigField "boolean", "PHONE_CORE_SETUP_AUTOLAUNCH_ALLOWED", 'true'/,
+    operator: 'match',
+    diff: 'simple'
+  }

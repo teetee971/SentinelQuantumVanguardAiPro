@@ -4,7 +4,15 @@ plugins {
     id 'com.google.devtools.ksp'
 }
 
+// Preserve debug CI compatibility; choose labPreview explicitly for isolated device tests.
+// Neither instrumentation target may use a release build type.
+def sentinelInstrumentationBuildType = providers.gradleProperty('sentinelInstrumentationBuildType').getOrElse('debug')
+if (!(sentinelInstrumentationBuildType in ['debug', 'labPreview'])) {
+    throw new GradleException('sentinelInstrumentationBuildType must be debug or labPreview; release instrumentation is forbidden.')
+}
+
 android {
+    testBuildType sentinelInstrumentationBuildType
     namespace = 'com.sentinel.quantum'
     compileSdk 37
 
@@ -14,6 +22,7 @@ android {
         targetSdk 36
         versionCode 24
         versionName "1.0.10"
+        buildConfigField "boolean", "PHONE_CORE_SETUP_AUTOLAUNCH_ALLOWED", 'true'
         // Public URL only: never pass credentials or tokens in this property.
         def deletionUrl = providers.gradleProperty('sentinelAccountDeletionUrl').getOrElse('')
         buildConfigField "String", "ACCOUNT_DELETION_URL", groovy.json.JsonOutput.toJson(deletionUrl)
@@ -58,6 +67,7 @@ android {
             initWith debug
             applicationIdSuffix '.labpreview'
             versionNameSuffix '-lab-preview'
+            buildConfigField "boolean", "PHONE_CORE_SETUP_AUTOLAUNCH_ALLOWED", 'false'
             signingConfig signingConfigs.debug
             matchingFallbacks = ['debug']
         }
@@ -169,6 +179,8 @@ dependencies {
 
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
+    // initWith(debug) does not inherit app dependency configurations.
+    labPreviewImplementation 'androidx.compose.ui:ui-test-manifest'
 }
 
 ksp {

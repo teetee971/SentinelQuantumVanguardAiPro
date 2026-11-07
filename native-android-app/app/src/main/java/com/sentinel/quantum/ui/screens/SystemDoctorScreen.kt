@@ -15,6 +15,8 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material3.OutlinedButton
+import com.sentinel.quantum.navigation.Screen
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,6 +77,7 @@ fun SystemDoctorScreen(navController: NavController) {
                 )
             )
             SystemAnalysisDashboard(scan = scan, isScanning = isScanning)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
                 onClick = {
                     if (!isScanning) {
@@ -86,9 +89,13 @@ fun SystemDoctorScreen(navController: NavController) {
                     }
                 },
                 enabled = !isScanning,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.weight(1f)
             ) {
                 Text(if (isScanning) "Analyse…" else if (scan == null) "Lancer le scan local" else "Relancer le scan")
+            }
+                OutlinedButton(onClick = { navController.navigate(Screen.SystemCleaner.route) }, modifier = Modifier.weight(1f)) {
+                    Text("Ouvrir le nettoyeur")
+                }
             }
 
             scan?.let { result ->
