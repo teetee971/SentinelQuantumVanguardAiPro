@@ -1,0 +1,27 @@
+/workspace/toolchains/jdk-17.0.21+9/bin/java -version
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app --version
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :app:compileDebugKotlin :mms-compression-lab:compileDebugKotlin --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :app:testDebugUnitTest --rerun --tests com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :app:testDebugUnitTest --rerun --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :mms-compression-lab:testDebugUnitTest --rerun --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :wearable-contract:test --rerun :wearable-security:test --rerun --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :app:lintDebug :mms-compression-lab:lintDebug --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :app:assembleDebug :mms-compression-lab:assembleDebug --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :app:assembleDebugAndroidTest :mms-compression-lab:assembleDebugAndroidTest --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner verify --verbose --print-certs /workspace/sentinel-mms-v23/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2 dump badging /workspace/sentinel-mms-v23/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign -c -P 16 4 /workspace/sentinel-mms-v23/native-android-app/app/build/outputs/apk/debug/app-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner verify --verbose --print-certs /workspace/sentinel-mms-v23/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2 dump badging /workspace/sentinel-mms-v23/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign -c -P 16 4 /workspace/sentinel-mms-v23/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner verify --verbose --print-certs /workspace/sentinel-mms-v23/native-android-app/mms-compression-lab/build/outputs/apk/debug/mms-compression-lab-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2 dump badging /workspace/sentinel-mms-v23/native-android-app/mms-compression-lab/build/outputs/apk/debug/mms-compression-lab-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign -c -P 16 4 /workspace/sentinel-mms-v23/native-android-app/mms-compression-lab/build/outputs/apk/debug/mms-compression-lab-debug.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner verify --verbose --print-certs /workspace/sentinel-mms-v23/native-android-app/mms-compression-lab/build/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2 dump badging /workspace/sentinel-mms-v23/native-android-app/mms-compression-lab/build/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk
+/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign -c -P 16 4 /workspace/sentinel-mms-v23/native-android-app/mms-compression-lab/build/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk
+bash /workspace/sentinel-mms-v23/native-android-app/gradlew -p /workspace/sentinel-mms-v23/native-android-app :app:testDebugUnitTest --rerun -PsentinelSignatureFixture=/workspace/sentinel-mms-v23/native-android-app/app/build/outputs/apk/debug/app-debug.apk --offline --no-daemon --max-workers=1 --console=plain -PsentinelRobolectricSdkDir=/workspace/toolchains/robolectric-sdks
+node --test scripts/android-release-policy.test.js
+npm run test:android-product-truth
+npm run test:credential-hygiene
+git diff --check

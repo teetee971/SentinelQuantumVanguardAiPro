@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SentinelMmsSender
+import com.sentinel.quantum.security.MmsComposeDraftSnapshot
 import com.sentinel.quantum.security.MmsAttachmentLoader
 import com.sentinel.quantum.security.MmsSendEligibilityPolicy
 import com.sentinel.quantum.security.SmsDeliveryStatusBus
@@ -412,6 +413,7 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                     recipient: String,
                     message: String,
                     attachments: List<MmsAttachmentLoader.LoadedAttachment>,
+                    requestedSubscriptionId: Int?,
                     onAccepted: () -> Unit
                 ) {
                     ioScope.launch {
@@ -421,13 +423,25 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                                 mmsSender.send(
                                     destination = recipient,
                                     text = message,
-                                    requestedSubscriptionId = selectedSubscriptionId,
+                                    requestedSubscriptionId = requestedSubscriptionId,
                                     attachments = attachments.map {
                                         SentinelMmsSender.Attachment(it.mimeType, it.payload)
                                     }
                                 )
                             }
                             status = when (result.reason) {
+                                "MMS_JPEG_STRICT_DECODER_UNAVAILABLE" ->
+                                    "La réduction JPEG sécurisée nécessite Android 9 ou plus récent. Choisissez une image déjà assez petite. Aucun envoi effectué."
+                                "MMS_PROVIDER_PERSISTENCE_UNCERTAIN" ->
+                                    "Enregistrement du MMS interrompu. Aucun envoi à Android ; vérifiez la conversation avant de réessayer."
+                                "MMS_JPEG_CANNOT_FIT_BUDGET", "MMS_JPEG_BUDGET_EXCEEDED" ->
+                                    "L’image reste trop volumineuse pour cette SIM après réduction. Choisissez une image plus petite. Aucun envoi effectué."
+                                "MMS_JPEG_INVALID_JPEG", "MMS_JPEG_INVALID_EXIF", "MMS_JPEG_INVALID_DIMENSIONS", "MMS_JPEG_DECODE_FAILED" ->
+                                    "Impossible de lire cette image JPEG correctement. Choisissez une autre image. Aucun envoi effectué."
+                                "MMS_JPEG_PIXEL_LIMIT_EXCEEDED", "MMS_JPEG_INPUT_TOO_LARGE", "MMS_JPEG_MEMORY_LIMIT" ->
+                                    "Cette image dépasse les limites de traitement sécurisé. Choisissez une image de dimensions plus petites. Aucun envoi effectué."
+                                "MMS_JPEG_COMPRESSION_FAILED", "MMS_IMAGE_PREPARATION_FAILED", "MMS_JPEG_INTERRUPTED", "MMS_PREPARATION_INTERRUPTED" ->
+                                    "La préparation de l’image n’a pas abouti. Vos pièces jointes sont conservées ; aucun envoi effectué."
                                 "MMS_CARRIER_SIZE_EXCEEDED" ->
                                     "MMS trop volumineux pour cette SIM. Choisissez une image plus petite ou moins de pièces jointes. Aucun envoi effectué."
                                 "MMS_CARRIER_CONFIG_UNAVAILABLE" ->
@@ -707,7 +721,7 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Text(
-                                        "Sentinel compose un PDU borné puis le confie à la pile MMS Android sur la SIM sélectionnée. Les images sont lues localement depuis le sélecteur Android, bornées et validées avant envoi. La prise en charge logicielle ne vaut pas preuve de livraison.",
+                                        "Sentinel compose un PDU borné puis le confie à la pile MMS Android sur la SIM sélectionnée. Les images sont lues localement depuis le sélecteur Android, bornées et validées avant envoi. Les JPEG trop volumineux sont réduits automatiquement lorsque c’est possible. La prise en charge logicielle ne vaut pas preuve de livraison.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -868,9 +882,19 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                             Button(
                                 onClick = {
                                     if (mmsComposeMode) {
-                                        submitMms(destination, body, selectedMmsAttachments) {
-                                            body = ""
-                                            selectedMmsAttachments = emptyList()
+                                        val submitted = MmsComposeDraftSnapshot(
+                                            destination, body, selectedMmsAttachments, selectedSubscriptionId
+                                        )
+                                        submitMms(
+                                            submitted.destination, submitted.body,
+                                            submitted.attachments, submitted.subscriptionId
+                                        ) {
+                                            if (submitted.isCurrent(destination, body, selectedMmsAttachments, selectedSubscriptionId)) {
+                                                body = ""
+                                                selectedMmsAttachments = emptyList()
+                                            } else {
+                                                status = "Le MMS précédent a été confié à Android. Votre nouveau brouillon est conservé."
+                                            }
                                         }
                                     } else {
                                         submitSms(destination, body) { body = "" }

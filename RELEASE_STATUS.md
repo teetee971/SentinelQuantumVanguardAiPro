@@ -1,5 +1,7 @@
 # RELEASE STATUS — CURRENT
 
+> This v23 work branch is EXPERIMENTAL / BLOCKED by the active JPEG entropy-corruption regression. See [qualification/v23/README.md](qualification/v23/README.md). No release readiness or device validation is claimed.
+
 This file previously described an old v1.0.0 release attempt, obsolete workflows and a branch that are no longer the current release path. That information is historical and is retired as an operational instruction.
 
 ## Current release path
@@ -10,7 +12,7 @@ Release workflow: `.github/workflows/android-release.yml`
 
 Trigger: version tag `v*`
 
-Android baseline: `compileSdk 37`, `targetSdk 36`, `minSdk 24`, `versionCode 22`, `versionName 1.0.9`, JDK 17, AGP 9.4.1, Kotlin 2.4.20 and Gradle 9.8.0.
+Android baseline: `compileSdk 37`, `targetSdk 36`, `minSdk 24`, `versionCode 23`, `versionName 1.0.10`, JDK 17, AGP 9.4.1, Kotlin 2.4.20 and Gradle 9.8.0.
 
 The workflow requires the tag to point exactly to the current `main` head and to match `versionName`, validates production signing secrets, builds the signed release APK and signed release AAB, exports the resolved Android `releaseRuntimeClasspath` dependency graph, generates SHA-256 checksums and signer evidence, binds those artifacts plus the SBOM to `release-evidence.json`, uploads the evidence bundle and creates a draft GitHub Release.
 

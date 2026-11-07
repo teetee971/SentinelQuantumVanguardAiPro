@@ -69,10 +69,16 @@ internal class MmsAttachmentLoader(context: Context) {
             val out = ByteArrayOutputStream(minOf(maxBytes.toInt(), BUFFER_BYTES))
             val buffer = ByteArray(BUFFER_BYTES)
             var total = 0L
+            var zeroReads = 0
             while (true) {
+                if (Thread.currentThread().isInterrupted) return null
                 val read = stream.read(buffer)
                 if (read < 0) break
-                if (read == 0) continue
+                if (read == 0) {
+                    if (++zeroReads >= 3) return null
+                    continue
+                }
+                zeroReads = 0
                 total += read.toLong()
                 if (total > maxBytes) return null
                 out.write(buffer, 0, read)

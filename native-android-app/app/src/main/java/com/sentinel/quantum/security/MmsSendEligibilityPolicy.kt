@@ -9,10 +9,10 @@ import android.telephony.SubscriptionManager
  * It does not mean that an MMS was submitted, sent or delivered by Android/the carrier.
  */
 object MmsSendEligibilityPolicy {
-    const val MAX_ATTACHMENTS = 8
-    const val MAX_ATTACHMENT_BYTES = 5L * 1024L * 1024L
-    const val MAX_TOTAL_ATTACHMENT_BYTES = 10L * 1024L * 1024L
-    const val MAX_TEXT_CHARS = 10_000
+    const val MAX_ATTACHMENTS = MmsOutgoingLimits.MAX_ATTACHMENTS
+    const val MAX_ATTACHMENT_BYTES = MmsOutgoingLimits.MAX_ATTACHMENT_BYTES
+    const val MAX_TOTAL_ATTACHMENT_BYTES = MmsOutgoingLimits.MAX_TOTAL_ATTACHMENT_BYTES
+    const val MAX_TEXT_CHARS = MmsOutgoingLimits.MAX_TEXT_CHARS
 
     private val ALLOWED_MIME_TYPES = setOf(
         "image/jpeg",
