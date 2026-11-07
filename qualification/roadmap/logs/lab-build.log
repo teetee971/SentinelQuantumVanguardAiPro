@@ -1,0 +1,221 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preLabPreviewBuild UP-TO-DATE
+> Task :app:mergeLabPreviewNativeDebugMetadata NO-SOURCE
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :app:generateLabPreviewBuildConfig
+> Task :app:generateLabPreviewResources FROM-CACHE
+> Task :app:packageLabPreviewResources
+> Task :app:processLabPreviewNavigationResources
+> Task :app:parseLabPreviewLocalResources FROM-CACHE
+> Task :app:generateLabPreviewRFile FROM-CACHE
+> Task :app:kspLabPreviewKotlin
+> Task :app:compileLabPreviewKotlin
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:78:66 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:738:56 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:766:43 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:834:56 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:108:84 'val isVoiceCapable: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:808:33 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:984:60 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1022:25 'fun ScrollableTabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., edgePadding: Dp = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryScrollableTabRow and SecondaryScrollableTabRow tab variants.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1740:79 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt:579:42 'val Icons.Rounded.VolumeUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.VolumeUp.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:626:68 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:649:25 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:889:52 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/OwnerDeviceKeyManager.kt:71:52 'val isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelApkManager.kt:23:36 'static field ACTION_INSTALL_PACKAGE: String' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:180:23 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:183:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:183:71 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:198:45 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:235:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:438:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:442:45 Redundant call of conversion method.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:466:53 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:470:18 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:505:28 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:658:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:658:63 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:663:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:668:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:673:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:679:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:703:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelMmsSender.kt:122:40 Unnecessary safe call on a non-null receiver of type 'Bundle'.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelVpnController.kt:262:24 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelVpnController.kt:280:29 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiScanner.kt:173:51 'field SSID: String!' is deprecated. Deprecated in Java.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/PhoneCoreWorkspace.kt:95:24 'fun rememberSwipeToDismissBoxState(initialValue: SwipeToDismissBoxValue = ..., confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = ..., positionalThreshold: (Float) -> Float = ...): SwipeToDismissBoxState' is deprecated. confirmValueChange is deprecated without replacement. Rather than relying on a callback to veto state changes, the anchor set should not include disallowed anchors. See androidx.compose.foundation.samples.AnchoredDraggableDynamicAnchorsSample for an example of using dynamic anchors over confirmValueChange.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/EmailSecurityScreen.kt:36:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt:256:13 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt:470:40 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+
+> Task :app:javaPreCompileLabPreview
+> Task :app:compileLabPreviewJavaWithJavac
+> Task :app:generateLabPreviewAssets UP-TO-DATE
+> Task :app:mergeLabPreviewAssets
+> Task :app:compressLabPreviewAssets
+> Task :app:generateLabPreviewGlobalSynthetics
+> Task :app:l8DexDesugarLibLabPreview
+> Task :app:checkLabPreviewDuplicateClasses
+> Task :app:desugarLabPreviewFileDependencies
+> Task :app:mergeExtDexLabPreview
+> Task :app:processLabPreviewJavaRes
+> Task :app:mergeLabPreviewJavaResource
+> Task :app:mergeLibDexLabPreview FROM-CACHE
+> Task :app:checkLabPreviewAarMetadata
+> Task :app:mapLabPreviewSourceSetPaths
+> Task :app:compileLabPreviewNavigationResources
+> Task :app:mergeLabPreviewResources
+> Task :app:createLabPreviewCompatibleScreenManifests
+> Task :app:extractDeepLinksLabPreview
+> Task :app:processLabPreviewMainManifest
+> Task :app:processLabPreviewManifest
+> Task :app:processLabPreviewManifestForPackage
+> Task :app:processLabPreviewResources
+> Task :app:dexBuilderLabPreview
+> Task :app:mergeProjectDexLabPreview
+> Task :app:mergeLabPreviewJniLibFolders
+> Task :app:mergeLabPreviewNativeLibs
+
+> Task :app:stripLabPreviewDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libjnidispatch.so, liblivekit_uniffi.so, liblkjingle_peerconnection_so.so, libwg-go.so, libwg-quick.so, libwg.so. Run with --info option to learn more.
+
+> Task :app:validateSigningLabPreview
+> Task :app:writeLabPreviewAppMetadata
+> Task :app:writeLabPreviewSigningConfigVersions
+> Task :app:packageLabPreview
+> Task :app:createLabPreviewApkListingFileRedirect
+> Task :app:assembleLabPreview
+> Task :app:bundleLabPreviewClassesToCompileJar
+> Task :app:preLabPreviewAndroidTestBuild SKIPPED
+> Task :app:mergeLabPreviewAndroidTestManifest
+> Task :app:processLabPreviewAndroidTestManifest
+> Task :app:generateLabPreviewAndroidTestBuildConfig
+> Task :app:generateLabPreviewAndroidTestResources
+> Task :app:packageLabPreviewAndroidTestResources
+> Task :app:processLabPreviewAndroidTestNavigationResources
+> Task :app:parseLabPreviewAndroidTestLocalResources
+> Task :app:generateLabPreviewAndroidTestRFile
+> Task :app:kspLabPreviewAndroidTestKotlin
+
+> Task :app:compileLabPreviewAndroidTestKotlin
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/androidTest/java/com/sentinel/quantum/security/SecurityLabProInstrumentationTest.kt:22:26 'fun <reified A : ComponentActivity> createAndroidComposeRule(effectContext: CoroutineContext = ...): AndroidComposeTestRule<ActivityScenarioRule<A>, A>' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createAndroidComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/AllStaticNavigationSurfacesInstrumentationTest.kt:20:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/HomeVisualContractTest.kt:28:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/OsintTruthInstrumentationTest.kt:15:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/ProtectionVisualContractTest.kt:23:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/SystemCleanerInstrumentationTest.kt:14:29 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/sentinel-play-ready/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/design/SentinelVisualPrimitivesTest.kt:34:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+
+> Task :app:javaPreCompileLabPreviewAndroidTest
+> Task :app:compileLabPreviewAndroidTestJavaWithJavac
+> Task :app:generateLabPreviewAndroidTestAssets UP-TO-DATE
+> Task :app:mergeLabPreviewAndroidTestAssets
+> Task :app:compressLabPreviewAndroidTestAssets
+> Task :app:generateLabPreviewAndroidTestGlobalSynthetics FROM-CACHE
+> Task :app:checkLabPreviewAndroidTestDuplicateClasses
+> Task :app:desugarLabPreviewAndroidTestFileDependencies FROM-CACHE
+> Task :app:mergeExtDexLabPreviewAndroidTest
+> Task :app:processLabPreviewAndroidTestJavaRes
+> Task :app:mergeLabPreviewAndroidTestJavaResource
+> Task :app:mergeLibDexLabPreviewAndroidTest
+> Task :app:checkLabPreviewAndroidTestAarMetadata
+> Task :app:mapLabPreviewAndroidTestSourceSetPaths
+> Task :app:compileLabPreviewAndroidTestNavigationResources FROM-CACHE
+> Task :app:mergeLabPreviewAndroidTestResources
+> Task :app:processLabPreviewAndroidTestResources
+> Task :app:dexBuilderLabPreviewAndroidTest
+> Task :app:mergeProjectDexLabPreviewAndroidTest
+> Task :app:mergeLabPreviewAndroidTestJniLibFolders
+> Task :app:mergeLabPreviewAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripLabPreviewAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningLabPreviewAndroidTest
+> Task :app:writeLabPreviewAndroidTestSigningConfigVersions
+> Task :app:packageLabPreviewAndroidTest
+> Task :app:createLabPreviewAndroidTestApkListingFileRedirect
+> Task :app:assembleLabPreviewAndroidTest
+> Task :app:generateLabPreviewAndroidTestLintModel
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:generateLabPreviewLintReportModel
+> Task :app:preLabPreviewUnitTestBuild UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:generateLabPreviewUnitTestLintModel
+> Task :app:lintAnalyzeLabPreview
+> Task :app:lintAnalyzeLabPreviewAndroidTest
+> Task :app:lintAnalyzeLabPreviewUnitTest
+
+> Task :app:lintReportLabPreview
+Wrote HTML report to file:///workspace/sentinel-play-ready/native-android-app/app/build/reports/lint-results-labPreview.html
+Wrote SARIF report to file:///workspace/sentinel-play-ready/native-android-app/app/build/reports/lint-results-labPreview.sarif
+Lint found 6 errors, 221 warnings and 19 hints. First failure:
+/workspace/sentinel-play-ready/native-android-app/app/src/labPreview/AndroidManifest.xml:5: Error: Permission exists without corresponding hardware <uses-feature android:name="android.hardware.telephony" android:required="false" /> tag [PermissionImpliesUnsupportedChromeOsHardware]
+    <uses-permission android:name="android.permission.CALL_PHONE" tools:node="remove" />
+     ~~~~~~~~~~~~~~~
+
+
+> Task :app:lintLabPreview FAILED
+Lint found 6 errors, 221 warnings, 19 hints. First failure:
+
+/workspace/sentinel-play-ready/native-android-app/app/src/labPreview/AndroidManifest.xml:5: Error: Permission exists without corresponding hardware <uses-feature android:name="android.hardware.telephony" android:required="false" /> tag [PermissionImpliesUnsupportedChromeOsHardware]
+    <uses-permission android:name="android.permission.CALL_PHONE" tools:node="remove" />
+     ~~~~~~~~~~~~~~~
+
+The full lint text report is located at:
+  /workspace/sentinel-play-ready/native-android-app/app/build/intermediates/lint_intermediate_text_report/labPreview/lintReportLabPreview/lint-results-labPreview.txt
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-play-ready/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:lintLabPreview' (registered by plugin 'com.android.internal.application').
+> Lint found errors in the project; aborting build.
+
+  Fix the issues identified by lint, or create a baseline to see only new errors.
+  To create a baseline, run `gradlew updateLintBaseline` after adding the following to the module's build.gradle file:
+  ```
+  android {
+      lint {
+          baseline = file("lint-baseline.xml")
+      }
+  }
+  ```
+  For more details, see https://developer.android.com/studio/write/lint#snapshot
+
+  Lint found 6 errors, 221 warnings, 19 hints. First failure:
+
+  /workspace/sentinel-play-ready/native-android-app/app/src/labPreview/AndroidManifest.xml:5: Error: Permission exists without corresponding hardware <uses-feature android:name="android.hardware.telephony" android:required="false" /> tag [PermissionImpliesUnsupportedChromeOsHardware]
+      <uses-permission android:name="android.permission.CALL_PHONE" tools:node="remove" />
+       ~~~~~~~~~~~~~~~
+
+  The full lint text report is located at:
+    /workspace/sentinel-play-ready/native-android-app/app/build/intermediates/lint_intermediate_text_report/labPreview/lintReportLabPreview/lint-results-labPreview.txt
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 5m 27s
+87 actionable tasks: 75 executed, 7 from cache, 5 up-to-date

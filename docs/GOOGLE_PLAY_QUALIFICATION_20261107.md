@@ -1,5 +1,7 @@
 # Qualification Google Play — 7 novembre 2026
 
+> Rapport historique de la candidate `3d5753ee`. La finalisation suivante intègre Doctor et prépare le laboratoire séparé : [résultats courants](../qualification/roadmap/RESULTS.md). Ne pas attribuer les artefacts ou limites de ce rapport à ce nouvel arbre Android. Les gates externes ci-dessous restent ouverts.
+
 **Décision : NON PRÊT À SOUMETTRE.** Candidate isolée `24 / 1.0.10`, application `com.sentinel.quantum`, minSdk 24 / targetSdk 36 / compileSdk 37. Le maximum versionCode utilisé dans Play Console reste inconnu : 24 est provisoire, pas une preuve d'acceptabilité. La v22 installée n'est pas modifiée.
 
 ## Périmètre

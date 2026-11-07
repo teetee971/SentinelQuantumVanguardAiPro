@@ -4,7 +4,7 @@ This file previously described an old v1.0.0 release attempt, obsolete workflows
 
 ## Qualification dated 2026-11-07
 
-**NOT READY FOR PLAY UPLOAD.** Candidate 24 / 1.0.10 is separate from stable v22 on the S24+. See [current qualification](docs/GOOGLE_PLAY_QUALIFICATION_20261107.md). No key, role, installed app or main branch is changed. Confirm this code exceeds every version already used in Play Console. Historical release workflow below is not authorization to dispatch it.
+**NOT READY FOR PLAY UPLOAD.** Candidate 24 / 1.0.10 is separate from stable v22 on the S24+. See [current roadmap qualification](qualification/roadmap/RESULTS.md) and the [earlier Play baseline](docs/GOOGLE_PLAY_QUALIFICATION_20261107.md). No key, role, installed app or main branch is changed. Confirm this code exceeds every version already used in Play Console. Historical release workflow below is not authorization to dispatch it.
 
 Signed release also requires the public `-PsentinelAccountDeletionUrl=https://…/delete-account` configuration and a real verified account/data deletion service. No URL is fabricated in source; optional account login fails closed by default. This does not implement backend deletion or prove its operation.
 

@@ -1,0 +1,145 @@
+Picked up JAVA_TOOL_OPTIONS: -Dhttps.proxyHost=proxy -Dhttps.proxyPort=8080 -Dhttp.proxyHost=proxy -Dhttp.proxyPort=8080 -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:16:126 Unresolved reference 'SentinelCleanerSession'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:17:53 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:17:71 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:18:51 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:18:69 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:19:16 Unresolved reference 'SentinelCleanerSession'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:19:56 Unresolved reference 'scan' on receiver of type 'SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:21:27 Unresolved reference 'SentinelCleanerSession'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:22:38 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:22:62 Unresolved reference 'candidates'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:22:75 Unresolved reference 'select'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:22:88 Unresolved reference 'it'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:26:51 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:26:69 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:27:30 Unresolved reference 'SentinelCleanerSession'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:28:82 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:28:104 Unresolved reference 'size'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:29:28 Unresolved reference 'clean'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:29:112 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:29:134 Unresolved reference 'size'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:33:51 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:33:69 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:35:28 Unresolved reference 'clean'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:35:76 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:35:98 Unresolved reference 'size'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:36:32 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:36:60 Unresolved reference 'it'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:41:51 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:41:69 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:43:28 Unresolved reference 'clean'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:44:32 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:44:54 Unresolved reference 'size'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:44:80 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:48:57 Unresolved reference 'state'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:48:81 Unresolved reference 'candidates'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:49:29 Unresolved reference 'clean'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:53:51 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:53:69 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:53:96 Unresolved reference 'SentinelCleanerSession'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:55:59 Unresolved reference 'clean'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:56:54 Unresolved reference 'clean'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanupReportTest.kt:10:18 Unresolved reference 'SentinelCleanupReport'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanupReportTest.kt:14:36 Unresolved reference 'SentinelCleanupReport'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanupReportTest.kt:20:18 Unresolved reference 'SentinelCleanupReport'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanupReportTest.kt:20:47 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:22:50 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:22:60 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:23:50 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:23:60 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:30:81 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:30:91 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:33:57 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:33:67 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:40:49 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:40:59 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:45:74 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:45:84 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:50:75 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:50:85 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:51:50 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:51:60 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupExecutor'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:55:75 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:55:85 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:61:75 Argument type mismatch: actual type is 'List<File>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:61:89 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:65:51 Argument type mismatch: actual type is 'List<<anonymous>>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:65:72 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:65:78 Unresolved reference 'scan' on receiver of type 'SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:69:48 Argument type mismatch: actual type is 'List<File!>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:69:58 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:69:64 Unresolved reference 'scan' on receiver of type 'SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:81:51 Argument type mismatch: actual type is 'List<<anonymous>>', but 'Context' was expected.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:81:68 Too many arguments for 'constructor(context: Context): SentinelOwnedCleanupCollector'.
+e: file:///workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelOwnedCleanupSafetyTest.kt:81:74 Unresolved reference 'scan' on receiver of type 'SentinelOwnedCleanupCollector'.
+
+> Task :app:compileDebugUnitTestKotlin FAILED
+
+[Incubating] Problems report is available at: file:///workspace/sentinel-play-ready/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugUnitTestKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Kotlin compiler: UNRESOLVED_REFERENCE
+       Kotlin compiler error
+         Unresolved reference 'SentinelCleanerSession'.
+         Location: /workspace/sentinel-play-ready/native-android-app/app/src/test/java/com/sentinel/quantum/security/SentinelCleanerSessionTest.kt:16
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 20s
+28 actionable tasks: 2 executed, 26 up-to-date

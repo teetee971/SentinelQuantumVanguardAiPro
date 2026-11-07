@@ -1,0 +1,128 @@
+[
+  {
+    "file": "base/lib/arm64-v8a/libandroidx.graphics.path.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/arm64-v8a/libjnidispatch.so",
+    "load_segment_alignments": [
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/arm64-v8a/liblivekit_uniffi.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/arm64-v8a/liblkjingle_peerconnection_so.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/arm64-v8a/libwg-go.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/arm64-v8a/libwg-quick.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/arm64-v8a/libwg.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/x86_64/libandroidx.graphics.path.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/x86_64/libjnidispatch.so",
+    "load_segment_alignments": [
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/x86_64/liblivekit_uniffi.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/x86_64/liblkjingle_peerconnection_so.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/x86_64/libwg-go.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/x86_64/libwg-quick.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  },
+  {
+    "file": "base/lib/x86_64/libwg.so",
+    "load_segment_alignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "debug_apk_bytes_identical": true
+  }
+]

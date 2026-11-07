@@ -1,0 +1,9 @@
+{
+  "expected": "1316a4f0414d1b99ae48682cf972658e940d86f74fd78e38b4b79d3930ef0273",
+  "actual": "1316a4f0414d1b99ae48682cf972658e940d86f74fd78e38b4b79d3930ef0273",
+  "matches": true,
+  "source_commit": "3d5753ee3effaa713baadb07abecdf3d8f5aecc1",
+  "rebuild_path": "/workspace/sentinel-play-recovery/native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+  "restored_path": "/workspace/qualification-evidence/play-20261107/Sentinel-24-DEBUG-DO-NOT-INSTALL.apk",
+  "restored": true
+}
