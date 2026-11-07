@@ -306,4 +306,11 @@ class PhoneCoreSetupWizardStoreTest {
         assertEquals(false, PhoneCoreSetupWizardStore.isStepActionable(PhoneCoreSetupWizardStore.Step.COMPLETE, facts()))
         assertEquals(false, PhoneCoreSetupWizardStore.shouldAutoLaunch(complete, complete))
     }
+
+    @Test fun optionalContactPermissionNeverBlocksEssentialFlow() {
+        val contacts = "android.permission.READ_CONTACTS"
+        val phone = "android.permission.CALL_PHONE"
+        assertEquals(null, PhoneCoreSetupWizardStore.firstMissingPermission(listOf(contacts to false)))
+        assertEquals(phone, PhoneCoreSetupWizardStore.firstMissingPermission(listOf(contacts to false, phone to false)))
+    }
 }

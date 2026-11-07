@@ -293,3 +293,9 @@ tasks.withType(Test).configureEach {
         systemProperty 'sentinel.signature.fixture', project.property('sentinelSignatureFixture').toString()
     }
 }
+
+// JUnit-only safety policy/rule: identical source in host and instrumented tests, never main.
+android.sourceSets {
+    test.kotlin.srcDir(project.file('src/sharedTest/java'))
+    androidTest.kotlin.srcDir(project.file('src/sharedTest/java'))
+}

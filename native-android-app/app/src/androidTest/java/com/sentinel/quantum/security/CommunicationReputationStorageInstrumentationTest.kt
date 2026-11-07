@@ -10,11 +10,16 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import com.sentinel.quantum.DestructiveTestRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CommunicationReputationStorageInstrumentationTest {
+    // Guard before @Before: it changes production consent/settings and storage.
+    @get:Rule val disposableDevice = DestructiveTestRule()
+
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
 
