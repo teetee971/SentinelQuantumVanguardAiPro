@@ -67,7 +67,7 @@ for source,output in [('app-debug-v22.apk','app-s24-v22.apk'),('app-debug-androi
  before=entries(original);assert before==entries(signed), 'STOP: APK payload changed'
  assert native_offsets(original)==native_offsets(signed), 'STOP: native library alignment changed'
  rows.append({'file':output,'cloud_sha256':r['artifact_sha256'][source],'signed_sha256':hashlib.sha256(signed.read_bytes()).hexdigest(),'zip_entries':len(before),'payload_identical':True,'native_offsets_preserved':True,'signature_v2_verified':True})
-result={'status':'SIGNED_NOT_INSTALLED','source_commit':r['source_commit'],'package':'com.sentinel.quantum','candidate_versionCode':21,'installed_versionCode':r['installed_versionCode'],'signer_sha256':r['installed_signer_sha256'],'artifacts':rows,'physical_s24_plus':'NOT_TESTED'}
+result={'status':'SIGNED_NOT_INSTALLED','source_commit':r['source_commit'],'package':'com.sentinel.quantum','candidate_versionCode':r['candidate_versionCode'],'installed_versionCode':r['installed_versionCode'],'signer_sha256':r['installed_signer_sha256'],'artifacts':rows,'physical_s24_plus':'NOT_TESTED'}
 (scratch/'DEVICE_SIGNING_REPORT.json').write_text(json.dumps(result,indent=2)+'\n')
 PY
 mv -- "$scratch/app-debug-v22.apk" "$kit_dir/app-s24-v22.apk"

@@ -304,11 +304,15 @@
       "sha256": "84e3b6462b15732253818822106d7789262ab4b5aca087ea17ee3ce7437eba3e"
     },
     "local_signing": {
-      "status": "PENDING_USER_EXECUTION",
+      "status": "USER_REPORTED_SIGNATURE_VERIFIED_NOT_INSTALLED",
       "helper": "qualification/prepare-device-upgrade.sh",
       "manifest": "qualification/V22_UPGRADE_INPUT.json",
       "self_test": "PASS with cloud-key fixture only; not the user private key",
-      "device_signed_apk_sha256": null
+      "device_signed_apk_sha256": "10e70d21409daabcee0ba898703a1cb60897d127d22afffc84b6ca79f94390c8",
+      "original_report_candidate_versionCode": 21,
+      "verified_apk_manifest_versionCode": 22,
+      "report_erratum": "qualification/SIGNING_REPORT_ERRATUM_20261107.md",
+      "helper_sha256": "54bde3af5c24c8827932cd5079297df4c5a7755863ed7cdefca0d7859a2a5bd1"
     },
     "device_history": {
       "origin": "USER_PROVIDED_ADB_AND_SCREENSHOTS",
@@ -338,12 +342,13 @@
       "full_data_preservation": "NOT_TESTED"
     },
     "publication": {
-      "url": "https://drive.google.com/file/d/10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf/view?usp=drivesdk",
-      "file_id": "10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf",
-      "sha256": "409ef6dc80a750cd7e6bda84d12a61c6595471e6ecd394b0d6db23117ce401f9",
-      "bytes": 60113120,
+      "url": "https://drive.google.com/file/d/1omdhxF5sOVQ1Xo_sKnMHKwRMTal7oQOn/view?usp=drivesdk",
+      "file_id": "1omdhxF5sOVQ1Xo_sKnMHKwRMTal7oQOn",
+      "sha256": "269b0209b3134a6006d565712aa7e2708e100cae6f5f39f9d24ade9d90dff527",
+      "bytes": 60113286,
       "shared": false,
-      "metadata_readback": "PASS"
+      "metadata_readback": "PASS",
+      "change": "Report helper and README only; APK hashes unchanged"
     },
     "room_unchanged": true,
     "dependencies_and_wrapper_unchanged": true,
@@ -362,7 +367,15 @@
       "Dependabot details inaccessible"
     ],
     "report": "qualification/MMS_CARRIER_LIMIT_V22_20261107.md",
-    "recorded_at_utc": "2026-11-07T00:19:03.765051+00:00"
+    "recorded_at_utc": "2026-11-07T00:19:03.765051+00:00",
+    "superseded_kit_publication": {
+      "url": "https://drive.google.com/file/d/10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf/view?usp=drivesdk",
+      "file_id": "10ED_nIRPQchx9IOjZYofFS_Q8yCYrFtf",
+      "sha256": "409ef6dc80a750cd7e6bda84d12a61c6595471e6ecd394b0d6db23117ce401f9",
+      "bytes": 60113120,
+      "shared": false,
+      "metadata_readback": "PASS"
+    }
   },
   "qualification_history": [
     {

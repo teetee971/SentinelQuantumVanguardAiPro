@@ -1,0 +1,16 @@
+{
+  "origin": "USER_PROVIDED_TERMUX_OUTPUT",
+  "cloud_apk_sha256": "9256d99f91b85c4f9e78539b9ce478b905c82f893782aea3c1f90f6938eb8f6a",
+  "device_signed_apk_sha256": "10e70d21409daabcee0ba898703a1cb60897d127d22afffc84b6ca79f94390c8",
+  "signer_sha256": "68915958f2f8683afead51cc3a1e578d182df4b9d9b2505c48c261b1a17b3fe2",
+  "signature_v2_verified": true,
+  "payload_identical": true,
+  "native_offsets_preserved": true,
+  "reported_candidate_versionCode": 21,
+  "input_manifest_candidate_versionCode": 22,
+  "cloud_apk_manifest_versionCode": 22,
+  "installed_versionCode": 21,
+  "status": "SIGNED_NOT_INSTALLED",
+  "report_error": "Hardcoded21 in output only. Guard validates22; APK manifest22. Original user report preserved.",
+  "physical_s24_plus": "NOT_TESTED"
+}

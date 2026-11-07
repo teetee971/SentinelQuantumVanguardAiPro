@@ -32,7 +32,7 @@
   "physical_s24_plus": "NOT_TESTED",
   "notes": [],
   "cloud_apk_sha256": "9256d99f91b85c4f9e78539b9ce478b905c82f893782aea3c1f90f6938eb8f6a",
-  "device_signed_apk_sha256": null,
+  "device_signed_apk_sha256": "10e70d21409daabcee0ba898703a1cb60897d127d22afffc84b6ca79f94390c8",
   "candidate_versionCode": 22,
   "installed_versionCode": 21
 }
