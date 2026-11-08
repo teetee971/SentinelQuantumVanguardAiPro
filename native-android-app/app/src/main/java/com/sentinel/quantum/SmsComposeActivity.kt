@@ -419,16 +419,14 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                     ioScope.launch {
                         if (!beginSubmission()) return@launch
                         try {
-                            val result = withContext(Dispatchers.IO) {
-                                mmsSender.send(
-                                    destination = recipient,
-                                    text = message,
-                                    requestedSubscriptionId = requestedSubscriptionId,
-                                    attachments = attachments.map {
-                                        SentinelMmsSender.Attachment(it.mimeType, it.payload)
-                                    }
-                                )
-                            }
+                            val result = mmsSender.sendInterruptibly(
+                                destination = recipient,
+                                text = message,
+                                requestedSubscriptionId = requestedSubscriptionId,
+                                attachments = attachments.map {
+                                    SentinelMmsSender.Attachment(it.mimeType, it.payload)
+                                }
+                            )
                             status = when (result.reason) {
                                 "MMS_JPEG_STRICT_DECODER_UNAVAILABLE" ->
                                     "La validation JPEG sécurisée est indisponible. Vos pièces jointes sont conservées ; aucun envoi effectué."

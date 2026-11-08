@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.net.Uri
 import org.junit.Assert.*
 import org.junit.Test
+import kotlinx.coroutines.launch
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -16,10 +17,12 @@ import org.robolectric.annotation.Config
 @Config(sdk=[35], manifest=Config.NONE, application=Application::class)
 class MmsOutgoingSenderTest {
     private class Fake : SentinelMmsSender.Effects {
+        var interruptTransport=false
         var realPreparation=false
         var role=true;var feature=true;var missingPermission:String?=null;var ineffectivePermission:String?=null
         var active=setOf(1);val limits=mutableMapOf<Int,Int>();val carrierRequests=mutableListOf<Int>();val transportSubscriptions=mutableListOf<Int>();var providerSubscription=-1;var prepareBudget=-1;var limit=20_000;var preparationCalls=0;var stageCalls=0;var persistenceCalls=0;var sendCalls=0
         var deleteCalls=0;var submitted=0;var unknown=0;var abandoned=0
+        var afterStage:(()->Unit)?=null
         var afterPersist:(()->Unit)?=null;var throwProvider=false;var throwPrepareMemory=false;var throwCarrier=false;var throwDefault=false;var beforePrepared:(()->Unit)?=null;var preparationFailure:String?=null;var throwPreparation=false;var throwStage=false;var rejectStage=false;var rejectProvider=false;var throwTransport=false
         var stagedPdu:ByteArray?=null;var providerParts:List<MmsConversationStore.Attachment> = emptyList()
         var preparedTransaction="";var providerTransaction="";var providerDestination="";var providerText=""
@@ -34,7 +37,7 @@ class MmsOutgoingSenderTest {
             check(subscriptionId in active);carrierRequests+=subscriptionId
             return object:SentinelMmsSender.Carrier {
                 override val maxPduBytes:Int get()=limits[subscriptionId]?:limit
-                override fun send(uri:Uri,callback:PendingIntent) {sendCalls++;transportSubscriptions+=subscriptionId;if(throwTransport)throw IllegalStateException("transport uncertain")}
+                override fun send(uri:Uri,callback:PendingIntent) {sendCalls++;transportSubscriptions+=subscriptionId;if(interruptTransport){Thread.currentThread().interrupt();throw InterruptedException("transport interrupted")};if(throwTransport)throw IllegalStateException("transport uncertain")}
             }
         }
         override fun prepare(destination:String,transactionId:String,text:String,attachments:List<SentinelMmsSendPduComposer.Part>,maxPduBytes:Int):MmsOutgoingPreparation.Result {
@@ -48,6 +51,7 @@ class MmsOutgoingSenderTest {
         override fun stage(pdu:ByteArray):MmsSendPduStager.Result {
             stageCalls++;stagedPdu=pdu.copyOf();if(throwStage)throw IllegalStateException("stage")
             if(rejectStage)return MmsSendPduStager.Result.Rejected("MMS_PDU_STAGE_FAILED")
+            afterStage?.invoke()
             val token="12345678-1234-1234-1234-123456789012"
             return MmsSendPduStager.Result.Staged(token,"$token.pdu",Uri.parse("content://test/$token.pdu"))
         }
@@ -91,6 +95,64 @@ class MmsOutgoingSenderTest {
         val result=sender(f).send("+33612345678","corrupt JPEG",1,listOf(SentinelMmsSender.Attachment("image/jpeg",corrupt)))
         assertFalse(result.accepted);assertEquals("MMS_JPEG_INVALID_JPEG",result.reason)
         assertNoEffects(f);assertArrayEquals(before,corrupt)
+    }
+    @Test fun interruptionAfterPreparationNeverStagesOrWrites() {
+        val f=Fake();f.beforePrepared={Thread.currentThread().interrupt()}
+        try {
+            val result=sender(f).send("+33612345678","cancelled")
+            assertFalse(result.accepted);assertEquals("MMS_PREPARATION_INTERRUPTED",result.reason)
+            assertNoEffects(f);assertTrue(Thread.currentThread().isInterrupted)
+        } finally { Thread.interrupted() }
+    }
+    @Test fun interruptionAfterStagingDeletesPduWithoutProviderWrite() {
+        val f=Fake();f.afterStage={Thread.currentThread().interrupt()}
+        try {
+            val result=sender(f).send("+33612345678","cancelled")
+            assertFalse(result.accepted);assertEquals("MMS_PREPARATION_INTERRUPTED",result.reason)
+            assertEquals(1,f.stageCalls);assertEquals(1,f.deleteCalls)
+            assertEquals(0,f.persistenceCalls);assertEquals(0,f.sendCalls)
+        } finally { Thread.interrupted() }
+    }
+    @Test fun interruptionAfterPersistenceCompensatesWithoutTransport() {
+        val f=Fake();f.afterPersist={Thread.currentThread().interrupt()}
+        try {
+            val result=sender(f).send("+33612345678","cancelled")
+            assertFalse(result.accepted);assertEquals("MMS_PREPARATION_INTERRUPTED",result.reason)
+            assertEquals(1,f.persistenceCalls);assertEquals(0,f.sendCalls)
+            assertEquals(1,f.abandoned);assertEquals(1,f.deleteCalls)
+        } finally { Thread.interrupted() }
+    }
+    @Test fun coroutineCancellationInterruptsPreparationWithoutEffects() = kotlinx.coroutines.runBlocking {
+        val f=Fake();val entered=java.util.concurrent.CountDownLatch(1);val release=java.util.concurrent.CountDownLatch(1)
+        val interrupted=java.util.concurrent.CountDownLatch(1)
+        f.beforePrepared={
+            entered.countDown()
+            try { release.await() } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt();interrupted.countDown()
+            }
+        }
+        val subject=sender(f)
+        val job=launch(kotlinx.coroutines.Dispatchers.Default) {
+            subject.sendInterruptibly("+33612345678","cancelled")
+        }
+        try {
+            assertTrue("Preparation did not start",entered.await(10,java.util.concurrent.TimeUnit.SECONDS))
+            job.cancel()
+            assertTrue("Cancellation did not interrupt preparation",interrupted.await(10,java.util.concurrent.TimeUnit.SECONDS))
+            kotlinx.coroutines.withTimeout(10_000) { job.join() }
+            assertTrue(job.isCancelled);assertNoEffects(f)
+        } finally {
+            release.countDown();job.cancel();job.join()
+        }
+    }
+    @Test fun interruptionAfterTransportStartsKeepsUnknownOutcomeWithoutRetry() {
+        val f=Fake();f.interruptTransport=true
+        try {
+            val result=sender(f).send("+33612345678","uncertain")
+            assertFalse(result.accepted);assertEquals("MMS_SUBMISSION_OUTCOME_UNKNOWN",result.reason)
+            assertEquals(1,f.sendCalls);assertEquals(1,f.unknown)
+            assertEquals(0,f.abandoned);assertEquals(0,f.deleteCalls)
+        } finally { Thread.interrupted() }
     }
     @Test fun absentRoleRejectsBeforePreparation() {val f=Fake();f.role=false;assertEquals("SMS_ROLE_NOT_HELD",sender(f).send("+33612345678","test").reason);assertEquals(0,f.preparationCalls);assertNoEffects(f)}
     @Test fun missingAndIneffectivePermissionsRefuseWithoutEffects() {

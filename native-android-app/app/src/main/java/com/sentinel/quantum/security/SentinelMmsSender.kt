@@ -11,6 +11,8 @@ import android.telephony.SmsManager
 import android.telephony.SubscriptionManager
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
 
 /**
  * Bounded outgoing MMS transport.
@@ -28,6 +30,16 @@ class SentinelMmsSender internal constructor(private val context: Context, priva
         val token: String? = null,
         val providerMessageId: Long? = null
     )
+
+    /** Connect coroutine cancellation to the synchronous preparation/transport guard checks. */
+    internal suspend fun sendInterruptibly(
+        destination: String,
+        text: String,
+        requestedSubscriptionId: Int? = null,
+        attachments: List<Attachment> = emptyList()
+    ): SendResult = runInterruptible(Dispatchers.IO) {
+        send(destination, text, requestedSubscriptionId, attachments)
+    }
 
     fun send(
         destination: String,
@@ -123,6 +135,10 @@ class SentinelMmsSender internal constructor(private val context: Context, priva
             return SendResult(false, (staged as MmsSendPduStager.Result.Rejected).reason)
         }
 
+        if (Thread.currentThread().isInterrupted) {
+            runCatching { effects.delete(staged.fileName) }
+            return SendResult(false, "MMS_PREPARATION_INTERRUPTED", subscriptionId, staged.token)
+        }
         val providerStore = effects
         runCatching { providerStore.repairJournal() }.onFailure {
             LocalLogger(context).log(
@@ -130,6 +146,10 @@ class SentinelMmsSender internal constructor(private val context: Context, priva
                 "MmsProvider",
                 "Réparation provider MMS différée; le nouvel envoi reste soumis à sa propre transaction"
             )
+        }
+        if (Thread.currentThread().isInterrupted) {
+            runCatching { effects.delete(staged.fileName) }
+            return SendResult(false, "MMS_PREPARATION_INTERRUPTED", subscriptionId, staged.token)
         }
         val providerAttachments = prepared.attachments.map {
             MmsConversationStore.Attachment(it.mimeType.lowercase(), it.payload)
@@ -187,6 +207,7 @@ class SentinelMmsSender internal constructor(private val context: Context, priva
 
             // From this instruction onward, a synchronous exception cannot prove that the platform
             // accepted no MMS bytes. Only callbacks may resolve that uncertainty.
+            if (Thread.currentThread().isInterrupted) throw BeforeTransportRefused("MMS_PREPARATION_INTERRUPTED")
             transportInvocationStarted = true
             carrier.send(staged.contentUri, callback)
             if (!providerStore.markSubmitted(staged.token, providerMessageId)) {
@@ -251,6 +272,7 @@ class SentinelMmsSender internal constructor(private val context: Context, priva
 
     private fun authorizationFailure(): String? = try {
         when {
+            Thread.currentThread().isInterrupted -> "MMS_PREPARATION_INTERRUPTED"
             !effects.roleHeld() -> "SMS_ROLE_NOT_HELD"
             !effects.permissionGranted(Manifest.permission.SEND_SMS) || !effects.permissionEffective(Manifest.permission.SEND_SMS) -> "SEND_SMS_PERMISSION_NOT_GRANTED"
             !effects.permissionGranted(Manifest.permission.READ_PHONE_STATE) || !effects.permissionEffective(Manifest.permission.READ_PHONE_STATE) -> "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
