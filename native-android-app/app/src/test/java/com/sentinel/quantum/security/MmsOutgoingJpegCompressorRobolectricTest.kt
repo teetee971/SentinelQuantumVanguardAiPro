@@ -5,7 +5,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk=[35], manifest=Config.NONE)
+@RunWith(StrictJpegRobolectricRunner::class)
+@Config(sdk=[27,28,35], manifest=Config.NONE)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class MmsOutgoingJpegCompressorRobolectricTest : MmsOutgoingJpegCases()

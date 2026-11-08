@@ -1,0 +1,3 @@
+Sentinel uses libjpeg-turbo 3.2.1.
+This software is based in part on the work of the Independent JPEG Group.
+The full upstream license texts accompany this notice.

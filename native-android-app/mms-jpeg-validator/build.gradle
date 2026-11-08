@@ -1,0 +1,31 @@
+plugins { id 'com.android.library' }
+android {
+    namespace 'com.sentinel.quantum.mmsjpeg'
+    compileSdk 37
+    ndkVersion '28.2.13676358'
+    defaultConfig {
+        minSdk 24
+        consumerProguardFiles 'consumer-rules.pro'
+        externalNativeBuild { cmake { arguments '-DANDROID_STL=none' } }
+    }
+    externalNativeBuild { cmake { path file('src/main/cpp/CMakeLists.txt'); version '3.22.1' } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+
+// Same JNI/decoder sources on the host: no mocked validation in Robolectric tests.
+def hostCmake = providers.gradleProperty('sentinelHostCmake').orElse('cmake')
+def hostBuild = layout.buildDirectory.dir('host-validator')
+tasks.register('configureHostValidator', Exec) {
+    inputs.property('cmakeExecutable', hostCmake)
+    inputs.dir('src/main/cpp'); inputs.dir('vendor/libjpeg-turbo')
+    outputs.file(hostBuild.map { it.file('CMakeCache.txt') })
+    commandLine hostCmake.get(), '-S', file('src/main/cpp'), '-B', hostBuild.get().asFile,
+        '-DCMAKE_BUILD_TYPE=Release'
+}
+tasks.register('buildHostValidator', Exec) {
+    dependsOn 'configureHostValidator'
+    inputs.dir('src/main/cpp'); inputs.dir('vendor/libjpeg-turbo')
+    outputs.file(hostBuild.map { it.file('libsentinel_jpeg_validator.so') })
+    commandLine hostCmake.get(), '--build', hostBuild.get().asFile,
+        '--target', 'sentinel_jpeg_validator', '--parallel', '2'
+}

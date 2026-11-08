@@ -113,6 +113,7 @@ gradle.taskGraph.whenReady { graph ->
 }
 
 dependencies {
+    implementation project(':mms-jpeg-validator')
     implementation 'androidx.exifinterface:exifinterface:1.4.1'
     implementation 'com.android.tools.build:apksig:9.3.2'
     implementation project(':wearable-security')
@@ -309,4 +310,11 @@ tasks.withType(Test).configureEach {
         systemProperty 'robolectric.offline', 'true'
         systemProperty 'robolectric.dependency.dir', project.property('sentinelRobolectricSdkDir').toString()
     }
+}
+
+// JNI is loaded by a shared test class loader, from this real host build.
+tasks.withType(Test).configureEach {
+    dependsOn ':mms-jpeg-validator:buildHostValidator'
+    systemProperty 'java.library.path', project(':mms-jpeg-validator').layout.buildDirectory
+        .dir('host-validator').get().asFile.absolutePath
 }

@@ -1,0 +1,2 @@
+# Preserve pinned upstream formatting; seven-character Markdown underlines are not merge conflicts.
+native-android-app/mms-jpeg-validator/vendor/libjpeg-turbo/** -whitespace conflict-marker-size=128 linguist-vendored

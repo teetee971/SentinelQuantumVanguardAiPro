@@ -1,6 +1,8 @@
 package com.sentinel.quantum.security
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
+import com.sentinel.quantum.mmsjpeg.StrictJpegValidator
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.graphics.ColorSpace
@@ -34,6 +36,13 @@ internal object MmsOutgoingJpegCompressor {
 
         var base: Bitmap? = null
         try {
+            when (StrictJpegValidator.validate(input)) {
+                StrictJpegValidator.VALID -> Unit
+                StrictJpegValidator.INTERRUPTED -> return Result.Rejected("INTERRUPTED")
+                StrictJpegValidator.LIMIT -> return Result.Rejected("MEMORY_LIMIT")
+                StrictJpegValidator.UNAVAILABLE -> return Result.Rejected("STRICT_DECODER_UNAVAILABLE")
+                else -> return Result.Rejected("INVALID_JPEG")
+            }
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeByteArray(input, 0, input.size, bounds)
             val width = bounds.outWidth
@@ -49,11 +58,6 @@ internal object MmsOutgoingJpegCompressor {
                 (height.toLong() + sample - 1) / sample > 1600 || sampledPixels() > MAX_DECODED_PIXELS) {
                 sample *= 2
             }
-            // Legacy Android cannot reliably report partial entropy decoding. Preserve v22
-            // pass-through behavior there, but never introduce best-effort lossy transcoding.
-            if (Build.VERSION.SDK_INT < 28 && input.size > budgetBytes) {
-                return Result.Rejected("STRICT_DECODER_UNAVAILABLE")
-            }
             val options = BitmapFactory.Options().apply {
                 inSampleSize = sample; inPreferredConfig = Bitmap.Config.ARGB_8888; inScaled = false
             }
@@ -62,6 +66,21 @@ internal object MmsOutgoingJpegCompressor {
             base = if (orientationBaked) Api28.decodeChecked(input, sample)
                 else BitmapFactory.decodeByteArray(input, 0, input.size, options)
             if (base == null) return Result.Rejected("DECODE_FAILED")
+            if (!orientationBaked && orientation in 2..8) {
+                val values = when (orientation) {
+                    2 -> floatArrayOf(-1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f)
+                    3 -> floatArrayOf(-1f, 0f, 0f, 0f, -1f, 0f, 0f, 0f, 1f)
+                    4 -> floatArrayOf(1f, 0f, 0f, 0f, -1f, 0f, 0f, 0f, 1f)
+                    5 -> floatArrayOf(0f, 1f, 0f, 1f, 0f, 0f, 0f, 0f, 1f)
+                    6 -> floatArrayOf(0f, -1f, 0f, 1f, 0f, 0f, 0f, 0f, 1f)
+                    7 -> floatArrayOf(0f, -1f, 0f, -1f, 0f, 0f, 0f, 0f, 1f)
+                    else -> floatArrayOf(0f, 1f, 0f, -1f, 0f, 0f, 0f, 0f, 1f)
+                }
+                val original = base
+                base = Bitmap.createBitmap(original, 0, 0, original.width, original.height,
+                    Matrix().apply { setValues(values) }, true)
+                if (base !== original) original.recycle()
+            }
             if (base.width.toLong() * base.height > MAX_DECODED_PIXELS) return Result.Rejected("PIXEL_LIMIT_EXCEEDED")
             if (Thread.currentThread().isInterrupted) return Result.Rejected("INTERRUPTED")
             if (input.size <= budgetBytes) return Result.Compressed(input)
@@ -85,7 +104,12 @@ internal object MmsOutgoingJpegCompressor {
                         val encoded = try { scaled.compress(Bitmap.CompressFormat.JPEG, quality, output) }
                             catch (_: BudgetExceeded) { false }
                         if (encoded && !output.exceeded && output.count > 0) {
-                            return Result.Compressed(output.bytes())
+                            val bytes = output.bytes()
+                            return when (StrictJpegValidator.validate(bytes)) {
+                                StrictJpegValidator.VALID -> Result.Compressed(bytes)
+                                StrictJpegValidator.INTERRUPTED -> Result.Rejected("INTERRUPTED")
+                                else -> Result.Rejected("ENCODED_JPEG_INVALID")
+                            }
                         }
                     }
                 } finally { if (scaled !== base) scaled?.recycle() }
@@ -108,8 +132,7 @@ internal object MmsOutgoingJpegCompressor {
                 decoder.setTargetColorSpace(ColorSpace.get(ColorSpace.Named.SRGB))
                 decoder.setTargetSampleSize(sample)
                 decoder.setOnPartialImageListener { false }
-                // Native libjpeg may recover entropy damage without flagging partial input.
-                // The dedicated failing regression records this known qualification blocker.
+                // Entropy has already been checked independently by StrictJpegValidator.
                 // ImageDecoder itself applies EXIF rotations and mirrors, including transpose.
             }
     }

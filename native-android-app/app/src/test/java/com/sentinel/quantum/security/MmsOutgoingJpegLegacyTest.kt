@@ -6,8 +6,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk=[27],manifest=Config.NONE)
+@RunWith(StrictJpegRobolectricRunner::class)
+@Config(sdk=[24,27],manifest=Config.NONE)
 class MmsOutgoingJpegLegacyTest {
     private fun input():ByteArray {
         val b=Bitmap.createBitmap(64,48,Bitmap.Config.ARGB_8888)
@@ -19,7 +19,7 @@ class MmsOutgoingJpegLegacyTest {
         assertTrue("$result",result is MmsOutgoingJpegCompressor.Result.Compressed)
         assertArrayEquals(bytes,(result as MmsOutgoingJpegCompressor.Result.Compressed).bytes)
     }
-    @Test fun newTranscodingFailsClosedWithoutStrictDecoder() {
-        assertEquals("STRICT_DECODER_UNAVAILABLE",(MmsOutgoingJpegCompressor.compress(input(),1) as MmsOutgoingJpegCompressor.Result.Rejected).reason)
+    @Test fun impossibleBudgetFailsWithStrictDecoder() {
+        assertEquals("CANNOT_FIT_BUDGET",(MmsOutgoingJpegCompressor.compress(input(),1) as MmsOutgoingJpegCompressor.Result.Rejected).reason)
     }
 }

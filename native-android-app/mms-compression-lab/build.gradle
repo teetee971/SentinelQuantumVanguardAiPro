@@ -5,7 +5,7 @@ plugins {
 // Lint does not honor Java include filters when inspecting a shared source root.
 // Materialize only the exact production/test files used by this role-free lab.
 def mainFiles = ['**/MmsOutgoingJpegCompressor.kt', '**/MmsOutgoingPreparation.kt', '**/SentinelMmsSendPduComposer.kt', '**/MmsOutgoingLimits.kt']
-def testFiles = ['**/MmsOutgoingJpegCompressorRobolectricTest.kt', '**/MmsOutgoingPreparationTest.kt', '**/MmsOutgoingPreparationNativeTest.kt']
+def testFiles = ['**/MmsOutgoingJpegCompressorRobolectricTest.kt', '**/MmsOutgoingPreparationTest.kt', '**/MmsOutgoingPreparationNativeTest.kt', '**/StrictJpegRobolectricRunner.kt', '**/MmsOutgoingJpegLegacyTest.kt']
 def androidTestFiles = ['**/MmsOutgoingJpegCompressorInstrumentationTest.kt', '**/MmsOutgoingPreparationInstrumentationTest.kt']
 def isolatedSources = [:]
 [main: mainFiles, test: testFiles, androidTest: androidTestFiles].each { kind, patterns ->
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId 'com.sentinel.quantum.mmslab.v23'
-        minSdk 28
+        minSdk 24
         targetSdk 36
         versionCode 1
         versionName '0.23-test'
@@ -51,7 +51,7 @@ android {
 
         test {
             java.srcDirs = [layout.buildDirectory.dir('generated/mmsCompression/test').get().asFile, 'src/sharedTest/java']
-            java.includes = ['**/MmsOutgoingJpegCompressorRobolectricTest.kt', '**/MmsOutgoingPreparationTest.kt', '**/MmsOutgoingJpegCases.kt', '**/MmsOutgoingPreparationNativeTest.kt', '**/MmsOutgoingPreparationNativeCases.kt']
+            java.includes = ['**/MmsOutgoingJpegCompressorRobolectricTest.kt', '**/MmsOutgoingPreparationTest.kt', '**/MmsOutgoingJpegCases.kt', '**/MmsOutgoingPreparationNativeTest.kt', '**/MmsOutgoingPreparationNativeCases.kt', '**/StrictJpegRobolectricRunner.kt', '**/MmsOutgoingJpegLegacyTest.kt']
         }
 
         androidTest {
@@ -64,6 +64,7 @@ android {
 }
 
 dependencies {
+    implementation project(':mms-jpeg-validator')
     implementation 'androidx.exifinterface:exifinterface:1.4.1'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.robolectric:robolectric:4.16.1'
@@ -84,3 +85,10 @@ tasks.withType(Test).configureEach {
 }
 
 tasks.named('preBuild') { dependsOn isolatedSources.values() }
+
+// JNI is loaded by a shared test class loader, from this real host build.
+tasks.withType(Test).configureEach {
+    dependsOn ':mms-jpeg-validator:buildHostValidator'
+    systemProperty 'java.library.path', project(':mms-jpeg-validator').layout.buildDirectory
+        .dir('host-validator').get().asFile.absolutePath
+}

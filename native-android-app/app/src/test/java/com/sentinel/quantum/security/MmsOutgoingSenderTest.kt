@@ -11,10 +11,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(StrictJpegRobolectricRunner::class)
+@org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
 @Config(sdk=[35], manifest=Config.NONE, application=Application::class)
 class MmsOutgoingSenderTest {
     private class Fake : SentinelMmsSender.Effects {
+        var realPreparation=false
         var role=true;var feature=true;var missingPermission:String?=null;var ineffectivePermission:String?=null
         var active=setOf(1);val limits=mutableMapOf<Int,Int>();val carrierRequests=mutableListOf<Int>();val transportSubscriptions=mutableListOf<Int>();var providerSubscription=-1;var prepareBudget=-1;var limit=20_000;var preparationCalls=0;var stageCalls=0;var persistenceCalls=0;var sendCalls=0
         var deleteCalls=0;var submitted=0;var unknown=0;var abandoned=0
@@ -40,7 +42,7 @@ class MmsOutgoingSenderTest {
             if(throwPrepareMemory)throw OutOfMemoryError("controlled codec allocation failure")
             if(throwPreparation)throw IllegalStateException("prepare")
             preparationFailure?.let{return MmsOutgoingPreparation.Result.Rejected(it)}
-            val result=MmsOutgoingPreparation.prepare(destination,transactionId,text,attachments,maxPduBytes){bytes,budget->MmsOutgoingJpegCompressor.Result.Compressed(if(bytes.size<=budget)bytes else ByteArray(budget){42})}
+            val result=if (realPreparation) MmsOutgoingPreparation.prepare(destination,transactionId,text,attachments,maxPduBytes) else MmsOutgoingPreparation.prepare(destination,transactionId,text,attachments,maxPduBytes){bytes,budget->MmsOutgoingJpegCompressor.Result.Compressed(if(bytes.size<=budget)bytes else ByteArray(budget){42})}
             beforePrepared?.invoke();return result
         }
         override fun stage(pdu:ByteArray):MmsSendPduStager.Result {
@@ -63,6 +65,33 @@ class MmsOutgoingSenderTest {
     private fun sender(fake:Fake)=SentinelMmsSender(RuntimeEnvironment.getApplication(),fake)
     private fun image(size:Int)=SentinelMmsSender.Attachment("image/jpeg",ByteArray(size){17})
     private fun assertNoEffects(fake:Fake) {assertEquals(0,fake.stageCalls);assertEquals(0,fake.persistenceCalls);assertEquals(0,fake.sendCalls)}
+    private fun realJpeg(): ByteArray {
+        val bitmap=android.graphics.Bitmap.createBitmap(800,600,android.graphics.Bitmap.Config.ARGB_8888)
+        try {
+            val pixels=IntArray(800*600){i->val x=i%800;val y=i/800;android.graphics.Color.rgb((x*37+y*17)and 255,(x*11+y*43)and 255,(x*29+y*7)and 255)}
+            bitmap.setPixels(pixels,0,800,0,0,800,600)
+            return java.io.ByteArrayOutputStream().use { check(bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG,95,it));it.toByteArray() }
+        } finally { bitmap.recycle() }
+    }
+    @Test fun realJpegValidationAndCompressionKeepProviderAndPduIdentical() {
+        val f=Fake();f.realPreparation=true
+        val original=realJpeg();val before=original.copyOf()
+        val result=sender(f).send("+33612345678","real JPEG",1,listOf(SentinelMmsSender.Attachment("image/jpeg",original)))
+        assertTrue("$result",result.accepted);assertEquals(1,f.sendCalls);assertEquals(1,f.persistenceCalls)
+        assertArrayEquals(before,original)
+        val bytes=f.providerParts.single().payload
+        assertTrue(bytes.size<original.size)
+        assertEquals(com.sentinel.quantum.mmsjpeg.StrictJpegValidator.VALID,com.sentinel.quantum.mmsjpeg.StrictJpegValidator.validate(bytes))
+        val encoded=SentinelMmsSendPduComposer.compose(f.providerDestination,f.providerTransaction,f.providerText,f.providerParts.map{SentinelMmsSendPduComposer.Part(it.mimeType,it.payload)},f.limit) as SentinelMmsSendPduComposer.Result.Composed
+        assertArrayEquals(encoded.pdu,f.stagedPdu);assertTrue(encoded.pdu.size<=f.limit)
+    }
+    @Test fun realTruncatedEntropyNeverStagesPersistsOrSubmits() {
+        val input=realJpeg();val corrupt=input.copyOf(input.size/2)+byteArrayOf(0xff.toByte(),0xd9.toByte())
+        val before=corrupt.copyOf();val f=Fake();f.realPreparation=true
+        val result=sender(f).send("+33612345678","corrupt JPEG",1,listOf(SentinelMmsSender.Attachment("image/jpeg",corrupt)))
+        assertFalse(result.accepted);assertEquals("MMS_JPEG_INVALID_JPEG",result.reason)
+        assertNoEffects(f);assertArrayEquals(before,corrupt)
+    }
     @Test fun absentRoleRejectsBeforePreparation() {val f=Fake();f.role=false;assertEquals("SMS_ROLE_NOT_HELD",sender(f).send("+33612345678","test").reason);assertEquals(0,f.preparationCalls);assertNoEffects(f)}
     @Test fun missingAndIneffectivePermissionsRefuseWithoutEffects() {
         for(p in listOf(Manifest.permission.SEND_SMS,Manifest.permission.READ_PHONE_STATE)) {
