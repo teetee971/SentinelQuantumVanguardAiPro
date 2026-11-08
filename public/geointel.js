@@ -22,7 +22,7 @@ function render(){
 function inspect(e){
  state.selected=e;inspector.replaceChildren();const h=document.createElement('h2');h.textContent=e.title;inspector.append(h);
  const risk=riskScore(e);paragraph(inspector,`Couche : ${e.layer} · sévérité ${e.severityBasis==='SOURCE_CATEGORY'?'issue de la catégorie source':'Sentinel'} : ${e.severity??'non fournie'} · risque : ${risk??'non calculé'} · confiance : ${e.confidence===null?'non fournie':e.confidence}`);
- paragraph(inspector,`${e.locationLabel||'Point source'}${e.locationStatus==='UNLOCATED'?' — aucune coordonnée inventée.':''}`);
+ paragraph(inspector,`${e.locationLabel||'Point source'}${e.locationStatus==='UNLOCATED'?' — aucune coordonnée inventée.':` — coordonnées source : ${e.lat}, ${e.lon}`}`);
  paragraph(inspector,`Date source : ${e.occurredAt} · mise à jour/observation source : ${e.detectedAt||'inconnue'} · acquisition : ${e.ingestedAt||'inconnue'}`);
  const proof=evidenceState(e,{now:Date.now(),ttlMs:21600000});paragraph(inspector,`Preuve : ${proof.trust} · fraîcheur : ${proof.freshness}. Une publication ou anomalie ne constitue pas une confirmation indépendante de l’événement.`);
  if(e.sourceUrl){const a=document.createElement('a');a.href=e.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Consulter la source';inspector.append(a);}
