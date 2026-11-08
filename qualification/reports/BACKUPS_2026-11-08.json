@@ -1,0 +1,81 @@
+{
+  "date_utc": "2026-11-08",
+  "tested_code": "8c2c2b98c4a25d6d3b355bca034ca4b54f9ba2b0",
+  "technical_delivery": "1a418cd90fba4fdb9bbf96d71383a896839a966a",
+  "geointel_delivery": "30948810f50a2d1cd5ede231ba94902976627182",
+  "source_backups": [
+    {
+      "label": "MMS JPEG v23",
+      "pr": 1755,
+      "sha": "1a418cd90fba4fdb9bbf96d71383a896839a966a",
+      "zip": "https://github.com/teetee971/SentinelQuantumVanguardAiPro/archive/1a418cd90fba4fdb9bbf96d71383a896839a966a.zip"
+    },
+    {
+      "label": "GeoIntel multisource",
+      "pr": 1760,
+      "sha": "30948810f50a2d1cd5ede231ba94902976627182",
+      "zip": "https://github.com/teetee971/SentinelQuantumVanguardAiPro/archive/30948810f50a2d1cd5ede231ba94902976627182.zip"
+    },
+    {
+      "label": "Doctor int\u00e9gr\u00e9 \u2014 ant\u00e9rieur",
+      "pr": 1759,
+      "sha": "0e280e6068544e5ad23962a5e31b45f943532296",
+      "zip": "https://github.com/teetee971/SentinelQuantumVanguardAiPro/archive/0e280e6068544e5ad23962a5e31b45f943532296.zip"
+    },
+    {
+      "label": "Candidat GooglePlay \u2014 ant\u00e9rieur",
+      "pr": 1758,
+      "sha": "8169dc50a33376ed157513667c1686b194def765",
+      "zip": "https://github.com/teetee971/SentinelQuantumVanguardAiPro/archive/8169dc50a33376ed157513667c1686b194def765.zip"
+    },
+    {
+      "label": "Gardes des tests \u2014 ant\u00e9rieur",
+      "pr": 1757,
+      "sha": "6a90af97a22f862ad5524b557a34c97615fa5d96",
+      "zip": "https://github.com/teetee971/SentinelQuantumVanguardAiPro/archive/6a90af97a22f862ad5524b557a34c97615fa5d96.zip"
+    },
+    {
+      "label": "Premier chantier nettoyeur \u2014 ant\u00e9rieur",
+      "pr": 1756,
+      "sha": "d120cef6292916bac29d506cac6dad768b0f6f5c",
+      "zip": "https://github.com/teetee971/SentinelQuantumVanguardAiPro/archive/d120cef6292916bac29d506cac6dad768b0f6f5c.zip"
+    }
+  ],
+  "artifacts": {
+    "app.apk": {
+      "bytes": 99453750,
+      "sha256": "f30ec1caa4b984c66fd9e8001e7386e026517fb0829fd3bd2a7ef4de6735c79b",
+      "source": "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/debug/app-debug.apk",
+      "hard_link_to_build": false
+    },
+    "app-test.apk": {
+      "bytes": 1158262,
+      "sha256": "d62c57193c1a995ce08d92a9c98283c29ca4e993bce75f3f05e009474d324198",
+      "source": "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "hard_link_to_build": false
+    },
+    "lab.apk": {
+      "bytes": 2277484,
+      "sha256": "8a179e194fdee7a897be3762f671c9acf775aaed0763da1e9668e3c3f689f8b8",
+      "source": "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/debug/mms-compression-lab-debug.apk",
+      "hard_link_to_build": false
+    },
+    "lab-test.apk": {
+      "bytes": 944423,
+      "sha256": "69be4f1c6a002c9c7f7d9dac655e09416c6abe2394dc154f01bc8571470003d9",
+      "source": "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk",
+      "hard_link_to_build": false
+    },
+    "app-releaseUnsigned.aab": {
+      "bytes": 43551785,
+      "sha256": "fcfb687b5c5f1ba5824a1a44a87c576aaf5e575f29a5c403c8738b954b897379",
+      "signing": "UNSIGNED_NOT_PUBLISHABLE",
+      "source": "/dev/shm/sentinel-native/gradle-build/app/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+      "hard_link_to_build": false
+    }
+  },
+  "local_artifacts_require_download": true,
+  "proof_zip_sha256": "b7e3b4da4e9a4dae02627e1e30e6d80618772538299d796c060c123b5997e4a6",
+  "physical_tests": "NOT_EXECUTED",
+  "production_status": "BLOCKED"
+}
