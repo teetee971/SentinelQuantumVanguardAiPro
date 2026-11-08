@@ -1,0 +1,38 @@
+✔ proxy rejects unknown sources, SSRF parameters, invalid range and methods before egress (28.599757ms)
+✔ proxy forwards only fixed HTTPS URLs and no request credentials (3.626161ms)
+✔ unknown non API path falls through without proxying (0.243917ms)
+✔ transport rejects oversized streamed bodies and invalid MIME (1.009657ms)
+✔ deadline covers a stalled response body and cancels reader (10.355756ms)
+✔ upstream error has no fake data and is not cached (0.802927ms)
+✔ only EONET can use its observed RSS-labelled JSON, and schema is checked (1.427385ms)
+✔ deadline does not wait for an upstream cancellation hook that never resolves (11.001627ms)
+✖ byte-limit rejection is not blocked by an unresponsive cancellation hook (101.126295ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.808422
+
+✖ failing tests:
+
+test at public/geointel-proxy.test.js:14:1
+✖ byte-limit rejection is not blocked by an unresponsive cancellation hook (101.126295ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'CANCEL_BLOCKED'
+  - 'Source byte limit exceeded'
+
+      at TestContext.<anonymous> (file:///workspace/sentinel-play-ready/public/geointel-proxy.test.js:14:465)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'CANCEL_BLOCKED',
+    expected: 'Source byte limit exceeded',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

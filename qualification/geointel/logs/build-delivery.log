@@ -1,0 +1,18 @@
+
+> sentinel-quantum-vanguard-ai-pro@2.0.0-pro build
+> node scripts/build-for-cloudflare.js
+
+Building static frontend for Cloudflare Pages...
+Regenerating public product truth from canonical registries...
+Regenerating public capability views from canonical capability registry...
+Copied: _worker.js
+Copied: index.html
+Copied: robots.txt
+Copied: sitemap.xml
+Copied: _headers
+Copied: _redirects
+Copied: public
+Copied: assets
+Deployment marker: 3724f695ef614e8a7e4c6e307cf0a094c8e2ecd2
+Build summary: 8 items copied, 0 errors.
+Output: frontend/dist

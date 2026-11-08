@@ -12,6 +12,10 @@ Le dépôt ne doit pas être présenté comme collectant ou stockant systématiq
 
 Avant un déploiement réel, l'exploitant doit vérifier les données effectivement traitées, les journaux, le stockage local, les communications réseau, les fournisseurs externes et les durées de conservation applicables.
 
+## GeoIntel multisource web
+
+La console consulte des flux publics USGS, NASA EONET, NWS, IODA, ONU et OFAC. Le relais du site ne transmet pas aux sources les cookies, jetons ou en-têtes d’authentification du navigateur. Les requêtes contiennent uniquement la source choisie et une fenêtre temporelle autorisée ; aucune géolocalisation de l’utilisateur n’est demandée. Les fournisseurs voient les métadonnées réseau du relais. Les réponses restent des instantanés, avec couverture et erreurs explicites ; aucune position manquante n’est inventée.
+
 ## Services et communications externes
 
 Le site peut être déployé sur Cloudflare Pages et certains modules de veille peuvent consulter des sources publiques. Une absence de transfert de données ne doit donc pas être affirmée de manière générale sans mesure sur la configuration effectivement déployée.

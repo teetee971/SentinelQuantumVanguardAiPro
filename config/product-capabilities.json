@@ -202,8 +202,8 @@
     {
       "id": "geointel_multisource",
       "surface": "GeoIntel conflicts/hotspots/sanctions/weather/outages",
-      "implemented": false,
-      "configured": false,
+      "implemented": true,
+      "configured": true,
       "requires_deployment": true,
       "deployed": false,
       "runtime_verified": false,
@@ -213,11 +213,15 @@
       "release_signed": false,
       "customer_available": false,
       "blockers": [
-        "Verified production sources are not wired for conflicts, hotspots, sanctions, weather or outages"
+        "Fixed-source Cloudflare relay is implemented but not deployed or observed on the public origin",
+        "UN/OFAC are publication signals, not confirmed conflict incidents or consolidated worldwide sanctions; NWS is US coverage and IODA observations are partial/unlocated",
+        "Real browser tests use captured official provider responses; production browser end-to-end acceptance remains unverified"
       ],
       "evidence": [
-        "public/geointel.html",
-        "public/geointel-core.js"
+        "public/geointel-multisource.js",
+        "public/geointel-multisource.test.js",
+        "public/geointel-proxy.test.js",
+        "_worker.js"
       ],
       "evidence_sha": null,
       "evidence_at": null,
@@ -225,7 +229,14 @@
       "dependencies": [],
       "source_scope": [
         "public/geointel.html",
-        "public/geointel-core.js"
+        "public/geointel.js",
+        "public/geointel-core.js",
+        "public/geointel-multisource.js",
+        "public/geointel-source-registry.js",
+        "public/geointel-transport.js",
+        "public/sw.js",
+        "_worker.js",
+        "scripts/build-for-cloudflare.js"
       ],
       "required_physical_criteria": []
     },

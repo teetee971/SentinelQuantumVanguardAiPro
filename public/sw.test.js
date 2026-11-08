@@ -32,8 +32,10 @@ class FakeCacheStorage {
   }
 }
 
+const listeners = new Map();
+globalThis.location = {origin: "https://example.test"};
 globalThis.self = {
-  addEventListener: () => {},
+  addEventListener: (name, handler) => listeners.set(name, handler),
   skipWaiting: () => {},
   clients: { claim: () => {} },
 };
@@ -89,4 +91,14 @@ test('re-caching an existing entry does not trigger eviction of others', async (
   const keys = (await cache.keys()).map((k) => k.url);
   assert.equal(keys.length, MAX_DYNAMIC_CACHE_ENTRIES);
   assert.ok(keys.includes('https://example.test/asset-0.js'));
+});
+
+ test('GeoIntel API is never served or saved by offline cache', async () => {
+  globalThis.caches = new FakeCacheStorage();
+  const request = new Request('https://example.test/api/geointel/nws?days=7');
+  await cacheDynamicResponse(request, makeResponse('stale'));
+  assert.equal((await (await caches.open(DYNAMIC_CACHE)).keys()).length, 0);
+  let handled = false;
+  listeners.get('fetch')({request, respondWith() { handled = true; }});
+  assert.equal(handled, false, 'browser network must handle API, without cached fallback');
 });

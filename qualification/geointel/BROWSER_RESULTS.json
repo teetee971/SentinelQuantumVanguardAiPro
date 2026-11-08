@@ -1,0 +1,45 @@
+{
+  "sources": [
+    {
+      "id": "usgs",
+      "health": "DEGRADED",
+      "text": "USGS Earthquake Hazards Program — DEGRADED — 320 reçu(s), 0 rejet(s). Séismes mondiaux M2,5+ ; fenêtre demandée Acquisition : 2026-11-08T08:31:47.476Z. "
+    },
+    {
+      "id": "eonet",
+      "health": "DEGRADED",
+      "text": "NASA EONET — DEGRADED — 85 reçu(s), 4 rejet(s). Événements naturels mondiaux signalés, non exhaustifs Acquisition : 2026-11-08T08:31:47.476Z. EONET valid point required"
+    },
+    {
+      "id": "nws",
+      "health": "HEALTHY",
+      "text": "National Weather Service — HEALTHY — 401 reçu(s), 0 rejet(s). Alertes actives États-Unis et territoires ; pas une météo mondiale Acquisition : 2026-11-08T08:31:47.476Z. "
+    },
+    {
+      "id": "ioda",
+      "health": "DEGRADED",
+      "text": "IODA — Georgia Tech — DEGRADED — 50 reçu(s), 0 rejet(s). Anomalies réseau observées ; réseaux/pays, pas de localisation précise Acquisition : 2026-11-08T08:31:47.476Z. Limite/pagination : résultats partiels. "
+    },
+    {
+      "id": "un",
+      "health": "HEALTHY",
+      "text": "ONU — paix et sécurité — HEALTHY — 30 reçu(s), 0 rejet(s). Publications ONU, pas un recensement exhaustif des conflits Acquisition : 2026-11-08T08:31:47.476Z. "
+    },
+    {
+      "id": "ofac",
+      "health": "HEALTHY",
+      "text": "OFAC — actions récentes — HEALTHY — 10 reçu(s), 0 rejet(s). Publications américaines, pas une liste consolidée mondiale des sanctions Acquisition : 2026-11-08T08:31:47.476Z. "
+    }
+  ],
+  "serviceWorker": true,
+  "canvasHeight": 812,
+  "counter": "500 affiché(s) sur 791 correspondant(s) · 100 point(s) · 400 sans coordonnées",
+  "xml": {
+    "title": "<img src=x onerror=alert(1)>",
+    "layer": "sanctions"
+  },
+  "failurePreservesOthers": true,
+  "offlineAllDown": true,
+  "browserExceptions": [],
+  "mobileOverflow": false
+}

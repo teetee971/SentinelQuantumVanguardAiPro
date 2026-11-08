@@ -1,0 +1,54 @@
+[
+  {
+    "id": "usgs",
+    "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson",
+    "status": 200,
+    "type": "application/json; charset=utf-8",
+    "bytes": 226913,
+    "cors": "*",
+    "acquired_at": "2026-11-07T22:51:36.304838+00:00"
+  },
+  {
+    "id": "nws",
+    "url": "https://api.weather.gov/alerts/active?status=actual",
+    "status": 200,
+    "type": "application/geo+json",
+    "bytes": 1822414,
+    "cors": "*",
+    "acquired_at": "2026-11-07T22:51:37.140484+00:00"
+  },
+  {
+    "id": "un",
+    "url": "https://news.un.org/feed/subscribe/en/news/topic/peace-and-security/feed/rss.xml",
+    "status": 200,
+    "type": "application/rss+xml; charset=utf-8",
+    "bytes": 34797,
+    "cors": null,
+    "acquired_at": "2026-11-07T22:51:52.364545+00:00"
+  },
+  {
+    "id": "ofac",
+    "url": "https://ofac.treasury.gov/rss.xml",
+    "status": 200,
+    "type": "application/rss+xml; charset=utf-8",
+    "bytes": 283289,
+    "cors": null,
+    "acquired_at": "2026-11-07T22:51:52.610149+00:00"
+  },
+  {
+    "id": "eonet",
+    "url": "https://eonet.gsfc.nasa.gov/api/v3/events?status=all&days=7&limit=500",
+    "status": 200,
+    "type": "application/rss+xml; charset=utf-8",
+    "bytes": 248373,
+    "acquired_at": "2026-11-07T22:52:36.356921+00:00"
+  },
+  {
+    "id": "ioda",
+    "url": "https://api.ioda.inetintel.cc.gatech.edu/v2/outages/events?from=1793487156&until=1794091956&limit=50&extendWindow=0",
+    "status": 200,
+    "type": "application/json",
+    "bytes": 12182,
+    "acquired_at": "2026-11-07T22:52:40.719554+00:00"
+  }
+]

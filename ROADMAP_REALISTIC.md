@@ -16,3 +16,7 @@ La référence détaillée reste [docs/ROADMAP.md](docs/ROADMAP.md), les états 
 La clôture requiert une preuve datée liée au SHA, à l'environnement et à l'artefact. Une étape non exécutée reste NON EXÉCUTÉE ; un blocage reste ouvert. Ni fusion dans main, ni publication, ni installation de cette candidate sur la v22 stable.
 
 Le suivi d’exécution de cette itération est [qualification/roadmap/RESULTS.md](qualification/roadmap/RESULTS.md). Les actions nécessitant le propriétaire et leurs preuves de clôture sont détaillées dans [OWNER_HANDOFF.md](qualification/roadmap/OWNER_HANDOFF.md). Aucun jalon externe n’est fermé par cette mise à jour.
+
+## GeoIntel multisource
+
+Les six collecteurs USGS/NASA/NWS/IODA/ONU/OFAC sont implémentés dans la console web. Les publications sans coordonnées restent en liste, sans point fictif. La couverture, les erreurs et limites sont séparées par source ; le relais fixe et son accès réel depuis l’origine publique restent à déployer/valider. Aucun APK GeoIntel natif n’est prétendu livré. Voir [qualification GeoIntel](qualification/geointel/REPORT.md).

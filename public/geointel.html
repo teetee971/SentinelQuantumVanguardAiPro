@@ -10,17 +10,17 @@
 <body>
 <script defer src="/public/shared-navigation.js"></script>
 <main id="main-content" class="geo-shell">
-<header class="geo-head"><div><span class="eyebrow">Sentinel · GeoIntel</span><h1>Situation mondiale</h1><p>Console GeoIntel fondée sur des preuves de source, de fraîcheur et de santé du collecteur. Cette version de production charge les flux sismiques publics USGS M2,5+. Les autres familles de renseignement restent indisponibles tant qu’une source vérifiable n’est pas branchée.</p></div><span class="geo-status" id="geointel-status" role="status" aria-live="polite" aria-atomic="true">INITIALISATION · SOURCE USGS</span></header>
+<header class="geo-head"><div><span class="eyebrow">Sentinel · GeoIntel</span><h1>Situation mondiale</h1><p>Console GeoIntel fondée sur des preuves de source, de fraîcheur et de santé du collecteur. Six collecteurs indépendants : séismes USGS, événements naturels NASA, alertes NWS, observations réseau IODA, publications ONU et OFAC. Les publications ne sont pas des incidents de conflit confirmés ni une liste consolidée des sanctions. Seuls les points réellement fournis par les sources figurent sur la carte.</p></div><span class="geo-status" id="geointel-status" role="status" aria-live="polite" aria-atomic="true">INITIALISATION · MULTISOURCE</span></header>
 <section class="geo-layout" aria-label="Console GeoIntel">
 <aside class="geo-panel"><h2>Couches</h2>
-<label class="geo-layer"><input type="checkbox" data-layer="conflicts" disabled> Conflits · source non branchée</label>
-<label class="geo-layer"><input type="checkbox" data-layer="hotspots" disabled> Points chauds · source non branchée</label>
-<label class="geo-layer"><input type="checkbox" data-layer="sanctions" disabled> Sanctions · source non branchée</label>
-<label class="geo-layer"><input type="checkbox" data-layer="weather" disabled> Météo · source non branchée</label>
-<label class="geo-layer"><input type="checkbox" data-layer="outages" disabled> Coupures · source non branchée</label>
+<label class="geo-layer"><input type="checkbox" data-layer="conflicts" checked> Conflits · publications ONU</label>
+<label class="geo-layer"><input type="checkbox" data-layer="hotspots" checked> Points chauds naturels · NASA</label>
+<label class="geo-layer"><input type="checkbox" data-layer="sanctions" checked> Sanctions · publications OFAC</label>
+<label class="geo-layer"><input type="checkbox" data-layer="weather" checked> Météo · NWS (États-Unis) et NASA</label>
+<label class="geo-layer"><input type="checkbox" data-layer="outages" checked> Réseaux · observations IODA</label>
 <label class="geo-layer"><input type="checkbox" data-layer="natural" checked> Séismes USGS · actif</label>
-<h2>Période</h2><label for="geointel-range" class="geo-range-label">Fenêtre temporelle USGS</label><select id="geointel-range" class="geo-range"><option value="1">24 h</option><option value="7" selected>7 jours</option><option value="30">30 jours</option></select>
-<p class="geo-disclaimer">Le statut en haut distingue la source USGS, le caractère instantané du chargement et sa santé (HEALTHY, DEGRADED ou DOWN). Une panne de source ne doit jamais être présentée comme une absence d’événements. Pour préserver les performances, la vue affiche au maximum les 500 événements les plus récents correspondant aux filtres.</p></aside>
+<h2>Période</h2><label for="geointel-range" class="geo-range-label">Fenêtre temporelle (inclut intervalles actifs)</label><select id="geointel-range" class="geo-range"><option value="1">24 h</option><option value="7" selected>7 jours</option><option value="30">30 jours</option></select>
+<button id="geointel-refresh" type="button">Actualiser les sources</button><h2>Santé et couverture</h2><ul id="geointel-sources" aria-live="polite"></ul><p class="geo-disclaimer">Sources indépendantes : une panne n’efface pas les autres résultats. Les alertes NWS sont actives uniquement ; les flux de publications et observations ne sont pas exhaustifs. Aucune position, confiance ou date manquante n’est inventée. Maximum 500 résultats visibles. L’acquisition ne remplace pas la date de mise à jour source.</p></aside>
 <div class="geo-map-wrap"><canvas id="geointel-map" class="geo-map" role="img" aria-label="Projection mondiale des événements">La carte graphique est complétée par la liste des événements visibles.</canvas><div class="geo-map-label" id="geointel-count" role="status" aria-live="polite" aria-atomic="true">Chargement…</div></div>
 <aside class="geo-panel"><h2>Événements</h2><div id="geointel-events" class="geo-events" aria-label="Événements visibles"></div><div id="geointel-inspector" class="geo-inspector"><h2>Inspecteur</h2><p>Sélectionnez un événement pour afficher son état de preuve.</p></div></aside>
 </section>

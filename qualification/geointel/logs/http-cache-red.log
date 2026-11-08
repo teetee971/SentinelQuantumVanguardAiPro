@@ -1,0 +1,38 @@
+✔ proxy rejects unknown sources, SSRF parameters, invalid range and methods before egress (32.559798ms)
+✖ proxy forwards only fixed HTTPS URLs and no request credentials (4.036034ms)
+✔ unknown non API path falls through without proxying (0.23308ms)
+✔ transport rejects oversized streamed bodies and invalid MIME (1.092261ms)
+✔ deadline covers a stalled response body and cancels reader (10.597144ms)
+✔ upstream error has no fake data and is not cached (0.719351ms)
+✔ only EONET can use its observed RSS-labelled JSON, and schema is checked (1.147894ms)
+✔ deadline does not wait for an upstream cancellation hook that never resolves (10.698927ms)
+✔ byte-limit rejection is not blocked by an unresponsive cancellation hook (0.777669ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 223.698335
+
+✖ failing tests:
+
+test at public/geointel-proxy.test.js:7:1
+✖ proxy forwards only fixed HTTPS URLs and no request credentials (4.036034ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + undefined
+  - 'no-store'
+
+      at TestContext.<anonymous> (file:///workspace/sentinel-play-ready/public/geointel-proxy.test.js:7:471)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'no-store',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

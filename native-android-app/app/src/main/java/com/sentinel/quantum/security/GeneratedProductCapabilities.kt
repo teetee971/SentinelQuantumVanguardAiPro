@@ -11,7 +11,7 @@ object GeneratedProductCapabilities {
         "sentinel_vpn_service" to State(true, false, null),
         "voice_transform_calls" to State(true, false, null),
         "geointel_usgs" to State(true, false, null),
-        "geointel_multisource" to State(false, false, null),
+        "geointel_multisource" to State(true, false, null),
         "collective_defense_backend" to State(true, false, null),
         "collective_defense_android" to State(true, false, null),
         "signed_phone_reputation_feed" to State(true, false, null),
