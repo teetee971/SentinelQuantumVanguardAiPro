@@ -175,7 +175,13 @@ internal class MmsConversationStore(private val context: Context) {
         journal.markSubmissionUnknown(token, providerMessageId)
 
     fun abandonBeforeTransport(token: String, providerMessageId: Long): Boolean {
-        if (!holdsSmsRole() || !MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
+        if (!MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
+        val record = journal.read(token) ?: return false
+        if (record.providerMessageId != providerMessageId || record.phase != MmsProviderJournal.Phase.READY) return false
+        // No transport was invoked. Persist this known local failure even if the SMS role
+        // disappeared; existing repair projects FAILED when provider access is restored.
+        if (!journal.markResult(token, providerMessageId, successful = false)) return false
+        if (!holdsSmsRole()) return false
         val deleted = cleanupRoot(providerMessageId, null)
         return deleted && journal.remove(token)
     }
@@ -190,8 +196,12 @@ internal class MmsConversationStore(private val context: Context) {
         successful: Boolean,
         nowMs: Long = System.currentTimeMillis()
     ): Boolean {
-        if (!holdsSmsRole() || !MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
-        val outcomeJournaled = journal.markResult(token, providerMessageId, successful, nowMs)
+        if (!MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
+        val outcomeJournaled = runCatching {
+            journal.markResult(token, providerMessageId, successful, nowMs)
+        }.getOrDefault(false)
+        // A genuine callback remains a durable fact even when role loss prevents projection.
+        if (!holdsSmsRole()) return false
         val updated = transitionMessageBox(providerMessageId, successful, nowMs)
         if (updated) {
             // A stale journal record is safe but noisy. Do not downgrade a confirmed provider write

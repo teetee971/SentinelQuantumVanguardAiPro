@@ -12,8 +12,8 @@ android {
         applicationId "com.sentinel.quantum"
         minSdk 24
         targetSdk 36
-        versionCode 22
-        versionName "1.0.9"
+        versionCode 23
+        versionName "1.0.10"
         buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'
         manifestPlaceholders = [
             auth0Domain: "@string/com_auth0_domain",
@@ -77,6 +77,11 @@ android {
         }
     }
 
+    sourceSets {
+        test.kotlin.srcDir(project.file('../mms-compression-lab/src/sharedTest/java'))
+        androidTest.kotlin.srcDir(project.file('../mms-compression-lab/src/sharedTest/java'))
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -101,13 +106,15 @@ gradle.taskGraph.whenReady { graph ->
     // are gated on signing secrets. Tasks for the "releaseUnsigned" build type
     // (assembleReleaseUnsigned, bundleReleaseUnsigned, ...) are intentionally exempt
     // because that variant never applies a signingConfig and is not publishable.
-    def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
+    def requiresSignedRelease = graph.allTasks.any { it.project.path == ':app' && it.name ==~ /(?i).*Release$/ }
     if (requiresSignedRelease && !releaseSigningConfigured) {
         throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
     }
 }
 
 dependencies {
+    implementation project(':mms-jpeg-validator')
+    implementation 'androidx.exifinterface:exifinterface:1.4.1'
     implementation 'com.android.tools.build:apksig:9.3.2'
     implementation project(':wearable-security')
     implementation 'androidx.core:core-ktx:1.19.1'
@@ -140,6 +147,7 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.16.1'
     testImplementation testFixtures(project(':wearable-security'))
     // JVM implementation used by local unit tests; Android's org.json classes are runtime stubs on the host JVM.
     testImplementation 'org.json:json:20260814'
@@ -292,4 +300,21 @@ tasks.withType(Test).configureEach {
     if (project.hasProperty('sentinelSignatureFixture')) {
         systemProperty 'sentinel.signature.fixture', project.property('sentinelSignatureFixture').toString()
     }
+}
+
+// AGP built-in Kotlin exposes variant test source sets (debugUnitTest/debugAndroidTest).
+
+// The reproduction script can guarantee offline Robolectric SDK resolution after bootstrap.
+tasks.withType(Test).configureEach {
+    if (project.hasProperty('sentinelRobolectricSdkDir')) {
+        systemProperty 'robolectric.offline', 'true'
+        systemProperty 'robolectric.dependency.dir', project.property('sentinelRobolectricSdkDir').toString()
+    }
+}
+
+// JNI is loaded by a shared test class loader, from this real host build.
+tasks.withType(Test).configureEach {
+    dependsOn ':mms-jpeg-validator:buildHostValidator'
+    systemProperty 'java.library.path', project(':mms-jpeg-validator').layout.buildDirectory
+        .dir('host-validator').get().asFile.absolutePath
 }

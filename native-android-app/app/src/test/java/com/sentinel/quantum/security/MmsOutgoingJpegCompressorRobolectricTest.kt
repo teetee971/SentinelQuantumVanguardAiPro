@@ -1,0 +1,11 @@
+package com.sentinel.quantum.security
+
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(StrictJpegRobolectricRunner::class)
+@Config(sdk=[27,28,35], manifest=Config.NONE)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class MmsOutgoingJpegCompressorRobolectricTest : MmsOutgoingJpegCases()

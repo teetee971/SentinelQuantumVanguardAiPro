@@ -18,3 +18,7 @@ rootProject.name = "SentinelQuantumVanguard"
 include ':app'
 include ':wearable-contract'
 include ':wearable-security'
+
+include ':mms-compression-lab'
+
+include ':mms-jpeg-validator'

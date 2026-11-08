@@ -1,0 +1,297 @@
+[
+  {
+    "label": "app-signature",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/debug/app-debug.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-align",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign",
+      "-c",
+      "-P",
+      "16",
+      "4",
+      "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/debug/app-debug.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-badging",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2",
+      "dump",
+      "badging",
+      "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/debug/app-debug.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-arm64-v8a-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmp88so34c5/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-arm64-v8a-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmp88so34c5/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-armeabi-v7a-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmpr83njrza/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-armeabi-v7a-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmpr83njrza/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-x86-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmpgw3t3q8f/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-x86-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmpgw3t3q8f/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-x86_64-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmpw_blu17k/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-x86_64-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmpw_blu17k/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-test-signature",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-test-align",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign",
+      "-c",
+      "-P",
+      "16",
+      "4",
+      "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "app-test-badging",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2",
+      "dump",
+      "badging",
+      "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-signature",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/debug/mms-compression-lab-debug.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-align",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign",
+      "-c",
+      "-P",
+      "16",
+      "4",
+      "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/debug/mms-compression-lab-debug.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-badging",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2",
+      "dump",
+      "badging",
+      "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/debug/mms-compression-lab-debug.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-arm64-v8a-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmpky2cyvam/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-arm64-v8a-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmpky2cyvam/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-armeabi-v7a-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmpae5hys4v/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-armeabi-v7a-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmpae5hys4v/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-x86-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmp5fwjjlec/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-x86-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmp5fwjjlec/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-x86_64-elf",
+    "command": [
+      "readelf",
+      "-lW",
+      "/tmp/tmp3nvllcht/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-x86_64-symbols",
+    "command": [
+      "readelf",
+      "--dyn-syms",
+      "-W",
+      "/tmp/tmp3nvllcht/validator.so"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-test-signature",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-test-align",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/zipalign",
+      "-c",
+      "-P",
+      "16",
+      "4",
+      "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "lab-test-badging",
+    "command": [
+      "/workspace/toolchains/android-sdk/build-tools/36.0.0/aapt2",
+      "dump",
+      "badging",
+      "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk"
+    ],
+    "exit": 0
+  },
+  {
+    "label": "bundletool-validate",
+    "command": [
+      "java",
+      "-jar",
+      "/dev/shm/sentinel-native/bundletool-all-1.18.3.jar",
+      "validate",
+      "--bundle=/workspace/qualification-evidence/v23-native-8c2c2b98/app-releaseUnsigned.aab"
+    ],
+    "exit": 0
+  }
+]

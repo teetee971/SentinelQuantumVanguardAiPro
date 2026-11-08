@@ -65,4 +65,21 @@ class MmsAttachmentLoaderTest {
         assertFalse(MmsAttachmentFormat.matchesPayload("image/webp", "RIFF".toByteArray()))
         assertFalse(MmsAttachmentFormat.matchesPayload("image/bmp", ByteArray(32)))
     }
+
+    @Test fun repeatedZeroReadsCannotSpinForever() {
+        var reads=0
+        val stream=object:java.io.InputStream() {
+            override fun read():Int=0
+            override fun read(bytes:ByteArray,offset:Int,length:Int):Int {
+                reads++;if(reads>3)throw AssertionError("Unbounded zero-read loop")
+                return 0
+            }
+        }
+        assertNull(MmsAttachmentLoader.readBounded(stream,64));assertEquals(3,reads)
+    }
+    @Test fun interruptedReadFailsClosedWithoutClearingFlag() {
+        Thread.currentThread().interrupt()
+        try {assertNull(MmsAttachmentLoader.readBounded(ByteArrayInputStream(byteArrayOf(1)),64));assertTrue(Thread.currentThread().isInterrupted)}
+        finally {Thread.interrupted()}
+    }
 }
