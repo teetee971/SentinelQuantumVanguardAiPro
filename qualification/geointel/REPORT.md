@@ -101,3 +101,7 @@ Le premier contient `dist/`, worker, modules, CSP et `deployment-meta.json` lié
 3. Tester les six `/api/geointel/{id}?days=7` depuis l'origine réelle : MIME, taille, timeout, erreurs, no-store, absence d'en-têtes d'authentification transmis et import du worker. Contrôler la cadence/les conditions de réutilisation des fournisseurs.
 4. Rejouer le navigateur réel contre cette origine avec données réellement acquises, CSP et SW, pannes et filtres ; enregistrer SHA/date/couverture. Ne pas compter les captures locales comme preuve de déploiement.
 5. Seulement après preuve conforme au registre envisager runtime/customer availability. Aucun recensement exhaustif des conflits, des sanctions ou des coupures ne doit être annoncé.
+
+## Cible Cloudflare confirmée
+
+Le propriétaire a identifié le projet `sentinelquantumvanguardaipro`. L’accès de déploiement reste absent ; les deux contrôles HTTP publics exécutés le8novembre ont répondu403. Procédure exacte et paquet : [DEPLOYMENT.md](DEPLOYMENT.md). Statut en ligne : **BLOCKED**, aucun déploiement effectué.
