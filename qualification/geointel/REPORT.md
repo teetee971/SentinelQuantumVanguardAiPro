@@ -1,6 +1,6 @@
 # GeoIntel multisource — livraison du 8 novembre 2026
 
-**Implémenté et qualifié localement ; non déployé.** Console web existante, pas un nouveau module Android natif. Branche `fix/geointel-multisource`, parent `0e280e6068544e5ad23962a5e31b45f943532296`. Code livré/testé `3724f695ef614e8a7e4c6e307cf0a094c8e2ecd2`. Aucun APK reconstruit, installé ou prétendu fournir cette console en natif ; v22 et artefacts Doctor préservés. Aucune fusion main ni publication.
+**Implémenté et qualifié localement ; prévisualisation publiée automatiquement, qualification en ligne bloquée par Cloudflare Access.** Console web existante, pas un nouveau module Android natif. Branche `fix/geointel-multisource`, parent `0e280e6068544e5ad23962a5e31b45f943532296`. Code livré/testé `3724f695ef614e8a7e4c6e307cf0a094c8e2ecd2`. Aucun APK reconstruit, installé ou prétendu fournir cette console en natif ; v22 et artefacts Doctor préservés. Aucune fusion main ni publication de release officielle ; prévisualisation automatique seulement.
 
 ## Couverture réelle
 
@@ -26,7 +26,7 @@ Six états indépendants HEALTHY/DEGRADED/DOWN ; panne d'un collecteur sans supp
 - ONU/OFAC n'exposaient pas d'Access-Control-Allow-Origin lors des acquisitions ; le relais évite de dépendre d'un accès navigateur direct.
 - Réponses API et requêtes navigateur no-store ; service worker2.4.1 ignore GeoIntel pour la lecture et l'écriture de cache. Pas de vieilles données en cache présentées comme une nouvelle acquisition saine lors d'une panne.
 - XML traité comme données via DOMParser, DTD/entities refusées, aucune insertion des titres comme HTML ; liens officiels HTTPS seulement. L'inspecteur reste textuel et utilise `noopener noreferrer`.
-- Build web copie le worker et les modules nécessaires dans `frontend/dist`. L'archive finale contient un marqueur lié au SHA de code. Ce paquet n'a pas été déployé et son import/binding ASSETS sur le projet Cloudflare réel reste à qualifier.
+- Build web copie le worker et les modules nécessaires dans `frontend/dist`. L'archive finale contient un marqueur lié au SHA de code. Cloudflare annonce ensuite un déploiement automatique de la prévisualisation27388cd ; son import/binding ASSETS et ses routes applicatives restent à qualifier derrière Cloudflare Access.
 
 ## Exécutions et preuves
 
@@ -44,7 +44,7 @@ Linux cloud, Node24.22.1, Chromium headless réel avec profil temporaire isolé.
 | Chromium : sources réelles capturées |Six états affichés, résultats géolocalisés/non géolocalisés séparés ; XML réellement parsé, source inspectable |
 | Chromium : pannes |OFAC503 simulé sans perdre les autres sources ; réseau entièrement offline =>6DOWN et aucun événement en cache/démo présenté comme frais, service worker réel activé |
 | Chromium : ergonomie |1440px et390px, absence de débordement horizontal ; carte bornée avec500résultats ; capture finale inspectée |
-| Origine publique / déploiement Cloudflare |**NON EXÉCUTÉS** |
+| Prévisualisation Cloudflare |Contrôle de déploiement réussi ; huit sondes HTTP403/1010 ; Chromium arrive sur Cloudflare Access, application non qualifiée |
 
 L'acquisition capturée du7novembre donnait4HEALTHY/2DEGRADED (NASA85acceptés/4géométries rejetées, IODA50limités). Le rejeu du8novembre donne aussi USGS DEGRADED car son instantané a vieilli : une nouvelle lecture ne réinitialise pas la fraîcheur source. Les nombres d'événements filtrés varient avec l'horloge, sans date inventée.
 
@@ -96,12 +96,11 @@ Le premier contient `dist/`, worker, modules, CSP et `deployment-meta.json` lié
 
 ## Étape externe restante
 
-1. Confirmer le projet Cloudflare Pages et l'autorisation d'un déploiement de prévisualisation. Aucun accès/jeton de déploiement n'a été fourni ou utilisé.
-2. Déployer le build sur ce seul canal autorisé, avec le worker advanced mode et binding ASSETS ; conserver main inchangé.
-3. Tester les six `/api/geointel/{id}?days=7` depuis l'origine réelle : MIME, taille, timeout, erreurs, no-store, absence d'en-têtes d'authentification transmis et import du worker. Contrôler la cadence/les conditions de réutilisation des fournisseurs.
-4. Rejouer le navigateur réel contre cette origine avec données réellement acquises, CSP et SW, pannes et filtres ; enregistrer SHA/date/couverture. Ne pas compter les captures locales comme preuve de déploiement.
-5. Seulement après preuve conforme au registre envisager runtime/customer availability. Aucun recensement exhaustif des conflits, des sanctions ou des coupures ne doit être annoncé.
+1. Utiliser une session Cloudflare Access autorisée pour consulter la prévisualisation déjà publiée. Aucun code de connexion ni jeton ne doit être transmis au chat.
+2. Tester les six `/api/geointel/{id}?days=7` depuis cette origine : MIME, taille, timeout, erreurs, no-store, absence d’en-têtes d’authentification transmis et binding ASSETS. Contrôler les conditions de réutilisation des fournisseurs.
+3. Rejouer le navigateur sur les données réellement acquises, CSP et service worker actifs, pannes et filtres ; enregistrer SHA/date/couverture. Les captures locales ne remplacent pas cette qualification.
+4. Après preuve seulement, envisager l’état runtime/customer de l’origine concernée. La production demeure distincte de la prévisualisation ; aucun recensement exhaustif des conflits, sanctions ou coupures ne doit être annoncé.
 
-## Cible Cloudflare confirmée
+## Prévisualisation Cloudflare : correction du statut initial
 
-Le propriétaire a identifié le projet `sentinelquantumvanguardaipro`. L’accès de déploiement reste absent ; les deux contrôles HTTP publics exécutés le8novembre ont répondu403. Procédure exacte et paquet : [DEPLOYMENT.md](DEPLOYMENT.md). Statut en ligne : **BLOCKED**, aucun déploiement effectué.
+Le déploiement n’est plus «non effectué» : l’intégration GitHub Cloudflare Pages annonce la prévisualisation27388cd publiée. Le navigateur réel atteint une page Cloudflare Access, sans session autorisée ; les sondes directes reçoivent403/1010. La qualification en ligne reste **BLOCKED**, sans modification de production ou de règles d’accès. Voir [DEPLOYMENT.md](DEPLOYMENT.md) et les trois fichiers de preuves Cloudflare. Les113tests ciblés ont été réexécutés avec succès pendant cette reprise ; le code web n’a pas changé.

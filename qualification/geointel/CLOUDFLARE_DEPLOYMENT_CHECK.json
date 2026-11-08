@@ -1,0 +1,14 @@
+{
+  "id": 128696021622,
+  "status": "completed",
+  "conclusion": "success",
+  "details_url": "https://dash.cloudflare.com/?to=/78642e56f72fff94c78e1ef87cb589a7/pages/view/sentinelquantumvanguardaipro/9047b227-e52a-4b73-817a-54aecfe917b2",
+  "output": {
+    "title": "Deployed successfully",
+    "summary": "<table><tr><td><strong>Latest commit:</strong> </td><td>\n<code>27388cd</code>\n</td></tr>\n<tr><td><strong>Status:</strong></td><td>&nbsp;\u2705&nbsp; Deploy successful!</td></tr>\n<tr><td><strong>Preview URL:</strong></td><td>\n<a href='https://9047b227.sentinelquantumvanguardaipro.pages.dev'>https://9047b227.sentinelquantumvanguardaipro.pages.dev</a>\n</td></tr>\n<tr><td><strong>Branch Preview URL:</strong></td><td>\n<a href='https://fix-geointel-multisource.sentinelquantumvanguardaipro.pages.dev'>https://fix-geointel-multisource.sentinelquantumvanguardaipro.pages.dev</a>\n</td></tr>\n</table>\n\n[View logs](https://dash.cloudflare.com/?to=/78642e56f72fff94c78e1ef87cb589a7/pages/view/sentinelquantumvanguardaipro/9047b227-e52a-4b73-817a-54aecfe917b2)\n",
+    "text": null,
+    "annotations_count": 0,
+    "annotations_url": "https://api.github.com/repos/teetee971/SentinelQuantumVanguardAiPro/check-runs/128696021622/annotations"
+  },
+  "completed_at": "2026-11-08T09:56:29Z"
+}

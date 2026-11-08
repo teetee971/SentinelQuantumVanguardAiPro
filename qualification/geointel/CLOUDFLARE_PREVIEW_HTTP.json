@@ -1,0 +1,118 @@
+{
+  "checked_at": "2026-11-08T09:50:05.420615+00:00",
+  "source_sha": "27388cd36ed56a5c8657479b1ebb6942d663cfa5",
+  "results": [
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/deployment-meta.json",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/deployment-meta.json",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe2cfe809db-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    },
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/public/geointel.html",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/public/geointel.html",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe30e5699b0-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    },
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/usgs?days=7",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/usgs?days=7",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe2dff8dacc-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    },
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/eonet?days=7",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/eonet?days=7",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe3187309db-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    },
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/nws?days=7",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/nws?days=7",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe3880899b0-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    },
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/ioda?days=7",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/ioda?days=7",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe38957dacc-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    },
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/un?days=7",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/un?days=7",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe3986199b0-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    },
+    {
+      "url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/ofac?days=7",
+      "final_url": "https://7518ecda.sentinelquantumvanguardaipro.pages.dev/api/geointel/ofac?days=7",
+      "status": 403,
+      "bytes": 17,
+      "headers": {
+        "content-type": "text/plain; charset=UTF-8",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "server": "envoy",
+        "cf-ray": "a573abe3985f99b0-ORD",
+        "x-mitmproxy-blocked-reason": null
+      },
+      "sample": "error code: 1010\n"
+    }
+  ]
+}
