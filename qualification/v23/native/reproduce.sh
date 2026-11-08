@@ -42,6 +42,7 @@ run signing-gate bash "$repo/qualification/v23/native/check-signing-gate.sh" "$o
 run build "${gradle[@]}" "${common[@]}" :app:assembleDebug :app:assembleDebugAndroidTest :mms-compression-lab:assembleDebug :mms-compression-lab:assembleDebugAndroidTest
 app=$(module_build app)
 run regression "${gradle[@]}" "${common[@]}" "-PsentinelSignatureFixture=$app/outputs/apk/debug/app-debug.apk" :app:testDebugUnitTest :mms-compression-lab:testDebugUnitTest :wearable-contract:test :wearable-security:test :app:lintDebug :mms-compression-lab:lintDebug
+run unsigned-bundle "${gradle[@]}" "${common[@]}" :app:bundleReleaseUnsigned
 for module in app mms-compression-lab wearable-contract wearable-security; do
     path=$(module_build "$module")
     mkdir -p "$out/$module"
@@ -61,6 +62,8 @@ for module in app mms-compression-lab; do
         done
     done
 done
+bundle="$app/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab"
+[[ ! -f "$bundle" ]] || cp "$bundle" "$out/"
 run diff-check git -C "$repo" diff --check
-(cd "$out" && sha256sum ./*.apk > SHA256SUMS)
+(cd "$out" && sha256sum ./*.apk ./*.aab > SHA256SUMS)
 awk '$2 != 0 { failed=1 } END { exit failed }' "$out/STATUS.tsv"

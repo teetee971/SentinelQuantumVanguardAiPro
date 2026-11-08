@@ -1,0 +1,62 @@
+{
+  "source_sha": "8c2c2b98c4a25d6d3b355bca034ca4b54f9ba2b0",
+  "android_tree": "8e67df8cd5dbbe625f090579a7cfb049c2efcf32",
+  "tests": {
+    "app": {
+      "tests": 1539,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mms-compression-lab": {
+      "tests": 71,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wearable-contract": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "wearable-security": {
+      "tests": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "app": {
+      "Warning": 223,
+      "Hint": 19
+    },
+    "mms-compression-lab": {
+      "Warning": 4
+    }
+  },
+  "upstream_libjpeg_tests": 212,
+  "host_jni_assertions": 13,
+  "automated_status": "PASS",
+  "delivery_status": "BLOCKED",
+  "physical_tests": "NOT_EXECUTED",
+  "device_installations": 0,
+  "release_bundle": "UNSIGNED_NOT_PUBLISHABLE",
+  "warnings": "223 app warnings/19 hints,4 lab warnings; no Lint errors",
+  "earlier_failures": [
+    "JPEG original regression reproduced 1/1",
+    "three cancellation regressions reproduced3/3",
+    "release guard incorrectly matched library release tasks; fixed",
+    "combined earlier R8 build daemon disappeared with cgroup oom_kill1; isolated builds passed"
+  ],
+  "final_test_lint_exit": 0,
+  "final_debug_build_exit": 0,
+  "final_unsigned_bundle_exit": 0,
+  "final_artifact_verifier_and_bundletool_exit": 0,
+  "node_tests": {
+    "policy": 7,
+    "products": 69,
+    "credentials": 6
+  }
+}

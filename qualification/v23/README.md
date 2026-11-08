@@ -1,3 +1,5 @@
+> Reprise actuelle : [native/REPORT.md](native/REPORT.md), code8c2c2b98. Qualification automatisée réussie ; livraison physique BLOCKED. Les instructions d’installation ci-dessous sont historiques et ne constituent pas une autorisation sur le S24+.
+
 # Sentinel v23 — EXPERIMENTAL / BLOCKED
 
 Source: verified Termux archive SHA-256 `138aa86bfcce3d1d0221178b0b347a697f0991a1642dab4b8a7d4a68f9998e8d`, based on `fafe9f5b1c57b21f276ca62189acab625a490ec9`. Worktree and branch isolated from stable v22.

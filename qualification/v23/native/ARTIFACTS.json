@@ -1,0 +1,33 @@
+{
+  "app.apk": {
+    "bytes": 99453750,
+    "sha256": "f30ec1caa4b984c66fd9e8001e7386e026517fb0829fd3bd2a7ef4de6735c79b",
+    "source": "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/debug/app-debug.apk",
+    "hard_link_to_build": false
+  },
+  "app-test.apk": {
+    "bytes": 1158262,
+    "sha256": "d62c57193c1a995ce08d92a9c98283c29ca4e993bce75f3f05e009474d324198",
+    "source": "/dev/shm/sentinel-native/gradle-build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+    "hard_link_to_build": false
+  },
+  "lab.apk": {
+    "bytes": 2277484,
+    "sha256": "8a179e194fdee7a897be3762f671c9acf775aaed0763da1e9668e3c3f689f8b8",
+    "source": "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/debug/mms-compression-lab-debug.apk",
+    "hard_link_to_build": false
+  },
+  "lab-test.apk": {
+    "bytes": 944423,
+    "sha256": "69be4f1c6a002c9c7f7d9dac655e09416c6abe2394dc154f01bc8571470003d9",
+    "source": "/dev/shm/sentinel-native/gradle-build/mms-compression-lab/outputs/apk/androidTest/debug/mms-compression-lab-debug-androidTest.apk",
+    "hard_link_to_build": false
+  },
+  "app-releaseUnsigned.aab": {
+    "bytes": 43551785,
+    "sha256": "fcfb687b5c5f1ba5824a1a44a87c576aaf5e575f29a5c403c8738b954b897379",
+    "signing": "UNSIGNED_NOT_PUBLISHABLE",
+    "source": "/dev/shm/sentinel-native/gradle-build/app/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+    "hard_link_to_build": false
+  }
+}

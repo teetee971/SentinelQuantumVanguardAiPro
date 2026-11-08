@@ -1,0 +1,11 @@
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: int UNAVAILABLE
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: int INTERRUPTED
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: int INVALID
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: int LIMIT
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: boolean AVAILABLE
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: int VALID
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: int validate(byte[])
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: StrictJpegValidator()
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: boolean interrupted()
+com.sentinel.quantum.mmsjpeg.StrictJpegValidator: int validateNative(byte[])

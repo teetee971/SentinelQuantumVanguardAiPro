@@ -24,3 +24,7 @@ Android NDK r28c (`28.2.13676358`) and official SDK CMake3.22.1. The host JNI te
 Bootstrap tools once, then build with `--offline --no-daemon --no-build-cache --max-workers=1`. Set local.properties SDK/NDK/CMake paths or install matching SDK packages. No credentials or absolute cloud paths are committed. `sentinelHostCmake` can select a local executable. Offline Robolectric SDK24/27/28/35 jars must be supplied using `sentinelRobolectricSdkDir`.
 
 Official NDK/CMake host binaries target Linuxx86_64. Rebuilding this native module inside UbuntuARM64/Termux has **not** been qualified; do not claim the old Kotlin-only phone build pipeline remains sufficient. The S24+ install remains forbidden pending explicit authorization. A cloud APK build is not proof of physical JPEG behavior or MMS delivery.
+
+## Cancellation boundary
+
+The actual UI calls the sender’s typed sendInterruptibly facade, using runInterruptible(IO). Interruptions after preparation, staging and before persistence are refused; staged data is removed before a new provider write. After persistence, the existing BeforeTransportRefused compensation is reused. Once carrier invocation starts, interruption keeps the unknown-outcome journal and staged data without retry. Five executable sender regressions cover these boundaries, including actual coroutine cancellation.

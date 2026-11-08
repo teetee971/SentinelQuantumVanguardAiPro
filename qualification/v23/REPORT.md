@@ -1,3 +1,5 @@
+> Rapport historique7ef494b3. La reprise et le correctif actuels sont documentés dans [native/REPORT.md](native/REPORT.md) : code8c2c2b98, tests automatisés réussis, livraison physique encore BLOCKED.
+
 # Qualification MMS v23 — BLOQUÉE
 
 Code et artefacts vérifiés : `7ef494b3606842f4be60c47ff8fbde8e2b8cfd99`.
