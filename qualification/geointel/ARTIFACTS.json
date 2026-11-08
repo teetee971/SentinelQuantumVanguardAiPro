@@ -1,0 +1,18 @@
+[
+  {
+    "file": "Sentinel-GeoIntel-3724f695-web.tar.gz",
+    "path": "/workspace/qualification-evidence/geointel-multisource/Sentinel-GeoIntel-3724f695-web.tar.gz",
+    "bytes": 787678,
+    "sha256": "c46c92ac652c32109caaff1b833c3148d10ca32d1f9204be16941554155db002",
+    "source_commit": "3724f695ef614e8a7e4c6e307cf0a094c8e2ecd2",
+    "kind": "web-build-not-deployed"
+  },
+  {
+    "file": "GeoIntel-provider-browser-evidence-final.zip",
+    "path": "/workspace/qualification-evidence/geointel-multisource/GeoIntel-provider-browser-evidence-final.zip",
+    "bytes": 728220,
+    "sha256": "bdf39d8b5b5ecb49cda039b775ab15793747e22275bc8362cb9aa4e691929a33",
+    "source_commit": "3724f695ef614e8a7e4c6e307cf0a094c8e2ecd2",
+    "kind": "public-source-captures-and-controlled-browser-test"
+  }
+]

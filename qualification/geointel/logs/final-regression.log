@@ -1,0 +1,41 @@
+✔ canonical product capability registry satisfies truth invariants (5.780764ms)
+✔ customer availability cannot bypass physical validation or signed release (3.327455ms)
+✔ deployment cannot be asserted without implementation and configuration (2.42802ms)
+✔ evidence paths must exist (2.66191ms)
+✔ impossible dates, future dates and runtime without configuration are blocked (8.608001ms)
+✔ availability cannot be promoted by changing booleans without operational evidence (2.028413ms)
+✔ unavailable dependencies, unknown dependencies and cycles are rejected (5.921204ms)
+✔ authorized signed observations are accepted only for an unchanged source and exact scope (8.142806ms)
+✔ signed but incomplete physical evidence cannot qualify Phone Core (2.857052ms)
+✔ expiry, issuer revocation, artifact substitution and signature tampering are rejected (6.149656ms)
+✔ public and Android availability expire when an operational dependency expires (1.734233ms)
+✔ ignores known generated Android build output (86.404148ms)
+✔ still scans a real source directory named build (76.531775ms)
+✔ public snapshot carries the canonical commerce switches (0.852945ms)
+✔ public snapshot contains PTT and API Pro without opening them for sale (0.13343ms)
+✔ snapshot never exports internal blockers, evidence or source scope (0.305186ms)
+✔ customer availability and effective evidence expiry mirror canonical consumers (0.338075ms)
+✔ public runtime fails closed on expired capability evidence and uses canonical SaaS identity id (0.217746ms)
+✔ public runtime reserves its global truth surface before asynchronous fetch hydration (0.189664ms)
+✔ Cloudflare build pre-renders truth shell and sizing CSS before first paint (0.158998ms)
+✔ canonical product-status renderer carries the public truth runtime and expiry boundary (0.160079ms)
+✔ public renderer is wired into truth-sensitive pages (0.584174ms)
+✔ roadmap keeps Zero Trust, SOC automation and sovereignty claims evidence-based (0.821028ms)
+✔ the free phone directory remains a first-class public route (0.254881ms)
+✔ RTR coverage and NDR roadmap do not overstate availability or identity (0.134991ms)
+✔ no Android package is publicly downloadable before the release gate (0.968709ms)
+✔ organization activation stays informative instead of exposing dead controls (0.197676ms)
+✔ the Sentinel command-center visual is optimized and identified (0.244055ms)
+✔ unversioned interface code is not served cache-first (0.121842ms)
+✔ desktop and paid offers are not presented as delivered products (0.395952ms)
+✔ mobile security claims identify the capability owner and current VPN state (0.202262ms)
+✔ the public roadmap uses a Sentinel API boundary instead of exposing provider origins (0.226629ms)
+✔ the ad blocker roadmap is explicit about scope, privacy and Android VPN limits (0.192148ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 414.201112

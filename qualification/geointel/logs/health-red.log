@@ -1,0 +1,56 @@
+✔ EONET chooses latest actual location, keeps null confidence and original ID (0.981946ms)
+✔ invalid EONET geometry and future date are rejected, not set to zero/today (0.260752ms)
+✔ weather polygon remains regional and unlocated rather than invented centroid (0.233571ms)
+✔ IODA network observation has no fabricated location or update timestamp (0.297587ms)
+✔ publication links must stay on official host, dates are mandatory (0.276045ms)
+✔ XML DTD/entity inputs fail before any parser invocation (0.375524ms)
+✔ unlocated signal only accepted with explicit flag; unknown severity stays unknown (0.469306ms)
+✔ ongoing outage intersects chosen window even when it started earlier (0.168693ms)
+✔ coordinator preserves healthy results when another source throws; never inserts demos (0.655205ms)
+✖ console acquisitions use only same-origin proxy paths compatible with CSP (24.446465ms)
+✔ unversioned JavaScript and CSS are refreshed from the network (0.761765ms)
+✔ dynamic cache stays within the configured max entries after overflow (36.660504ms)
+✔ dynamic cache evicts the oldest entries first (FIFO) (5.552195ms)
+✔ re-caching an existing entry does not trigger eviction of others (3.811359ms)
+✖ GeoIntel API is never served or saved by offline cache (1.74303ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 13
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 188.706736
+
+✖ failing tests:
+
+test at public/geointel-multisource.test.js:18:1
+✖ console acquisitions use only same-origin proxy paths compatible with CSP (24.446465ms)
+  AssertionError [ERR_ASSERTION]: ["https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson","/api/geointel/eonet?days=7","/api/geointel/nws?days=7","/api/geointel/ioda?days=7","/api/geointel/un?days=7","/api/geointel/ofac?days=7"]
+      at TestContext.<anonymous> (file:///workspace/sentinel-play-ready/public/geointel-multisource.test.js:18:431)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at public/sw.test.js:96:2
+✖ GeoIntel API is never served or saved by offline cache (1.74303ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at TestContext.<anonymous> (file:///workspace/sentinel-play-ready/public/sw.test.js:100:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
