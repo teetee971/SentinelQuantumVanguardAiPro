@@ -38,6 +38,7 @@ module_build() {
     if [[ -n "${SENTINEL_BUILD_ROOT:-}" ]]; then printf '%s/%s' "$build" "$1"; else printf '%s/%s/build' "$build" "$1"; fi
 }
 gradle=(bash "$repo/native-android-app/gradlew" -p "$repo/native-android-app")
+run signing-gate bash "$repo/qualification/v23/native/check-signing-gate.sh" "$out/signing-gate" "${common[@]}"
 run build "${gradle[@]}" "${common[@]}" :app:assembleDebug :app:assembleDebugAndroidTest :mms-compression-lab:assembleDebug :mms-compression-lab:assembleDebugAndroidTest
 app=$(module_build app)
 run regression "${gradle[@]}" "${common[@]}" "-PsentinelSignatureFixture=$app/outputs/apk/debug/app-debug.apk" :app:testDebugUnitTest :mms-compression-lab:testDebugUnitTest :wearable-contract:test :wearable-security:test :app:lintDebug :mms-compression-lab:lintDebug

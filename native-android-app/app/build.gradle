@@ -106,7 +106,7 @@ gradle.taskGraph.whenReady { graph ->
     // are gated on signing secrets. Tasks for the "releaseUnsigned" build type
     // (assembleReleaseUnsigned, bundleReleaseUnsigned, ...) are intentionally exempt
     // because that variant never applies a signingConfig and is not publishable.
-    def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
+    def requiresSignedRelease = graph.allTasks.any { it.project.path == ':app' && it.name ==~ /(?i).*Release$/ }
     if (requiresSignedRelease && !releaseSigningConfigured) {
         throw new GradleException('Release signing requires KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD environment variables.')
     }

@@ -431,7 +431,7 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                             }
                             status = when (result.reason) {
                                 "MMS_JPEG_STRICT_DECODER_UNAVAILABLE" ->
-                                    "La réduction JPEG sécurisée nécessite Android 9 ou plus récent. Choisissez une image déjà assez petite. Aucun envoi effectué."
+                                    "La validation JPEG sécurisée est indisponible. Vos pièces jointes sont conservées ; aucun envoi effectué."
                                 "MMS_PROVIDER_PERSISTENCE_UNCERTAIN" ->
                                     "Enregistrement du MMS interrompu. Aucun envoi à Android ; vérifiez la conversation avant de réessayer."
                                 "MMS_JPEG_CANNOT_FIT_BUDGET", "MMS_JPEG_BUDGET_EXCEEDED" ->
@@ -440,7 +440,7 @@ private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
                                     "Impossible de lire cette image JPEG correctement. Choisissez une autre image. Aucun envoi effectué."
                                 "MMS_JPEG_PIXEL_LIMIT_EXCEEDED", "MMS_JPEG_INPUT_TOO_LARGE", "MMS_JPEG_MEMORY_LIMIT" ->
                                     "Cette image dépasse les limites de traitement sécurisé. Choisissez une image de dimensions plus petites. Aucun envoi effectué."
-                                "MMS_JPEG_COMPRESSION_FAILED", "MMS_IMAGE_PREPARATION_FAILED", "MMS_JPEG_INTERRUPTED", "MMS_PREPARATION_INTERRUPTED" ->
+                                "MMS_JPEG_ENCODED_JPEG_INVALID", "MMS_JPEG_COMPRESSION_FAILED", "MMS_IMAGE_PREPARATION_FAILED", "MMS_JPEG_INTERRUPTED", "MMS_PREPARATION_INTERRUPTED" ->
                                     "La préparation de l’image n’a pas abouti. Vos pièces jointes sont conservées ; aucun envoi effectué."
                                 "MMS_CARRIER_SIZE_EXCEEDED" ->
                                     "MMS trop volumineux pour cette SIM. Choisissez une image plus petite ou moins de pièces jointes. Aucun envoi effectué."
