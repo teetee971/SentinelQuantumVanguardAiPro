@@ -14,12 +14,33 @@ class InternationalNumberIdentityTest {
     }
 
     @Test fun nonFrenchHomeDoesNotRewriteANationalNumberAsFrance() {
+        InternationalNumberParser.resetForTests()
         assertNull(CallRuleEngine.normalizeNumber("0470123456", homeRegion = "BE"))
+        InternationalNumberParser.warm()
+        assertEquals("+32470123456", CallRuleEngine.normalizeNumber("0470 12 34 56", homeRegion = "BE"))
         val frenchPrefix = CallRuleEngine(blockedPrefixes = setOf("+33"), homeRegion = "BE")
         assertEquals(CallRuleEngine.Action.ALLOW, frenchPrefix.evaluate("0470123456").action)
         assertEquals(CallRuleEngine.Action.ALLOW, frenchPrefix.evaluate("+32470123456").action)
         val belgianPrefix = CallRuleEngine(blockedPrefixes = setOf("+32"), homeRegion = "BE")
+        assertEquals(CallRuleEngine.Action.BLOCK, belgianPrefix.evaluate("0470123456").action)
         assertEquals(CallRuleEngine.Action.BLOCK, belgianPrefix.evaluate("+32470123456").action)
+    }
+
+    @Test fun otherNationalPlansFoldOnlyWhenValidForThatRegion() {
+        InternationalNumberParser.warm()
+        assertEquals("+447123456789", CallRuleEngine.normalizeNumber("07123456789", homeRegion = "GB"))
+        assertEquals("+4915112345678", CallRuleEngine.normalizeNumber("01511 2345678", homeRegion = "DE"))
+        assertNull(CallRuleEngine.normalizeNumber("07911123456", homeRegion = "GB"))
+        assertNull(CallRuleEngine.normalizeNumber("0612345678", homeRegion = "BE"))
+        assertEquals("+33612345678", CallRuleEngine.normalizeNumber("0612345678", homeRegion = "FR"))
+        assertEquals("+590690123456", CallRuleEngine.normalizeNumber("0690123456", homeRegion = "GP"))
+    }
+
+    @Test fun tariffLabelDoesNotChangeTheScreeningDecision() {
+        InternationalNumberParser.warm()
+        assertEquals("Surtaxé", CallRuleEngine.displayKind("09001234567", homeRegion = "DE"))
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine(homeRegion = "DE").evaluate("09001234567").action)
+        assertEquals("International", CallRuleEngine.displayKind("+447911123456"))
     }
 
     @Test fun foreignAndPremiumLabelsDoNotBlock() {

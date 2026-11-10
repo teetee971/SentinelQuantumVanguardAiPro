@@ -5,3 +5,7 @@
 
 # ROME may discover parser implementations reflectively.
 -keep class com.rometools.** { *; }
+
+# libphonenumber loads its country metadata by resource name.
+-keep class com.google.i18n.phonenumbers.** { *; }
+-dontwarn com.google.i18n.phonenumbers.**
