@@ -25,11 +25,11 @@ class CallerIdentityResolverTest {
     @Test
     fun `normalizes overseas national prefixes before geographic resolution`() {
         val guadeloupeZone = CallerIdentityResolver.resolve("0590 12 34 56", "Non vérifié")
-        assertEquals("+590123456", guadeloupeZone.displayNumber)
+        assertEquals("+590590123456", guadeloupeZone.displayNumber)
         assertEquals("GPBLMF", guadeloupeZone.countryIsoCode)
-        assertEquals("+594123456", CallerIdentityResolver.normalize("0594 12 34 56"))
-        assertEquals("+596123456", CallerIdentityResolver.normalize("0596 12 34 56"))
-        assertEquals("+262123456", CallerIdentityResolver.normalize("0262 12 34 56"))
+        assertEquals("+594594123456", CallerIdentityResolver.normalize("0594 12 34 56"))
+        assertEquals("+596596123456", CallerIdentityResolver.normalize("0596 12 34 56"))
+        assertEquals("+262262123456", CallerIdentityResolver.normalize("0262 12 34 56"))
         assertEquals("+262269123456", CallerIdentityResolver.normalize("0269 12 34 56"))
     }
 
