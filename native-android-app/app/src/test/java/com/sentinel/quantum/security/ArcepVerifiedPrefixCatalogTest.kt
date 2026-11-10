@@ -71,6 +71,18 @@ class ArcepVerifiedPrefixCatalogTest {
             CallRuleEngine.Action.BLOCK,
             enabled.evaluate("+590 9475 12 34 56").action
         )
+        assertEquals(CallRuleEngine.Action.BLOCK, enabled.evaluate("0947512345").action)
+        assertEquals(CallRuleEngine.Action.BLOCK, enabled.evaluate("0598712345").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, enabled.evaluate("0151012345").action)
+    }
+
+    @Test
+    fun planLabelsDoNotSilence() {
+        assertEquals("Polyvalent vérifié", CallRuleEngine.displayKind("0598712345"))
+        assertEquals("Intérêt général", CallRuleEngine.displayKind("0151012345"))
+        assertEquals("Intérêt général", CallRuleEngine.displayKind("0508601234"))
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("0151012345").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("0598712345").action)
     }
 
     @Test
