@@ -8,6 +8,8 @@ class CallBlocklistStore(context: Context) {
     private val fingerprinter = CallNumberFingerprinter()
 
     fun snapshot(now: Long = System.currentTimeMillis()): Snapshot {
+        // Keep expired entries in the lookup so they cannot be mistaken for
+        // legacy hashes without metadata. Legacy hashes remain permanent.
         val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .mapNotNull(::decodeMetadata)
             .associateBy { it.fingerprint }
@@ -41,6 +43,11 @@ class CallBlocklistStore(context: Context) {
     fun isArcepVerifiedBlockingEnabled(): Boolean =
         preferences.getBoolean(ARCEP_VERIFIED_BLOCKING_ENABLED, false)
 
+    /**
+     * Persisted default is true, so a warmed process silences numbers absent from the directory.
+     * [Snapshot.silenceOutsideDirectory] stays false until [prepareScreeningSnapshot], which keeps
+     * the first cold callback fail-open. This preference does not delete explicit block rules.
+     */
     fun silenceOutsideDirectory(): Boolean =
         preferences.getBoolean(SILENCE_OUTSIDE_DIRECTORY, true)
 
@@ -65,9 +72,11 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    /** Loads persisted rules into the process cache from an explicitly post-response path. */
     fun prepareScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
         snapshot(now).also { SCREENING_SNAPSHOT = it }
 
+    /** Screening-critical path: memory-only and fail-open while the cold-process cache is empty. */
     fun cachedScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
         cachedSnapshotForScreening(now)
 
@@ -108,11 +117,14 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    /** General path; may access AndroidKeyStore and must never be called from onScreenCall(). */
     fun fingerprintsForNumber(normalizedNumber: String): Set<String> = fingerprinter.candidates(normalizedNumber)
 
+    /** Screening-critical path: cache-only, fail-open when keys are not preloaded. */
     fun cachedFingerprintsForNumber(normalizedNumber: String): Set<String> =
         fingerprinter.cachedCandidates(normalizedNumber)
 
+    /** Best-effort warm-up outside the call-screening callback. */
     fun prepareFingerprintKeys() = fingerprinter.prepareExistingKeys()
 
     fun clearBlockedNumbers(): Boolean {
@@ -121,9 +133,14 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    /**
+     * UI/general path only; may access AndroidKeyStore.
+     * Removal also tries the pre-fold +33 enrolment string, which is not rewritten on disk.
+     */
     fun removeBlockedNumber(rawNumber: String): Boolean {
-        val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
-        val fingerprints = fingerprinter.candidates(normalized)
+        val representations = CallRuleEngine.blockMatchInputs(rawNumber)
+        if (representations.isEmpty()) return false
+        val fingerprints = representations.flatMap { fingerprinter.candidates(it) }.toSet()
         if (fingerprints.isEmpty()) return false
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
         val changed = hashes.removeAll(fingerprints)
@@ -138,6 +155,7 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
     fun purgeExpiredBlockedNumbers(now: Long = System.currentTimeMillis()): Int {
         val entries = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty().mapNotNull(::decodeMetadata)
         val expired = entries.filterNot { it.isActive(now) }.map { it.fingerprint }.toSet()
@@ -176,6 +194,10 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    /**
+     * User-driven restore path. The full replacement is committed atomically only when every
+     * supplied prefix is valid and the bounded rule capacity is respected.
+     */
     fun replaceBlockedPrefixes(rawPrefixes: Collection<String>): Boolean {
         if (rawPrefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return false
         val normalized = rawPrefixes.map { CallRuleEngine.normalizePrefix(it) ?: return false }
@@ -188,6 +210,10 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    /**
+     * Read-only provenance for the protection-list UI. No raw phone number or prefix value is
+     * returned: only non-sensitive package identifiers, timestamps, sequence and bounded counts.
+     */
     fun signedRuleMetadata(): SignedRuleMetadata {
         val sequence = preferences.getLong(SIGNED_SEQUENCE, 0L)
         val issuedAt = preferences.getLong(SIGNED_ISSUED_AT, 0L)
@@ -249,8 +275,13 @@ class CallBlocklistStore(context: Context) {
         val arcepVerifiedBlockingEnabled: Boolean = false,
         val blockedNumberExpiresAtMs: Map<String, Long> = emptyMap(),
         val signedExpiresAtMs: Long = 0L,
+        /**
+         * False until [prepareScreeningSnapshot]. The preference itself defaults to true,
+         * so a cold callback does not silence unknown callers.
+         */
         val silenceOutsideDirectory: Boolean = false
     ) {
+        /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
             blockedNumberHashes = blockedNumberHashes.filter { hash ->
                 blockedNumberExpiresAtMs[hash]?.let { now < it } ?: true
@@ -303,6 +334,12 @@ class CallBlocklistStore(context: Context) {
         private val INSTALL_LOCK = Any()
         @Volatile private var SCREENING_SNAPSHOT = Snapshot(emptySet(), emptySet(), emptySet())
 
+        /**
+         * CallScreeningService access point. This method reads process memory only: it does not
+         * construct a store, open SharedPreferences, initialize Room, access AndroidKeyStore or
+         * perform network I/O. Until post-response warm-up completes it intentionally returns an
+         * empty snapshot, so the first cold-process call may fail open.
+         */
         internal fun cachedSnapshotForScreening(now: Long = System.currentTimeMillis()): Snapshot =
             SCREENING_SNAPSHOT.activeAt(now)
     }
