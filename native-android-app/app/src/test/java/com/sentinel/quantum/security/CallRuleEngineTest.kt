@@ -155,4 +155,45 @@ class CallRuleEngineTest {
         )
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("+33612345678").action)
     }
+
+    @Test fun overseasTerritoriesAreNotRewrittenAsMetropolitanFrance() {
+        assertEquals("+590691123456", CallRuleEngine.normalizeNumber("0691123456"))
+        assertEquals("+594694123456", CallRuleEngine.normalizeNumber("0694123456"))
+        assertEquals("+596696123456", CallRuleEngine.normalizeNumber("0696123456"))
+        assertEquals("+262692123456", CallRuleEngine.normalizeNumber("0692123456"))
+        assertEquals("+262269123456", CallRuleEngine.normalizeNumber("0269123456"))
+        assertEquals("+262639123456", CallRuleEngine.normalizeNumber("0639123456"))
+        assertEquals("+508508123456", CallRuleEngine.normalizeNumber("0508123456"))
+        assertEquals("+33612345678", CallRuleEngine.normalizeNumber("+33612345678"))
+    }
+
+    @Test fun legacyPlus33OverseasNumberFoldsToTerritoryIdentity() {
+        assertEquals("+590690123456", CallRuleEngine.normalizeNumber("+33 6 90 12 34 56"))
+        assertEquals("+590690123456", CallRuleEngine.normalizeNumber("0033690123456"))
+        assertEquals("+33690", CallRuleEngine.normalizePrefix("+33690"))
+        val known = CallRuleEngine(
+            silenceOutsideDirectory = true,
+            directoryReady = true,
+            directoryContains = { it == "+590690123456" }
+        )
+        assertEquals(CallRuleEngine.Action.ALLOW, known.evaluate("+33690123456").action)
+    }
+
+    @Test fun historicalMetropolitanFingerprintStillBlocksOverseasNumber() {
+        val legacy = "+33690123456"
+        val fingerprint = "c".repeat(64)
+        val engine = CallRuleEngine(
+            setOf(fingerprint),
+            fingerprintsForNumber = { setOf(if (it == legacy) fingerprint else "d".repeat(64)) }
+        )
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("0690 12 34 56").action)
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("+590690123456").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("0612345678").action)
+    }
+
+    @Test fun historicalMetropolitanPrefixStillBlocksOverseasNumber() {
+        val engine = CallRuleEngine(blockedPrefixes = setOf("+33690"))
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("0690123456").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("0612345678").action)
+    }
 }
