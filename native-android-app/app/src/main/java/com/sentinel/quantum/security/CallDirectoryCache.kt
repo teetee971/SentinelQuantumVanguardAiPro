@@ -69,6 +69,7 @@ internal object CallDirectoryCache {
      */
     fun refresh(context: Context, silenceOutsideDirectory: Boolean): Boolean {
         val app = context.applicationContext
+        ScreeningHomeRegion.capture(app)
         val ticket = publication.openRefresh()
         fun publish(next: View) = publication.publish(ticket, next, contactsPermissionGranted(app))
         if (!silenceOutsideDirectory) {

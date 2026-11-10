@@ -24,9 +24,37 @@ class RtrDirectoryClient(
         return find(loadDirectory(), number)
     }
 
+    /** Downloads the official Austrian allocation copy. A rejected document is not cached. */
+    @Synchronized
+    fun refreshFromNetwork(): Boolean = runCatching {
+        val text = downloadText()
+        val decision = PublishedCatalogPolicy.evaluate(PublishedCatalogPolicy.Kind.RTR, text)
+        if (!decision.accepted) return false
+        val parsed = parseAccepted(text) ?: return false
+        cachedDirectory = parsed
+        PublishedNumberCatalogStore.commit(PublishedCatalogPolicy.Kind.RTR, text).accepted
+    }.getOrDefault(false)
+
     @Synchronized
     private fun loadDirectory(): JSONObject {
         cachedDirectory?.let { return it }
+        readStored()?.let {
+            cachedDirectory = it
+            return it
+        }
+        val text = downloadText()
+        val parsed = parseAccepted(text) ?: throw IllegalStateException("RTR_SCHEMA")
+        cachedDirectory = parsed
+        PublishedNumberCatalogStore.commit(PublishedCatalogPolicy.Kind.RTR, text)
+        return parsed
+    }
+
+    private fun readStored(): JSONObject? {
+        val text = PublishedNumberCatalogStore.readFresh(PublishedCatalogPolicy.Kind.RTR) ?: return null
+        return parseAccepted(text)
+    }
+
+    private fun downloadText(): String {
         val req = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(req).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("RTR_HTTP_${response.code}")
@@ -34,15 +62,19 @@ class RtrDirectoryClient(
             if (body.contentLength() == 0L || body.contentLength() > MAX_BYTES) throw IllegalStateException("RTR_SIZE")
             val bytes = body.bytes()
             if (bytes.size > MAX_BYTES) throw IllegalStateException("RTR_SIZE")
-            val parsed = JSONObject(String(bytes, Charsets.UTF_8))
-            // Validate before caching; incompatible data must fail closed and remain uncached.
-            if (parsed.optInt("schemaVersion") != 1 || parsed.optString("country") != "AT" ||
-                parsed.optJSONArray("holders") == null || parsed.optJSONObject("groups") == null) {
-                throw IllegalStateException("RTR_SCHEMA")
-            }
-            cachedDirectory = parsed
-            return parsed
+            return String(bytes, Charsets.UTF_8)
         }
+    }
+
+    private fun parseAccepted(text: String): JSONObject? {
+        if (!PublishedCatalogPolicy.evaluate(PublishedCatalogPolicy.Kind.RTR, text).accepted) return null
+        val parsed = runCatching { JSONObject(text) }.getOrNull() ?: return null
+        if (parsed.optInt("schemaVersion") != 1 || parsed.optString("country") != "AT" ||
+            parsed.optJSONArray("holders") == null || parsed.optJSONObject("groups") == null
+        ) {
+            return null
+        }
+        return parsed
     }
 
     companion object {

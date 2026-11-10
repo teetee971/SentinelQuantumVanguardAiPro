@@ -50,6 +50,8 @@ import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallDirectoryCache
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.PhoneProtectionListTruth
+import com.sentinel.quantum.security.PublishedCatalogPolicy
+import com.sentinel.quantum.security.PublishedNumberCatalogStore
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -324,6 +326,41 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                     )
                     Text(
                         stringResource(R.string.phone_lists_signed_disclaimer),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+            ) {
+                val catalogStamps = remember(postureEpoch) {
+                    PublishedNumberCatalogStore.bind(context.applicationContext)
+                    PublishedNumberCatalogStore.stamps()
+                }
+                val arcepReady = catalogStamps.any { it.kind == PublishedCatalogPolicy.Kind.ARCEP }
+                val rtrReady = catalogStamps.any { it.kind == PublishedCatalogPolicy.Kind.RTR }
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.phone_lists_catalog_title), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.phone_lists_catalog_meta), style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(
+                            R.string.phone_lists_catalog_arcep,
+                            stringResource(if (arcepReady) R.string.phone_lists_catalog_fresh else R.string.phone_lists_catalog_missing)
+                        ),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        stringResource(
+                            R.string.phone_lists_catalog_rtr,
+                            stringResource(if (rtrReady) R.string.phone_lists_catalog_fresh else R.string.phone_lists_catalog_missing)
+                        ),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        stringResource(R.string.phone_lists_catalog_spam),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
