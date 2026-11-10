@@ -227,6 +227,7 @@ class CallRuleEngine(
             val country = if (canonical.startsWith('+')) E164CallingCodeDirectory.resolve(canonical) else null
             if (country?.shared == true) return "Indicatif partagé, pays non déterminé"
             InternationalNumberParser.tariffLabel(canonical)?.let { return it }
+            InternationalNumberParser.planLabel(canonical)?.let { return it }
             return when {
                 country == null -> if (canonical.startsWith('+')) "International" else "Type indéterminé"
                 else -> "International"
