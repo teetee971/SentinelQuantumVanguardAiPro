@@ -85,4 +85,29 @@ class InternationalNumberIdentityTest {
         )
         assertEquals(CallRuleEngine.Action.BLOCK, blocked.evaluate("+32470123456").action)
     }
+
+    @Test fun premiumSilenceIsOptInAndDoesNotReject() {
+        InternationalNumberParser.resetForTests()
+        val beforeMetadata = CallRuleEngine(silencePremiumRate = true)
+        assertEquals(CallRuleEngine.Action.ALLOW, beforeMetadata.evaluate("0899123456").action)
+        InternationalNumberParser.warm()
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("0899123456").action)
+        val armed = CallRuleEngine(silencePremiumRate = true)
+        val decision = armed.evaluate("0899123456")
+        assertEquals(CallRuleEngine.Action.SILENCE, decision.action)
+        assertEquals("USER_PREMIUM_SILENCE", decision.reason)
+        assertEquals(CallRuleEngine.Action.ALLOW, armed.evaluate("0800123456").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, armed.evaluate("0820123456").action)
+        val contact = CallRuleEngine(
+            silencePremiumRate = true,
+            directoryReady = true,
+            directoryContains = { it == "+33899123456" }
+        )
+        assertEquals(CallRuleEngine.Action.ALLOW, contact.evaluate("0899123456").action)
+        val blocked = CallRuleEngine(
+            blockedPrefixes = setOf("+33899"),
+            silencePremiumRate = true
+        )
+        assertEquals(CallRuleEngine.Action.BLOCK, blocked.evaluate("0899123456").action)
+    }
 }

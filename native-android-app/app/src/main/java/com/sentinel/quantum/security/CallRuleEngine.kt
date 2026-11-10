@@ -12,7 +12,8 @@ class CallRuleEngine(
     private val directoryReady: Boolean = false,
     private val directoryContains: (String) -> Boolean = { false },
     private val homeRegion: String = "FR",
-    userSilencePrefixes: Set<String> = emptySet()
+    userSilencePrefixes: Set<String> = emptySet(),
+    private val silencePremiumRate: Boolean = false
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
@@ -35,6 +36,9 @@ class CallRuleEngine(
         }
         if (prefixSilenced(normalized)) {
             return Decision(Action.SILENCE, "USER_PREFIX_SILENCE", normalized, RuleSource.USER)
+        }
+        if (silencePremiumRate && InternationalNumberParser.isPremiumRate(normalized)) {
+            return Decision(Action.SILENCE, "USER_PREMIUM_SILENCE", normalized, RuleSource.USER)
         }
         if (silenceRules.any(normalized::startsWith)) {
             return Decision(Action.SILENCE, "SIGNED_REPUTATION_PREFIX", normalized, RuleSource.SIGNED_REPUTATION)

@@ -37,7 +37,8 @@ class CallBlocklistStore(context: Context) {
                 .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
             signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L),
             silenceOutsideDirectory = silenceOutsideDirectory(),
-            userSilencePrefixes = userSilencePrefixes()
+            userSilencePrefixes = userSilencePrefixes(),
+            silencePremiumRate = silencePremiumRate()
         )
     }
 
@@ -64,6 +65,15 @@ class CallBlocklistStore(context: Context) {
      */
     fun silenceOutsideDirectory(): Boolean =
         SilenceOutsideDirectoryPreference.resolved(storedSilenceOutsideDirectory())
+
+    /** Absent key stays off. Premium-rate silence is a separate opt-in and never a rejection. */
+    fun silencePremiumRate(): Boolean = preferences.getBoolean(SILENCE_PREMIUM_RATE, false)
+
+    fun setSilencePremiumRate(enabled: Boolean): Boolean {
+        val committed = preferences.edit().putBoolean(SILENCE_PREMIUM_RATE, enabled).commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
+    }
 
     private fun storedSilenceOutsideDirectory(): Boolean? =
         if (preferences.contains(SILENCE_OUTSIDE_DIRECTORY)) {
@@ -330,7 +340,8 @@ class CallBlocklistStore(context: Context) {
          * A missing preference is not an opt-in, so a cold callback does not silence unknown callers.
          */
         val silenceOutsideDirectory: Boolean = false,
-        val userSilencePrefixes: Set<String> = emptySet()
+        val userSilencePrefixes: Set<String> = emptySet(),
+        val silencePremiumRate: Boolean = false
     ) {
         /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
@@ -376,6 +387,7 @@ class CallBlocklistStore(context: Context) {
         private const val USER_SILENCE_PREFIXES = "user_silence_prefixes"
         private const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
         private const val SILENCE_OUTSIDE_DIRECTORY = "silence_outside_directory_v1"
+        private const val SILENCE_PREMIUM_RATE = "silence_premium_rate_v1"
         private const val SIGNED_PACKAGE_ID = "signed_rule_package_id"
         private const val SIGNED_ISSUER_ID = "signed_rule_issuer_id"
         private const val SIGNED_KEY_ID = "signed_rule_key_id"

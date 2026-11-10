@@ -192,6 +192,8 @@
     <string name="call_blocking_silence_prefix">Silencier le préfixe</string>
     <string name="call_blocking_silence_prefix_added">Préfixe mis en silencieux. Un contact de cette zone sonne encore.</string>
     <string name="call_blocking_silence_prefix_invalid">Préfixe invalide ou limite atteinte.</string>
+    <string name="call_blocking_silence_premium_title">Silencier les numéros surtaxés</string>
+    <string name="call_blocking_silence_premium_body">Uniquement les numéros classés surtaxés par le plan de numérotation. Désactivé tant que vous ne l’activez pas. Un contact sonne quand même. Ce n’est jamais un rejet.</string>
     <string name="call_blocking_prefix_added">Préfixe ajouté.</string>
     <string name="call_blocking_prefix_invalid">Préfixe invalide ou limite atteinte.</string>
     <string name="call_blocking_remove">Retirer</string>
