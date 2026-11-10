@@ -21,12 +21,22 @@ class SentinelCallScreeningService : CallScreeningService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
 
+        // One ordering boundary per callback. It owns no thread and cannot leak readiness from one
+        // call into another. Optional work is delegated to the existing bounded process worker only
+        // after respondToCall() has returned successfully for this exact invocation.
         val responseBoundary = CallScreeningResponseBoundary { task ->
             POST_RESPONSE_WORKER.execute(task)
         }
 
+        // PII-free lifecycle marker used by emulator qualification to prove that Telecom actually
+        // invoked Sentinel for an incoming screening callback. Keep it before emergency-number
+        // classification: callback observation and a completed rule-engine decision are distinct
+        // proofs, especially on Android 10 emulators where emergency classification may be unknown.
         Log.i(LIFECYCLE_TAG, CALLBACK_MARKER)
 
+        // Telecom can invoke the default dialer's screening service even after the
+        // dedicated screening role is revoked. Invocation is not authorization.
+        // One system role read; no rule engine, storage or network before this response.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             !AndroidRoleReadPolicy.readBoolean {
                 getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
@@ -47,6 +57,9 @@ class SentinelCallScreeningService : CallScreeningService() {
                 PhoneNumberUtils.isEmergencyNumber(rawCallerNumber.orEmpty())
             }
         }.getOrNull()
+        // Emergency classification is safety-critical. If Android cannot classify the number,
+        // fail open rather than applying a blocking or silencing rule. The lifecycle marker above
+        // may still prove callback invocation, but no CALL_SCREENED:* evidence is manufactured.
         if (emergency != false) {
             responseBoundary.deliverResponse {
                 respondToCall(callDetails, CallResponse.Builder().build())
@@ -55,6 +68,8 @@ class SentinelCallScreeningService : CallScreeningService() {
         }
 
         val decision = runCatching {
+            // Strict screening boundary: process-memory caches only. Do not instantiate
+            // CallBlocklistStore here because its constructor obtains SharedPreferences.
             val snapshot = CallBlocklistStore.cachedSnapshotForScreening()
             val directory = CallDirectoryCache.current()
             CallRuleEngine(
@@ -67,6 +82,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 directoryContains = directory.numbers::contains
             ).evaluate(rawCallerNumber)
         }.getOrElse {
+            // The platform response must not depend on local rule storage remaining healthy.
             responseBoundary.deliverResponse {
                 respondToCall(callDetails, CallResponse.Builder().build())
             }
@@ -92,6 +108,10 @@ class SentinelCallScreeningService : CallScreeningService() {
         val submitted = responseBoundary.submitPostResponse {
             (applicationContext as? SentinelApplication)?.runPostResponseMaintenance()
 
+            // Caller-ID rendering happens only after the mandatory platform response. The profile
+            // is computed offline and contains no invented person or company identity.
+            // STIR/SHAKEN verification on Call.Details was added in Android 11, not 10.
+            // Never call this accessor on API 29 before responding: it could crash the dialer process.
             val verificationCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 when (callDetails.callerNumberVerificationStatus) {
                     Connection.VERIFICATION_STATUS_PASSED -> "VERIFIED"
@@ -139,6 +159,8 @@ class SentinelCallScreeningService : CallScreeningService() {
                 )
             }
 
+            // Everything below can touch disk or initialize Room. The boundary guarantees this
+            // block cannot run until the mandatory Android response has returned successfully.
             val logger = LocalLogger(appContext)
             logger.log(
                 LocalLogger.LogLevel.SECURITY,
@@ -171,6 +193,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 )
             }
 
+            // Persist only privacy-bounded call metadata; never the raw or normalized number.
             runCatching {
                 PhonePrivateTimelineStore(appContext).append(CallTimelineMapper.toEvent(decision))
             }.onFailure {
