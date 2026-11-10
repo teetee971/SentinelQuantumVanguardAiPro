@@ -232,16 +232,23 @@ class CallRuleEngineTest {
         }
     }
 
-    @Test fun unassignedReserveRootsStayMetropolitan() {
+    @Test fun unassignedReserveRootsStayMetropolitanAndDoNotSilence() {
         val reserves = listOf(
             "0264", "0592", "0593", "0595", "0599",
+            "02680", "02681", "02682", "02683", "02684", "02685", "02686",
             "05980", "05981", "05982", "05983", "05984",
-            "059865", "059866", "059867", "059868", "059869",
-            "09471", "09472", "09473", "09474"
+            "059865", "059866", "059867", "059868", "059869"
         )
         for (prefix in reserves) {
             val national = (prefix + "1234567890").take(10)
             assertEquals(prefix, "+33" + national.drop(1), CallRuleEngine.normalizeNumber(national))
+            assertEquals(prefix, "Réserve, non attribué", CallRuleEngine.displayKind(national))
+            assertEquals(prefix, CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate(national).action)
+        }
+        for (prefix in listOf("09471", "09472", "09473", "09474")) {
+            val national = (prefix + "1234567890").take(10)
+            assertEquals(prefix, "+33" + national.drop(1), CallRuleEngine.normalizeNumber(national))
+            assertEquals(prefix, "Polyvalent / voix sur IP", CallRuleEngine.displayKind(national))
         }
     }
 

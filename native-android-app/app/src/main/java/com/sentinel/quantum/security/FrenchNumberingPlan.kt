@@ -14,6 +14,7 @@ internal object FrenchNumberingPlan {
             return "Polyvalent vérifié"
         }
         if (PUBLIC_INTEREST.any { national.startsWith(it) }) return "Intérêt général"
+        if (RESERVED.any { national.startsWith(it) }) return "Réserve, non attribué"
         return null
     }
 
@@ -37,5 +38,16 @@ internal object FrenchNumberingPlan {
         "059860", "059861", "059862", "059863", "059864",
         "094700", "094701", "094702", "094703", "094704",
         "094705", "094706", "094707", "094708", "094709"
+    )
+
+    /**
+     * Outre-mer reserves from decision 2025-2215. 09471–09474 are allocated metropolitan
+     * polyvalent ranges, not reserves, and must not be listed here.
+     */
+    private val RESERVED = listOf(
+        "0264", "0592", "0593", "0595", "0599",
+        "02680", "02681", "02682", "02683", "02684", "02685", "02686",
+        "05980", "05981", "05982", "05983", "05984",
+        "059865", "059866", "059867", "059868", "059869"
     )
 }
