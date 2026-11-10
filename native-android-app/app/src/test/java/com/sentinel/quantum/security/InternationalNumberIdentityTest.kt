@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InternationalNumberIdentityTest {
@@ -40,12 +41,24 @@ class InternationalNumberIdentityTest {
         InternationalNumberParser.warm()
         assertEquals("Surtaxé", CallRuleEngine.displayKind("09001234567", homeRegion = "DE"))
         assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine(homeRegion = "DE").evaluate("09001234567").action)
-        assertEquals("International", CallRuleEngine.displayKind("+447911123456"))
+        assertEquals("Mobile · Guernesey", CallRuleEngine.displayKind("+447911123456"))
+        assertTrue(InternationalNumberParser.supportedRegionCount() >= 240)
     }
 
     @Test fun foreignAndPremiumLabelsDoNotBlock() {
-        assertEquals("International", CallRuleEngine.displayKind("+447911123456"))
+        InternationalNumberParser.resetForTests()
+        assertEquals(0, InternationalNumberParser.supportedRegionCount())
+        assertEquals("International", CallRuleEngine.displayKind("+4915112345678"))
+        InternationalNumberParser.warm()
+        assertTrue(InternationalNumberParser.supportedRegionCount() >= 240)
+        assertEquals("Mobile · Allemagne", CallRuleEngine.displayKind("+4915112345678"))
+        assertEquals("Fixe · Japon", CallRuleEngine.displayKind("+81312345678"))
+        assertEquals("Mobile · Brésil", CallRuleEngine.displayKind("+5511987654321"))
+        assertEquals("Mobile · Inde", CallRuleEngine.displayKind("+919876543210"))
+        assertEquals("Mobile", CallRuleEngine.displayKind("0612345678"))
         assertEquals("Indicatif partagé, pays non déterminé", CallRuleEngine.displayKind("+12025550123"))
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("+4915112345678").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("+81312345678").action)
         assertEquals("Saint-Pierre-et-Miquelon", CallRuleEngine.displayKind("0508123456"))
         assertEquals("Mobile", CallRuleEngine.displayKind("0690123456"))
         InternationalNumberParser.resetForTests()
