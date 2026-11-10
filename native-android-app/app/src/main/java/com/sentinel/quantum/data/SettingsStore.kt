@@ -4,6 +4,7 @@ import android.content.Context
 import com.sentinel.quantum.security.ProtectionMode
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.FamilySafetyPolicy
+import com.sentinel.quantum.security.PublishedCatalogRefreshPreference
 
 /** User-facing theme preference. [SYSTEM] follows the device's day/night setting. */
 enum class ThemeMode {
@@ -40,15 +41,22 @@ class SettingsStore(context: Context) {
     }
 
     /**
-     * Official ARCEP and RTR allocation copies. Default on because the user asked for automatic
-     * updates. These copies never carry a block or silence instruction.
+     * Official ARCEP and RTR allocation copies. Absent key means the user has not consented.
+     * A stored true is kept. These copies never carry a block or silence instruction.
      */
     fun isPublishedCatalogRefreshEnabled(): Boolean =
-        preferences.getBoolean(PUBLISHED_CATALOG_REFRESH_ENABLED, true)
+        PublishedCatalogRefreshPreference.resolved(storedPublishedCatalogRefresh())
 
     fun setPublishedCatalogRefreshEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(PUBLISHED_CATALOG_REFRESH_ENABLED, enabled).apply()
     }
+
+    private fun storedPublishedCatalogRefresh(): Boolean? =
+        if (preferences.contains(PUBLISHED_CATALOG_REFRESH_ENABLED)) {
+            preferences.getBoolean(PUBLISHED_CATALOG_REFRESH_ENABLED, false)
+        } else {
+            null
+        }
 
     /** Privacy boundary for remote protection features. Invalid/missing values fail closed. */
     var protectionMode: ProtectionMode

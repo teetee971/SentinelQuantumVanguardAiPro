@@ -194,6 +194,10 @@
     <string name="call_blocking_silence_prefix_invalid">Préfixe invalide ou limite atteinte.</string>
     <string name="call_blocking_silence_premium_title">Silencier les numéros surtaxés</string>
     <string name="call_blocking_silence_premium_body">Uniquement les numéros classés surtaxés par le plan de numérotation. Désactivé tant que vous ne l’activez pas. Un contact sonne quand même. Ce n’est jamais un rejet.</string>
+    <string name="call_blocking_neighbor_title">Signaler un numéro proche d’un contact</string>
+    <string name="call_blocking_neighbor_body">Désactivé tant que vous ne l’activez pas. Le numéro déjà normalisé est comparé à l’annuaire en mémoire. Une seule différence de chiffre affiche « Proche d’un contact ». Ce n’est pas une preuve d’usurpation et l’appel n’est pas bloqué.</string>
+    <string name="call_blocking_neighbor_silence_title">Silencier ces numéros proches</string>
+    <string name="call_blocking_neighbor_silence_body">Désactivé par défaut. Met en silencieux, ne rejette jamais. Un contact exact sonne. Une urgence sonne. Sans annuaire prêt, l’appel sonne.</string>
     <string name="call_blocking_prefix_added">Préfixe ajouté.</string>
     <string name="call_blocking_prefix_invalid">Préfixe invalide ou limite atteinte.</string>
     <string name="call_blocking_remove">Retirer</string>
@@ -284,7 +288,7 @@
     <string name="settings_sync_description">Tant qu\'aucun émetteur de production n\'est provisionné, cette option ne déclenche aucun accès réseau.</string>
     <string name="settings_catalog_title">Annuaires officiels</string>
     <string name="settings_catalog_switch">Mettre à jour les plans ARCEP et RTR</string>
-    <string name="settings_catalog_description">Copie locale des attributions de numéros. Cela n\'identifie pas l\'appelant et ne bloque aucun appel. Les listes de spam ne sont pas téléchargées tant qu\'aucune signature de production n\'est provisionnée.</string>
+    <string name="settings_catalog_description">Copie locale des attributions de numéros. Désactivée tant que vous ne l’activez pas. Cela n\'identifie pas l\'appelant et ne bloque aucun appel. Les listes de spam ne sont pas téléchargées tant qu\'aucune signature de production n\'est provisionnée.</string>
     <string name="settings_about_title">À propos de l\'application</string>
     <string name="settings_version">Version %1$s</string>
 

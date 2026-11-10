@@ -13,7 +13,9 @@ class CallRuleEngine(
     private val directoryContains: (String) -> Boolean = { false },
     private val homeRegion: String = "FR",
     userSilencePrefixes: Set<String> = emptySet(),
-    private val silencePremiumRate: Boolean = false
+    private val silencePremiumRate: Boolean = false,
+    private val silenceNearDirectory: Boolean = false,
+    private val nearDirectory: (String) -> Boolean = { false }
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
@@ -44,6 +46,9 @@ class CallRuleEngine(
         }
         if (silenceRules.any(normalized::startsWith)) {
             return Decision(Action.SILENCE, "SIGNED_REPUTATION_PREFIX", normalized, RuleSource.SIGNED_REPUTATION)
+        }
+        if (silenceNearDirectory && directoryReady && nearDirectory(normalized)) {
+            return Decision(Action.SILENCE, "NEAR_DIRECTORY_CONTACT", normalized, RuleSource.USER)
         }
         if (silenceOutsideDirectory && directoryReady) {
             return Decision(Action.SILENCE, "NOT_IN_DIRECTORY", normalized, RuleSource.USER)

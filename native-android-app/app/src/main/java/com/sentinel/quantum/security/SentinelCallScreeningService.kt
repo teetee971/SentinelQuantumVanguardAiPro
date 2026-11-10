@@ -83,7 +83,11 @@ class SentinelCallScreeningService : CallScreeningService() {
                 directoryContains = directory.numbers::contains,
                 homeRegion = ScreeningHomeRegion.current(),
                 userSilencePrefixes = snapshot.userSilencePrefixes,
-                silencePremiumRate = snapshot.silencePremiumRate
+                silencePremiumRate = snapshot.silencePremiumRate,
+                silenceNearDirectory = snapshot.silenceNearDirectory,
+                nearDirectory = { candidate ->
+                    NeighborNumberMatcher.isNear(candidate, directory.numbers)
+                }
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
@@ -152,6 +156,9 @@ class SentinelCallScreeningService : CallScreeningService() {
                     putExtra(CallerIdActivity.EXTRA_ORGANISATION, profile.organisation)
                     putExtra(CallerIdActivity.EXTRA_SOURCE, profile.identitySource)
                     putExtra(CallerIdActivity.EXTRA_IDENTITY_VERIFIED, profile.identityVerified)
+                    neighborNotice(decision.normalizedNumber)?.let { notice ->
+                        putExtra(CallerIdActivity.EXTRA_NEIGHBOR, notice)
+                    }
                 })
             }.onFailure {
                 LocalLogger(applicationContext).logAsync(
@@ -210,6 +217,16 @@ class SentinelCallScreeningService : CallScreeningService() {
         if (!submitted) {
             REJECTED_POST_RESPONSE_WORK.incrementAndGet()
         }
+    }
+
+    /** After the platform response. Memory directory only; this does not query contacts or the network. */
+    private fun neighborNotice(canonical: String?): String? {
+        if (canonical.isNullOrBlank()) return null
+        val snapshot = CallBlocklistStore.cachedSnapshotForScreening()
+        if (!snapshot.neighborNoticeEnabled && !snapshot.silenceNearDirectory) return null
+        val directory = CallDirectoryCache.currentForScreening(this)
+        if (!directory.ready || !NeighborNumberMatcher.isNear(canonical, directory.numbers)) return null
+        return NeighborNumberMatcher.LABEL
     }
 
     private companion object {

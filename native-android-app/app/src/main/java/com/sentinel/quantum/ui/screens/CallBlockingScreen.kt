@@ -64,6 +64,8 @@ fun CallBlockingScreen(navController: NavController) {
     }
     var silenceUnknown by remember { mutableStateOf(store.silenceOutsideDirectory()) }
     var silencePremium by remember { mutableStateOf(store.silencePremiumRate()) }
+    var neighborNotice by remember { mutableStateOf(store.neighborNoticeEnabled()) }
+    var silenceNear by remember { mutableStateOf(store.silenceNearDirectory()) }
     var isSyncing by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf<String?>(null) }
     val syncEnabledByUser = remember { settingsStore.isRuleSyncEnabled() }
@@ -88,7 +90,7 @@ fun CallBlockingScreen(navController: NavController) {
     }
     val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         contactsAllowed = granted
-        if (granted && store.silenceOutsideDirectory()) {
+        if (granted && (store.silenceOutsideDirectory() || store.neighborNoticeEnabled())) {
             store.refreshDirectoryForCurrentPreference()
         }
     }
@@ -198,6 +200,56 @@ fun CallBlockingScreen(navController: NavController) {
                         }
                         silencePremium = store.silencePremiumRate()
                         snapshot = store.snapshot()
+                    }
+                )
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.call_blocking_neighbor_title), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.call_blocking_neighbor_body),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Switch(
+                    checked = neighborNotice,
+                    onCheckedChange = { enabled ->
+                        if (!store.setNeighborNoticeEnabled(enabled)) {
+                            status = silenceFailed
+                            return@Switch
+                        }
+                        neighborNotice = store.neighborNoticeEnabled()
+                        silenceNear = store.silenceNearDirectory()
+                        snapshot = store.snapshot()
+                        if (enabled && !contactsAllowed) {
+                            contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
+                        }
+                    }
+                )
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.call_blocking_neighbor_silence_title), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.call_blocking_neighbor_silence_body),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Switch(
+                    checked = silenceNear,
+                    onCheckedChange = { enabled ->
+                        if (!store.setSilenceNearDirectory(enabled)) {
+                            status = silenceFailed
+                            return@Switch
+                        }
+                        neighborNotice = store.neighborNoticeEnabled()
+                        silenceNear = store.silenceNearDirectory()
+                        snapshot = store.snapshot()
+                        if (enabled && !contactsAllowed) {
+                            contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
+                        }
                     }
                 )
             }

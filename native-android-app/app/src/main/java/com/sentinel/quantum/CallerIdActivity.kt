@@ -244,6 +244,7 @@ class CallerIdActivity : ComponentActivity() {
                         reportStatus = reportStatus,
                         reportRunning = reportRunning,
                         pendingReportCategory = pendingReportCategory,
+                        neighborNotice = intent.getStringExtra(EXTRA_NEIGHBOR),
                         onPrepareReport = { category ->
                             if (!communityReportingEnabled) {
                                 reportStatus = "Mode local uniquement : aucun numéro n’est transmis pour signalement."
@@ -338,6 +339,7 @@ class CallerIdActivity : ComponentActivity() {
         const val EXTRA_ORGANISATION = "caller.organisation"
         const val EXTRA_SOURCE = "caller.source"
         const val EXTRA_IDENTITY_VERIFIED = "caller.identity_verified"
+        const val EXTRA_NEIGHBOR = "caller.neighbor"
     }
 }
 
@@ -363,6 +365,7 @@ private fun CallerCard(
     reportStatus: String?,
     reportRunning: Boolean,
     pendingReportCategory: CommunityReportClient.Category?,
+    neighborNotice: String? = null,
     onPrepareReport: (CommunityReportClient.Category) -> Unit,
     onCancelReport: () -> Unit,
     onReport: (CommunityReportClient.Category) -> Unit,
@@ -446,6 +449,13 @@ private fun CallerCard(
                     contentDescription = "Décision Sentinel : $decisionLabel"
                 }
             )
+            neighborNotice?.let { notice ->
+                Text(notice, fontWeight = FontWeight.Bold)
+                Text(
+                    "Ce n’est pas une preuve d’usurpation. Un seul chiffre diffère d’un numéro du répertoire.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
         Text(numberCard.identity.displayName ?: "Identité non disponible", fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
         numberCard.identity.organisation?.let { Text(it, fontSize = 20.sp, color = SentinelD1.Cyan) }

@@ -100,7 +100,10 @@ class SentinelApplication : Application() {
         if (snapshot.blockedNumberHashes.isNotEmpty()) {
             store.prepareFingerprintKeys()
         }
-        return CallDirectoryCache.refresh(applicationContext, store.silenceOutsideDirectory())
+        return CallDirectoryCache.refresh(
+            applicationContext,
+            store.silenceOutsideDirectory() || store.neighborNoticeEnabled()
+        )
     }
 
     private fun performMaintenance(): Boolean {

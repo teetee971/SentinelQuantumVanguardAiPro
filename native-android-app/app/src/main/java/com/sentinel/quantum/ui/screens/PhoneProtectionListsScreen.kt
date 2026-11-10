@@ -67,6 +67,8 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     var actionStatus by remember { mutableStateOf<String?>(null) }
     var silenceUnknown by remember(postureEpoch) { mutableStateOf(store.silenceOutsideDirectory()) }
     var silencePremium by remember(postureEpoch) { mutableStateOf(store.silencePremiumRate()) }
+    var neighborNotice by remember(postureEpoch) { mutableStateOf(store.neighborNoticeEnabled()) }
+    var silenceNear by remember(postureEpoch) { mutableStateOf(store.silenceNearDirectory()) }
     val silenceNeedsContacts = stringResource(R.string.call_blocking_silence_unknown_needs_contacts)
     val silenceWaiting = stringResource(R.string.call_blocking_silence_unknown_waiting)
     val silenceOn = stringResource(R.string.call_blocking_silence_unknown_on)
@@ -242,6 +244,56 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                                 }
                                 silencePremium = store.silencePremiumRate()
                                 snapshot = store.snapshot()
+                            }
+                        )
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.call_blocking_neighbor_title),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                stringResource(R.string.call_blocking_neighbor_body),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Switch(
+                            checked = neighborNotice,
+                            onCheckedChange = { enabled ->
+                                if (!store.setNeighborNoticeEnabled(enabled)) {
+                                    actionStatus = silenceFailed
+                                    return@Switch
+                                }
+                                postureEpoch++
+                                if (enabled && !contactsReady) {
+                                    contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                }
+                            }
+                        )
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.call_blocking_neighbor_silence_title),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                stringResource(R.string.call_blocking_neighbor_silence_body),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Switch(
+                            checked = silenceNear,
+                            onCheckedChange = { enabled ->
+                                if (!store.setSilenceNearDirectory(enabled)) {
+                                    actionStatus = silenceFailed
+                                    return@Switch
+                                }
+                                postureEpoch++
+                                if (enabled && !contactsReady) {
+                                    contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                }
                             }
                         )
                     }

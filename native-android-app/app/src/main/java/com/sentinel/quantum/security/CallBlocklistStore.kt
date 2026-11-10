@@ -38,7 +38,9 @@ class CallBlocklistStore(context: Context) {
             signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L),
             silenceOutsideDirectory = silenceOutsideDirectory(),
             userSilencePrefixes = userSilencePrefixes(),
-            silencePremiumRate = silencePremiumRate()
+            silencePremiumRate = silencePremiumRate(),
+            neighborNoticeEnabled = neighborNoticeEnabled(),
+            silenceNearDirectory = silenceNearDirectory()
         )
     }
 
@@ -69,6 +71,37 @@ class CallBlocklistStore(context: Context) {
     /** Absent key stays off. Premium-rate silence is a separate opt-in and never a rejection. */
     fun silencePremiumRate(): Boolean = preferences.getBoolean(SILENCE_PREMIUM_RATE, false)
 
+    /** Absent key does not load the directory and does not label a caller. */
+    fun neighborNoticeEnabled(): Boolean =
+        preferences.contains(NEIGHBOR_NOTICE) && preferences.getBoolean(NEIGHBOR_NOTICE, false)
+
+    /**
+     * Silence only follows an explicit notice choice. A stored silence flag without the notice
+     * stays off, so a near number cannot be silenced by accident.
+     */
+    fun silenceNearDirectory(): Boolean =
+        neighborNoticeEnabled() && preferences.getBoolean(SILENCE_NEAR_DIRECTORY, false)
+
+    fun setNeighborNoticeEnabled(enabled: Boolean): Boolean {
+        val editor = preferences.edit().putBoolean(NEIGHBOR_NOTICE, enabled)
+        if (!enabled) editor.putBoolean(SILENCE_NEAR_DIRECTORY, false)
+        val committed = editor.commit()
+        if (!committed) return false
+        refreshScreeningSnapshotAfterCommit()
+        CallDirectoryCache.onDirectoryObservationChanged(appContext)
+        return true
+    }
+
+    fun setSilenceNearDirectory(enabled: Boolean): Boolean {
+        val editor = preferences.edit().putBoolean(SILENCE_NEAR_DIRECTORY, enabled)
+        if (enabled) editor.putBoolean(NEIGHBOR_NOTICE, true)
+        val committed = editor.commit()
+        if (!committed) return false
+        refreshScreeningSnapshotAfterCommit()
+        CallDirectoryCache.onDirectoryObservationChanged(appContext)
+        return true
+    }
+
     fun setSilencePremiumRate(enabled: Boolean): Boolean {
         val committed = preferences.edit().putBoolean(SILENCE_PREMIUM_RATE, enabled).commit()
         if (committed) refreshScreeningSnapshotAfterCommit()
@@ -93,13 +126,13 @@ class CallBlocklistStore(context: Context) {
             .commit()
         if (!committed) return false
         refreshScreeningSnapshotAfterCommit()
-        CallDirectoryCache.onSilencePreferenceChanged(appContext, enabled)
+        CallDirectoryCache.onDirectoryObservationChanged(appContext)
         return true
     }
 
-    /** Reloads or drops the directory to match the stored choice. Does not block on the provider when disabling. */
+    /** Reloads or drops the directory to match every stored observation choice. */
     fun refreshDirectoryForCurrentPreference() {
-        CallDirectoryCache.onSilencePreferenceChanged(appContext, silenceOutsideDirectory())
+        CallDirectoryCache.onDirectoryObservationChanged(appContext)
     }
 
     fun setArcepVerifiedBlockingEnabled(enabled: Boolean): Boolean {
@@ -341,7 +374,9 @@ class CallBlocklistStore(context: Context) {
          */
         val silenceOutsideDirectory: Boolean = false,
         val userSilencePrefixes: Set<String> = emptySet(),
-        val silencePremiumRate: Boolean = false
+        val silencePremiumRate: Boolean = false,
+        val neighborNoticeEnabled: Boolean = false,
+        val silenceNearDirectory: Boolean = false
     ) {
         /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
@@ -388,6 +423,8 @@ class CallBlocklistStore(context: Context) {
         private const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
         private const val SILENCE_OUTSIDE_DIRECTORY = "silence_outside_directory_v1"
         private const val SILENCE_PREMIUM_RATE = "silence_premium_rate_v1"
+        private const val NEIGHBOR_NOTICE = "neighbor_notice_v1"
+        private const val SILENCE_NEAR_DIRECTORY = "silence_near_directory_v1"
         private const val SIGNED_PACKAGE_ID = "signed_rule_package_id"
         private const val SIGNED_ISSUER_ID = "signed_rule_issuer_id"
         private const val SIGNED_KEY_ID = "signed_rule_key_id"

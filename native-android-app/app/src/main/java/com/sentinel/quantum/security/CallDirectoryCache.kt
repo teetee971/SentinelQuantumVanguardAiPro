@@ -55,12 +55,26 @@ internal object CallDirectoryCache {
      * stays fail-open even though the snapshot flag is already true.
      */
     fun onSilencePreferenceChanged(context: Context, enabled: Boolean) {
-        if (!enabled) {
+        onDirectoryObservationChanged(context, enabled)
+    }
+
+    /**
+     * Loads the directory only when unknown-caller silence or the neighbor notice is on.
+     * Disabling both publishes an empty view on the caller thread and does not read contacts.
+     */
+    fun onDirectoryObservationChanged(context: Context, silenceHint: Boolean = false) {
+        val observe = silenceHint || observesDirectory(context)
+        if (!observe) {
             refresh(context, false)
             return
         }
         executor.execute { refresh(context.applicationContext, true) }
     }
+
+    private fun observesDirectory(context: Context): Boolean = runCatching {
+        val store = CallBlocklistStore(context.applicationContext)
+        store.silenceOutsideDirectory() || store.neighborNoticeEnabled()
+    }.getOrDefault(false)
 
     /**
      * @return false only when a readable directory could not be queried and a later retry may succeed.
@@ -143,10 +157,8 @@ internal object CallDirectoryCache {
             object : ContentObserver(Handler(Looper.getMainLooper())) {
                 override fun onChange(selfChange: Boolean) {
                     executor.execute {
-                        val enabled = runCatching {
-                            CallBlocklistStore(app).silenceOutsideDirectory()
-                        }.getOrDefault(false)
-                        refresh(app, enabled)
+                        val store = CallBlocklistStore(app)
+                        refresh(app, store.silenceOutsideDirectory() || store.neighborNoticeEnabled())
                     }
                 }
             }

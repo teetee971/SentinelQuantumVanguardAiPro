@@ -35,6 +35,9 @@ object PhoneCoreFrenchLabels {
         "USER_EXACT_BLOCK" -> "Numéro placé dans la liste de blocage"
         "USER_PREFIX_BLOCK" -> "Préfixe placé dans la liste de blocage"
         "SIGNED_REPUTATION_PREFIX" -> "Préfixe signalé par la réputation signée Sentinel"
+        "USER_PREMIUM_SILENCE" -> "Numéro surtaxé mis en silencieux par choix"
+        "NEAR_DIRECTORY_CONTACT" -> "Proche d’un contact, mis en silencieux par choix"
+        "NOT_IN_DIRECTORY" -> "Numéro absent du répertoire, mis en silencieux par choix"
         "NONE", "UNKNOWN", "" -> "Motif indéterminé"
         else -> "Motif technique non traduit"
     }
