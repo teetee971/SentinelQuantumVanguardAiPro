@@ -187,6 +187,64 @@ class CallRuleEngineTest {
         )
     }
 
+    @Test fun everyCriticalOverseasRootKeepsItsCountryInNationalAndPlus33Form() {
+        val roots = listOf(
+            "0590" to "590", "0591" to "590", "0690" to "590", "0691" to "590",
+            "059850" to "590", "059851" to "590", "059852" to "590", "059853" to "590", "059854" to "590",
+            "05987" to "590", "094700" to "590", "094701" to "590", "09475" to "590",
+            "09760" to "590", "09761" to "590", "09768" to "590",
+            "0594" to "594", "0694" to "594",
+            "059855" to "594", "059856" to "594", "059857" to "594", "059858" to "594", "059859" to "594",
+            "05988" to "594", "094702" to "594", "094703" to "594", "09476" to "594",
+            "09764" to "594", "09765" to "594",
+            "0596" to "596", "0597" to "596", "0696" to "596",
+            "059860" to "596", "059861" to "596", "059862" to "596", "059863" to "596", "059864" to "596",
+            "05989" to "596", "094704" to "596", "094705" to "596", "09477" to "596",
+            "09766" to "596", "09767" to "596",
+            "0262" to "262", "0263" to "262", "0692" to "262",
+            "026870" to "262", "026871" to "262", "026872" to "262", "026873" to "262", "026874" to "262",
+            "02688" to "262", "094706" to "262", "094707" to "262", "09479" to "262",
+            "09762" to "262", "09763" to "262",
+            "0269" to "262", "0693" to "262", "0639" to "262",
+            "026875" to "262", "026876" to "262", "026877" to "262", "026878" to "262", "026879" to "262",
+            "02689" to "262", "094708" to "262", "094709" to "262", "09478" to "262",
+            "09769" to "262", "09900" to "262",
+            "0508" to "508"
+        )
+        assertEquals(72, roots.size)
+        for ((prefix, countryCode) in roots) {
+            val national = (prefix + "1234567890").take(10)
+            val expected = if (prefix.startsWith("0508")) "+508" + national.drop(4) else "+$countryCode" + national.drop(1)
+            assertEquals(prefix, expected, CallRuleEngine.normalizeNumber(national))
+            assertEquals(prefix, expected, CallRuleEngine.normalizeNumber("+33" + national.drop(1)))
+            assertEquals(prefix, expected, CallRuleEngine.normalizeNumber("0033" + national.drop(1)))
+            val contact = CallRuleEngine(
+                silenceOutsideDirectory = true,
+                directoryReady = true,
+                directoryContains = { it == expected }
+            )
+            assertEquals(prefix, CallRuleEngine.Action.ALLOW, contact.evaluate(national).action)
+            assertEquals(
+                prefix,
+                CallRuleEngine.Action.BLOCK,
+                CallRuleEngine(blockedPrefixes = setOf("+$countryCode")).evaluate("+33" + national.drop(1)).action
+            )
+        }
+    }
+
+    @Test fun unassignedReserveRootsStayMetropolitan() {
+        val reserves = listOf(
+            "0264", "0592", "0593", "0595", "0599",
+            "05980", "05981", "05982", "05983", "05984",
+            "059865", "059866", "059867", "059868", "059869",
+            "09471", "09472", "09473", "09474"
+        )
+        for (prefix in reserves) {
+            val national = (prefix + "1234567890").take(10)
+            assertEquals(prefix, "+33" + national.drop(1), CallRuleEngine.normalizeNumber(national))
+        }
+    }
+
     @Test fun legacyPlus33OverseasNumberFoldsToTerritoryIdentity() {
         assertEquals("+590690123456", CallRuleEngine.normalizeNumber("+33 6 90 12 34 56"))
         assertEquals("+590690123456", CallRuleEngine.normalizeNumber("0033690123456"))
