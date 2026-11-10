@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CallRuleEngineTest {
@@ -163,7 +164,8 @@ class CallRuleEngineTest {
         assertEquals("+262692123456", CallRuleEngine.normalizeNumber("0692123456"))
         assertEquals("+262269123456", CallRuleEngine.normalizeNumber("0269123456"))
         assertEquals("+262639123456", CallRuleEngine.normalizeNumber("0639123456"))
-        assertEquals("+508508123456", CallRuleEngine.normalizeNumber("0508123456"))
+        assertEquals("+590590123456", CallRuleEngine.normalizeNumber("0590123456"))
+        assertEquals("+262262123456", CallRuleEngine.normalizeNumber("0262123456"))
         assertEquals("+33612345678", CallRuleEngine.normalizeNumber("+33612345678"))
     }
 
@@ -195,5 +197,41 @@ class CallRuleEngineTest {
         val engine = CallRuleEngine(blockedPrefixes = setOf("+33690"))
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("0690123456").action)
         assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("0612345678").action)
+    }
+
+    @Test fun saintPierreUsesSixDigitsAfter508() {
+        assertEquals("+508410974", CallRuleEngine.normalizeNumber("0508410974"))
+        assertEquals("+508410974", CallRuleEngine.normalizeNumber("+508 41 09 74"))
+        assertEquals("+508410974", CallRuleEngine.normalizeNumber("00508410974"))
+        assertEquals("+508410974", CallRuleEngine.normalizeNumber("+33 508 41 09 74"))
+        assertEquals("+508", CallRuleEngine.normalizePrefix("0508"))
+        assertEquals("+33556123456", CallRuleEngine.normalizeNumber("0556123456"))
+        assertEquals("+508708401234", CallRuleEngine.normalizeNumber("+508708401234"))
+    }
+
+    @Test fun saintPierreContactMatchesNationalAndE164() {
+        val known = CallRuleEngine(
+            silenceOutsideDirectory = true,
+            directoryReady = true,
+            directoryContains = { it == "+508410974" }
+        )
+        assertEquals(CallRuleEngine.Action.ALLOW, known.evaluate("05 08 41 09 74").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, known.evaluate("+508410974").action)
+        assertEquals(CallRuleEngine.Action.SILENCE, known.evaluate("0556123456").action)
+    }
+
+    @Test fun historicalSaintPierreFingerprintAndPrefixStillBlock() {
+        val legacy = "+33508410974"
+        val fingerprint = "e".repeat(64)
+        val exact = CallRuleEngine(
+            setOf(fingerprint),
+            fingerprintsForNumber = { setOf(if (it == legacy) fingerprint else "f".repeat(64)) }
+        )
+        assertEquals(CallRuleEngine.Action.BLOCK, exact.evaluate("0508410974").action)
+        assertEquals(CallRuleEngine.Action.BLOCK, exact.evaluate("+508410974").action)
+        assertTrue(CallRuleEngine.blockMatchInputs("0508410974").contains(legacy))
+        val prefix = CallRuleEngine(blockedPrefixes = setOf("+33508"))
+        assertEquals(CallRuleEngine.Action.BLOCK, prefix.evaluate("0508410974").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, prefix.evaluate("0556123456").action)
     }
 }
