@@ -7,7 +7,8 @@ import java.util.Locale
 /**
  * Home region captured outside the screening callback.
  * A national number is folded with the French plan only when this region is French.
- * Anywhere else, a national number that is not already international stays unmatched and rings.
+ * Anywhere else it is parsed for that region, and only after the offline metadata is loaded.
+ * Until then, or if the number is not valid there, the call rings.
  */
 object ScreeningHomeRegion {
     private val frenchIso = setOf("FR", "GP", "GF", "MQ", "RE", "YT", "BL", "MF", "PM")

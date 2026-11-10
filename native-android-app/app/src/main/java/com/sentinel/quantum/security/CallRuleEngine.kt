@@ -127,7 +127,8 @@ class CallRuleEngine(
          * Guadeloupe, Guyane, Martinique, Réunion and Mayotte keep a 9-digit national significant number.
          * Saint-Pierre-et-Miquelon keeps +508 and the last 6 digits of 0508xxxxxx.
          * A full +33 number whose national form is one of those ranges is folded to the same identity.
-         * Outside a French home region, a national number is not rewritten as +33: the call stays unmatched.
+         * Outside a French home region, a national number is parsed offline for that region only.
+         * If that parser is not ready, or the number is not valid there, the call stays unmatched.
          * Numbers already in international form are accepted for every region.
          */
         fun normalizeNumber(raw: String?, homeRegion: String = "FR"): String? {
@@ -141,7 +142,8 @@ class CallRuleEngine(
                 digits.startsWith("00") && digits.length >= 9 -> foldLegacyOverseas("+${digits.drop(2)}")
                 digits.length == 10 && digits.startsWith('0') && homeRegion.uppercase() in FRENCH_HOME ->
                     e164FromNational(digits)
-                digits.length == 10 && digits.startsWith('0') -> null
+                digits.startsWith('0') && homeRegion.uppercase() !in FRENCH_HOME ->
+                    InternationalNumberParser.toE164(input, homeRegion)
                 else -> digits
             }
         }
@@ -174,9 +176,10 @@ class CallRuleEngine(
                 canonical.startsWith("+508") -> return "Saint-Pierre-et-Miquelon"
             }
             val country = if (canonical.startsWith('+')) E164CallingCodeDirectory.resolve(canonical) else null
+            if (country?.shared == true) return "Indicatif partagé, pays non déterminé"
+            InternationalNumberParser.tariffLabel(canonical)?.let { return it }
             return when {
                 country == null -> if (canonical.startsWith('+')) "International" else "Type indéterminé"
-                country.shared -> "Indicatif partagé, pays non déterminé"
                 else -> "International"
             }
         }
