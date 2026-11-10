@@ -14,13 +14,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Process-level services and lifecycle-safe maintenance for Sentinel.
  *
- * [onCreate] intentionally performs no screening preparation. Android creates the Application
- * before CallScreeningService, so disk, WorkManager and AndroidKeyStore work here would extend the
- * cold-start window before the mandatory Telecom response. Maintenance starts either when the
- * user-facing activity resumes or, for a Telecom-only cold start, from the bounded post-response
- * worker. Until one of those paths completes, exact, prefix and signed rules may fail open while
- * the process cache is cold. Unknown-caller silence stays fail-open until the contact directory
- * has been loaded into memory.
+ * [onCreate] does not block on disk, WorkManager or the contact provider. It only schedules an
+ * asynchronous warm-up of the in-memory screening snapshot and contact directory. That warm-up
+ * does not schedule MMS repair. Until it publishes, unknown-caller silence stays fail-open.
+ * MMS and SMS repair still start from a resumed activity or from the post-response worker.
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -35,6 +32,9 @@ class SentinelApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        maintenanceScope.launch {
+            runCatching { warmScreeningCaches() }
+        }
     }
 
     /**
@@ -61,6 +61,15 @@ class SentinelApplication : Application() {
         if (!performMaintenance()) maintenanceStarted.set(false)
     }
 
+    private fun warmScreeningCaches(): Boolean {
+        val store = CallBlocklistStore(applicationContext)
+        val snapshot = store.prepareScreeningSnapshot()
+        if (snapshot.blockedNumberHashes.isNotEmpty()) {
+            store.prepareFingerprintKeys()
+        }
+        return CallDirectoryCache.refresh(applicationContext, store.silenceOutsideDirectory())
+    }
+
     private fun performMaintenance(): Boolean {
         var succeeded = true
         runCatching {
@@ -74,14 +83,7 @@ class SentinelApplication : Application() {
             succeeded = false
         }
         runCatching {
-            val store = CallBlocklistStore(applicationContext)
-            val screeningSnapshot = store.prepareScreeningSnapshot()
-            if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
-                store.prepareFingerprintKeys()
-            }
-            if (!CallDirectoryCache.refresh(applicationContext, store.silenceOutsideDirectory())) {
-                succeeded = false
-            }
+            if (!warmScreeningCaches()) succeeded = false
         }.onFailure {
             succeeded = false
         }
