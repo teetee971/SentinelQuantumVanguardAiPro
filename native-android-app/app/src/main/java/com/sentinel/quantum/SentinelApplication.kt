@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallDirectoryCache
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * cold-start window before the mandatory Telecom response. Maintenance starts either when the
  * user-facing activity resumes or, for a Telecom-only cold start, from the bounded post-response
  * worker. Until one of those paths completes, exact, prefix and signed rules may fail open while
- * the process cache is cold.
+ * the process cache is cold. Unknown-caller silence stays fail-open until the contact directory
+ * has been loaded into memory.
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -76,6 +78,9 @@ class SentinelApplication : Application() {
             val screeningSnapshot = store.prepareScreeningSnapshot()
             if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
                 store.prepareFingerprintKeys()
+            }
+            if (!CallDirectoryCache.refresh(applicationContext, store.silenceOutsideDirectory())) {
+                succeeded = false
             }
         }.onFailure {
             succeeded = false
