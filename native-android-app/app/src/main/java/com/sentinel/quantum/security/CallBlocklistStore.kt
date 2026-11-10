@@ -8,8 +8,6 @@ class CallBlocklistStore(context: Context) {
     private val fingerprinter = CallNumberFingerprinter()
 
     fun snapshot(now: Long = System.currentTimeMillis()): Snapshot {
-        // Keep expired entries in the lookup so they cannot be mistaken for
-        // legacy hashes without metadata. Legacy hashes remain permanent.
         val metadataByHash = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty()
             .mapNotNull(::decodeMetadata)
             .associateBy { it.fingerprint }
@@ -29,7 +27,8 @@ class CallBlocklistStore(context: Context) {
             blockedNumberExpiresAtMs = metadataByHash.values
                 .filter { it.fingerprint in blockedHashes && it.expiresAtEpochMs != null }
                 .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
-            signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L)
+            signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L),
+            silenceOutsideDirectory = silenceOutsideDirectory()
         )
     }
 
@@ -41,6 +40,17 @@ class CallBlocklistStore(context: Context) {
 
     fun isArcepVerifiedBlockingEnabled(): Boolean =
         preferences.getBoolean(ARCEP_VERIFIED_BLOCKING_ENABLED, false)
+
+    fun silenceOutsideDirectory(): Boolean =
+        preferences.getBoolean(SILENCE_OUTSIDE_DIRECTORY, true)
+
+    fun setSilenceOutsideDirectory(enabled: Boolean): Boolean {
+        val committed = preferences.edit()
+            .putBoolean(SILENCE_OUTSIDE_DIRECTORY, enabled)
+            .commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
+    }
 
     fun setArcepVerifiedBlockingEnabled(enabled: Boolean): Boolean {
         if (
@@ -55,11 +65,9 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
-    /** Loads persisted rules into the process cache from an explicitly post-response path. */
     fun prepareScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
         snapshot(now).also { SCREENING_SNAPSHOT = it }
 
-    /** Screening-critical path: memory-only and fail-open while the cold-process cache is empty. */
     fun cachedScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
         cachedSnapshotForScreening(now)
 
@@ -100,14 +108,11 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
-    /** General path; may access AndroidKeyStore and must never be called from onScreenCall(). */
     fun fingerprintsForNumber(normalizedNumber: String): Set<String> = fingerprinter.candidates(normalizedNumber)
 
-    /** Screening-critical path: cache-only, fail-open when keys are not preloaded. */
     fun cachedFingerprintsForNumber(normalizedNumber: String): Set<String> =
         fingerprinter.cachedCandidates(normalizedNumber)
 
-    /** Best-effort warm-up outside the call-screening callback. */
     fun prepareFingerprintKeys() = fingerprinter.prepareExistingKeys()
 
     fun clearBlockedNumbers(): Boolean {
@@ -116,7 +121,6 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
-    /** UI/general path only; may access AndroidKeyStore. */
     fun removeBlockedNumber(rawNumber: String): Boolean {
         val normalized = CallRuleEngine.normalizeNumber(rawNumber) ?: return false
         val fingerprints = fingerprinter.candidates(normalized)
@@ -134,7 +138,6 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
-    /** Maintenance path only. snapshot() already ignores expired metadata without writing. */
     fun purgeExpiredBlockedNumbers(now: Long = System.currentTimeMillis()): Int {
         val entries = preferences.getStringSet(EXACT_METADATA, emptySet()).orEmpty().mapNotNull(::decodeMetadata)
         val expired = entries.filterNot { it.isActive(now) }.map { it.fingerprint }.toSet()
@@ -173,10 +176,6 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
-    /**
-     * User-driven restore path. The full replacement is committed atomically only when every
-     * supplied prefix is valid and the bounded rule capacity is respected.
-     */
     fun replaceBlockedPrefixes(rawPrefixes: Collection<String>): Boolean {
         if (rawPrefixes.size > CallRuleEngine.MAX_PREFIX_RULES) return false
         val normalized = rawPrefixes.map { CallRuleEngine.normalizePrefix(it) ?: return false }
@@ -189,10 +188,6 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
-    /**
-     * Read-only provenance for the protection-list UI. No raw phone number or prefix value is
-     * returned: only non-sensitive package identifiers, timestamps, sequence and bounded counts.
-     */
     fun signedRuleMetadata(): SignedRuleMetadata {
         val sequence = preferences.getLong(SIGNED_SEQUENCE, 0L)
         val issuedAt = preferences.getLong(SIGNED_ISSUED_AT, 0L)
@@ -253,9 +248,9 @@ class CallBlocklistStore(context: Context) {
         val signedSilencePrefixes: Set<String>,
         val arcepVerifiedBlockingEnabled: Boolean = false,
         val blockedNumberExpiresAtMs: Map<String, Long> = emptyMap(),
-        val signedExpiresAtMs: Long = 0L
+        val signedExpiresAtMs: Long = 0L,
+        val silenceOutsideDirectory: Boolean = false
     ) {
-        /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
             blockedNumberHashes = blockedNumberHashes.filter { hash ->
                 blockedNumberExpiresAtMs[hash]?.let { now < it } ?: true
@@ -297,6 +292,7 @@ class CallBlocklistStore(context: Context) {
         private const val EXACT_METADATA = "blocked_number_metadata_v1"
         private const val PREFIXES = "blocked_prefixes"
         private const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
+        private const val SILENCE_OUTSIDE_DIRECTORY = "silence_outside_directory_v1"
         private const val SIGNED_PACKAGE_ID = "signed_rule_package_id"
         private const val SIGNED_ISSUER_ID = "signed_rule_issuer_id"
         private const val SIGNED_KEY_ID = "signed_rule_key_id"
@@ -307,12 +303,6 @@ class CallBlocklistStore(context: Context) {
         private val INSTALL_LOCK = Any()
         @Volatile private var SCREENING_SNAPSHOT = Snapshot(emptySet(), emptySet(), emptySet())
 
-        /**
-         * CallScreeningService access point. This method reads process memory only: it does not
-         * construct a store, open SharedPreferences, initialize Room, access AndroidKeyStore or
-         * perform network I/O. Until post-response warm-up completes it intentionally returns an
-         * empty snapshot, so the first cold-process call may fail open.
-         */
         internal fun cachedSnapshotForScreening(now: Long = System.currentTimeMillis()): Snapshot =
             SCREENING_SNAPSHOT.activeAt(now)
     }
