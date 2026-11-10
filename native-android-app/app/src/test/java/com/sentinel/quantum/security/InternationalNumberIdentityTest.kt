@@ -61,4 +61,28 @@ class InternationalNumberIdentityTest {
         assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("00447911123456").action)
         assertEquals(CallRuleEngine.Action.ALLOW, engine.evaluate("+33612345678").action)
     }
+
+    @Test fun userCountrySilenceDoesNotRejectAndLetsContactsRing() {
+        val belgium = CallRuleEngine(userSilencePrefixes = setOf("+32"), homeRegion = "BE")
+        val silenced = belgium.evaluate("+32 470 12 34 56")
+        assertEquals(CallRuleEngine.Action.SILENCE, silenced.action)
+        assertEquals("USER_PREFIX_SILENCE", silenced.reason)
+        assertEquals(CallRuleEngine.Action.ALLOW, belgium.evaluate("+33612345678").action)
+
+        val contact = CallRuleEngine(
+            userSilencePrefixes = setOf("+32"),
+            directoryReady = true,
+            directoryContains = { it == "+32470123456" },
+            homeRegion = "BE"
+        )
+        InternationalNumberParser.warm()
+        assertEquals(CallRuleEngine.Action.ALLOW, contact.evaluate("0470123456").action)
+        assertEquals(CallRuleEngine.Action.SILENCE, contact.evaluate("+32471111111").action)
+
+        val blocked = CallRuleEngine(
+            blockedPrefixes = setOf("+32"),
+            userSilencePrefixes = setOf("+32")
+        )
+        assertEquals(CallRuleEngine.Action.BLOCK, blocked.evaluate("+32470123456").action)
+    }
 }

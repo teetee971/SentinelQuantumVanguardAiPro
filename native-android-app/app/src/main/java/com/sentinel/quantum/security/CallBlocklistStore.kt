@@ -36,12 +36,19 @@ class CallBlocklistStore(context: Context) {
                 .filter { it.fingerprint in blockedHashes && it.expiresAtEpochMs != null }
                 .associate { it.fingerprint to requireNotNull(it.expiresAtEpochMs) },
             signedExpiresAtMs = preferences.getLong(SIGNED_EXPIRES_AT, 0L),
-            silenceOutsideDirectory = silenceOutsideDirectory()
+            silenceOutsideDirectory = silenceOutsideDirectory(),
+            userSilencePrefixes = userSilencePrefixes()
         )
     }
 
     fun manualBlockedPrefixes(): Set<String> =
         preferences.getStringSet(PREFIXES, emptySet()).orEmpty()
+            .mapNotNull { CallRuleEngine.normalizePrefix(it) }
+            .take(CallRuleEngine.MAX_PREFIX_RULES)
+            .toSet()
+
+    fun userSilencePrefixes(): Set<String> =
+        preferences.getStringSet(USER_SILENCE_PREFIXES, emptySet()).orEmpty()
             .mapNotNull { CallRuleEngine.normalizePrefix(it) }
             .take(CallRuleEngine.MAX_PREFIX_RULES)
             .toSet()
@@ -218,6 +225,25 @@ class CallBlocklistStore(context: Context) {
         return committed
     }
 
+    fun addUserSilencePrefix(rawPrefix: String): Boolean {
+        val normalized = CallRuleEngine.normalizePrefix(rawPrefix) ?: return false
+        val values = userSilencePrefixes().toMutableSet()
+        if (normalized !in values && values.size >= CallRuleEngine.MAX_PREFIX_RULES) return false
+        values += normalized
+        val committed = preferences.edit().putStringSet(USER_SILENCE_PREFIXES, values).commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
+    }
+
+    fun removeUserSilencePrefix(prefix: String): Boolean {
+        val normalized = CallRuleEngine.normalizePrefix(prefix) ?: return false
+        val values = userSilencePrefixes().toMutableSet()
+        if (!values.remove(normalized)) return false
+        val committed = preferences.edit().putStringSet(USER_SILENCE_PREFIXES, values).commit()
+        if (committed) refreshScreeningSnapshotAfterCommit()
+        return committed
+    }
+
     /**
      * User-driven restore path. The full replacement is committed atomically only when every
      * supplied prefix is valid and the bounded rule capacity is respected.
@@ -303,7 +329,8 @@ class CallBlocklistStore(context: Context) {
          * False until [prepareScreeningSnapshot] or an explicit commit.
          * A missing preference is not an opt-in, so a cold callback does not silence unknown callers.
          */
-        val silenceOutsideDirectory: Boolean = false
+        val silenceOutsideDirectory: Boolean = false,
+        val userSilencePrefixes: Set<String> = emptySet()
     ) {
         /** Memory-only expiry checks keep warm-process decisions consistent with persisted TTLs. */
         fun activeAt(now: Long): Snapshot = copy(
@@ -346,6 +373,7 @@ class CallBlocklistStore(context: Context) {
         private const val EXACT_HASHES = "blocked_number_hashes"
         private const val EXACT_METADATA = "blocked_number_metadata_v1"
         private const val PREFIXES = "blocked_prefixes"
+        private const val USER_SILENCE_PREFIXES = "user_silence_prefixes"
         private const val ARCEP_VERIFIED_BLOCKING_ENABLED = "arcep_verified_blocking_enabled_v1"
         private const val SILENCE_OUTSIDE_DIRECTORY = "silence_outside_directory_v1"
         private const val SIGNED_PACKAGE_ID = "signed_rule_package_id"

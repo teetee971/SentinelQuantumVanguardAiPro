@@ -11,12 +11,15 @@ class CallRuleEngine(
     private val silenceOutsideDirectory: Boolean = false,
     private val directoryReady: Boolean = false,
     private val directoryContains: (String) -> Boolean = { false },
-    private val homeRegion: String = "FR"
+    private val homeRegion: String = "FR",
+    userSilencePrefixes: Set<String> = emptySet()
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
     private val silenceRules = reputationSilencePrefixes.mapNotNull(::normalizePrefix)
         .take(MAX_REPUTATION_RULES).toSet()
+    private val userSilenceRules = userSilencePrefixes.mapNotNull(::normalizePrefix)
+        .take(MAX_PREFIX_RULES).toSet()
 
     fun evaluate(rawNumber: String?): Decision {
         val normalized = normalizeNumber(rawNumber, homeRegion)
@@ -27,8 +30,11 @@ class CallRuleEngine(
         if (prefixBlocked(normalized)) {
             return Decision(Action.BLOCK, "USER_PREFIX_BLOCK", normalized, RuleSource.USER)
         }
-        if (silenceOutsideDirectory && directoryReady && directoryContains(normalized)) {
+        if (directoryReady && directoryContains(normalized)) {
             return Decision(Action.ALLOW, "IN_DIRECTORY", normalized, RuleSource.USER)
+        }
+        if (prefixSilenced(normalized)) {
+            return Decision(Action.SILENCE, "USER_PREFIX_SILENCE", normalized, RuleSource.USER)
         }
         if (silenceRules.any(normalized::startsWith)) {
             return Decision(Action.SILENCE, "SIGNED_REPUTATION_PREFIX", normalized, RuleSource.SIGNED_REPUTATION)
@@ -52,6 +58,12 @@ class CallRuleEngine(
         if (prefixRules.any(normalized::startsWith)) return true
         val legacy = legacyMetropolitanAlias(normalized) ?: return false
         return prefixRules.any(legacy::startsWith)
+    }
+
+    private fun prefixSilenced(normalized: String): Boolean {
+        if (userSilenceRules.any(normalized::startsWith)) return true
+        val legacy = legacyMetropolitanAlias(normalized) ?: return false
+        return userSilenceRules.any(legacy::startsWith)
     }
 
     data class Decision(val action: Action, val reason: String, val normalizedNumber: String?, val source: RuleSource)

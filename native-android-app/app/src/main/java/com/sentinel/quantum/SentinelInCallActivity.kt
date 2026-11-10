@@ -52,6 +52,7 @@ import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import kotlinx.coroutines.flow.collect
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallRuleEngine
+import com.sentinel.quantum.security.ScreeningHomeRegion
 import com.sentinel.quantum.security.CallTrustIndicator
 import com.sentinel.quantum.security.LocalContactLookup
 import com.sentinel.quantum.security.PhoneCorePhysicalValidation
@@ -227,17 +228,21 @@ private fun InCallScreen(
                 val appContext = context.applicationContext
                 val store = CallBlocklistStore(appContext)
                 val rules = store.snapshot()
+                val contactKnown = runCatching {
+                    LocalContactLookup(appContext).find(number) != null
+                }.getOrDefault(false)
                 val decision = runCatching {
                     CallRuleEngine(
                         blockedNumberHashes = rules.blockedNumberHashes,
                         blockedPrefixes = rules.blockedPrefixes,
                         reputationSilencePrefixes = rules.signedSilencePrefixes,
-                        fingerprintsForNumber = store::fingerprintsForNumber
+                        fingerprintsForNumber = store::fingerprintsForNumber,
+                        directoryReady = contactKnown,
+                        directoryContains = { contactKnown },
+                        homeRegion = ScreeningHomeRegion.current(),
+                        userSilencePrefixes = rules.userSilencePrefixes
                     ).evaluate(number)
                 }.getOrNull()
-                val contactKnown = runCatching {
-                    LocalContactLookup(appContext).find(number) != null
-                }.getOrDefault(false)
                 val intelligence = runCatching {
                     IntelligenceCoreRuntime.snapshotForNumber(appContext, number)
                 }.getOrNull()?.let { IntelligenceSnapshotPresentation.from(it) }
