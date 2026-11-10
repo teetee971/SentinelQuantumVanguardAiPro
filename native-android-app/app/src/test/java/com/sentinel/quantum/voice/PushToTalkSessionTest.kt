@@ -1,5 +1,9 @@
 package com.sentinel.quantum.voice
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -67,5 +71,26 @@ class PushToTalkSessionTest {
         assertEquals(listOf(true, false), changes)
         assertEquals(PushToTalkSession.State.CLOSED, session.state())
         assertFalse(session.press().isSuccess)
+    }
+
+    @Test
+    fun releasingDuringPressClosesTheMicrophone() = runBlocking {
+        val changes = mutableListOf<Boolean>()
+        val opened = CompletableDeferred<Unit>()
+        val session = PushToTalkSession { enabled ->
+            changes += enabled
+            if (enabled) {
+                opened.complete(Unit)
+                awaitCancellation()
+            }
+            Result.success(Unit)
+        }
+
+        val job = launch { session.press() }
+        opened.await()
+        job.cancelAndJoin()
+
+        assertEquals(listOf(true, false), changes)
+        assertEquals(PushToTalkSession.State.READY, session.state())
     }
 }

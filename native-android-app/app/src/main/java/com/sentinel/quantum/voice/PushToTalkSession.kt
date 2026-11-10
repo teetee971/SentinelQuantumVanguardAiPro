@@ -1,7 +1,10 @@
 package com.sentinel.quantum.voice
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Fail-closed client-side push-to-talk gate.
@@ -34,13 +37,21 @@ class PushToTalkSession(
             )
         }
 
-        val result = microphoneGate(true)
-        if (result.isSuccess) {
-            state = State.TRANSMITTING
-        } else {
-            state = State.FAILED
+        try {
+            val result = microphoneGate(true)
+            if (result.isSuccess) {
+                state = State.TRANSMITTING
+            } else {
+                state = State.FAILED
+            }
+            result
+        } catch (cancelled: CancellationException) {
+            withContext(NonCancellable) {
+                val muted = microphoneGate(false)
+                state = if (muted.isSuccess) State.READY else State.FAILED
+            }
+            throw cancelled
         }
-        result
     }
 
     suspend fun release(): Result<Unit> = mutex.withLock {

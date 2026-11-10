@@ -7,8 +7,10 @@ import androidx.core.content.ContextCompat
 import io.livekit.android.LiveKit
 import io.livekit.android.room.Room
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.net.URI
 
 /**
@@ -205,6 +207,14 @@ class SentinelLiveKitCallTransport internal constructor(
             }
             state = if (enabled) State.ACTIVE_MIC else State.CONNECTED
             Result.success(Unit)
+        } catch (cancelled: CancellationException) {
+            if (enabled) {
+                withContext(NonCancellable) {
+                    runCatching { connectedRoom.localParticipant.setMicrophoneEnabled(false) }
+                }
+                state = State.CONNECTED
+            }
+            throw cancelled
         } catch (failure: Exception) {
             state = State.FAILED
             Result.failure(failure)
