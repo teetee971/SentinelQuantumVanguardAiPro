@@ -56,6 +56,7 @@ import com.sentinel.quantum.voice.VoiceSessionCoordinator
 import com.sentinel.quantum.voice.VoiceSessionRequest
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import com.sentinel.quantum.voice.PushToTalkSession
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -115,6 +116,27 @@ class VoiceStudioActivity : ComponentActivity() {
                 pttGestureJob?.cancel()
                 pttGestureJob = null
                 transmitting = false
+            }
+        }
+        LaunchedEffect(sessionConnected) {
+            val talk = activeVoiceSession?.pushToTalk ?: return@LaunchedEffect
+            val remove = talk.addStateListener { next ->
+                transmitting = next == PushToTalkSession.State.TRANSMITTING
+                sessionStatus = when (next) {
+                    PushToTalkSession.State.FAILED ->
+                        "Salle LiveKit interrompue. Le microphone est coupé."
+                    PushToTalkSession.State.READY ->
+                        "Microphone coupé : la salle ne publie plus la voix."
+                    PushToTalkSession.State.TRANSMITTING ->
+                        "Microphone ouvert : maintenez pour parler."
+                    PushToTalkSession.State.CLOSED ->
+                        "Session PTT fermée."
+                }
+            }
+            try {
+                awaitCancellation()
+            } finally {
+                remove()
             }
         }
 
@@ -410,11 +432,18 @@ class VoiceStudioActivity : ComponentActivity() {
                                                 awaitCancellation()
                                             } finally {
                                                 val releaseResult = releasePushToTalk()
-                                                transmitting = false
-                                                sessionStatus = if (releaseResult.isSuccess) {
-                                                    "Microphone coupé : session PTT toujours connectée."
-                                                } else {
-                                                    "Fermeture du microphone impossible : ${releaseResult.exceptionOrNull()?.message.orEmpty()}"
+                                                val talkState = session.pushToTalk.state()
+                                                transmitting = talkState == PushToTalkSession.State.TRANSMITTING
+                                                sessionStatus = when (talkState) {
+                                                    PushToTalkSession.State.FAILED ->
+                                                        "Salle LiveKit interrompue. Le microphone est coupé."
+                                                    PushToTalkSession.State.TRANSMITTING ->
+                                                        "Microphone ouvert : maintenez pour parler."
+                                                    else -> if (releaseResult.isSuccess) {
+                                                        "Microphone coupé : session PTT toujours connectée."
+                                                    } else {
+                                                        "Fermeture du microphone impossible : ${releaseResult.exceptionOrNull()?.message.orEmpty()}"
+                                                    }
                                                 }
                                             }
                                         }

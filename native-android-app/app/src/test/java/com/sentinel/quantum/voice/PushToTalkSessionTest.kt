@@ -93,4 +93,26 @@ class PushToTalkSessionTest {
         assertEquals(listOf(true, false), changes)
         assertEquals(PushToTalkSession.State.READY, session.state())
     }
+
+    @Test
+    fun roomPublicationLossLeavesTheButtonReadyWithoutSending() = runBlocking {
+        var enables = 0
+        val session = PushToTalkSession {
+            enables += 1
+            Result.success(Unit)
+        }
+        assertTrue(session.press().isSuccess)
+        session.onRoomPublicationLost()
+        assertEquals(PushToTalkSession.State.READY, session.state())
+        assertEquals(1, enables)
+    }
+
+    @Test
+    fun roomGoneRejectsTheNextPress() = runBlocking {
+        val session = PushToTalkSession { Result.success(Unit) }
+        assertTrue(session.press().isSuccess)
+        session.onRoomGone()
+        assertEquals(PushToTalkSession.State.FAILED, session.state())
+        assertFalse(session.press().isSuccess)
+    }
 }

@@ -5,6 +5,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Fail-closed client-side push-to-talk gate.
@@ -24,11 +25,27 @@ class PushToTalkSession(
     }
 
     private val mutex = Mutex()
+    private val listeners = CopyOnWriteArrayList<(State) -> Unit>()
 
     @Volatile
     private var state: State = State.READY
 
     fun state(): State = state
+
+    fun addStateListener(listener: (State) -> Unit): () -> Unit {
+        listeners += listener
+        return { listeners -= listener }
+    }
+
+    /** The room dropped the local microphone. The button must not stay on transmit. */
+    suspend fun onRoomPublicationLost() = mutex.withLock {
+        if (state == State.TRANSMITTING) setState(State.READY)
+    }
+
+    /** The room is gone. Further presses fail closed. */
+    suspend fun onRoomGone() = mutex.withLock {
+        if (state != State.CLOSED) setState(State.FAILED)
+    }
 
     suspend fun press(): Result<Unit> = mutex.withLock {
         if (state != State.READY) {
@@ -39,16 +56,16 @@ class PushToTalkSession(
 
         try {
             val result = microphoneGate(true)
-            if (result.isSuccess) {
-                state = State.TRANSMITTING
-            } else {
-                state = State.FAILED
+            when {
+                result.isSuccess -> setState(State.TRANSMITTING)
+                result.exceptionOrNull() is LiveKitPublicationSuspended -> setState(State.READY)
+                else -> setState(State.FAILED)
             }
             result
         } catch (cancelled: CancellationException) {
             withContext(NonCancellable) {
                 val muted = microphoneGate(false)
-                state = if (muted.isSuccess) State.READY else State.FAILED
+                setState(if (muted.isSuccess) State.READY else State.FAILED)
             }
             throw cancelled
         }
@@ -59,7 +76,7 @@ class PushToTalkSession(
             State.READY -> Result.success(Unit)
             State.TRANSMITTING -> {
                 val result = microphoneGate(false)
-                if (result.isSuccess) state = State.READY else state = State.FAILED
+                if (result.isSuccess) setState(State.READY) else setState(State.FAILED)
                 result
             }
             State.FAILED,
@@ -78,7 +95,13 @@ class PushToTalkSession(
             Result.success(Unit)
         }
 
-        state = if (muteResult.isSuccess) State.CLOSED else State.FAILED
+        setState(if (muteResult.isSuccess) State.CLOSED else State.FAILED)
         muteResult
+    }
+
+    private fun setState(next: State) {
+        if (state == next) return
+        state = next
+        listeners.forEach { listener -> runCatching { listener(next) } }
     }
 }

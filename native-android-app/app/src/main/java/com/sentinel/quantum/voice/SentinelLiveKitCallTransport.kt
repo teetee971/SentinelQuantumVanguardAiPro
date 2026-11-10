@@ -5,9 +5,17 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import io.livekit.android.LiveKit
+import io.livekit.android.events.RoomEvent
 import io.livekit.android.room.Room
+import io.livekit.android.room.participant.LocalParticipant
+import io.livekit.android.room.track.Track
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -23,7 +31,9 @@ import java.net.URI
 class SentinelLiveKitCallTransport internal constructor(
     private val voiceProcessor: LiveKitVoiceAudioProcessor,
     private val permissionGranted: () -> Boolean,
-    private val roomFactory: () -> Room
+    private val roomFactory: () -> Room,
+    private val nowMs: () -> Long = { System.currentTimeMillis() },
+    private val awaitExpiry: suspend (Long) -> Unit = { kotlinx.coroutines.delay(it) }
 ) : VoiceSessionTransportPort {
     constructor(
         context: Context,
@@ -54,7 +64,8 @@ class SentinelLiveKitCallTransport internal constructor(
     }
     data class Credentials(
         val serverUrl: String,
-        val accessToken: String
+        val accessToken: String,
+        val expiresAtEpochMs: Long? = null
     ) {
         fun validate(): Boolean {
             val uri = runCatching { URI(serverUrl) }.getOrNull() ?: return false
@@ -77,11 +88,15 @@ class SentinelLiveKitCallTransport internal constructor(
     }
 
     private val mutex = Mutex()
+    private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Volatile
     private var state: State = State.DISCONNECTED
 
     private var room: Room? = null
+    private var linkedTalk: PushToTalkSession? = null
+    private var observerJob: Job? = null
+    private var publicationSuspended = false
 
     private fun disposeRoomBestEffort(target: Room?) {
         if (target == null) return
@@ -102,8 +117,11 @@ class SentinelLiveKitCallTransport internal constructor(
         voiceProcessor.configure(enabled, effect)
     }
 
-    suspend fun connect(credentials: Credentials): Result<Unit> =
-        connectInternal(credentials, publishMicrophone = true)
+    suspend fun connect(credentials: Credentials): Result<Unit> {
+        val connection = connectInternal(credentials, publishMicrophone = true)
+        if (connection.isSuccess) observe(credentials.expiresAtEpochMs)
+        return connection
+    }
 
     /**
      * Connects to a Sentinel room without opening the microphone.
@@ -115,14 +133,11 @@ class SentinelLiveKitCallTransport internal constructor(
         credentials: Credentials
     ): Result<PushToTalkSession> {
         val connection = connectInternal(credentials, publishMicrophone = false)
-        return connection.fold(
-            onSuccess = {
-                Result.success(PushToTalkSession { enabled ->
-                    setMicrophoneEnabled(enabled)
-                })
-            },
-            onFailure = { Result.failure(it) }
-        )
+        if (connection.isFailure) return Result.failure(connection.exceptionOrNull() ?: IllegalStateException("VOICE_TRANSPORT_CONNECT_FAILED"))
+        val session = PushToTalkSession { enabled -> setMicrophoneEnabled(enabled) }
+        mutex.withLock { linkedTalk = session }
+        observe(credentials.expiresAtEpochMs)
+        return Result.success(session)
     }
 
     private suspend fun connectInternal(
@@ -132,6 +147,11 @@ class SentinelLiveKitCallTransport internal constructor(
         if (!credentials.validate()) {
             state = State.FAILED
             return Result.failure(IllegalArgumentException("Invalid secure LiveKit credentials"))
+        }
+        val expiry = credentials.expiresAtEpochMs
+        if (expiry != null && expiry <= nowMs()) {
+            state = State.FAILED
+            return Result.failure(IllegalStateException("LiveKit token is expired"))
         }
         if (room != null) {
             return Result.failure(IllegalStateException("LiveKit room already connected"))
@@ -191,6 +211,9 @@ class SentinelLiveKitCallTransport internal constructor(
             ?: return Result.failure(
                 IllegalStateException("Microphone gate requires a connected LiveKit room")
             )
+        if (publicationSuspended && enabled) {
+            return Result.failure(LiveKitPublicationSuspended())
+        }
         if (state != State.CONNECTED && state != State.ACTIVE_MIC) {
             return Result.failure(
                 IllegalStateException("Microphone gate is unavailable in state $state")
@@ -222,6 +245,10 @@ class SentinelLiveKitCallTransport internal constructor(
     }
 
     override suspend fun disconnect() = mutex.withLock {
+        observerJob?.cancel()
+        observerJob = null
+        linkedTalk = null
+        publicationSuspended = false
         val connectedRoom = room
         room = null
         try {
@@ -232,4 +259,95 @@ class SentinelLiveKitCallTransport internal constructor(
         }
         Unit
     }
+
+    private fun observe(expiresAtEpochMs: Long?) {
+        val connectedRoom = room ?: return
+        observerJob?.cancel()
+        observerJob = observerScope.launch {
+            if (expiresAtEpochMs != null) {
+                launch {
+                    val wait = expiresAtEpochMs - nowMs()
+                    if (wait > 0L) awaitExpiry(wait)
+                    handle(LiveKitSyncSignal.TOKEN_EXPIRED)
+                }
+            }
+            launch {
+                connectedRoom.events.collect { event ->
+                    when (event) {
+                        is RoomEvent.Disconnected -> handle(LiveKitSyncSignal.DISCONNECTED)
+                        is RoomEvent.Reconnecting -> handle(LiveKitSyncSignal.RECONNECTING)
+                        is RoomEvent.Reconnected -> handle(LiveKitSyncSignal.RECONNECTED)
+                        is RoomEvent.TrackUnpublished ->
+                            if (isLocalMicrophone(event.participant, event.publication.source)) {
+                                handle(LiveKitSyncSignal.LOCAL_MIC_LOST)
+                            }
+                        is RoomEvent.TrackMuted ->
+                            if (isLocalMicrophone(event.participant, event.publication.source)) {
+                                handle(LiveKitSyncSignal.LOCAL_MIC_LOST)
+                            }
+                        else -> Unit
+                    }
+                }
+            }
+        }
+    }
+
+    private fun isLocalMicrophone(participant: io.livekit.android.room.participant.Participant, source: Track.Source): Boolean =
+        participant is LocalParticipant && source == Track.Source.MICROPHONE
+
+    private suspend fun handle(signal: LiveKitSyncSignal) {
+        val followUp = mutex.withLock {
+            val talk = linkedTalk
+            when (LiveKitRoomSync.followUp(signal)) {
+                LiveKitSyncFollowUp.NONE -> null
+                LiveKitSyncFollowUp.PUBLICATION_LOST -> {
+                    val current = room
+                    if (current == null) {
+                        null
+                    } else {
+                        val mute = state == State.ACTIVE_MIC
+                        publicationSuspended = signal != LiveKitSyncSignal.RECONNECTED
+                        state = State.CONNECTED
+                        SyncAction(
+                            room = if (mute) current else null,
+                            talk = talk,
+                            kind = LiveKitSyncFollowUp.PUBLICATION_LOST
+                        )
+                    }
+                }
+                LiveKitSyncFollowUp.ROOM_GONE -> {
+                    if (room == null && state == State.DISCONNECTED) {
+                        null
+                    } else {
+                        val current = room
+                        room = null
+                        publicationSuspended = false
+                        state = State.DISCONNECTED
+                        SyncAction(current, talk, LiveKitSyncFollowUp.ROOM_GONE)
+                    }
+                }
+            }
+        } ?: return
+        withContext(NonCancellable) {
+            if (followUp.kind == LiveKitSyncFollowUp.PUBLICATION_LOST) {
+                followUp.room?.let { target ->
+                    runCatching { target.localParticipant.setMicrophoneEnabled(false) }
+                }
+            } else if (followUp.kind == LiveKitSyncFollowUp.ROOM_GONE) {
+                disposeRoomBestEffort(followUp.room)
+            }
+            when (followUp.kind) {
+                LiveKitSyncFollowUp.PUBLICATION_LOST -> followUp.talk?.onRoomPublicationLost()
+                LiveKitSyncFollowUp.ROOM_GONE -> followUp.talk?.onRoomGone()
+                LiveKitSyncFollowUp.NONE -> Unit
+            }
+        }
+        if (followUp.kind == LiveKitSyncFollowUp.ROOM_GONE) observerJob?.cancel()
+    }
+
+    private data class SyncAction(
+        val room: Room?,
+        val talk: PushToTalkSession?,
+        val kind: LiveKitSyncFollowUp
+    )
 }

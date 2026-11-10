@@ -95,7 +95,7 @@ class VoiceSessionCoordinatorTest {
                     transport = VoiceSessionTransport(
                         serverUrl = "wss://livekit.example.test",
                         accessToken = "a".repeat(32),
-                        expiresAt = "2026-10-11T00:00:00Z"
+                        expiresAt = "2099-01-01T00:00:00Z"
                     ),
                     voiceTransformRequired = true,
                     pttRequired = true

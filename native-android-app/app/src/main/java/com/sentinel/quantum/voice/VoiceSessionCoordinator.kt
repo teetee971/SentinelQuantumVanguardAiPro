@@ -6,6 +6,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import java.util.UUID
 
 interface VoiceSessionApi {
@@ -68,12 +69,18 @@ class VoiceSessionCoordinator(
             return Result.failure(created.exceptionOrNull() ?: IllegalStateException("VOICE_SESSION_CREATE_FAILED"))
         }
         val session = created.getOrThrow()
+        val expiresAtEpochMs = runCatching { Instant.parse(session.transport.expiresAt).toEpochMilli() }.getOrNull()
+        if (expiresAtEpochMs == null || expiresAtEpochMs <= System.currentTimeMillis()) {
+            cleanupCreatedSession(accessToken, session.sessionId)
+            return Result.failure(IllegalStateException("VOICE_TOKEN_EXPIRED"))
+        }
 
         try {
             val connected = transport.connectForPushToTalk(
                 SentinelLiveKitCallTransport.Credentials(
                     serverUrl = session.transport.serverUrl,
-                    accessToken = session.transport.accessToken
+                    accessToken = session.transport.accessToken,
+                    expiresAtEpochMs = expiresAtEpochMs
                 )
             )
             if (connected.isFailure) {
