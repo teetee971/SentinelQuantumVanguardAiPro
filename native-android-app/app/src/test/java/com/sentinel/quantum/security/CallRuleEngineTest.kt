@@ -234,4 +234,44 @@ class CallRuleEngineTest {
         assertEquals(CallRuleEngine.Action.BLOCK, prefix.evaluate("0508410974").action)
         assertEquals(CallRuleEngine.Action.ALLOW, prefix.evaluate("0556123456").action)
     }
+
+    @Test fun verifiedArcepTerritoryRootsKeepTheirCountryCode() {
+        assertEquals("+590591123456", CallRuleEngine.normalizeNumber("0591123456"))
+        assertEquals("+596597123456", CallRuleEngine.normalizeNumber("0597123456"))
+        assertEquals("+262263123456", CallRuleEngine.normalizeNumber("0263123456"))
+        assertEquals("+262269123456", CallRuleEngine.normalizeNumber("0269123456"))
+        assertEquals("+262639123456", CallRuleEngine.normalizeNumber("0639123456"))
+        assertEquals("+262268701234", CallRuleEngine.normalizeNumber("0268701234"))
+        assertEquals("+262268751234", CallRuleEngine.normalizeNumber("0268751234"))
+        assertEquals("+262268812345", CallRuleEngine.normalizeNumber("0268812345"))
+        assertEquals("+262268912345", CallRuleEngine.normalizeNumber("0268912345"))
+        assertEquals("+590976012345", CallRuleEngine.normalizeNumber("0976012345"))
+        assertEquals("+594976412345", CallRuleEngine.normalizeNumber("0976412345"))
+        assertEquals("+596976612345", CallRuleEngine.normalizeNumber("0976612345"))
+        assertEquals("+262976212345", CallRuleEngine.normalizeNumber("0976212345"))
+        assertEquals("+262976912345", CallRuleEngine.normalizeNumber("0976912345"))
+        assertEquals("+262990012345", CallRuleEngine.normalizeNumber("0990012345"))
+        assertEquals("+590591123456", CallRuleEngine.normalizeNumber("+33591123456"))
+        assertEquals("+33264123456", CallRuleEngine.normalizeNumber("0264123456"))
+        assertEquals("+33977012345", CallRuleEngine.normalizeNumber("0977012345"))
+        assertEquals("+33268123456", CallRuleEngine.normalizeNumber("0268123456"))
+    }
+
+    @Test fun historicalMayotteFingerprintStillMatchesFoldedIdentity() {
+        val legacy = "+33269123456"
+        val fingerprint = "1".repeat(64)
+        val engine = CallRuleEngine(
+            setOf(fingerprint),
+            fingerprintsForNumber = { setOf(if (it == legacy) fingerprint else "2".repeat(64)) }
+        )
+        assertEquals(CallRuleEngine.Action.BLOCK, engine.evaluate("0269123456").action)
+        val removed = CallRuleEngine.removalFingerprints("0269123456") { candidate ->
+            setOf(if (candidate == legacy) fingerprint else "3".repeat(64))
+        }
+        assertTrue(removed.contains(fingerprint))
+        val other = CallRuleEngine.removalFingerprints("0612345678") { candidate ->
+            setOf(if (candidate == legacy) fingerprint else "3".repeat(64))
+        }
+        assertTrue(!other.contains(fingerprint))
+    }
 }

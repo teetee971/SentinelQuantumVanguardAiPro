@@ -160,6 +160,13 @@
 
     <string name="call_blocking_title">Protection des appels</string>
     <string name="call_blocking_intro">Choisissez simplement les numéros ou préfixes que Sentinel doit filtrer. Vos règles restent sur cet appareil.</string>
+    <string name="call_blocking_silence_unknown_title">Silencier les numéros absents des contacts</string>
+    <string name="call_blocking_silence_unknown_body">Désactivé tant que vous ne le choisissez pas. Un contact continue de sonner. Un numéro masqué, une urgence ou un numéro illisible sonne aussi. Un blocage explicite refuse l’appel. À partir d’Android 10, un inconnu est mis en silencieux, pas rejeté. Avant Android 10, Android ne peut pas couper la sonnerie.</string>
+    <string name="call_blocking_silence_unknown_needs_contacts">Choix enregistré. Les inconnus continuent de sonner tant que l’accès aux contacts n’est pas autorisé.</string>
+    <string name="call_blocking_silence_unknown_waiting">Choix enregistré. Les inconnus sonnent encore le temps de charger le répertoire.</string>
+    <string name="call_blocking_silence_unknown_on">Choix enregistré. Au prochain appel, un numéro absent du répertoire est mis en silencieux.</string>
+    <string name="call_blocking_silence_unknown_off">Choix enregistré. Les numéros absents des contacts sonnent à nouveau, sauf blocage explicite.</string>
+    <string name="call_blocking_silence_unknown_failed">Impossible d’enregistrer ce réglage.</string>
     <string name="call_blocking_role_on">Protection système activée</string>
     <string name="call_blocking_role_off">Protection système non activée</string>
     <string name="call_blocking_enable_role">Activer le filtrage Android</string>

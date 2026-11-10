@@ -67,18 +67,52 @@ class CallRuleEngine(
 
         /**
          * 10-digit national ranges that must not be rewritten as metropolitan +33.
-         * Saint-Pierre-et-Miquelon is intentionally absent: 0508xxxxxx is +508 plus 6 digits,
-         * not a 9-digit NSN under +508.
+         * Saint-Pierre-et-Miquelon is absent: 0508xxxxxx is +508 plus 6 digits.
+         * Longer prefixes are matched first. Unassigned reserve roots (0264, 0592, 0593, 0595, 0599)
+         * are intentionally absent and stay +33.
+         *
+         * ARCEP national plan: 0591 Saint-Barthélemy, 0597 Martinique, 0263 Réunion,
+         * 026870–026874 and 02688 Réunion, 026875–026879 and 02689 Mayotte,
+         * 09760/09761/09768 Guadeloupe–Saint-Martin–Saint-Barthélemy,
+         * 09764/09765 Guyane, 09766/09767 Martinique,
+         * 09762/09763 Réunion, 09769 and 09900 Mayotte.
+         * ITU E.164 +262 (3 December 2025) gives those Indian-Ocean roots a 9-digit NSN.
          */
         private val OVERSEAS = listOf(
+            OverseasRange("026870", "262"),
+            OverseasRange("026871", "262"),
+            OverseasRange("026872", "262"),
+            OverseasRange("026873", "262"),
+            OverseasRange("026874", "262"),
+            OverseasRange("026875", "262"),
+            OverseasRange("026876", "262"),
+            OverseasRange("026877", "262"),
+            OverseasRange("026878", "262"),
+            OverseasRange("026879", "262"),
+            OverseasRange("02688", "262"),
+            OverseasRange("02689", "262"),
+            OverseasRange("09760", "590"),
+            OverseasRange("09761", "590"),
+            OverseasRange("09762", "262"),
+            OverseasRange("09763", "262"),
+            OverseasRange("09764", "594"),
+            OverseasRange("09765", "594"),
+            OverseasRange("09766", "596"),
+            OverseasRange("09767", "596"),
+            OverseasRange("09768", "590"),
+            OverseasRange("09769", "262"),
+            OverseasRange("09900", "262"),
             OverseasRange("0590", "590"),
+            OverseasRange("0591", "590"),
             OverseasRange("0690", "590"),
             OverseasRange("0691", "590"),
             OverseasRange("0594", "594"),
             OverseasRange("0694", "594"),
             OverseasRange("0596", "596"),
+            OverseasRange("0597", "596"),
             OverseasRange("0696", "596"),
             OverseasRange("0262", "262"),
+            OverseasRange("0263", "262"),
             OverseasRange("0692", "262"),
             OverseasRange("0693", "262"),
             OverseasRange("0269", "262"),
@@ -146,6 +180,19 @@ class CallRuleEngine(
         }
 
         /**
+         * Fingerprints that removal must try. The result contains HMAC values only.
+         * An empty set means the number could not be normalized or no fingerprint was produced.
+         */
+        fun removalFingerprints(
+            rawNumber: String?,
+            fingerprintsForRepresentation: (String) -> Set<String>
+        ): Set<String> {
+            val representations = blockMatchInputs(rawNumber)
+            if (representations.isEmpty()) return emptySet()
+            return representations.flatMapTo(linkedSetOf(), fingerprintsForRepresentation)
+        }
+
+        /**
          * Old enrolment form for an overseas number that used to be rewritten as metropolitan +33.
          * Not an identity: directory membership uses [normalizeNumber] only.
          */
@@ -157,7 +204,7 @@ class CallRuleEngine(
 
         private fun e164FromNational(digits: String): String {
             if (digits.startsWith("0508")) return "+508${digits.drop(4)}"
-            val range = OVERSEAS.firstOrNull { digits.startsWith(it.nationalPrefix) }
+            val range = matchingOverseas(digits)
             val nsn = digits.drop(1)
             return if (range != null) "+${range.countryCode}$nsn" else "+33$nsn"
         }
@@ -167,7 +214,7 @@ class CallRuleEngine(
             if (!e164.startsWith("+33") || e164.length != 12) return e164
             val national = "0${e164.drop(3)}"
             if (national.startsWith("0508")) return "+508${national.drop(4)}"
-            val range = OVERSEAS.firstOrNull { national.startsWith(it.nationalPrefix) } ?: return e164
+            val range = matchingOverseas(national) ?: return e164
             return "+${range.countryCode}${national.drop(1)}"
         }
 
@@ -176,13 +223,24 @@ class CallRuleEngine(
             val digits = canonical.drop(1)
             if (digits.startsWith("508") && digits.length == 9) return "0508${digits.drop(3)}"
             if (digits.startsWith("33") && digits.length == 11) return "0${digits.drop(2)}"
-            val range = OVERSEAS.firstOrNull {
-                digits.startsWith(it.countryCode) &&
-                    digits.length == it.countryCode.length + 9 &&
-                    digits.drop(it.countryCode.length).startsWith(it.nationalPrefix.drop(1))
-            } ?: return null
+            val range = matchingOverseasCanonical(digits) ?: return null
             return "0${digits.drop(range.countryCode.length)}"
         }
+
+        private fun matchingOverseas(nationalDigits: String): OverseasRange? =
+            OVERSEAS.asSequence()
+                .filter { nationalDigits.startsWith(it.nationalPrefix) }
+                .maxByOrNull { it.nationalPrefix.length }
+
+        private fun matchingOverseasCanonical(digitsWithoutPlus: String): OverseasRange? =
+            OVERSEAS.asSequence()
+                .filter { range ->
+                    digitsWithoutPlus.startsWith(range.countryCode) &&
+                        digitsWithoutPlus.length == range.countryCode.length + 9 &&
+                        digitsWithoutPlus.drop(range.countryCode.length)
+                            .startsWith(range.nationalPrefix.drop(1))
+                }
+                .maxByOrNull { it.nationalPrefix.length }
 
         private fun isOverseasNational(national: String): Boolean =
             national.startsWith("0508") || OVERSEAS.any { national.startsWith(it.nationalPrefix) }
