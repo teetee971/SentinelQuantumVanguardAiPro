@@ -70,8 +70,9 @@ class SentinelCallScreeningService : CallScreeningService() {
         val decision = runCatching {
             // Strict screening boundary: process-memory caches only. Do not instantiate
             // CallBlocklistStore here because its constructor obtains SharedPreferences.
+            // The permission check below does not query ContactsContract.
             val snapshot = CallBlocklistStore.cachedSnapshotForScreening()
-            val directory = CallDirectoryCache.current()
+            val directory = CallDirectoryCache.currentForScreening(this)
             CallRuleEngine(
                 snapshot.blockedNumberHashes,
                 snapshot.effectiveBlockedPrefixes,
