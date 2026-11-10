@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #05080f;
+  --color-surface: #0d1524;
+  --color-fg: #eef6ff;
+  --color-muted: #8ea0bd;
+  --color-accent: #2ee6ff;
+  --color-ok: #2dffc3;
+  --color-warn: #f5b942;
+  --color-danger: #ff4d6a;
+  --color-line: #1a2a44;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 1.25rem;
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+.glass {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.sentinel-sky {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-accent) 28%, transparent), transparent 58%),
+    var(--color-bg);
+}
+
+.sentinel-spin {
+  transform-origin: 100px 74px;
+  animation: sentinel-spin 18s linear infinite;
+}
+
+@keyframes sentinel-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sentinel-spin { animation: none; }
+}

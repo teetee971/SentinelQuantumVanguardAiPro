@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test talkie</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; font: 16px/1.45 system-ui, sans-serif; background: #080b10; color: #f4f7fb; }
+    main { max-width: 28rem; margin: 0 auto; padding: 1.25rem; }
+    h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+    p { color: #9aa6b2; }
+    button { min-height: 2.75rem; margin: 0.35rem 0.35rem 0 0; padding: 0 0.9rem; border-radius: 0.8rem; border: 1px solid #243041; background: transparent; color: #3fc7ff; font: inherit; }
+    button.primary { background: #3fc7ff; color: #080b10; border-color: transparent; font-weight: 650; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 0.45rem 0; border-bottom: 1px solid #243041; }
+    .ok { color: #3dd68c; }
+    .bad { color: #ff8b8b; }
+    #log { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Test talkie</h1>
+    <p>Cette page vérifie la salle commune. Elle n’ouvre pas LiveKit et n’envoie aucune voix.</p>
+    <button type="button" id="run" class="primary">Lancer les tests</button>
+    <button type="button" id="beep">Bip local</button>
+    <ul id="log"></ul>
+  </main>
+  <script>
+    const expected = {
+      "Équipe terrain": "talkie-148717ef668860f6f103893ed08270fa",
+      "Atelier": "talkie-56d2bb8adf06b84becd1cb4e42592583",
+      "Veille": "talkie-7672aa5acf979cab01f86d30e6824bb1"
+    };
+
+    async function talkieRoomId(channel) {
+      const name = channel.trim();
+      if (!name || name.length > 80) return null;
+      const bytes = new TextEncoder().encode("sentinel-talkie:v1:" + name);
+      const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+      const suffix = [...digest.slice(0, 16)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      return "talkie-" + suffix;
+    }
+
+    function line(text, ok) {
+      const item = document.createElement("li");
+      item.className = ok ? "ok" : "bad";
+      item.textContent = text;
+      document.getElementById("log").append(item);
+    }
+
+    async function run() {
+      const log = document.getElementById("log");
+      log.replaceChildren();
+      let failed = 0;
+      for (const [channel, room] of Object.entries(expected)) {
+        const got = await talkieRoomId(channel);
+        const ok = got === room;
+        if (!ok) failed += 1;
+        line((ok ? "OK " : "ÉCHEC ") + channel + " → " + got, ok);
+      }
+      const blank = await talkieRoomId("   ");
+      const blankOk = blank === null;
+      if (!blankOk) failed += 1;
+      line(blankOk ? "OK canal vide refusé" : "ÉCHEC canal vide accepté", blankOk);
+      line("Salle non ouverte. Aucun jeton LiveKit. Aucune voix n’est envoyée.", true);
+      line(failed === 0 ? "Tests réussis." : failed + " test(s) en échec.", failed === 0);
+    }
+
+    function beep() {
+      const context = new AudioContext();
+      const tone = context.createOscillator();
+      const level = context.createGain();
+      tone.frequency.value = 880;
+      level.gain.value = 0.04;
+      tone.connect(level);
+      level.connect(context.destination);
+      tone.start();
+      tone.stop(context.currentTime + 0.12);
+      tone.onended = () => context.close();
+      line("Bip local. Rien n’est parti.", true);
+    }
+
+    document.getElementById("run").addEventListener("click", () => void run());
+    document.getElementById("beep").addEventListener("click", beep);
+    void run();
+  </script>
+</body>
+</html>
