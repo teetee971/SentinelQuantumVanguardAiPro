@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +47,7 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallDirectoryCache
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.PhoneProtectionListTruth
 import com.sentinel.quantum.ui.design.SentinelD1
@@ -60,6 +63,18 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     val store = remember(context) { CallBlocklistStore(context.applicationContext) }
     var postureEpoch by remember { mutableIntStateOf(0) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
+    var silenceUnknown by remember(postureEpoch) { mutableStateOf(store.silenceOutsideDirectory()) }
+    val silenceNeedsContacts = stringResource(R.string.call_blocking_silence_unknown_needs_contacts)
+    val silenceWaiting = stringResource(R.string.call_blocking_silence_unknown_waiting)
+    val silenceOn = stringResource(R.string.call_blocking_silence_unknown_on)
+    val silenceOff = stringResource(R.string.call_blocking_silence_unknown_off)
+    val silenceFailed = stringResource(R.string.call_blocking_silence_unknown_failed)
+    val contactsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        postureEpoch++
+        if (granted) store.refreshDirectoryForCurrentPreference()
+    }
 
     DisposableEffect(hostActivity) {
         val observer = LifecycleEventObserver { _, event ->
@@ -162,6 +177,49 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.phone_lists_manage_rules))
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.call_blocking_silence_unknown_title),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                stringResource(R.string.call_blocking_silence_unknown_body),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Switch(
+                            checked = silenceUnknown,
+                            onCheckedChange = { enabled ->
+                                if (!store.setSilenceOutsideDirectory(enabled)) {
+                                    actionStatus = silenceFailed
+                                    return@Switch
+                                }
+                                silenceUnknown = store.silenceOutsideDirectory()
+                                snapshot = store.snapshot()
+                                actionStatus = when {
+                                    !silenceUnknown -> silenceOff
+                                    !contactsReady -> silenceNeedsContacts
+                                    !CallDirectoryCache.current().ready -> silenceWaiting
+                                    else -> silenceOn
+                                }
+                                if (enabled && !contactsReady) {
+                                    contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                }
+                            }
+                        )
+                    }
+                    if (silenceUnknown && !contactsReady) {
+                        Text(silenceNeedsContacts, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             }
 
             SectionTitle(stringResource(R.string.phone_lists_trusted_section))

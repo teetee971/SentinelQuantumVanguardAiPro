@@ -28,6 +28,7 @@ import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallDirectoryCache
 import com.sentinel.quantum.security.CallRuleSyncClient
 import com.sentinel.quantum.security.CallRuleSyncConfig
 import com.sentinel.quantum.security.CallScreeningActivationPolicy
@@ -61,6 +62,7 @@ fun CallBlockingScreen(navController: NavController) {
                 PackageManager.PERMISSION_GRANTED
         )
     }
+    var silenceUnknown by remember { mutableStateOf(store.silenceOutsideDirectory()) }
     var isSyncing by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf<String?>(null) }
     val syncEnabledByUser = remember { settingsStore.isRuleSyncEnabled() }
@@ -75,11 +77,19 @@ fun CallBlockingScreen(navController: NavController) {
     val prefixAddedText = stringResource(R.string.call_blocking_prefix_added)
     val prefixInvalidText = stringResource(R.string.call_blocking_prefix_invalid)
     val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
+    val silenceNeedsContacts = stringResource(R.string.call_blocking_silence_unknown_needs_contacts)
+    val silenceWaiting = stringResource(R.string.call_blocking_silence_unknown_waiting)
+    val silenceOn = stringResource(R.string.call_blocking_silence_unknown_on)
+    val silenceOff = stringResource(R.string.call_blocking_silence_unknown_off)
+    val silenceFailed = stringResource(R.string.call_blocking_silence_unknown_failed)
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         screeningState = CallScreeningActivationPolicy.read(context)
     }
     val contactsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         contactsAllowed = granted
+        if (granted && store.silenceOutsideDirectory()) {
+            store.refreshDirectoryForCurrentPreference()
+        }
     }
 
     Scaffold(
@@ -135,6 +145,39 @@ fun CallBlockingScreen(navController: NavController) {
                     onClick = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.caller_id_contacts_enable)) }
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.call_blocking_silence_unknown_title), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.call_blocking_silence_unknown_body),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (silenceUnknown && !contactsAllowed) {
+                        Text(silenceNeedsContacts, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Switch(
+                    checked = silenceUnknown,
+                    onCheckedChange = { enabled ->
+                        if (!store.setSilenceOutsideDirectory(enabled)) {
+                            status = silenceFailed
+                            return@Switch
+                        }
+                        silenceUnknown = store.silenceOutsideDirectory()
+                        snapshot = store.snapshot()
+                        status = when {
+                            !silenceUnknown -> silenceOff
+                            !contactsAllowed -> silenceNeedsContacts
+                            !CallDirectoryCache.current().ready -> silenceWaiting
+                            else -> silenceOn
+                        }
+                        if (enabled && !contactsAllowed) {
+                            contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
+                        }
+                    }
+                )
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

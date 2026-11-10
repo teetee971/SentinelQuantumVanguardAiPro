@@ -60,7 +60,7 @@ class SentinelCallScreeningService : CallScreeningService() {
         // Emergency classification is safety-critical. If Android cannot classify the number,
         // fail open rather than applying a blocking or silencing rule. The lifecycle marker above
         // may still prove callback invocation, but no CALL_SCREENED:* evidence is manufactured.
-        if (emergency != false) {
+        if (screeningMustFailOpen(emergency)) {
             responseBoundary.deliverResponse {
                 respondToCall(callDetails, CallResponse.Builder().build())
             }
@@ -90,16 +90,14 @@ class SentinelCallScreeningService : CallScreeningService() {
             return
         }
         val response = CallResponse.Builder()
-        when (decision.action) {
-            CallRuleEngine.Action.BLOCK -> response
+        when (callScreeningPlatformEffect(decision.action, Build.VERSION.SDK_INT)) {
+            CallScreeningPlatformEffect.REJECT -> response
                 .setDisallowCall(true)
                 .setRejectCall(true)
                 .setSkipCallLog(false)
                 .setSkipNotification(false)
-            CallRuleEngine.Action.SILENCE -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                response.setSilenceCall(true)
-            }
-            CallRuleEngine.Action.ALLOW -> Unit
+            CallScreeningPlatformEffect.SILENCE -> response.setSilenceCall(true)
+            CallScreeningPlatformEffect.ALLOW -> Unit
         }
         responseBoundary.deliverResponse {
             respondToCall(callDetails, response.build())

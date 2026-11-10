@@ -4,7 +4,8 @@ import android.content.Context
 
 /** App-private rule storage. Exact phone numbers are persisted only as keyed fingerprints. */
 class CallBlocklistStore(context: Context) {
-    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
     private val fingerprinter = CallNumberFingerprinter()
 
     fun snapshot(now: Long = System.currentTimeMillis()): Snapshot {
@@ -49,19 +50,39 @@ class CallBlocklistStore(context: Context) {
         preferences.getBoolean(ARCEP_VERIFIED_BLOCKING_ENABLED, false)
 
     /**
-     * Persisted default is true, so a warmed process silences numbers absent from the directory.
-     * [Snapshot.silenceOutsideDirectory] stays false until [prepareScreeningSnapshot], which keeps
-     * the first cold callback fail-open. This preference does not delete explicit block rules.
+     * Absent key means the user has not chosen. Do not treat the old implicit default of true
+     * as consent. A stored value is kept. The in-memory snapshot stays false until this is read
+     * into [prepareScreeningSnapshot] or written by [setSilenceOutsideDirectory].
+     * Explicit block rules are independent of this preference.
      */
     fun silenceOutsideDirectory(): Boolean =
-        preferences.getBoolean(SILENCE_OUTSIDE_DIRECTORY, true)
+        SilenceOutsideDirectoryPreference.resolved(storedSilenceOutsideDirectory())
 
+    private fun storedSilenceOutsideDirectory(): Boolean? =
+        if (preferences.contains(SILENCE_OUTSIDE_DIRECTORY)) {
+            preferences.getBoolean(SILENCE_OUTSIDE_DIRECTORY, false)
+        } else {
+            null
+        }
+
+    /**
+     * Commits the choice and refreshes the screening snapshot before returning, so the next
+     * callback sees it without waiting for a contacts query. Disabling also drops the in-memory
+     * directory immediately. Enabling reloads contacts off the caller thread.
+     */
     fun setSilenceOutsideDirectory(enabled: Boolean): Boolean {
         val committed = preferences.edit()
             .putBoolean(SILENCE_OUTSIDE_DIRECTORY, enabled)
             .commit()
-        if (committed) refreshScreeningSnapshotAfterCommit()
-        return committed
+        if (!committed) return false
+        refreshScreeningSnapshotAfterCommit()
+        CallDirectoryCache.onSilencePreferenceChanged(appContext, enabled)
+        return true
+    }
+
+    /** Reloads or drops the directory to match the stored choice. Does not block on the provider when disabling. */
+    fun refreshDirectoryForCurrentPreference() {
+        CallDirectoryCache.onSilencePreferenceChanged(appContext, silenceOutsideDirectory())
     }
 
     fun setArcepVerifiedBlockingEnabled(enabled: Boolean): Boolean {
@@ -143,9 +164,7 @@ class CallBlocklistStore(context: Context) {
      * Removal also tries the pre-fold +33 enrolment string, which is not rewritten on disk.
      */
     fun removeBlockedNumber(rawNumber: String): Boolean {
-        val representations = CallRuleEngine.blockMatchInputs(rawNumber)
-        if (representations.isEmpty()) return false
-        val fingerprints = representations.flatMap { fingerprinter.candidates(it) }.toSet()
+        val fingerprints = CallRuleEngine.removalFingerprints(rawNumber, fingerprinter::candidates)
         if (fingerprints.isEmpty()) return false
         val hashes = preferences.getStringSet(EXACT_HASHES, emptySet()).orEmpty().toMutableSet()
         val changed = hashes.removeAll(fingerprints)
@@ -281,8 +300,8 @@ class CallBlocklistStore(context: Context) {
         val blockedNumberExpiresAtMs: Map<String, Long> = emptyMap(),
         val signedExpiresAtMs: Long = 0L,
         /**
-         * False until [prepareScreeningSnapshot]. The preference itself defaults to true,
-         * so a cold callback does not silence unknown callers.
+         * False until [prepareScreeningSnapshot] or an explicit commit.
+         * A missing preference is not an opt-in, so a cold callback does not silence unknown callers.
          */
         val silenceOutsideDirectory: Boolean = false
     ) {
