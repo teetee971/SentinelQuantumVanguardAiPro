@@ -85,15 +85,12 @@ class CallRuleEngine(
         /**
          * 10-digit national ranges that must not be rewritten as metropolitan +33.
          * Saint-Pierre-et-Miquelon is absent: 0508xxxxxx is +508 plus 6 digits.
-         * Longer prefixes are matched first. Unassigned reserve roots (0264, 0592, 0593, 0595, 0599)
-         * are intentionally absent and stay +33.
+         * Longer prefixes are matched first.
          *
-         * ARCEP national plan: 0591 Saint-Barthélemy, 0597 Martinique, 0263 Réunion,
-         * 026870–026874 and 02688 Réunion, 026875–026879 and 02689 Mayotte,
-         * 09760/09761/09768 Guadeloupe–Saint-Martin–Saint-Barthélemy,
-         * 09764/09765 Guyane, 09766/09767 Martinique,
-         * 09762/09763 Réunion, 09769 and 09900 Mayotte.
-         * ITU E.164 +262 (3 December 2025) gives those Indian-Ocean roots a 9-digit NSN.
+         * ARCEP decision 2025-2215, effective 1 January 2026, adds verified roots 05987, 05988,
+         * 05989 and 09475–09479, plus public-interest roots 059850–059864 and 094700–094709.
+         * Unassigned reserves (0264, 0592, 0593, 0595, 0599, 05980–05984, 059865–059869,
+         * 09471–09474) stay +33. Routing prefixes are not subscriber identities and are not folded.
          */
         private val OVERSEAS = listOf(
             OverseasRange("026870", "262"),
@@ -108,6 +105,39 @@ class CallRuleEngine(
             OverseasRange("026879", "262"),
             OverseasRange("02688", "262"),
             OverseasRange("02689", "262"),
+            OverseasRange("059850", "590"),
+            OverseasRange("059851", "590"),
+            OverseasRange("059852", "590"),
+            OverseasRange("059853", "590"),
+            OverseasRange("059854", "590"),
+            OverseasRange("059855", "594"),
+            OverseasRange("059856", "594"),
+            OverseasRange("059857", "594"),
+            OverseasRange("059858", "594"),
+            OverseasRange("059859", "594"),
+            OverseasRange("059860", "596"),
+            OverseasRange("059861", "596"),
+            OverseasRange("059862", "596"),
+            OverseasRange("059863", "596"),
+            OverseasRange("059864", "596"),
+            OverseasRange("05987", "590"),
+            OverseasRange("05988", "594"),
+            OverseasRange("05989", "596"),
+            OverseasRange("094700", "590"),
+            OverseasRange("094701", "590"),
+            OverseasRange("094702", "594"),
+            OverseasRange("094703", "594"),
+            OverseasRange("094704", "596"),
+            OverseasRange("094705", "596"),
+            OverseasRange("094706", "262"),
+            OverseasRange("094707", "262"),
+            OverseasRange("094708", "262"),
+            OverseasRange("094709", "262"),
+            OverseasRange("09475", "590"),
+            OverseasRange("09476", "594"),
+            OverseasRange("09477", "596"),
+            OverseasRange("09478", "262"),
+            OverseasRange("09479", "262"),
             OverseasRange("09760", "590"),
             OverseasRange("09761", "590"),
             OverseasRange("09762", "262"),
@@ -169,6 +199,7 @@ class CallRuleEngine(
          */
         fun displayKind(raw: String?, homeRegion: String = "FR"): String {
             val canonical = normalizeNumber(raw, homeRegion) ?: raw.orEmpty()
+            FrenchNumberingPlan.label(canonical)?.let { return it }
             val frenchNational = if (canonical.startsWith("+33") && canonical.length == 12) {
                 "0" + canonical.drop(3)
             } else {

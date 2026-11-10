@@ -167,6 +167,24 @@ class CallRuleEngineTest {
         assertEquals("+590590123456", CallRuleEngine.normalizeNumber("0590123456"))
         assertEquals("+262262123456", CallRuleEngine.normalizeNumber("0262123456"))
         assertEquals("+33612345678", CallRuleEngine.normalizeNumber("+33612345678"))
+        assertEquals("+590598712345", CallRuleEngine.normalizeNumber("0598712345"))
+        assertEquals("+594598812345", CallRuleEngine.normalizeNumber("0598812345"))
+        assertEquals("+596598912345", CallRuleEngine.normalizeNumber("0598912345"))
+        assertEquals("+590947512345", CallRuleEngine.normalizeNumber("0947512345"))
+        assertEquals("+590598501234", CallRuleEngine.normalizeNumber("0598501234"))
+        assertEquals("+33598012345", CallRuleEngine.normalizeNumber("0598012345"))
+        assertEquals("+33598651234", CallRuleEngine.normalizeNumber("0598651234"))
+        assertEquals("+33947112345", CallRuleEngine.normalizeNumber("0947112345"))
+        assertEquals("+508601234", CallRuleEngine.normalizeNumber("0508601234"))
+        assertEquals("Polyvalent vérifié", CallRuleEngine.displayKind("0598712345"))
+        assertEquals("Intérêt général", CallRuleEngine.displayKind("0151012345"))
+        assertEquals("Intérêt général", CallRuleEngine.displayKind("0508601234"))
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("0151012345").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, CallRuleEngine().evaluate("0598712345").action)
+        assertEquals(
+            CallRuleEngine.Action.BLOCK,
+            CallRuleEngine(blockedPrefixes = setOf("+5905987")).evaluate("0598712345").action
+        )
     }
 
     @Test fun legacyPlus33OverseasNumberFoldsToTerritoryIdentity() {
