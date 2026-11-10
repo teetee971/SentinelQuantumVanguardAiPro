@@ -89,8 +89,9 @@ class CallRuleEngine(
          *
          * ARCEP decision 2025-2215, effective 1 January 2026, adds verified roots 05987, 05988,
          * 05989 and 09475–09479, plus public-interest roots 059850–059864 and 094700–094709.
-         * Unassigned reserves (0264, 0592, 0593, 0595, 0599, 05980–05984, 059865–059869,
-         * 09471–09474) stay +33. Routing prefixes are not subscriber identities and are not folded.
+         * Unassigned outre-mer reserves (0264, 0592, 0593, 0595, 0599, 02680–02686,
+         * 05980–05984, 059865–059869) stay +33 and are only labeled as reserved.
+         * 09471–09474 are metropolitan polyvalent ranges, not reserves.
          */
         private val OVERSEAS = listOf(
             OverseasRange("026870", "262"),
