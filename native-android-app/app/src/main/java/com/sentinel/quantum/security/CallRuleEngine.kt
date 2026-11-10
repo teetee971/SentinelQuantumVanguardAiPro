@@ -37,7 +37,9 @@ class CallRuleEngine(
         if (prefixSilenced(normalized)) {
             return Decision(Action.SILENCE, "USER_PREFIX_SILENCE", normalized, RuleSource.USER)
         }
-        if (silencePremiumRate && InternationalNumberParser.isPremiumRate(normalized)) {
+        if (silencePremiumRate && InternationalNumberParser.isPremiumRate(normalized) &&
+            !FrenchNumberingPlan.isDialupAccess(normalized)
+        ) {
             return Decision(Action.SILENCE, "USER_PREMIUM_SILENCE", normalized, RuleSource.USER)
         }
         if (silenceRules.any(normalized::startsWith)) {
@@ -207,6 +209,7 @@ class CallRuleEngine(
                 null
             }
             if (frenchNational != null) {
+                FrenchNumberingPlan.serviceLabel(frenchNational)?.let { return it }
                 return when {
                     frenchNational.startsWith("06") || frenchNational.startsWith("07") -> "Mobile"
                     frenchNational.startsWith("08") ->

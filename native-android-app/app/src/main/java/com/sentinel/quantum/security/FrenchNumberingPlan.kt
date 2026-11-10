@@ -18,6 +18,22 @@ internal object FrenchNumberingPlan {
         return null
     }
 
+    /** ARCEP service category that libphonenumber does not name. Not a silence decision. */
+    fun serviceLabel(national: String): String? = when {
+        national.startsWith("0806") || national.startsWith("0807") ||
+            national.startsWith("0808") || national.startsWith("0809") -> "Tarification banalisée"
+        national.startsWith("0860") || national.startsWith("0868") -> "Accès internet commuté"
+        national.startsWith("0937") || national.startsWith("0938") ||
+            national.startsWith("0939") -> "Plateforme technique"
+        else -> null
+    }
+
+    /** Dial-up internet roots are not the voice premium-rate opt-in. */
+    fun isDialupAccess(canonical: String): Boolean {
+        val national = nationalForm(canonical) ?: return false
+        return national.startsWith("0860") || national.startsWith("0868")
+    }
+
     private fun nationalForm(canonical: String): String? = when {
         canonical.startsWith("+33") && canonical.length == 12 -> "0" + canonical.drop(3)
         canonical.startsWith("+590") && canonical.length == 13 -> "0" + canonical.drop(4)

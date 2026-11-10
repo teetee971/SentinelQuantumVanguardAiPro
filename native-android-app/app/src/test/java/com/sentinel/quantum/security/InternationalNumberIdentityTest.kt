@@ -127,5 +127,14 @@ class InternationalNumberIdentityTest {
             silencePremiumRate = true
         )
         assertEquals(CallRuleEngine.Action.BLOCK, blocked.evaluate("0899123456").action)
+        InternationalNumberParser.warm()
+        assertEquals("Tarification banalisée", CallRuleEngine.displayKind("0806123456"))
+        assertEquals("Numéro vert", CallRuleEngine.displayKind("0800123456"))
+        assertEquals("Surtaxé", CallRuleEngine.displayKind("0812123456"))
+        assertEquals("Accès internet commuté", CallRuleEngine.displayKind("0860123456"))
+        assertEquals("Plateforme technique", CallRuleEngine.displayKind("0937123456"))
+        assertEquals(CallRuleEngine.Action.ALLOW, armed.evaluate("0806123456").action)
+        assertEquals(CallRuleEngine.Action.ALLOW, armed.evaluate("0860123456").action)
+        assertEquals(CallRuleEngine.Action.SILENCE, armed.evaluate("0812123456").action)
     }
 }
