@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Wear OS observation start only after a user-facing activity resumes or from the bounded
  * post-response worker. Until one of those paths completes, screening caches may fail open while
  * the process is cold and wearable truth remains unobserved. Unknown-caller silence stays
- * fail-open until the contact directory has been loaded into memory.
+ * fail-open until the contact directory has been loaded into memory. The directory warm-up does
+ * not schedule MMS or SMS repair; that repair stays in [performMaintenance].
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -77,6 +78,15 @@ class SentinelApplication : Application() {
         }
     }
 
+    private fun warmScreeningCaches(): Boolean {
+        val store = CallBlocklistStore(applicationContext)
+        val snapshot = store.prepareScreeningSnapshot()
+        if (snapshot.blockedNumberHashes.isNotEmpty()) {
+            store.prepareFingerprintKeys()
+        }
+        return CallDirectoryCache.refresh(applicationContext, store.silenceOutsideDirectory())
+    }
+
     private fun performMaintenance(): Boolean {
         var succeeded = true
         runCatching {
@@ -90,14 +100,7 @@ class SentinelApplication : Application() {
             succeeded = false
         }
         runCatching {
-            val store = CallBlocklistStore(applicationContext)
-            val screeningSnapshot = store.prepareScreeningSnapshot()
-            if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
-                store.prepareFingerprintKeys()
-            }
-            if (!CallDirectoryCache.refresh(applicationContext, store.silenceOutsideDirectory())) {
-                succeeded = false
-            }
+            if (!warmScreeningCaches()) succeeded = false
         }.onFailure {
             succeeded = false
         }
