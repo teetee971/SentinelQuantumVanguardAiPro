@@ -222,9 +222,25 @@ def demo_room_id_for_device(device_id: str) -> str:
     return f"demo-{digest}"
 
 
+TALKIE_CHANNELS = ("Équipe terrain", "Atelier", "Veille")
+
+
+def talkie_room_id(channel: str) -> str:
+    """Return the shared room id for one known talkie channel."""
+    digest = hashlib.sha256(
+        f"sentinel-talkie:v1:{channel.strip()}".encode("utf-8")
+    ).hexdigest()[:32]
+    return f"talkie-{digest}"
+
+
+TALKIE_ROOM_IDS = {talkie_room_id(channel) for channel in TALKIE_CHANNELS}
+
+
 def _room_name(room_id: str, *, subject: str, device_id: str) -> str:
     if not ROOM_ID_PATTERN.fullmatch(room_id):
         raise HTTPException(status_code=422, detail="Invalid voice destination")
+    if room_id in TALKIE_ROOM_IDS:
+        return f"sentinel-talkie-{room_id.removeprefix('talkie-')}"
     if room_id != demo_room_id_for_device(device_id):
         raise HTTPException(status_code=403, detail="Voice destination unavailable")
     return f"sentinel-ptt-{_hash(f'v2:{subject}:{device_id}:{room_id}')[:32]}"

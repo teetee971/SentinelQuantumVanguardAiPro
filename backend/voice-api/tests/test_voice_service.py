@@ -16,6 +16,7 @@ from app import (  # noqa: E402
     _hash,
     create_app,
     demo_room_id_for_device,
+    talkie_room_id,
 )
 
 
@@ -139,6 +140,46 @@ def test_malformed_numeric_configuration_stays_fail_closed(monkeypatch):
     assert settings.missing_configuration(
         custom_identity_verifier=True, custom_token_issuer=True
     )
+
+
+def test_two_phones_on_the_same_talkie_channel_share_one_room():
+    room_id = talkie_room_id("Équipe terrain")
+    assert room_id == "talkie-148717ef668860f6f103893ed08270fa"
+    first, first_issuer = make_client()
+    second, second_issuer = make_client(
+        principal={"subject": "user-2", "device_id": "device-2", "entitled": True}
+    )
+    first_payload = valid_payload(room_id)
+    second_payload = valid_payload(room_id)
+    second_payload["client"]["device_id"] = "device-2"
+
+    first_response = first.post(
+        "/v1/voice/sessions",
+        headers={"Authorization": "Bearer valid", "Idempotency-Key": "talkie-phone-1-key"},
+        json=first_payload,
+    )
+    second_response = second.post(
+        "/v1/voice/sessions",
+        headers={"Authorization": "Bearer valid", "Idempotency-Key": "talkie-phone-2-key"},
+        json=second_payload,
+    )
+
+    assert first_response.status_code == 201
+    assert second_response.status_code == 201
+    assert first_issuer.calls[0]["room"] == second_issuer.calls[0]["room"]
+    assert first_issuer.calls[0]["room"] == "sentinel-talkie-148717ef668860f6f103893ed08270fa"
+
+
+def test_unknown_talkie_room_stays_closed():
+    client, issuer = make_client()
+    response = client.post(
+        "/v1/voice/sessions",
+        headers={"Authorization": "Bearer valid", "Idempotency-Key": "talkie-unknown-key1"},
+        json=valid_payload("talkie-" + "ab" * 16),
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Voice destination unavailable"
+    assert issuer.calls == []
 
 
 def test_demo_room_id_matches_the_android_sha256_vector():
