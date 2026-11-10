@@ -43,7 +43,12 @@ class CallerIdentityResolverTest {
 
     @Test
     fun `classifies French service number`() {
+        InternationalNumberParser.resetForTests()
+        val unknownTariff = CallerIdentityResolver.resolve("08 99 12 34 56", "Échec")
+        assertEquals("Service / tarification à vérifier", unknownTariff.callType)
+        InternationalNumberParser.warm()
         val result = CallerIdentityResolver.resolve("08 99 12 34 56", "Échec")
-        assertEquals("Service / tarification à vérifier", result.callType)
+        assertEquals("Surtaxé", result.callType)
+        assertEquals("Numéro vert", CallerIdentityResolver.resolve("08 00 12 34 56", "Échec").callType)
     }
 }

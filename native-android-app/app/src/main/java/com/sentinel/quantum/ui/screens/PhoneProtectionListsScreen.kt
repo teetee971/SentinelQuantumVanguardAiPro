@@ -66,6 +66,7 @@ fun PhoneProtectionListsScreen(navController: NavController) {
     var postureEpoch by remember { mutableIntStateOf(0) }
     var actionStatus by remember { mutableStateOf<String?>(null) }
     var silenceUnknown by remember(postureEpoch) { mutableStateOf(store.silenceOutsideDirectory()) }
+    var silencePremium by remember(postureEpoch) { mutableStateOf(store.silencePremiumRate()) }
     val silenceNeedsContacts = stringResource(R.string.call_blocking_silence_unknown_needs_contacts)
     val silenceWaiting = stringResource(R.string.call_blocking_silence_unknown_waiting)
     val silenceOn = stringResource(R.string.call_blocking_silence_unknown_on)
@@ -220,6 +221,29 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                     }
                     if (silenceUnknown && !contactsReady) {
                         Text(silenceNeedsContacts, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.call_blocking_silence_premium_title),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                stringResource(R.string.call_blocking_silence_premium_body),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Switch(
+                            checked = silencePremium,
+                            onCheckedChange = { enabled ->
+                                if (!store.setSilencePremiumRate(enabled)) {
+                                    actionStatus = silenceFailed
+                                    return@Switch
+                                }
+                                silencePremium = store.silencePremiumRate()
+                                snapshot = store.snapshot()
+                            }
+                        )
                     }
                 }
             }
