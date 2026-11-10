@@ -2,6 +2,7 @@ package com.sentinel.quantum
 
 import android.app.Application
 import com.sentinel.quantum.security.CallBlocklistStore
+import com.sentinel.quantum.security.CallDirectoryCache
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 import com.sentinel.quantum.security.WearOsDataLayerAdapter
@@ -19,7 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * here would extend the cold-start window before the mandatory Telecom response. Maintenance and
  * Wear OS observation start only after a user-facing activity resumes or from the bounded
  * post-response worker. Until one of those paths completes, screening caches may fail open while
- * the process is cold and wearable truth remains unobserved.
+ * the process is cold and wearable truth remains unobserved. Unknown-caller silence stays
+ * fail-open until the contact directory has been loaded into memory.
  */
 class SentinelApplication : Application() {
     private val voiceTeardownScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -92,6 +94,9 @@ class SentinelApplication : Application() {
             val screeningSnapshot = store.prepareScreeningSnapshot()
             if (screeningSnapshot.blockedNumberHashes.isNotEmpty()) {
                 store.prepareFingerprintKeys()
+            }
+            if (!CallDirectoryCache.refresh(applicationContext, store.silenceOutsideDirectory())) {
+                succeeded = false
             }
         }.onFailure {
             succeeded = false
