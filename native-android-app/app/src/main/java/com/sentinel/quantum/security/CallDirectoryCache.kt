@@ -10,10 +10,12 @@ import android.provider.ContactsContract
 import androidx.core.content.ContextCompat
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Process-memory view of contact phone numbers. CallScreeningService may only read [current].
- * Contacts queries stay on the maintenance and settings paths.
+ * Process-memory view of contact phone numbers.
+ * [currentForScreening] may check READ_CONTACTS and then reads memory only.
+ * Contacts queries stay on the maintenance, startup and settings paths.
  */
 internal object CallDirectoryCache {
     const val MAX_NUMBERS = 10_000
@@ -29,6 +31,7 @@ internal object CallDirectoryCache {
     @Volatile
     private var view: View = View(ready = false, numbers = emptySet())
 
+    private val generation = AtomicInteger()
     private val observing = AtomicBoolean(false)
     private val executor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "sentinel-call-directory").apply { isDaemon = true }
@@ -37,38 +40,69 @@ internal object CallDirectoryCache {
     fun current(): View = view
 
     /**
+     * Screening path. A revoked permission is detected here and the directory is dropped
+     * before the decision, so a stale ready view cannot keep silencing callers.
+     * This does not query [ContactsContract].
+     */
+    fun currentForScreening(context: Context): View {
+        if (!contactsPermissionGranted(context)) {
+            val closed = View(ready = false, numbers = emptySet())
+            view = closed
+            return closed
+        }
+        return view
+    }
+
+    /**
      * @return false only when a readable directory could not be queried and a later retry may succeed.
-     * Truncation and a missing permission fail open: screening must not silence every caller.
+     * Truncation and a missing permission fail open: the published view is not ready, never a partial set.
+     * A newer refresh supersedes an older in-flight query.
      */
     fun refresh(context: Context, silenceOutsideDirectory: Boolean): Boolean {
         val app = context.applicationContext
+        val ticket = generation.incrementAndGet()
+        fun stillLatest() = generation.get() == ticket
+        fun publish(next: View) {
+            if (stillLatest()) view = next
+        }
         if (!silenceOutsideDirectory) {
-            view = View(ready = false, numbers = emptySet())
+            publish(View(ready = false, numbers = emptySet()))
             return true
         }
-        if (
-            ContextCompat.checkSelfPermission(app, Manifest.permission.READ_CONTACTS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            view = View(ready = false, numbers = emptySet())
+        if (!contactsPermissionGranted(app)) {
+            publish(View(ready = false, numbers = emptySet()))
             return true
         }
-        when (val loaded = runCatching { loadNumbers(app) }.getOrElse { return false }) {
+        val loaded = runCatching { loadNumbers(app) }.getOrElse {
+            return stillLatest().not()
+        }
+        if (!stillLatest()) return true
+        if (!contactsPermissionGranted(app)) {
+            publish(View(ready = false, numbers = emptySet()))
+            return true
+        }
+        return when (loaded) {
             Load.Unavailable -> {
-                view = View(ready = false, numbers = emptySet())
-                return false
+                publish(View(ready = false, numbers = emptySet()))
+                false
             }
             Load.Truncated -> {
-                view = View(ready = false, numbers = emptySet())
-                return true
+                publish(View(ready = false, numbers = emptySet()))
+                true
             }
             is Load.Ready -> {
-                view = View(ready = true, numbers = loaded.numbers)
-                ensureObserving(app)
-                return true
+                publish(View(ready = true, numbers = loaded.numbers))
+                if (stillLatest()) ensureObserving(app)
+                true
             }
         }
     }
+
+    private fun contactsPermissionGranted(context: Context): Boolean =
+        ContextCompat.checkSelfPermission(
+            context.applicationContext,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
 
     private fun loadNumbers(context: Context): Load {
         val numbers = LinkedHashSet<String>()
