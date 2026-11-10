@@ -20,7 +20,7 @@ class CallRuleEngine(
     fun evaluate(rawNumber: String?): Decision {
         val normalized = normalizeNumber(rawNumber)
             ?: return Decision(Action.ALLOW, "INVALID_OR_UNAVAILABLE_NUMBER", null, RuleSource.NONE)
-        if (exactBlockMatches(rawNumber, normalized)) {
+        if (exactBlockMatches(rawNumber)) {
             return Decision(Action.BLOCK, "USER_EXACT_BLOCK", normalized, RuleSource.USER)
         }
         if (prefixBlocked(normalized)) {
@@ -42,15 +42,10 @@ class CallRuleEngine(
      * Exact rules are HMAC of the string stored at enrolment. Numbers enrolled before overseas
      * ranges stopped being rewritten as +33 still match, without treating that alias as identity.
      */
-    private fun exactBlockMatches(rawNumber: String?, normalized: String): Boolean {
-        val candidates = LinkedHashSet<String>()
-        candidates += matchingRepresentations(rawNumber)
-        legacyMetropolitanAlias(normalized)?.let { legacy ->
-            candidates += legacy
-            candidates += "00${legacy.drop(1)}"
+    private fun exactBlockMatches(rawNumber: String?): Boolean =
+        blockMatchInputs(rawNumber).any { candidate ->
+            fingerprintsForNumber(candidate).any(exactHashes::contains)
         }
-        return candidates.any { candidate -> fingerprintsForNumber(candidate).any(exactHashes::contains) }
-    }
 
     private fun prefixBlocked(normalized: String): Boolean {
         if (prefixRules.any(normalized::startsWith)) return true
@@ -70,7 +65,11 @@ class CallRuleEngine(
 
         private data class OverseasRange(val nationalPrefix: String, val countryCode: String)
 
-        /** 10-digit national ranges that must not be rewritten as metropolitan +33. */
+        /**
+         * 10-digit national ranges that must not be rewritten as metropolitan +33.
+         * Saint-Pierre-et-Miquelon is intentionally absent: 0508xxxxxx is +508 plus 6 digits,
+         * not a 9-digit NSN under +508.
+         */
         private val OVERSEAS = listOf(
             OverseasRange("0590", "590"),
             OverseasRange("0690", "590"),
@@ -83,15 +82,14 @@ class CallRuleEngine(
             OverseasRange("0692", "262"),
             OverseasRange("0693", "262"),
             OverseasRange("0269", "262"),
-            OverseasRange("0639", "262"),
-            OverseasRange("0508", "508")
+            OverseasRange("0639", "262")
         )
 
         /**
-         * Metropolitan 0xxxxxxxxx becomes +33. Guadeloupe, Guyane, Martinique, Réunion,
-         * Mayotte and Saint-Pierre keep their own country code. A full +33 number whose
-         * national significant number is one of those ranges is folded to the same identity.
-         * Other regions require E.164.
+         * Metropolitan 0xxxxxxxxx becomes +33. Guadeloupe, Guyane, Martinique, Réunion and
+         * Mayotte keep a 9-digit national significant number. Saint-Pierre-et-Miquelon keeps
+         * +508 and the last 6 digits of 0508xxxxxx. A full +33 number whose national form is
+         * one of those ranges is folded to the same identity. Other regions require E.164.
          */
         fun normalizeNumber(raw: String?): String? {
             val input = raw?.trim()?.takeIf { it.isNotBlank() && it.length <= 64 } ?: return null
@@ -134,16 +132,31 @@ class CallRuleEngine(
         }
 
         /**
+         * Strings whose HMAC may equal a rule enrolled before or after overseas folding.
+         * Directory membership must use [normalizeNumber], never this set.
+         */
+        fun blockMatchInputs(raw: String?): Set<String> {
+            val canonical = normalizeNumber(raw) ?: return emptySet()
+            val values = LinkedHashSet(matchingRepresentations(raw))
+            legacyMetropolitanAlias(canonical)?.let { legacy ->
+                values += legacy
+                values += "00${legacy.drop(1)}"
+            }
+            return values
+        }
+
+        /**
          * Old enrolment form for an overseas number that used to be rewritten as metropolitan +33.
          * Not an identity: directory membership uses [normalizeNumber] only.
          */
         fun legacyMetropolitanAlias(canonical: String): String? {
             val national = nationalForm(canonical) ?: return null
-            if (OVERSEAS.none { national.startsWith(it.nationalPrefix) }) return null
+            if (!isOverseasNational(national)) return null
             return "+33${national.drop(1)}"
         }
 
         private fun e164FromNational(digits: String): String {
+            if (digits.startsWith("0508")) return "+508${digits.drop(4)}"
             val range = OVERSEAS.firstOrNull { digits.startsWith(it.nationalPrefix) }
             val nsn = digits.drop(1)
             return if (range != null) "+${range.countryCode}$nsn" else "+33$nsn"
@@ -153,6 +166,7 @@ class CallRuleEngine(
         private fun foldLegacyOverseas(e164: String): String {
             if (!e164.startsWith("+33") || e164.length != 12) return e164
             val national = "0${e164.drop(3)}"
+            if (national.startsWith("0508")) return "+508${national.drop(4)}"
             val range = OVERSEAS.firstOrNull { national.startsWith(it.nationalPrefix) } ?: return e164
             return "+${range.countryCode}${national.drop(1)}"
         }
@@ -160,6 +174,7 @@ class CallRuleEngine(
         private fun nationalForm(canonical: String): String? {
             if (!canonical.startsWith('+')) return null
             val digits = canonical.drop(1)
+            if (digits.startsWith("508") && digits.length == 9) return "0508${digits.drop(3)}"
             if (digits.startsWith("33") && digits.length == 11) return "0${digits.drop(2)}"
             val range = OVERSEAS.firstOrNull {
                 digits.startsWith(it.countryCode) &&
@@ -168,6 +183,9 @@ class CallRuleEngine(
             } ?: return null
             return "0${digits.drop(range.countryCode.length)}"
         }
+
+        private fun isOverseasNational(national: String): Boolean =
+            national.startsWith("0508") || OVERSEAS.any { national.startsWith(it.nationalPrefix) }
 
         private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray(Charsets.UTF_8))
