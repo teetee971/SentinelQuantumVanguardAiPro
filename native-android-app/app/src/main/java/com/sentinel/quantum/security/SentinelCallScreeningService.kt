@@ -82,7 +82,8 @@ class SentinelCallScreeningService : CallScreeningService() {
                 directoryReady = directory.ready,
                 directoryContains = directory.numbers::contains,
                 homeRegion = ScreeningHomeRegion.current(),
-                userSilencePrefixes = snapshot.userSilencePrefixes
+                userSilencePrefixes = snapshot.userSilencePrefixes,
+                silencePremiumRate = snapshot.silencePremiumRate
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.

@@ -44,6 +44,17 @@ object InternationalNumberParser {
         }
     }
 
+    /**
+     * True only when metadata is already loaded and the number is a premium-rate type.
+     * False when metadata is not ready, so screening fails open instead of guessing.
+     */
+    fun isPremiumRate(e164: String): Boolean {
+        val phoneUtil = util ?: return false
+        if (!e164.startsWith("+")) return false
+        val parsed = runCatching { phoneUtil.parse(e164, "ZZ") }.getOrNull() ?: return false
+        return phoneUtil.getNumberType(parsed) == PhoneNumberType.PREMIUM_RATE
+    }
+
     internal fun resetForTests() {
         util = null
     }

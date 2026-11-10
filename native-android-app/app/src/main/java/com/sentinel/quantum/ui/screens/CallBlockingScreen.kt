@@ -63,6 +63,7 @@ fun CallBlockingScreen(navController: NavController) {
         )
     }
     var silenceUnknown by remember { mutableStateOf(store.silenceOutsideDirectory()) }
+    var silencePremium by remember { mutableStateOf(store.silencePremiumRate()) }
     var isSyncing by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf<String?>(null) }
     val syncEnabledByUser = remember { settingsStore.isRuleSyncEnabled() }
@@ -176,6 +177,27 @@ fun CallBlockingScreen(navController: NavController) {
                         if (enabled && !contactsAllowed) {
                             contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
                         }
+                    }
+                )
+            }
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.call_blocking_silence_premium_title), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.call_blocking_silence_premium_body),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Switch(
+                    checked = silencePremium,
+                    onCheckedChange = { enabled ->
+                        if (!store.setSilencePremiumRate(enabled)) {
+                            status = silenceFailed
+                            return@Switch
+                        }
+                        silencePremium = store.silencePremiumRate()
+                        snapshot = store.snapshot()
                     }
                 )
             }

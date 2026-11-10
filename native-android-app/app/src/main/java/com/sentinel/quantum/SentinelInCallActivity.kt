@@ -240,7 +240,8 @@ private fun InCallScreen(
                         directoryReady = contactKnown,
                         directoryContains = { contactKnown },
                         homeRegion = ScreeningHomeRegion.current(),
-                        userSilencePrefixes = rules.userSilencePrefixes
+                        userSilencePrefixes = rules.userSilencePrefixes,
+                        silencePremiumRate = rules.silencePremiumRate
                     ).evaluate(number)
                 }.getOrNull()
                 val intelligence = runCatching {
