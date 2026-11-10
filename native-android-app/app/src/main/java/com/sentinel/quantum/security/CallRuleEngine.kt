@@ -177,7 +177,9 @@ class CallRuleEngine(
             if (frenchNational != null) {
                 return when {
                     frenchNational.startsWith("06") || frenchNational.startsWith("07") -> "Mobile"
-                    frenchNational.startsWith("08") -> "Service / tarification à vérifier"
+                    frenchNational.startsWith("08") ->
+                        InternationalNumberParser.tariffLabel(canonical)
+                            ?: "Service / tarification à vérifier"
                     frenchNational.startsWith("09") -> "Polyvalent / voix sur IP"
                     else -> "Fixe ou polyvalent"
                 }
