@@ -228,7 +228,7 @@ fun CallBlockingScreen(navController: NavController) {
             HorizontalDivider()
             Text("Préfixes bloqués par vous", fontWeight = FontWeight.Bold)
             Text(
-                "Ajoutez un indicatif international ou un préfixe plus précis. Ces règles bloquent réellement les appels correspondants sur cet appareil.",
+                "Bloquer rejette l’appel. Silencier le laisse arriver sans sonner. Un numéro présent dans les contacts sonne quand même.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -319,6 +319,19 @@ fun CallBlockingScreen(navController: NavController) {
                 enabled = prefix.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) { Text(stringResource(R.string.call_blocking_add_prefix)) }
+            OutlinedButton(
+                onClick = {
+                    status = if (store.addUserSilencePrefix(prefix)) {
+                        context.getString(R.string.call_blocking_silence_prefix_added)
+                    } else {
+                        context.getString(R.string.call_blocking_silence_prefix_invalid)
+                    }
+                    snapshot = store.snapshot()
+                    prefix = ""
+                },
+                enabled = prefix.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(stringResource(R.string.call_blocking_silence_prefix)) }
 
             val manualPrefixes = store.manualBlockedPrefixes()
             Text(
@@ -352,6 +365,38 @@ fun CallBlockingScreen(navController: NavController) {
                                 if (store.removeBlockedPrefix(value)) {
                                     snapshot = store.snapshot()
                                     status = "Règle de préfixe retirée."
+                                }
+                            }
+                        ) { Text(stringResource(R.string.call_blocking_remove)) }
+                    }
+                }
+            }
+
+            val silencedPrefixes = store.userSilencePrefixes()
+            Text(
+                "${silencedPrefixes.size} préfixe(s) en silencieux",
+                style = MaterialTheme.typography.bodySmall
+            )
+            silencedPrefixes.sorted().forEach { value ->
+                val geographicLabel = PhoneCountryPrefixCatalog.find(value)?.label
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(value, fontWeight = FontWeight.Bold)
+                            Text(
+                                geographicLabel ?: "Préfixe personnalisé",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                if (store.removeUserSilencePrefix(value)) {
+                                    snapshot = store.snapshot()
+                                    status = "Règle de silencieux retirée."
                                 }
                             }
                         ) { Text(stringResource(R.string.call_blocking_remove)) }

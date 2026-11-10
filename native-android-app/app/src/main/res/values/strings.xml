@@ -188,7 +188,10 @@
     <string name="call_blocking_clear_failed">Échec de l\'effacement.</string>
     <string name="call_blocking_prefix_title">Bloquer un préfixe personnalisé</string>
     <string name="call_blocking_prefix_label">Préfixe</string>
-    <string name="call_blocking_add_prefix">Ajouter le préfixe</string>
+    <string name="call_blocking_add_prefix">Bloquer le préfixe</string>
+    <string name="call_blocking_silence_prefix">Silencier le préfixe</string>
+    <string name="call_blocking_silence_prefix_added">Préfixe mis en silencieux. Un contact de cette zone sonne encore.</string>
+    <string name="call_blocking_silence_prefix_invalid">Préfixe invalide ou limite atteinte.</string>
     <string name="call_blocking_prefix_added">Préfixe ajouté.</string>
     <string name="call_blocking_prefix_invalid">Préfixe invalide ou limite atteinte.</string>
     <string name="call_blocking_remove">Retirer</string>
