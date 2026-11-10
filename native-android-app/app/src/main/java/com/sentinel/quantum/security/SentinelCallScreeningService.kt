@@ -80,7 +80,8 @@ class SentinelCallScreeningService : CallScreeningService() {
                 fingerprintsForNumber = SCREENING_FINGERPRINTER::cachedCandidates,
                 silenceOutsideDirectory = snapshot.silenceOutsideDirectory,
                 directoryReady = directory.ready,
-                directoryContains = directory.numbers::contains
+                directoryContains = directory.numbers::contains,
+                homeRegion = ScreeningHomeRegion.current()
             ).evaluate(rawCallerNumber)
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.

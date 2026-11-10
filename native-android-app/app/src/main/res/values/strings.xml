@@ -277,6 +277,9 @@
     <string name="settings_sync_title">Synchronisation des règles signées</string>
     <string name="settings_sync_switch">Activer la synchronisation des règles signées</string>
     <string name="settings_sync_description">Tant qu\'aucun émetteur de production n\'est provisionné, cette option ne déclenche aucun accès réseau.</string>
+    <string name="settings_catalog_title">Annuaires officiels</string>
+    <string name="settings_catalog_switch">Mettre à jour les plans ARCEP et RTR</string>
+    <string name="settings_catalog_description">Copie locale des attributions de numéros. Cela n\'identifie pas l\'appelant et ne bloque aucun appel. Les listes de spam ne sont pas téléchargées tant qu\'aucune signature de production n\'est provisionnée.</string>
     <string name="settings_about_title">À propos de l\'application</string>
     <string name="settings_version">Version %1$s</string>
 

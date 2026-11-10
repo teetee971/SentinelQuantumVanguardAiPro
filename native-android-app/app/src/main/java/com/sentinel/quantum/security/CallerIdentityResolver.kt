@@ -46,37 +46,15 @@ object CallerIdentityResolver {
     }
 
     fun normalize(rawNumber: String?): String {
+        CallRuleEngine.normalizeNumber(rawNumber, ScreeningHomeRegion.current())?.let { return it }
         val compact = rawNumber.orEmpty().trim().filter { it.isDigit() || it == '+' }
         if (compact.isEmpty()) return ""
-        val international = when {
-            compact.startsWith("+") -> "+" + compact.drop(1).filter(Char::isDigit)
-            compact.startsWith("00") -> "+" + compact.drop(2).filter(Char::isDigit)
-            compact.length == 10 && compact.startsWith("0590") -> "+590" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0594") -> "+594" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0596") -> "+596" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0262") -> "+262" + compact.drop(4)
-            compact.length == 10 && compact.startsWith("0269") -> "+262" + compact.drop(1)
-            compact.length == 10 && compact.startsWith('0') -> "+33" + compact.drop(1)
-            else -> compact.filter(Char::isDigit)
-        }
-        return international.take(32)
+        return compact.take(32)
     }
 
-    private fun classifyType(number: String): String {
-        val french = when {
-            number.startsWith("+33") -> "0" + number.drop(3)
-            number.length == 10 && number.startsWith('0') -> number
-            else -> null
-        }
-        return when {
-            french?.startsWith("06") == true || french?.startsWith("07") == true -> "Mobile"
-            french?.startsWith("01") == true || french?.startsWith("02") == true ||
-                french?.startsWith("03") == true || french?.startsWith("04") == true ||
-                french?.startsWith("05") == true -> "Fixe ou polyvalent"
-            french?.startsWith("08") == true -> "Service / tarification à vérifier"
-            french?.startsWith("09") == true -> "Polyvalent / voix sur IP"
-            number.startsWith('+') -> "International"
-            else -> "Type indéterminé"
-        }
-    }
+    /**
+     * Display label only. It is not a screening decision and must never be turned into a block.
+     */
+    private fun classifyType(number: String): String =
+        CallRuleEngine.displayKind(number, ScreeningHomeRegion.current())
 }

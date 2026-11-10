@@ -32,6 +32,7 @@ import com.sentinel.quantum.auth.Auth0SessionController
 import com.sentinel.quantum.auth.Auth0UserSummary
 import com.sentinel.quantum.auth.auth0ErrorMessage
 import com.sentinel.quantum.VoiceStudioActivity
+import com.sentinel.quantum.background.PublishedNumberCatalogScheduler
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.SettingsStore
@@ -67,6 +68,9 @@ fun SettingsScreen(
     val ruleSyncAvailable = CallRuleSyncConfig.SYNC_ENABLED && CallRuleSyncConfig.TRUSTED_KEYS.isNotEmpty()
     var ruleSyncEnabled by remember {
         mutableStateOf(ruleSyncAvailable && settingsStore.isRuleSyncEnabled())
+    }
+    var catalogRefreshEnabled by remember {
+        mutableStateOf(settingsStore.isPublishedCatalogRefreshEnabled())
     }
     var intervalHours by remember { mutableStateOf(settingsStore.osintRefreshIntervalHours) }
     var familySafetyProfile by remember { mutableStateOf(settingsStore.familySafetyProfile) }
@@ -565,6 +569,40 @@ fun SettingsScreen(
             statusMessageRes?.let {
                 Text(stringResource(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+
+            HorizontalDivider()
+
+            SentinelSectionHeader(
+                title = stringResource(R.string.settings_catalog_title),
+                subtitle = "Mise à jour en arrière-plan, hors de l’écran d’appel."
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_catalog_switch), fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (catalogRefreshEnabled) "Activée" else "Désactivée",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = catalogRefreshEnabled,
+                    onCheckedChange = { enabled ->
+                        catalogRefreshEnabled = enabled
+                        settingsStore.setPublishedCatalogRefreshEnabled(enabled)
+                        PublishedNumberCatalogScheduler.sync(context, enabled)
+                    }
+                )
+            }
+            Text(
+                stringResource(R.string.settings_catalog_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             HorizontalDivider()
 

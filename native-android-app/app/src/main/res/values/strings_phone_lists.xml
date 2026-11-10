@@ -47,6 +47,14 @@
     <string name="phone_lists_signed_channel_missing">Canal de mise à jour non provisionné : aucune source distante n’est présentée comme active.</string>
     <string name="phone_lists_signed_disclaimer">Une réputation signée peut seulement mettre en silencieux. Elle ne devient jamais, à elle seule, un blocage automatique.</string>
 
+    <string name="phone_lists_catalog_title">Annuaires ARCEP et RTR</string>
+    <string name="phone_lists_catalog_meta">IDENTIFIER · copie officielle · aucune action d\'appel</string>
+    <string name="phone_lists_catalog_arcep">ARCEP : %1$s</string>
+    <string name="phone_lists_catalog_rtr">RTR : %1$s</string>
+    <string name="phone_lists_catalog_fresh">copie locale disponible</string>
+    <string name="phone_lists_catalog_missing">pas encore de copie locale</string>
+    <string name="phone_lists_catalog_spam">Liste de spam signée : non provisionnée. Aucun numéro distant n\'est bloqué ni mis en silencieux par ce canal.</string>
+
     <string name="phone_lists_community_section">Réputation communautaire</string>
     <string name="phone_lists_community_title">Consensus communautaire</string>
     <string name="phone_lists_community_details">Le consensus n’est affiché que pour un numéro réellement interrogé. Un signal isolé reste « Signalement insuffisant » et ne peut jamais déclencher un blocage automatique.</string>

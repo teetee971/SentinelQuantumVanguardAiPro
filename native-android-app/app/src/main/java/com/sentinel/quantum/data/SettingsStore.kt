@@ -38,6 +38,17 @@ class SettingsStore(context: Context) {
         preferences.edit().putBoolean(RULE_SYNC_ENABLED, enabled).apply()
     }
 
+    /**
+     * Official ARCEP and RTR allocation copies. Default on because the user asked for automatic
+     * updates. These copies never carry a block or silence instruction.
+     */
+    fun isPublishedCatalogRefreshEnabled(): Boolean =
+        preferences.getBoolean(PUBLISHED_CATALOG_REFRESH_ENABLED, true)
+
+    fun setPublishedCatalogRefreshEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(PUBLISHED_CATALOG_REFRESH_ENABLED, enabled).apply()
+    }
+
     /** Privacy boundary for remote protection features. Invalid/missing values fail closed. */
     var protectionMode: ProtectionMode
         get() = try {
@@ -192,6 +203,7 @@ class SettingsStore(context: Context) {
             "sentinel_communication_reputation"
         private const val THEME_MODE = "theme_mode"
         private const val RULE_SYNC_ENABLED = "rule_sync_enabled"
+        private const val PUBLISHED_CATALOG_REFRESH_ENABLED = "published_catalog_refresh_enabled"
         private const val PROTECTION_MODE = "protection_mode"
         private const val CALLER_REPUTATION_ENRICHMENT_ENABLED = "caller_reputation_enrichment_enabled"
         private const val FAMILY_SAFETY_PROFILE = "family_safety_profile"

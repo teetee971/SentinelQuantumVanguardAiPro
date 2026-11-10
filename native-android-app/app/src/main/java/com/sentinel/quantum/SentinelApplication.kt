@@ -1,9 +1,12 @@
 package com.sentinel.quantum
 
 import android.app.Application
+import com.sentinel.quantum.background.PublishedNumberCatalogScheduler
+import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallDirectoryCache
 import com.sentinel.quantum.security.MmsSendCleanupWorker
+import com.sentinel.quantum.security.PublishedNumberCatalogStore
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,8 +18,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Process-level services and lifecycle-safe maintenance for Sentinel.
  *
  * [onCreate] does not block on disk, WorkManager or the contact provider. It only schedules an
- * asynchronous warm-up of the in-memory screening snapshot and contact directory. That warm-up
- * does not schedule MMS repair. Until it publishes, unknown-caller silence stays fail-open.
+ * asynchronous warm-up of the in-memory screening snapshot and contact directory, then the
+ * published numbering-catalog refresh. That work does not schedule MMS repair. Until the
+ * screening warm-up publishes, unknown-caller silence stays fail-open.
  * MMS and SMS repair still start from a resumed activity or from the post-response worker.
  */
 class SentinelApplication : Application() {
@@ -34,6 +38,11 @@ class SentinelApplication : Application() {
         super.onCreate()
         maintenanceScope.launch {
             runCatching { warmScreeningCaches() }
+            runCatching {
+                PublishedNumberCatalogStore.bind(applicationContext)
+                val enabled = SettingsStore(applicationContext).isPublishedCatalogRefreshEnabled()
+                PublishedNumberCatalogScheduler.sync(applicationContext, enabled)
+            }
         }
     }
 

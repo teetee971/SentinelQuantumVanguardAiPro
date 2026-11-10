@@ -29,9 +29,37 @@ class ArcepDirectoryClient(
         return find(loadDirectory(), national)
     }
 
+    /** Downloads the official allocation copy. A rejected document is not cached and returns false. */
+    @Synchronized
+    fun refreshFromNetwork(): Boolean = runCatching {
+        val text = downloadText()
+        val decision = PublishedCatalogPolicy.evaluate(PublishedCatalogPolicy.Kind.ARCEP, text)
+        if (!decision.accepted) return false
+        val parsed = parseAccepted(text) ?: return false
+        cachedDirectory = parsed
+        PublishedNumberCatalogStore.commit(PublishedCatalogPolicy.Kind.ARCEP, text).accepted
+    }.getOrDefault(false)
+
     @Synchronized
     private fun loadDirectory(): JSONObject {
         cachedDirectory?.let { return it }
+        readStored()?.let {
+            cachedDirectory = it
+            return it
+        }
+        val text = downloadText()
+        val parsed = parseAccepted(text) ?: throw IllegalStateException("ARCEP_SCHEMA")
+        cachedDirectory = parsed
+        PublishedNumberCatalogStore.commit(PublishedCatalogPolicy.Kind.ARCEP, text)
+        return parsed
+    }
+
+    private fun readStored(): JSONObject? {
+        val text = PublishedNumberCatalogStore.readFresh(PublishedCatalogPolicy.Kind.ARCEP) ?: return null
+        return parseAccepted(text)
+    }
+
+    private fun downloadText(): String {
         val request = Request.Builder().url(DIRECTORY_URL).header("Accept", "application/json").get().build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("ARCEP_HTTP_${response.code}")
@@ -39,14 +67,15 @@ class ArcepDirectoryClient(
             if ((body.contentLength() > MAX_BYTES) || body.contentLength() == 0L) throw IllegalStateException("ARCEP_SIZE")
             val bytes = body.bytes()
             if (bytes.size > MAX_BYTES) throw IllegalStateException("ARCEP_SIZE")
-            val parsed = JSONObject(String(bytes, Charsets.UTF_8))
-            // Validate before caching so malformed/stale-incompatible data never becomes trusted state.
-            if (parsed.optInt("schemaVersion") != 2 || parsed.optJSONArray("entries") == null) {
-                throw IllegalStateException("ARCEP_SCHEMA")
-            }
-            cachedDirectory = parsed
-            return parsed
+            return String(bytes, Charsets.UTF_8)
         }
+    }
+
+    private fun parseAccepted(text: String): JSONObject? {
+        if (!PublishedCatalogPolicy.evaluate(PublishedCatalogPolicy.Kind.ARCEP, text).accepted) return null
+        val parsed = runCatching { JSONObject(text) }.getOrNull() ?: return null
+        if (parsed.optInt("schemaVersion") != 2 || parsed.optJSONArray("entries") == null) return null
+        return parsed
     }
 
     companion object {

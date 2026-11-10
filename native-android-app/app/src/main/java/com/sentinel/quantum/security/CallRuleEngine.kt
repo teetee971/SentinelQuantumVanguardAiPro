@@ -10,7 +10,8 @@ class CallRuleEngine(
     private val fingerprintsForNumber: (String) -> Set<String> = { setOf(sha256(it)) },
     private val silenceOutsideDirectory: Boolean = false,
     private val directoryReady: Boolean = false,
-    private val directoryContains: (String) -> Boolean = { false }
+    private val directoryContains: (String) -> Boolean = { false },
+    private val homeRegion: String = "FR"
 ) {
     private val exactHashes = blockedNumberHashes.filter(HASH_PATTERN::matches).take(MAX_EXACT_RULES).toSet()
     private val prefixRules = blockedPrefixes.mapNotNull(::normalizePrefix).take(MAX_PREFIX_RULES).toSet()
@@ -18,7 +19,7 @@ class CallRuleEngine(
         .take(MAX_REPUTATION_RULES).toSet()
 
     fun evaluate(rawNumber: String?): Decision {
-        val normalized = normalizeNumber(rawNumber)
+        val normalized = normalizeNumber(rawNumber, homeRegion)
             ?: return Decision(Action.ALLOW, "INVALID_OR_UNAVAILABLE_NUMBER", null, RuleSource.NONE)
         if (exactBlockMatches(rawNumber)) {
             return Decision(Action.BLOCK, "USER_EXACT_BLOCK", normalized, RuleSource.USER)
@@ -119,13 +120,17 @@ class CallRuleEngine(
             OverseasRange("0639", "262")
         )
 
+        private val FRENCH_HOME = setOf("FR", "GP", "GF", "MQ", "RE", "YT", "BL", "MF", "PM")
+
         /**
-         * Metropolitan 0xxxxxxxxx becomes +33. Guadeloupe, Guyane, Martinique, Réunion and
-         * Mayotte keep a 9-digit national significant number. Saint-Pierre-et-Miquelon keeps
-         * +508 and the last 6 digits of 0508xxxxxx. A full +33 number whose national form is
-         * one of those ranges is folded to the same identity. Other regions require E.164.
+         * Metropolitan 0xxxxxxxxx becomes +33 when [homeRegion] is French.
+         * Guadeloupe, Guyane, Martinique, Réunion and Mayotte keep a 9-digit national significant number.
+         * Saint-Pierre-et-Miquelon keeps +508 and the last 6 digits of 0508xxxxxx.
+         * A full +33 number whose national form is one of those ranges is folded to the same identity.
+         * Outside a French home region, a national number is not rewritten as +33: the call stays unmatched.
+         * Numbers already in international form are accepted for every region.
          */
-        fun normalizeNumber(raw: String?): String? {
+        fun normalizeNumber(raw: String?, homeRegion: String = "FR"): String? {
             val input = raw?.trim()?.takeIf { it.isNotBlank() && it.length <= 64 } ?: return null
             if (!input.all { it.isDigit() || it in setOf('+', ' ', '-', '(', ')', '.') }) return null
             if (input.count { it == '+' } > 1 || (input.contains('+') && !input.startsWith('+'))) return null
@@ -134,8 +139,45 @@ class CallRuleEngine(
             return when {
                 input.startsWith('+') -> foldLegacyOverseas("+$digits")
                 digits.startsWith("00") && digits.length >= 9 -> foldLegacyOverseas("+${digits.drop(2)}")
-                digits.length == 10 && digits.startsWith('0') -> e164FromNational(digits)
+                digits.length == 10 && digits.startsWith('0') && homeRegion.uppercase() in FRENCH_HOME ->
+                    e164FromNational(digits)
+                digits.length == 10 && digits.startsWith('0') -> null
                 else -> digits
+            }
+        }
+
+        /**
+         * Label for the caller card. Not an action: premium, VoIP and foreign numbers are not blocked here.
+         */
+        fun displayKind(raw: String?, homeRegion: String = "FR"): String {
+            val canonical = normalizeNumber(raw, homeRegion) ?: raw.orEmpty()
+            val frenchNational = if (canonical.startsWith("+33") && canonical.length == 12) {
+                "0" + canonical.drop(3)
+            } else {
+                null
+            }
+            if (frenchNational != null) {
+                return when {
+                    frenchNational.startsWith("06") || frenchNational.startsWith("07") -> "Mobile"
+                    frenchNational.startsWith("08") -> "Service / tarification à vérifier"
+                    frenchNational.startsWith("09") -> "Polyvalent / voix sur IP"
+                    else -> "Fixe ou polyvalent"
+                }
+            }
+            when {
+                canonical.startsWith("+59069") || canonical.startsWith("+59469") ||
+                    canonical.startsWith("+59669") || canonical.startsWith("+26269") ||
+                    canonical.startsWith("+262639") -> return "Mobile"
+                canonical.startsWith("+590") || canonical.startsWith("+594") ||
+                    canonical.startsWith("+596") || canonical.startsWith("+262") ->
+                    return "Fixe ou polyvalent"
+                canonical.startsWith("+508") -> return "Saint-Pierre-et-Miquelon"
+            }
+            val country = if (canonical.startsWith('+')) E164CallingCodeDirectory.resolve(canonical) else null
+            return when {
+                country == null -> if (canonical.startsWith('+')) "International" else "Type indéterminé"
+                country.shared -> "Indicatif partagé, pays non déterminé"
+                else -> "International"
             }
         }
 
