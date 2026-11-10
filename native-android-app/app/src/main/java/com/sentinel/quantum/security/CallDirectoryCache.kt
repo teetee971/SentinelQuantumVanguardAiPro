@@ -32,6 +32,7 @@ internal object CallDirectoryCache {
     private var view: View = View(ready = false, numbers = emptySet())
 
     private val generation = AtomicInteger()
+    private val publishLock = Any()
     private val observing = AtomicBoolean(false)
     private val executor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "sentinel-call-directory").apply { isDaemon = true }
@@ -42,12 +43,16 @@ internal object CallDirectoryCache {
     /**
      * Screening path. A revoked permission is detected here and the directory is dropped
      * before the decision, so a stale ready view cannot keep silencing callers.
-     * This does not query [ContactsContract].
+     * Incrementing [generation] under [publishLock] also stops an in-flight refresh from
+     * publishing that view again. This does not query [ContactsContract].
      */
     fun currentForScreening(context: Context): View {
         if (!contactsPermissionGranted(context)) {
             val closed = View(ready = false, numbers = emptySet())
-            view = closed
+            synchronized(publishLock) {
+                generation.incrementAndGet()
+                view = closed
+            }
             return closed
         }
         return view
@@ -55,15 +60,22 @@ internal object CallDirectoryCache {
 
     /**
      * @return false only when a readable directory could not be queried and a later retry may succeed.
-     * Truncation and a missing permission fail open: the published view is not ready, never a partial set.
-     * A newer refresh supersedes an older in-flight query.
+     * Truncation, a missing permission and a query failure fail open: the published view is not ready,
+     * never a partial set. A newer refresh or a detected revocation supersedes an older query.
      */
     fun refresh(context: Context, silenceOutsideDirectory: Boolean): Boolean {
         val app = context.applicationContext
         val ticket = generation.incrementAndGet()
         fun stillLatest() = generation.get() == ticket
         fun publish(next: View) {
-            if (stillLatest()) view = next
+            synchronized(publishLock) {
+                if (generation.get() != ticket) return
+                if (next.ready && !contactsPermissionGranted(app)) {
+                    view = View(ready = false, numbers = emptySet())
+                    return
+                }
+                view = next
+            }
         }
         if (!silenceOutsideDirectory) {
             publish(View(ready = false, numbers = emptySet()))
@@ -74,6 +86,7 @@ internal object CallDirectoryCache {
             return true
         }
         val loaded = runCatching { loadNumbers(app) }.getOrElse {
+            if (stillLatest()) publish(View(ready = false, numbers = emptySet()))
             return stillLatest().not()
         }
         if (!stillLatest()) return true
