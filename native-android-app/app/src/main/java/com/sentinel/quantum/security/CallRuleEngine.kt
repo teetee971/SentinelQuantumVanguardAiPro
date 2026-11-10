@@ -20,12 +20,10 @@ class CallRuleEngine(
     fun evaluate(rawNumber: String?): Decision {
         val normalized = normalizeNumber(rawNumber)
             ?: return Decision(Action.ALLOW, "INVALID_OR_UNAVAILABLE_NUMBER", null, RuleSource.NONE)
-        if (matchingRepresentations(rawNumber).any { candidate ->
-                fingerprintsForNumber(candidate).any(exactHashes::contains)
-            }) {
+        if (exactBlockMatches(rawNumber, normalized)) {
             return Decision(Action.BLOCK, "USER_EXACT_BLOCK", normalized, RuleSource.USER)
         }
-        if (prefixRules.any(normalized::startsWith)) {
+        if (prefixBlocked(normalized)) {
             return Decision(Action.BLOCK, "USER_PREFIX_BLOCK", normalized, RuleSource.USER)
         }
         if (silenceOutsideDirectory && directoryReady && directoryContains(normalized)) {
@@ -38,6 +36,26 @@ class CallRuleEngine(
             return Decision(Action.SILENCE, "NOT_IN_DIRECTORY", normalized, RuleSource.USER)
         }
         return Decision(Action.ALLOW, "NO_MATCHING_RULE", normalized, RuleSource.NONE)
+    }
+
+    /**
+     * Exact rules are HMAC of the string stored at enrolment. Numbers enrolled before overseas
+     * ranges stopped being rewritten as +33 still match, without treating that alias as identity.
+     */
+    private fun exactBlockMatches(rawNumber: String?, normalized: String): Boolean {
+        val candidates = LinkedHashSet<String>()
+        candidates += matchingRepresentations(rawNumber)
+        legacyMetropolitanAlias(normalized)?.let { legacy ->
+            candidates += legacy
+            candidates += "00${legacy.drop(1)}"
+        }
+        return candidates.any { candidate -> fingerprintsForNumber(candidate).any(exactHashes::contains) }
+    }
+
+    private fun prefixBlocked(normalized: String): Boolean {
+        if (prefixRules.any(normalized::startsWith)) return true
+        val legacy = legacyMetropolitanAlias(normalized) ?: return false
+        return prefixRules.any(legacy::startsWith)
     }
 
     data class Decision(val action: Action, val reason: String, val normalizedNumber: String?, val source: RuleSource)
@@ -71,7 +89,9 @@ class CallRuleEngine(
 
         /**
          * Metropolitan 0xxxxxxxxx becomes +33. Guadeloupe, Guyane, Martinique, Réunion,
-         * Mayotte and Saint-Pierre keep their own country code. Other regions require E.164.
+         * Mayotte and Saint-Pierre keep their own country code. A full +33 number whose
+         * national significant number is one of those ranges is folded to the same identity.
+         * Other regions require E.164.
          */
         fun normalizeNumber(raw: String?): String? {
             val input = raw?.trim()?.takeIf { it.isNotBlank() && it.length <= 64 } ?: return null
@@ -80,8 +100,8 @@ class CallRuleEngine(
             val digits = input.filter(Char::isDigit)
             if (digits.length !in 7..15) return null
             return when {
-                input.startsWith('+') -> "+$digits"
-                digits.startsWith("00") && digits.length >= 9 -> "+${digits.drop(2)}"
+                input.startsWith('+') -> foldLegacyOverseas("+$digits")
+                digits.startsWith("00") && digits.length >= 9 -> foldLegacyOverseas("+${digits.drop(2)}")
                 digits.length == 10 && digits.startsWith('0') -> e164FromNational(digits)
                 else -> digits
             }
@@ -95,8 +115,8 @@ class CallRuleEngine(
             val digits = input.filter(Char::isDigit)
             if (digits.length !in 1..15) return null
             return when {
-                input.startsWith('+') -> "+$digits"
-                digits.startsWith("00") && digits.length >= 3 -> "+${digits.drop(2)}"
+                input.startsWith('+') -> foldLegacyOverseas("+$digits")
+                digits.startsWith("00") && digits.length >= 3 -> foldLegacyOverseas("+${digits.drop(2)}")
                 digits.startsWith('0') && digits.length >= 3 -> e164FromNational(digits)
                 digits.length >= 3 -> digits
                 else -> null
@@ -113,10 +133,28 @@ class CallRuleEngine(
             return values
         }
 
+        /**
+         * Old enrolment form for an overseas number that used to be rewritten as metropolitan +33.
+         * Not an identity: directory membership uses [normalizeNumber] only.
+         */
+        fun legacyMetropolitanAlias(canonical: String): String? {
+            val national = nationalForm(canonical) ?: return null
+            if (OVERSEAS.none { national.startsWith(it.nationalPrefix) }) return null
+            return "+33${national.drop(1)}"
+        }
+
         private fun e164FromNational(digits: String): String {
             val range = OVERSEAS.firstOrNull { digits.startsWith(it.nationalPrefix) }
             val nsn = digits.drop(1)
             return if (range != null) "+${range.countryCode}$nsn" else "+33$nsn"
+        }
+
+        /** Fold only a complete +33 national number. Short prefixes such as +33 and +33690 stay unchanged. */
+        private fun foldLegacyOverseas(e164: String): String {
+            if (!e164.startsWith("+33") || e164.length != 12) return e164
+            val national = "0${e164.drop(3)}"
+            val range = OVERSEAS.firstOrNull { national.startsWith(it.nationalPrefix) } ?: return e164
+            return "+${range.countryCode}${national.drop(1)}"
         }
 
         private fun nationalForm(canonical: String): String? {
