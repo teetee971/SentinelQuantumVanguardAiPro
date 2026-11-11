@@ -609,6 +609,11 @@ private fun WifiSurveyCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Text(
+                "Cet appareil : ${Build.MANUFACTURER} ${Build.MODEL}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             if (joined.rxLinkSpeedMbps != null || joined.txLinkSpeedMbps != null) {
                 Text(
                     "Débit annoncé du lien : ↓ ${joined.rxLinkSpeedMbps ?: "non lu"} Mb/s · " +
@@ -749,6 +754,11 @@ private fun WifiNetworkCard(
         )
         Text(
             text = "${network.radio.securityDetail} · ${network.radio.pmfLabel}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = network.radio.beaconLoadLabel,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

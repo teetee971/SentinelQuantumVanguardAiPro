@@ -53,6 +53,15 @@ class WifiRadioAnalyzerTest {
             WifiRadioAnalyzer.occupiedLabel(5570, 3)
         )
         assertEquals("plage non déduite", WifiRadioAnalyzer.occupiedLabel(5500, 4))
+        val load = byteArrayOf(2, 0, 8, 0, 0)
+        assertEquals(
+            "2 client(s) annoncé(s) par la borne · occupation annoncée 3 %",
+            WifiRadioAnalyzer.beaconLoadLabel(listOf(11 to load))
+        )
+        assertEquals(
+            "charge non annoncée par la borne",
+            WifiRadioAnalyzer.beaconLoadLabel(emptyList())
+        )
     }
 
     private fun sample(ssid: String, bssid: String, frequency: Int): DiscoveredWifiNetwork {

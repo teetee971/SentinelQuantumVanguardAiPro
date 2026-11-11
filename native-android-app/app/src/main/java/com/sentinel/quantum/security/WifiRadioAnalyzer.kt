@@ -12,7 +12,8 @@ data class WifiAccessPointRadio(
     val pmfLabel: String,
     val vendorLabel: String,
     val signalLabel: String,
-    val occupiedLabel: String = "plage non déduite"
+    val occupiedLabel: String = "plage non déduite",
+    val beaconLoadLabel: String = "charge non annoncée par la borne"
 )
 
 data class WifiChannelLoad(
@@ -60,6 +61,43 @@ object WifiRadioAnalyzer {
         if (centerMhz !in 2400..7125) return "plage non déduite"
         val half = width / 2
         return "${centerMhz - half}–${centerMhz + half} MHz · centre annoncé $centerMhz"
+    }
+
+    /** BSS Load and TPC as the beacon sent them. Not a count of devices we discovered. */
+    fun beaconLoadLabel(elements: List<Pair<Int, ByteArray>>): String {
+        val load = elements.firstOrNull { it.first == 11 }?.second
+        val clients = load?.let(::stationCount)
+        val utilization = load?.let(::utilizationPercent)
+        val power = elements.firstOrNull { it.first == 35 }?.second?.let(::transmitPowerDbm)
+        if (clients == null && utilization == null && power == null) {
+            return "charge non annoncée par la borne"
+        }
+        return buildString {
+            if (clients != null) append("$clients client(s) annoncé(s) par la borne")
+            if (utilization != null) {
+                if (isNotEmpty()) append(" · ")
+                append("occupation annoncée $utilization %")
+            }
+            if (power != null) {
+                if (isNotEmpty()) append(" · ")
+                append("puissance annoncée $power dBm")
+            }
+        }
+    }
+
+    fun stationCount(payload: ByteArray): Int? {
+        if (payload.size < 2) return null
+        return (payload[0].toInt() and 0xff) or ((payload[1].toInt() and 0xff) shl 8)
+    }
+
+    fun utilizationPercent(payload: ByteArray): Int? {
+        if (payload.size < 3) return null
+        return ((payload[2].toInt() and 0xff) * 100) / 255
+    }
+
+    fun transmitPowerDbm(payload: ByteArray): Int? {
+        if (payload.isEmpty()) return null
+        return payload[0].toInt()
     }
 
     fun standardLabel(wifiStandard: Int): String = when (wifiStandard) {
@@ -129,7 +167,8 @@ object WifiRadioAnalyzer {
         wifiStandard: Int,
         capabilities: String?,
         bssid: String,
-        rssiDbm: Int
+        rssiDbm: Int,
+        informationElements: List<Pair<Int, ByteArray>> = emptyList()
     ): WifiAccessPointRadio = WifiAccessPointRadio(
         channel = channel(frequencyMhz),
         widthLabel = widthLabel(channelWidth),
@@ -138,7 +177,8 @@ object WifiRadioAnalyzer {
         pmfLabel = pmfLabel(capabilities),
         vendorLabel = vendorLabel(bssid),
         signalLabel = signalLabel(rssiDbm),
-        occupiedLabel = occupiedLabel(centerMhz, channelWidth)
+        occupiedLabel = occupiedLabel(centerMhz, channelWidth),
+        beaconLoadLabel = beaconLoadLabel(informationElements)
     )
 
     fun sameChannelCount(channel: Int?, band: WifiBand, networks: List<DiscoveredWifiNetwork>): Int {

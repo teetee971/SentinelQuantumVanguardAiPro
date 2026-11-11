@@ -216,7 +216,8 @@ class WifiScanner(context: Context) {
                         centerMhz = result.centerFreq0,
                         capabilities = result.capabilities,
                         channelWidth = result.channelWidth,
-                        wifiStandard = standard
+                        wifiStandard = standard,
+                        informationElements = beaconElements(result)
                     )
                 }
                 .sortedWith(
@@ -265,7 +266,8 @@ class WifiScanner(context: Context) {
         centerMhz: Int,
         capabilities: String?,
         channelWidth: Int,
-        wifiStandard: Int
+        wifiStandard: Int,
+        informationElements: List<Pair<Int, ByteArray>> = emptyList()
     ): DiscoveredWifiNetwork {
         val bssid = rawBssid.orEmpty()
         val ssid = rawSsid?.trim()?.takeIf { it.isNotEmpty() } ?: WifiRiskEvaluator.HIDDEN_SSID_LABEL
@@ -289,9 +291,20 @@ class WifiScanner(context: Context) {
                 wifiStandard = wifiStandard,
                 capabilities = capabilities,
                 bssid = bssid,
-                rssiDbm = rssiDbm
+                rssiDbm = rssiDbm,
+                informationElements = informationElements
             )
         )
+    }
+
+    private fun beaconElements(result: android.net.wifi.ScanResult): List<Pair<Int, ByteArray>> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return emptyList()
+        return result.informationElements?.map { element ->
+            val buffer = element.bytes.duplicate()
+            val copy = ByteArray(buffer.remaining())
+            buffer.get(copy)
+            element.id to copy
+        }.orEmpty()
     }
 
     private fun riskOrder(level: NetworkRiskLevel): Int = when (level) {
