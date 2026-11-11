@@ -46,6 +46,9 @@ import com.sentinel.quantum.security.NetworkTimelineStore
 import com.sentinel.quantum.security.NetworkTrustStore
 import com.sentinel.quantum.security.WifiBand
 import com.sentinel.quantum.security.WifiRiskEvaluator
+import com.sentinel.quantum.security.WifiJoinedLink
+import com.sentinel.quantum.security.WifiJoinedLinkReader
+import com.sentinel.quantum.security.WifiRadioAnalyzer
 import com.sentinel.quantum.security.WifiScanResultTruth
 import com.sentinel.quantum.security.WifiScanner
 import com.sentinel.quantum.security.WifiSecurityType
@@ -86,6 +89,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     var selectedTab by rememberSaveable { mutableStateOf(SurveillanceTab.WIFI) }
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
+    var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
@@ -156,6 +160,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             onResults = { outcome ->
                 val results = outcome.networks
                 wifiNetworks = results
+                joinedLink = runCatching { WifiJoinedLinkReader.read(context) }.getOrNull()
                 isScanning = false
                 statusMessage = WifiScanResultTruth.statusMessage(outcome.source, results.size)
                 logger.log(
@@ -402,9 +407,24 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         if (wifiNetworks.isEmpty()) {
                             item { EmptyStateCard("Lancez un scan pour lister les réseaux Wi-Fi environnants.") }
                         } else {
-                            items(wifiNetworks, key = { it.bssid + it.ssid }) { network ->
+                            item {
+                                WifiSurveyCard(
+                                    survey = WifiRadioAnalyzer.survey(wifiNetworks),
+                                    joined = joinedLink
+                                )
+                            }
+                            items(wifiNetworks, key = { it.bssid + it.ssid + it.frequencyMhz }) { network ->
                                 WifiNetworkCard(
                                     network = network,
+                                    sameChannel = WifiRadioAnalyzer.sameChannelCount(
+                                        network.radio.channel,
+                                        network.band,
+                                        wifiNetworks
+                                    ),
+                                    overlap24 = WifiRadioAnalyzer.overlapping24Count(
+                                        network.radio.channel,
+                                        wifiNetworks
+                                    ),
                                     onAllow = {
                                         trustStore.allow(network.bssid)
                                         runWifiScan()
@@ -439,7 +459,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     EducationalCard(
                         title = "Scanner et se connecter",
                         bullets = listOf(
-                            "Le scan Sentinel analyse localement les réseaux et appareils visibles et signale les indices compatibles avec des traceurs, balises, caméras ou enregistreurs cachés.",
+                            "Le scan décrit chaque point d'accès visible : canal, largeur, norme, chiffrement, PMF, signal et fabricant quand l'adresse n'est pas privée.",
+                            "Les appareils raccordés à un autre réseau ne sont pas visibles. Seul le Wi-Fi rejoint expose son adresse, sa passerelle et ses DNS.",
                             "La connexion ou l’appairage est confirmé dans le panneau sécurisé Android : Sentinel ne contourne pas les protections du système.",
                             when (selectedTab) {
                                 SurveillanceTab.WIFI -> WifiRiskEvaluator.OPEN_NETWORK_ADVICE
@@ -482,8 +503,60 @@ private fun networkTimelineKindLabel(kind: NetworkTimelineEventKind): String = w
 }
 
 @Composable
+private fun WifiSurveyCard(
+    survey: com.sentinel.quantum.security.WifiRadioSurvey,
+    joined: WifiJoinedLink?
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text("Lecture radio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            "${survey.accessPointCount} point(s) d'accès · ${survey.distinctSsids} nom(s) · ${survey.openCount} ouvert(s)",
+            style = MaterialTheme.typography.bodySmall
+        )
+        if (survey.busiest.isEmpty()) {
+            Text("Aucun canal calculable.", style = MaterialTheme.typography.bodySmall)
+        } else {
+            survey.busiest.forEach { load ->
+                Text(
+                    "${bandLabel(load.band)} · canal ${load.channel} · ${load.accessPoints} point(s)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        if (joined == null) {
+            Text(
+                "Aucun Wi-Fi rejoint observable. Les autres réseaux restent des points d'accès, pas des réseaux visités.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else {
+            Text(
+                "Réseau rejoint : ${joined.ssid}",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "IPv4 ${joined.ipv4 ?: "non lue"} · passerelle ${joined.gateway ?: "non lue"} · " +
+                    "${joined.linkSpeedMbps} Mb/s · ${joined.rssiDbm} dBm",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (joined.dns.isNotEmpty()) {
+                Text(
+                    "DNS ${joined.dns.joinToString()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun WifiNetworkCard(
     network: DiscoveredWifiNetwork,
+    sameChannel: Int,
+    overlap24: Int,
     onAllow: () -> Unit,
     onBlock: () -> Unit
 ) {
@@ -502,8 +575,24 @@ private fun WifiNetworkCard(
             RiskBadge(network.assessment.riskLevel, "Risque")
         }
         Text(
-            text = "${securityLabel(network.assessment.securityType)} · " +
-                "${bandLabel(network.band)} · ${network.rssiDbm} dBm",
+            text = "${bandLabel(network.band)} · ${network.rssiDbm} dBm · signal ${network.radio.signalLabel}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "${network.radio.securityDetail} · ${network.radio.pmfLabel}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "Canal ${network.radio.channel ?: "?"} · ${network.frequencyMhz} MHz · " +
+                "${network.radio.widthLabel} · ${network.radio.standardLabel}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "${network.radio.vendorLabel} · $sameChannel point(s) sur ce canal" +
+                if (network.band == WifiBand.BAND_2_4_GHZ) " · $overlap24 chevauchement(s)" else "",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

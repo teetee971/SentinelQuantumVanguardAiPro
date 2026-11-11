@@ -25,7 +25,16 @@ data class DiscoveredWifiNetwork(
     val rssiDbm: Int,
     val frequencyMhz: Int,
     val band: WifiBand,
-    val assessment: WifiRiskAssessment
+    val assessment: WifiRiskAssessment,
+    val radio: WifiAccessPointRadio = WifiAccessPointRadio(
+        channel = null,
+        widthLabel = "largeur non indiquée",
+        standardLabel = "norme non indiquée",
+        securityDetail = "sécurité non indiquée",
+        pmfLabel = "PMF non indiqué",
+        vendorLabel = "fabricant non lu",
+        signalLabel = "non qualifié"
+    )
 )
 
 data class WifiScanOutcome(
@@ -193,7 +202,22 @@ class WifiScanner(context: Context) {
         try {
             val results = manager.scanResults
                 .orEmpty()
-                .map { result -> toNetwork(result.SSID, result.BSSID, result.level, result.frequency, result.capabilities) }
+                .map { result ->
+                    val standard = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        result.wifiStandard
+                    } else {
+                        0
+                    }
+                    toNetwork(
+                        rawSsid = result.SSID,
+                        rawBssid = result.BSSID,
+                        rssiDbm = result.level,
+                        frequencyMhz = result.frequency,
+                        capabilities = result.capabilities,
+                        channelWidth = result.channelWidth,
+                        wifiStandard = standard
+                    )
+                }
                 .sortedWith(
                     compareBy<DiscoveredWifiNetwork> { riskOrder(it.assessment.riskLevel) }
                         .thenByDescending { it.rssiDbm }
@@ -237,7 +261,9 @@ class WifiScanner(context: Context) {
         rawBssid: String?,
         rssiDbm: Int,
         frequencyMhz: Int,
-        capabilities: String?
+        capabilities: String?,
+        channelWidth: Int,
+        wifiStandard: Int
     ): DiscoveredWifiNetwork {
         val bssid = rawBssid.orEmpty()
         val ssid = rawSsid?.trim()?.takeIf { it.isNotEmpty() } ?: WifiRiskEvaluator.HIDDEN_SSID_LABEL
@@ -253,6 +279,14 @@ class WifiScanner(context: Context) {
                 rssiDbm = rssiDbm,
                 blocked = bssid.isNotEmpty() && trustStore.isBlocked(bssid),
                 allowed = bssid.isNotEmpty() && trustStore.isAllowed(bssid)
+            ),
+            radio = WifiRadioAnalyzer.describe(
+                frequencyMhz = frequencyMhz,
+                channelWidth = channelWidth,
+                wifiStandard = wifiStandard,
+                capabilities = capabilities,
+                bssid = bssid,
+                rssiDbm = rssiDbm
             )
         )
     }
