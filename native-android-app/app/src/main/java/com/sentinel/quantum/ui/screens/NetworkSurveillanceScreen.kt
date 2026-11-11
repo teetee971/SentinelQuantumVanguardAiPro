@@ -104,6 +104,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var gatewayNote by remember { mutableStateOf<String?>(null) }
     var dnsNote by remember { mutableStateOf<String?>(null) }
     var accessPointNote by remember { mutableStateOf<String?>(null) }
+    var securityNote by remember { mutableStateOf<String?>(null) }
     val gatewayMemory = remember(context) { GatewayChangeMemory(context) }
     var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
     val lanMemory = remember(context) { JoinedLanSightingMemory(context) }
@@ -184,6 +185,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 gatewayNote = joinedLink?.let { gatewayMemory.note(it.ssid, it.gateway) }
                 dnsNote = joinedLink?.let { gatewayMemory.noteDns(it.ssid, it.dns) }
                 accessPointNote = joinedLink?.let { gatewayMemory.noteAccessPoint(it.ssid, it.bssid) }
+                securityNote = joinedLink?.let { link ->
+                    wifiNetworks.firstOrNull { it.bssid.equals(link.bssid, ignoreCase = true) }
+                        ?.let { gatewayMemory.noteSecurity(it.ssid, it.bssid, it.assessment.securityType) }
+                }
                 lanServices = emptyList()
                 lanAssessment = null
                 lanRunning = joinedLink != null
@@ -231,7 +236,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         device.assessment.announcesFindMy ||
                         device.assessment.announcesKnownTracker ||
                         device.assessment.likelyCameraOrRecorder ||
-                        device.assessment.likelyBeacon
+                        device.assessment.likelyBeacon ||
+                        device.assessment.announcesUnpairedInput
                     interesting && (device.alertKey ?: device.address) !in covertDeviceAlerted
                 }
                 if (fresh.isNotEmpty()) {
@@ -472,7 +478,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                         listOfNotNull(
                                             gatewayNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
                                             dnsNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
-                                            accessPointNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) }
+                                            accessPointNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
+                                            securityNote?.let { WifiIntrusionFinding(NetworkRiskLevel.HIGH, it) }
                                         )
                                 )
                             }

@@ -45,6 +45,8 @@ class WifiIntrusionHintsTest {
         assertTrue(enterprise.any { it.text.contains("mode entreprise") })
         assertTrue(WifiIntrusionHints.newAccessPoint(setOf("aa"), "bb"))
         assertFalse(WifiIntrusionHints.newAccessPoint(emptySet(), "bb"))
+        assertTrue(WifiIntrusionHints.securityDowngraded("strong", "weak"))
+        assertFalse(WifiIntrusionHints.securityDowngraded("strong", "strong"))
         assertFalse(WifiIntrusionHints.gatewayChanged(null, "aa"))
         assertTrue(WifiIntrusionHints.gatewayChanged("aa", "bb"))
     }

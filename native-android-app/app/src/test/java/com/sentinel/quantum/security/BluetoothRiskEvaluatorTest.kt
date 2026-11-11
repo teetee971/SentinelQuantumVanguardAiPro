@@ -129,4 +129,13 @@ class BluetoothRiskEvaluatorTest {
         assertFalse(tile.likelyTracker)
         assertEquals(NetworkRiskLevel.MEDIUM, tile.riskLevel)
     }
+
+    @Test
+    fun unpairedKeyboardIsAHintAndABondedOneIsNot() {
+        val open = BluetoothRiskEvaluator.evaluate(deviceName = "Clavier", hidAdvertisement = true)
+        val own = BluetoothRiskEvaluator.evaluate(deviceName = "Clavier", bonded = true, hidAdvertisement = true)
+        assertTrue(open.announcesUnpairedInput)
+        assertTrue(open.reasons.any { it.contains("Pas une intrusion constatée") })
+        assertFalse(own.announcesUnpairedInput)
+    }
 }

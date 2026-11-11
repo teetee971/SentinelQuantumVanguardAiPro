@@ -107,6 +107,15 @@ object WifiIntrusionHints {
     fun newAccessPoint(known: Set<String>, current: String): Boolean =
         known.isNotEmpty() && current.isNotBlank() && current !in known
 
+    fun securityRank(type: WifiSecurityType): String = when (type) {
+        WifiSecurityType.OPEN, WifiSecurityType.WEP -> "weak"
+        WifiSecurityType.WPA2, WifiSecurityType.WPA3, WifiSecurityType.WPA2_ENTERPRISE -> "strong"
+        else -> "other"
+    }
+
+    fun securityDowngraded(previous: String?, next: String): Boolean =
+        previous == "strong" && next == "weak"
+
     private val PERSONAL = setOf(WifiSecurityType.WPA, WifiSecurityType.WPA2, WifiSecurityType.WPA3)
 
     private val STRONG = setOf(
@@ -157,6 +166,20 @@ class GatewayChangeMemory(context: Context) {
         preferences.edit().putString(key, next).apply()
         if (!WifiIntrusionHints.newAccessPoint(known, current)) return null
         return "Une borne nouvelle annonce le nom « $name ». Cela peut être une autre borne de la même box, ou une copie. Pas une preuve."
+    }
+
+    fun noteSecurity(ssid: String, bssid: String, security: WifiSecurityType): String? {
+        val name = ssid.trim()
+        val address = bssid.trim().lowercase()
+        if (name.isBlank() || address.isBlank() || address == "02:00:00:00:00:00" || WifiRiskEvaluator.isHiddenSsid(name)) {
+            return null
+        }
+        val key = "sec:" + sha256(address)
+        val next = WifiIntrusionHints.securityRank(security)
+        val previous = preferences.getString(key, null)
+        preferences.edit().putString(key, next).apply()
+        if (!WifiIntrusionHints.securityDowngraded(previous, next)) return null
+        return "La borne déjà vue pour « $name » est maintenant ouverte ou en WEP. Cela peut être un réglage changé, ou une autre borne qui a repris la même adresse. Pas une preuve."
     }
 
     private fun sha256(value: String): String =

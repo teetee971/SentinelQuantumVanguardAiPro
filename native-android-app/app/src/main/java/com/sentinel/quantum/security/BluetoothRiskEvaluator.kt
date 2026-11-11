@@ -21,7 +21,8 @@ data class BluetoothRiskAssessment(
     val likelyBeacon: Boolean,
     val reasons: List<String>,
     val announcesFindMy: Boolean = false,
-    val announcesKnownTracker: Boolean = false
+    val announcesKnownTracker: Boolean = false,
+    val announcesUnpairedInput: Boolean = false
 )
 
 object BluetoothRiskEvaluator {
@@ -123,7 +124,8 @@ object BluetoothRiskEvaluator {
         findMyAnnouncement: Boolean = false,
         findMyLabel: String? = null,
         repeatNote: String? = null,
-        trackerNote: String? = null
+        trackerNote: String? = null,
+        hidAdvertisement: Boolean = false
     ): BluetoothRiskAssessment {
         val likelyTracker = isLikelyTracker(deviceName)
         val likelyCameraOrRecorder = isLikelyCameraOrRecorder(deviceName)
@@ -149,10 +151,15 @@ object BluetoothRiskEvaluator {
         }
         if (!namedDevice) reasons += "Appareil sans nom diffusé (adresse possiblement aléatoire)."
         if (bonded) reasons += "Appareil déjà appairé avec ce téléphone."
+        val unpairedInput = hidAdvertisement && !bonded
+        if (unpairedInput) {
+            reasons += "Annonce de clavier ou souris, non appairée avec ce téléphone. Cela peut être un périphérique voisin. Pas une intrusion constatée."
+        }
 
         val riskLevel = when {
             likelyTracker -> NetworkRiskLevel.HIGH
-            likelyCameraOrRecorder || likelyBeacon || findMyAnnouncement || trackerNote != null -> NetworkRiskLevel.MEDIUM
+            likelyCameraOrRecorder || likelyBeacon || findMyAnnouncement || trackerNote != null || unpairedInput ->
+                NetworkRiskLevel.MEDIUM
             kind == BluetoothDeviceKind.UNKNOWN -> NetworkRiskLevel.MEDIUM
             !namedDevice -> NetworkRiskLevel.MEDIUM
             else -> NetworkRiskLevel.LOW
@@ -172,7 +179,8 @@ object BluetoothRiskEvaluator {
             likelyBeacon = likelyBeacon,
             reasons = reasons.toList(),
             announcesFindMy = findMyAnnouncement,
-            announcesKnownTracker = trackerNote != null
+            announcesKnownTracker = trackerNote != null,
+            announcesUnpairedInput = unpairedInput
         )
     }
 

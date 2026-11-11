@@ -271,7 +271,10 @@ class BluetoothScanner(context: Context) {
                 findMyAnnouncement = findMy,
                 findMyLabel = payload?.let(BluetoothRiskEvaluator::appleFindMyLabel),
                 repeatNote = repeat,
-                trackerNote = known?.label
+                trackerNote = known?.label,
+                hidAdvertisement = record?.serviceUuids?.any { service ->
+                    service.uuid.toString().lowercase().startsWith("00001812-")
+                } == true
             ),
             alertKey = alertKey
         )
