@@ -56,11 +56,19 @@ object WifiIntrusionHints {
         val joinedNetwork = joined?.let { link ->
             networks.firstOrNull { it.bssid.equals(link.bssid, ignoreCase = true) }
         }
-        if (joinedNetwork?.radio?.securityDetail?.contains("WPS activé") == true) {
-            findings += WifiIntrusionFinding(
-                NetworkRiskLevel.MEDIUM,
-                "WPS est activé sur le réseau rejoint. Une personne proche peut tenter le code. Aucune tentative n’a été vue."
-            )
+        val detail = joinedNetwork?.radio?.securityDetail.orEmpty()
+        if (detail.contains("WPS")) {
+            val text = when {
+                detail.contains("verrouillé") ->
+                    "Le WPS du réseau rejoint est annoncé verrouillé. Aucune tentative n’a été vue."
+                detail.contains("code") ->
+                    "Le réseau rejoint annonce un code WPS. Une personne proche peut tenter ce code. Aucune tentative n’a été vue."
+                detail.contains("bouton") ->
+                    "Le réseau rejoint annonce le bouton WPS. Aucune pression n’a été vue."
+                else ->
+                    "WPS est activé sur le réseau rejoint. Une personne proche peut tenter le code. Aucune tentative n’a été vue."
+            }
+            findings += WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, text)
         }
         if (joinedNetwork?.radio?.pmfLabel == "PMF non annoncé" &&
             joinedNetwork.assessment.securityType == WifiSecurityType.WPA2

@@ -162,9 +162,12 @@ object WifiRadioAnalyzer {
     private fun extension(elements: List<Pair<Int, ByteArray>>, extensionId: Int): ByteArray? =
         elements.firstOrNull { it.first == 255 && it.second.firstOrNull()?.toInt() == extensionId }?.second
 
-    fun securityDetail(capabilities: String?): String {
+    fun securityDetail(
+        capabilities: String?,
+        elements: List<Pair<Int, ByteArray>> = emptyList()
+    ): String {
         val normalized = capabilities?.uppercase().orEmpty()
-        if (normalized.isBlank()) return "sécurité non indiquée"
+        if (normalized.isBlank()) return wpsAnnounced(elements) ?: "sécurité non indiquée"
         val parts = mutableListOf<String>()
         when {
             normalized.contains("SAE") || normalized.contains("WPA3") -> parts += "WPA3-SAE"
@@ -181,8 +184,46 @@ object WifiRadioAnalyzer {
             normalized.contains("CCMP") -> parts += "CCMP"
         }
         if (normalized.contains("TKIP")) parts += "TKIP"
-        if (normalized.contains("WPS")) parts += "WPS activé"
-        return parts.joinToString(" · ")
+        parts += wpsAnnounced(elements) ?: if (normalized.contains("WPS")) "WPS activé" else ""
+        return parts.filter { it.isNotEmpty() }.joinToString(" · ")
+    }
+
+    /** Reads the WPS announcement. No code is sent. */
+    fun wpsAnnounced(elements: List<Pair<Int, ByteArray>>): String? {
+        val body = elements.firstNotNullOfOrNull { (id, value) ->
+            if (id != 221 || value.size < 4) return@firstNotNullOfOrNull null
+            val wps = value[0] == 0x00.toByte() &&
+                value[1] == 0x50.toByte() &&
+                value[2] == 0xF2.toByte() &&
+                value[3] == 0x04.toByte()
+            if (wps) value.copyOfRange(4, value.size) else null
+        } ?: return null
+        var methods: Int? = null
+        var locked = false
+        var offset = 0
+        while (offset + 4 <= body.size) {
+            val type = ((body[offset].toInt() and 0xff) shl 8) or (body[offset + 1].toInt() and 0xff)
+            val length = ((body[offset + 2].toInt() and 0xff) shl 8) or (body[offset + 3].toInt() and 0xff)
+            if (offset + 4 + length > body.size) break
+            val start = offset + 4
+            when (type) {
+                0x1008 -> if (length >= 2) {
+                    methods = ((body[start].toInt() and 0xff) shl 8) or (body[start + 1].toInt() and 0xff)
+                }
+                0x1057 -> if (length >= 1 && (body[start].toInt() and 0xff) == 0x01) locked = true
+            }
+            offset += 4 + length
+        }
+        if (locked) return "WPS annoncé verrouillé"
+        val bits = methods ?: return "WPS annoncé, mode non précisé"
+        val pin = bits and 0x610C != 0
+        val button = bits and 0x0680 != 0
+        return when {
+            pin && button -> "WPS annoncé : code et bouton"
+            pin -> "WPS annoncé : code"
+            button -> "WPS annoncé : bouton"
+            else -> "WPS annoncé, mode non précisé"
+        }
     }
 
     fun pmfLabel(capabilities: String?): String {
@@ -238,7 +279,7 @@ object WifiRadioAnalyzer {
         channel = channel(frequencyMhz),
         widthLabel = widthLabel(channelWidth),
         standardLabel = standardLabel(wifiStandard, frequencyMhz),
-        securityDetail = securityDetail(capabilities),
+        securityDetail = securityDetail(capabilities, informationElements),
         pmfLabel = pmfLabel(capabilities),
         vendorLabel = vendorLabel(bssid),
         signalLabel = signalLabel(rssiDbm),

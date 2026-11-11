@@ -31,6 +31,13 @@ class WifiRadioAnalyzerTest {
         assertTrue(WifiRadioAnalyzer.securityDetail("[WPA2-PSK-CCMP][WPS]").contains("WPS activé"))
         assertEquals("PMF obligatoire", WifiRadioAnalyzer.pmfLabel(capabilities))
         assertEquals("WEP", WifiRadioAnalyzer.securityDetail("[WEP]"))
+        val button = wpsElement(0x1008, byteArrayOf(0x00, 0x80.toByte()))
+        val pin = wpsElement(0x1008, byteArrayOf(0x00, 0x04))
+        val locked = wpsElement(0x1057, byteArrayOf(0x01))
+        assertEquals("WPS annoncé : bouton", WifiRadioAnalyzer.wpsAnnounced(button))
+        assertEquals("WPS annoncé : code", WifiRadioAnalyzer.wpsAnnounced(pin))
+        assertEquals("WPS annoncé verrouillé", WifiRadioAnalyzer.wpsAnnounced(locked))
+        assertTrue(WifiRadioAnalyzer.securityDetail("[WPA2-PSK-CCMP]", pin).contains("code"))
     }
 
     @Test
@@ -128,5 +135,19 @@ class WifiRadioAnalyzerTest {
             assessment = WifiRiskEvaluator.evaluate(ssid, "[WPA2-PSK-CCMP]", -55),
             radio = radio
         )
+    }
+
+    private fun wpsElement(type: Int, value: ByteArray): List<Pair<Int, ByteArray>> {
+        val header = byteArrayOf(
+            0x00,
+            0x50,
+            0xF2.toByte(),
+            0x04,
+            (type shr 8).toByte(),
+            type.toByte(),
+            (value.size shr 8).toByte(),
+            value.size.toByte()
+        )
+        return listOf(221 to header + value)
     }
 }
