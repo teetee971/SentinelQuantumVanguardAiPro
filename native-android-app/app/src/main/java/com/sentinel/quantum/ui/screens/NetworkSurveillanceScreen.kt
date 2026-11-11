@@ -501,7 +501,14 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     assessment = lanAssessment,
                                     running = lanRunning,
                                     joined = joinedLink != null,
-                                    knownFingerprints = lanKnown
+                                    knownFingerprints = lanKnown,
+                                    mine = { fingerprint ->
+                                        trustRevision >= 0 && trustStore.isAllowed("service:$fingerprint")
+                                    },
+                                    onMine = { fingerprint ->
+                                        trustStore.allow("service:$fingerprint")
+                                        trustRevision += 1
+                                    }
                                 )
                             }
                             item {
@@ -768,7 +775,9 @@ private fun JoinedLanCard(
     assessment: NetworkServiceExposureAssessment?,
     running: Boolean,
     joined: Boolean,
-    knownFingerprints: Set<String>
+    knownFingerprints: Set<String>,
+    mine: (String) -> Boolean,
+    onMine: (String) -> Unit
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -810,6 +819,12 @@ private fun JoinedLanCard(
                     },
                     style = MaterialTheme.typography.bodySmall
                 )
+                val fingerprint = service.service.subjectFingerprint
+                if (mine(fingerprint)) {
+                    Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    OutlinedButton(onClick = { onMine(fingerprint) }) { Text("C’est à moi") }
+                }
             }
             if (running) {
                 Text(
