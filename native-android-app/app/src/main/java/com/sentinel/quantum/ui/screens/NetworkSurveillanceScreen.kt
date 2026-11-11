@@ -98,6 +98,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
     val lanDiscovery = remember(context) { JoinedLanDiscovery(context) }
     var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
+    var gatewayNote by remember { mutableStateOf<String?>(null) }
+    val gatewayMemory = remember(context) { GatewayChangeMemory(context) }
     var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
     val lanMemory = remember(context) { JoinedLanSightingMemory(context) }
     var lanKnown by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -174,6 +176,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 val results = outcome.networks
                 wifiNetworks = results
                 joinedLink = runCatching { WifiJoinedLinkReader.read(context) }.getOrNull()
+                gatewayNote = joinedLink?.let { gatewayMemory.note(it.ssid, it.gateway) }
                 lanServices = emptyList()
                 lanAssessment = null
                 lanRunning = joinedLink != null
@@ -457,7 +460,11 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     quiet5 = WifiRadioAnalyzer.quietestChannel(
                                         WifiBand.BAND_5_GHZ,
                                         wifiNetworks
-                                    )
+                                    ),
+                                    intrusions = WifiIntrusionHints.assess(wifiNetworks, joinedLink) +
+                                        listOfNotNull(gatewayNote?.let {
+                                            WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it)
+                                        })
                                 )
                             }
                             item {
@@ -566,7 +573,8 @@ private fun WifiSurveyCard(
     survey: com.sentinel.quantum.security.WifiRadioSurvey,
     joined: WifiJoinedLink?,
     quiet24: Int?,
-    quiet5: Int?
+    quiet5: Int?,
+    intrusions: List<WifiIntrusionFinding>
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Text("Lecture radio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -598,6 +606,26 @@ private fun WifiSurveyCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        Text("Sécurité", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        if (intrusions.isEmpty()) {
+            Text(
+                "Aucun indice d’intrusion dans ce scan. Cela ne prouve pas qu’il n’y en a pas.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            intrusions.forEach { finding ->
+                Text(
+                    finding.text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (finding.level == NetworkRiskLevel.HIGH) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
         }
         if (joined == null) {
             Text(
