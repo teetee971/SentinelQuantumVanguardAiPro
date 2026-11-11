@@ -77,6 +77,12 @@ android {
     }
 }
 
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.packaging.jniLibs.keepDebugSymbols.add("**/*.so")
+    }
+}
+
 gradle.taskGraph.whenReady { graph ->
     def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
     def requiresSignedRelease = graph.allTasks.any { it.name ==~ /(?i).*Release$/ }
