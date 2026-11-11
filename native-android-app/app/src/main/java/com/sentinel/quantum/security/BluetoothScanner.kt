@@ -220,6 +220,7 @@ class BluetoothScanner(context: Context) {
                 kind = kind,
                 bonded = bonded,
                 findMyAnnouncement = findMy,
+                findMyLabel = payload?.let(BluetoothRiskEvaluator::appleFindMyLabel),
                 repeatNote = repeat,
                 trackerNote = known?.label
             )

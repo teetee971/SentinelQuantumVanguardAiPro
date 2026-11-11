@@ -106,5 +106,16 @@ class BluetoothRiskEvaluatorTest {
         assertEquals(NetworkRiskLevel.MEDIUM, assessment.riskLevel)
         assertFalse(assessment.likelyTracker)
         assertTrue(assessment.announcesFindMy)
+        val airtag = ByteArray(27)
+        airtag[0] = 0x12
+        airtag[1] = 0x19
+        airtag[2] = 0x10
+        val airpods = airtag.copyOf()
+        airpods[2] = 0x18
+        val phone = airtag.copyOf()
+        phone[2] = 0x00
+        assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(airtag)!!.contains("AirTag"))
+        assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(airpods)!!.contains("AirPods"))
+        assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(phone)!!.contains("sans le motif AirTag"))
     }
 }

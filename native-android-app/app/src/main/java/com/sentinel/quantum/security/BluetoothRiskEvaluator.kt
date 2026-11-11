@@ -92,11 +92,21 @@ object BluetoothRiskEvaluator {
         return declared >= 4 && payload.size >= declared + 2
     }
 
+    fun appleFindMyLabel(payload: ByteArray): String? {
+        if (!isAppleFindMy(APPLE_MANUFACTURER_ID, payload) || payload.size < 3) return null
+        return when (payload[2].toInt() and 0x18) {
+            0x10 -> "Annonce compatible avec un AirTag. Une seule observation ne prouve pas qu’il vous suit."
+            0x18 -> "Annonce compatible avec des AirPods. Pas une preuve de suivi."
+            else -> "Annonce Apple Localiser, sans le motif AirTag. Peut être un iPhone ou un accessoire. Pas une preuve de suivi."
+        }
+    }
+
     fun evaluate(
         deviceName: String?,
         kind: BluetoothDeviceKind = BluetoothDeviceKind.UNKNOWN,
         bonded: Boolean = false,
         findMyAnnouncement: Boolean = false,
+        findMyLabel: String? = null,
         repeatNote: String? = null,
         trackerNote: String? = null
     ): BluetoothRiskAssessment {
@@ -111,7 +121,8 @@ object BluetoothRiskEvaluator {
             reasons += TRACKER_ADVICE
         }
         if (findMyAnnouncement) {
-            reasons += "Annonce Apple Localiser. Compatible avec un AirTag ou un appareil Apple. Une seule observation ne prouve pas qu’il vous suit."
+            reasons += findMyLabel
+                ?: "Annonce Apple Localiser. Compatible avec un AirTag ou un appareil Apple. Une seule observation ne prouve pas qu’il vous suit."
         }
         if (!repeatNote.isNullOrBlank()) reasons += repeatNote
         if (!trackerNote.isNullOrBlank()) reasons += trackerNote

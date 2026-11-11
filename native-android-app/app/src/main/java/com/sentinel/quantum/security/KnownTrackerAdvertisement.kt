@@ -37,6 +37,13 @@ object KnownTrackerAdvertisements {
                 identityPayload = data[CHIPOLO]?.takeIf { it.size >= 4 }
             )
         }
+        if (PEBBLEBEE in uuids || data.containsKey(PEBBLEBEE)) {
+            return KnownTrackerAdvertisement(
+                kind = "pebblebee",
+                label = "Annonce compatible avec un Pebblebee. Pas une preuve de suivi.",
+                identityPayload = data[PEBBLEBEE]?.takeIf { it.size >= 4 }
+            )
+        }
         return null
     }
 
@@ -45,4 +52,5 @@ object KnownTrackerAdvertisements {
     private const val SAMSUNG = "0000fd5a-0000-1000-8000-00805f9b34fb"
     private const val TILE = "0000feed-0000-1000-8000-00805f9b34fb"
     private const val CHIPOLO = "0000fe33-0000-1000-8000-00805f9b34fb"
+    private const val PEBBLEBEE = "0000fa25-0000-1000-8000-00805f9b34fb"
 }

@@ -15,6 +15,10 @@ class KnownTrackerAdvertisementTest {
         assertEquals("tile", KnownTrackerAdvertisements.match(emptyList(), mapOf(tile to byteArrayOf(0x02, 0x00, 1, 2)))?.kind)
         assertNull(KnownTrackerAdvertisements.match(emptyList(), mapOf(tile to byteArrayOf(0x02, 0x01))))
         assertEquals("chipolo", KnownTrackerAdvertisements.match(listOf(chipolo), emptyMap())?.kind)
+        assertEquals(
+            "pebblebee",
+            KnownTrackerAdvertisements.match(listOf("0000FA25-0000-1000-8000-00805F9B34FB"), emptyMap())?.kind
+        )
         assertNull(KnownTrackerAdvertisements.match(listOf("0000FEAA-0000-1000-8000-00805F9B34FB"), emptyMap()))
     }
 }
