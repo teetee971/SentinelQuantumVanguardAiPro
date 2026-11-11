@@ -121,5 +121,12 @@ class BluetoothRiskEvaluatorTest {
         assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(low)!!.contains("basse"))
         assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(airpods)!!.contains("AirPods"))
         assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(phone)!!.contains("sans le motif AirTag"))
+        val tile = BluetoothRiskEvaluator.evaluate(
+            deviceName = null,
+            trackerNote = "Annonce Tile. Pas une preuve de suivi."
+        )
+        assertTrue(tile.announcesKnownTracker)
+        assertFalse(tile.likelyTracker)
+        assertEquals(NetworkRiskLevel.MEDIUM, tile.riskLevel)
     }
 }

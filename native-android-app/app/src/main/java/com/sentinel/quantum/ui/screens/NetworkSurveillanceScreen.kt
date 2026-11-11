@@ -220,6 +220,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 if (!covertDeviceAlerted && results.any {
                         it.assessment.likelyTracker ||
                             it.assessment.announcesFindMy ||
+                            it.assessment.announcesKnownTracker ||
                             it.assessment.likelyCameraOrRecorder ||
                             it.assessment.likelyBeacon
                     }) {
@@ -238,7 +239,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     LocalLogger.LogLevel.INFO,
                     "NetworkSurveillance",
                     "Scan Bluetooth local terminé : ${bluetoothDevices.size} appareil(s), " +
-                        "${bluetoothDevices.count { it.assessment.likelyTracker }} traceur(s) potentiel(s)."
+                        "${bluetoothDevices.count { it.assessment.likelyTracker }} nom(s) explicite(s), " +
+                        "${bluetoothDevices.count { it.assessment.announcesFindMy || it.assessment.announcesKnownTracker }} annonce(s)."
                 )
             },
             onTimelineUpdated = { snapshot -> timelineSnapshot = snapshot }
@@ -863,7 +865,13 @@ private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (device.assessment.likelyTracker) {
-            Text("Traceur d’objet potentiel détecté.", style = MaterialTheme.typography.bodySmall)
+            Text("Nom compatible avec un traceur. Ce n'est pas une preuve.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (device.assessment.announcesFindMy || device.assessment.announcesKnownTracker) {
+            Text(
+                "Annonce de traceur connu. Une seule observation ne prouve pas un suivi.",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
         if (device.assessment.likelyCameraOrRecorder) {
             Text("Caméra ou enregistreur sans fil potentiel.", style = MaterialTheme.typography.bodySmall)

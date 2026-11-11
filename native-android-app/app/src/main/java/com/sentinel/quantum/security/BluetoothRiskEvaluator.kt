@@ -20,7 +20,8 @@ data class BluetoothRiskAssessment(
     val likelyCameraOrRecorder: Boolean,
     val likelyBeacon: Boolean,
     val reasons: List<String>,
-    val announcesFindMy: Boolean = false
+    val announcesFindMy: Boolean = false,
+    val announcesKnownTracker: Boolean = false
 )
 
 object BluetoothRiskEvaluator {
@@ -170,7 +171,8 @@ object BluetoothRiskEvaluator {
             likelyCameraOrRecorder = likelyCameraOrRecorder,
             likelyBeacon = likelyBeacon,
             reasons = reasons.toList(),
-            announcesFindMy = findMyAnnouncement
+            announcesFindMy = findMyAnnouncement,
+            announcesKnownTracker = trackerNote != null
         )
     }
 
