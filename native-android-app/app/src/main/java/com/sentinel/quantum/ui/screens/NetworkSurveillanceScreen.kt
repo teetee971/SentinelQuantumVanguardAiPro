@@ -39,6 +39,11 @@ import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.GatewayChangeMemory
+import com.sentinel.quantum.background.TrackerWatchPreferences
+import com.sentinel.quantum.background.TrackerWatchScheduler
+import com.sentinel.quantum.security.JoinedAddressOutcome
+import com.sentinel.quantum.security.JoinedAddressScan
+import com.sentinel.quantum.security.JoinedHost
 import com.sentinel.quantum.security.JoinedLanAnnouncement
 import com.sentinel.quantum.security.JoinedLanDiscovery
 import com.sentinel.quantum.security.JoinedLanDiscoveryUpdate
@@ -109,6 +114,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
     val lanMemory = remember(context) { JoinedLanSightingMemory(context) }
     var lanKnown by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var addressOutcome by remember { mutableStateOf<JoinedAddressOutcome?>(null) }
+    var addressRunning by remember { mutableStateOf(false) }
+    var trustRevision by remember { mutableIntStateOf(0) }
+    val watchPreferences = remember(context) { TrackerWatchPreferences(context) }
+    var watchEnabled by remember { mutableStateOf(watchPreferences.enabled) }
+    val scope = rememberCoroutineScope()
     var lanAssessment by remember { mutableStateOf<NetworkServiceExposureAssessment?>(null) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
@@ -232,13 +243,14 @@ fun NetworkSurveillanceScreen(navController: NavController) {
             onResults = { results ->
                 bluetoothDevices = results
                 val fresh = results.filter { device ->
+                    val key = device.alertKey ?: device.address
                     val interesting = device.assessment.likelyTracker ||
                         device.assessment.announcesFindMy ||
                         device.assessment.announcesKnownTracker ||
                         device.assessment.likelyCameraOrRecorder ||
                         device.assessment.likelyBeacon ||
                         device.assessment.announcesUnpairedInput
-                    interesting && (device.alertKey ?: device.address) !in covertDeviceAlerted
+                    interesting && key !in covertDeviceAlerted && !trustStore.isAllowed("tracker:$key")
                 }
                 if (fresh.isNotEmpty()) {
                     covertDeviceAlerted = covertDeviceAlerted + fresh.map { it.alertKey ?: it.address }
@@ -492,6 +504,31 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     knownFingerprints = lanKnown
                                 )
                             }
+                            item {
+                                AddressSearchCard(
+                                    outcome = addressOutcome,
+                                    running = addressRunning,
+                                    enabled = joinedLink?.ipv4 != null,
+                                    mine = { host -> trustStore.isAllowed(hostMineKey(host)) },
+                                    revision = trustRevision,
+                                    onSearch = {
+                                        val link = joinedLink
+                                        if (link?.ipv4 == null) return@AddressSearchCard
+                                        addressRunning = true
+                                        scope.launch(Dispatchers.IO) {
+                                            val outcome = JoinedAddressScan().discover(link.ipv4, link.prefixLength)
+                                            withContext(Dispatchers.Main) {
+                                                addressOutcome = outcome
+                                                addressRunning = false
+                                            }
+                                        }
+                                    },
+                                    onMine = { host ->
+                                        trustStore.allow(hostMineKey(host))
+                                        trustRevision += 1
+                                    }
+                                )
+                            }
                             items(wifiNetworks, key = { it.bssid + it.ssid + it.frequencyMhz }) { network ->
                                 WifiNetworkCard(
                                     network = network,
@@ -521,11 +558,35 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                     }
 
                     SurveillanceTab.BLUETOOTH -> {
+                        item {
+                            SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                                Text("Prévenir plus tard", fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Android relance un court scan environ toutes les 15 minutes. Une notification part seulement si un objet déjà vu change de réseau. Un objet marqué « à moi » reste silencieux.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                OutlinedButton(onClick = {
+                                    watchEnabled = !watchEnabled
+                                    watchPreferences.enabled = watchEnabled
+                                    TrackerWatchScheduler.sync(context, watchEnabled)
+                                }) {
+                                    Text(if (watchEnabled) "Arrêter les alertes" else "Activer les alertes")
+                                }
+                            }
+                        }
                         if (bluetoothDevices.isEmpty()) {
                             item { EmptyStateCard("Lancez un scan pour lister les appareils Bluetooth environnants.") }
                         } else {
                             items(bluetoothDevices, key = { it.address }) { device ->
-                                BluetoothDeviceCard(device)
+                                val key = device.alertKey ?: device.address
+                                BluetoothDeviceCard(
+                                    device = device,
+                                    mine = trustRevision >= 0 && trustStore.isAllowed("tracker:$key"),
+                                    onMine = {
+                                        trustStore.allow("tracker:$key")
+                                        trustRevision += 1
+                                    }
+                                )
                             }
                         }
                     }
@@ -894,8 +955,52 @@ private fun WifiNetworkCard(
     }
 }
 
+private fun hostMineKey(host: JoinedHost): String = "lan:${host.mac.ifBlank { host.ipv4 }}"
+
 @Composable
-private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
+private fun AddressSearchCard(
+    outcome: JoinedAddressOutcome?,
+    running: Boolean,
+    enabled: Boolean,
+    mine: (JoinedHost) -> Boolean,
+    revision: Int,
+    onSearch: () -> Unit,
+    onMine: (JoinedHost) -> Unit
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text("Adresses du réseau rejoint", fontWeight = FontWeight.Bold)
+        Text(
+            "Envoie une question locale, sans tester les ports. Une caméra qui ne répond pas n’apparaît pas.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        OutlinedButton(onClick = onSearch, enabled = enabled && !running) {
+            Text(if (running) "Question en cours" else "Chercher les adresses")
+        }
+        outcome?.let { result ->
+            Text(result.note, style = MaterialTheme.typography.bodySmall)
+            result.hosts.forEach { host ->
+                val owned = revision >= 0 && mine(host)
+                Text(
+                    "${host.ipv4} · ${host.vendor} · ${host.mac}" +
+                        if (host.appearedAfterQuestion) " · apparu après la question" else " · déjà connu du téléphone",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                if (owned) {
+                    Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    OutlinedButton(onClick = { onMine(host) }) { Text("C’est à moi") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BluetoothDeviceCard(
+    device: DiscoveredBluetoothDevice,
+    mine: Boolean,
+    onMine: () -> Unit
+) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -939,6 +1044,11 @@ private fun BluetoothDeviceCard(device: DiscoveredBluetoothDevice) {
         }
         device.assessment.reasons.forEach { reason ->
             Text("• $reason", style = MaterialTheme.typography.bodySmall)
+        }
+        if (mine) {
+            Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
+        } else {
+            OutlinedButton(onClick = onMine) { Text("C’est à moi") }
         }
     }
 }
