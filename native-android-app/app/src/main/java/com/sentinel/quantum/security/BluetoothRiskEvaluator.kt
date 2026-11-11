@@ -97,7 +97,8 @@ object BluetoothRiskEvaluator {
         kind: BluetoothDeviceKind = BluetoothDeviceKind.UNKNOWN,
         bonded: Boolean = false,
         findMyAnnouncement: Boolean = false,
-        repeatNote: String? = null
+        repeatNote: String? = null,
+        trackerNote: String? = null
     ): BluetoothRiskAssessment {
         val likelyTracker = isLikelyTracker(deviceName)
         val likelyCameraOrRecorder = isLikelyCameraOrRecorder(deviceName)
@@ -113,6 +114,7 @@ object BluetoothRiskEvaluator {
             reasons += "Annonce Apple Localiser. Compatible avec un AirTag ou un appareil Apple. Une seule observation ne prouve pas qu’il vous suit."
         }
         if (!repeatNote.isNullOrBlank()) reasons += repeatNote
+        if (!trackerNote.isNullOrBlank()) reasons += trackerNote
         if (likelyCameraOrRecorder) {
             reasons += "Nom compatible avec une caméra ou un enregistreur sans fil. Ce signal est indicatif et ne prouve pas un dispositif espion."
         }
@@ -124,13 +126,13 @@ object BluetoothRiskEvaluator {
 
         val riskLevel = when {
             likelyTracker -> NetworkRiskLevel.HIGH
-            likelyCameraOrRecorder || likelyBeacon || findMyAnnouncement -> NetworkRiskLevel.MEDIUM
+            likelyCameraOrRecorder || likelyBeacon || findMyAnnouncement || trackerNote != null -> NetworkRiskLevel.MEDIUM
             kind == BluetoothDeviceKind.UNKNOWN -> NetworkRiskLevel.MEDIUM
             !namedDevice -> NetworkRiskLevel.MEDIUM
             else -> NetworkRiskLevel.LOW
         }
 
-        if (riskLevel == NetworkRiskLevel.MEDIUM && !likelyTracker && !findMyAnnouncement) {
+        if (riskLevel == NetworkRiskLevel.MEDIUM && !likelyTracker && !findMyAnnouncement && trackerNote == null) {
             reasons += "Type d'appareil inconnu à proximité : à surveiller s'il vous suit dans plusieurs lieux."
         }
         if (riskLevel == NetworkRiskLevel.LOW) {
