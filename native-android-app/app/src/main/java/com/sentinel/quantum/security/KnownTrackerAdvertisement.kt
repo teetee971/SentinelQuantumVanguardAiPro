@@ -18,8 +18,12 @@ object KnownTrackerAdvertisements {
         if (samsung != null && samsung.isNotEmpty() && (samsung[0].toInt() and 0xF8) == 0x10) {
             return KnownTrackerAdvertisement(
                 kind = "samsung",
-                label = "Annonce compatible avec un SmartTag Samsung. Pas une preuve de suivi.",
-                identityPayload = samsung.takeIf { it.size >= 4 }
+                label = samsungDetail(samsung),
+                identityPayload = when {
+                    samsung.size >= 12 -> samsung.copyOfRange(4, 12)
+                    samsung.size >= 4 -> samsung
+                    else -> null
+                }
             )
         }
         val tile = data[TILE]
@@ -46,6 +50,32 @@ object KnownTrackerAdvertisements {
         }
         return null
     }
+
+    fun samsungDetail(payload: ByteArray): String {
+        val separated = when {
+            payload.isEmpty() -> "état non lu"
+            !bit(payload[0], 2) && bit(payload[0], 1) && bit(payload[0], 0) -> "séparation longue annoncée"
+            !bit(payload[0], 2) && bit(payload[0], 1) && !bit(payload[0], 0) -> "séparation annoncée"
+            !bit(payload[0], 2) && !bit(payload[0], 1) && bit(payload[0], 0) -> "séparation récente annoncée"
+            else -> "propriétaire proche annoncé"
+        }
+        val battery = if (payload.size >= 13) {
+            val high = bit(payload[12], 1)
+            val low = bit(payload[12], 0)
+            val level = when {
+                high && low -> "batterie annoncée pleine"
+                high && !low -> "batterie annoncée moyenne"
+                !high && low -> "batterie annoncée basse"
+                else -> "batterie annoncée très basse"
+            }
+            ", $level"
+        } else {
+            ""
+        }
+        return "Annonce compatible avec un SmartTag Samsung : $separated$battery. Pas une preuve de suivi."
+    }
+
+    private fun bit(value: Byte, position: Int): Boolean = ((value.toInt() shr position) and 1) == 1
 
     private fun normalize(uuid: String): String = uuid.trim().lowercase()
 

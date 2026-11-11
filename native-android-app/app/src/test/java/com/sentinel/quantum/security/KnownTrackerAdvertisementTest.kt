@@ -2,6 +2,7 @@ package com.sentinel.quantum.security
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class KnownTrackerAdvertisementTest {
@@ -11,6 +12,13 @@ class KnownTrackerAdvertisementTest {
         val tile = "0000FEED-0000-1000-8000-00805F9B34FB"
         val chipolo = "0000FE33-0000-1000-8000-00805F9B34FB"
         assertEquals("samsung", KnownTrackerAdvertisements.match(emptyList(), mapOf(samsung to byteArrayOf(0x10, 1, 2, 3)))?.kind)
+        assertEquals(
+            "propriétaire proche annoncé",
+            KnownTrackerAdvertisements.samsungDetail(byteArrayOf(0x10)).substringAfter(": ").substringBefore(".")
+        )
+        assertTrue(KnownTrackerAdvertisements.samsungDetail(byteArrayOf(0x12)).contains("séparation annoncée"))
+        assertTrue(KnownTrackerAdvertisements.samsungDetail(byteArrayOf(0x13)).contains("séparation longue"))
+        assertTrue(KnownTrackerAdvertisements.samsungDetail(byteArrayOf(0x11)).contains("séparation récente"))
         assertNull(KnownTrackerAdvertisements.match(emptyList(), mapOf(samsung to byteArrayOf(0x18))))
         assertEquals("tile", KnownTrackerAdvertisements.match(emptyList(), mapOf(tile to byteArrayOf(0x02, 0x00, 1, 2)))?.kind)
         assertNull(KnownTrackerAdvertisements.match(emptyList(), mapOf(tile to byteArrayOf(0x02, 0x01))))
