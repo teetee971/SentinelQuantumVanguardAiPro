@@ -121,9 +121,30 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         decode(fileName, preferences.all[key(fileName)])
     }
 
-    fun remove(fileName: String): Boolean = synchronized(LOCK) {
-        MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
-            preferences.edit().remove(key(fileName)).commit()
+    /**
+     * Removes the journal entry only when the full transactional identity matches (when supplied).
+     * Unreadable or identity-mismatched records are left intact. An already-absent entry is treated as success.
+     */
+    fun remove(
+        fileName: String,
+        expectedSubscriptionId: Int? = null,
+        expectedRequestedAtMs: Long? = null,
+        expectedDigestHex: String? = null
+    ): Boolean = synchronized(LOCK) {
+        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return@synchronized false
+        val raw = preferences.getString(key(fileName), null) ?: return@synchronized true
+        val current = decode(fileName, raw) ?: return@synchronized false
+        if (expectedSubscriptionId != null && current.subscriptionId != expectedSubscriptionId) {
+            return@synchronized false
+        }
+        if (expectedRequestedAtMs != null && current.requestedAtMs != expectedRequestedAtMs) {
+            return@synchronized false
+        }
+        if (expectedDigestHex != null) {
+            val expected = expectedDigestHex.lowercase()
+            if (current.digestHex?.lowercase() != expected) return@synchronized false
+        }
+        preferences.edit().remove(key(fileName)).commit()
     }
 
     fun all(): List<Record> = synchronized(LOCK) {

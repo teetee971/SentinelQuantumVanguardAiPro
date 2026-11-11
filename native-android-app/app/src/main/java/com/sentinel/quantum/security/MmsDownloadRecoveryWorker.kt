@@ -137,14 +137,12 @@ internal object MmsDownloadRecovery {
         }
         val sizeBefore = target.length()
         if (sizeBefore <= 0L) {
-            return if (allowQuarantine) {
-                finishTerminal(appContext, fileName, fromCleanupDeadline = true)
-            } else {
-                Outcome.RETRY
-            }
+            // Empty or unreadable staging is never considered recovered. Keep for diagnosis or retry.
+            return if (allowQuarantine) Outcome.DIAGNOSE else Outcome.RETRY
         }
         if (sizeBefore > MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            return finishTerminal(appContext, fileName, allowQuarantine)
+            // Oversized staging is incomplete/unusable; do not declare terminal without private proof.
+            return if (allowQuarantine) Outcome.DIAGNOSE else Outcome.RETRY
         }
 
         val modifiedBefore = target.lastModified()
@@ -199,6 +197,7 @@ internal object MmsDownloadRecovery {
             journal = journal,
             fileName = fileName,
             subscriptionId = record.subscriptionId,
+            requestedAtMs = record.requestedAtMs,
             data = data,
             digest = digest,
             persistence = persistence,
@@ -239,6 +238,7 @@ internal object MmsDownloadRecovery {
                     journal = journal,
                     fileName = record.fileName,
                     subscriptionId = record.subscriptionId,
+                    requestedAtMs = record.requestedAtMs,
                     data = requireNotNull(data),
                     digest = requireNotNull(digest),
                     persistence = IncomingMmsPrivateStore.Result(
@@ -282,6 +282,7 @@ internal object MmsDownloadRecovery {
         journal: MmsDownloadRecoveryJournal,
         fileName: String,
         subscriptionId: Int,
+        requestedAtMs: Long,
         data: ByteArray,
         digest: String,
         persistence: IncomingMmsPrivateStore.Result,
@@ -367,9 +368,15 @@ internal object MmsDownloadRecovery {
         }
 
         if (!stagingPresent) {
-            return if (journal.remove(fileName)) Outcome.RECOVERED else Outcome.RETRY
+            val removed = journal.remove(
+                fileName = fileName,
+                expectedSubscriptionId = subscriptionId,
+                expectedRequestedAtMs = requestedAtMs,
+                expectedDigestHex = digest
+            )
+            return if (removed) Outcome.RECOVERED else Outcome.RETRY
         }
-        return if (finish(appContext, fileName, allowQuarantine)) {
+        return if (finish(appContext, fileName, allowQuarantine, subscriptionId, requestedAtMs, digest)) {
             Outcome.RECOVERED
         } else {
             Outcome.RETRY
@@ -379,8 +386,20 @@ internal object MmsDownloadRecovery {
     private fun finishTerminal(
         context: Context,
         fileName: String,
-        fromCleanupDeadline: Boolean
-    ): Outcome = if (finish(context, fileName, fromCleanupDeadline)) {
+        fromCleanupDeadline: Boolean,
+        expectedSubscriptionId: Int? = null,
+        expectedRequestedAtMs: Long? = null,
+        expectedDigestHex: String? = null
+    ): Outcome = if (
+        finish(
+            context,
+            fileName,
+            fromCleanupDeadline,
+            expectedSubscriptionId,
+            expectedRequestedAtMs,
+            expectedDigestHex
+        )
+    ) {
         Outcome.TERMINAL
     } else {
         Outcome.RETRY
@@ -406,11 +425,21 @@ internal object MmsDownloadRecovery {
     ): Boolean =
         providerResult is IncomingMmsConversationStore.ProjectResult.Rejected && !allowQuarantine
 
-    private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean): Boolean =
+    private fun finish(
+        context: Context,
+        fileName: String,
+        fromCleanupDeadline: Boolean,
+        expectedSubscriptionId: Int? = null,
+        expectedRequestedAtMs: Long? = null,
+        expectedDigestHex: String? = null
+    ): Boolean =
         MmsDownloadCoordinator.finishRecovery(
             context = context,
             fileName = fileName,
-            cancelCleanupWorker = !fromCleanupDeadline
+            cancelCleanupWorker = !fromCleanupDeadline,
+            expectedSubscriptionId = expectedSubscriptionId,
+            expectedRequestedAtMs = expectedRequestedAtMs,
+            expectedDigestHex = expectedDigestHex
         )
 
     private fun stagedFile(context: Context, fileName: String): File? {

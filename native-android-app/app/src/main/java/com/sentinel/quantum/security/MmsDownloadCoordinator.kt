@@ -139,14 +139,20 @@ object MmsDownloadCoordinator {
     internal fun finishRecovery(
         context: Context,
         fileName: String,
-        cancelCleanupWorker: Boolean = true
+        cancelCleanupWorker: Boolean = true,
+        expectedSubscriptionId: Int? = null,
+        expectedRequestedAtMs: Long? = null,
+        expectedDigestHex: String? = null
     ): Boolean =
         deleteInternal(
             context = context,
             fileName = fileName,
             cancelCleanup = cancelCleanupWorker,
             cancelRecovery = false,
-            removeRecoveryMetadata = true
+            removeRecoveryMetadata = true,
+            expectedSubscriptionId = expectedSubscriptionId,
+            expectedRequestedAtMs = expectedRequestedAtMs,
+            expectedDigestHex = expectedDigestHex
         )
 
     private fun deleteInternal(
@@ -154,7 +160,10 @@ object MmsDownloadCoordinator {
         fileName: String,
         cancelCleanup: Boolean,
         cancelRecovery: Boolean,
-        removeRecoveryMetadata: Boolean
+        removeRecoveryMetadata: Boolean,
+        expectedSubscriptionId: Int? = null,
+        expectedRequestedAtMs: Long? = null,
+        expectedDigestHex: String? = null
     ): Boolean {
         if (!isValidStagedFileName(fileName)) return false
         val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull()
@@ -165,17 +174,22 @@ object MmsDownloadCoordinator {
         val file = runCatching { File(canonicalDirectory, fileName).canonicalFile }.getOrNull()
             ?: return false
         if (file.parentFile != canonicalDirectory) return false
+
+        // Retire the journal first under full identity. Only then unlink the staging bytes.
+        // A failed journal retirement leaves the last usable copy intact for later recovery.
+        if (removeRecoveryMetadata) {
+            val metadataRemoved = MmsDownloadRecoveryJournal(context.applicationContext).remove(
+                fileName = fileName,
+                expectedSubscriptionId = expectedSubscriptionId,
+                expectedRequestedAtMs = expectedRequestedAtMs,
+                expectedDigestHex = expectedDigestHex
+            )
+            if (!metadataRemoved) return false
+        }
+
         val removed = !file.exists() || runCatching { file.delete() }.getOrDefault(false)
         if (!removed) return false
 
-        // Do not cancel the durable safety nets until the recovery journal is durably retired.
-        // Otherwise a SharedPreferences commit failure can strand phantom recovery metadata with no
-        // worker left to revisit it. A failed metadata retirement therefore stays fail-closed and
-        // leaves the existing workers scheduled for a later cleanup/recovery pass.
-        if (removeRecoveryMetadata) {
-            val metadataRemoved = MmsDownloadRecoveryJournal(context.applicationContext).remove(fileName)
-            if (!metadataRemoved) return false
-        }
         if (cancelCleanup) {
             runCatching { MmsDownloadCleanupWorker.cancel(context.applicationContext, fileName) }
         }
