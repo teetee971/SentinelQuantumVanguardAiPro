@@ -80,6 +80,7 @@ android {
 androidComponents {
     onVariants(selector().withBuildType("debug")) { variant ->
         variant.packaging.jniLibs.keepDebugSymbols.add("**/*.so")
+        variant.packaging.jniLibs.keepDebugSymbols.add("*.so")
     }
 }
 
