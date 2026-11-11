@@ -23,6 +23,22 @@ class JoinedLanServiceCatalogTest {
     }
 
     @Test
+    fun onvifAnnouncementIsACameraHintWithoutProbing() {
+        val found = JoinedLanServiceCatalog.announcement(
+            name = "IPC-S21FEP",
+            dnsType = "_onvif._tcp.",
+            host = "192.168.1.18",
+            port = 80
+        )
+        requireNotNull(found)
+        assertTrue(JoinedLanServiceCatalog.looksLikeCamera(found.name, found.host, found.type))
+        assertTrue(
+            JoinedLanServiceCatalog.looksLikeCamera("nomi-ipc-s21fe-b45f", "192.168.1.17", "_http._tcp.")
+        )
+        assertTrue(!JoinedLanServiceCatalog.looksLikeCamera("Livebox", "192.168.1.1", "_http._tcp."))
+    }
+
+    @Test
     fun unknownServiceTypeIsIgnored() {
         assertNull(
             JoinedLanServiceCatalog.announcement("x", "_unknown._tcp.", "192.168.1.2", 9)

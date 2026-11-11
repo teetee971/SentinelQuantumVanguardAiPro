@@ -595,7 +595,9 @@ private fun WifiSurveyCard(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "IPv4 ${joined.ipv4 ?: "non lue"} · passerelle ${joined.gateway ?: "non lue"} · " +
+                "IPv4 ${joined.ipv4 ?: "non lue"}" +
+                    (joined.prefixLength?.let { "/$it" } ?: "") +
+                    " · passerelle ${joined.gateway ?: "non lue"} · " +
                     "${joined.linkSpeedMbps} Mb/s · ${joined.rssiDbm} dBm",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -641,8 +643,11 @@ private fun JoinedLanCard(
             )
         } else {
             services.take(12).forEach { service ->
-                val cameraHint = WifiRiskEvaluator.isLikelyCameraOrRecorderSsid(service.name) ||
-                    WifiRiskEvaluator.isLikelyCameraOrRecorderSsid(service.host)
+                val cameraHint = JoinedLanServiceCatalog.looksLikeCamera(
+                    service.name,
+                    service.host,
+                    service.type
+                )
                 Text(
                     buildString {
                         append("${service.name} · ${service.host} · port ${service.port}")

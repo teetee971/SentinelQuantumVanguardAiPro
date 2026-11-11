@@ -39,7 +39,9 @@ object JoinedLanServiceCatalog {
         Type("_ipp._tcp.", "ipp", 631),
         Type("_smb._tcp.", "smb", 445),
         Type("_ssh._tcp.", "ssh", 22),
-        Type("_hap._tcp.", "homekit", 8080)
+        Type("_hap._tcp.", "homekit", 8080),
+        Type("_onvif._tcp.", "onvif", 80),
+        Type("_rtsp._tcp.", "rtsp", 554)
     )
 
     fun fingerprint(name: String, host: String, port: Int): String {
@@ -67,6 +69,13 @@ object JoinedLanServiceCatalog {
                 serviceHint = type.hint
             )
         )
+    }
+
+    fun looksLikeCamera(name: String, host: String, dnsType: String): Boolean {
+        val announced = dnsType.lowercase()
+        if (announced.contains("_onvif.") || announced.contains("_rtsp.")) return true
+        return WifiRiskEvaluator.isLikelyCameraOrRecorderSsid(name) ||
+            WifiRiskEvaluator.isLikelyCameraOrRecorderSsid(host)
     }
 
     private fun sameType(expected: String, actual: String): Boolean {
