@@ -614,6 +614,21 @@ private fun WifiSurveyCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (joined.wifiStandard != null) {
+                Text(
+                    "Norme négociée : ${WifiRadioAnalyzer.standardLabel(joined.wifiStandard, joined.frequencyMhz)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (joined.maxRxLinkMbps != null || joined.maxTxLinkMbps != null) {
+                Text(
+                    "Maximum annoncé du lien : ↓ ${joined.maxRxLinkMbps ?: "non lu"} Mb/s · " +
+                        "↑ ${joined.maxTxLinkMbps ?: "non lu"} Mb/s",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (joined.rxLinkSpeedMbps != null || joined.txLinkSpeedMbps != null) {
                 Text(
                     "Débit annoncé du lien : ↓ ${joined.rxLinkSpeedMbps ?: "non lu"} Mb/s · " +
@@ -762,6 +777,13 @@ private fun WifiNetworkCard(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (network.radio.phyDetailLabel != "détails Wi-Fi 6/7 non annoncés") {
+            Text(
+                text = network.radio.phyDetailLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         if (network.radio.occupiedLabel != "plage non déduite") {
             Text(
                 text = "Plage déduite du centre annoncé : ${network.radio.occupiedLabel}",

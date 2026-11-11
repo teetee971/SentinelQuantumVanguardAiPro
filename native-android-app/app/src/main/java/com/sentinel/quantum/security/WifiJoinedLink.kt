@@ -20,6 +20,9 @@ data class WifiJoinedLink(
     val rxLinkSpeedMbps: Int?,
     val txLinkSpeedMbps: Int?,
     val frequencyMhz: Int,
+    val wifiStandard: Int?,
+    val maxRxLinkMbps: Int?,
+    val maxTxLinkMbps: Int?,
     val ipv4: String?,
     val prefixLength: Int?,
     val gateway: String?,
@@ -46,6 +49,9 @@ object WifiJoinedLinkReader {
             rxLinkSpeedMbps = directedSpeed(wifi, receive = true),
             txLinkSpeedMbps = directedSpeed(wifi, receive = false),
             frequencyMhz = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) wifi.frequency else 0,
+            wifiStandard = negotiatedStandard(wifi),
+            maxRxLinkMbps = maxSpeed(wifi, receive = true),
+            maxTxLinkMbps = maxSpeed(wifi, receive = false),
             ipv4 = (ipv4?.address as? Inet4Address)?.hostAddress,
             prefixLength = ipv4?.prefixLength?.takeIf { it in 0..32 },
             gateway = defaultGateway(links),
@@ -71,6 +77,17 @@ object WifiJoinedLinkReader {
     private fun directedSpeed(wifi: WifiInfo, receive: Boolean): Int? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
         val speed = if (receive) wifi.rxLinkSpeedMbps else wifi.txLinkSpeedMbps
+        return speed.takeIf { it > 0 }
+    }
+
+    private fun negotiatedStandard(wifi: WifiInfo): Int? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
+        return wifi.wifiStandard.takeIf { it > 0 }
+    }
+
+    private fun maxSpeed(wifi: WifiInfo, receive: Boolean): Int? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null
+        val speed = if (receive) wifi.maxSupportedRxLinkSpeedMbps else wifi.maxSupportedTxLinkSpeedMbps
         return speed.takeIf { it > 0 }
     }
 }

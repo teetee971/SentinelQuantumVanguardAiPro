@@ -13,7 +13,8 @@ data class WifiAccessPointRadio(
     val vendorLabel: String,
     val signalLabel: String,
     val occupiedLabel: String = "plage non déduite",
-    val beaconLoadLabel: String = "charge non annoncée par la borne"
+    val beaconLoadLabel: String = "charge non annoncée par la borne",
+    val phyDetailLabel: String = "détails Wi-Fi 6/7 non annoncés"
 )
 
 data class WifiChannelLoad(
@@ -100,15 +101,53 @@ object WifiRadioAnalyzer {
         return payload[0].toInt()
     }
 
-    fun standardLabel(wifiStandard: Int): String = when (wifiStandard) {
-        1 -> "802.11a/b/g"
-        4 -> "Wi-Fi 4 · 802.11n"
-        5 -> "Wi-Fi 5 · 802.11ac"
-        6 -> "Wi-Fi 6 · 802.11ax"
-        7 -> "802.11ad"
-        8 -> "Wi-Fi 7 · 802.11be"
+    fun standardLabel(wifiStandard: Int, frequencyMhz: Int = 0): String = when {
+        wifiStandard == 6 && frequencyMhz in 5925..7125 -> "Wi-Fi 6E · 802.11ax"
+        wifiStandard == 1 -> "802.11a/b/g"
+        wifiStandard == 4 -> "Wi-Fi 4 · 802.11n"
+        wifiStandard == 5 -> "Wi-Fi 5 · 802.11ac"
+        wifiStandard == 6 -> "Wi-Fi 6 · 802.11ax"
+        wifiStandard == 7 -> "802.11ad"
+        wifiStandard == 8 -> "Wi-Fi 7 · 802.11be"
         else -> "norme non indiquée"
     }
+
+    /** HE/EHT fields the beacon actually carries. Streams are announced, not measured. */
+    fun phyDetailLabel(elements: List<Pair<Int, ByteArray>>): String {
+        val parts = mutableListOf<String>()
+        extension(elements, 35)?.let(::heSpatialStreams)?.let { parts += "jusqu'à $it flux annoncés" }
+        extension(elements, 36)?.let(::heBssColor)?.let { parts += it }
+        if (extension(elements, 108) != null) parts += "capacités Wi-Fi 7 annoncées"
+        if (elements.any { it.first == 107 }) parts += "MLO annoncé"
+        if (parts.isEmpty()) return "détails Wi-Fi 6/7 non annoncés"
+        return parts.joinToString(" · ")
+    }
+
+    fun heSpatialStreams(payload: ByteArray): Int? {
+        if (payload.isEmpty() || payload[0].toInt() != 35 || payload.size < 20) return null
+        return spatialStreams(payload.copyOfRange(18, 20))
+    }
+
+    fun heBssColor(payload: ByteArray): String? {
+        if (payload.isEmpty() || payload[0].toInt() != 36 || payload.size < 5) return null
+        val info = payload[4].toInt() and 0xff
+        if (info and 0x80 != 0) return "couleur BSS désactivée"
+        return "couleur BSS annoncée ${info and 0x3f}"
+    }
+
+    fun spatialStreams(rxMap: ByteArray): Int? {
+        if (rxMap.size < 2) return null
+        val value = (rxMap[0].toInt() and 0xff) or ((rxMap[1].toInt() and 0xff) shl 8)
+        var max = 0
+        for (index in 0 until 8) {
+            val supported = (value shr (index * 2)) and 0x3
+            if (supported != 3) max = index + 1
+        }
+        return max.takeIf { it > 0 }
+    }
+
+    private fun extension(elements: List<Pair<Int, ByteArray>>, extensionId: Int): ByteArray? =
+        elements.firstOrNull { it.first == 255 && it.second.firstOrNull()?.toInt() == extensionId }?.second
 
     fun securityDetail(capabilities: String?): String {
         val normalized = capabilities?.uppercase().orEmpty()
@@ -172,13 +211,14 @@ object WifiRadioAnalyzer {
     ): WifiAccessPointRadio = WifiAccessPointRadio(
         channel = channel(frequencyMhz),
         widthLabel = widthLabel(channelWidth),
-        standardLabel = standardLabel(wifiStandard),
+        standardLabel = standardLabel(wifiStandard, frequencyMhz),
         securityDetail = securityDetail(capabilities),
         pmfLabel = pmfLabel(capabilities),
         vendorLabel = vendorLabel(bssid),
         signalLabel = signalLabel(rssiDbm),
         occupiedLabel = occupiedLabel(centerMhz, channelWidth),
-        beaconLoadLabel = beaconLoadLabel(informationElements)
+        beaconLoadLabel = beaconLoadLabel(informationElements),
+        phyDetailLabel = phyDetailLabel(informationElements)
     )
 
     fun sameChannelCount(channel: Int?, band: WifiBand, networks: List<DiscoveredWifiNetwork>): Int {

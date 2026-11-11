@@ -62,6 +62,24 @@ class WifiRadioAnalyzerTest {
             "charge non annoncée par la borne",
             WifiRadioAnalyzer.beaconLoadLabel(emptyList())
         )
+        assertEquals("Wi-Fi 6E · 802.11ax", WifiRadioAnalyzer.standardLabel(6, 6135))
+        assertEquals("Wi-Fi 6 · 802.11ax", WifiRadioAnalyzer.standardLabel(6, 5500))
+        val he = ByteArray(20)
+        he[0] = 35
+        he[18] = 0xAA.toByte()
+        he[19] = 0xFF.toByte()
+        val color = byteArrayOf(36, 0, 0, 0, 7)
+        assertEquals(
+            "jusqu'à 4 flux annoncés · couleur BSS annoncée 7 · capacités Wi-Fi 7 annoncées · MLO annoncé",
+            WifiRadioAnalyzer.phyDetailLabel(
+                listOf(
+                    255 to he,
+                    255 to color,
+                    255 to byteArrayOf(108),
+                    107 to byteArrayOf(0)
+                )
+            )
+        )
     }
 
     private fun sample(ssid: String, bssid: String, frequency: Int): DiscoveredWifiNetwork {
