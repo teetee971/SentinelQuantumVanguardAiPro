@@ -85,6 +85,7 @@ object WifiRiskEvaluator {
         "v380",
         "imou",
         "dahua",
+        "s21fep",
         "ipc-",
         "camera",
         "recorder"
