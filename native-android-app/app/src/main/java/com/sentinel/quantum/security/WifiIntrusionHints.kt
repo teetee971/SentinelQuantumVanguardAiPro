@@ -51,6 +51,20 @@ object WifiIntrusionHints {
                 "La borne rejointe n’annonce pas de protection des trames de gestion. Une déconnexion forcée ne serait pas visible ici."
             )
         }
+        if (joinedNetwork?.radio?.securityDetail?.contains("TKIP") == true) {
+            findings += WifiIntrusionFinding(
+                NetworkRiskLevel.MEDIUM,
+                "Le réseau rejoint annonce TKIP, un chiffrement ancien. Ce n’est pas une intrusion en cours."
+            )
+        }
+        if (joinedNetwork?.assessment?.securityType == WifiSecurityType.OPEN &&
+            findings.none { it.text.contains("copie ouverte") }
+        ) {
+            findings += WifiIntrusionFinding(
+                NetworkRiskLevel.HIGH,
+                "Le réseau rejoint n’a pas de chiffrement. Le trafic peut être lu à proximité. Aucune interception n’a été constatée."
+            )
+        }
         return findings
     }
 
@@ -78,6 +92,18 @@ class GatewayChangeMemory(context: Context) {
         preferences.edit().putString(key, next).apply()
         if (!WifiIntrusionHints.gatewayChanged(previous, next)) return null
         return "La passerelle de « $name » a changé depuis la dernière lecture. Cela peut être un nouveau routeur, ou un autre appareil qui répond à sa place. Pas une preuve."
+    }
+
+    fun noteDns(ssid: String, dns: List<String>): String? {
+        val name = ssid.trim()
+        val servers = dns.map { it.trim().lowercase() }.filter { it.isNotEmpty() }.distinct().sorted()
+        if (name.isBlank() || servers.isEmpty() || WifiRiskEvaluator.isHiddenSsid(name)) return null
+        val key = "dns:" + sha256(name.lowercase())
+        val next = sha256(servers.joinToString(","))
+        val previous = preferences.getString(key, null)
+        preferences.edit().putString(key, next).apply()
+        if (!WifiIntrusionHints.gatewayChanged(previous, next)) return null
+        return "Les DNS de « $name » ont changé depuis la dernière lecture. Cela peut être le routeur, ou un autre résolveur. Pas une preuve."
     }
 
     private fun sha256(value: String): String =

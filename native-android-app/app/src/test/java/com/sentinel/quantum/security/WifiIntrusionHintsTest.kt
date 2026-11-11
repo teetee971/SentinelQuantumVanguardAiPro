@@ -18,6 +18,27 @@ class WifiIntrusionHintsTest {
         assertEquals(1, findings.size)
         assertTrue(findings[0].text.contains("pas une intrusion constatée"))
         assertTrue(WifiIntrusionHints.assess(transition, null).isEmpty())
+        val joined = WifiJoinedLink(
+            ssid = "Livebox",
+            bssid = "2c:93:fb:00:00:01",
+            rssiDbm = -40,
+            linkSpeedMbps = 100,
+            rxLinkSpeedMbps = null,
+            txLinkSpeedMbps = null,
+            frequencyMhz = 5500,
+            wifiStandard = null,
+            maxRxLinkMbps = null,
+            maxTxLinkMbps = null,
+            ipv4 = null,
+            prefixLength = null,
+            gateway = null,
+            dns = emptyList()
+        )
+        val weak = WifiIntrusionHints.assess(
+            listOf(network("Livebox", "2c:93:fb:00:00:01", "[WPA2-PSK-TKIP][ESS]")),
+            joined
+        )
+        assertTrue(weak.any { it.text.contains("TKIP") })
         assertFalse(WifiIntrusionHints.gatewayChanged(null, "aa"))
         assertTrue(WifiIntrusionHints.gatewayChanged("aa", "bb"))
     }

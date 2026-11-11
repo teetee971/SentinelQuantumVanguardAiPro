@@ -102,6 +102,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     val lanDiscovery = remember(context) { JoinedLanDiscovery(context) }
     var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
     var gatewayNote by remember { mutableStateOf<String?>(null) }
+    var dnsNote by remember { mutableStateOf<String?>(null) }
     val gatewayMemory = remember(context) { GatewayChangeMemory(context) }
     var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
     val lanMemory = remember(context) { JoinedLanSightingMemory(context) }
@@ -180,6 +181,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 wifiNetworks = results
                 joinedLink = runCatching { WifiJoinedLinkReader.read(context) }.getOrNull()
                 gatewayNote = joinedLink?.let { gatewayMemory.note(it.ssid, it.gateway) }
+                dnsNote = joinedLink?.let { gatewayMemory.noteDns(it.ssid, it.dns) }
                 lanServices = emptyList()
                 lanAssessment = null
                 lanRunning = joinedLink != null
@@ -465,9 +467,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                         wifiNetworks
                                     ),
                                     intrusions = WifiIntrusionHints.assess(wifiNetworks, joinedLink) +
-                                        listOfNotNull(gatewayNote?.let {
-                                            WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it)
-                                        })
+                                        listOfNotNull(
+                                            gatewayNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
+                                            dnsNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) }
+                                        )
                                 )
                             }
                             item {
