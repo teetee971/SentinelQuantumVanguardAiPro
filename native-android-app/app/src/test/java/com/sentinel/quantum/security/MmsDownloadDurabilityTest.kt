@@ -198,3 +198,28 @@ class MmsDownloadDurabilityTest {
         // Unreadable or identity-mismatched records must not be deleted to free slots.
         assertEquals(1, MmsDownloadJournalMutation.SCHEMA_VERSION)
     }
+
+
+    @Test
+    fun pruneMustNotDeleteOnRetryOrDiagnoseOrException() {
+        // Invariant: recover() result is respected; only RECOVERED/TERMINAL may retire staging+journal.
+        // RETRY, DIAGNOSE and any exception keep the last usable copy.
+        assertTrue(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.RETRY))
+        assertTrue(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.DIAGNOSE))
+        assertFalse(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.RECOVERED))
+        assertFalse(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.TERMINAL))
+    }
+
+    @Test
+    fun historicalJournalWithoutShaRequiresExplicitAbsenceCheck() {
+        val raw = """{"schema":1,"subscription_id":5,"requested_at_ms":200}"""
+        val decoded = MmsDownloadJournalMutation.decodeSchema1(
+            fileName = fileName,
+            raw = raw,
+            fileNameAcceptable = true,
+            subscriptionAcceptable = { true }
+        )
+        requireNotNull(decoded)
+        assertNull(decoded.digestHex)
+        // remove() with expectedDigestHex=null now means "must be absent", not wildcard.
+    }

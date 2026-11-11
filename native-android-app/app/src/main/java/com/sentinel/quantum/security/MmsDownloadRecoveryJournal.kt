@@ -122,27 +122,25 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
     }
 
     /**
-     * Removes the journal entry only when the full transactional identity matches (when supplied).
-     * Unreadable or identity-mismatched records are left intact. An already-absent entry is treated as success.
+     * Removes the journal entry only when the full transactional identity matches.
+     * expectedDigestHex == null means the record must have no SHA (historical schema-1).
+     * Unreadable or mismatched records are left intact. An already-absent entry is success (idempotent).
      */
     fun remove(
         fileName: String,
-        expectedSubscriptionId: Int? = null,
-        expectedRequestedAtMs: Long? = null,
-        expectedDigestHex: String? = null
+        expectedSubscriptionId: Int,
+        expectedRequestedAtMs: Long,
+        expectedDigestHex: String?
     ): Boolean = synchronized(LOCK) {
         if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return@synchronized false
         val raw = preferences.getString(key(fileName), null) ?: return@synchronized true
         val current = decode(fileName, raw) ?: return@synchronized false
-        if (expectedSubscriptionId != null && current.subscriptionId != expectedSubscriptionId) {
-            return@synchronized false
-        }
-        if (expectedRequestedAtMs != null && current.requestedAtMs != expectedRequestedAtMs) {
-            return@synchronized false
-        }
-        if (expectedDigestHex != null) {
-            val expected = expectedDigestHex.lowercase()
-            if (current.digestHex?.lowercase() != expected) return@synchronized false
+        if (current.subscriptionId != expectedSubscriptionId) return@synchronized false
+        if (current.requestedAtMs != expectedRequestedAtMs) return@synchronized false
+        if (expectedDigestHex == null) {
+            if (current.digestHex != null) return@synchronized false
+        } else {
+            if (current.digestHex?.lowercase() != expectedDigestHex.lowercase()) return@synchronized false
         }
         preferences.edit().remove(key(fileName)).commit()
     }

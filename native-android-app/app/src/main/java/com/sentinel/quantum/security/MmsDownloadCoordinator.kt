@@ -58,7 +58,7 @@ object MmsDownloadCoordinator {
             return Result.Rejected("MMS_DOWNLOAD_RECOVERY_JOURNAL_FAILED")
         }
         if (!runCatching { canonicalFile.createNewFile() }.getOrDefault(false)) {
-            recoveryJournal.remove(canonicalFile.name)
+            recoveryJournal.remove(canonicalFile.name, subscriptionId, requestedAtMs, null)
             return Result.Rejected("MMS_DOWNLOAD_TARGET_FAILED")
         }
 
@@ -140,9 +140,9 @@ object MmsDownloadCoordinator {
         context: Context,
         fileName: String,
         cancelCleanupWorker: Boolean = true,
-        expectedSubscriptionId: Int? = null,
-        expectedRequestedAtMs: Long? = null,
-        expectedDigestHex: String? = null
+        expectedSubscriptionId: Int,
+        expectedRequestedAtMs: Long,
+        expectedDigestHex: String?
     ): Boolean =
         deleteInternal(
             context = context,
@@ -178,12 +178,20 @@ object MmsDownloadCoordinator {
         // Retire the journal first under full identity. Only then unlink the staging bytes.
         // A failed journal retirement leaves the last usable copy intact for later recovery.
         if (removeRecoveryMetadata) {
-            val metadataRemoved = MmsDownloadRecoveryJournal(context.applicationContext).remove(
-                fileName = fileName,
-                expectedSubscriptionId = expectedSubscriptionId,
-                expectedRequestedAtMs = expectedRequestedAtMs,
-                expectedDigestHex = expectedDigestHex
-            )
+            val journal = MmsDownloadRecoveryJournal(context.applicationContext)
+            val metadataRemoved = if (
+                expectedSubscriptionId != null && expectedRequestedAtMs != null
+            ) {
+                journal.remove(
+                    fileName = fileName,
+                    expectedSubscriptionId = expectedSubscriptionId,
+                    expectedRequestedAtMs = expectedRequestedAtMs,
+                    expectedDigestHex = expectedDigestHex
+                )
+            } else {
+                // Identity incomplete: never remove an existing journal.
+                journal.read(fileName) == null
+            }
             if (!metadataRemoved) return false
         }
 
@@ -230,18 +238,28 @@ object MmsDownloadCoordinator {
             .forEach { file ->
                 val existedBefore = file.exists()
                 if (isValidStagedFileName(file.name)) {
-                    if (MmsDownloadRecoveryJournal(context).read(file.name) != null) {
-                        runCatching {
+                    val journal = MmsDownloadRecoveryJournal(context)
+                    val record = journal.read(file.name)
+                    if (record != null) {
+                        // Never turn an exception or non-terminal outcome into a deletion.
+                        val outcome = runCatching {
                             MmsDownloadRecovery.recover(
                                 context = context,
                                 fileName = file.name,
                                 allowQuarantine = true
                             )
+                        }.getOrElse { MmsDownloadRecovery.Outcome.RETRY }
+                        if (
+                            outcome == MmsDownloadRecovery.Outcome.RECOVERED ||
+                            outcome == MmsDownloadRecovery.Outcome.TERMINAL
+                        ) {
+                            expire(context, file.name)
                         }
+                        // RETRY / DIAGNOSE / exception: keep staging and journal for later recovery.
+                    } else {
+                        // Orphan staging (journal already retired, or never existed): safe to unlink.
+                        runCatching { file.delete() }
                     }
-                    // Mirror the cleanup deadline even if final recovery could not complete: retire
-                    // the staged file, its recovery metadata and any pending recovery worker.
-                    expire(context, file.name)
                 } else {
                     runCatching { file.delete() }
                 }

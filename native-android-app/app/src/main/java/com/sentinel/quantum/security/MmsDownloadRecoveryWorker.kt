@@ -387,9 +387,9 @@ internal object MmsDownloadRecovery {
         context: Context,
         fileName: String,
         fromCleanupDeadline: Boolean,
-        expectedSubscriptionId: Int? = null,
-        expectedRequestedAtMs: Long? = null,
-        expectedDigestHex: String? = null
+        expectedSubscriptionId: Int,
+        expectedRequestedAtMs: Long,
+        expectedDigestHex: String?
     ): Outcome = if (
         finish(
             context,
@@ -429,9 +429,9 @@ internal object MmsDownloadRecovery {
         context: Context,
         fileName: String,
         fromCleanupDeadline: Boolean,
-        expectedSubscriptionId: Int? = null,
-        expectedRequestedAtMs: Long? = null,
-        expectedDigestHex: String? = null
+        expectedSubscriptionId: Int,
+        expectedRequestedAtMs: Long,
+        expectedDigestHex: String?
     ): Boolean =
         MmsDownloadCoordinator.finishRecovery(
             context = context,
