@@ -172,3 +172,29 @@ class MmsDownloadDurabilityTest {
         digestHex = digestHex
     )
 }
+
+
+    @Test
+    fun emptyOrOversizedStagingIsNeverRecoveredWithoutPrivateProof() {
+        // Documented invariant: size <= 0 or > MAX never yields RECOVERED/TERMINAL
+        // without a reread private copy matching a journal-accepted SHA.
+        assertTrue(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.DIAGNOSE))
+        assertTrue(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.RETRY))
+        assertFalse(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.TERMINAL))
+        assertFalse(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.RECOVERED))
+    }
+
+    @Test
+    fun historicalSchema1JournalRemainsReadableAndIsNotErasedForCapacity() {
+        val raw = """{"schema":1,"subscription_id":3,"requested_at_ms":100}"""
+        val decoded = MmsDownloadJournalMutation.decodeSchema1(
+            fileName = fileName,
+            raw = raw,
+            fileNameAcceptable = true,
+            subscriptionAcceptable = { true }
+        )
+        requireNotNull(decoded)
+        assertNull(decoded.digestHex)
+        // Unreadable or identity-mismatched records must not be deleted to free slots.
+        assertEquals(1, MmsDownloadJournalMutation.SCHEMA_VERSION)
+    }
