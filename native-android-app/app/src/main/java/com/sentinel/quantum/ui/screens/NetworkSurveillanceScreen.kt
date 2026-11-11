@@ -496,16 +496,38 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 )
                             }
                             item {
+                                val networkKey = joinedLink?.bssid
+                                    ?.takeIf { it.isNotBlank() && !it.equals("02:00:00:00:00:00", ignoreCase = true) }
+                                    ?.let { "network:${it.lowercase()}" }
+                                val networkBlocked = networkKey != null &&
+                                    trustRevision >= 0 &&
+                                    trustStore.isBlocked(networkKey)
                                 JoinedLanCard(
                                     services = lanServices,
                                     assessment = lanAssessment,
                                     running = lanRunning,
                                     joined = joinedLink != null,
                                     knownFingerprints = lanKnown,
+                                    networkBlocked = networkBlocked,
+                                    canBlockNetwork = networkKey != null,
+                                    onBlockNetwork = {
+                                        if (networkKey != null) {
+                                            trustStore.block(networkKey)
+                                            trustRevision += 1
+                                        }
+                                    },
+                                    onClearNetwork = {
+                                        if (networkKey != null) {
+                                            trustStore.clear(networkKey)
+                                            trustRevision += 1
+                                        }
+                                    },
                                     mine = { fingerprint ->
                                         trustRevision >= 0 && trustStore.isAllowed("service:$fingerprint")
                                     },
-                                    blocked = { fingerprint -> trustStore.isBlocked("service:$fingerprint") },
+                                    blocked = { fingerprint ->
+                                        trustStore.isBlocked("service:$fingerprint") || networkBlocked
+                                    },
                                     onMine = { fingerprint ->
                                         trustStore.allow("service:$fingerprint")
                                         trustRevision += 1
@@ -526,8 +548,16 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     running = addressRunning,
                                     enabled = joinedLink?.ipv4 != null,
                                     mine = { host -> trustStore.isAllowed(hostMineKey(host)) },
-                                    blocked = { host -> trustStore.isBlocked(hostMineKey(host)) },
+                                    blocked = { host ->
+                                        trustStore.isBlocked(hostMineKey(host)) ||
+                                            (joinedLink?.bssid
+                                                ?.takeIf { it.isNotBlank() && !it.equals("02:00:00:00:00:00", ignoreCase = true) }
+                                                ?.let { trustStore.isBlocked("network:${it.lowercase()}") } == true)
+                                    },
                                     revision = trustRevision,
+                                    networkBlocked = joinedLink?.bssid
+                                        ?.takeIf { it.isNotBlank() && !it.equals("02:00:00:00:00:00", ignoreCase = true) }
+                                        ?.let { trustRevision >= 0 && trustStore.isBlocked("network:${it.lowercase()}") } == true,
                                     onSearch = {
                                         val link = joinedLink
                                         if (link?.ipv4 == null) return@AddressSearchCard
@@ -803,6 +833,10 @@ private fun JoinedLanCard(
     running: Boolean,
     joined: Boolean,
     knownFingerprints: Set<String>,
+    networkBlocked: Boolean,
+    canBlockNetwork: Boolean,
+    onBlockNetwork: () -> Unit,
+    onClearNetwork: () -> Unit,
     mine: (String) -> Boolean,
     blocked: (String) -> Boolean,
     onMine: (String) -> Unit,
@@ -815,6 +849,17 @@ private fun JoinedLanCard(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
+        if (canBlockNetwork) {
+            if (networkBlocked) {
+                Text(
+                    "Tout le réseau rejoint est marqué bloqué sur ce téléphone. Aucun appareil n’est déconnecté du routeur. Un appareil marqué « à moi » reste une exception.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedButton(onClick = onClearNetwork) { Text("Retirer le blocage du réseau") }
+            } else {
+                OutlinedButton(onClick = onBlockNetwork) { Text("Bloquer tout le réseau") }
+            }
+        }
         if (!joined) {
             Text(
                 "Aucun Wi-Fi rejoint. Les annonces locales ne sont pas recherchées.",
@@ -853,6 +898,7 @@ private fun JoinedLanCard(
                 OwnershipActions(
                     mine = mine(fingerprint),
                     blocked = blocked(fingerprint),
+                    networkWide = networkBlocked,
                     onMine = { onMine(fingerprint) },
                     onBlock = { onBlock(fingerprint) },
                     onClear = { onClear(fingerprint) }
@@ -1011,6 +1057,7 @@ private fun AddressSearchCard(
     enabled: Boolean,
     mine: (JoinedHost) -> Boolean,
     blocked: (JoinedHost) -> Boolean,
+    networkBlocked: Boolean,
     revision: Int,
     onSearch: () -> Unit,
     onMine: (JoinedHost) -> Unit,
@@ -1037,6 +1084,7 @@ private fun AddressSearchCard(
                 OwnershipActions(
                     mine = revision >= 0 && mine(host),
                     blocked = blocked(host),
+                    networkWide = networkBlocked,
                     onMine = { onMine(host) },
                     onBlock = { onBlock(host) },
                     onClear = { onClear(host) }
@@ -1099,7 +1147,7 @@ private fun BluetoothDeviceCard(
         device.assessment.reasons.forEach { reason ->
             Text("• $reason", style = MaterialTheme.typography.bodySmall)
         }
-        OwnershipActions(mine, blocked, onMine, onBlock, onClear)
+        OwnershipActions(mine, blocked, false, onMine, onBlock, onClear)
     }
 }
 
@@ -1107,21 +1155,26 @@ private fun BluetoothDeviceCard(
 private fun OwnershipActions(
     mine: Boolean,
     blocked: Boolean,
+    networkWide: Boolean,
     onMine: () -> Unit,
     onBlock: () -> Unit,
     onClear: () -> Unit
 ) {
     when {
+        mine -> {
+            Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = onBlock) { Text("Bloquer") }
+        }
+        blocked && networkWide -> Text(
+            "Bloqué avec le réseau. Le routeur ne le déconnecte pas.",
+            style = MaterialTheme.typography.bodySmall
+        )
         blocked -> {
             Text(
                 "Marqué comme bloqué sur ce téléphone. Le routeur ne le déconnecte pas.",
                 style = MaterialTheme.typography.bodySmall
             )
             OutlinedButton(onClick = onClear) { Text("Retirer la marque") }
-        }
-        mine -> {
-            Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
-            OutlinedButton(onClick = onBlock) { Text("Bloquer") }
         }
         else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onMine) { Text("C’est à moi") }
