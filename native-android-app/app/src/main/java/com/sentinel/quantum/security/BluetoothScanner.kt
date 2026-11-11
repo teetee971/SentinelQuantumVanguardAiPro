@@ -188,6 +188,9 @@ class BluetoothScanner(context: Context) {
         val randomizedAddress = runCatching { device.type == BluetoothDevice.DEVICE_TYPE_LE }.getOrDefault(false)
         val address = runCatching { device.address }.getOrNull()?.trim().orEmpty()
 
+        val findMy = result.scanRecord?.getManufacturerSpecificData(0x004C)?.let { payload ->
+            BluetoothRiskEvaluator.isAppleFindMy(0x004C, payload)
+        } == true
         return DiscoveredBluetoothDevice(
             name = name.ifEmpty { UNKNOWN_DEVICE_NAME },
             address = address,
@@ -197,7 +200,8 @@ class BluetoothScanner(context: Context) {
             assessment = BluetoothRiskEvaluator.evaluate(
                 deviceName = name.takeIf { it.isNotEmpty() },
                 kind = kind,
-                bonded = bonded
+                bonded = bonded,
+                findMyAnnouncement = findMy
             )
         )
     }

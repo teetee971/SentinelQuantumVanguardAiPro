@@ -217,7 +217,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         bluetoothScanner.scan(
             onResults = { results ->
                 bluetoothDevices = results
-                if (!covertDeviceAlerted && results.any { it.assessment.likelyTracker || it.assessment.likelyCameraOrRecorder || it.assessment.likelyBeacon }) {
+                if (!covertDeviceAlerted && results.any {
+                        it.assessment.likelyTracker ||
+                            it.assessment.announcesFindMy ||
+                            it.assessment.likelyCameraOrRecorder ||
+                            it.assessment.likelyBeacon
+                    }) {
                     covertDeviceAlerted = true
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 }

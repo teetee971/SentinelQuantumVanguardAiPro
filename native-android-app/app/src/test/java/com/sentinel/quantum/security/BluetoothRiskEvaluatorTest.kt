@@ -94,4 +94,17 @@ class BluetoothRiskEvaluatorTest {
 
         assertEquals(NetworkRiskLevel.HIGH, assessment.riskLevel)
     }
+
+    @Test
+    fun appleFindMyAnnouncementIsNotProofOfStalking() {
+        val payload = ByteArray(27)
+        payload[0] = 0x12
+        payload[1] = 0x19
+        assertTrue(BluetoothRiskEvaluator.isAppleFindMy(0x004C, payload))
+        assertFalse(BluetoothRiskEvaluator.isAppleFindMy(0x004C, byteArrayOf(0x10, 0x05, 0, 0, 0, 0, 0)))
+        val assessment = BluetoothRiskEvaluator.evaluate(deviceName = null, findMyAnnouncement = true)
+        assertEquals(NetworkRiskLevel.MEDIUM, assessment.riskLevel)
+        assertFalse(assessment.likelyTracker)
+        assertTrue(assessment.announcesFindMy)
+    }
 }

@@ -34,7 +34,7 @@ object CovertDeviceDetectionCapabilities {
             channel = CovertDetectionChannel.BLUETOOTH_TRACKER,
             support = CovertDetectionSupport.ACTIVE_LOCAL,
             label = "AirTags et traceurs Bluetooth",
-            limitation = "Analyse locale des annonces BLE visibles. Un appareil silencieux, éteint ou non compatible BLE peut rester invisible."
+            limitation = "Noms connus et annonce Apple Localiser. Un appareil silencieux peut rester invisible. Une annonce ne prouve pas qu’il vous suit."
         ),
         CovertDetectionCapability(
             channel = CovertDetectionChannel.WIRELESS_CAMERA_HINT,

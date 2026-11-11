@@ -19,7 +19,8 @@ data class BluetoothRiskAssessment(
     val likelyTracker: Boolean,
     val likelyCameraOrRecorder: Boolean,
     val likelyBeacon: Boolean,
-    val reasons: List<String>
+    val reasons: List<String>,
+    val announcesFindMy: Boolean = false
 )
 
 object BluetoothRiskEvaluator {
@@ -84,10 +85,18 @@ object BluetoothRiskEvaluator {
         return markers.any { marker -> normalized.contains(marker) }
     }
 
+    fun isAppleFindMy(manufacturerId: Int, payload: ByteArray): Boolean {
+        if (manufacturerId != APPLE_MANUFACTURER_ID || payload.size < 4) return false
+        if (payload[0].toInt() and 0xff != FIND_MY_TYPE) return false
+        val declared = payload[1].toInt() and 0xff
+        return declared >= 4 && payload.size >= declared + 2
+    }
+
     fun evaluate(
         deviceName: String?,
         kind: BluetoothDeviceKind = BluetoothDeviceKind.UNKNOWN,
-        bonded: Boolean = false
+        bonded: Boolean = false,
+        findMyAnnouncement: Boolean = false
     ): BluetoothRiskAssessment {
         val likelyTracker = isLikelyTracker(deviceName)
         val likelyCameraOrRecorder = isLikelyCameraOrRecorder(deviceName)
@@ -98,6 +107,9 @@ object BluetoothRiskEvaluator {
         if (likelyTracker) {
             reasons += "Nom compatible avec un traceur d'objet sans appairage."
             reasons += TRACKER_ADVICE
+        }
+        if (findMyAnnouncement) {
+            reasons += "Annonce Apple Localiser. Compatible avec un AirTag ou un appareil Apple. Une seule observation ne prouve pas qu’il vous suit."
         }
         if (likelyCameraOrRecorder) {
             reasons += "Nom compatible avec une caméra ou un enregistreur sans fil. Ce signal est indicatif et ne prouve pas un dispositif espion."
@@ -110,13 +122,13 @@ object BluetoothRiskEvaluator {
 
         val riskLevel = when {
             likelyTracker -> NetworkRiskLevel.HIGH
-            likelyCameraOrRecorder || likelyBeacon -> NetworkRiskLevel.MEDIUM
+            likelyCameraOrRecorder || likelyBeacon || findMyAnnouncement -> NetworkRiskLevel.MEDIUM
             kind == BluetoothDeviceKind.UNKNOWN -> NetworkRiskLevel.MEDIUM
             !namedDevice -> NetworkRiskLevel.MEDIUM
             else -> NetworkRiskLevel.LOW
         }
 
-        if (riskLevel == NetworkRiskLevel.MEDIUM && !likelyTracker) {
+        if (riskLevel == NetworkRiskLevel.MEDIUM && !likelyTracker && !findMyAnnouncement) {
             reasons += "Type d'appareil inconnu à proximité : à surveiller s'il vous suit dans plusieurs lieux."
         }
         if (riskLevel == NetworkRiskLevel.LOW) {
@@ -128,7 +140,11 @@ object BluetoothRiskEvaluator {
             likelyTracker = likelyTracker,
             likelyCameraOrRecorder = likelyCameraOrRecorder,
             likelyBeacon = likelyBeacon,
-            reasons = reasons.toList()
+            reasons = reasons.toList(),
+            announcesFindMy = findMyAnnouncement
         )
     }
+
+    private const val APPLE_MANUFACTURER_ID = 0x004C
+    private const val FIND_MY_TYPE = 0x12
 }
