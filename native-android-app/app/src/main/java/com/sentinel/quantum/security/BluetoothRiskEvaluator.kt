@@ -94,11 +94,25 @@ object BluetoothRiskEvaluator {
 
     fun appleFindMyLabel(payload: ByteArray): String? {
         if (!isAppleFindMy(APPLE_MANUFACTURER_ID, payload) || payload.size < 3) return null
-        return when (payload[2].toInt() and 0x18) {
-            0x10 -> "Annonce compatible avec un AirTag. Une seule observation ne prouve pas qu’il vous suit."
-            0x18 -> "Annonce compatible avec des AirPods. Pas une preuve de suivi."
-            else -> "Annonce Apple Localiser, sans le motif AirTag. Peut être un iPhone ou un accessoire. Pas une preuve de suivi."
+        val kind = when (payload[2].toInt() and 0x18) {
+            0x10 -> "Annonce compatible avec un AirTag."
+            0x18 -> "Annonce compatible avec des AirPods."
+            else -> "Annonce Apple Localiser, sans le motif AirTag."
         }
+        val battery = when ((payload[2].toInt() ushr 6) and 0x03) {
+            0 -> "Batterie annoncée pleine"
+            1 -> "Batterie annoncée moyenne"
+            2 -> "Batterie annoncée basse"
+            else -> "Batterie annoncée très basse"
+        }
+        val caution = if ((payload[2].toInt() and 0x18) == 0x10) {
+            "Une seule observation ne prouve pas qu’il vous suit."
+        } else if ((payload[2].toInt() and 0x18) == 0x18) {
+            "Pas une preuve de suivi."
+        } else {
+            "Peut être un iPhone ou un accessoire. Pas une preuve de suivi."
+        }
+        return "$kind $battery. $caution"
     }
 
     fun evaluate(

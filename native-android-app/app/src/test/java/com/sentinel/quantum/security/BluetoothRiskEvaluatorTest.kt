@@ -115,6 +115,10 @@ class BluetoothRiskEvaluatorTest {
         val phone = airtag.copyOf()
         phone[2] = 0x00
         assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(airtag)!!.contains("AirTag"))
+        assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(airtag)!!.contains("pleine"))
+        val low = airtag.copyOf()
+        low[2] = 0x90.toByte()
+        assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(low)!!.contains("basse"))
         assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(airpods)!!.contains("AirPods"))
         assertTrue(BluetoothRiskEvaluator.appleFindMyLabel(phone)!!.contains("sans le motif AirTag"))
     }
