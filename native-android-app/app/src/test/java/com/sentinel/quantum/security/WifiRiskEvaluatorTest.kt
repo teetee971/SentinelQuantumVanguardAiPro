@@ -148,4 +148,12 @@ class WifiRiskEvaluatorTest {
 
         assertEquals(NetworkRiskLevel.LOW, assessment.riskLevel)
     }
+
+    @Test
+    fun cameraNameIsAHintNotAProofOfAbsence() {
+        assertTrue(WifiRiskEvaluator.isLikelyCameraOrRecorderSsid("IMOU-C26"))
+        assertTrue(WifiRiskEvaluator.isLikelyCameraOrRecorderSsid("nomi-ipc-s21fe-e32b"))
+        assertFalse(WifiRiskEvaluator.isLikelyCameraOrRecorderSsid("Livebox Teetee 5GHz"))
+        assertFalse(WifiRiskEvaluator.isLikelyCameraOrRecorderSsid("Generic"))
+    }
 }

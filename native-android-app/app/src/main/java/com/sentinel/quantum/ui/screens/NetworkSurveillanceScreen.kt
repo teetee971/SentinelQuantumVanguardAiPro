@@ -641,8 +641,13 @@ private fun JoinedLanCard(
             )
         } else {
             services.take(12).forEach { service ->
+                val cameraHint = WifiRiskEvaluator.isLikelyCameraOrRecorderSsid(service.name) ||
+                    WifiRiskEvaluator.isLikelyCameraOrRecorderSsid(service.host)
                 Text(
-                    "${service.name} · ${service.host} · port ${service.port}",
+                    buildString {
+                        append("${service.name} · ${service.host} · port ${service.port}")
+                        if (cameraHint) append(" · nom compatible avec une caméra")
+                    },
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -671,6 +676,13 @@ private fun JoinedLanCard(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (joined && !running) {
+            Text(
+                "Aucune caméra reconnue parmi les appareils annoncés. Cela ne prouve pas qu’il n’y en a pas : une Imou peut être en ligne sous un autre nom, ou sans nom.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

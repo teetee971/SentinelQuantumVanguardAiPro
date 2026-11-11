@@ -84,6 +84,7 @@ object WifiRiskEvaluator {
         "hdwificam",
         "v380",
         "imou",
+        "dahua",
         "ipc-",
         "camera",
         "recorder"

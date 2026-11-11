@@ -28,6 +28,7 @@ class WifiRadioAnalyzerTest {
     fun securityAndPmfAreReadFromCapabilities() {
         val capabilities = "[WPA2-PSK-CCMP][WPA3-SAE-CCMP][MFPC][MFPR]"
         assertTrue(WifiRadioAnalyzer.securityDetail(capabilities).contains("WPA3-SAE"))
+        assertTrue(WifiRadioAnalyzer.securityDetail("[WPA2-PSK-CCMP][WPS]").contains("WPS activé"))
         assertEquals("PMF obligatoire", WifiRadioAnalyzer.pmfLabel(capabilities))
         assertEquals("WEP", WifiRadioAnalyzer.securityDetail("[WEP]"))
     }

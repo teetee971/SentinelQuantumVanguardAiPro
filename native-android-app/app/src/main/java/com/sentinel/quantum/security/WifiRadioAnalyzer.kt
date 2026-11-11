@@ -75,6 +75,7 @@ object WifiRadioAnalyzer {
             normalized.contains("CCMP") -> parts += "CCMP"
         }
         if (normalized.contains("TKIP")) parts += "TKIP"
+        if (normalized.contains("WPS")) parts += "WPS activé"
         return parts.joinToString(" · ")
     }
 
