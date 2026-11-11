@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +58,8 @@ import com.sentinel.quantum.security.NetworkTimelineEventKind
 import com.sentinel.quantum.security.NetworkTimelineSnapshot
 import com.sentinel.quantum.security.NetworkTimelineStore
 import com.sentinel.quantum.security.NetworkTrustStore
-import com.sentinel.quantum.security.WifiBand
+import com.sentinel.quantum.security.WifiConnect
+import com.sentinel.quantum.security.WifiConnectPlan
 import com.sentinel.quantum.security.WifiIntrusionFinding
 import com.sentinel.quantum.security.WifiIntrusionHints
 import com.sentinel.quantum.security.WifiRiskEvaluator
@@ -119,6 +121,9 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var trustRevision by remember { mutableIntStateOf(0) }
     val watchPreferences = remember(context) { TrackerWatchPreferences(context) }
     var watchEnabled by remember { mutableStateOf(watchPreferences.enabled) }
+    val wifiConnect = remember(context) { WifiConnect(context) }
+    var connectTarget by remember { mutableStateOf<DiscoveredWifiNetwork?>(null) }
+    var connectKey by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     var lanAssessment by remember { mutableStateOf<NetworkServiceExposureAssessment?>(null) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
@@ -344,6 +349,49 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                         text = { Text(tab.label) }
                     )
                 }
+            }
+
+            connectTarget?.let { target ->
+                AlertDialog(
+                    onDismissRequest = {
+                        connectKey = ""
+                        connectTarget = null
+                    },
+                    title = { Text("Se connecter") },
+                    text = {
+                        Column {
+                            Text(
+                                "Saisissez votre clé pour « ${target.ssid} ». Elle n’est pas enregistrée. Le code WPS n’est pas utilisé.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            OutlinedTextField(
+                                value = connectKey,
+                                onValueChange = { connectKey = it },
+                                visualTransformation = PasswordVisualTransformation(),
+                                label = { Text("Clé Wi-Fi") },
+                                singleLine = true
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            statusMessage = wifiConnect.request(
+                                target.ssid,
+                                target.bssid,
+                                target.assessment.securityType,
+                                connectKey
+                            )
+                            connectKey = ""
+                            connectTarget = null
+                        }) { Text("Demander à Android") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            connectKey = ""
+                            connectTarget = null
+                        }) { Text("Annuler") }
+                    }
+                )
             }
 
             LazyColumn(
@@ -606,6 +654,20 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     onBlock = {
                                         trustStore.block(network.bssid)
                                         runWifiScan()
+                                    },
+                                    onConnect = {
+                                        val type = network.assessment.securityType
+                                        if (WifiConnectPlan.needsKey(type)) {
+                                            connectTarget = network
+                                            connectKey = ""
+                                        } else {
+                                            statusMessage = wifiConnect.request(
+                                                network.ssid,
+                                                network.bssid,
+                                                type,
+                                                null
+                                            )
+                                        }
                                     }
                                 )
                             }
@@ -946,7 +1008,8 @@ private fun WifiNetworkCard(
     overlap24: Int,
     joinedHere: Boolean,
     onAllow: () -> Unit,
-    onBlock: () -> Unit
+    onBlock: () -> Unit,
+    onConnect: () -> Unit
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -1043,6 +1106,9 @@ private fun WifiNetworkCard(
             }
             OutlinedButton(onClick = onBlock, enabled = network.bssid.isNotBlank()) {
                 Text("Marquer suspect")
+            }
+            OutlinedButton(onClick = onConnect, enabled = network.ssid.isNotBlank()) {
+                Text("Se connecter")
             }
         }
     }
