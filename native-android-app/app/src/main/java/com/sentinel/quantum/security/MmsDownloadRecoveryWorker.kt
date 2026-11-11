@@ -9,7 +9,6 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 /**
@@ -32,7 +31,8 @@ class MmsDownloadRecoveryWorker(
         ) {
             MmsDownloadRecovery.Outcome.RETRY -> Result.retry()
             MmsDownloadRecovery.Outcome.RECOVERED,
-            MmsDownloadRecovery.Outcome.TERMINAL -> Result.success()
+            MmsDownloadRecovery.Outcome.TERMINAL,
+            MmsDownloadRecovery.Outcome.DIAGNOSE -> Result.success()
         }
     }
 
@@ -95,7 +95,9 @@ internal object MmsDownloadRecovery {
     enum class Outcome {
         RECOVERED,
         RETRY,
-        TERMINAL
+        TERMINAL,
+        /** Stop scheduling, but keep the journal and the staging bytes for diagnosis. */
+        DIAGNOSE
     }
 
     fun recover(
@@ -108,16 +110,15 @@ internal object MmsDownloadRecovery {
     }
 
     /** Serializes recovery, cleanup and the download callback for one staging name. */
-    inline fun <T> exclusively(fileName: String, block: () -> T): T {
-        val gate = GATES.computeIfAbsent(fileName) { Any() }
-        return synchronized(gate) { block() }
-    }
+    inline fun <T> exclusively(fileName: String, block: () -> T): T =
+        MmsDownloadProcessingLock.withFile(fileName, block)
 
     /**
-     * A retry still needs the staging bytes. Cleanup must not unlink them.
+     * A retry or a diagnosis still needs the bytes. Cleanup must not unlink them.
      * Terminal and recovered passes have already kept a private copy or proved there is nothing to keep.
      */
-    fun cleanupMustKeepStaging(outcome: Outcome): Boolean = outcome == Outcome.RETRY
+    fun cleanupMustKeepStaging(outcome: Outcome): Boolean =
+        outcome == Outcome.RETRY || outcome == Outcome.DIAGNOSE
 
     private fun recoverExclusive(
         context: Context,
@@ -161,10 +162,24 @@ internal object MmsDownloadRecovery {
         }
 
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return Outcome.RETRY
-        if (!journal.markDigest(fileName, digest)) return Outcome.RETRY
-        val persistence = persistPrivate(appContext, data)
-        val persistedDigest = persistence.digestHex
-        if (persistence.state == IncomingMmsPrivateStore.State.FAILED || persistedDigest != digest) {
+        val persistence = IncomingMmsPrivateStore.confirmDurableCopy(
+            appContext.filesDir,
+            data,
+            journal.pinnedDigests()
+        )
+        if (persistence == null || persistence.digestHex != digest) return Outcome.RETRY
+        if (
+            !journal.markDigest(
+                fileName = fileName,
+                digestHex = digest,
+                expectedSubscriptionId = record.subscriptionId,
+                expectedRequestedAtMs = record.requestedAtMs
+            )
+        ) {
+            return Outcome.RETRY
+        }
+        IncomingMmsPrivateStore.releaseJournaled(digest)
+        if (!MmsDownloadDurability.stagingDeletable(privateRereadMatches = true, journalAccepted = true)) {
             return Outcome.RETRY
         }
 
@@ -172,10 +187,11 @@ internal object MmsDownloadRecovery {
             appContext.readSmsRoleStateFailClosed() !=
                 SmsActivationDiagnostics.SmsRoleState.HELD
         ) {
+            check(!MmsDownloadDurability.roleRevocationDeletesStaging())
             return Outcome.RETRY
         }
         if (!MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)) {
-            return finishTerminal(appContext, fileName, allowQuarantine)
+            return Outcome.DIAGNOSE
         }
 
         return projectAndFinish(
@@ -201,32 +217,64 @@ internal object MmsDownloadRecovery {
     ): Outcome {
         val digest = record.digestHex
         val data = digest?.let { IncomingMmsPrivateStore.read(appContext.filesDir, it) }
-        if (digest == null || data == null) {
-            return if (journal.remove(record.fileName)) Outcome.TERMINAL else Outcome.RETRY
-        }
-        if (
-            appContext.readSmsRoleStateFailClosed() !=
-                SmsActivationDiagnostics.SmsRoleState.HELD ||
-            !MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)
-        ) {
-            return Outcome.RETRY
-        }
-        val persistence = IncomingMmsPrivateStore.Result(
-            IncomingMmsPrivateStore.State.EXISTING,
-            digest
+        val privateReadable = digest != null &&
+            data != null &&
+            IncomingMmsIdentity.sha256Hex(data) == digest
+        val disposition = MmsDownloadMissingCopyPolicy.disposition(
+            digestPresent = digest != null,
+            privateReadable = privateReadable,
+            observations = record.privateMissCount
         )
-        return projectAndFinish(
-            appContext = appContext,
-            journal = journal,
-            fileName = record.fileName,
-            subscriptionId = record.subscriptionId,
-            data = data,
-            digest = digest,
-            persistence = persistence,
-            allowQuarantine = allowQuarantine,
-            nowMs = nowMs,
-            stagingPresent = false
-        )
+        return when (disposition) {
+            MmsDownloadMissingCopyPolicy.Disposition.CONTINUE_PRIVATE -> {
+                if (
+                    appContext.readSmsRoleStateFailClosed() !=
+                        SmsActivationDiagnostics.SmsRoleState.HELD ||
+                    !MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)
+                ) {
+                    return Outcome.RETRY
+                }
+                projectAndFinish(
+                    appContext = appContext,
+                    journal = journal,
+                    fileName = record.fileName,
+                    subscriptionId = record.subscriptionId,
+                    data = requireNotNull(data),
+                    digest = requireNotNull(digest),
+                    persistence = IncomingMmsPrivateStore.Result(
+                        IncomingMmsPrivateStore.State.EXISTING,
+                        digest
+                    ),
+                    allowQuarantine = allowQuarantine,
+                    nowMs = nowMs,
+                    stagingPresent = false
+                )
+            }
+            MmsDownloadMissingCopyPolicy.Disposition.RETRY_INCONSISTENT,
+            MmsDownloadMissingCopyPolicy.Disposition.RETRY_HISTORICAL -> {
+                journal.notePrivateUnavailable(
+                    fileName = record.fileName,
+                    expectedSubscriptionId = record.subscriptionId,
+                    expectedRequestedAtMs = record.requestedAtMs
+                )
+                Outcome.RETRY
+            }
+            MmsDownloadMissingCopyPolicy.Disposition.DIAGNOSE_INCONSISTENT,
+            MmsDownloadMissingCopyPolicy.Disposition.DIAGNOSE_HISTORICAL -> {
+                LocalLogger(appContext).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsDownload",
+                    "Reprise MMS arrêtée sans effacer le journal; disposition=$disposition"
+                )
+                SmsNotificationHelper.notifyMessage(
+                    appContext,
+                    title = "MMS à vérifier",
+                    preview = "Une copie MMS n’a pas pu être relue. Le journal est conservé.",
+                    notificationId = record.fileName.hashCode()
+                )
+                Outcome.DIAGNOSE
+            }
+        }
     }
 
     private fun projectAndFinish(
@@ -328,11 +376,6 @@ internal object MmsDownloadRecovery {
         }
     }
 
-    private fun persistPrivate(context: Context, data: ByteArray): IncomingMmsPrivateStore.Result {
-        val pins = MmsDownloadRecoveryJournal(context).pinnedDigests()
-        return IncomingMmsPrivateStore.persist(context.filesDir, data, pins)
-    }
-
     private fun finishTerminal(
         context: Context,
         fileName: String,
@@ -383,5 +426,4 @@ internal object MmsDownloadRecovery {
     }
 
     internal const val STABLE_FILE_GRACE_MS = 30_000L
-    private val GATES = ConcurrentHashMap<String, Any>()
 }

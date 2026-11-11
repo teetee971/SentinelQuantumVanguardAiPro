@@ -115,6 +115,28 @@ class IncomingMmsPrivateStoreTest {
         assertTrue(pinnedPdu.contentEquals(restored))
     }
 
+    @Test
+    fun unpinnedOverflowFailsWithoutDeletingPinnedProofs() = withTempRoot { root ->
+        val pinned = mutableSetOf<String>()
+        repeat(IncomingMmsPrivateStore.MAX_STORED_MMS) { index ->
+            val pdu = "pinned-$index".toByteArray(Charsets.UTF_8)
+            val result = IncomingMmsPrivateStore.persist(root, pdu, pinned)
+            assertEquals(IncomingMmsPrivateStore.State.CREATED, result.state)
+            pinned += requireNotNull(result.digestHex)
+        }
+
+        val overflow = IncomingMmsPrivateStore.persist(
+            root,
+            "not-pinned".toByteArray(Charsets.UTF_8),
+            pinnedDigests = pinned
+        )
+        assertEquals(IncomingMmsPrivateStore.State.FAILED, overflow.state)
+        assertEquals(IncomingMmsPrivateStore.MAX_STORED_MMS, pduFiles(root).size)
+        pinned.forEach { digest ->
+            assertNotNull(IncomingMmsPrivateStore.read(root, digest))
+        }
+    }
+
     private fun pduFiles(root: File): List<File> =
         File(root, "mms-inbox").listFiles()
             ?.filter { it.isFile && it.extension == "pdu" }

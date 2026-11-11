@@ -99,15 +99,23 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
                 SmsActivationDiagnostics.SmsRoleState.HELD
         ) {
             val preserved = runCatching { target.readBytes() }.getOrNull()
-            if (preserved != null && preserved.isNotEmpty()) {
-                val persisted = IncomingMmsPrivateStore.persist(
+            val journal = MmsDownloadRecoveryJournal(context)
+            val record = journal.read(fileName)
+            if (preserved != null && preserved.isNotEmpty() && record != null) {
+                val persisted = IncomingMmsPrivateStore.confirmDurableCopy(
                     context.filesDir,
                     preserved,
-                    MmsDownloadRecoveryJournal(context).pinnedDigests()
+                    journal.pinnedDigests()
                 )
-                val digest = persisted.digestHex
-                if (persisted.state != IncomingMmsPrivateStore.State.FAILED && digest != null) {
-                    MmsDownloadRecoveryJournal(context).markDigest(fileName, digest)
+                val digest = persisted?.digestHex
+                if (digest != null && journal.markDigest(
+                        fileName = fileName,
+                        digestHex = digest,
+                        expectedSubscriptionId = record.subscriptionId,
+                        expectedRequestedAtMs = record.requestedAtMs
+                    )
+                ) {
+                    IncomingMmsPrivateStore.releaseJournaled(digest)
                 }
             }
             LocalLogger(context).log(
@@ -159,21 +167,30 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
-        val persistence = IncomingMmsPrivateStore.persist(
+        val journal = MmsDownloadRecoveryJournal(context)
+        val record = journal.read(fileName)
+        val persistence = IncomingMmsPrivateStore.confirmDurableCopy(
             context.filesDir,
             data,
-            MmsDownloadRecoveryJournal(context).pinnedDigests()
+            journal.pinnedDigests()
         )
-        val digest = persistence.digestHex
-        if (persistence.state == IncomingMmsPrivateStore.State.FAILED || digest == null) {
+        val digest = persistence?.digestHex
+        if (persistence == null || digest == null || record == null) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "MmsDownload",
-                "Persistance MMS privée refusée fail-closed; copie temporaire conservée jusqu’au nettoyage durable"
+                "Persistance MMS privée non relue; copie temporaire conservée"
             )
             return
         }
-        if (!MmsDownloadRecoveryJournal(context).markDigest(fileName, digest)) {
+        if (
+            !journal.markDigest(
+                fileName = fileName,
+                digestHex = digest,
+                expectedSubscriptionId = record.subscriptionId,
+                expectedRequestedAtMs = record.requestedAtMs
+            )
+        ) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
@@ -181,6 +198,7 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             )
             return
         }
+        IncomingMmsPrivateStore.releaseJournaled(digest)
 
         val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
         val safePreview: MmsDecodePipeline.Result = when (prepared) {

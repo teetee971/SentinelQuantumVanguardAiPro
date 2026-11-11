@@ -32,6 +32,14 @@ class MmsDownloadCleanupWorker(
             )
         }.getOrDefault(MmsDownloadRecovery.Outcome.RETRY)
 
+        if (outcome == MmsDownloadRecovery.Outcome.DIAGNOSE) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échéance MMS atteinte sans copie relisible : le journal et le staging restent en diagnostic"
+            )
+            return@exclusively Result.success()
+        }
         if (outcome == MmsDownloadRecovery.Outcome.RETRY || MmsDownloadRecovery.cleanupMustKeepStaging(outcome)) {
             LocalLogger(applicationContext).log(
                 LocalLogger.LogLevel.WARNING,

@@ -49,15 +49,11 @@ internal object IncomingMmsPrivateStore {
         }
 
         if (target.exists()) {
-            return if (
-                target.isFile &&
+            val matches = target.isFile &&
                 target.length() == data.size.toLong() &&
                 digestFile(target) == digest
-            ) {
-                Result(State.EXISTING, digest)
-            } else {
-                failed()
-            }
+            if (!matches) return failed()
+            return Result(State.EXISTING, digest)
         }
 
         // With the process-wide monitor held, any .part is crash residue rather than a live writer.
@@ -68,21 +64,9 @@ internal object IncomingMmsPrivateStore {
             if (!runCatching { residue.delete() }.getOrDefault(false)) return failed()
         }
 
-        val completed = canonicalDirectory.listFiles()
-            ?.filter { it.isFile && it.extension == PDU_EXTENSION }
-            ?.sortedWith(compareByDescending<File> { it.lastModified() }.thenBy { it.name })
-            .orEmpty()
-        val pinnedNames = pinnedDigests.mapNotNull(IncomingMmsIdentity::persistedFileName).toSet()
-        var stored = completed
-        while (stored.size > MAX_STORED_MMS - 1) {
-            val victim = stored.lastOrNull { it.name !in pinnedNames } ?: break
-            if (!runCatching { victim.delete() }.getOrDefault(false)) return failed()
-            stored = stored.filterNot { it == victim }
-        }
-
         if (partial.exists() && !runCatching { partial.delete() }.getOrDefault(false)) return failed()
 
-        return try {
+        val written = try {
             FileOutputStream(partial).use { stream ->
                 stream.write(data)
                 stream.fd.sync()
@@ -92,14 +76,76 @@ internal object IncomingMmsPrivateStore {
                     target.length() == data.size.toLong() &&
                     digestFile(target) == digest
                 runCatching { partial.delete() }
-                if (matchingTarget) Result(State.EXISTING, digest) else failed()
+                matchingTarget
             } else {
-                Result(State.CREATED, digest)
+                true
             }
         } catch (_: Exception) {
             runCatching { partial.delete() }
-            failed()
+            false
         }
+        if (!written || digestFile(target) != digest) {
+            runCatching { partial.delete() }
+            return failed()
+        }
+
+        // Evict only after the new bytes are durable. Pinned proofs are never victims.
+        // If pinned files already fill the cap, the new pinned file is kept and the cap
+        // is exceeded on purpose: dropping it would drop the only copy. An unpinned file
+        // that still does not fit is deleted and the call fails closed.
+        val protected = pinnedDigests.mapNotNull(IncomingMmsIdentity::persistedFileName).toSet() +
+            retainedUntilJournal.mapNotNull(IncomingMmsIdentity::persistedFileName).toSet()
+        val targetIsProtected = target.name in protected || targetName in protected
+        var stored = canonicalDirectory.listFiles()
+            ?.filter { it.isFile && it.extension == PDU_EXTENSION }
+            ?.sortedWith(compareByDescending<File> { it.lastModified() }.thenBy { it.name })
+            .orEmpty()
+        while (stored.size > MAX_STORED_MMS) {
+            val victim = stored.lastOrNull { it.name !in protected && it.name != target.name } ?: break
+            if (!runCatching { victim.delete() }.getOrDefault(false)) return failed()
+            stored = stored.filterNot { it == victim }
+        }
+        if (stored.size > MAX_STORED_MMS && !targetIsProtected) {
+            if (!runCatching { target.delete() }.getOrDefault(false)) return failed()
+            return failed()
+        }
+        return Result(State.CREATED, digest)
+    }
+
+    /**
+     * Persist, then prove the private file still matches. Does not touch the journal.
+     * The digest stays retained until [releaseJournaled] so a later persist cannot evict it first.
+     */
+    fun confirmDurableCopy(
+        filesDir: File,
+        data: ByteArray,
+        pinnedDigests: Set<String> = emptySet()
+    ): Result? {
+        val digest = IncomingMmsIdentity.sha256Hex(data) ?: return null
+        retainUntilJournaled(digest)
+        val persisted = persist(filesDir, data, pinnedDigests + digest)
+        if (
+            (persisted.state != State.CREATED && persisted.state != State.EXISTING) ||
+            persisted.digestHex != digest
+        ) {
+            releaseJournaled(digest)
+            return null
+        }
+        val again = read(filesDir, digest) ?: return null
+        if (IncomingMmsIdentity.sha256Hex(again) != digest) return null
+        return persisted
+    }
+
+    /** Keeps a digest that is about to be journaled from being evicted by another persist. */
+    fun retainUntilJournaled(digestHex: String) {
+        val normalized = digestHex.lowercase()
+        if (IncomingMmsIdentity.persistedFileName(normalized) != null) {
+            retainedUntilJournal.add(normalized)
+        }
+    }
+
+    fun releaseJournaled(digestHex: String) {
+        retainedUntilJournal.remove(digestHex.lowercase())
     }
 
     /** Reads a private PDU only when its file name and contents still match the digest. */
@@ -134,4 +180,5 @@ internal object IncomingMmsPrivateStore {
     private const val PDU_EXTENSION = "pdu"
     private const val PART_EXTENSION = "part"
     internal const val MAX_STORED_MMS = 50
+    private val retainedUntilJournal = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 }

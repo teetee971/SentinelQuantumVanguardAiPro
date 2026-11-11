@@ -1,7 +1,6 @@
 package com.sentinel.quantum.security
 
 import android.content.Context
-import org.json.JSONObject
 
 /**
  * Durable metadata for an MMS download whose Android callback may be lost across process death.
@@ -14,8 +13,9 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         val fileName: String,
         val subscriptionId: Int,
         val requestedAtMs: Long,
-        /** Null on journals written before the private copy was confirmed. */
-        val digestHex: String? = null
+        /** Null until a private copy has been reread and this exact record accepted its SHA-256. */
+        val digestHex: String? = null,
+        val privateMissCount: Int = 0
     )
 
     private val preferences = context.applicationContext.getSharedPreferences(
@@ -23,71 +23,111 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    @Synchronized
     fun record(
         fileName: String,
         subscriptionId: Int,
         requestedAtMs: Long = System.currentTimeMillis()
-    ): Boolean {
-        if (!validRecordFields(fileName, subscriptionId, requestedAtMs)) return false
-
-        // Malformed/stale metadata must not consume the bounded recovery budget forever. Sanitize
-        // first; if SharedPreferences cannot commit the cleanup, fail closed rather than pretending
-        // capacity became available.
-        if (!sanitizeInvalidEntries()) return false
+    ): Boolean = synchronized(LOCK) {
+        if (!validRecordFields(fileName, subscriptionId, requestedAtMs)) return@synchronized false
 
         val recordKey = key(fileName)
-        val existing = preferences.contains(recordKey)
-        val activeRecordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
-        if (!canAcceptRecord(existing = existing, activeRecordCount = activeRecordCount)) {
-            return false
+        val existingRaw = preferences.getString(recordKey, null)
+        if (existingRaw != null) {
+            val current = decode(fileName, existingRaw) ?: return@synchronized false
+            return@synchronized current.subscriptionId == subscriptionId &&
+                current.requestedAtMs == requestedAtMs
         }
-        val encoded = JSONObject()
-            .put("schema", SCHEMA_VERSION)
-            .put("subscription_id", subscriptionId)
-            .put("requested_at_ms", requestedAtMs)
-            .toString()
-        return preferences.edit().putString(recordKey, encoded).commit()
+
+        val activeRecordCount = preferences.all.keys.count { it.startsWith(KEY_PREFIX) }
+        if (!canAcceptRecord(existing = false, activeRecordCount = activeRecordCount)) {
+            return@synchronized false
+        }
+        val encoded = MmsDownloadJournalMutation.encode(
+            MmsDownloadJournalMutation.Snapshot(
+                fileName = fileName,
+                subscriptionId = subscriptionId,
+                requestedAtMs = requestedAtMs
+            )
+        )
+        preferences.edit().putString(recordKey, encoded).commit()
     }
 
     /**
-     * Records the SHA-256 of a verified private copy without changing the schema number.
-     * Older journals simply have no digest and must still be treated as requiring the staging file.
+     * Writes a verified SHA only onto the expected record.
+     * An absent record is not recreated. A different SHA is not replaced.
      */
-    @Synchronized
-    fun markDigest(fileName: String, digestHex: String): Boolean {
-        val current = read(fileName) ?: return false
-        val normalized = digestHex.lowercase()
-        if (IncomingMmsIdentity.persistedFileName(normalized) == null) return false
-        if (current.digestHex == normalized) return true
-        val encoded = JSONObject()
-            .put("schema", SCHEMA_VERSION)
-            .put("subscription_id", current.subscriptionId)
-            .put("requested_at_ms", current.requestedAtMs)
-            .put("sha256", normalized)
-            .toString()
-        if (encoded.length > MAX_ENCODED_CHARS) return false
-        return preferences.edit().putString(key(fileName), encoded).commit()
+    fun markDigest(
+        fileName: String,
+        digestHex: String,
+        expectedSubscriptionId: Int,
+        expectedRequestedAtMs: Long
+    ): Boolean = synchronized(LOCK) {
+        val recordKey = key(fileName)
+        val raw = preferences.getString(recordKey, null)
+        val current = decode(fileName, raw)
+        val decision = MmsDownloadJournalMutation.decideDigest(
+            current = current?.toSnapshot(),
+            expectedFileName = fileName,
+            expectedSubscriptionId = expectedSubscriptionId,
+            expectedRequestedAtMs = expectedRequestedAtMs,
+            digestHex = digestHex
+        )
+        when (decision) {
+            MmsDownloadJournalMutation.DigestCommit.IDENTICAL_REPLAY -> true
+            MmsDownloadJournalMutation.DigestCommit.APPLIED -> {
+                val snapshot = current?.toSnapshot()?.copy(digestHex = digestHex.lowercase())
+                    ?: return@synchronized false
+                val encoded = MmsDownloadJournalMutation.encode(snapshot)
+                if (encoded.length > MmsDownloadJournalMutation.MAX_ENCODED_CHARS) return@synchronized false
+                if (preferences.getString(recordKey, null) != raw) return@synchronized false
+                preferences.edit().putString(recordKey, encoded).commit()
+            }
+            else -> false
+        }
     }
 
-    @Synchronized
-    fun pinnedDigests(): Set<String> = all().mapNotNull { it.digestHex }.toSet()
-
-    @Synchronized
-    fun read(fileName: String): Record? {
-        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null
-        return decode(fileName, preferences.all[key(fileName)])
+    /** Counts a missing private copy without deleting the record or changing its SHA. */
+    fun notePrivateUnavailable(
+        fileName: String,
+        expectedSubscriptionId: Int,
+        expectedRequestedAtMs: Long
+    ): Boolean = synchronized(LOCK) {
+        val recordKey = key(fileName)
+        val raw = preferences.getString(recordKey, null)
+        val current = decode(fileName, raw) ?: return@synchronized false
+        if (
+            current.fileName != fileName ||
+            current.subscriptionId != expectedSubscriptionId ||
+            current.requestedAtMs != expectedRequestedAtMs
+        ) {
+            return@synchronized false
+        }
+        val encoded = MmsDownloadJournalMutation.encode(
+            current.toSnapshot().copy(privateMissCount = current.privateMissCount + 1)
+        )
+        if (preferences.getString(recordKey, null) != raw) return@synchronized false
+        preferences.edit().putString(recordKey, encoded).commit()
     }
 
-    @Synchronized
-    fun remove(fileName: String): Boolean =
+    fun pinnedDigests(): Set<String> = synchronized(LOCK) {
+        preferences.all.asSequence()
+            .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
+            .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value)?.digestHex }
+            .toSet()
+    }
+
+    fun read(fileName: String): Record? = synchronized(LOCK) {
+        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return@synchronized null
+        decode(fileName, preferences.all[key(fileName)])
+    }
+
+    fun remove(fileName: String): Boolean = synchronized(LOCK) {
         MmsDownloadCoordinator.isValidStagedFileName(fileName) &&
             preferences.edit().remove(key(fileName)).commit()
+    }
 
-    @Synchronized
-    fun all(): List<Record> {
-        sanitizeInvalidEntries()
-        return preferences.all.asSequence()
+    fun all(): List<Record> = synchronized(LOCK) {
+        preferences.all.asSequence()
             .filter { (name, _) -> name.startsWith(KEY_PREFIX) }
             .mapNotNull { (name, value) -> decode(name.removePrefix(KEY_PREFIX), value) }
             .sortedBy { it.requestedAtMs }
@@ -95,55 +135,39 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
             .toList()
     }
 
-    /**
-     * Removes malformed journal values, wrong SharedPreferences value types and invalid filenames.
-     * Returns false only when a required cleanup commit failed, so callers can remain fail-closed.
-     */
-    private fun sanitizeInvalidEntries(): Boolean {
-        val invalidKeys = preferences.all.asSequence()
-            .filter { (name, value) ->
-                name.startsWith(KEY_PREFIX) &&
-                    decode(name.removePrefix(KEY_PREFIX), value) == null
-            }
-            .map { it.key }
-            .toList()
-        if (invalidKeys.isEmpty()) return true
-
-        val editor = preferences.edit()
-        invalidKeys.forEach(editor::remove)
-        return editor.commit()
-    }
-
     private fun decode(fileName: String, rawValue: Any?): Record? {
-        if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null
         val encoded = rawValue as? String ?: return null
-        if (encoded.length > MAX_ENCODED_CHARS) return null
-        return runCatching {
-            val json = JSONObject(encoded)
-            if (json.optInt("schema", -1) != SCHEMA_VERSION) return@runCatching null
-            val digest = json.optString("sha256", "")
-                .lowercase()
-                .takeIf { IncomingMmsIdentity.persistedFileName(it) != null }
-            val record = Record(
-                fileName = fileName,
-                subscriptionId = json.getInt("subscription_id"),
-                requestedAtMs = json.getLong("requested_at_ms"),
-                digestHex = digest
-            )
-            record.takeIf {
-                validRecordFields(it.fileName, it.subscriptionId, it.requestedAtMs)
-            }
-        }.getOrNull()
+        val snapshot = MmsDownloadJournalMutation.decodeSchema1(
+            fileName = fileName,
+            raw = encoded,
+            fileNameAcceptable = MmsDownloadCoordinator.isValidStagedFileName(fileName),
+            subscriptionAcceptable = MmsSubscriptionResolver::isValidSubscriptionId
+        ) ?: return null
+        return Record(
+            fileName = snapshot.fileName,
+            subscriptionId = snapshot.subscriptionId,
+            requestedAtMs = snapshot.requestedAtMs,
+            digestHex = snapshot.digestHex,
+            privateMissCount = snapshot.privateMissCount
+        )
     }
+
+    private fun Record.toSnapshot() = MmsDownloadJournalMutation.Snapshot(
+        fileName = fileName,
+        subscriptionId = subscriptionId,
+        requestedAtMs = requestedAtMs,
+        digestHex = digestHex,
+        privateMissCount = privateMissCount
+    )
 
     private fun key(fileName: String) = KEY_PREFIX + fileName
 
     companion object {
         internal const val PREFS_NAME = "sentinel_mms_download_recovery_v1"
         internal const val KEY_PREFIX = "record."
-        private const val SCHEMA_VERSION = 1
-        private const val MAX_ENCODED_CHARS = 512
+        private const val SCHEMA_VERSION = MmsDownloadJournalMutation.SCHEMA_VERSION
         internal const val MAX_RECORDS = 64
+        private val LOCK = Any()
 
         internal fun canAcceptRecord(existing: Boolean, activeRecordCount: Int): Boolean =
             activeRecordCount >= 0 && (existing || activeRecordCount < MAX_RECORDS)

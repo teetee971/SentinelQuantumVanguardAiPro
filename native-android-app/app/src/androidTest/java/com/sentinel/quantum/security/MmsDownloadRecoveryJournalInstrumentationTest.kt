@@ -80,7 +80,7 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
     }
 
     @Test
-    fun corruptEntriesCannotPermanentlyConsumeRecoveryCapacity() {
+    fun corruptEntriesStayOnDiskAndDoNotFreeCapacity() {
         val preferences = context.getSharedPreferences(
             MmsDownloadRecoveryJournal.PREFS_NAME,
             Context.MODE_PRIVATE
@@ -105,7 +105,7 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
 
         val validFile = "ffffffff-ffff-ffff-ffff-ffffffffffff.pdu"
         createdFiles += validFile
-        assertTrue(
+        assertFalse(
             MmsDownloadRecoveryJournal(context).record(
                 fileName = validFile,
                 subscriptionId = 1,
@@ -114,9 +114,9 @@ class MmsDownloadRecoveryJournalInstrumentationTest {
         )
 
         assertEquals(
-            1,
+            MmsDownloadRecoveryJournal.MAX_RECORDS,
             preferences.all.keys.count { it.startsWith(MmsDownloadRecoveryJournal.KEY_PREFIX) }
         )
-        assertEquals(validFile, MmsDownloadRecoveryJournal(context).read(validFile)?.fileName)
+        assertNull(MmsDownloadRecoveryJournal(context).read(validFile))
     }
 }
