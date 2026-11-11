@@ -96,7 +96,8 @@ object BluetoothRiskEvaluator {
         deviceName: String?,
         kind: BluetoothDeviceKind = BluetoothDeviceKind.UNKNOWN,
         bonded: Boolean = false,
-        findMyAnnouncement: Boolean = false
+        findMyAnnouncement: Boolean = false,
+        repeatNote: String? = null
     ): BluetoothRiskAssessment {
         val likelyTracker = isLikelyTracker(deviceName)
         val likelyCameraOrRecorder = isLikelyCameraOrRecorder(deviceName)
@@ -111,6 +112,7 @@ object BluetoothRiskEvaluator {
         if (findMyAnnouncement) {
             reasons += "Annonce Apple Localiser. Compatible avec un AirTag ou un appareil Apple. Une seule observation ne prouve pas qu’il vous suit."
         }
+        if (!repeatNote.isNullOrBlank()) reasons += repeatNote
         if (likelyCameraOrRecorder) {
             reasons += "Nom compatible avec une caméra ou un enregistreur sans fil. Ce signal est indicatif et ne prouve pas un dispositif espion."
         }

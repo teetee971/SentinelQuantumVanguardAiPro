@@ -41,6 +41,8 @@ class BluetoothScanner(context: Context) {
     private val handler = Handler(Looper.getMainLooper())
     private val networkTimelineStore = NetworkTimelineStore(appContext)
     private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val trackerMemory = TrackerRepeatMemory(appContext)
+    private val notedThisScan = mutableSetOf<String>()
     private val discovered = linkedMapOf<String, DiscoveredBluetoothDevice>()
     private var callback: ScanCallback? = null
 
@@ -106,6 +108,7 @@ class BluetoothScanner(context: Context) {
 
         stop()
         discovered.clear()
+        notedThisScan.clear()
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
                 if (callback !== this) return
@@ -188,9 +191,8 @@ class BluetoothScanner(context: Context) {
         val randomizedAddress = runCatching { device.type == BluetoothDevice.DEVICE_TYPE_LE }.getOrDefault(false)
         val address = runCatching { device.address }.getOrNull()?.trim().orEmpty()
 
-        val findMy = result.scanRecord?.getManufacturerSpecificData(0x004C)?.let { payload ->
-            BluetoothRiskEvaluator.isAppleFindMy(0x004C, payload)
-        } == true
+        val payload = result.scanRecord?.getManufacturerSpecificData(0x004C)
+        val findMy = payload != null && BluetoothRiskEvaluator.isAppleFindMy(0x004C, payload)
         return DiscoveredBluetoothDevice(
             name = name.ifEmpty { UNKNOWN_DEVICE_NAME },
             address = address,
@@ -201,9 +203,20 @@ class BluetoothScanner(context: Context) {
                 deviceName = name.takeIf { it.isNotEmpty() },
                 kind = kind,
                 bonded = bonded,
-                findMyAnnouncement = findMy
+                findMyAnnouncement = findMy,
+                repeatNote = if (findMy && payload != null) repeatNote(payload) else null
             )
         )
+    }
+
+    private fun repeatNote(payload: ByteArray): String {
+        val identity = TrackerRepeat.identity(payload)
+        val state = if (notedThisScan.add(identity)) {
+            trackerMemory.record(identity, TrackerRepeat.place(WifiJoinedLinkReader.read(appContext)?.bssid.orEmpty()))
+        } else {
+            trackerMemory.read(identity)
+        }
+        return TrackerRepeat.label(state.sightings, state.places)
     }
 
     private fun deviceKind(bluetoothClass: BluetoothClass?): BluetoothDeviceKind =
