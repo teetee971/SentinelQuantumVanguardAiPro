@@ -40,6 +40,7 @@ import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.JoinedLanAnnouncement
 import com.sentinel.quantum.security.JoinedLanDiscovery
+import com.sentinel.quantum.security.JoinedLanDiscoveryUpdate
 import com.sentinel.quantum.security.NetworkServiceExposureAnalyzer
 import com.sentinel.quantum.security.NetworkServiceExposureAssessment
 import com.sentinel.quantum.security.LocalLogger
@@ -96,6 +97,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     val lanDiscovery = remember(context) { JoinedLanDiscovery(context) }
     var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
     var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
+    var lanRunning by remember { mutableStateOf(false) }
     var lanAssessment by remember { mutableStateOf<NetworkServiceExposureAssessment?>(null) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
@@ -171,14 +173,17 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 joinedLink = runCatching { WifiJoinedLinkReader.read(context) }.getOrNull()
                 lanServices = emptyList()
                 lanAssessment = null
+                lanRunning = joinedLink != null
                 if (joinedLink != null) {
-                    lanDiscovery.start { announcements ->
-                        lanServices = announcements
+                    lanDiscovery.start { update: JoinedLanDiscoveryUpdate ->
+                        lanServices = update.services
+                        lanRunning = update.running
                         lanAssessment = NetworkServiceExposureAnalyzer.assess(
-                            announcements.map { it.service }
+                            update.services.map { it.service }
                         )
                     }
                 } else {
+                    lanRunning = false
                     lanDiscovery.stop()
                 }
                 isScanning = false
@@ -434,7 +439,12 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 )
                             }
                             item {
-                                JoinedLanCard(services = lanServices, assessment = lanAssessment)
+                                JoinedLanCard(
+                                    services = lanServices,
+                                    assessment = lanAssessment,
+                                    running = lanRunning,
+                                    joined = joinedLink != null
+                                )
                             }
                             items(wifiNetworks, key = { it.bssid + it.ssid + it.frequencyMhz }) { network ->
                                 WifiNetworkCard(
@@ -578,7 +588,9 @@ private fun WifiSurveyCard(
 @Composable
 private fun JoinedLanCard(
     services: List<JoinedLanAnnouncement>,
-    assessment: NetworkServiceExposureAssessment?
+    assessment: NetworkServiceExposureAssessment?,
+    running: Boolean,
+    joined: Boolean
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -586,9 +598,19 @@ private fun JoinedLanCard(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
-        if (services.isEmpty()) {
+        if (!joined) {
             Text(
-                "Aucun service mDNS annoncé pour le moment. La recherche ne balaie pas les adresses et ne teste aucun port.",
+                "Aucun Wi-Fi rejoint. Les annonces locales ne sont pas recherchées.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else if (running && services.isEmpty()) {
+            Text(
+                "Recherche des annonces mDNS en cours. Aucun balayage d’adresses.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else if (services.isEmpty()) {
+            Text(
+                "Aucun service mDNS annoncé. La recherche ne balaie pas les adresses et ne teste aucun port.",
                 style = MaterialTheme.typography.bodySmall
             )
         } else {
@@ -596,6 +618,13 @@ private fun JoinedLanCard(
                 Text(
                     "${service.name} · ${service.host} · port ${service.port}",
                     style = MaterialTheme.typography.bodySmall
+                )
+            }
+            if (running) {
+                Text(
+                    "Recherche encore en cours.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

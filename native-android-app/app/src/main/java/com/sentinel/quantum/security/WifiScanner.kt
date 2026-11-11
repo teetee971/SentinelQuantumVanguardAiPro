@@ -108,7 +108,7 @@ class WifiScanner(context: Context) {
             return
         }
         if (!hasPermissions()) {
-            onError("Autorisation Position précise requise pour le scan Wi-Fi Android.")
+            onError("Autorisations Position précise et approximative requises pour le scan Wi-Fi Android.")
             return
         }
         if (!isLocationEnabled()) {
