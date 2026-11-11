@@ -220,6 +220,7 @@ class WifiScanner(context: Context) {
                         informationElements = beaconElements(result)
                     )
                 }
+                .let(WifiRadioAnalyzer::distinctAccessPoints)
                 .sortedWith(
                     compareBy<DiscoveredWifiNetwork> { riskOrder(it.assessment.riskLevel) }
                         .thenByDescending { it.rssiDbm }

@@ -23,7 +23,13 @@ data class JoinedLanAnnouncement(
     val service: ObservedNetworkService
 )
 
-/** Service types a phone may learn by mDNS on the network it has joined. No address sweep. */
+/** Empty service types stop early. A type that answers keeps the longer window. */
+object JoinedLanPace {
+    const val QUIET_MS = 900L
+    const val BUSY_MS = 2_500L
+
+    fun nextWindowMs(foundThisType: Int): Long = if (foundThisType <= 0) QUIET_MS else BUSY_MS
+}
 object JoinedLanServiceCatalog {
     data class Type(
         val dnsType: String,
@@ -105,6 +111,8 @@ class JoinedLanDiscovery(context: Context) {
     private val pendingResolves = ArrayDeque<NsdServiceInfo>()
     private var resolving = false
     private var resolveToken = 0
+    private var foundThisType = 0
+    private var windowToken = 0
     private var activeCallback: NsdManager.ServiceInfoCallback? = null
     private var callback: ((JoinedLanDiscoveryUpdate) -> Unit)? = null
 
@@ -164,6 +172,7 @@ class JoinedLanDiscovery(context: Context) {
             publish(running = false)
             return
         }
+        foundThisType = 0
         val discovery = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) = Unit
             override fun onDiscoveryStopped(serviceType: String) {
@@ -188,16 +197,26 @@ class JoinedLanDiscovery(context: Context) {
             advance(current)
             return
         }
+        armWindow(current, discovery)
+    }
+
+    private fun armWindow(current: Int, discovery: NsdManager.DiscoveryListener) {
+        windowToken += 1
+        val token = windowToken
         main.postDelayed({
-            if (current == session && listener === discovery) {
-                runCatching { manager.stopServiceDiscovery(discovery) }
-            }
-        }, TYPE_WINDOW_MS)
+            if (token != windowToken || current != session || listener !== discovery) return@postDelayed
+            val manager = nsd ?: return@postDelayed
+            runCatching { manager.stopServiceDiscovery(discovery) }
+        }, JoinedLanPace.nextWindowMs(foundThisType))
     }
 
     private fun enqueue(service: NsdServiceInfo, current: Int) {
         main.post {
             if (current != session) return@post
+            if (foundThisType == 0 && listener != null) {
+                foundThisType = 1
+                armWindow(current, listener!!)
+            }
             pendingResolves.add(service)
             drainResolves(current)
         }
@@ -319,7 +338,6 @@ class JoinedLanDiscovery(context: Context) {
     }
 
     companion object {
-        private const val TYPE_WINDOW_MS = 2_500L
         private const val IDLE_WAIT_MS = 400L
         private const val MAX_IDLE_WAITS = 20
     }

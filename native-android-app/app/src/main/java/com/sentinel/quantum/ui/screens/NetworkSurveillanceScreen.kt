@@ -585,7 +585,7 @@ private fun WifiSurveyCard(
         }
         if (quiet5 != null) {
             Text(
-                "Canal 5 GHz le moins chargé parmi les canaux usuels : $quiet5.",
+                "Canal 5 GHz le moins chargé parmi les canaux usuels et ceux déjà vus : $quiet5.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

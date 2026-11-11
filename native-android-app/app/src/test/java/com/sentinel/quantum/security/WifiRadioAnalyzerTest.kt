@@ -82,6 +82,21 @@ class WifiRadioAnalyzerTest {
         )
     }
 
+    @Test
+    fun duplicateBssidKeepsTheStrongestSignalAndAnEmptyTypeWaitsLess() {
+        val weak = sample("Livebox", "2c:93:fb:3a:4a:10", 5500).copy(rssiDbm = -70)
+        val strong = sample("Livebox", "2C:93:FB:3A:4A:10", 5500).copy(rssiDbm = -37)
+        val distinct = WifiRadioAnalyzer.distinctAccessPoints(listOf(weak, strong))
+        assertEquals(1, distinct.size)
+        assertEquals(-37, distinct.first().rssiDbm)
+        assertEquals(900L, JoinedLanPace.nextWindowMs(0))
+        assertEquals(2_500L, JoinedLanPace.nextWindowMs(1))
+        val he = ByteArray(8)
+        he[0] = 35
+        he[7] = 0x08
+        assertEquals("160 MHz annoncé", WifiRadioAnalyzer.heWidthLabel(he))
+    }
+
     private fun sample(ssid: String, bssid: String, frequency: Int): DiscoveredWifiNetwork {
         val radio = WifiRadioAnalyzer.describe(
             frequencyMhz = frequency,

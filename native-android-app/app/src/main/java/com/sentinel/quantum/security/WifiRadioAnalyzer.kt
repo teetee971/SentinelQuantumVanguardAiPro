@@ -116,6 +116,7 @@ object WifiRadioAnalyzer {
     fun phyDetailLabel(elements: List<Pair<Int, ByteArray>>): String {
         val parts = mutableListOf<String>()
         extension(elements, 35)?.let(::heSpatialStreams)?.let { parts += "jusqu'à $it flux annoncés" }
+        extension(elements, 35)?.let(::heWidthLabel)?.let { parts += it }
         extension(elements, 36)?.let(::heBssColor)?.let { parts += it }
         if (extension(elements, 108) != null) parts += "capacités Wi-Fi 7 annoncées"
         if (elements.any { it.first == 107 }) parts += "MLO annoncé"
@@ -126,6 +127,18 @@ object WifiRadioAnalyzer {
     fun heSpatialStreams(payload: ByteArray): Int? {
         if (payload.isEmpty() || payload[0].toInt() != 35 || payload.size < 20) return null
         return spatialStreams(payload.copyOfRange(18, 20))
+    }
+
+    fun heWidthLabel(payload: ByteArray): String? {
+        if (payload.isEmpty() || payload[0].toInt() != 35 || payload.size < 8) return null
+        val width = payload[7].toInt() and 0xff
+        return when {
+            width and 0x10 != 0 -> "160 ou 80+80 MHz annoncé"
+            width and 0x08 != 0 -> "160 MHz annoncé"
+            width and 0x04 != 0 -> "80 MHz annoncé"
+            width and 0x02 != 0 -> "40 MHz annoncé en 2,4 GHz"
+            else -> null
+        }
     }
 
     fun heBssColor(payload: ByteArray): String? {
@@ -221,6 +234,14 @@ object WifiRadioAnalyzer {
         phyDetailLabel = phyDetailLabel(informationElements)
     )
 
+    fun distinctAccessPoints(networks: List<DiscoveredWifiNetwork>): List<DiscoveredWifiNetwork> {
+        val (identified, hidden) = networks.partition { it.bssid.isNotBlank() }
+        val strongest = identified
+            .groupBy { it.bssid.lowercase() }
+            .map { (_, group) -> group.maxBy { it.rssiDbm } }
+        return strongest + hidden
+    }
+
     fun sameChannelCount(channel: Int?, band: WifiBand, networks: List<DiscoveredWifiNetwork>): Int {
         if (channel == null) return 0
         return networks.count { it.band == band && it.radio.channel == channel }
@@ -237,9 +258,12 @@ object WifiRadioAnalyzer {
     }
 
     fun quietestChannel(band: WifiBand, networks: List<DiscoveredWifiNetwork>): Int? {
+        val seen = networks.mapNotNull { network ->
+            network.radio.channel?.takeIf { network.band == band }
+        }
         val candidates = when (band) {
             WifiBand.BAND_2_4_GHZ -> listOf(1, 6, 11)
-            WifiBand.BAND_5_GHZ -> listOf(36, 40, 44, 48, 149, 153, 157, 161)
+            WifiBand.BAND_5_GHZ -> (listOf(36, 40, 44, 48, 100, 104, 108, 112) + seen).distinct()
             else -> return null
         }
         return candidates.minByOrNull { channel ->
