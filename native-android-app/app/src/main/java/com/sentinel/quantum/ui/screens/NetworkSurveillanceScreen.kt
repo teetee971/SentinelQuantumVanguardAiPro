@@ -103,6 +103,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
     var gatewayNote by remember { mutableStateOf<String?>(null) }
     var dnsNote by remember { mutableStateOf<String?>(null) }
+    var accessPointNote by remember { mutableStateOf<String?>(null) }
     val gatewayMemory = remember(context) { GatewayChangeMemory(context) }
     var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
     val lanMemory = remember(context) { JoinedLanSightingMemory(context) }
@@ -182,6 +183,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 joinedLink = runCatching { WifiJoinedLinkReader.read(context) }.getOrNull()
                 gatewayNote = joinedLink?.let { gatewayMemory.note(it.ssid, it.gateway) }
                 dnsNote = joinedLink?.let { gatewayMemory.noteDns(it.ssid, it.dns) }
+                accessPointNote = joinedLink?.let { gatewayMemory.noteAccessPoint(it.ssid, it.bssid) }
                 lanServices = emptyList()
                 lanAssessment = null
                 lanRunning = joinedLink != null
@@ -469,7 +471,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     intrusions = WifiIntrusionHints.assess(wifiNetworks, joinedLink) +
                                         listOfNotNull(
                                             gatewayNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
-                                            dnsNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) }
+                                            dnsNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
+                                            accessPointNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) }
                                         )
                                 )
                             }

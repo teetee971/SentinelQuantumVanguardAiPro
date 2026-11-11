@@ -39,6 +39,12 @@ class WifiIntrusionHintsTest {
             joined
         )
         assertTrue(weak.any { it.text.contains("TKIP") })
+        val office = network("Bureau", "24:a4:3c:00:00:01", "[WPA2-EAP-CCMP]")
+        val copy = network("Bureau", "00:11:22:00:00:09", "[WPA2-PSK-CCMP]")
+        val enterprise = WifiIntrusionHints.assess(listOf(office, copy), joined = null)
+        assertTrue(enterprise.any { it.text.contains("mode entreprise") })
+        assertTrue(WifiIntrusionHints.newAccessPoint(setOf("aa"), "bb"))
+        assertFalse(WifiIntrusionHints.newAccessPoint(emptySet(), "bb"))
         assertFalse(WifiIntrusionHints.gatewayChanged(null, "aa"))
         assertTrue(WifiIntrusionHints.gatewayChanged("aa", "bb"))
     }
