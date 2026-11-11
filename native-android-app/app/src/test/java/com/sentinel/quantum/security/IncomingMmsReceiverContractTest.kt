@@ -19,7 +19,9 @@ class IncomingMmsReceiverContractTest {
         ).readText()
 
         for (source in listOf(deliver, download)) {
-            assertTrue(source.contains("IncomingMmsPrivateStore.persist(context.filesDir, data)"))
+            assertTrue(source.contains("IncomingMmsPrivateStore.persist("))
+            assertTrue(source.contains("context.filesDir"))
+            assertTrue(source.contains("data"))
             assertFalse(source.contains("FileOutputStream("))
             assertFalse(source.contains("MessageDigest.getInstance("))
         }

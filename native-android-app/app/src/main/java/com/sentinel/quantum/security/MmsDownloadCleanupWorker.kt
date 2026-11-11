@@ -23,6 +23,7 @@ class MmsDownloadCleanupWorker(
 ) : Worker(appContext, workerParams) {
     override fun doWork(): Result {
         val fileName = inputData.getString(KEY_FILE_NAME) ?: return Result.success()
+        return MmsDownloadRecovery.exclusively(fileName) {
         val outcome = runCatching {
             MmsDownloadRecovery.recover(
                 context = applicationContext,
@@ -31,18 +32,19 @@ class MmsDownloadCleanupWorker(
             )
         }.getOrDefault(MmsDownloadRecovery.Outcome.RETRY)
 
-        if (outcome == MmsDownloadRecovery.Outcome.RETRY) {
+        if (outcome == MmsDownloadRecovery.Outcome.RETRY || MmsDownloadRecovery.cleanupMustKeepStaging(outcome)) {
             LocalLogger(applicationContext).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
-                "Échéance de reprise MMS atteinte : restauration automatique non terminée avant suppression du staging"
+                "Échéance de reprise MMS atteinte : la copie temporaire est conservée tant que la copie privée n’est pas prouvée"
             )
             SmsNotificationHelper.notifyMessage(
                 applicationContext,
                 title = "MMS à vérifier",
-                preview = "Le MMS n’a pas pu être restauré automatiquement dans la conversation avant l’expiration de sa copie temporaire.",
+                preview = "Le MMS n’a pas pu être restauré automatiquement. Sa copie temporaire est conservée pour une nouvelle tentative.",
                 notificationId = fileName.hashCode()
             )
+            return@exclusively Result.retry()
         }
 
         val expired = MmsDownloadCoordinator.expire(applicationContext, fileName)
@@ -52,9 +54,10 @@ class MmsDownloadCleanupWorker(
                 "MmsDownload",
                 "Nettoyage MMS temporaire non confirmé : nouvelle tentative durable planifiée"
             )
-            return Result.retry()
+            return@exclusively Result.retry()
         }
-        return Result.success()
+        Result.success()
+        }
     }
 
     companion object {

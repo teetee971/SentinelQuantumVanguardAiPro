@@ -103,7 +103,11 @@ class SentinelMmsDeliverReceiver : BroadcastReceiver() {
             MmsDownloadCoordinator.Result.NotNotification -> Unit
         }
 
-        val persistence = IncomingMmsPrivateStore.persist(context.filesDir, data)
+        val persistence = IncomingMmsPrivateStore.persist(
+            context.filesDir,
+            data,
+            MmsDownloadRecoveryJournal(context).pinnedDigests()
+        )
         val digest = persistence.digestHex
         if (persistence.state == IncomingMmsPrivateStore.State.FAILED || digest == null) {
             LocalLogger(context).log(

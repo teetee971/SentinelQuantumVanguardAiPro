@@ -9,6 +9,7 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 /**
@@ -102,33 +103,47 @@ internal object MmsDownloadRecovery {
         fileName: String,
         allowQuarantine: Boolean,
         nowMs: Long = System.currentTimeMillis()
+    ): Outcome = exclusively(fileName) {
+        recoverExclusive(context, fileName, allowQuarantine, nowMs)
+    }
+
+    /** Serializes recovery, cleanup and the download callback for one staging name. */
+    inline fun <T> exclusively(fileName: String, block: () -> T): T {
+        val gate = GATES.computeIfAbsent(fileName) { Any() }
+        return synchronized(gate) { block() }
+    }
+
+    /**
+     * A retry still needs the staging bytes. Cleanup must not unlink them.
+     * Terminal and recovered passes have already kept a private copy or proved there is nothing to keep.
+     */
+    fun cleanupMustKeepStaging(outcome: Outcome): Boolean = outcome == Outcome.RETRY
+
+    private fun recoverExclusive(
+        context: Context,
+        fileName: String,
+        allowQuarantine: Boolean,
+        nowMs: Long
     ): Outcome {
         val appContext = context.applicationContext
         val journal = MmsDownloadRecoveryJournal(appContext)
         val record = journal.read(fileName) ?: return Outcome.TERMINAL
         if (nowMs < 0L || record.requestedAtMs > nowMs) return Outcome.RETRY
 
-        if (
-            appContext.readSmsRoleStateFailClosed() !=
-                SmsActivationDiagnostics.SmsRoleState.HELD
-        ) {
-            finish(appContext, fileName, allowQuarantine)
-            return Outcome.TERMINAL
-        }
-        if (!MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)) {
-            finish(appContext, fileName, allowQuarantine)
-            return Outcome.TERMINAL
-        }
-
-        val target = stagedFile(appContext, fileName) ?: run {
-            journal.remove(fileName)
-            return Outcome.TERMINAL
+        val target = stagedFile(appContext, fileName)
+        if (target == null) {
+            return recoverWithoutStaging(appContext, journal, record, allowQuarantine, nowMs)
         }
         val sizeBefore = target.length()
-        if (sizeBefore <= 0L) return Outcome.RETRY
+        if (sizeBefore <= 0L) {
+            return if (allowQuarantine) {
+                finishTerminal(appContext, fileName, fromCleanupDeadline = true)
+            } else {
+                Outcome.RETRY
+            }
+        }
         if (sizeBefore > MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            finish(appContext, fileName, allowQuarantine)
-            return Outcome.TERMINAL
+            return finishTerminal(appContext, fileName, allowQuarantine)
         }
 
         val modifiedBefore = target.lastModified()
@@ -146,17 +161,90 @@ internal object MmsDownloadRecovery {
         }
 
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return Outcome.RETRY
-        val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, record.subscriptionId)
-        if (shouldRetryQuarantine(prepared, allowQuarantine)) {
+        if (!journal.markDigest(fileName, digest)) return Outcome.RETRY
+        val persistence = persistPrivate(appContext, data)
+        val persistedDigest = persistence.digestHex
+        if (persistence.state == IncomingMmsPrivateStore.State.FAILED || persistedDigest != digest) {
             return Outcome.RETRY
         }
 
-        val persistence = IncomingMmsPrivateStore.persist(appContext.filesDir, data)
-        val persistedDigest = persistence.digestHex
-        if (persistence.state == IncomingMmsPrivateStore.State.FAILED || persistedDigest == null) {
+        if (
+            appContext.readSmsRoleStateFailClosed() !=
+                SmsActivationDiagnostics.SmsRoleState.HELD
+        ) {
             return Outcome.RETRY
         }
-        if (persistedDigest != digest) return Outcome.RETRY
+        if (!MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)) {
+            return finishTerminal(appContext, fileName, allowQuarantine)
+        }
+
+        return projectAndFinish(
+            appContext = appContext,
+            journal = journal,
+            fileName = fileName,
+            subscriptionId = record.subscriptionId,
+            data = data,
+            digest = digest,
+            persistence = persistence,
+            allowQuarantine = allowQuarantine,
+            nowMs = nowMs,
+            stagingPresent = true
+        )
+    }
+
+    private fun recoverWithoutStaging(
+        appContext: Context,
+        journal: MmsDownloadRecoveryJournal,
+        record: MmsDownloadRecoveryJournal.Record,
+        allowQuarantine: Boolean,
+        nowMs: Long
+    ): Outcome {
+        val digest = record.digestHex
+        val data = digest?.let { IncomingMmsPrivateStore.read(appContext.filesDir, it) }
+        if (digest == null || data == null) {
+            return if (journal.remove(record.fileName)) Outcome.TERMINAL else Outcome.RETRY
+        }
+        if (
+            appContext.readSmsRoleStateFailClosed() !=
+                SmsActivationDiagnostics.SmsRoleState.HELD ||
+            !MmsSubscriptionResolver.isValidSubscriptionId(record.subscriptionId)
+        ) {
+            return Outcome.RETRY
+        }
+        val persistence = IncomingMmsPrivateStore.Result(
+            IncomingMmsPrivateStore.State.EXISTING,
+            digest
+        )
+        return projectAndFinish(
+            appContext = appContext,
+            journal = journal,
+            fileName = record.fileName,
+            subscriptionId = record.subscriptionId,
+            data = data,
+            digest = digest,
+            persistence = persistence,
+            allowQuarantine = allowQuarantine,
+            nowMs = nowMs,
+            stagingPresent = false
+        )
+    }
+
+    private fun projectAndFinish(
+        appContext: Context,
+        journal: MmsDownloadRecoveryJournal,
+        fileName: String,
+        subscriptionId: Int,
+        data: ByteArray,
+        digest: String,
+        persistence: IncomingMmsPrivateStore.Result,
+        allowQuarantine: Boolean,
+        nowMs: Long,
+        stagingPresent: Boolean
+    ): Outcome {
+        val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
+        if (shouldRetryQuarantine(prepared, allowQuarantine)) {
+            return Outcome.RETRY
+        }
 
         val providerResult = when (prepared) {
             is IncomingMmsProjectionPipeline.Result.Ready -> {
@@ -174,10 +262,6 @@ internal object MmsDownloadRecovery {
         val providerRejected =
             providerResult is IncomingMmsConversationStore.ProjectResult.Rejected
 
-        // A private PDU is durable, but it is not equivalent to a message visible in the canonical
-        // Android conversation. Keep staged bytes + recovery metadata active on provider failure so
-        // transient provider/process conditions can be retried. At the bounded cleanup deadline,
-        // however, private durability is accepted explicitly and staging is retired as quarantine.
         if (shouldRetryProviderProjection(providerResult, allowQuarantine)) {
             if (persistence.state == IncomingMmsPrivateStore.State.CREATED) {
                 runCatching {
@@ -234,8 +318,29 @@ internal object MmsDownloadRecovery {
             )
         }
 
-        finish(appContext, fileName, allowQuarantine)
-        return Outcome.RECOVERED
+        if (!stagingPresent) {
+            return if (journal.remove(fileName)) Outcome.RECOVERED else Outcome.RETRY
+        }
+        return if (finish(appContext, fileName, allowQuarantine)) {
+            Outcome.RECOVERED
+        } else {
+            Outcome.RETRY
+        }
+    }
+
+    private fun persistPrivate(context: Context, data: ByteArray): IncomingMmsPrivateStore.Result {
+        val pins = MmsDownloadRecoveryJournal(context).pinnedDigests()
+        return IncomingMmsPrivateStore.persist(context.filesDir, data, pins)
+    }
+
+    private fun finishTerminal(
+        context: Context,
+        fileName: String,
+        fromCleanupDeadline: Boolean
+    ): Outcome = if (finish(context, fileName, fromCleanupDeadline)) {
+        Outcome.TERMINAL
+    } else {
+        Outcome.RETRY
     }
 
     /**
@@ -258,13 +363,12 @@ internal object MmsDownloadRecovery {
     ): Boolean =
         providerResult is IncomingMmsConversationStore.ProjectResult.Rejected && !allowQuarantine
 
-    private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean) {
+    private fun finish(context: Context, fileName: String, fromCleanupDeadline: Boolean): Boolean =
         MmsDownloadCoordinator.finishRecovery(
             context = context,
             fileName = fileName,
             cancelCleanupWorker = !fromCleanupDeadline
         )
-    }
 
     private fun stagedFile(context: Context, fileName: String): File? {
         if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return null
@@ -279,4 +383,5 @@ internal object MmsDownloadRecovery {
     }
 
     internal const val STABLE_FILE_GRACE_MS = 30_000L
+    private val GATES = ConcurrentHashMap<String, Any>()
 }

@@ -25,7 +25,7 @@ internal object IncomingMmsPrivateStore {
     )
 
     @Synchronized
-    fun persist(filesDir: File, data: ByteArray): Result {
+    fun persist(filesDir: File, data: ByteArray, pinnedDigests: Set<String> = emptySet()): Result {
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return failed()
         val targetName = IncomingMmsIdentity.persistedFileName(digest) ?: return failed()
         val partialName = IncomingMmsIdentity.partialFileName(digest) ?: return failed()
@@ -72,8 +72,12 @@ internal object IncomingMmsPrivateStore {
             ?.filter { it.isFile && it.extension == PDU_EXTENSION }
             ?.sortedWith(compareByDescending<File> { it.lastModified() }.thenBy { it.name })
             .orEmpty()
-        for (old in completed.drop(MAX_STORED_MMS - 1)) {
-            if (!runCatching { old.delete() }.getOrDefault(false)) return failed()
+        val pinnedNames = pinnedDigests.mapNotNull(IncomingMmsIdentity::persistedFileName).toSet()
+        var stored = completed
+        while (stored.size > MAX_STORED_MMS - 1) {
+            val victim = stored.lastOrNull { it.name !in pinnedNames } ?: break
+            if (!runCatching { victim.delete() }.getOrDefault(false)) return failed()
+            stored = stored.filterNot { it == victim }
         }
 
         if (partial.exists() && !runCatching { partial.delete() }.getOrDefault(false)) return failed()
@@ -96,6 +100,19 @@ internal object IncomingMmsPrivateStore {
             runCatching { partial.delete() }
             failed()
         }
+    }
+
+    /** Reads a private PDU only when its file name and contents still match the digest. */
+    fun read(filesDir: File, digestHex: String): ByteArray? {
+        val name = IncomingMmsIdentity.persistedFileName(digestHex) ?: return null
+        val canonicalRoot = runCatching { filesDir.canonicalFile }.getOrNull() ?: return null
+        val directory = runCatching { File(canonicalRoot, DIRECTORY_NAME).canonicalFile }.getOrNull()
+            ?: return null
+        if (directory.parentFile != canonicalRoot || !directory.isDirectory) return null
+        val target = runCatching { File(directory, name).canonicalFile }.getOrNull() ?: return null
+        if (target.parentFile != directory || !target.isFile) return null
+        val data = runCatching { target.readBytes() }.getOrNull() ?: return null
+        return data.takeIf { IncomingMmsIdentity.sha256Hex(it) == name.removeSuffix(".$PDU_EXTENSION") }
     }
 
     private fun digestFile(file: File): String? = runCatching {

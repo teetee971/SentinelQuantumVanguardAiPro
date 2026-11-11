@@ -88,4 +88,11 @@ class MmsDownloadRecoveryProviderPolicyTest {
             )
         }
     }
+
+    @Test
+    fun cleanupKeepsStagingWhileRecoveryStillRetries() {
+        assertTrue(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.RETRY))
+        assertFalse(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.RECOVERED))
+        assertFalse(MmsDownloadRecovery.cleanupMustKeepStaging(MmsDownloadRecovery.Outcome.TERMINAL))
+    }
 }

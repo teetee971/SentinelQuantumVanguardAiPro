@@ -13,7 +13,9 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
     data class Record(
         val fileName: String,
         val subscriptionId: Int,
-        val requestedAtMs: Long
+        val requestedAtMs: Long,
+        /** Null on journals written before the private copy was confirmed. */
+        val digestHex: String? = null
     )
 
     private val preferences = context.applicationContext.getSharedPreferences(
@@ -47,6 +49,29 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
             .toString()
         return preferences.edit().putString(recordKey, encoded).commit()
     }
+
+    /**
+     * Records the SHA-256 of a verified private copy without changing the schema number.
+     * Older journals simply have no digest and must still be treated as requiring the staging file.
+     */
+    @Synchronized
+    fun markDigest(fileName: String, digestHex: String): Boolean {
+        val current = read(fileName) ?: return false
+        val normalized = digestHex.lowercase()
+        if (IncomingMmsIdentity.persistedFileName(normalized) == null) return false
+        if (current.digestHex == normalized) return true
+        val encoded = JSONObject()
+            .put("schema", SCHEMA_VERSION)
+            .put("subscription_id", current.subscriptionId)
+            .put("requested_at_ms", current.requestedAtMs)
+            .put("sha256", normalized)
+            .toString()
+        if (encoded.length > MAX_ENCODED_CHARS) return false
+        return preferences.edit().putString(key(fileName), encoded).commit()
+    }
+
+    @Synchronized
+    fun pinnedDigests(): Set<String> = all().mapNotNull { it.digestHex }.toSet()
 
     @Synchronized
     fun read(fileName: String): Record? {
@@ -96,10 +121,14 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         return runCatching {
             val json = JSONObject(encoded)
             if (json.optInt("schema", -1) != SCHEMA_VERSION) return@runCatching null
+            val digest = json.optString("sha256", "")
+                .lowercase()
+                .takeIf { IncomingMmsIdentity.persistedFileName(it) != null }
             val record = Record(
                 fileName = fileName,
                 subscriptionId = json.getInt("subscription_id"),
-                requestedAtMs = json.getLong("requested_at_ms")
+                requestedAtMs = json.getLong("requested_at_ms"),
+                digestHex = digest
             )
             record.takeIf {
                 validRecordFields(it.fileName, it.subscriptionId, it.requestedAtMs)

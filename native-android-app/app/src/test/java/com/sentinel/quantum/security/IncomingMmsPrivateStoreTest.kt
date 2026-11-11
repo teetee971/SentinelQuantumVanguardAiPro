@@ -95,6 +95,26 @@ class IncomingMmsPrivateStoreTest {
         assertTrue(File(root, "mms-inbox").listFiles().orEmpty().none { it.extension == "part" })
     }
 
+    @Test
+    fun pinnedDigestSurvivesRetention() = withTempRoot { root ->
+        val pinnedPdu = "pinned-mms".toByteArray(Charsets.UTF_8)
+        val pinned = IncomingMmsPrivateStore.persist(root, pinnedPdu)
+        val digest = requireNotNull(pinned.digestHex)
+
+        repeat(IncomingMmsPrivateStore.MAX_STORED_MMS + 2) { index ->
+            val result = IncomingMmsPrivateStore.persist(
+                root,
+                "later-$index".toByteArray(Charsets.UTF_8),
+                pinnedDigests = setOf(digest)
+            )
+            assertEquals(IncomingMmsPrivateStore.State.CREATED, result.state)
+        }
+
+        val restored = IncomingMmsPrivateStore.read(root, digest)
+        assertNotNull(restored)
+        assertTrue(pinnedPdu.contentEquals(restored))
+    }
+
     private fun pduFiles(root: File): List<File> =
         File(root, "mms-inbox").listFiles()
             ?.filter { it.isFile && it.extension == "pdu" }
