@@ -38,6 +38,7 @@ import com.sentinel.quantum.security.CovertDetectionSupport
 import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
+import com.sentinel.quantum.security.GatewayChangeMemory
 import com.sentinel.quantum.security.JoinedLanAnnouncement
 import com.sentinel.quantum.security.JoinedLanDiscovery
 import com.sentinel.quantum.security.JoinedLanDiscoveryUpdate
@@ -52,6 +53,8 @@ import com.sentinel.quantum.security.NetworkTimelineSnapshot
 import com.sentinel.quantum.security.NetworkTimelineStore
 import com.sentinel.quantum.security.NetworkTrustStore
 import com.sentinel.quantum.security.WifiBand
+import com.sentinel.quantum.security.WifiIntrusionFinding
+import com.sentinel.quantum.security.WifiIntrusionHints
 import com.sentinel.quantum.security.WifiRiskEvaluator
 import com.sentinel.quantum.security.WifiJoinedLink
 import com.sentinel.quantum.security.WifiJoinedLinkReader
