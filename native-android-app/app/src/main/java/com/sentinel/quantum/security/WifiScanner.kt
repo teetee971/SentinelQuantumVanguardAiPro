@@ -213,6 +213,7 @@ class WifiScanner(context: Context) {
                         rawBssid = result.BSSID,
                         rssiDbm = result.level,
                         frequencyMhz = result.frequency,
+                        centerMhz = result.centerFreq0,
                         capabilities = result.capabilities,
                         channelWidth = result.channelWidth,
                         wifiStandard = standard
@@ -261,6 +262,7 @@ class WifiScanner(context: Context) {
         rawBssid: String?,
         rssiDbm: Int,
         frequencyMhz: Int,
+        centerMhz: Int,
         capabilities: String?,
         channelWidth: Int,
         wifiStandard: Int
@@ -282,6 +284,7 @@ class WifiScanner(context: Context) {
             ),
             radio = WifiRadioAnalyzer.describe(
                 frequencyMhz = frequencyMhz,
+                centerMhz = centerMhz,
                 channelWidth = channelWidth,
                 wifiStandard = wifiStandard,
                 capabilities = capabilities,

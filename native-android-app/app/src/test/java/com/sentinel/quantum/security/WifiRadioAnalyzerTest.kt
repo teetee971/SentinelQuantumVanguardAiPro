@@ -48,11 +48,17 @@ class WifiRadioAnalyzerTest {
         assertEquals(2, survey.busiest.first().accessPoints)
         assertEquals(1, WifiRadioAnalyzer.quietestChannel(WifiBand.BAND_2_4_GHZ, networks))
         assertEquals(36, WifiRadioAnalyzer.quietestChannel(WifiBand.BAND_5_GHZ, networks))
+        assertEquals(
+            "5490–5650 MHz · centre annoncé 5570",
+            WifiRadioAnalyzer.occupiedLabel(5570, 3)
+        )
+        assertEquals("plage non déduite", WifiRadioAnalyzer.occupiedLabel(5500, 4))
     }
 
     private fun sample(ssid: String, bssid: String, frequency: Int): DiscoveredWifiNetwork {
         val radio = WifiRadioAnalyzer.describe(
             frequencyMhz = frequency,
+            centerMhz = frequency,
             channelWidth = 0,
             wifiStandard = 4,
             capabilities = "[WPA2-PSK-CCMP]",

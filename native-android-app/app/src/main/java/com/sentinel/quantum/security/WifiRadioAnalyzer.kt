@@ -11,7 +11,8 @@ data class WifiAccessPointRadio(
     val securityDetail: String,
     val pmfLabel: String,
     val vendorLabel: String,
-    val signalLabel: String
+    val signalLabel: String,
+    val occupiedLabel: String = "plage non déduite"
 )
 
 data class WifiChannelLoad(
@@ -44,6 +45,21 @@ object WifiRadioAnalyzer {
         4 -> "80+80 MHz"
         5 -> "320 MHz"
         else -> "largeur non indiquée"
+    }
+
+    /** Contiguous width around the center Android announced. Not a measured spectrum. */
+    fun occupiedLabel(centerMhz: Int, channelWidth: Int): String {
+        val width = when (channelWidth) {
+            0 -> 20
+            1 -> 40
+            2 -> 80
+            3 -> 160
+            5 -> 320
+            else -> return "plage non déduite"
+        }
+        if (centerMhz !in 2400..7125) return "plage non déduite"
+        val half = width / 2
+        return "${centerMhz - half}–${centerMhz + half} MHz · centre annoncé $centerMhz"
     }
 
     fun standardLabel(wifiStandard: Int): String = when (wifiStandard) {
@@ -108,6 +124,7 @@ object WifiRadioAnalyzer {
 
     fun describe(
         frequencyMhz: Int,
+        centerMhz: Int,
         channelWidth: Int,
         wifiStandard: Int,
         capabilities: String?,
@@ -120,7 +137,8 @@ object WifiRadioAnalyzer {
         securityDetail = securityDetail(capabilities),
         pmfLabel = pmfLabel(capabilities),
         vendorLabel = vendorLabel(bssid),
-        signalLabel = signalLabel(rssiDbm)
+        signalLabel = signalLabel(rssiDbm),
+        occupiedLabel = occupiedLabel(centerMhz, channelWidth)
     )
 
     fun sameChannelCount(channel: Int?, band: WifiBand, networks: List<DiscoveredWifiNetwork>): Int {

@@ -17,6 +17,8 @@ data class WifiJoinedLink(
     val bssid: String,
     val rssiDbm: Int,
     val linkSpeedMbps: Int,
+    val rxLinkSpeedMbps: Int?,
+    val txLinkSpeedMbps: Int?,
     val frequencyMhz: Int,
     val ipv4: String?,
     val prefixLength: Int?,
@@ -41,6 +43,8 @@ object WifiJoinedLinkReader {
             bssid = wifi.bssid.orEmpty(),
             rssiDbm = wifi.rssi,
             linkSpeedMbps = wifi.linkSpeed,
+            rxLinkSpeedMbps = directedSpeed(wifi, receive = true),
+            txLinkSpeedMbps = directedSpeed(wifi, receive = false),
             frequencyMhz = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) wifi.frequency else 0,
             ipv4 = (ipv4?.address as? Inet4Address)?.hostAddress,
             prefixLength = ipv4?.prefixLength?.takeIf { it in 0..32 },
@@ -62,5 +66,11 @@ object WifiJoinedLinkReader {
         val gateway = routes.firstOrNull { it.isDefaultRoute }?.gateway
             ?: routes.firstOrNull { it.gateway != null }?.gateway
         return gateway?.hostAddress
+    }
+
+    private fun directedSpeed(wifi: WifiInfo, receive: Boolean): Int? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        val speed = if (receive) wifi.rxLinkSpeedMbps else wifi.txLinkSpeedMbps
+        return speed.takeIf { it > 0 }
     }
 }

@@ -41,6 +41,8 @@ import com.sentinel.quantum.security.DiscoveredWifiNetwork
 import com.sentinel.quantum.security.JoinedLanAnnouncement
 import com.sentinel.quantum.security.JoinedLanDiscovery
 import com.sentinel.quantum.security.JoinedLanDiscoveryUpdate
+import com.sentinel.quantum.security.JoinedLanSighting
+import com.sentinel.quantum.security.JoinedLanSightingMemory
 import com.sentinel.quantum.security.NetworkServiceExposureAnalyzer
 import com.sentinel.quantum.security.NetworkServiceExposureAssessment
 import com.sentinel.quantum.security.LocalLogger
@@ -97,7 +99,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     val lanDiscovery = remember(context) { JoinedLanDiscovery(context) }
     var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
     var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
-    var lanRunning by remember { mutableStateOf(false) }
+    val lanMemory = remember(context) { JoinedLanSightingMemory(context) }
+    var lanKnown by remember { mutableStateOf<Set<String>>(emptySet()) }
     var lanAssessment by remember { mutableStateOf<NetworkServiceExposureAssessment?>(null) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
@@ -176,6 +179,9 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 lanRunning = joinedLink != null
                 if (joinedLink != null) {
                     lanDiscovery.start { update: JoinedLanDiscoveryUpdate ->
+                        val prints = update.services.map { it.service.subjectFingerprint }
+                        lanKnown = lanMemory.known(prints)
+                        if (!update.running) lanMemory.remember(prints)
                         lanServices = update.services
                         lanRunning = update.running
                         lanAssessment = NetworkServiceExposureAnalyzer.assess(
@@ -451,7 +457,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     services = lanServices,
                                     assessment = lanAssessment,
                                     running = lanRunning,
-                                    joined = joinedLink != null
+                                    joined = joinedLink != null,
+                                    knownFingerprints = lanKnown
                                 )
                             }
                             items(wifiNetworks, key = { it.bssid + it.ssid + it.frequencyMhz }) { network ->
@@ -602,6 +609,14 @@ private fun WifiSurveyCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (joined.rxLinkSpeedMbps != null || joined.txLinkSpeedMbps != null) {
+                Text(
+                    "Débit annoncé du lien : ↓ ${joined.rxLinkSpeedMbps ?: "non lu"} Mb/s · " +
+                        "↑ ${joined.txLinkSpeedMbps ?: "non lu"} Mb/s",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (joined.dns.isNotEmpty()) {
                 Text(
                     "DNS ${joined.dns.joinToString()}",
@@ -618,7 +633,8 @@ private fun JoinedLanCard(
     services: List<JoinedLanAnnouncement>,
     assessment: NetworkServiceExposureAssessment?,
     running: Boolean,
-    joined: Boolean
+    joined: Boolean,
+    knownFingerprints: Set<String>
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -652,6 +668,11 @@ private fun JoinedLanCard(
                     buildString {
                         append("${service.name} · ${service.host} · port ${service.port}")
                         if (cameraHint) append(" · nom compatible avec une caméra")
+                        append(
+                            " · " + JoinedLanSighting.label(
+                                service.service.subjectFingerprint in knownFingerprints
+                            )
+                        )
                     },
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -731,6 +752,13 @@ private fun WifiNetworkCard(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (network.radio.occupiedLabel != "plage non déduite") {
+            Text(
+                text = "Plage déduite du centre annoncé : ${network.radio.occupiedLabel}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Text(
             text = "Canal ${network.radio.channel ?: "?"} · ${network.frequencyMhz} MHz · " +
                 "${network.radio.widthLabel} · ${network.radio.standardLabel}",
