@@ -38,6 +38,10 @@ import com.sentinel.quantum.security.CovertDetectionSupport
 import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
 import com.sentinel.quantum.security.DiscoveredBluetoothDevice
 import com.sentinel.quantum.security.DiscoveredWifiNetwork
+import com.sentinel.quantum.security.JoinedLanAnnouncement
+import com.sentinel.quantum.security.JoinedLanDiscovery
+import com.sentinel.quantum.security.NetworkServiceExposureAnalyzer
+import com.sentinel.quantum.security.NetworkServiceExposureAssessment
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.NetworkRiskLevel
 import com.sentinel.quantum.security.NetworkTimelineEventKind
@@ -89,7 +93,10 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     var selectedTab by rememberSaveable { mutableStateOf(SurveillanceTab.WIFI) }
     var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
+    val lanDiscovery = remember(context) { JoinedLanDiscovery(context) }
     var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
+    var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
+    var lanAssessment by remember { mutableStateOf<NetworkServiceExposureAssessment?>(null) }
     var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
@@ -131,6 +138,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
         onDispose {
             wifiScanner.close()
             bluetoothScanner.close()
+            lanDiscovery.close()
         }
     }
 
@@ -161,6 +169,18 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                 val results = outcome.networks
                 wifiNetworks = results
                 joinedLink = runCatching { WifiJoinedLinkReader.read(context) }.getOrNull()
+                lanServices = emptyList()
+                lanAssessment = null
+                if (joinedLink != null) {
+                    lanDiscovery.start { announcements ->
+                        lanServices = announcements
+                        lanAssessment = NetworkServiceExposureAnalyzer.assess(
+                            announcements.map { it.service }
+                        )
+                    }
+                } else {
+                    lanDiscovery.stop()
+                }
                 isScanning = false
                 statusMessage = WifiScanResultTruth.statusMessage(outcome.source, results.size)
                 logger.log(
@@ -413,6 +433,9 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     joined = joinedLink
                                 )
                             }
+                            item {
+                                JoinedLanCard(services = lanServices, assessment = lanAssessment)
+                            }
                             items(wifiNetworks, key = { it.bssid + it.ssid + it.frequencyMhz }) { network ->
                                 WifiNetworkCard(
                                     network = network,
@@ -549,6 +572,50 @@ private fun WifiSurveyCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun JoinedLanCard(
+    services: List<JoinedLanAnnouncement>,
+    assessment: NetworkServiceExposureAssessment?
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "Réseau rejoint",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        if (services.isEmpty()) {
+            Text(
+                "Aucun service mDNS annoncé pour le moment. La recherche ne balaie pas les adresses et ne teste aucun port.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else {
+            services.take(12).forEach { service ->
+                Text(
+                    "${service.name} · ${service.host} · port ${service.port}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        val findings = assessment?.findings.orEmpty()
+        if (findings.isEmpty()) {
+            Text(
+                "Aucune exposition classée. Cela ne prouve pas que le réseau est sûr.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            findings.take(6).forEach { finding ->
+                Text("• ${finding.explanation}", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        Text(
+            "La sonde TCP du laboratoire n’est pas lancée : aucune session autorisée n’est ouverte.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
