@@ -95,6 +95,18 @@ class WifiRadioAnalyzerTest {
         he[0] = 35
         he[7] = 0x08
         assertEquals("160 MHz annoncé", WifiRadioAnalyzer.heWidthLabel(he))
+        assertEquals("vu à l'instant", WifiRadioAnalyzer.seenAgeLabel(1_000L))
+        assertEquals("vu il y a 4 min", WifiRadioAnalyzer.seenAgeLabel(4 * 60_000L))
+        assertEquals("âge non lu", WifiRadioAnalyzer.seenAgeLabel(-1L))
+        assertEquals("Sercomm", WifiRadioAnalyzer.vendorLabel("2C:93:FB:3A:4A:10"))
+        val alone = sample("Livebox", "2c:93:fb:3a:4a:10", 5500)
+        val neighbor = sample("Voisin", "24:a4:3c:00:00:09", 5500)
+        assertEquals(
+            1,
+            WifiRadioAnalyzer.sameChannelCount(100, WifiBand.BAND_5_GHZ, listOf(alone, neighbor), alone.bssid)
+        )
+        assertEquals(2_500L, BluetoothScanPace.remainingQuietMs(0L))
+        assertEquals(1_000L, BluetoothScanPace.remainingQuietMs(9_000L))
     }
 
     private fun sample(ssid: String, bssid: String, frequency: Int): DiscoveredWifiNetwork {

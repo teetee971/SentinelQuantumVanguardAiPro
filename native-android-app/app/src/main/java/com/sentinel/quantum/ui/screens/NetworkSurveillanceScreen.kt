@@ -106,7 +106,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var permissionDenied by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
-    var covertDeviceAlerted by remember { mutableStateOf(false) }
+    var covertDeviceAlerted by remember { mutableStateOf(setOf<String>()) }
     var timelineSnapshot by remember {
         mutableStateOf(
             NetworkTimelineSnapshot(
@@ -213,18 +213,19 @@ fun NetworkSurveillanceScreen(navController: NavController) {
 
     fun runBluetoothScan() {
         isScanning = true
-        covertDeviceAlerted = false
         bluetoothScanner.scan(
             onResults = { results ->
                 bluetoothDevices = results
-                if (!covertDeviceAlerted && results.any {
-                        it.assessment.likelyTracker ||
-                            it.assessment.announcesFindMy ||
-                            it.assessment.announcesKnownTracker ||
-                            it.assessment.likelyCameraOrRecorder ||
-                            it.assessment.likelyBeacon
-                    }) {
-                    covertDeviceAlerted = true
+                val fresh = results.filter { device ->
+                    val interesting = device.assessment.likelyTracker ||
+                        device.assessment.announcesFindMy ||
+                        device.assessment.announcesKnownTracker ||
+                        device.assessment.likelyCameraOrRecorder ||
+                        device.assessment.likelyBeacon
+                    interesting && (device.alertKey ?: device.address) !in covertDeviceAlerted
+                }
+                if (fresh.isNotEmpty()) {
+                    covertDeviceAlerted = covertDeviceAlerted + fresh.map { it.alertKey ?: it.address }
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
             },
@@ -474,7 +475,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     sameChannel = WifiRadioAnalyzer.sameChannelCount(
                                         network.radio.channel,
                                         network.band,
-                                        wifiNetworks
+                                        wifiNetworks,
+                                        exceptBssid = network.bssid
                                     ),
                                     overlap24 = WifiRadioAnalyzer.overlapping24Count(
                                         network.radio.channel,
@@ -805,8 +807,13 @@ private fun WifiNetworkCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "${network.radio.vendorLabel} · $sameChannel point(s) sur ce canal" +
+            text = "${network.radio.vendorLabel} · $sameChannel autre(s) point(s) sur ce canal" +
                 if (network.band == WifiBand.BAND_2_4_GHZ) " · $overlap24 chevauchement(s)" else "",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = network.seenAgeLabel,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -34,7 +34,8 @@ data class DiscoveredWifiNetwork(
         pmfLabel = "PMF non indiqué",
         vendorLabel = "fabricant non lu",
         signalLabel = "non qualifié"
-    )
+    ),
+    val seenAgeLabel: String = "âge non lu"
 )
 
 data class WifiScanOutcome(
@@ -217,7 +218,10 @@ class WifiScanner(context: Context) {
                         capabilities = result.capabilities,
                         channelWidth = result.channelWidth,
                         wifiStandard = standard,
-                        informationElements = beaconElements(result)
+                        informationElements = beaconElements(result),
+                        seenAgeLabel = WifiRadioAnalyzer.seenAgeLabel(
+                            WifiRadioAnalyzer.ageMs(result.timestamp, android.os.SystemClock.elapsedRealtime())
+                        )
                     )
                 }
                 .let(WifiRadioAnalyzer::distinctAccessPoints)
@@ -268,7 +272,8 @@ class WifiScanner(context: Context) {
         capabilities: String?,
         channelWidth: Int,
         wifiStandard: Int,
-        informationElements: List<Pair<Int, ByteArray>> = emptyList()
+        informationElements: List<Pair<Int, ByteArray>> = emptyList(),
+        seenAgeLabel: String = "âge non lu"
     ): DiscoveredWifiNetwork {
         val bssid = rawBssid.orEmpty()
         val ssid = rawSsid?.trim()?.takeIf { it.isNotEmpty() } ?: WifiRiskEvaluator.HIDDEN_SSID_LABEL
@@ -294,7 +299,8 @@ class WifiScanner(context: Context) {
                 bssid = bssid,
                 rssiDbm = rssiDbm,
                 informationElements = informationElements
-            )
+            ),
+            seenAgeLabel = seenAgeLabel
         )
     }
 

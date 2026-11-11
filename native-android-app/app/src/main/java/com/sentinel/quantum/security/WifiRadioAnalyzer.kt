@@ -212,6 +212,19 @@ object WifiRadioAnalyzer {
         return VENDORS[prefix] ?: "fabricant hors table locale"
     }
 
+    fun ageMs(bootTimestampUs: Long, elapsedRealtimeMs: Long): Long {
+        if (bootTimestampUs <= 0L || elapsedRealtimeMs < 0L) return -1L
+        return elapsedRealtimeMs - bootTimestampUs / 1_000L
+    }
+
+    fun seenAgeLabel(ageMs: Long): String = when {
+        ageMs < 0L -> "âge non lu"
+        ageMs < 5_000L -> "vu à l'instant"
+        ageMs < 60_000L -> "vu il y a ${ageMs / 1_000L} s"
+        ageMs < 3_600_000L -> "vu il y a ${ageMs / 60_000L} min"
+        else -> "vu il y a ${ageMs / 3_600_000L} h"
+    }
+
     fun describe(
         frequencyMhz: Int,
         centerMhz: Int,
@@ -242,9 +255,18 @@ object WifiRadioAnalyzer {
         return strongest + hidden
     }
 
-    fun sameChannelCount(channel: Int?, band: WifiBand, networks: List<DiscoveredWifiNetwork>): Int {
+    fun sameChannelCount(
+        channel: Int?,
+        band: WifiBand,
+        networks: List<DiscoveredWifiNetwork>,
+        exceptBssid: String? = null
+    ): Int {
         if (channel == null) return 0
-        return networks.count { it.band == band && it.radio.channel == channel }
+        return networks.count { network ->
+            network.band == band &&
+                network.radio.channel == channel &&
+                (exceptBssid == null || !network.bssid.equals(exceptBssid, ignoreCase = true))
+        }
     }
 
     fun overlapping24Count(channel: Int?, networks: List<DiscoveredWifiNetwork>): Int {
@@ -291,6 +313,7 @@ object WifiRadioAnalyzer {
 
     private val VENDORS = mapOf(
         "00:1a:2b" to "Ayecom",
+        "2c:93:fb" to "Sercomm",
         "18:e8:29" to "Ubiquiti",
         "24:a4:3c" to "Ubiquiti",
         "74:83:c2" to "Ubiquiti",

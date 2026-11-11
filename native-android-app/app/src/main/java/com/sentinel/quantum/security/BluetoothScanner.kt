@@ -25,7 +25,8 @@ data class DiscoveredBluetoothDevice(
     val rssiDbm: Int,
     val kind: BluetoothDeviceKind,
     val randomizedAddress: Boolean,
-    val assessment: BluetoothRiskAssessment
+    val assessment: BluetoothRiskAssessment,
+    val alertKey: String? = null
 )
 
 /**
@@ -45,6 +46,9 @@ class BluetoothScanner(context: Context) {
     private val notedThisScan = mutableSetOf<String>()
     private val discovered = linkedMapOf<String, DiscoveredBluetoothDevice>()
     private var callback: ScanCallback? = null
+    private var quietToken = 0
+    private var scanStartedAt = 0L
+    private var scanMaxMs = BluetoothScanPace.MAX_MS
 
     /** Autorisations réellement nécessaires au produit pour exécuter ce scan et lire ses métadonnées. */
     val requiredPermissions: Array<String> = requiredPermissionsForApi(Build.VERSION.SDK_INT)
@@ -109,6 +113,8 @@ class BluetoothScanner(context: Context) {
         stop()
         discovered.clear()
         notedThisScan.clear()
+        scanStartedAt = android.os.SystemClock.elapsedRealtime()
+        scanMaxMs = durationMs.coerceIn(BluetoothScanPace.QUIET_MS, BluetoothScanPace.MAX_MS)
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
                 if (callback !== this) return
@@ -125,7 +131,11 @@ class BluetoothScanner(context: Context) {
                     onScanFinished()
                     return
                 }
+                val firstSighting = sessionKey !in discovered
                 discovered[sessionKey] = mapped
+                if (firstSighting) {
+                    armQuiet(scanCallback, onResults, onScanFinished, onTimelineUpdated)
+                }
                 onResults(sortedResults())
             }
 
@@ -137,33 +147,66 @@ class BluetoothScanner(context: Context) {
             }
         }
         callback = scanCallback
+        armQuiet(scanCallback, onResults, onScanFinished, onTimelineUpdated)
 
         try {
             scanner.startScan(scanCallback)
         } catch (_: SecurityException) {
             callback = null
+            quietToken += 1
+            handler.removeCallbacksAndMessages(null)
             onError("Autorisation Bluetooth refusée ou révoquée par le système.")
             return
         } catch (_: IllegalStateException) {
             callback = null
+            quietToken += 1
+            handler.removeCallbacksAndMessages(null)
             onError("Bluetooth indisponible ou désactivé.")
             return
         }
 
         handler.postDelayed({
-            stop()
-            val finalResults = sortedResults()
-            persistenceScope.launch {
-                networkTimelineStore.recordObserved(
-                    source = NetworkTimelineSource.ANDROID_BLE,
-                    rawIdentifiers = finalResults.map { it.address }
-                )
-                val snapshot = networkTimelineStore.read()
-                handler.post { onTimelineUpdated(snapshot) }
-            }
-            onResults(finalResults)
-            onScanFinished()
-        }, durationMs)
+            finishScan(scanCallback, onResults, onScanFinished, onTimelineUpdated)
+        }, scanMaxMs)
+    }
+
+    private fun armQuiet(
+        scanCallback: ScanCallback,
+        onResults: (List<DiscoveredBluetoothDevice>) -> Unit,
+        onScanFinished: () -> Unit,
+        onTimelineUpdated: (NetworkTimelineSnapshot) -> Unit
+    ) {
+        quietToken += 1
+        val token = quietToken
+        val wait = BluetoothScanPace.remainingQuietMs(
+            android.os.SystemClock.elapsedRealtime() - scanStartedAt,
+            scanMaxMs
+        )
+        handler.postDelayed({
+            if (token != quietToken || callback !== scanCallback) return@postDelayed
+            finishScan(scanCallback, onResults, onScanFinished, onTimelineUpdated)
+        }, wait)
+    }
+
+    private fun finishScan(
+        scanCallback: ScanCallback,
+        onResults: (List<DiscoveredBluetoothDevice>) -> Unit,
+        onScanFinished: () -> Unit,
+        onTimelineUpdated: (NetworkTimelineSnapshot) -> Unit
+    ) {
+        if (callback !== scanCallback) return
+        stop()
+        val finalResults = sortedResults()
+        persistenceScope.launch {
+            networkTimelineStore.recordObserved(
+                source = NetworkTimelineSource.ANDROID_BLE,
+                rawIdentifiers = finalResults.map { it.address }
+            )
+            val snapshot = networkTimelineStore.read()
+            handler.post { onTimelineUpdated(snapshot) }
+        }
+        onResults(finalResults)
+        onScanFinished()
     }
 
     @SuppressLint("MissingPermission")
@@ -209,6 +252,12 @@ class BluetoothScanner(context: Context) {
                 repeatNote(TrackerRepeat.identity(known.kind.toByteArray() + trackedPayload))
             else -> null
         }
+        val alertKey = when {
+            findMy && payload != null -> TrackerRepeat.identity(payload)
+            known != null && trackedPayload != null ->
+                TrackerRepeat.identity(known.kind.toByteArray() + trackedPayload)
+            else -> null
+        }
         return DiscoveredBluetoothDevice(
             name = name.ifEmpty { UNKNOWN_DEVICE_NAME },
             address = address,
@@ -223,7 +272,8 @@ class BluetoothScanner(context: Context) {
                 findMyLabel = payload?.let(BluetoothRiskEvaluator::appleFindMyLabel),
                 repeatNote = repeat,
                 trackerNote = known?.label
-            )
+            ),
+            alertKey = alertKey
         )
     }
 
