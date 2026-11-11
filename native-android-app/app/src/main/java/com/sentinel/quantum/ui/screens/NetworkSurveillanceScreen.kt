@@ -505,8 +505,17 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     mine = { fingerprint ->
                                         trustRevision >= 0 && trustStore.isAllowed("service:$fingerprint")
                                     },
+                                    blocked = { fingerprint -> trustStore.isBlocked("service:$fingerprint") },
                                     onMine = { fingerprint ->
                                         trustStore.allow("service:$fingerprint")
+                                        trustRevision += 1
+                                    },
+                                    onBlock = { fingerprint ->
+                                        trustStore.block("service:$fingerprint")
+                                        trustRevision += 1
+                                    },
+                                    onClear = { fingerprint ->
+                                        trustStore.clear("service:$fingerprint")
                                         trustRevision += 1
                                     }
                                 )
@@ -517,6 +526,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     running = addressRunning,
                                     enabled = joinedLink?.ipv4 != null,
                                     mine = { host -> trustStore.isAllowed(hostMineKey(host)) },
+                                    blocked = { host -> trustStore.isBlocked(hostMineKey(host)) },
                                     revision = trustRevision,
                                     onSearch = {
                                         val link = joinedLink
@@ -532,6 +542,14 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                     },
                                     onMine = { host ->
                                         trustStore.allow(hostMineKey(host))
+                                        trustRevision += 1
+                                    },
+                                    onBlock = { host ->
+                                        trustStore.block(hostMineKey(host))
+                                        trustRevision += 1
+                                    },
+                                    onClear = { host ->
+                                        trustStore.clear(hostMineKey(host))
                                         trustRevision += 1
                                     }
                                 )
@@ -589,8 +607,17 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                 BluetoothDeviceCard(
                                     device = device,
                                     mine = trustRevision >= 0 && trustStore.isAllowed("tracker:$key"),
+                                    blocked = trustStore.isBlocked("tracker:$key"),
                                     onMine = {
                                         trustStore.allow("tracker:$key")
+                                        trustRevision += 1
+                                    },
+                                    onBlock = {
+                                        trustStore.block("tracker:$key")
+                                        trustRevision += 1
+                                    },
+                                    onClear = {
+                                        trustStore.clear("tracker:$key")
                                         trustRevision += 1
                                     }
                                 )
@@ -777,7 +804,10 @@ private fun JoinedLanCard(
     joined: Boolean,
     knownFingerprints: Set<String>,
     mine: (String) -> Boolean,
-    onMine: (String) -> Unit
+    blocked: (String) -> Boolean,
+    onMine: (String) -> Unit,
+    onBlock: (String) -> Unit,
+    onClear: (String) -> Unit
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -820,11 +850,13 @@ private fun JoinedLanCard(
                     style = MaterialTheme.typography.bodySmall
                 )
                 val fingerprint = service.service.subjectFingerprint
-                if (mine(fingerprint)) {
-                    Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
-                } else {
-                    OutlinedButton(onClick = { onMine(fingerprint) }) { Text("C’est à moi") }
-                }
+                OwnershipActions(
+                    mine = mine(fingerprint),
+                    blocked = blocked(fingerprint),
+                    onMine = { onMine(fingerprint) },
+                    onBlock = { onBlock(fingerprint) },
+                    onClear = { onClear(fingerprint) }
+                )
             }
             if (running) {
                 Text(
@@ -978,9 +1010,12 @@ private fun AddressSearchCard(
     running: Boolean,
     enabled: Boolean,
     mine: (JoinedHost) -> Boolean,
+    blocked: (JoinedHost) -> Boolean,
     revision: Int,
     onSearch: () -> Unit,
-    onMine: (JoinedHost) -> Unit
+    onMine: (JoinedHost) -> Unit,
+    onBlock: (JoinedHost) -> Unit,
+    onClear: (JoinedHost) -> Unit
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Text("Adresses du réseau rejoint", fontWeight = FontWeight.Bold)
@@ -994,17 +1029,18 @@ private fun AddressSearchCard(
         outcome?.let { result ->
             Text(result.note, style = MaterialTheme.typography.bodySmall)
             result.hosts.forEach { host ->
-                val owned = revision >= 0 && mine(host)
                 Text(
                     "${host.ipv4} · ${host.vendor} · ${host.mac}" +
                         if (host.appearedAfterQuestion) " · apparu après la question" else " · déjà connu du téléphone",
                     style = MaterialTheme.typography.bodySmall
                 )
-                if (owned) {
-                    Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
-                } else {
-                    OutlinedButton(onClick = { onMine(host) }) { Text("C’est à moi") }
-                }
+                OwnershipActions(
+                    mine = revision >= 0 && mine(host),
+                    blocked = blocked(host),
+                    onMine = { onMine(host) },
+                    onBlock = { onBlock(host) },
+                    onClear = { onClear(host) }
+                )
             }
         }
     }
@@ -1014,7 +1050,10 @@ private fun AddressSearchCard(
 private fun BluetoothDeviceCard(
     device: DiscoveredBluetoothDevice,
     mine: Boolean,
-    onMine: () -> Unit
+    blocked: Boolean,
+    onMine: () -> Unit,
+    onBlock: () -> Unit,
+    onClear: () -> Unit
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -1060,10 +1099,33 @@ private fun BluetoothDeviceCard(
         device.assessment.reasons.forEach { reason ->
             Text("• $reason", style = MaterialTheme.typography.bodySmall)
         }
-        if (mine) {
+        OwnershipActions(mine, blocked, onMine, onBlock, onClear)
+    }
+}
+
+@Composable
+private fun OwnershipActions(
+    mine: Boolean,
+    blocked: Boolean,
+    onMine: () -> Unit,
+    onBlock: () -> Unit,
+    onClear: () -> Unit
+) {
+    when {
+        blocked -> {
+            Text(
+                "Marqué comme bloqué sur ce téléphone. Le routeur ne le déconnecte pas.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedButton(onClick = onClear) { Text("Retirer la marque") }
+        }
+        mine -> {
             Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
-        } else {
+            OutlinedButton(onClick = onBlock) { Text("Bloquer") }
+        }
+        else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onMine) { Text("C’est à moi") }
+            OutlinedButton(onClick = onBlock) { Text("Bloquer") }
         }
     }
 }
