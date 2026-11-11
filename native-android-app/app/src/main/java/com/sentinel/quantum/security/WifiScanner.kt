@@ -52,12 +52,15 @@ class WifiScanner(context: Context) {
     private var timeoutRunnable: Runnable? = null
 
     /**
-     * WifiManager.startScan()/scanResults remain gated by precise location on the
-     * Android versions supported by Sentinel. NEARBY_WIFI_DEVICES covers other
-     * nearby-Wi-Fi APIs on Android 13+, but must not become an extra blocker here.
+     * Since Android 12, a runtime request that contains only precise location is ignored.
+     * Ask for approximate and precise together. Scan results still need the precise grant:
+     * approximate-only does not make WifiManager.getScanResults() succeed.
      */
     val requiredPermissions: Array<String> =
-        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
 
     private val mandatoryPermissions: Array<String> = requiredPermissions
 
