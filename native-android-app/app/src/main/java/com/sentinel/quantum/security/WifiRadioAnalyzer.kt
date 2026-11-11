@@ -137,6 +137,19 @@ object WifiRadioAnalyzer {
         }
     }
 
+    fun quietestChannel(band: WifiBand, networks: List<DiscoveredWifiNetwork>): Int? {
+        val candidates = when (band) {
+            WifiBand.BAND_2_4_GHZ -> listOf(1, 6, 11)
+            WifiBand.BAND_5_GHZ -> listOf(36, 40, 44, 48, 149, 153, 157, 161)
+            else -> return null
+        }
+        return candidates.minByOrNull { channel ->
+            val same = sameChannelCount(channel, band, networks)
+            val overlap = if (band == WifiBand.BAND_2_4_GHZ) overlapping24Count(channel, networks) else 0
+            same * 3 + overlap
+        }
+    }
+
     fun survey(networks: List<DiscoveredWifiNetwork>): WifiRadioSurvey {
         val loads = networks
             .filter { it.radio.channel != null }

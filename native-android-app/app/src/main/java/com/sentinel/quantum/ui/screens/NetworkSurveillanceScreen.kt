@@ -435,7 +435,15 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                             item {
                                 WifiSurveyCard(
                                     survey = WifiRadioAnalyzer.survey(wifiNetworks),
-                                    joined = joinedLink
+                                    joined = joinedLink,
+                                    quiet24 = WifiRadioAnalyzer.quietestChannel(
+                                        WifiBand.BAND_2_4_GHZ,
+                                        wifiNetworks
+                                    ),
+                                    quiet5 = WifiRadioAnalyzer.quietestChannel(
+                                        WifiBand.BAND_5_GHZ,
+                                        wifiNetworks
+                                    )
                                 )
                             }
                             item {
@@ -458,6 +466,8 @@ fun NetworkSurveillanceScreen(navController: NavController) {
                                         network.radio.channel,
                                         wifiNetworks
                                     ),
+                                    joinedHere = network.bssid.isNotBlank() &&
+                                        network.bssid.equals(joinedLink?.bssid, ignoreCase = true),
                                     onAllow = {
                                         trustStore.allow(network.bssid)
                                         runWifiScan()
@@ -538,7 +548,9 @@ private fun networkTimelineKindLabel(kind: NetworkTimelineEventKind): String = w
 @Composable
 private fun WifiSurveyCard(
     survey: com.sentinel.quantum.security.WifiRadioSurvey,
-    joined: WifiJoinedLink?
+    joined: WifiJoinedLink?,
+    quiet24: Int?,
+    quiet5: Int?
 ) {
     SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
         Text("Lecture radio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -556,6 +568,20 @@ private fun WifiSurveyCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+        if (quiet24 != null) {
+            Text(
+                "Canal 2,4 GHz le moins chargé parmi 1, 6 et 11 : $quiet24. Observation seulement, aucun changement n’est appliqué.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (quiet5 != null) {
+            Text(
+                "Canal 5 GHz le moins chargé parmi les canaux usuels : $quiet5.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         if (joined == null) {
             Text(
@@ -653,6 +679,7 @@ private fun WifiNetworkCard(
     network: DiscoveredWifiNetwork,
     sameChannel: Int,
     overlap24: Int,
+    joinedHere: Boolean,
     onAllow: () -> Unit,
     onBlock: () -> Unit
 ) {
@@ -669,6 +696,13 @@ private fun WifiNetworkCard(
                 modifier = Modifier.weight(1f)
             )
             RiskBadge(network.assessment.riskLevel, "Risque")
+        }
+        if (joinedHere) {
+            Text(
+                "Point d'accès rejoint",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold
+            )
         }
         Text(
             text = "${bandLabel(network.band)} · ${network.rssiDbm} dBm · signal ${network.radio.signalLabel}",

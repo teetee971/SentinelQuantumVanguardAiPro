@@ -91,6 +91,7 @@ class JoinedLanDiscovery(context: Context) {
     private var typeIndex = 0
     private var advancedIndex = -1
     private var session = 0
+    private var discoveryFinished = false
     private val found = linkedMapOf<String, JoinedLanAnnouncement>()
     private val pendingResolves = ArrayDeque<NsdServiceInfo>()
     private var resolving = false
@@ -112,6 +113,7 @@ class JoinedLanDiscovery(context: Context) {
         resolving = false
         typeIndex = 0
         advancedIndex = -1
+        discoveryFinished = false
         val wifi = appContext.getSystemService(WifiManager::class.java)
         lock = runCatching {
             wifi?.createMulticastLock("sentinel-joined-lan")?.apply {
@@ -255,6 +257,7 @@ class JoinedLanDiscovery(context: Context) {
 
     private fun accept(info: NsdServiceInfo) {
         val host = hostAddress(info) ?: return
+        val current = session
         val announcement = JoinedLanServiceCatalog.announcement(
             name = info.serviceName.orEmpty(),
             dnsType = info.serviceType.orEmpty(),
@@ -262,8 +265,10 @@ class JoinedLanDiscovery(context: Context) {
             port = info.port
         ) ?: return
         main.post {
+            if (current != session) return@post
             found["${announcement.name}|${announcement.host}|${announcement.port}"] = announcement
             publish(running = true)
+            if (discoveryFinished) finishWhenIdle(current, 0)
         }
     }
 
@@ -285,9 +290,19 @@ class JoinedLanDiscovery(context: Context) {
             if (typeIndex < JoinedLanServiceCatalog.types.size) {
                 discoverCurrent(current)
             } else {
-                publish(running = false)
+                discoveryFinished = true
+                finishWhenIdle(current, 0)
             }
         }
+    }
+
+    private fun finishWhenIdle(current: Int, waits: Int) {
+        if (current != session) return
+        if ((resolving || pendingResolves.isNotEmpty()) && waits < MAX_IDLE_WAITS) {
+            main.postDelayed({ finishWhenIdle(current, waits + 1) }, IDLE_WAIT_MS)
+            return
+        }
+        publish(running = false)
     }
 
     private fun publish(running: Boolean) {
@@ -296,5 +311,7 @@ class JoinedLanDiscovery(context: Context) {
 
     companion object {
         private const val TYPE_WINDOW_MS = 2_500L
+        private const val IDLE_WAIT_MS = 400L
+        private const val MAX_IDLE_WAITS = 20
     }
 }

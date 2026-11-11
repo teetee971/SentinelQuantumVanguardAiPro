@@ -45,6 +45,8 @@ class WifiRadioAnalyzerTest {
         assertEquals(3, survey.distinctSsids)
         assertEquals(6, survey.busiest.first().channel)
         assertEquals(2, survey.busiest.first().accessPoints)
+        assertEquals(1, WifiRadioAnalyzer.quietestChannel(WifiBand.BAND_2_4_GHZ, networks))
+        assertEquals(36, WifiRadioAnalyzer.quietestChannel(WifiBand.BAND_5_GHZ, networks))
     }
 
     private fun sample(ssid: String, bssid: String, frequency: Int): DiscoveredWifiNetwork {
