@@ -110,6 +110,17 @@ android {
     }
 }
 
+// Termux/Ubuntu ARM64 may not be able to execute the host x86_64 NDK llvm-strip
+// selected by AGP for prebuilt dependency libraries. The P0.2 APK is an isolated
+// instrumentation artifact, so preserve its already-valid native libraries instead
+// of attempting a host-side strip. This does not affect debug, labPreview, release,
+// or releaseUnsigned, and does not bypass APK signing or manifest validation.
+androidComponents {
+    onVariants(selector().withBuildType('p02Test')) { variant ->
+        variant.packaging.jniLibs.keepDebugSymbols.add('**/*.so')
+    }
+}
+
 gradle.taskGraph.whenReady { graph ->
     def releaseSigningConfigured = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD'].every { System.getenv(it) }
     // Only tasks for the signed "release" build type (assembleRelease, bundleRelease, ...)
