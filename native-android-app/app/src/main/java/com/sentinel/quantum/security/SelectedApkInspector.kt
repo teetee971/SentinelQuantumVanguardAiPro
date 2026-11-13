@@ -51,7 +51,7 @@ class SelectedApkInspector(private val context: Context) {
                 context.packageManager.getPackageArchiveInfo(file.absolutePath, flags)
             }
             val signing = if (Build.VERSION.SDK_INT >= 28) info?.signingInfo else null
-            val signers = if (signing == null) null else {
+            val signers = if (Build.VERSION.SDK_INT < 28 || signing == null) null else {
                 val certificates = if (signing.hasMultipleSigners())
                     signing.apkContentsSigners else signing.signingCertificateHistory
                 certificates?.map { cert ->
