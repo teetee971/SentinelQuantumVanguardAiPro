@@ -108,3 +108,22 @@ test('the ad blocker roadmap is explicit about scope, privacy and Android VPN li
   assert.match(roadmap, /Aucun bloqueur n’est livré aujourd’hui/);
   assert.match(roadmap, /la vitrine Web ne peut pas filtrer les autres sites/);
 });
+
+test('November roadmap separates development milestones from customer availability', () => {
+  const registry = JSON.parse(read('config/product-capabilities.json'));
+  const byId = new Map(registry.capabilities.map((capability) => [capability.id, capability]));
+  assert.match(roadmap, /Point de situation · 12 novembre 2026/);
+  assert.match(roadmap, /id="november-title"/);
+  assert.match(roadmap, /MMS sortants · journal et identité/);
+  assert.match(roadmap, /Wi-Fi et radio Android/);
+  assert.match(roadmap, /Protection antifraude étendue/);
+  assert.match(roadmap, /Fonctions proposées · non livrées/);
+  assert.match(roadmap, /Les données du registre canonique restent prioritaires/);
+  for (const id of ['phone_core_android', 'sentinel_vpn_service', 'voice_transform_calls', 'public_android_release']) {
+    const capability = byId.get(id);
+    assert.ok(capability, `Canonical capability missing: ${id}`);
+    assert.equal(capability.customer_available, false, `${id} must not be presented as available without evidence`);
+  }
+  assert.match(roadmap, /data-capability-status-generated/);
+  assert.match(roadmap, /product-truth\.js/);
+});
