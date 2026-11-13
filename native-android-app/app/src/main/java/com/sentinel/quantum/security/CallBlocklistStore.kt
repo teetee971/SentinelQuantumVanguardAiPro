@@ -62,8 +62,18 @@ class CallBlocklistStore(context: Context) {
 
     /** Loads persisted rules into the process cache from an explicitly post-response path. */
     fun prepareScreeningSnapshot(now: Long = System.currentTimeMillis()): Snapshot =
+        prepareScreeningSnapshot(now, System.currentTimeMillis())
+
+    /**
+     * Builds a snapshot at the requested clock value while publishing a snapshot evaluated at the
+     * real publication clock. The second clock is injectable only for deterministic instrumentation
+     * tests; production callers use the one-argument overload.
+     */
+    internal fun prepareScreeningSnapshot(now: Long, publicationNow: Long): Snapshot =
         CallRuleMutationCoordinator.withLock {
-            snapshotUnlocked(now).also { SCREENING_SNAPSHOT = it }
+            val prepared = snapshotUnlocked(now)
+            SCREENING_SNAPSHOT = snapshotUnlocked(publicationNow)
+            prepared
         }
 
     /** Screening-critical path: memory-only and fail-open while the cold-process cache is empty. */

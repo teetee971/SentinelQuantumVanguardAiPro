@@ -41,7 +41,11 @@ class SelectedApkInspector(private val context: Context) {
             inspectionJob?.ensureActive()
             ApkArchiveValidator.validate(file)
             val signatureVerified = ApkSignatureVerifier.verify(file)
-            val flags = PackageManager.GET_SIGNING_CERTIFICATES
+            val flags = if (Build.VERSION.SDK_INT >= 28) {
+                PackageManager.GET_SIGNING_CERTIFICATES
+            } else {
+                0
+            }
             val info = if (Build.VERSION.SDK_INT >= 33) {
                 context.packageManager.getPackageArchiveInfo(
                     file.absolutePath, PackageManager.PackageInfoFlags.of(flags.toLong())

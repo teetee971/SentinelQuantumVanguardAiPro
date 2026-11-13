@@ -87,6 +87,26 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
     }
 
     @Test
+    fun simulated_snapshot_time_does_not_publish_an_expired_cache() {
+        val store = CallBlocklistStore(context)
+        val createdAt = System.currentTimeMillis()
+        assertTrue(store.addBlockedNumber(
+            "0612345680",
+            "temporary fixture",
+            CallBlockMetadata.Duration.HOURS_24,
+            now = createdAt
+        ))
+
+        val simulated = store.prepareScreeningSnapshot(
+            now = createdAt + CallBlockMetadata.Duration.HOURS_24.durationMs!! + 1L,
+            publicationNow = createdAt + 1L
+        )
+
+        assertTrue(simulated.blockedNumberHashes.isEmpty())
+        assertTrue(store.cachedScreeningSnapshot(createdAt + 1L).blockedNumberHashes.isNotEmpty())
+    }
+
+    @Test
     fun arcep_activation_and_manual_prefix_addition_are_serialized() {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
