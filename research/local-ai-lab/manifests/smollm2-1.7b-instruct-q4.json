@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "model_id": "smollm2-1.7b-instruct-q4",
+  "status": "UNVERIFIED",
+  "revision": null,
+  "source": "https://huggingface.co/HuggingFaceTB",
+  "license": null,
+  "commercial_use": "UNVERIFIED",
+  "tokenizer": null,
+  "limits": {"max_context_tokens": 4096},
+  "artifact": {"filename": null, "size_bytes": null, "sha256": null},
+  "verification_notes": "No model weights downloaded; exact GGUF source and revision require approval."
+}
