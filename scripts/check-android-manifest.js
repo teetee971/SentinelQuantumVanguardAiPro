@@ -43,7 +43,9 @@ const scopedExceptions = new Map([
 // Permissions that must never be usable to derive the physical location of the user.
 const neverForLocationPermissions = ['NEARBY_WIFI_DEVICES', 'BLUETOOTH_SCAN'];
 
-const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)].map((match) => {
+const declarations = [...manifest.matchAll(/<uses-permission\b([^>]*?)\/>/gs)]
+  .filter((match) => !/tools:node="remove"/.test(match[1]))
+  .map((match) => {
   const attributesSource = match[1];
   const name = /android:name="android\.permission\.([A-Z0-9_]+)"/.exec(attributesSource)?.[1];
   const attributes = Object.fromEntries(

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -90,6 +91,7 @@ fun SentinelStateChip(
     val actionLabel = stringResource(R.string.phone_core_open_validations)
     Surface(
         modifier = modifier
+            .then(if (onClick != null) Modifier.heightIn(min = 48.dp) else Modifier)
             .then(
                 if (onClick != null) {
                     Modifier.clickable(

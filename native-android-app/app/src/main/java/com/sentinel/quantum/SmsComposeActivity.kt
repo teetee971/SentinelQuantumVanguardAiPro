@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -48,19 +50,23 @@ import androidx.compose.runtime.saveable.mapSaver
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.sentinel.quantum.ui.design.phoneCoreTestId
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.asImageBitmap
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.SentinelSmsSender
 import com.sentinel.quantum.security.SentinelMmsSender
@@ -78,6 +84,9 @@ import com.sentinel.quantum.security.WhatsAppClickToChat
 import com.sentinel.quantum.security.LocalLogger
 import com.sentinel.quantum.security.PhoneCoreFrenchLabels
 import com.sentinel.quantum.security.MmsLocalInbox
+import com.sentinel.quantum.security.MmsImagePartRepository
+import com.sentinel.quantum.security.MmsThumbnailState
+import com.sentinel.quantum.security.UnifiedProviderMessage
 import com.sentinel.quantum.security.SmsActivationActions
 import com.sentinel.quantum.security.SmsActivationDiagnostics
 import com.sentinel.quantum.security.SmsActivationUiModel
@@ -93,6 +102,10 @@ import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
 import com.sentinel.quantum.ui.design.PhoneCoreDisclosure
 import com.sentinel.quantum.ui.design.PhoneCoreConversationRow
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.ui.semantics.semantics
@@ -105,6 +118,7 @@ import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.ensureActive
 
 /**
  * SENDTO composer and conversation surface for the default SMS/MMS role.
@@ -121,6 +135,71 @@ class SmsComposeActivity : ComponentActivity() {
         if (!value.all { it.isDigit() || it in "+*#" }) return null
         return value
     }
+
+@Composable
+private fun SecureConversationHeader(address: String, messageCount: Int, activationReady: Boolean) {
+    SentinelGlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("secure-conversation-header")
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(
+                modifier = Modifier.size(54.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = SentinelD1.Cyan.copy(alpha = 0.14f)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Text("?", style = MaterialTheme.typography.headlineSmall, color = SentinelD1.Cyan, fontWeight = FontWeight.Bold)
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("Messages sécurisés", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(address.ifBlank { "Expéditeur inconnu" }, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    if (messageCount == 0) "Aucun message chargé" else "$messageCount message(s) chargé(s)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            SentinelStatusChip(
+                status = if (activationReady) SentinelStatus.OK else SentinelStatus.LIMITED,
+                label = if (activationReady) "Local" else "Permissions"
+            )
+        }
+        Text(
+            "Analyse locale du message · aucun contenu n’est envoyé pour enrichissement distant.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun MessageRiskCard(score: Int, level: String, findings: List<String>) {
+    SentinelGlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("message-risk-card")
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Default.Security, contentDescription = null, tint = SentinelD1.Danger)
+            Column(Modifier.weight(1f)) {
+                Text("Analyse locale du message", fontWeight = FontWeight.Bold)
+                Text("Risque $level · score $score/100", color = SentinelD1.Danger, style = MaterialTheme.typography.bodySmall)
+            }
+            SentinelStatusChip(SentinelStatus.BAD, label = level)
+        }
+        if (findings.isNotEmpty()) {
+            Text(
+                findings.joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            "Ce résultat est une analyse locale du contenu disponible, pas une preuve d’identité de l’expéditeur.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -224,6 +303,10 @@ class SmsComposeActivity : ComponentActivity() {
                 val smsAnalyzer = remember { SmsLinkAnalyzer(LocalLogger(applicationContext)) }
                 val ioScope = rememberCoroutineScope()
                 val attachmentLoader = remember { MmsAttachmentLoader(applicationContext) }
+                val thumbnailRepository = remember { MmsImagePartRepository(applicationContext) }
+                var thumbnailStates by remember {
+                    mutableStateOf<Map<Long, MmsThumbnailState>>(emptyMap())
+                }
                 val mmsAttachmentLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.GetMultipleContents()
                 ) { uris ->
@@ -404,6 +487,44 @@ class SmsComposeActivity : ComponentActivity() {
                     }
                     threads = refreshed.first
                     threadMessages = refreshed.second
+                }
+                LaunchedEffect(selectedThreadId, threadMessages) {
+                    val threadId = selectedThreadId ?: return@LaunchedEffect
+                    if (!conversations.canRead()) {
+                        thumbnailStates = emptyMap()
+                        return@LaunchedEffect
+                    }
+
+                    thumbnailStates = emptyMap()
+                    threadMessages
+                        .asSequence()
+                        .filter { UnifiedProviderMessage.decodeMmsId(it.id) != null }
+                        .take(MMS_THUMBNAIL_MESSAGE_LIMIT)
+                        .forEach { message ->
+                            ensureActive()
+                            thumbnailStates = thumbnailStates +
+                                (message.id to MmsThumbnailState.Loading)
+                            val part = withContext(Dispatchers.IO) {
+                                thumbnailRepository.findImages(message.id, threadId).firstOrNull()
+                            }
+                            val bitmap = part?.let {
+                                withContext(Dispatchers.IO) {
+                                    thumbnailRepository.loadThumbnail(
+                                        syntheticMessageId = message.id,
+                                        threadId = threadId,
+                                        partId = it.partId
+                                    )
+                                }
+                            }
+                            ensureActive()
+                            thumbnailStates = thumbnailStates + (
+                                message.id to if (bitmap == null) {
+                                    MmsThumbnailState.Unavailable
+                                } else {
+                                    MmsThumbnailState.Ready(bitmap)
+                                }
+                            )
+                        }
                 }
                 LaunchedEffect(selectedThreadId, threadMessages.lastOrNull()?.id) {
                     if (selectedThreadId != null && threadMessages.isNotEmpty()) {
@@ -1058,6 +1179,11 @@ class SmsComposeActivity : ComponentActivity() {
                                     val replyAddress = threads.firstOrNull { it.threadId == selectedThreadId }?.address
                                         ?: threadMessages.lastOrNull()?.address.orEmpty()
                                     Text(replyAddress.ifBlank { "Conversation" }, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    SecureConversationHeader(
+                                        address = replyAddress,
+                                        messageCount = threadMessages.size,
+                                        activationReady = activationSnapshot.state == SmsActivationDiagnostics.State.READY
+                                    )
                                     if (threadMessages.isEmpty()) {
                                         Text(
                                             "Aucun message disponible dans cette conversation.",
@@ -1101,6 +1227,23 @@ class SmsComposeActivity : ComponentActivity() {
                                                     style = MaterialTheme.typography.bodySmall
                                                 )
                                                 Text(message.body.take(1000))
+                                                when (val thumbnail = thumbnailStates[message.id]) {
+                                                    MmsThumbnailState.Loading -> Text(
+                                                        "Miniature MMS en chargement…",
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                    is MmsThumbnailState.Ready -> Image(
+                                                        bitmap = thumbnail.bitmap.asImageBitmap(),
+                                                        contentDescription = "Miniature MMS reçue",
+                                                        modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp)
+                                                    )
+                                                    MmsThumbnailState.Unavailable -> Text(
+                                                        "Miniature MMS indisponible",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    null -> Unit
+                                                }
                                                 val messageRisk = remember(message.id, message.body) { smsAnalyzer.analyze(message.body) }
                                                 val otpPrivacy = remember(message.id, message.body) { SmsOtpPrivacy.inspect(message.body) }
                                                 if (otpPrivacy.containsOtp) {
@@ -1111,10 +1254,10 @@ class SmsComposeActivity : ComponentActivity() {
                                                     )
                                                 }
                                                 if (messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.LOW && messageRisk.riskLevel != SmsLinkAnalyzer.RiskLevel.UNKNOWN) {
-                                                    Text(
-                                                        "Risque local ${PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name)} · score ${messageRisk.score}/100 · ${messageRisk.findings.joinToString { PhoneCoreFrenchLabels.smsFinding(it.code) }}",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.error
+                                                    MessageRiskCard(
+                                                        score = messageRisk.score,
+                                                        level = PhoneCoreFrenchLabels.riskLevel(messageRisk.riskLevel.name),
+                                                        findings = messageRisk.findings.map { PhoneCoreFrenchLabels.smsFinding(it.code) }
                                                     )
                                                 }
                                                 OutlinedButton(
@@ -1191,6 +1334,7 @@ class SmsComposeActivity : ComponentActivity() {
     }
     companion object {
         const val EXTRA_OPEN_CONVERSATIONS = "com.sentinel.quantum.extra.OPEN_SMS_CONVERSATIONS"
+        private const val MMS_THUMBNAIL_MESSAGE_LIMIT = 20
     }
 
 }

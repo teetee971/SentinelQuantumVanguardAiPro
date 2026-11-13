@@ -24,6 +24,8 @@ class SentinelCallActionReceiver : BroadcastReceiver() {
         // SentinelInCallService owns cancellation after it observes a real transition away from
         // STATE_RINGING. If Telecom ignores a stale/racing request, the user must keep the call UI.
         when {
+            intent.action == SentinelCallNotificationHelper.ACTION_DISCONNECT && kind == "disconnect" ->
+                SentinelInCallService.disconnect(callId)
             intent.action == SentinelCallNotificationHelper.ACTION_ANSWER && kind == "answer" ->
                 SentinelInCallService.answer(callId)
             intent.action == SentinelCallNotificationHelper.ACTION_REJECT && kind == "reject" ->

@@ -46,8 +46,13 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelD1
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
 import com.sentinel.quantum.ui.design.phoneCoreTestId
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -517,6 +522,12 @@ class SentinelDialerActivity : ComponentActivity() {
         val failure = runCatching {
             telecom.placeCall(Uri.parse("tel:" + Uri.encode(safeNumber)), extras)
         }.exceptionOrNull()
+        // The user initiated this from a foreground activity. Do not rely on a
+        // background InCallService launch to expose the outgoing call controls.
+        if (failure == null) {
+            runCatching { startActivity(Intent(this, SentinelInCallActivity::class.java)) }
+                .onFailure { android.util.Log.w("SentinelDialer", "In-call UI launch refused", it) }
+        }
         assistedConfirmationBypassNumber = null
         assistedConfirmationBypassExpiresAtMs = 0L
         callActionStatus = if (failure == null) {
@@ -1463,6 +1474,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }
 
+                            ContactCommandCenter(
+                                contactCount = callableCount,
+                                phoneCount = phoneCount,
+                                totalContacts = contactItems.size
+                            )
+
                             OutlinedTextField(
                                 value = contactQuery,
                                 onValueChange = {
@@ -1593,15 +1610,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                     ?.toString()
                                     ?: "?"
 
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(22.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                    )
-                                ) {
+                                SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                                     Column(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Row(
@@ -1800,5 +1811,37 @@ class SentinelDialerActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_OPEN_CONTACTS = "sentinel.extra.OPEN_CONTACTS"
+    }
+}
+
+@Composable
+private fun ContactCommandCenter(contactCount: Int, phoneCount: Int, totalContacts: Int) {
+    SentinelGlassCard(
+        modifier = Modifier.fillMaxWidth().testTag("contacts-command-center")
+    ) {
+        Text("Répertoire Sentinel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+        Text(
+            "Contacts locaux · données lues depuis le fournisseur Android",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ContactMetric("Contacts locaux", totalContacts.toString(), Icons.Default.Contacts, Modifier.weight(1f))
+            ContactMetric("Numéros appelables", phoneCount.toString(), Icons.Default.Phone, Modifier.weight(1f))
+            ContactMetric("Répertoire visible", contactCount.toString(), Icons.Default.Shield, Modifier.weight(1f))
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SentinelStatusChip(SentinelStatus.OK, label = "Accès local")
+            Text("Aucun profil social synchronisé", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ContactMetric(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Icon(icon, contentDescription = null, tint = SentinelD1.Cyan, modifier = Modifier.size(24.dp))
+        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = SentinelD1.Cyan)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

@@ -1,0 +1,108 @@
+{
+  "result": "PASS",
+  "permissions": [
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.ACCESS_WIFI_STATE",
+    "android.permission.BLUETOOTH",
+    "android.permission.BLUETOOTH_ADMIN",
+    "android.permission.BLUETOOTH_CONNECT",
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.CALL_PHONE",
+    "android.permission.CHANGE_WIFI_STATE",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.INTERNET",
+    "android.permission.MODIFY_AUDIO_SETTINGS",
+    "android.permission.NEARBY_WIFI_DEVICES",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.READ_CALL_LOG",
+    "android.permission.READ_CONTACTS",
+    "android.permission.READ_PHONE_STATE",
+    "android.permission.READ_SMS",
+    "android.permission.RECEIVE_BOOT_COMPLETED",
+    "android.permission.RECEIVE_MMS",
+    "android.permission.RECEIVE_SMS",
+    "android.permission.RECEIVE_WAP_PUSH",
+    "android.permission.RECORD_AUDIO",
+    "android.permission.SEND_SMS",
+    "android.permission.USE_BIOMETRIC",
+    "android.permission.USE_FINGERPRINT",
+    "android.permission.USE_FULL_SCREEN_INTENT",
+    "android.permission.WAKE_LOCK",
+    "com.sentinel.quantum.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ],
+  "permission_count": 30,
+  "exported_components": [
+    {
+      "type": "activity",
+      "name": "com.sentinel.quantum.MainActivity",
+      "permission": null
+    },
+    {
+      "type": "activity",
+      "name": "com.sentinel.quantum.SentinelDialerActivity",
+      "permission": null
+    },
+    {
+      "type": "activity",
+      "name": "com.sentinel.quantum.SmsComposeActivity",
+      "permission": null
+    },
+    {
+      "type": "activity",
+      "name": "com.auth0.android.provider.RedirectActivity",
+      "permission": null
+    },
+    {
+      "type": "service",
+      "name": "com.sentinel.quantum.security.SentinelCallScreeningService",
+      "permission": "android.permission.BIND_SCREENING_SERVICE"
+    },
+    {
+      "type": "service",
+      "name": "com.sentinel.quantum.security.SentinelInCallService",
+      "permission": "android.permission.BIND_INCALL_SERVICE"
+    },
+    {
+      "type": "service",
+      "name": "com.sentinel.quantum.security.SentinelRespondViaMessageService",
+      "permission": "android.permission.SEND_RESPOND_VIA_MESSAGE"
+    },
+    {
+      "type": "service",
+      "name": "androidx.work.impl.background.systemjob.SystemJobService",
+      "permission": "android.permission.BIND_JOB_SERVICE"
+    },
+    {
+      "type": "service",
+      "name": "com.google.android.gms.auth.api.signin.RevocationBoundService",
+      "permission": "com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+    },
+    {
+      "type": "receiver",
+      "name": "com.sentinel.quantum.security.SentinelMissedCallReceiver",
+      "permission": "android.permission.MODIFY_PHONE_STATE"
+    },
+    {
+      "type": "receiver",
+      "name": "com.sentinel.quantum.security.SentinelSmsDeliverReceiver",
+      "permission": "android.permission.BROADCAST_SMS"
+    },
+    {
+      "type": "receiver",
+      "name": "com.sentinel.quantum.security.SentinelMmsDeliverReceiver",
+      "permission": "android.permission.BROADCAST_WAP_PUSH"
+    },
+    {
+      "type": "receiver",
+      "name": "androidx.work.impl.diagnostics.DiagnosticsReceiver",
+      "permission": "android.permission.DUMP"
+    },
+    {
+      "type": "receiver",
+      "name": "androidx.profileinstaller.ProfileInstallReceiver",
+      "permission": "android.permission.DUMP"
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.provider.Telephony
 import android.provider.Settings
 import android.telecom.TelecomManager
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
@@ -140,6 +142,8 @@ class PhoneCoreActivationActivity : ComponentActivity() {
             SentinelQuantumTheme {
                 var epoch by remember { mutableStateOf(0) }
                 var deniedPermissions by remember { mutableStateOf<Set<String>>(emptySet()) }
+                var roleRequestMessage by rememberSaveable { mutableStateOf<String?>(null) }
+                var roleRequestRole by rememberSaveable { mutableStateOf<String?>(null) }
                 val smsDiagnostics = remember { SmsActivationDiagnostics(applicationContext) }
                 val notificationPermissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 val fullScreenIntentReady = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
@@ -147,7 +151,20 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val smsActions = remember { SmsActivationActions(applicationContext) }
                 val setupWizard = remember { PhoneCoreSetupWizardStore(applicationContext) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
-                val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
+                val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                    val role = roleRequestRole
+                    if (role != null) {
+                        val roleHeld = holdsRole(role)
+                        val status = PhoneCoreRoleRequestPolicy.afterResult(result.resultCode, roleHeld)
+                        Log.i(
+                            TAG,
+                            "role_result role=$role resultCode=${result.resultCode} roleHeld=$roleHeld status=$status"
+                        )
+                        roleRequestMessage = PhoneCoreRoleRequestPolicy.message(status)
+                        roleRequestRole = null
+                    }
+                    epoch++
+                }
                 val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { epoch++ }
                 val permissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
                     deniedPermissions = grants.filterValues { !it }.keys
@@ -298,6 +315,38 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                 val setupTargetKey = PhoneCoreSetupWizardStore.targetKey(setupStep, setupAtomicPermission)
                 val attemptedSetupTargetKey = remember(epoch) { setupWizard.attemptedTargetKey() }
 
+                fun requestRole(role: String) {
+                    Log.i(TAG, "role_click role=$role")
+                    val available = isRoleAvailable(role)
+                    Log.i(TAG, "role_available role=$role value=$available")
+                    val intent = roleIntent(role)
+                    Log.i(TAG, "role_intent_created role=$role value=${intent != null}")
+                    when (PhoneCoreRoleRequestPolicy.afterClick(available, intent != null)) {
+                        PhoneCoreRoleRequestPolicy.Status.ROLE_UNAVAILABLE,
+                        PhoneCoreRoleRequestPolicy.Status.INTENT_UNAVAILABLE -> {
+                            val status = PhoneCoreRoleRequestPolicy.afterClick(available, intent != null)
+                            Log.w(TAG, "role_request_blocked role=$role status=$status")
+                            roleRequestMessage = PhoneCoreRoleRequestPolicy.message(status)
+                            roleRequestRole = null
+                        }
+                        PhoneCoreRoleRequestPolicy.Status.INTENT_READY -> {
+                            roleRequestRole = role
+                            try {
+                                roleLauncher.launch(requireNotNull(intent))
+                                val status = PhoneCoreRoleRequestPolicy.afterLaunch(success = true)
+                                Log.i(TAG, "role_launch_attempted role=$role status=$status")
+                                roleRequestMessage = PhoneCoreRoleRequestPolicy.message(status)
+                            } catch (error: RuntimeException) {
+                                val status = PhoneCoreRoleRequestPolicy.afterLaunch(success = false)
+                                Log.w(TAG, "role_launch_failed role=$role status=$status", error)
+                                roleRequestMessage = PhoneCoreRoleRequestPolicy.message(status)
+                                roleRequestRole = null
+                            }
+                        }
+                        else -> Unit
+                    }
+                }
+
                 fun launchSetupStep(step: PhoneCoreSetupWizardStore.Step) {
                     setupWizard.markAttemptedTarget(setupTargetKey)
                     when (step) {
@@ -313,8 +362,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                                 setupPermissionLauncher.launch(permission)
                             } else epoch++
                         }
-                        PhoneCoreSetupWizardStore.Step.DIALER_ROLE ->
-                            roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch) ?: run { epoch++ }
+                        PhoneCoreSetupWizardStore.Step.DIALER_ROLE -> requestRole(RoleManager.ROLE_DIALER)
                         PhoneCoreSetupWizardStore.Step.CALL_SCREENING_ROLE ->
                             roleIntent(RoleManager.ROLE_CALL_SCREENING)?.let(roleLauncher::launch) ?: run { epoch++ }
                         PhoneCoreSetupWizardStore.Step.CALL_LOG_PERMISSION ->
@@ -632,6 +680,13 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         }
 
+                        roleRequestMessage?.let { message ->
+                            Text(
+                                message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         SectionTitle("Appels")
                         CapabilityCard(
                             Icons.Default.Call, "Téléphone par défaut",
@@ -657,7 +712,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
                             }
                         ) {
                             when {
-                                !state.dialerRole -> roleIntent(RoleManager.ROLE_DIALER)?.let(roleLauncher::launch)
+                                !state.dialerRole -> requestRole(RoleManager.ROLE_DIALER)
                                 !state.callPermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE))
                                 !state.phoneStatePermission -> permissionsLauncher.launch(arrayOf(Manifest.permission.READ_PHONE_STATE))
                                 !state.callLineAvailable -> epoch++
@@ -800,6 +855,7 @@ class PhoneCoreActivationActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_FIRST_RUN_SETUP = "com.sentinel.quantum.extra.FIRST_RUN_PHONE_CORE_SETUP"
+        private const val TAG = "SentinelPhoneRole"
     }
 
     private fun readState(smsDiagnostics: SmsActivationDiagnostics): RuntimeState {

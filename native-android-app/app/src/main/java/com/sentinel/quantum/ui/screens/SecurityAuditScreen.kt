@@ -150,6 +150,14 @@ fun SecurityAuditScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading
             ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(Modifier.width(10.dp))
+                }
                 Text(
                     if (isLoading) stringResource(R.string.security_audit_running)
                     else stringResource(R.string.security_audit_run)

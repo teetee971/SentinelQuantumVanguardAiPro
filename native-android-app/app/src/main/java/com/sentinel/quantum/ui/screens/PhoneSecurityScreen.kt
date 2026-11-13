@@ -260,6 +260,16 @@ fun PhoneSecurityScreen(navController: NavController) {
                 motionLevel = protectionMotion
             )
 
+            ProtectionCommandCenter(
+                protectionStatus = protectionStatus,
+                callPrerequisitesReady = callPrerequisitesReady,
+                messagePrerequisitesReady = messagePrerequisitesReady,
+                onPhoneCore = { context.startActivity(Intent(context, PhoneCoreActivationActivity::class.java)) },
+                onApplications = { navController.navigate(Screen.AppPermissionAnalyzer.route) },
+                onNetwork = { navController.navigate(Screen.NetworkSurveillance.route) },
+                onVpn = { navController.navigate(Screen.Vpn.route) }
+            )
+
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.elevatedCardColors(
@@ -754,6 +764,114 @@ private fun IntelligenceDiagnosticCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun ProtectionCommandCenter(
+    protectionStatus: SentinelStatus,
+    callPrerequisitesReady: Boolean,
+    messagePrerequisitesReady: Boolean,
+    onPhoneCore: () -> Unit,
+    onApplications: () -> Unit,
+    onNetwork: () -> Unit,
+    onVpn: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("protection-command-center-dashboard"),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Protection temps réel", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(
+            if (protectionStatus == SentinelStatus.LIMITED) {
+                "Système surveillé · les protections affichées sont limitées aux preuves locales disponibles."
+            } else {
+                "Configuration à finaliser · aucune protection globale n’est déclarée active automatiquement."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ProtectionModuleCard(
+                title = "Phone Core",
+                detail = if (callPrerequisitesReady && messagePrerequisitesReady) "Prérequis prêts" else "À configurer",
+                status = protectionStatus,
+                icon = Icons.Default.Security,
+                onClick = onPhoneCore,
+                modifier = Modifier.weight(1f)
+            )
+            ProtectionModuleCard(
+                title = "Applications",
+                detail = "Permissions locales",
+                status = SentinelStatus.LIMITED,
+                icon = Icons.Default.Apps,
+                onClick = onApplications,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            ProtectionModuleCard(
+                title = "Réseau local",
+                detail = "Observation disponible",
+                status = SentinelStatus.UNKNOWN,
+                icon = Icons.Default.Wifi,
+                onClick = onNetwork,
+                modifier = Modifier.weight(1f)
+            )
+            ProtectionModuleCard(
+                title = "VPN",
+                detail = "Passerelle non configurée",
+                status = SentinelStatus.LOCKED,
+                icon = Icons.Default.VpnLock,
+                onClick = onVpn,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Column {
+                    Text("Alertes récentes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Aucune alerte récente fournie par les sources locales.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProtectionModuleCard(
+    title: String,
+    detail: String,
+    status: SentinelStatus,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier,
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            com.sentinel.quantum.ui.design.SentinelStatusChip(status = status)
         }
     }
 }
