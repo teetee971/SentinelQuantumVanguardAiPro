@@ -8,6 +8,14 @@ from .envelope import (
     VerifiedEnvelope,
     verify_envelope,
 )
+from .rollback import (
+    SequenceConflictError,
+    SequenceReceipt,
+    SequenceReplayError,
+    SequenceStore,
+    SequenceStoreError,
+    accept_envelope,
+)
 
 __all__ = [
     "STIC_DOMAIN",
@@ -16,4 +24,10 @@ __all__ = [
     "TrustRegistry",
     "VerifiedEnvelope",
     "verify_envelope",
+    "SequenceConflictError",
+    "SequenceReceipt",
+    "SequenceReplayError",
+    "SequenceStore",
+    "SequenceStoreError",
+    "accept_envelope",
 ]

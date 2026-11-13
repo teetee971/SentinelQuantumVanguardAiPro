@@ -36,6 +36,16 @@ class SticTestCase(unittest.TestCase):
             encoding=serialization.Encoding.X962,
             format=serialization.PublicFormat.UncompressedPoint,
         )
+        revoked_private = ec.generate_private_key(ec.SECP256R1())
+        revoked_public = revoked_private.public_key().public_bytes(
+            encoding=serialization.Encoding.X962,
+            format=serialization.PublicFormat.UncompressedPoint,
+        )
+        staging_private = ec.generate_private_key(ec.SECP256R1())
+        staging_public = staging_private.public_key().public_bytes(
+            encoding=serialization.Encoding.X962,
+            format=serialization.PublicFormat.UncompressedPoint,
+        )
         cls.registry = TrustRegistry({
             "prod-signing-1": TrustKey(
                 key_id="prod-signing-1",
@@ -49,7 +59,7 @@ class SticTestCase(unittest.TestCase):
                 environment="prod",
                 flows=frozenset({"threat-intelligence"}),
                 capabilities=frozenset({"cisa-kev"}),
-                public_key=cls.public,
+                public_key=revoked_public,
                 revoked=True,
             ),
             "staging-1": TrustKey(
@@ -57,7 +67,7 @@ class SticTestCase(unittest.TestCase):
                 environment="staging",
                 flows=frozenset({"threat-intelligence"}),
                 capabilities=frozenset({"cisa-kev"}),
-                public_key=cls.public,
+                public_key=staging_public,
             ),
         })
 
@@ -132,6 +142,11 @@ class SticTestCase(unittest.TestCase):
             envelope = self.make_envelope(signature=bad)
             with self.subTest(bad=bad), self.assertRaises(EnvelopeVerificationError):
                 verify_envelope(envelope, self.registry, now=NOW)
+
+    def test_base64url_rejects_noncanonical_pad_bits(self):
+        from sentinel_cti.crypto import decode_base64url
+        with self.assertRaises(Exception):
+            decode_base64url("AB")
 
     def test_registry_authorization_and_environment(self):
         for key_id, header_changes in (

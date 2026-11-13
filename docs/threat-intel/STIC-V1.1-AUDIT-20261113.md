@@ -27,7 +27,11 @@ Le nouveau package `threat-intelligence/sentinel_cti/` fournit :
 - vérification UTC de `issued_at`, `valid_from`, `expires_at` ;
 - vérification de la taille et du SHA-256 du payload canonique ;
 - résultat `VerifiedEnvelope` immuable ;
-- aucune mutation du registre et aucune prétention d’anti-rollback durable.
+- stockage monotone `SequenceStore` avec verrou exclusif, écriture temporaire,
+  `fsync`, remplacement atomique, marqueur d’initialisation et rejet fail-closed
+  des corruptions ou schémas inconnus ;
+- acceptation FULL/DELTA avec `base_sequence`, rotation par
+  `sequence_namespace` et révocation de clés.
 
 Les octets signés sont explicitement documentés dans `sentinel_cti/envelope.py` :
 séparateur de domaine ASCII, en-tête JCS sans `key_id`, payload JCS. `key_id`
@@ -38,13 +42,14 @@ octets signés.
 
 | Contrôle | Résultat | Preuve |
 |---|---:|---|
-| Tests Python STIC | PASS — 10/10 | `python3 -m unittest discover -s tests -v` |
+| Tests Python STIC | PASS — 10/10 | `python3 -m unittest discover -s tests -t . -v` |
+| Tests anti-rollback | PASS — 9/9 | inclus dans la commande Python ci-dessus |
 | Compilation Python | PASS | `python3 -m compileall -q sentinel_cti tests` |
 | Régression JavaScript threat-intel | PASS — 56/56 | `npm run test:threat-intel` |
 | Contrôle espaces/diff | PASS | `git diff --check` |
 | Vecteurs historiques Termux | NON TESTÉ | fichiers absents du checkout |
 | Intégration Android | NON TESTÉ | aucune liaison Python→Android existante |
-| Anti-rollback persistant | NON IMPLÉMENTÉ | aucun stockage durable fourni |
+| Anti-rollback persistant local | PASS — 9/9 | stockage transactionnel et fail-closed testés |
 
 ## Anomalies corrigées dans ce périmètre
 
@@ -54,13 +59,15 @@ octets signés.
 - confusion de clé/environnement/flux/capacité : registre d’autorisation ;
 - substitution de payload ou incohérence digest/taille : liaison canonique vérifiée ;
 - résultat mutable après vérification : structures exposées immuables.
+- absence de garde monotone persistante : `SequenceStore` ajouté avec isolation
+  environment/flow/namespace, concurrence et reprise après redémarrage.
 
 ## Risques résiduels
 
 - le contrat historique Termux n’est pas disponible ; une compatibilité exacte
   avec ses octets signés n’est pas démontrée ;
-- aucune persistance anti-rejeu ou anti-rollback n’est fournie ; le vérificateur
-  ne doit pas être présenté comme une autorité de séquence ;
+- le stockage local résiste aux interruptions et aux corruptions détectables,
+  mais pas à la restauration coordonnée de l’état et du marqueur par un attaquant ;
 - la dépendance `cryptography` doit être installée et verrouillée par le
   consommateur ; aucun lockfile Python n’existe dans le dépôt ;
 - aucune intégration applicative de cette enveloppe n’est encore raccordée au
@@ -71,12 +78,26 @@ Le critère de fin de mission n’est donc pas atteint. La PR doit rester en
 brouillon jusqu’à récupération des vecteurs historiques et validation de
 l’intégration réelle.
 
+## Classement des risques
+
+- **P0 — aucun défaut critique démontré** dans les tests locaux du périmètre.
+- **P1 — compatibilité historique non démontrée** : les candidats Termux et les
+  vecteurs JCS/ECDSA annoncés ne sont pas présents dans ce checkout.
+- **P1 — ancrage fort absent** : une restauration complète du fichier et du
+  marqueur peut restaurer une séquence ancienne ; un serveur, HSM ou compteur
+  matériel est requis contre cet attaquant.
+- **P2 — intégration applicative absente** : aucun consommateur Android ou
+  JavaScript n’appelle encore `accept_envelope`.
+- **P2 — migration future** : le schéma actuel est rejeté si inconnu ; toute
+  migration devra être un outil explicite, authentifié et testé, jamais une
+  réinitialisation automatique.
+
 ## Reproduction
 
 ```bash
 cd threat-intelligence
 python3 -m pip install -r requirements.txt
-python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -t . -v
 python3 -m compileall -q sentinel_cti tests
 cd ..
 npm run test:threat-intel

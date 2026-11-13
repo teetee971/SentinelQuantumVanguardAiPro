@@ -69,24 +69,35 @@ class TrustKey:
     capabilities: frozenset[str]
     public_key: bytes
     revoked: bool = False
+    sequence_namespace: str | None = None
 
 
 class TrustRegistry:
     def __init__(self, keys: Mapping[str, TrustKey]):
         normalized: dict[str, TrustKey] = {}
+        public_key_ids: dict[bytes, str] = {}
         for key_id, key in keys.items():
             if key_id != key.key_id or not _KEY_ID_RE.fullmatch(key_id):
                 raise ValueError("invalid or inconsistent trust key id")
-            if not key.environment or not key.flows or not key.capabilities:
+            if not isinstance(key.environment, str) or not key.environment or not isinstance(key.flows, frozenset) or not key.flows or not all(isinstance(item, str) and item for item in key.flows) or not isinstance(key.capabilities, frozenset) or not key.capabilities or not all(isinstance(item, str) and item for item in key.capabilities):
                 raise ValueError("trust key must declare environment, flows, and capabilities")
+            if key.sequence_namespace is not None and (not isinstance(key.sequence_namespace, str) or not key.sequence_namespace):
+                raise ValueError("invalid sequence namespace")
             if not isinstance(key.public_key, bytes) or len(key.public_key) != 65 or key.public_key[0] != 4:
                 raise ValueError("trust key must contain an uncompressed P-256 point")
             try:
                 load_p256_public_key(key.public_key)
             except CryptoVerificationError as exc:
                 raise ValueError("trust key contains an invalid P-256 point") from exc
+            previous_id = public_key_ids.get(key.public_key)
+            if previous_id is not None and previous_id != key_id:
+                raise ValueError("duplicate public key material under different identities")
+            public_key_ids[key.public_key] = key_id
             normalized[key_id] = key
         self._keys = MappingProxyType(normalized)
+
+    def get(self, key_id: str) -> TrustKey | None:
+        return self._keys.get(key_id)
 
     def authorize(self, key_id: str, environment: str, flow: str, capabilities: frozenset[str]) -> TrustKey:
         key = self._keys.get(key_id)

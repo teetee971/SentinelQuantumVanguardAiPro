@@ -30,6 +30,8 @@ def decode_base64url(value: str, *, expected_size: int | None = None) -> bytes:
         decoded = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
     except (ValueError, binascii.Error) as exc:
         raise CryptoVerificationError("invalid base64url") from exc
+    if encode_base64url(decoded) != value:
+        raise CryptoVerificationError("non-canonical base64url")
     if expected_size is not None and len(decoded) != expected_size:
         raise CryptoVerificationError("unexpected decoded size")
     return decoded
