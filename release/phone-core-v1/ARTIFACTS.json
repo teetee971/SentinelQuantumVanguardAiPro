@@ -1,0 +1,48 @@
+{
+  "generated_at_utc": "2026-10-29T16:00:28.441145+00:00",
+  "source_commit": "846ed793b1234e1d87ec21a218e50dba6c52d43d",
+  "configuration": {
+    "applicationId": "com.sentinel.quantum",
+    "versionCode": 10,
+    "versionName": "1.0.9",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "compileSdk": 37,
+    "release_signing": "unsigned",
+    "debug_signing": "Android Debug"
+  },
+  "artifacts": [
+    {
+      "file": "Sentinel-PhoneCore-V1-debug.apk",
+      "bytes": 98030896,
+      "sha256": "f425738907548935a306260b0205cd5070ffeb8384173d6a58a50a60ac1b9851",
+      "source_commit": "846ed793b1234e1d87ec21a218e50dba6c52d43d",
+      "build_task": ":app:assembleDebug",
+      "path": "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-debug.apk",
+      "source_artifact_path": "/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+      "download_url": null
+    },
+    {
+      "file": "Sentinel-PhoneCore-V1-androidTest.apk",
+      "bytes": 1136918,
+      "sha256": "0c564b78ef56002246d2f1aa79675d0a3cb58f9555256690b7a6d5e3c601b2e8",
+      "source_commit": "846ed793b1234e1d87ec21a218e50dba6c52d43d",
+      "build_task": ":app:assembleDebugAndroidTest",
+      "path": "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-androidTest.apk",
+      "source_artifact_path": "/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "download_url": null
+    },
+    {
+      "file": "Sentinel-PhoneCore-V1-release-unsigned.aab",
+      "bytes": 40039043,
+      "sha256": "40d1820130ae07bc18e75d76efcaceee01ba2d0ea60af4a434ec8602acdeb788",
+      "source_commit": "846ed793b1234e1d87ec21a218e50dba6c52d43d",
+      "build_task": ":app:bundleReleaseUnsigned",
+      "path": "/workspace/SentinelQuantumVanguardAiPro/release/phone-core-v1/Sentinel-PhoneCore-V1-release-unsigned.aab",
+      "source_artifact_path": "/workspace/SentinelQuantumVanguardAiPro/native-android-app/app/build/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+      "download_url": null
+    }
+  ],
+  "draft_release_url": "https://github.com/teetee971/SentinelQuantumVanguardAiPro/releases/tag/untagged-749c39c7074ebd9991bc",
+  "draft": true
+}

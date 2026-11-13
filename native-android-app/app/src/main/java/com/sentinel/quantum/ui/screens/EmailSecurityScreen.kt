@@ -21,6 +21,7 @@ import com.sentinel.quantum.security.HeaderAnomaly
 import com.sentinel.quantum.security.LookalikeLevel
 import com.sentinel.quantum.security.LookalikeReason
 import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.ui.design.SentinelGlassCard
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
 import com.sentinel.quantum.ui.design.SentinelTopBar
@@ -74,7 +75,7 @@ fun EmailSecurityScreen(navController: NavController) {
             ) {
                 Text(if (isAnalyzing) "Analyse…" else stringResource(R.string.email_security_analyze))
             }
-            result?.let { analysis -> Card(Modifier.fillMaxWidth()) {
+            result?.let { analysis -> SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.email_security_result), fontWeight = FontWeight.Bold)
                     if (!analysis.accepted) Text(

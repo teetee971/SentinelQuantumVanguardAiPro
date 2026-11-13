@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-06T12:05:00+00:00",
+  "branch": "codex/sentinel-audit-20261105",
+  "base_commit": "f5a39e1efd9544ee7f8fb1796e9c49930c9c6fed",
+  "validation": {
+    "target": "MMS received thumbnails",
+    "unit_tests": {
+      "MmsThumbnailPolicyTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "status": "PASS",
+        "report_sha256": "50d59e8e2d2d4802be05a4280bd1b0a12793b84656b191a51e9a3308b9d7d0ed"
+      },
+      "MmsImagePartContractTest": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "status": "PASS",
+        "report_sha256": "94fe9490e0a5976a632b130c0c4504cf673aceb37d04e3f539daa9ebd66866ee"
+      }
+    },
+    "total_tests": 13,
+    "unit_tests_status": "PASS",
+    "kotlin_compilation": "PASS_REPORTED",
+    "repository_runtime": "NOT_TESTED",
+    "thumbnail_decode": "NOT_IMPLEMENTED",
+    "compose_display": "NOT_IMPLEMENTED",
+    "physical_s24_plus": "NOT_TESTED"
+  },
+  "file_sha256": {
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsThumbnailPolicy.kt": "c448fa7f5ddf01efbc86abf5c53cbf22f1aa90226d1e854e39d6c08c0f8d70f2",
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsImagePartContract.kt": "0fcb796194a8061d766120dfc683f7c2b010577d9c3d6c3c64dd10f7cd9faacf",
+    "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsImagePartRepository.kt": "b1131fd4b6abded201eb104b897315b9e2db6f80aed60fe7e5aa870feb54508d",
+    "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailPolicyTest.kt": "36b055aaa21f01304f13c7007ad3e8f016e65b5704e7bfb2c1d8cd5ac7e0cc54",
+    "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsImagePartContractTest.kt": "f6d530c588077351505c3605ddaa0451c6e91d209b3356953a7c66fd8110dec4"
+  },
+  "reuse_policy": "Historical PASS is reusable only while relevant source, tests and build configuration remain compatible. Changed dependencies require impact analysis.",
+  "codex_session_2026_11_05": {
+    "branch": "codex/sentinel-audit-20261105",
+    "base_sha": "6315d3da7a62ac01fcb6f25f4494d25e20a5c4ed",
+    "current_sha": "fb0b4e61a",
+    "changes": [
+      "MmsBoundedImageReader added",
+      "MmsImagePartRepository.loadThumbnail added",
+      "MmsBoundedImageReaderTest added",
+      "SmsComposeActivity asynchronous thumbnail wiring added"
+    ],
+    "gradle_tests": "PASS",
+    "compilation": "PASS",
+    "lint": {
+      "status": "PASS",
+      "errors": 0,
+      "warnings": 221,
+      "hints": 19,
+      "sarif_sha256": "5b03bb745a4966011cbfba99321061ea4218d6b7e17fd3f6f4f45f6c6ec23b20",
+      "text_report_sha256": "068cdeca0688aa888b638d91a95ff6f6516deed7e34f491520580a0904cd65e6",
+      "classification": "qualification/LINT_CLASSIFICATION_20261106.md"
+    },
+      "compose_wiring": "IMPLEMENTED_NOT_ANDROID_TESTED",
+    "physical_s24_plus": "NOT_TESTED",
+    "historical_pass_rewritten": false,
+      "commands": {
+      "targeted": ":app:testDebugUnitTest --tests MmsBoundedImageReaderTest --tests MmsThumbnailPolicyTest --tests MmsImagePartContractTest --tests MmsThumbnailDecoderTest --tests SmsComposeMmsThumbnailSourceContractTest --no-daemon",
+      "regression": ":app:testDebugUnitTest --no-daemon",
+      "artifact": ":app:assembleDebug --no-daemon"
+    },
+    "targeted_tests": {
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "report_sha256": {
+        "SmsComposeMmsThumbnailSourceContractTest.xml": "610d0487445a4be552f97c2f139029979a7b2dcf324b6226569a6ca595fb37ed",
+        "MmsBoundedImageReaderTest.xml": "1fa22556d0a55ca9796f00d77424cf623cc1dee370031827f03dbe33a6ad2c5f",
+        "MmsThumbnailPolicyTest.xml": "a229b4f40643c9c31c95f9bade037a7ab78192708d15ef93ff5f5f9da29d4f92",
+        "MmsImagePartContractTest.xml": "30984e602e2429009b706cf9d62290b6d8e0c8d3b6470411f12ccf2fdf0514ec",
+        "MmsThumbnailDecoderTest.xml": "d2c452d2aa98f311b07b1323c3bb3329e9a8a4ae260fb16c590c8bfc7bb17cc6"
+      }
+    },
+      "full_unit_regression": {
+      "tests": 1400,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "status": "PASS_WITH_EXPLICIT_SKIP",
+      "skip_reason": "SIGNED_APK_FIXTURE_REQUIRED"
+    },
+    "instrumented": {
+      "compile_command": ":app:assembleDebugAndroidTest --no-daemon",
+      "compile_status": "PASS",
+      "connected_command": ":app:connectedDebugAndroidTest --no-daemon",
+      "connected_status": "BLOCKED_NO_CONNECTED_DEVICES",
+      "connected_error": "com.android.builder.testing.api.DeviceException: No connected devices!",
+      "test_apk": {
+        "path": "native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+        "sha256": "95eb7b17abb666004fc238358f106f046408233191a0e3935f6be4a28cee48d5",
+        "signature": "debug keystore; APK v2 verified"
+      }
+    },
+      "debug_apk": {
+      "status": "PASS",
+      "path": "native-android-app/app/build/outputs/apk/debug/app-debug.apk",
+        "sha256": "d166ee4cd548fa9b99c44054afe654be6933b7afe68e79b96fca910f79eeb505",
+      "signature": "debug keystore; APK v2 verified; not a release artifact"
+    }
+    ,"release_unsigned": {
+      "assemble_command": ":app:assembleReleaseUnsigned --no-daemon",
+      "bundle_command": ":app:bundleReleaseUnsigned --no-daemon",
+      "assemble_status": "PASS",
+      "bundle_status": "PASS",
+      "apk": {
+        "path": "native-android-app/app/build/outputs/apk/releaseUnsigned/app-releaseUnsigned-unsigned.apk",
+        "sha256": "c3c882d3517ab6b324c6f363d6d3d6582b176ab53a9b67045079e96a98e1913e",
+        "signature": "UNSIGNED_EXPECTED; apksigner does not verify; not publishable"
+      },
+      "aab": {
+        "path": "native-android-app/app/build/outputs/bundle/releaseUnsigned/app-releaseUnsigned.aab",
+        "sha256": "78abf53e2ea52797de513cd3f6fafe51d05e79ed450ea135b74238733f64e316",
+        "signature": "unsigned validation bundle; not publishable"
+      },
+      "apk_checks": {
+        "zipalign": "PASS",
+        "badging": "PASS; package com.sentinel.quantum, compileSdk 37, targetSdk 36, minSdk 24",
+        "manifest_security_flags": "INSPECTED; allowBackup=false, usesCleartextTraffic=false"
+      }
+    }
+  },
+  "additional_validations": [
+    {
+      "suite": "MmsThumbnailDecoderTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-05T11:25:45.624023+00:00",
+      "file_sha256": {
+        "native-android-app/app/src/main/java/com/sentinel/quantum/security/MmsThumbnailDecoder.kt": "c1082c10f08031656f592c17d9a3ce7d5593197bf1518d2529533c202e23ad0e",
+        "native-android-app/app/src/test/java/com/sentinel/quantum/security/MmsThumbnailDecoderTest.kt": "50cfa5712c2ffb7bc71398cc9129acce353105145ab0751239371592ad762779"
+      },
+      "scope": "JVM signature tests and Kotlin compilation; Android bitmap decoding not physically validated"
+    },
+    {
+      "suite": "NumberSearchVisualSourceContractTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:05:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.NumberSearchVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for the reference-inspired number profile; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "AppPermissionVisualDashboardSourceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:32:42+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.AppPermissionVisualDashboardSourceTest --no-daemon",
+      "scope": "Source contract for the applications-risk visual dashboard; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "HomeCommandCenterSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T12:40:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.HomeCommandCenterSourceContractTest --no-daemon",
+      "scope": "Source contract for the home command center; not an Android screenshot or physical-device validation"
+    },
+    {
+      "suite": "VpnVisualDashboardSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T13:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.VpnVisualDashboardSourceContractTest --no-daemon",
+      "scope": "Source contract for the VPN visual dashboard; no real gateway or physical-device validation"
+    },
+    {
+      "suite": "SmsSecureVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T13:30:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.SmsSecureVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for secure SMS conversation presentation; Android provider and physical-device behavior remain separately untested"
+    },
+    {
+      "suite": "ContactVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T14:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ContactVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for local contacts presentation; no physical contact-provider validation"
+    },
+    {
+      "suite": "SystemDoctorVisualSourceContractTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T14:30:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.SystemDoctorVisualSourceContractTest --no-daemon",
+      "scope": "Source contract for device analysis dashboard; no physical Android diagnostic validation"
+    },
+    {
+      "suite": "SmsThreatDetailVisualSourceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "PASS",
+      "validated_at_utc": "2026-11-06T15:00:00+00:00",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.SmsThreatDetailVisualSourceTest --no-daemon",
+      "scope": "Source contract for local SMS threat detail; no external link opening or physical-device validation"
+    },
+    {
+      "suite": "PhoneSecurityVisualDashboardSourceContractTest",
+      "tests": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "status": "BLOCKED",
+      "validated_at_utc": "2026-11-06T17:38:11Z",
+      "command": ":app:testDebugUnitTest --tests com.sentinel.quantum.ui.screens.PhoneSecurityVisualDashboardSourceContractTest",
+      "scope": "Source contract added for the realtime protection dashboard; execution blocked because Gradle 9.8 distribution download was refused and only an incomplete .part file is present"
+    }
+  ]
+}

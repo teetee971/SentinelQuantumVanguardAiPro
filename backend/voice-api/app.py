@@ -56,6 +56,7 @@ class Settings:
     auth_issuer: str = ""
     auth_audience: str = ""
     entitlement_claim: str = "sentinel_voice_entitled"
+    email_verified_claim: str = "https://sentinelquantumvanguardaipro.pages.dev/claims/email_verified"
     device_claim: str = "device_ids"
     token_ttl_seconds: int = MAX_TOKEN_TTL_SECONDS
     rate_limit_per_minute: int = 30
@@ -75,6 +76,10 @@ class Settings:
                 "VOICE_ENTITLEMENT_CLAIM", "sentinel_voice_entitled"
             ),
             device_claim=os.getenv("VOICE_DEVICE_CLAIM", "device_ids"),
+            email_verified_claim=os.getenv(
+                "VOICE_EMAIL_VERIFIED_CLAIM",
+                "https://sentinelquantumvanguardaipro.pages.dev/claims/email_verified",
+            ),
             token_ttl_seconds=_int_env(
                 "VOICE_TOKEN_TTL_SECONDS", MAX_TOKEN_TTL_SECONDS
             ),
@@ -111,6 +116,8 @@ class Settings:
             ):
                 if not value:
                     missing.append(name)
+        if not self.email_verified_claim.startswith("https://"):
+            missing.append("VOICE_EMAIL_VERIFIED_CLAIM must be namespaced with https://")
         if not self.livekit_url.startswith("wss://"):
             missing.append("LIVEKIT_URL must use wss://")
         if not 1 <= self.token_ttl_seconds <= MAX_TOKEN_TTL_SECONDS:
@@ -179,6 +186,7 @@ class OidcIdentityVerifier:
             "subject": subject,
             "device_ids": device_ids,
             "entitled": claims.get(self._settings.entitlement_claim) is True,
+            "email_verified": claims.get(self._settings.email_verified_claim) is True,
             "revoked": claims.get("sentinel_voice_revoked") is True,
         }
 
@@ -255,8 +263,10 @@ async def _is_revoked(client: Any, subject: str, device_id: str) -> bool:
 def _principal_device_ids(principal: dict[str, Any]) -> list[str]:
     device_ids = principal.get("device_ids", principal.get("device_id", []))
     if isinstance(device_ids, str):
-        return [device_ids]
-    return [item for item in device_ids if isinstance(item, str)]
+        return [device_ids] if device_ids else []
+    if not isinstance(device_ids, (list, tuple)):
+        return []
+    return [item for item in device_ids if isinstance(item, str) and item]
 
 
 def _load_state_record(raw: str, required_keys: tuple[str, ...]) -> dict[str, Any]:
@@ -295,19 +305,10 @@ async def _reserve_session(
             raise RedisError("atomic voice session reservation failed")
         return result == 1
 
-    stored = await client.set(
-        idempotency_key,
-        idempotency_value,
-        ex=idempotency_ttl,
-        nx=True,
-    )
-    if stored:
-        await client.set(
-            session_key,
-            session_value,
-            ex=session_ttl,
-        )
-    return bool(stored)
+    # A two-command fallback can reserve an idempotency key without creating
+    # its session record. Require Redis Lua atomicity instead of silently
+    # committing partial state under network failure or concurrent requests.
+    raise RedisError("atomic voice session reservation unavailable")
 
 
 def extract_device_ids(claims: dict[str, Any], claim_name: str = "device_ids") -> list[str]:
@@ -410,6 +411,9 @@ def create_app(
         if not principal:
             raise HTTPException(status_code=401, detail="Authentication required")
         subject = principal.get("subject")
+        # Validate the identity before using it in a Redis revocation key.
+        if not isinstance(subject, str) or not subject:
+            raise HTTPException(status_code=403, detail="Voice access denied")
         try:
             revoked = await _is_revoked(client, subject, device_id)
         except (RedisError, TimeoutError, OSError) as exc:
@@ -420,6 +424,7 @@ def create_app(
             not isinstance(subject, str)
             or not subject
             or principal.get("revoked")
+            or principal.get("email_verified") is not True
             or not principal.get("entitled")
             or device_id not in _principal_device_ids(principal)
             or revoked
@@ -560,7 +565,13 @@ def create_app(
         principal = await app.state.voice_identity.verify(
             _authorization_required(authorization)
         )
-        if not principal or not isinstance(principal.get("subject"), str):
+        # Closing an existing session is cleanup, not a grant of new access.
+        # Ownership and device binding are checked against the stored session below.
+        if (
+            not principal
+            or not isinstance(principal.get("subject"), str)
+            or not principal["subject"]
+        ):
             raise HTTPException(status_code=401, detail="Authentication required")
         session_key = f"voice:session:v1:{session_id}"
         closed_key = f"voice:closed:v1:{session_id}"

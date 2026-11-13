@@ -2,6 +2,7 @@ package com.sentinel.quantum.ui.design
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -135,7 +136,10 @@ fun SentinelHero(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (badges.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     badges.forEach { (label, color) ->
                         Surface(
                             shape = RoundedCornerShape(999.dp),

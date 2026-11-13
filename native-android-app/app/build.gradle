@@ -50,6 +50,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
 
+        // Separately installable preview; never inherits the production application ID.
+        labPreview {
+            initWith debug
+            applicationIdSuffix '.labpreview'
+            versionNameSuffix '-lab-preview'
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['debug']
+        }
+
         // Unsigned variant used to prove that an Android App Bundle compiles and
         // packages correctly (e.g. for Play Console dry-runs) before real release
         // signing secrets are available. It intentionally never applies a
@@ -99,6 +108,7 @@ gradle.taskGraph.whenReady { graph ->
 }
 
 dependencies {
+    implementation 'com.android.tools.build:apksig:9.3.2'
     implementation project(':wearable-security')
     implementation 'androidx.core:core-ktx:1.19.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
@@ -277,3 +287,9 @@ tasks.register('exportReleaseDependencyInventory') {
     }
 }
 
+
+tasks.withType(Test).configureEach {
+    if (project.hasProperty('sentinelSignatureFixture')) {
+        systemProperty 'sentinel.signature.fixture', project.property('sentinelSignatureFixture').toString()
+    }
+}

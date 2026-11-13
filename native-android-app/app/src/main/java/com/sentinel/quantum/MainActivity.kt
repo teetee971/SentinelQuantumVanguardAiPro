@@ -164,9 +164,34 @@ class MainActivity : ComponentActivity() {
                                 bottomNavEntries.forEach { entry ->
                                     val selected = when (entry.target) {
                                         BottomNavTarget.HOME -> currentRoute == Screen.Home.route
-                                        BottomNavTarget.PROTECTION -> currentRoute == Screen.PhoneSecurity.route
-                                        BottomNavTarget.MORE -> currentRoute == Screen.Settings.route
-                                        BottomNavTarget.COMMUNICATIONS -> currentRoute == Screen.CommunicationsHub.route
+                                        BottomNavTarget.PROTECTION -> currentRoute in setOf(
+                                            Screen.PhoneSecurity.route,
+                                            Screen.SecurityAudit.route,
+                                            Screen.SystemDoctor.route,
+                                            Screen.CallBlocking.route,
+                                            Screen.PhoneLists.route,
+                                            Screen.CallFilterHistory.route,
+                                            Screen.SmsScanner.route,
+                                            Screen.AppPermissionAnalyzer.route,
+                                            Screen.NetworkSurveillance.route,
+                                            Screen.DigitalExposure.route,
+                                            Screen.CollectiveDefense.route,
+                                            Screen.Vpn.route,
+                                            Screen.SmartHome.route
+                                        )
+                                        BottomNavTarget.MORE -> currentRoute in setOf(
+                                            Screen.Settings.route,
+                                            Screen.About.route,
+                                            Screen.Compliance.route,
+                                            Screen.LocalLogs.route
+                                        )
+                                        BottomNavTarget.COMMUNICATIONS -> currentRoute in setOf(
+                                            Screen.CommunicationsHub.route,
+                                            Screen.Search.route,
+                                            Screen.EmailSecurity.route
+                                        )
+                                        || currentRoute == Screen.OsintFeed.route
+                                        || currentRoute == Screen.OsintDetail.route
                                     }
                                     NavigationBarItem(
                                         selected = selected,
