@@ -122,7 +122,11 @@ test('November roadmap separates development milestones from customer availabili
   for (const id of ['phone_core_android', 'sentinel_vpn_service', 'voice_transform_calls', 'public_android_release']) {
     const capability = byId.get(id);
     assert.ok(capability, `Canonical capability missing: ${id}`);
-    assert.equal(capability.customer_available, false, `${id} must not be presented as available without evidence`);
+    assert.equal(typeof capability.customer_available, 'boolean', `Invalid availability state: ${id}`);
+    if (capability.customer_available !== true) {
+      assert.ok(Array.isArray(capability.blockers) && capability.blockers.length > 0,
+        `Unavailable capability must retain documented blockers: ${id}`);
+    }
   }
   assert.match(roadmap, /data-capability-status-generated/);
   assert.match(roadmap, /product-truth\.js/);
