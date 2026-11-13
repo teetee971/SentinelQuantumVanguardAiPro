@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- P0.2 tests use only app-private SharedPreferences. Remove role and data-plane
+         capabilities so installing this APK cannot register as a dialer/SMS client,
+         receive carrier broadcasts, or request unrelated runtime permissions. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.SEND_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_SMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="remove" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />
+
+    <!-- The removed phone/SMS permissions are still declared as merge directives; keep the
+         resulting test package optional on ChromeOS and non-telephony devices. -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <application
+        android:label="Sentinel P0.2 Test"
+        tools:replace="android:label">
+        <service android:name=".security.SentinelCallScreeningService" tools:node="remove" />
+        <service android:name=".security.SentinelInCallService" tools:node="remove" />
+        <service android:name=".security.SentinelRespondViaMessageService" tools:node="remove" />
+        <receiver android:name=".security.SentinelCallActionReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelMissedCallReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelSmsDeliverReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelMmsDeliverReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelMmsDownloadReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelMmsSendStatusReceiver" tools:node="remove" />
+        <receiver android:name=".security.SentinelSmsStatusReceiver" tools:node="remove" />
+        <activity android:name=".SentinelDialerActivity" tools:node="remove" />
+        <activity android:name=".SentinelInCallActivity" tools:node="remove" />
+        <activity android:name=".SmsComposeActivity" tools:node="remove" />
+    </application>
+</manifest>

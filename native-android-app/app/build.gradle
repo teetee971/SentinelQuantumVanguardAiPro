@@ -26,6 +26,10 @@ android {
         }
     }
 
+    // Route the instrumentation source set to the isolated application variant.
+    // This prevents connected tests from silently selecting the production debug target.
+    testBuildType "p02Test"
+
     def releaseKeystoreFile = System.getenv('KEYSTORE_FILE')
     def releaseKeystorePassword = System.getenv('KEYSTORE_PASSWORD')
     def releaseKeyAlias = System.getenv('KEY_ALIAS')
@@ -55,6 +59,17 @@ android {
             initWith debug
             applicationIdSuffix '.labpreview'
             versionNameSuffix '-lab-preview'
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['debug']
+        }
+
+        // Isolated instrumentation target for P0.2 call-rule tests. It has its own
+        // application ID and debug key, so it cannot replace or mutate the installed
+        // production package or the lab preview package.
+        p02Test {
+            initWith debug
+            applicationIdSuffix '.p02test'
+            versionNameSuffix '-p02-test'
             signingConfig signingConfigs.debug
             matchingFallbacks = ['debug']
         }
