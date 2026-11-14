@@ -35,10 +35,11 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
     fun two_store_instances_concurrently_add_prefixes_without_lost_rules() {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
-        runConcurrent {
+        val results = runConcurrent {
             first.addBlockedPrefix("+33981")
             second.addBlockedPrefix("+33982")
         }
+        assertEquals(listOf(true, true), results)
         assertEquals(setOf("+33981", "+33982"), first.snapshot().blockedPrefixes)
     }
 
@@ -47,10 +48,11 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
         assertTrue(first.addBlockedPrefix("+33983"))
-        runConcurrent {
+        val results = runConcurrent {
             first.removeBlockedPrefix("+33983")
             second.addBlockedPrefix("+33984")
         }
+        assertEquals(listOf(true, true), results)
         assertFalse(first.snapshot().blockedPrefixes.contains("+33983"))
         assertTrue(first.snapshot().blockedPrefixes.contains("+33984"))
     }
@@ -62,12 +64,14 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
         assertTrue(first.addBlockedNumber(
             "0612345678", "expired fixture", CallBlockMetadata.Duration.HOURS_24, now = 1_000L
         ))
-        runConcurrent {
+        val results = runConcurrent {
             first.purgeExpiredBlockedNumbers(now = 24L * 60L * 60L * 1000L + 1L)
             second.addBlockedNumber(
                 "0612345679", "live fixture", CallBlockMetadata.Duration.PERMANENT, now = 2_000L
             )
         }
+        assertEquals(1, results[0])
+        assertEquals(true, results[1])
         val snapshot = first.snapshot(now = 2_000L)
         assertEquals(1, snapshot.blockedNumberHashes.size)
     }
@@ -76,10 +80,11 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
     fun replacement_and_snapshot_publication_never_leave_an_old_manual_set() {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
-        runConcurrent {
+        val results = runConcurrent {
             first.replaceBlockedPrefixes(setOf("+33985", "+33986"))
             second.replaceBlockedPrefixes(setOf("+33987", "+33988"))
         }
+        assertEquals(listOf(true, true), results)
         val persisted = first.snapshot().blockedPrefixes
         assertTrue(persisted == setOf("+33985", "+33986") || persisted == setOf("+33987", "+33988"))
         assertEquals(persisted, first.prepareScreeningSnapshot().blockedPrefixes)
@@ -110,13 +115,17 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
     fun arcep_activation_and_manual_prefix_addition_are_serialized() {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
-        runConcurrent {
+        val results = runConcurrent {
             first.setArcepVerifiedBlockingEnabled(true)
             second.addBlockedPrefix("+33989")
         }
+        assertEquals(true, results[0])
         val snapshot = first.snapshot()
         if (ArcepVerifiedPrefixCatalog.e164Prefixes.size < CallRuleEngine.MAX_PREFIX_RULES) {
+            assertEquals(true, results[1])
             assertTrue(snapshot.blockedPrefixes.contains("+33989"))
+        } else {
+            assertEquals(false, results[1])
         }
     }
 
@@ -133,6 +142,10 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
             second.installSignedSilenceRules(envelope, verifier, NOW)
         }
         assertEquals(1, results.count { it.accepted })
+        assertEquals(1, results.count { !it.accepted })
+        assertTrue(results.all {
+            it.reason == "SIGNED_RULE_ACCEPTED" || it.reason == "SIGNED_RULE_ROLLBACK_REJECTED"
+        })
         assertEquals("SIGNED_RULE_ROLLBACK_REJECTED", first.installSignedSilenceRules(envelope, verifier, NOW).reason)
     }
 
