@@ -69,7 +69,7 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
         ))
         val results = runConcurrent(
             {
-                first.purgeExpiredBlockedNumbers(now = 24L * 60L * 60L * 1000L + 1L)
+                first.purgeExpiredBlockedNumbers(now = 1_000L + CallBlockMetadata.Duration.HOURS_24.durationMs!! + 1L)
             },
             {
                 second.addBlockedNumber(
