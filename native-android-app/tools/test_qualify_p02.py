@@ -12,6 +12,16 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 HARNESS = ROOT / "native-android-app/tools/qualify_p02.sh"
+CLASS = "com.sentinel.quantum.security.CallBlocklistStoreConcurrencyInstrumentationTest"
+METHODS = [
+    "two_store_instances_concurrently_add_prefixes_without_lost_rules",
+    "concurrent_add_and_remove_preserve_the_complete_committed_state",
+    "purge_and_exact_number_addition_do_not_publish_a_torn_snapshot",
+    "replacement_and_snapshot_publication_never_leave_an_old_manual_set",
+    "simulated_snapshot_time_does_not_publish_an_expired_cache",
+    "arcep_activation_and_manual_prefix_addition_are_serialized",
+    "signed_installation_is_serialized_and_replay_is_rejected",
+]
 
 
 def executable(path: pathlib.Path, content: str) -> pathlib.Path:
@@ -29,21 +39,33 @@ def run_case(kind: str, *, expected_sha: str | None = None) -> tuple[int, str]:
             f"#!/bin/sh\nif [ \"$1\" = devices ]; then echo 'List of devices attached'; echo '{adb_output}'; fi\n",
         )
         junit_body = "".join(
-            f'<testcase classname="C" name="t{i}" />' for i in range(7)
+            f'<testcase classname="{CLASS}" name="{method}" />' for method in METHODS
         )
         if kind == "failure":
-            junit_body = junit_body[:-len('</testcase>')] + '<failure /></testcase>'
+            junit_body = junit_body.replace(
+                f'classname="{CLASS}" name="{METHODS[-1]}" />',
+                f'classname="{CLASS}" name="{METHODS[-1]}"><failure /></testcase>',
+            )
         if kind == "incomplete":
             junit_body = junit_body[: junit_body.rfind('<testcase')]
+        results_dir = temp / "results"
+        gradle_write_results = kind != "stale"
+        gradle_script = "#!/bin/sh\n"
+        if gradle_write_results:
+            gradle_script += (
+                f"mkdir -p '{results_dir}'\n"
+                f"printf '%s' '<testsuite>{junit_body}</testsuite>' > '{results_dir}/TEST-p02.xml'\n"
+            )
+        gradle_script += "echo 'BUILD SUCCESSFUL'\nexit 0\n"
         gradle = executable(
             temp / "gradle",
-            "#!/bin/sh\n"
-            "mkdir -p app/build/outputs/androidTest-results/connected/p02Test\n"
-            f"printf '%s' '<testsuite>{junit_body}</testsuite>' > "
-            "app/build/outputs/androidTest-results/connected/p02Test/TEST-p02.xml\n"
-            "echo 'BUILD SUCCESSFUL'\n"
-            "exit 0\n",
+            gradle_script,
         )
+        if kind == "stale":
+            results_dir.mkdir(parents=True, exist_ok=True)
+            (results_dir / "TEST-stale.xml").write_text(
+                f'<testsuite>{junit_body}</testsuite>', encoding="utf-8"
+            )
         report = temp / "report"
         env = os.environ.copy()
         env.update(
@@ -52,6 +74,7 @@ def run_case(kind: str, *, expected_sha: str | None = None) -> tuple[int, str]:
             P02_ADB=str(adb),
             P02_GRADLE=str(gradle),
             P02_REPORT_DIR=str(report),
+            P02_RESULTS_ROOT=str(results_dir),
             P02_RUNS="1",
         )
         if expected_sha is not None:
@@ -72,4 +95,6 @@ bad_sha, bad_sha_output = run_case("success", expected_sha="bad-sha")
 assert bad_sha == 1 and "unexpected Git SHA" in bad_sha_output, bad_sha_output
 incomplete, incomplete_output = run_case("incomplete")
 assert incomplete == 1 and "JUnit validation failed" in incomplete_output, incomplete_output
+stale, stale_output = run_case("stale")
+assert stale == 1 and "no fresh JUnit report" in stale_output, stale_output
 print("harness_black_box_tests=5 passed=5 failed=0")

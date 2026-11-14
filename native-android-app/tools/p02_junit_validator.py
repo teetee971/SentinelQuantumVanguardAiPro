@@ -8,17 +8,39 @@ import pathlib
 import sys
 import xml.etree.ElementTree as ET
 
+EXPECTED_CLASS = "com.sentinel.quantum.security.CallBlocklistStoreConcurrencyInstrumentationTest"
+EXPECTED_METHODS = frozenset(
+    {
+        "two_store_instances_concurrently_add_prefixes_without_lost_rules",
+        "concurrent_add_and_remove_preserve_the_complete_committed_state",
+        "purge_and_exact_number_addition_do_not_publish_a_torn_snapshot",
+        "replacement_and_snapshot_publication_never_leave_an_old_manual_set",
+        "simulated_snapshot_time_does_not_publish_an_expired_cache",
+        "arcep_activation_and_manual_prefix_addition_are_serialized",
+        "signed_installation_is_serialized_and_replay_is_rejected",
+    }
+)
+
 
 def summarize(paths: list[pathlib.Path]) -> tuple[int, int, int, int]:
     tests = failures = errors = skipped = 0
+    identities: list[tuple[str, str]] = []
     for path in paths:
         root = ET.parse(path).getroot()
         cases = list(root.iter("testcase"))
         tests += len(cases)
         for case in cases:
+            identities.append((case.attrib.get("classname", ""), case.attrib.get("name", "")))
             failures += len(list(case.findall("failure")))
             errors += len(list(case.findall("error")))
             skipped += len(list(case.findall("skipped")))
+    if len(identities) != len(set(identities)):
+        raise ValueError("duplicate JUnit testcase identity")
+    expected = {(EXPECTED_CLASS, method) for method in EXPECTED_METHODS}
+    if set(identities) != expected:
+        raise ValueError(
+            f"unexpected JUnit identities: expected={sorted(expected)} actual={sorted(identities)}"
+        )
     return tests, failures, errors, skipped
 
 
@@ -29,7 +51,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         summary = summarize(args.xml)
-    except (OSError, ET.ParseError) as error:
+    except (OSError, ET.ParseError, ValueError) as error:
         print(f"JUNIT_INVALID: {error}")
         return 2
     tests, failures, errors, skipped = summary

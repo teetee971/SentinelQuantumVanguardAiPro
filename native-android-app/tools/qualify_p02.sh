@@ -14,6 +14,7 @@ SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 ADB="${P02_ADB:-${ADB:-${SDK:+$SDK/platform-tools/adb}}}"
 APKSIGNER="${APKSIGNER:-}"
 AAPT2="${AAPT2:-}"
+RESULTS_ROOT="${P02_RESULTS_ROOT:-$ROOT/app/build/outputs/androidTest-results/connected/p02Test}"
 
 REQUIRED_COMMITS=(
   92d1c916ebbdf393166fcf2fd904894ebee15661
@@ -141,7 +142,12 @@ for iteration in $(seq 1 "$RUNS"); do
   status=${PIPESTATUS[0]}
   [ "$status" -eq 0 ] || fail "instrumentation run $iteration failed with status $status"
   rg -q 'BUILD SUCCESSFUL' "$log" || fail "missing successful Gradle result in run $iteration"
-  mapfile -t junit_files < <(find "$ROOT/app/build/outputs/androidTest-results/connected/p02Test" \
+  # connectedAndroidTest may rebuild its dependencies; prove the installed inputs
+  # still match the approved artifacts after Gradle returns.
+  check_apk "$APP_DEBUG" com.sentinel.quantum "$EXPECTED_DEBUG_SHA"
+  check_apk "$APP_P02" com.sentinel.quantum.p02test "$EXPECTED_P02_SHA"
+  check_apk "$TEST_P02" com.sentinel.quantum.p02test.test "$EXPECTED_TEST_SHA"
+  mapfile -t junit_files < <(find "$RESULTS_ROOT" \
     -type f -name '*.xml' -newer "$marker" 2>/dev/null | sort)
   [ "${#junit_files[@]}" -gt 0 ] || fail "no fresh JUnit report for run $iteration"
   report_args=()
