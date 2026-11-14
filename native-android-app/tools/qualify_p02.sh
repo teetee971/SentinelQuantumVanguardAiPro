@@ -4,7 +4,7 @@ set -u -o pipefail
 # Non-destructive P0/P0.2 qualification harness.
 # It never connects to an ADB address, clears data, or touches the production packages.
 
-EXPECTED_SHA="${EXPECTED_SHA:-5815594d5a30182892db9649498f4a951634dcdf}"
+EXPECTED_SHA="${EXPECTED_SHA:-cdcd27027f4b50f58acb093ee35b9293dda297ba}"
 RUNS="${P02_RUNS:-10}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPORT_DIR="${P02_REPORT_DIR:-$ROOT/build/qualification/p02-$(date -u +%Y%m%dT%H%M%SZ)}"
