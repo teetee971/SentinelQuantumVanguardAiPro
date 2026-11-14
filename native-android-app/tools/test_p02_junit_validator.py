@@ -20,10 +20,11 @@ METHODS = [
     "simulated_snapshot_time_does_not_publish_an_expired_cache",
     "arcep_activation_and_manual_prefix_addition_are_serialized",
     "signed_installation_is_serialized_and_replay_is_rejected",
+    "concurrent_helper_executes_each_supplied_operation_once",
 ]
 
 
-def run(xml: str, expected: int = 7) -> tuple[int, str]:
+def run(xml: str, expected: int = 8) -> tuple[int, str]:
     with tempfile.TemporaryDirectory() as directory:
         path = pathlib.Path(directory) / "results.xml"
         path.write_text(xml, encoding="utf-8")
@@ -65,7 +66,7 @@ assert_case(
 )
 assert_case(
     "incomplete",
-    suite("".join(f'<testcase classname=\"{CLASS}\" name=\"{method}\" />' for method in METHODS[:6])),
+    suite("".join(f'<testcase classname=\"{CLASS}\" name=\"{method}\" />' for method in METHODS[:7])),
     2,
 )
 assert_case("malformed", "<testsuite>", 2)

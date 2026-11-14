@@ -155,9 +155,9 @@ for iteration in $(seq 1 "$RUNS"); do
     cp "$junit_file" "$run_report/$(basename "$junit_file")"
     report_args+=("$run_report/$(basename "$junit_file")")
   done
-  python3 "$ROOT/tools/p02_junit_validator.py" --expected-tests 7 "${report_args[@]}" \
+  python3 "$ROOT/tools/p02_junit_validator.py" --expected-tests 8 "${report_args[@]}" \
     | tee "$run_report/summary.txt" || fail "JUnit validation failed for run $iteration"
 done
 
-echo "PHYSICAL_TEST_PASS: $RUNS runs of the seven-test concurrency class completed"
+echo "PHYSICAL_TEST_PASS: $RUNS runs of the eight-test concurrency class completed"
 echo "qualification_report=$REPORT_DIR/qualification.log"

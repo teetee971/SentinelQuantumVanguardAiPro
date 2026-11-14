@@ -18,6 +18,7 @@ EXPECTED_METHODS = frozenset(
         "simulated_snapshot_time_does_not_publish_an_expired_cache",
         "arcep_activation_and_manual_prefix_addition_are_serialized",
         "signed_installation_is_serialized_and_replay_is_rejected",
+        "concurrent_helper_executes_each_supplied_operation_once",
     }
 )
 
@@ -47,7 +48,7 @@ def summarize(paths: list[pathlib.Path]) -> tuple[int, int, int, int]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("xml", nargs="+", type=pathlib.Path)
-    parser.add_argument("--expected-tests", type=int, default=7)
+    parser.add_argument("--expected-tests", type=int, default=8)
     args = parser.parse_args()
     try:
         summary = summarize(args.xml)
@@ -59,7 +60,7 @@ def main() -> int:
         f"tests={tests} failures={failures} errors={errors} skipped={skipped}"
     )
     if summary != (args.expected_tests, 0, 0, 0):
-        print("JUNIT_INVALID: expected exactly seven passing tests")
+        print("JUNIT_INVALID: expected exactly eight passing tests")
         return 1
     return 0
 

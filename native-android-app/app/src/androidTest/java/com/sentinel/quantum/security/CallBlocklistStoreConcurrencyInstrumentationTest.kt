@@ -10,6 +10,7 @@ import java.security.spec.ECGenParameterSpec
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,11 +36,12 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
     fun two_store_instances_concurrently_add_prefixes_without_lost_rules() {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
-        val results = runConcurrent {
-            first.addBlockedPrefix("+33981")
-            second.addBlockedPrefix("+33982")
-        }
-        assertEquals(listOf(true, true), results)
+        val results = runConcurrent(
+            { first.addBlockedPrefix("+33981") },
+            { second.addBlockedPrefix("+33982") },
+        )
+        assertEquals(true, results.first)
+        assertEquals(true, results.second)
         assertEquals(setOf("+33981", "+33982"), first.snapshot().blockedPrefixes)
     }
 
@@ -48,11 +50,12 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
         assertTrue(first.addBlockedPrefix("+33983"))
-        val results = runConcurrent {
-            first.removeBlockedPrefix("+33983")
-            second.addBlockedPrefix("+33984")
-        }
-        assertEquals(listOf(true, true), results)
+        val results = runConcurrent(
+            { first.removeBlockedPrefix("+33983") },
+            { second.addBlockedPrefix("+33984") },
+        )
+        assertEquals(true, results.first)
+        assertEquals(true, results.second)
         assertFalse(first.snapshot().blockedPrefixes.contains("+33983"))
         assertTrue(first.snapshot().blockedPrefixes.contains("+33984"))
     }
@@ -64,14 +67,18 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
         assertTrue(first.addBlockedNumber(
             "0612345678", "expired fixture", CallBlockMetadata.Duration.HOURS_24, now = 1_000L
         ))
-        val results = runConcurrent {
-            first.purgeExpiredBlockedNumbers(now = 24L * 60L * 60L * 1000L + 1L)
-            second.addBlockedNumber(
+        val results = runConcurrent(
+            {
+                first.purgeExpiredBlockedNumbers(now = 24L * 60L * 60L * 1000L + 1L)
+            },
+            {
+                second.addBlockedNumber(
                 "0612345679", "live fixture", CallBlockMetadata.Duration.PERMANENT, now = 2_000L
-            )
-        }
-        assertEquals(1, results[0])
-        assertEquals(true, results[1])
+                )
+            },
+        )
+        assertEquals(1, results.first)
+        assertEquals(true, results.second)
         val snapshot = first.snapshot(now = 2_000L)
         assertEquals(1, snapshot.blockedNumberHashes.size)
     }
@@ -80,11 +87,12 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
     fun replacement_and_snapshot_publication_never_leave_an_old_manual_set() {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
-        val results = runConcurrent {
-            first.replaceBlockedPrefixes(setOf("+33985", "+33986"))
-            second.replaceBlockedPrefixes(setOf("+33987", "+33988"))
-        }
-        assertEquals(listOf(true, true), results)
+        val results = runConcurrent(
+            { first.replaceBlockedPrefixes(setOf("+33985", "+33986")) },
+            { second.replaceBlockedPrefixes(setOf("+33987", "+33988")) },
+        )
+        assertEquals(true, results.first)
+        assertEquals(true, results.second)
         val persisted = first.snapshot().blockedPrefixes
         assertTrue(persisted == setOf("+33985", "+33986") || persisted == setOf("+33987", "+33988"))
         assertEquals(persisted, first.prepareScreeningSnapshot().blockedPrefixes)
@@ -115,17 +123,17 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
     fun arcep_activation_and_manual_prefix_addition_are_serialized() {
         val first = CallBlocklistStore(context)
         val second = CallBlocklistStore(context)
-        val results = runConcurrent {
-            first.setArcepVerifiedBlockingEnabled(true)
-            second.addBlockedPrefix("+33989")
-        }
-        assertEquals(true, results[0])
+        val results = runConcurrent(
+            { first.setArcepVerifiedBlockingEnabled(true) },
+            { second.addBlockedPrefix("+33989") },
+        )
+        assertEquals(true, results.first)
         val snapshot = first.snapshot()
         if (ArcepVerifiedPrefixCatalog.e164Prefixes.size < CallRuleEngine.MAX_PREFIX_RULES) {
-            assertEquals(true, results[1])
+            assertEquals(true, results.second)
             assertTrue(snapshot.blockedPrefixes.contains("+33989"))
         } else {
-            assertEquals(false, results[1])
+            assertEquals(false, results.second)
         }
     }
 
@@ -137,34 +145,52 @@ class CallBlocklistStoreConcurrencyInstrumentationTest {
         val verifier = SignedCallRulePackageVerifier(mapOf("trusted" to keyPair.public), "sentinel-rules")
         val current = first.signedRuleMetadata().acceptedSequence ?: 0L
         val envelope = envelope(sequence = current + 1L, signer = keyPair)
-        val results = runConcurrent {
-            first.installSignedSilenceRules(envelope, verifier, NOW)
-            second.installSignedSilenceRules(envelope, verifier, NOW)
-        }
-        assertEquals(1, results.count { it.accepted })
-        assertEquals(1, results.count { !it.accepted })
-        assertTrue(results.all {
+        val results = runConcurrent(
+            { first.installSignedSilenceRules(envelope, verifier, NOW) },
+            { second.installSignedSilenceRules(envelope, verifier, NOW) },
+        )
+        val resultList = listOf(results.first, results.second)
+        assertEquals(1, resultList.count { it.accepted })
+        assertEquals(1, resultList.count { !it.accepted })
+        assertTrue(resultList.all {
             it.reason == "SIGNED_RULE_ACCEPTED" || it.reason == "SIGNED_RULE_ROLLBACK_REJECTED"
         })
         assertEquals("SIGNED_RULE_ROLLBACK_REJECTED", first.installSignedSilenceRules(envelope, verifier, NOW).reason)
     }
 
-    private fun <T> runConcurrent(block: () -> T): List<T> {
+    @Test
+    fun concurrent_helper_executes_each_supplied_operation_once() {
+        val firstCalls = AtomicInteger(0)
+        val secondCalls = AtomicInteger(0)
+        val results = runConcurrent(
+            { firstCalls.incrementAndGet() },
+            { secondCalls.incrementAndGet() },
+        )
+        assertEquals(1, firstCalls.get())
+        assertEquals(1, secondCalls.get())
+        assertEquals(1, results.first)
+        assertEquals(1, results.second)
+    }
+
+    private fun <A, B> runConcurrent(first: () -> A, second: () -> B): Pair<A, B> {
         val ready = CountDownLatch(2)
         val release = CountDownLatch(1)
         val executor = Executors.newFixedThreadPool(2)
         return try {
-            val futures = (0 until 2).map {
-                executor.submit<T> {
-                    ready.countDown()
-                    assertTrue(ready.await(2, TimeUnit.SECONDS))
-                    assertTrue(release.await(2, TimeUnit.SECONDS))
-                    block()
-                }
+            fun <T> awaitStartAndRun(operation: () -> T): T {
+                ready.countDown()
+                assertTrue(ready.await(2, TimeUnit.SECONDS))
+                assertTrue(release.await(2, TimeUnit.SECONDS))
+                return operation()
             }
+            val firstFuture = executor.submit<A> { awaitStartAndRun(first) }
+            val secondFuture = executor.submit<B> { awaitStartAndRun(second) }
             assertTrue(ready.await(2, TimeUnit.SECONDS))
             release.countDown()
-            futures.map { it.get(10, TimeUnit.SECONDS) }
+            Pair(
+                firstFuture.get(10, TimeUnit.SECONDS),
+                secondFuture.get(10, TimeUnit.SECONDS),
+            )
         } finally {
             executor.shutdownNow()
         }
