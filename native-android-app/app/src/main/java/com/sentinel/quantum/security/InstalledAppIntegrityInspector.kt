@@ -19,8 +19,11 @@ class InstalledAppIntegrityInspector(private val context: Context) {
             )))
         }
         val pm = context.packageManager
-        val flags = PackageManager.GET_SIGNING_CERTIFICATES or
-            PackageManager.GET_PERMISSIONS or PackageManager.GET_ACTIVITIES or
+        val flags = (if (Build.VERSION.SDK_INT >= 28) {
+            PackageManager.GET_SIGNING_CERTIFICATES
+        } else {
+            0
+        }) or PackageManager.GET_PERMISSIONS or PackageManager.GET_ACTIVITIES or
             PackageManager.GET_SERVICES or PackageManager.GET_RECEIVERS or PackageManager.GET_PROVIDERS
         val info: PackageInfo = try {
             if (Build.VERSION.SDK_INT >= 33) {
