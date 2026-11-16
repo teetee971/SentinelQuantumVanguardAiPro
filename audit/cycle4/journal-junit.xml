@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T23:20:30.898Z" hostname="a029fdcc4328" time="1.019">
+  <properties/>
+  <testcase name="concurrentInstancesDoNotLoseOrDuplicateEvents" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.181"/>
+  <testcase name="alteredEventIsRejectedAndNeverOverwritten" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.006"/>
+  <testcase name="oversizedFileFailsBeforeParsing" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.004"/>
+  <testcase name="missingAnchorAndMissingEventsBothFailClosed" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.004"/>
+  <testcase name="wrongKeyNeverResetsExistingJournal" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.003"/>
+  <testcase name="negativeClockIsRejectedWithoutAppending" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.003"/>
+  <testcase name="oldEventsWithNewAnchorAreRejected" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.005"/>
+  <testcase name="eventsSurviveReopenWithoutPersistingUserContent" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.006"/>
+  <testcase name="newCreationNeverOverwritesExistingDirectory" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.002"/>
+  <testcase name="capacityLimitPreservesLastVerifiedState" classname="com.sentinel.quantum.ai.SentinelAiAuditJournalTest" time="0.804"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
