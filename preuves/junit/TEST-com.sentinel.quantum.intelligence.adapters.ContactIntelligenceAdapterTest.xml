@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.466Z" hostname="localhost" time="0.089">
+  <properties/>
+  <testcase name="provider_unavailable_emits_only_unavailable_unknown_evidence" classname="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" time="0.033"/>
+  <testcase name="presentation_attributes_never_become_primary_identity_keys" classname="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" time="0.015"/>
+  <testcase name="fingerprint_version_is_preserved_in_contact_identity_key" classname="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" time="0.001"/>
+  <testcase name="equal_names_with_different_fingerprints_are_never_merged" classname="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" time="0.0"/>
+  <testcase name="permission_required_emits_no_not_in_contacts_claim" classname="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" time="0.0"/>
+  <testcase name="ready_matching_provider_contact_emits_contact_evidence_and_android_contact_alias" classname="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" time="0.001"/>
+  <testcase name="emitted_event_debug_representation_never_contains_raw_number" classname="com.sentinel.quantum.intelligence.adapters.ContactIntelligenceAdapterTest" time="0.034"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

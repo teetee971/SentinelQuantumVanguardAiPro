@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CollectiveDefenseClientTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.295Z" hostname="localhost" time="0.033">
+  <properties/>
+  <testcase name="parsesBoundedReputationResponse" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.01"/>
+  <testcase name="negativeOrMissingFreshnessDoesNotBecomeValidFreshness" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.0"/>
+  <testcase name="recheckMustMatchRequestedTypeAndFingerprint" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.002"/>
+  <testcase name="disabledIntelligenceMayOmitFingerprintWithoutCrashing" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.0"/>
+  <testcase name="rejectsNonStandardHttpsPortAndOversizedRawIndicator" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.009"/>
+  <testcase name="rejectsInvalidFingerprintInServerResponse" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.002"/>
+  <testcase name="endpointPolicyAllowsOnlyPinnedHttpsIntelligenceRoutes" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.003"/>
+  <testcase name="availableIntelligenceMustProvideFingerprint" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.002"/>
+  <testcase name="rejectsBackendAttemptToEnableAutomaticEnforcement" classname="com.sentinel.quantum.security.CollectiveDefenseClientTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

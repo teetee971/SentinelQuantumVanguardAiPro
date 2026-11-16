@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneMonitorTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.932Z" hostname="localhost" time="0.013">
+  <properties/>
+  <testcase name="internationalZeroZeroThreeThreePrefixIsRecognizedAsKnownSpamPrefix" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.009"/>
+  <testcase name="ordinaryFrenchNonGeographicNumberIsNotBlanketBlocked" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.0"/>
+  <testcase name="nonFrenchInternationalNumberIsNormalizedAndLow" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.0"/>
+  <testcase name="nationalFrenchFormatWithoutPlusIsNormalizedWithoutCountryCode" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.0"/>
+  <testcase name="statisticsReflectChecks" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.002"/>
+  <testcase name="knownPrefixIsElevated" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.0"/>
+  <testcase name="auditDoesNotContainFullNumber" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.0"/>
+  <testcase name="ordinaryNumberIsNormalized" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.0"/>
+  <testcase name="malformedInputFailsClosed" classname="com.sentinel.quantum.security.PhoneMonitorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

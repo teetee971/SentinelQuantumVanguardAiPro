@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsDecodePipelineTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.845Z" hostname="localhost" time="0.088">
+  <properties/>
+  <testcase name="rejectsOversizedPduBeforeDecoder" classname="com.sentinel.quantum.security.MmsDecodePipelineTest" time="0.055"/>
+  <testcase name="decoderCannotMutateCallerPdu" classname="com.sentinel.quantum.security.MmsDecodePipelineTest" time="0.008"/>
+  <testcase name="rejectsEmptyPduBeforeDecoder" classname="com.sentinel.quantum.security.MmsDecodePipelineTest" time="0.001"/>
+  <testcase name="safeTextPartCanPassBoundary" classname="com.sentinel.quantum.security.MmsDecodePipelineTest" time="0.011"/>
+  <testcase name="unsafeDecodedPartStillPassesThroughSafetyBoundary" classname="com.sentinel.quantum.security.MmsDecodePipelineTest" time="0.001"/>
+  <testcase name="decoderFailureIsFailClosed" classname="com.sentinel.quantum.security.MmsDecodePipelineTest" time="0.001"/>
+  <testcase name="decoderRejectionReasonIsBounded" classname="com.sentinel.quantum.security.MmsDecodePipelineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

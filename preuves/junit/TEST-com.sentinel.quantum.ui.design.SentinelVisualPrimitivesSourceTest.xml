@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.364Z" hostname="localhost" time="0.052">
+  <properties/>
+  <testcase name="screenMotionPoliciesRefreshWhenTheScreenResumes" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.01"/>
+  <testcase name="animationValuesAreReadOnlyInTheDrawPhase" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.006"/>
+  <testcase name="heroMergesVisibleTextWithoutRepeatingItAsADescription" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.003"/>
+  <testcase name="decorativeLayersUseTheMeasuredHeroBounds" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.004"/>
+  <testcase name="particlesAreInsetAndDecorationsAreClippedAndSilent" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.005"/>
+  <testcase name="sectionHeaderHasOneCanonicalD1Contract" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.006"/>
+  <testcase name="unknownStateUsesAutoMirroredHelpIcon" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.005"/>
+  <testcase name="particleSeedsAndRingStrokesAreCachedOutsideDrawing" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.006"/>
+  <testcase name="motionLevelTransitionsUseSeparateComposeMemoryKeys" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.002"/>
+  <testcase name="statusChipMergesItsLabelWithoutAnExtraAnnouncement" classname="com.sentinel.quantum.ui.design.SentinelVisualPrimitivesSourceTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

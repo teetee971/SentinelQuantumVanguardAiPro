@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsRelatedPresentationContractTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.535Z" hostname="localhost" time="0.052">
+  <properties/>
+  <testcase name="explicitStartMismatchIsQuarantinedInsteadOfPromotingAnotherSmil" classname="com.sentinel.quantum.security.MmsRelatedPresentationContractTest" time="0.047"/>
+  <testcase name="absentStartUsesFirstBodyPartAndRejectsLaterSmilRoot" classname="com.sentinel.quantum.security.MmsRelatedPresentationContractTest" time="0.004"/>
+  <testcase name="aospStyleRelatedTypeAndStartBindTheDeclaredSmilRoot" classname="com.sentinel.quantum.security.MmsRelatedPresentationContractTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

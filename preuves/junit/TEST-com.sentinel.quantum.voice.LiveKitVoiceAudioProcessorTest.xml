@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.893Z" hostname="localhost" time="0.063">
+  <properties/>
+  <testcase name="invalidCallbackShapeIsSilencedWhenTransformationIsRequired" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.021"/>
+  <testcase name="nativeFloatBufferKeepsWebRtcFloatS16Scale" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.015"/>
+  <testcase name="disabledProcessorLeavesNativeFloatCaptureUntouched" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.003"/>
+  <testcase name="undersizedNativeBufferIsSilencedFailClosed" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.001"/>
+  <testcase name="captureProcessorPreservesCallerBufferPositionAndOrder" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.002"/>
+  <testcase name="threeBand48kCallbackProcessesTheWhole480Frame" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.002"/>
+  <testcase name="oversizedNativeBufferIsSilencedFailClosed" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.002"/>
+  <testcase name="processorCanBeWiredAsLiveKitCapturePostProcessor" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.01"/>
+  <testcase name="multiChannelCaptureIsRejectedInsteadOfPartiallyTransformingVoice" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.001"/>
+  <testcase name="enabledProcessorRewritesOutgoingNativeFloatCaptureInPlace" classname="com.sentinel.quantum.voice.LiveKitVoiceAudioProcessorTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

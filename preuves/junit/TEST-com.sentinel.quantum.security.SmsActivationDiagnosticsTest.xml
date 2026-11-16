@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsActivationDiagnosticsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:10.843Z" hostname="localhost" time="0.017">
+  <properties/>
+  <testcase name="send remains available when only inbox permissions are missing" classname="com.sentinel.quantum.security.SmsActivationDiagnosticsTest" time="0.008"/>
+  <testcase name="composer asks send permissions only when outbound prerequisites are missing" classname="com.sentinel.quantum.security.SmsActivationDiagnosticsTest" time="0.0"/>
+  <testcase name="sms role discovery preserves successful reads" classname="com.sentinel.quantum.security.SmsActivationDiagnosticsTest" time="0.006"/>
+  <testcase name="sms role discovery degrades platform failures to unavailable" classname="com.sentinel.quantum.security.SmsActivationDiagnosticsTest" time="0.001"/>
+  <testcase name="send remains fail closed without role send permission or active sim" classname="com.sentinel.quantum.security.SmsActivationDiagnosticsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

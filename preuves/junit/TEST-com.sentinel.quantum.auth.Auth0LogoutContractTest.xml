@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.auth.Auth0LogoutContractTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:40.995Z" hostname="localhost" time="0.008">
+  <properties/>
+  <testcase name="logout_is_locally_final_even_when_remote_sso_logout_fails" classname="com.sentinel.quantum.auth.Auth0LogoutContractTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

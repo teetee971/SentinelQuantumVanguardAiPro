@@ -1,0 +1,81 @@
+name: CISA KEV Refresh
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: cisa-kev-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Validate and propose CISA KEV refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup pinned Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Verify GitHub Actions supply-chain pinning
+        run: node scripts/check-github-actions-pinning.js
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run ingestion regression tests
+        run: npm run test:threat-intel
+
+      - name: Fetch and validate official CISA KEV feed
+        run: node scripts/update-cisa-kev.js --output data/threat-intel/cisa-kev.json
+
+      - name: Create reviewable refresh PR when catalog changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: automation/cisa-kev-refresh
+        run: |
+          if ! git status --porcelain -- data/threat-intel/cisa-kev.json | grep -q .; then
+            echo "CISA KEV catalog unchanged; no pull request required."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          remote_exists=false
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            remote_exists=true
+            git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH"
+          fi
+
+          git checkout -B "$BRANCH"
+          git add data/threat-intel/cisa-kev.json
+          git commit -m "Threat intel: refresh CISA KEV catalog"
+
+          if [ "$remote_exists" = true ]; then
+            git push --force-with-lease origin "$BRANCH"
+          else
+            git push --set-upstream origin "$BRANCH"
+          fi
+
+          existing_pr="$(gh pr list --base main --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$existing_pr" ]; then
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "Threat intel: refresh CISA KEV catalog" \
+              --body "Manual CISA KEV refresh from the official CISA JSON feed. Scheduled Vulnerability Watch owns automated refreshes so duplicate automation PRs are avoided. This workflow performs no remediation or runtime enforcement."
+          else
+            echo "Updated existing refresh PR #$existing_pr."
+          fi

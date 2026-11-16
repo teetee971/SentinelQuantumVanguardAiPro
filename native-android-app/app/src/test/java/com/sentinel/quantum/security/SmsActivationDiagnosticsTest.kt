@@ -1,0 +1,123 @@
+package com.sentinel.quantum.security
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class SmsActivationDiagnosticsTest {
+    @Test
+    fun `send remains available when only inbox permissions are missing`() {
+        val snapshot = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(
+                SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1)
+        )
+
+        assertTrue(snapshot.canSend)
+    }
+
+    @Test
+    fun `composer asks send permissions only when outbound prerequisites are missing`() {
+        val inboxOnly = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(
+                SmsActivationDiagnostics.Blocker.READ_SMS_PERMISSION_REQUIRED,
+                SmsActivationDiagnostics.Blocker.RECEIVE_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1)
+        )
+        val sendMissing = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED),
+            activeSubscriptionIds = listOf(1)
+        )
+        val roleMissing = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(
+                SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED,
+                SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1)
+        )
+
+        assertFalse(inboxOnly.needsSendRuntimePermissions)
+        assertTrue(sendMissing.needsSendRuntimePermissions)
+        assertFalse(roleMissing.needsSendRuntimePermissions)
+    }
+
+    @Test
+    fun `send remains fail closed without role send permission or active sim`() {
+        val roleMissing = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED),
+            activeSubscriptionIds = listOf(1)
+        )
+        val sendPermissionMissing = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED),
+            activeSubscriptionIds = listOf(1)
+        )
+        val phoneStateMissing = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LIMITED,
+            blockers = setOf(SmsActivationDiagnostics.Blocker.READ_PHONE_STATE_PERMISSION_REQUIRED),
+            activeSubscriptionIds = emptyList()
+        )
+        val noActiveSim = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LIMITED,
+            blockers = setOf(SmsActivationDiagnostics.Blocker.NO_ACTIVE_SIM),
+            activeSubscriptionIds = emptyList()
+        )
+        val roleUnavailable = SmsActivationDiagnostics.Snapshot(
+            state = SmsActivationDiagnostics.State.LOCKED,
+            blockers = setOf(
+                SmsActivationDiagnostics.Blocker.SMS_ROLE_REQUIRED,
+                SmsActivationDiagnostics.Blocker.SEND_SMS_PERMISSION_REQUIRED
+            ),
+            activeSubscriptionIds = listOf(1),
+            smsRoleState = SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE
+        )
+
+        assertFalse(roleMissing.canSend)
+        assertFalse(sendPermissionMissing.canSend)
+        assertFalse(phoneStateMissing.canSend)
+        assertFalse(noActiveSim.canSend)
+        assertFalse(roleUnavailable.canSend)
+        assertFalse(roleUnavailable.needsSendRuntimePermissions)
+    }
+
+    @Test
+    fun `sms role discovery degrades platform failures to unavailable`() {
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+            SmsRoleReadPolicy.read {
+                throw SecurityException("role query denied")
+            }
+        )
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.UNAVAILABLE,
+            SmsRoleReadPolicy.read {
+                throw IllegalStateException("framework temporarily unavailable")
+            }
+        )
+    }
+
+    @Test
+    fun `sms role discovery preserves successful reads`() {
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.HELD,
+            SmsRoleReadPolicy.read {
+                SmsActivationDiagnostics.SmsRoleState.HELD
+            }
+        )
+        assertEquals(
+            SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD,
+            SmsRoleReadPolicy.read {
+                SmsActivationDiagnostics.SmsRoleState.AVAILABLE_NOT_HELD
+            }
+        )
+    }
+}

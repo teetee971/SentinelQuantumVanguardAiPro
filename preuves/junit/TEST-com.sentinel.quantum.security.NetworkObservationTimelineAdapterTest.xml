@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NetworkObservationTimelineAdapterTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.057Z" hostname="localhost" time="0.027">
+  <properties/>
+  <testcase name="newAndKnownFingerprintsBecomeBoundedTimelineEvents" classname="com.sentinel.quantum.security.NetworkObservationTimelineAdapterTest" time="0.025"/>
+  <testcase name="invalidOrDuplicateFingerprintsAreNotPublished" classname="com.sentinel.quantum.security.NetworkObservationTimelineAdapterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

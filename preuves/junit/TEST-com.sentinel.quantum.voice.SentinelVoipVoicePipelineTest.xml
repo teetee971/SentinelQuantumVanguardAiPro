@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.voice.SentinelVoipVoicePipelineTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:15.107Z" hostname="localhost" time="0.006">
+  <properties/>
+  <testcase name="resetClearsPerCallProcessingState" classname="com.sentinel.quantum.voice.SentinelVoipVoicePipelineTest" time="0.002"/>
+  <testcase name="allocationBoundedPathWritesIntoCallerOwnedFloatBuffer" classname="com.sentinel.quantum.voice.SentinelVoipVoicePipelineTest" time="0.002"/>
+  <testcase name="enabledDeepEffectTransformsBeforeTransportBoundary" classname="com.sentinel.quantum.voice.SentinelVoipVoicePipelineTest" time="0.001"/>
+  <testcase name="disabledPipelineLeavesOutgoingMicrophoneFrameUnchanged" classname="com.sentinel.quantum.voice.SentinelVoipVoicePipelineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

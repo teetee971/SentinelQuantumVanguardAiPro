@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NetworkChangeTimelineTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.872Z" hostname="localhost" time="0.035">
+  <properties/>
+  <testcase name="buildsReverseChronologyAndCountsSeverity" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.03"/>
+  <testcase name="sameSignalFromDifferentSourceIsKept" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.0"/>
+  <testcase name="malformedEventsAreRejected" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.0"/>
+  <testcase name="oldEventsArePrunedByRetentionWindow" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.0"/>
+  <testcase name="caseInsensitiveDuplicateSemanticsArePreserved" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.001"/>
+  <testcase name="duplicateSignalInsideWindowIsSuppressed" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.0"/>
+  <testcase name="summaryIsNormalizedAndBounded" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.001"/>
+  <testcase name="rejectedDuplicateDoesNotAdvanceWindow" classname="com.sentinel.quantum.security.NetworkChangeTimelineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

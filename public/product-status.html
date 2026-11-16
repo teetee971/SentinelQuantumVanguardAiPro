@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="État public généré des capacités Sentinel : code, validation, disponibilité client et frontière commerciale séparés.">
+  <meta name="theme-color" content="#080b10">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="shared-styles.css">
+  <title>État produit — Sentinel</title>
+</head>
+<body>
+<script src="shared-navigation.js" defer></script>
+<main id="main-content" class="page-shell sq-home">
+  <section class="sq-hero" aria-labelledby="status-title">
+    <div class="sq-hero-copy">
+      <span class="sq-kicker">État produit · généré depuis le registre canonique</span>
+      <h1 id="status-title" class="sq-title">Code présent ≠ <span class="sq-title-emphasis">fonction disponible.</span></h1>
+      <p class="sq-lede">Cette page est régénérée depuis <code>config/product-capabilities.json</code>. Les validations physiques, la publication, l’entitlement commercial et la disponibilité client restent des preuves distinctes.</p>
+      <p class="sq-lede" data-product-truth-summary>Chargement du snapshot commercial public…</p>
+      <div class="sq-actions"><a class="btn" href="roadmap.html">Voir la roadmap</a><a class="btn btn-secondary" href="pricing.html">Voir le modèle commercial</a></div>
+    </div>
+    <aside class="sq-command-panel" aria-label="État du registre">
+      <div class="sq-command-head"><strong>Registre produit</strong><span>2026-10-05</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>17 capacités suivies</strong><small>Disponibilité calculée depuis les preuves canoniques.</small></div><span class="sq-status-value">Fail-closed</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Commerce</strong><small data-checkout-status>Checkout désactivé</small></div><span class="sq-status-value" data-trial-status>Essai désactivé</span></div>
+    </aside>
+  </section>
+
+  <section class="sq-section" aria-labelledby="capability-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Capacités techniques</span><h2 id="capability-title">Fallback statique vérifiable au build.</h2></div><p>Le navigateur réévalue aussi la validité temporelle des capacités disponibles ; aucune date expirée ne peut conserver un affichage disponible.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Service</th><th>État technique</th><th>Disponibilité client</th></tr></thead><tbody>
+<tr><td>Android Phone Core</td><td>Implémenté, validation manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Sentinel VPN</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Voice Studio transformed calls</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>GeoIntel USGS earthquakes</td><td>Implémenté, validation manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>GeoIntel conflicts/hotspots/sanctions/weather/outages</td><td>Prévu</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Collective Defense API</td><td>Implémenté, validation manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Collective Defense Android center</td><td>Implémenté, validation manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Signed Phone Intelligence reputation feed</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Phone Intelligence moderation service</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Repository-wide internationalization</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Android distribution legal and Play compliance</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Public signed Android release</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>SaaS customer identity and authorization</td><td>Prévu</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Voice signaling, token issuer and VoIP/PSTN gateway</td><td>Prévu</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Independent monotonic VPN lease sequence authority</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Mesh control plane and relay runtime</td><td>Implémenté, configuration manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+<tr><td>Android public-source OSINT feeds</td><td>Implémenté, validation manquante</td><td data-product-available="false" data-product-expires="">Non disponible</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="commerce-title">
+    <div class="sq-section-head"><div><span class="eyebrow">Catalogue commercial</span><h2 id="commerce-title">Free / Premium / Pro / Enterprise suivent le même snapshot public.</h2></div><p>La table commerciale est alimentée par le snapshot public filtré ; aucun blocker interne, chemin de preuve, scoring ou secret serveur n’est exposé.</p></div>
+    <div class="table-wrap"><table><thead><tr><th>Module</th><th>Niveau</th><th>Offre</th><th>Essai / accès</th></tr></thead><tbody data-commercial-catalog-generated><tr><td colspan="4">Chargement…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="notice info"><strong>Règle de release :</strong> Phone Core peut être prêt indépendamment de PTT, VPN, Voice, FIMI ou API Pro. Un add-on indisponible ne doit pas déclasser la readiness du socle Phone Core.</section>
+  <p><a href="capabilities-roadmap.html">Périmètre détaillé des capacités</a></p>
+</main>
+<script src="product-truth.js" defer></script>
+</body>
+</html>

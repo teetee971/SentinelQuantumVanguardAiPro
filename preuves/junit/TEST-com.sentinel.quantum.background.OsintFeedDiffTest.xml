@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.background.OsintFeedDiffTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.057Z" hostname="localhost" time="0.021">
+  <properties/>
+  <testcase name="alreadyCachedItemsAreNotReportedAsNew" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.014"/>
+  <testcase name="everyFreshItemIsNewWhenCacheIsEmpty" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.0"/>
+  <testcase name="newItemsAreSortedNewestFirst" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.0"/>
+  <testcase name="missingSnapshotIsSilentBootstrap" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.0"/>
+  <testcase name="mergeKeepsCachedHistoryAndDeduplicates" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.004"/>
+  <testcase name="identicalSnapshotProducesNoNewItem" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.0"/>
+  <testcase name="duplicatedFreshIdIsCountedOnce" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.0"/>
+  <testcase name="existingSnapshotReportsOnlyNewItems" classname="com.sentinel.quantum.background.OsintFeedDiffTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

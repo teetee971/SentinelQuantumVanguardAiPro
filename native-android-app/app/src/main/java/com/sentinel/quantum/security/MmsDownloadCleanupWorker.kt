@@ -1,0 +1,134 @@
+package com.sentinel.quantum.security
+
+import android.content.Context
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.Worker
+import androidx.work.WorkerParameters
+import androidx.work.workDataOf
+import java.util.concurrent.TimeUnit
+
+/**
+ * Durable per-file deadline for temporary MMS downloads.
+ *
+ * Before the final bounded deletion, one last recovery pass is attempted. This preserves the
+ * original privacy guarantee (temporary cache cannot live forever) without confusing cleanup with
+ * product recovery when Android's callback was lost.
+ */
+class MmsDownloadCleanupWorker(
+    appContext: Context,
+    workerParams: WorkerParameters
+) : Worker(appContext, workerParams) {
+    override fun doWork(): Result {
+        val fileName = inputData.getString(KEY_FILE_NAME) ?: return Result.success()
+        return MmsDownloadRecovery.exclusively(fileName) {
+        val outcome = runCatching {
+            MmsDownloadRecovery.recover(
+                context = applicationContext,
+                fileName = fileName,
+                allowQuarantine = true
+            )
+        }.getOrDefault(MmsDownloadRecovery.Outcome.RETRY)
+
+        if (outcome == MmsDownloadRecovery.Outcome.DIAGNOSE) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échéance MMS atteinte sans copie relisible : le journal et le staging restent en diagnostic"
+            )
+            return@exclusively Result.success()
+        }
+        if (outcome == MmsDownloadRecovery.Outcome.RETRY || MmsDownloadRecovery.cleanupMustKeepStaging(outcome)) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Échéance de reprise MMS atteinte : la copie temporaire est conservée tant que la copie privée n’est pas prouvée"
+            )
+            SmsNotificationHelper.notifyMessage(
+                applicationContext,
+                title = "MMS à vérifier",
+                preview = "Le MMS n’a pas pu être restauré automatiquement. Sa copie temporaire est conservée pour une nouvelle tentative.",
+                notificationId = fileName.hashCode()
+            )
+            return@exclusively Result.retry()
+        }
+
+        val expired = MmsDownloadCoordinator.expire(applicationContext, fileName)
+        if (!expired) {
+            LocalLogger(applicationContext).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Nettoyage MMS temporaire non confirmé : nouvelle tentative durable planifiée"
+            )
+            return@exclusively Result.retry()
+        }
+        Result.success()
+        }
+    }
+
+    companion object {
+        fun schedule(context: Context, fileName: String) {
+            scheduleAtDeadline(
+                context = context,
+                fileName = fileName,
+                requestedAtMs = System.currentTimeMillis()
+            )
+        }
+
+        /**
+         * Reconstructs the original retention deadline after process death. The delay is anchored to
+         * the durable request timestamp; a restart must never grant a fresh 24-hour staging window.
+         */
+        internal fun scheduleAtDeadline(
+            context: Context,
+            fileName: String,
+            requestedAtMs: Long,
+            nowMs: Long = System.currentTimeMillis()
+        ) {
+            require(MmsDownloadCoordinator.isValidStagedFileName(fileName)) {
+                "invalid MMS download file"
+            }
+            require(requestedAtMs >= 0L) { "invalid MMS request timestamp" }
+            val request = OneTimeWorkRequestBuilder<MmsDownloadCleanupWorker>()
+                .setInitialDelay(remainingDelayMs(requestedAtMs, nowMs), TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30L, TimeUnit.SECONDS)
+                .setInputData(workDataOf(KEY_FILE_NAME to fileName))
+                .addTag(WORK_TAG)
+                .addTag(fileTag(fileName))
+                .build()
+            WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(
+                workName(fileName),
+                ExistingWorkPolicy.KEEP,
+                request
+            )
+        }
+
+        internal fun remainingDelayMs(requestedAtMs: Long, nowMs: Long): Long {
+            if (requestedAtMs < 0L) return 0L
+            val deadlineMs = if (
+                requestedAtMs > Long.MAX_VALUE - MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+            ) {
+                Long.MAX_VALUE
+            } else {
+                requestedAtMs + MmsDownloadCoordinator.DOWNLOAD_TTL_MS
+            }
+            if (nowMs < 0L) return deadlineMs
+            return if (deadlineMs <= nowMs) 0L else deadlineMs - nowMs
+        }
+
+        fun cancel(context: Context, fileName: String) {
+            if (!MmsDownloadCoordinator.isValidStagedFileName(fileName)) return
+            WorkManager.getInstance(context.applicationContext).cancelUniqueWork(workName(fileName))
+        }
+
+        internal const val WORK_TAG = "sentinel-mms-download-cleanup"
+        private const val WORK_PREFIX = "sentinel-mms-download-cleanup-v1-"
+        private const val FILE_TAG_PREFIX = "sentinel-mms-download-file-"
+        private const val KEY_FILE_NAME = "mms.download.file_name"
+
+        private fun workName(fileName: String) = WORK_PREFIX + fileName.removeSuffix(".pdu")
+        private fun fileTag(fileName: String) = FILE_TAG_PREFIX + fileName.removeSuffix(".pdu")
+    }
+}

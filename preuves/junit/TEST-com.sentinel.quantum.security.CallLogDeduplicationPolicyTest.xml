@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallLogDeduplicationPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:43.064Z" hostname="localhost" time="0.007">
+  <properties/>
+  <testcase name="collapsesSameCallExposedTwiceByProvider" classname="com.sentinel.quantum.security.CallLogDeduplicationPolicyTest" time="0.005"/>
+  <testcase name="keepsDifferentDurations" classname="com.sentinel.quantum.security.CallLogDeduplicationPolicyTest" time="0.0"/>
+  <testcase name="keepsPrivateCallsEvenWhenProviderRowsLookSimilar" classname="com.sentinel.quantum.security.CallLogDeduplicationPolicyTest" time="0.001"/>
+  <testcase name="keepsDifferentCallTypes" classname="com.sentinel.quantum.security.CallLogDeduplicationPolicyTest" time="0.0"/>
+  <testcase name="keepsCallsSeparatedInTime" classname="com.sentinel.quantum.security.CallLogDeduplicationPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

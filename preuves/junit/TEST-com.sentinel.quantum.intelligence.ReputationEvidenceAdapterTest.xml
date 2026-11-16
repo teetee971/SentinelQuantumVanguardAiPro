@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.ReputationEvidenceAdapterTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.320Z" hostname="localhost" time="0.016">
+  <properties/>
+  <testcase name="accepted_signed_rule_package_becomes_signed_evidence_without_invented_score" classname="com.sentinel.quantum.intelligence.ReputationEvidenceAdapterTest" time="0.011"/>
+  <testcase name="remote_api_result_preserves_bounded_reputation_but_remains_unverified" classname="com.sentinel.quantum.intelligence.ReputationEvidenceAdapterTest" time="0.005"/>
+  <testcase name="rejected_or_incomplete_signed_package_cannot_become_trusted_evidence" classname="com.sentinel.quantum.intelligence.ReputationEvidenceAdapterTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

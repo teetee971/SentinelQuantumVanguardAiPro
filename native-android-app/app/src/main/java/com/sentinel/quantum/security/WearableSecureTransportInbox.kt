@@ -1,0 +1,32 @@
+package com.sentinel.quantum.security
+
+import com.sentinel.quantum.wearable.contract.WearableProtocolV2
+
+internal fun interface WearableSecureFrameHandler {
+    fun onFrame(sourceNodeId: String, path: String, frame: WearableProtocolV2.Frame)
+}
+
+internal object WearableSecureTransportInbox {
+    @Volatile
+    private var handler: WearableSecureFrameHandler? = null
+
+    fun install(value: WearableSecureFrameHandler) {
+        handler = value
+    }
+
+    fun clear() {
+        handler = null
+    }
+
+    fun dispatch(sourceNodeId: String, path: String, frame: WearableProtocolV2.Frame): Boolean {
+        if (!WearableProtocolV2.isSecurePath(path) || path == WearableProtocolV2.CHALLENGE_PATH) return false
+        if (sourceNodeId.isBlank() || frame.payload.isEmpty()) return false
+        val current = handler ?: return false
+        return try {
+            current.onFrame(sourceNodeId, path, frame)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+}

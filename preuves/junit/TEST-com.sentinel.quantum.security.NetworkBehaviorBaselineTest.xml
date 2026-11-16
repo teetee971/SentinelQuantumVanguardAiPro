@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.825Z" hostname="localhost" time="0.039">
+  <properties/>
+  <testcase name="knownBehaviorProducesNoDeterministicAnomaly" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.028"/>
+  <testcase name="newDestinationAndServiceAreSeparated" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.007"/>
+  <testcase name="newPortOnKnownDestinationIsNewServiceOnly" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.0"/>
+  <testcase name="volumeSpikeUsesMedianAndMinimumDelta" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.0"/>
+  <testcase name="unusualHourRequiresBroaderBaseline" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.001"/>
+  <testcase name="historyFromOtherFingerprintIsNotMixedIntoBaseline" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.0"/>
+  <testcase name="invalidCurrentSampleFailsClosed" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.0"/>
+  <testcase name="insufficientHistoryNeverClaimsAnomaly" classname="com.sentinel.quantum.security.NetworkBehaviorBaselineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

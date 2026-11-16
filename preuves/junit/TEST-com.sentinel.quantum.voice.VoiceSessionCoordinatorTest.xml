@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.voice.VoiceSessionCoordinatorTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:15.595Z" hostname="localhost" time="0.372">
+  <properties/>
+  <testcase name="cancellation_after_backend_creation_closes_remote_and_transport_state" classname="com.sentinel.quantum.voice.VoiceSessionCoordinatorTest" time="0.284"/>
+  <testcase name="cancellation_during_disconnect_still_closes_transport_and_remote_session" classname="com.sentinel.quantum.voice.VoiceSessionCoordinatorTest" time="0.063"/>
+  <testcase name="connects_and_keeps_the_live_session_owned_outside_the_activity" classname="com.sentinel.quantum.voice.VoiceSessionCoordinatorTest" time="0.024"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

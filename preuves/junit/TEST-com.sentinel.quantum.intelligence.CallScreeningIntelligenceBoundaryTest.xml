@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.CallScreeningIntelligenceBoundaryTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.698Z" hostname="localhost" time="0.009">
+  <properties/>
+  <testcase name="intelligence publication occurs only inside post-response work" classname="com.sentinel.quantum.intelligence.CallScreeningIntelligenceBoundaryTest" time="0.004"/>
+  <testcase name="critical path never reads intelligence persistence contacts remote reputation or aggregator" classname="com.sentinel.quantum.intelligence.CallScreeningIntelligenceBoundaryTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

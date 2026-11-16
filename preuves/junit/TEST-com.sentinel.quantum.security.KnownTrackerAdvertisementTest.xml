@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.KnownTrackerAdvertisementTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.355Z" hostname="localhost" time="0.008">
+  <properties/>
+  <testcase name="tileChipoloAndSamsungMatchThePublishedFilters" classname="com.sentinel.quantum.security.KnownTrackerAdvertisementTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

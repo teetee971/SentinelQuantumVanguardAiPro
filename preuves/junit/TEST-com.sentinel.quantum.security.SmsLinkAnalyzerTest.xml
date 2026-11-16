@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsLinkAnalyzerTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.049Z" hostname="localhost" time="0.026">
+  <properties/>
+  <testcase name="oversizedMessageIsRejected" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.005"/>
+  <testcase name="shortenerAndSuspiciousTldAreDetected" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.006"/>
+  <testcase name="scoreIsBoundedAtOneHundred" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.001"/>
+  <testcase name="plainMessageWithoutLinksIsLowRisk" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.0"/>
+  <testcase name="auditDoesNotCopyContents" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.0"/>
+  <testcase name="suspiciousTldRequiresHostnameSuffix" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.001"/>
+  <testcase name="malformedLinkDoesNotCrashAnalyzer" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.0"/>
+  <testcase name="shortenerSubdomainIsDetected" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.0"/>
+  <testcase name="emptyMessageIsRejected" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.0"/>
+  <testcase name="ipLiteralAndUserInfoLinkAreHighRisk" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.0"/>
+  <testcase name="subdomainSpoofOfShortenerIsNotTreatedAsShortener" classname="com.sentinel.quantum.security.SmsLinkAnalyzerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

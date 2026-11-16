@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.463Z" hostname="localhost" time="0.022">
+  <properties/>
+  <testcase name="unavailableBackendIsLimitedNotHealthy" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.017"/>
+  <testcase name="revokedPhoneRoleRequiresActionWithoutInventingDanger" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.001"/>
+  <testcase name="missingEvidenceNeverProducesOverallOk" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.0"/>
+  <testcase name="allExplicitlyHealthyComponentsCanProduceOverallOk" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.002"/>
+  <testcase name="explicitDangerIsTheOnlyPathToBad" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.0"/>
+  <testcase name="componentHealthNeverInventsAnActivityHistoryOrAnEmptyHistoryClaim" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.0"/>
+  <testcase name="degradedComponentKeepsOverallOutOfGreen" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.0"/>
+  <testcase name="unavailableAndroidRoleIsLimitedWhileAnAvailableMissingRoleIsRemediable" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.0"/>
+  <testcase name="unavailableCapabilityTakesPrecedenceOverAMissingRole" classname="com.sentinel.quantum.ui.presentation.HomeSecurityPresentationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

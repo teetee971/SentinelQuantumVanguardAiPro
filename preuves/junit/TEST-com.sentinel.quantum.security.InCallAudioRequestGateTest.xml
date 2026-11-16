@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.InCallAudioRequestGateTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:46.862Z" hostname="localhost" time="0.011">
+  <properties/>
+  <testcase name="teardownInvalidatesEvenTheSameCall" classname="com.sentinel.quantum.security.InCallAudioRequestGateTest" time="0.009"/>
+  <testcase name="completionCannotModifyAnotherCall" classname="com.sentinel.quantum.security.InCallAudioRequestGateTest" time="0.0"/>
+  <testcase name="newerRouteRequestRejectsOldCompletion" classname="com.sentinel.quantum.security.InCallAudioRequestGateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

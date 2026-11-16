@@ -1,0 +1,714 @@
+package com.sentinel.quantum.security
+
+import android.content.Intent
+import android.content.ActivityNotFoundException
+import android.os.Build
+import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
+import android.os.OutcomeReceiver
+import android.telecom.Call
+import android.telecom.CallAudioState
+import android.telecom.CallEndpoint
+import android.telecom.CallEndpointException
+import android.telecom.InCallService
+import androidx.annotation.RequiresApi
+import com.sentinel.quantum.SentinelInCallActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+
+/**
+ * ROLE_DIALER in-call foundation. Exposes only bounded call state/actions to Sentinel UI;
+ * the Telecom Call object remains owned by this service.
+ */
+class SentinelInCallService : InCallService() {
+    private val evidenceTracker = InCallEvidenceTracker<Call>()
+    private val timelineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var currentDirection = "UNKNOWN"
+
+    private val trackedCalls = LinkedHashSet<Call>()
+    private val callIds = java.util.IdentityHashMap<Call, String>()
+    private val callDirections = java.util.IdentityHashMap<Call, String>()
+    private val serviceInstanceToken = java.util.UUID.randomUUID().toString().replace("-", "")
+    private var nextCallId = 1L
+
+    private val audioRequestGate = InCallAudioRequestGate()
+    private var audioMuted: Boolean? = null
+    private var audioRoutes: List<AudioRouteOption> = emptyList()
+    private var audioStatus: String? = null
+
+    @Volatile
+    private var modernEndpoints: List<CallEndpoint> = emptyList()
+    private var currentModernEndpointId: String? = null
+    private var legacySupportedRouteMask: Int = 0
+
+    private val callback = object : Call.Callback() {
+        override fun onStateChanged(call: Call, state: Int) {
+            refreshForegroundCall()
+        }
+
+        override fun onDetailsChanged(call: Call, details: Call.Details) {
+            refreshForegroundCall()
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        activeService = this
+        registry.attach(this)
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        activeService = this
+        registry.attach(this)
+        val binder = super.onBind(intent)
+        if (binder != null) registry.publish(this, currentSnapshot(), currentSnapshots())
+        else if (registry.detach(this)) activeService = null
+        return binder
+    }
+
+    override fun onUnbind(intent: Intent): Boolean {
+        if (registry.detach(this)) {
+            trackedCalls.toList().forEach {
+                evidenceTracker.remove(it)
+                it.unregisterCallback(callback)
+            }
+            trackedCalls.clear()
+            callIds.clear()
+            callDirections.clear()
+            currentCall = null
+            activeService = null
+            currentDirection = "UNKNOWN"
+            clearAudioState()
+            SentinelCallNotificationHelper.cancel(this)
+        }
+        return super.onUnbind(intent)
+    }
+
+    /** Reconcile with the platform list when an activity resumes or Telecom brings us forward. */
+    private fun synchronizePlatformCalls() {
+        if (activeService !== this) return
+        calls.forEach { call ->
+            val newCall = trackedCalls.add(call)
+            evidenceTracker.track(call)
+            if (newCall) {
+                callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
+                call.registerCallback(callback, Handler(Looper.getMainLooper()))
+            }
+        }
+        refreshForegroundCall(updateNotification = false)
+    }
+
+    override fun onCallAdded(call: Call) {
+        super.onCallAdded(call)
+        trackedCalls.add(call)
+        evidenceTracker.track(call)
+        if (!callIds.containsKey(call)) {
+            callIds[call] = "call-$serviceInstanceToken-" + nextCallId++
+        }
+        call.registerCallback(callback, Handler(Looper.getMainLooper()))
+        initializeAudioState()
+        refreshForegroundCall()
+        if (currentCall === call && resolveDirection(call) == "OUTGOING") {
+            showInCallActivity(InCallActivityLaunchPolicy.Trigger.CALL_ADDED)
+        }
+    }
+
+    override fun onBringToForeground(showDialpad: Boolean) {
+        super.onBringToForeground(showDialpad)
+        synchronizePlatformCalls()
+        showInCallActivity(InCallActivityLaunchPolicy.Trigger.TELECOM_BRING_TO_FOREGROUND)
+    }
+
+    override fun onDestroy() {
+        trackedCalls.toList().forEach { it.unregisterCallback(callback) }
+        trackedCalls.clear()
+        callIds.clear()
+        callDirections.clear()
+        val ownedSession = registry.detach(this)
+        if (ownedSession) {
+            currentCall = null
+            activeService = null
+        }
+        evidenceTracker.destroy()
+        timelineScope.cancel()
+        currentDirection = "UNKNOWN"
+        clearAudioState()
+        if (ownedSession) SentinelCallNotificationHelper.cancel(this)
+        super.onDestroy()
+    }
+
+    override fun onCallRemoved(call: Call) {
+        call.unregisterCallback(callback)
+        trackedCalls.remove(call)
+        callIds.remove(call)
+        callDirections.remove(call)
+        evidenceTracker.remove(call)
+        if (activeService !== this) {
+            super.onCallRemoved(call)
+            return
+        }
+        if (trackedCalls.isNotEmpty()) {
+            initializeAudioState()
+            refreshForegroundCall()
+        }
+        if (trackedCalls.isEmpty()) {
+            currentCall = null
+            registry.publish(this, null, emptyList())
+            currentDirection = "UNKNOWN"
+            clearAudioState()
+            SentinelCallNotificationHelper.cancel(this)
+        }
+        super.onCallRemoved(call)
+    }
+
+    private fun refreshForegroundCall(updateNotification: Boolean = true) {
+        if (activeService !== this) return
+        val selected = selectForegroundCall(trackedCalls)
+        if (currentCall !== selected) {
+            audioRequestGate.invalidate()
+            currentCall = selected
+        }
+        currentDirection = selected?.let(::resolveDirection) ?: "UNKNOWN"
+        if (selected != null) publish(selected)
+        else registry.publish(this, null, emptyList())
+
+        if (!updateNotification) return
+        if (selected?.state != Call.STATE_RINGING) {
+            val snapshot = currentSnapshot()
+            if (snapshot != null && selected != null &&
+                selected.state != Call.STATE_DISCONNECTED && selected.state != Call.STATE_DISCONNECTING) {
+                SentinelCallNotificationHelper.showOngoing(this, snapshot)
+            } else {
+                SentinelCallNotificationHelper.cancel(this)
+            }
+            return
+        }
+
+        currentSnapshot()?.let { snapshot ->
+            val posted = SentinelCallNotificationHelper.showIncoming(this, snapshot)
+            if (posted) recordIncomingNotificationEvidence()
+        }
+    }
+
+    private fun selectForegroundCall(calls: Collection<Call>): Call? =
+        calls.minByOrNull { callPriority(it.state) }
+
+    private fun callPriority(state: Int): Int = when (state) {
+        Call.STATE_RINGING -> 0
+        Call.STATE_ACTIVE -> 1
+        Call.STATE_DIALING, Call.STATE_CONNECTING, Call.STATE_SELECT_PHONE_ACCOUNT -> 2
+        Call.STATE_HOLDING -> 3
+        else -> 4
+    }
+
+    @RequiresApi(34)
+    override fun onCallEndpointChanged(callEndpoint: CallEndpoint) {
+        super.onCallEndpointChanged(callEndpoint)
+        audioRequestGate.invalidate()
+        currentModernEndpointId = modernEndpointId(callEndpoint)
+        audioStatus = null
+        rebuildModernAudioRoutes()
+        publishCurrentCall()
+    }
+
+    @RequiresApi(34)
+    override fun onAvailableCallEndpointsChanged(availableEndpoints: MutableList<CallEndpoint>) {
+        super.onAvailableCallEndpointsChanged(availableEndpoints)
+        modernEndpoints = availableEndpoints.toList()
+        rebuildModernAudioRoutes()
+        publishCurrentCall()
+    }
+
+    @RequiresApi(34)
+    override fun onMuteStateChanged(isMuted: Boolean) {
+        super.onMuteStateChanged(isMuted)
+        audioMuted = isMuted
+        audioStatus = null
+        publishCurrentCall()
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onCallAudioStateChanged(audioState: CallAudioState) {
+        super.onCallAudioStateChanged(audioState)
+        if (Build.VERSION.SDK_INT >= 34) return
+        updateLegacyAudioState(audioState)
+        publishCurrentCall()
+    }
+
+    private fun recordIncomingNotificationEvidence() {
+        val call = currentCall ?: return
+        val token = evidenceTracker.begin(
+            call,
+            InCallEvidenceTracker.Kind.INCOMING_NOTIFICATION
+        ) ?: return
+
+        timelineScope.launch {
+            val stored = runCatching {
+                PhonePrivateTimelineStore(this@SentinelInCallService).append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.CALL,
+                        timestampMs = System.currentTimeMillis(),
+                        direction = "INCOMING",
+                        signal = PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+                    )
+                )
+            }.onFailure {
+                LocalLogger(this@SentinelInCallService).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "InCall",
+                    "Chronologie privée indisponible; le traitement d'appel principal continue"
+                )
+            }.getOrDefault(false)
+
+            evidenceTracker.complete(token, stored)
+        }
+    }
+
+    /**
+     * Default-dialer outgoing calls (including external origins) and Telecom foreground
+     * requests may open controls. Incoming calls use the notification path.
+     * REQUESTED means Android accepted startActivity(); it is not proof that the activity was
+     * rendered. Incoming calls use the notification's full-screen PendingIntent instead of a
+     * background-service fallback.
+     */
+    private fun showInCallActivity(
+        trigger: InCallActivityLaunchPolicy.Trigger
+    ): InCallActivityLaunchResult {
+        if (!InCallActivityLaunchPolicy.shouldRequest(
+                trigger, currentCall != null, outgoingCall = currentDirection == "OUTGOING"
+            )) {
+            return InCallActivityLaunchResult.NOT_REQUESTED
+        }
+
+        return try {
+            startActivity(
+                Intent(this, SentinelInCallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+            InCallActivityLaunchResult.REQUESTED
+        } catch (error: ActivityNotFoundException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        } catch (error: SecurityException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        } catch (error: RuntimeException) {
+            logActivityLaunchFailure(error)
+            InCallActivityLaunchResult.FAILED
+        }
+    }
+
+    private fun logActivityLaunchFailure(error: RuntimeException) {
+        LocalLogger(this).log(
+            LocalLogger.LogLevel.WARNING,
+            "InCall",
+            "Android a refusé le lancement de l’interface d’appel (" +
+                error::class.java.simpleName + ") ; le service téléphonique continue"
+        )
+    }
+
+    private fun initializeAudioState() {
+        clearAudioState()
+        if (Build.VERSION.SDK_INT >= 34) {
+            initializeModernAudioState()
+        } else {
+            initializeLegacyAudioState()
+        }
+    }
+
+    @RequiresApi(34)
+    private fun initializeModernAudioState() {
+        currentModernEndpointId = runCatching {
+            modernEndpointId(currentCallEndpoint)
+        }.getOrNull()
+        rebuildModernAudioRoutes()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun initializeLegacyAudioState() {
+        val state = runCatching { callAudioState }.getOrNull() ?: return
+        updateLegacyAudioState(state)
+    }
+
+    private fun clearAudioState() {
+        audioRequestGate.invalidate()
+        audioMuted = null
+        audioRoutes = emptyList()
+        audioStatus = null
+        modernEndpoints = emptyList()
+        currentModernEndpointId = null
+        legacySupportedRouteMask = 0
+    }
+
+    @Suppress("DEPRECATION")
+    private fun updateLegacyAudioState(state: CallAudioState) {
+        audioMuted = state.isMuted
+        legacySupportedRouteMask = state.supportedRouteMask
+        audioStatus = null
+        val routes = buildList {
+            addLegacyRouteIfSupported(
+                state,
+                CallAudioState.ROUTE_EARPIECE,
+                "legacy:earpiece",
+                InCallAudioUiPolicy.Kind.EARPIECE
+            )
+            addLegacyRouteIfSupported(
+                state,
+                CallAudioState.ROUTE_SPEAKER,
+                "legacy:speaker",
+                InCallAudioUiPolicy.Kind.SPEAKER
+            )
+            addLegacyRouteIfSupported(
+                state,
+                CallAudioState.ROUTE_BLUETOOTH,
+                "legacy:bluetooth",
+                InCallAudioUiPolicy.Kind.BLUETOOTH
+            )
+            addLegacyRouteIfSupported(
+                state,
+                CallAudioState.ROUTE_WIRED_HEADSET,
+                "legacy:wired",
+                InCallAudioUiPolicy.Kind.WIRED_HEADSET
+            )
+        }
+        audioRoutes = InCallAudioUiPolicy.present(routes).map {
+            AudioRouteOption(it.id, it.label, it.selected)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun MutableList<InCallAudioUiPolicy.Route>.addLegacyRouteIfSupported(
+        state: CallAudioState,
+        route: Int,
+        id: String,
+        kind: InCallAudioUiPolicy.Kind
+    ) {
+        if (state.supportedRouteMask and route == 0) return
+        add(
+            InCallAudioUiPolicy.Route(
+                id = id,
+                kind = kind,
+                selected = state.route == route
+            )
+        )
+    }
+
+    @RequiresApi(34)
+    private fun rebuildModernAudioRoutes() {
+        val routes = modernEndpoints.map { endpoint ->
+            InCallAudioUiPolicy.Route(
+                id = modernEndpointId(endpoint),
+                kind = endpointKind(endpoint.endpointType),
+                deviceName = endpoint.endpointName.toString(),
+                selected = modernEndpointId(endpoint) == currentModernEndpointId
+            )
+        }
+        audioRoutes = InCallAudioUiPolicy.present(routes).map {
+            AudioRouteOption(it.id, it.label, it.selected)
+        }
+    }
+
+    @RequiresApi(34)
+    private fun modernEndpointId(endpoint: CallEndpoint): String =
+        "endpoint:" + endpoint.identifier.toString()
+
+    @RequiresApi(34)
+    private fun endpointKind(type: Int): InCallAudioUiPolicy.Kind = when (type) {
+        CallEndpoint.TYPE_EARPIECE -> InCallAudioUiPolicy.Kind.EARPIECE
+        CallEndpoint.TYPE_BLUETOOTH -> InCallAudioUiPolicy.Kind.BLUETOOTH
+        CallEndpoint.TYPE_WIRED_HEADSET -> InCallAudioUiPolicy.Kind.WIRED_HEADSET
+        CallEndpoint.TYPE_SPEAKER -> InCallAudioUiPolicy.Kind.SPEAKER
+        CallEndpoint.TYPE_STREAMING -> InCallAudioUiPolicy.Kind.STREAMING
+        else -> InCallAudioUiPolicy.Kind.UNKNOWN
+    }
+
+    private fun publishCurrentCall() {
+        refreshForegroundCall()
+    }
+
+    private fun snapshotFor(call: Call): CallSnapshot? {
+        val id = callIds[call] ?: return null
+        val details = call.details ?: return null
+        return CallSnapshot(
+            id = id,
+            state = call.state,
+            direction = resolveDirection(call),
+            connectedAtMs = details.connectTimeMillis.takeIf { it > 0L },
+            displayName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                details.contactDisplayName?.toString()?.take(MAX_LABEL_CHARS)
+            } else null,
+            handle = details.handle?.schemeSpecificPart?.take(MAX_HANDLE_CHARS),
+            canHold = InCallTruthPolicy.canToggleHold(
+                currentHoldCapability = details.can(Call.Details.CAPABILITY_HOLD),
+                genericConference = details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE)
+            ),
+            canMute = InCallTruthPolicy.canMute(
+                details.can(Call.Details.CAPABILITY_MUTE)
+            ),
+            canMergeConference = details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE),
+            canSwapConference = details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE),
+            isMuted = audioMuted,
+            audioRoutes = audioRoutes,
+            audioStatus = audioStatus
+        )
+    }
+
+    private fun publish(call: Call) {
+        evidenceTracker.track(call)
+        if (currentDirection == "UNKNOWN") currentDirection = resolveDirection(call)
+        registry.publish(
+            this,
+            snapshotFor(call),
+            trackedCalls.sortedBy { callPriority(it.state) }.mapNotNull(::snapshotFor)
+        )
+
+        val evidenceDirection = resolveDirection(call)
+        if (call.state == Call.STATE_ACTIVE && evidenceDirection in setOf("INCOMING", "OUTGOING")) {
+            val token = evidenceTracker.begin(call, InCallEvidenceTracker.Kind.CONNECTED)
+                ?: return
+            timelineScope.launch {
+                val stored = runCatching {
+                    PhonePrivateTimelineStore(this@SentinelInCallService).append(
+                        PhonePrivateTimeline.Event(
+                            kind = PhonePrivateTimeline.Kind.CALL,
+                            timestampMs = System.currentTimeMillis(),
+                            direction = evidenceDirection,
+                            signal = PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                        )
+                    )
+                }.onFailure {
+                    LocalLogger(this@SentinelInCallService).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "InCall",
+                        "Chronologie privée indisponible; le traitement d'appel principal continue"
+                    )
+                }.getOrDefault(false)
+
+                evidenceTracker.complete(token, stored)
+            }
+        }
+    }
+
+    private fun resolveDirection(call: Call): String {
+        val observed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            when (call.details.callDirection) {
+                Call.Details.DIRECTION_INCOMING -> "INCOMING"
+                Call.Details.DIRECTION_OUTGOING -> "OUTGOING"
+                else -> "UNKNOWN"
+            }
+        } else {
+            InCallTruthPolicy.legacyDirection(
+                when (call.state) {
+                    Call.STATE_RINGING -> InCallTruthPolicy.LegacyState.RINGING
+                    Call.STATE_DIALING -> InCallTruthPolicy.LegacyState.DIALING
+                    Call.STATE_CONNECTING -> InCallTruthPolicy.LegacyState.CONNECTING
+                    Call.STATE_SELECT_PHONE_ACCOUNT -> InCallTruthPolicy.LegacyState.SELECT_PHONE_ACCOUNT
+                    else -> InCallTruthPolicy.LegacyState.OTHER
+                }
+            )
+        }
+
+        val direction = InCallDirectionPolicy.reconcile(callDirections[call], observed)
+        if (direction != "UNKNOWN") callDirections[call] = direction
+        return direction
+    }
+
+    private fun requestMicrophoneMuted(callId: String, muted: Boolean): Boolean {
+        val call = currentCall ?: return false
+        if (callIds[call] != callId) return false
+        if (!call.details.can(Call.Details.CAPABILITY_MUTE)) {
+            audioStatus = "Android n’autorise pas la modification du microphone pour cet appel."
+            publishCurrentCall()
+            return false
+        }
+        return runCatching {
+            audioStatus = if (muted) "Coupure du microphone demandée…" else "Réactivation du microphone demandée…"
+            publishCurrentCall()
+            setMuted(muted)
+            true
+        }.getOrElse {
+            audioStatus = "Android a refusé le changement d’état du microphone."
+            publishCurrentCall()
+            false
+        }
+    }
+
+    private fun requestAudioRoute(callId: String, routeId: String): Boolean {
+        val call = currentCall ?: return false
+        if (callIds[call] != callId || routeId.isBlank()) return false
+        return if (Build.VERSION.SDK_INT >= 34) {
+            requestModernAudioRoute(routeId)
+        } else {
+            requestLegacyAudioRoute(routeId)
+        }
+    }
+
+    @RequiresApi(34)
+    private fun requestModernAudioRoute(routeId: String): Boolean {
+        val endpoint = modernEndpoints.firstOrNull { modernEndpointId(it) == routeId } ?: run {
+            audioStatus = "Cette sortie audio n’est plus disponible."
+            publishCurrentCall()
+            return false
+        }
+        val callId = currentCall?.let { callIds[it] } ?: return false
+        val request = audioRequestGate.begin(callId)
+        audioStatus = "Changement de sortie audio demandé…"
+        publishCurrentCall()
+        return runCatching {
+            requestCallEndpointChange(
+                endpoint,
+                mainExecutor,
+                object : OutcomeReceiver<Void?, CallEndpointException> {
+                    override fun onResult(result: Void?) {
+                        if (activeService !== this@SentinelInCallService ||
+                            !audioRequestGate.accepts(request, currentCall?.let { callIds[it] })) return
+                        audioStatus = "Changement audio accepté par Android ; confirmation en cours…"
+                        publishCurrentCall()
+                    }
+
+                    override fun onError(error: CallEndpointException) {
+                        if (activeService !== this@SentinelInCallService ||
+                            !audioRequestGate.accepts(request, currentCall?.let { callIds[it] })) return
+                        audioStatus = "Android n’a pas pu changer la sortie audio."
+                        publishCurrentCall()
+                    }
+                }
+            )
+            true
+        }.getOrElse {
+            audioStatus = "Android n’a pas pu demander cette sortie audio."
+            publishCurrentCall()
+            false
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun requestLegacyAudioRoute(routeId: String): Boolean {
+        val route = when (routeId) {
+            "legacy:earpiece" -> CallAudioState.ROUTE_EARPIECE
+            "legacy:speaker" -> CallAudioState.ROUTE_SPEAKER
+            "legacy:bluetooth" -> CallAudioState.ROUTE_BLUETOOTH
+            "legacy:wired" -> CallAudioState.ROUTE_WIRED_HEADSET
+            else -> return false
+        }
+        if (legacySupportedRouteMask and route == 0) {
+            audioStatus = "Cette sortie audio n’est plus disponible."
+            publishCurrentCall()
+            return false
+        }
+        return runCatching {
+            audioStatus = "Changement de sortie audio demandé…"
+            publishCurrentCall()
+            setAudioRoute(route)
+            true
+        }.getOrElse {
+            audioStatus = "Android n’a pas pu changer la sortie audio."
+            publishCurrentCall()
+            false
+        }
+    }
+
+    data class AudioRouteOption(
+        val id: String,
+        val label: String,
+        val selected: Boolean
+    )
+
+    data class CallSnapshot(
+        val id: String,
+        val state: Int,
+        val direction: String,
+        val connectedAtMs: Long?,
+        val displayName: String?,
+        val handle: String?,
+        val canHold: Boolean,
+        val canMute: Boolean,
+        val canMergeConference: Boolean,
+        val canSwapConference: Boolean,
+        val isMuted: Boolean?,
+        val audioRoutes: List<AudioRouteOption>,
+        val audioStatus: String?
+    )
+
+    companion object {
+        private const val MAX_LABEL_CHARS = 120
+        private const val MAX_HANDLE_CHARS = 64
+
+        @Volatile private var currentCall: Call? = null
+        private val registry = InCallSessionRegistry<CallSnapshot>()
+        internal val sessions get() = registry.sessions
+        @Volatile private var activeService: SentinelInCallService? = null
+
+        fun currentSnapshot(): CallSnapshot? = registry.sessions.value.primary
+        fun currentSnapshots(): List<CallSnapshot> = registry.sessions.value.calls
+        fun requestRefresh() {
+            Handler(Looper.getMainLooper()).post { activeService?.synchronizePlatformCalls() }
+        }
+        fun hasActiveCall(): Boolean = currentCall != null
+
+        private fun callById(id: String): Call? = activeService?.let { service ->
+            service.callIds.entries.firstOrNull { it.value == id }?.key
+        }
+
+        fun disconnect(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) return@let false
+            call.disconnect(); true
+        } ?: false
+
+        fun hold(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state != Call.STATE_ACTIVE || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
+            call.hold(); true
+        } ?: false
+
+        fun unhold(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state != Call.STATE_HOLDING || call.details.hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE) || !call.details.can(Call.Details.CAPABILITY_HOLD)) return@let false
+            call.unhold(); true
+        } ?: false
+
+        fun answer(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state != Call.STATE_RINGING) return@let false
+            call.answer(android.telecom.VideoProfile.STATE_AUDIO_ONLY)
+            true
+        } ?: false
+
+        fun reject(id: String): Boolean = callById(id)?.let { call ->
+            if (call.state != Call.STATE_RINGING) return@let false
+            call.reject(false, null)
+            true
+        } ?: false
+
+        fun mergeConference(id: String): Boolean = callById(id)?.let { call ->
+            if (!call.details.can(Call.Details.CAPABILITY_MERGE_CONFERENCE)) return@let false
+            return@let runCatching { call.mergeConference(); true }.getOrDefault(false)
+        } ?: false
+
+        fun swapConference(id: String): Boolean = callById(id)?.let { call ->
+            if (!call.details.can(Call.Details.CAPABILITY_SWAP_CONFERENCE)) return@let false
+            return@let runCatching { call.swapConference(); true }.getOrDefault(false)
+        } ?: false
+
+        fun setMicrophoneMuted(id: String, muted: Boolean): Boolean =
+            activeService?.requestMicrophoneMuted(id, muted) ?: false
+
+        fun selectAudioRoute(id: String, routeId: String): Boolean =
+            activeService?.requestAudioRoute(id, routeId) ?: false
+
+        fun startDtmf(id: String, digit: Char): Boolean {
+            if (digit !in "0123456789*#") return false
+            return callById(id)?.let { call ->
+                if (call.state != Call.STATE_ACTIVE) return@let false
+                call.playDtmfTone(digit)
+                true
+            } ?: false
+        }
+
+        fun stopDtmf(id: String): Boolean = callById(id)?.let { call ->
+            call.stopDtmfTone()
+            true
+        } ?: false
+    }
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.ContactDirectoryPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.566Z" hostname="localhost" time="0.016">
+  <properties/>
+  <testcase name="limitAppliesToContactsNotPhoneRows" classname="com.sentinel.quantum.security.ContactDirectoryPolicyTest" time="0.013"/>
+  <testcase name="duplicateProviderRowsDoNotDuplicateTheSameNumber" classname="com.sentinel.quantum.security.ContactDirectoryPolicyTest" time="0.001"/>
+  <testcase name="providerPhoneMismatchRemainsObservable" classname="com.sentinel.quantum.security.ContactDirectoryPolicyTest" time="0.001"/>
+  <testcase name="contactsWithoutPhoneRowsRemainVisible" classname="com.sentinel.quantum.security.ContactDirectoryPolicyTest" time="0.0"/>
+  <testcase name="multipleNumbersStayGroupedUnderOneContact" classname="com.sentinel.quantum.security.ContactDirectoryPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

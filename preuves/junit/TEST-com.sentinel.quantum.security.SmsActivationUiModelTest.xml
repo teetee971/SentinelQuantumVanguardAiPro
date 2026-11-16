@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsActivationUiModelTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:10.891Z" hostname="localhost" time="0.015">
+  <properties/>
+  <testcase name="availableUnheldSmsRoleOffersOnlyRoleRequest" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.012"/>
+  <testcase name="lockedRoleAndSendPermissionOfferOnlyRequiredActions" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.001"/>
+  <testcase name="unavailableSmsRoleNeverOffersRoleOrRuntimePermissionAction" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="missingReceiveSmsPermissionIsUserActivatable" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="readyMultiSimSnapshotMakesExplicitLineSelectionVisible" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="noActiveSimDoesNotInventAnAction" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="permissionsAreOfferedOnlyAfterSmsRoleIsHeld" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="titlesNeverExposeEnglishStateNames" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="readySnapshotOffersNoEscalationAction" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="missingReadSmsPermissionIsUserActivatable" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="failedSubscriptionLookupOffersRetryWithoutPermissionEscalation" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <testcase name="missingPhoneStateRequestsRuntimePermissionWithoutSimRetry" classname="com.sentinel.quantum.security.SmsActivationUiModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

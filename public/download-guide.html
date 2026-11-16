@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="État de distribution de Sentinel : Android en validation, aucun APK public pour le moment et client PC planifié.">
+  <meta name="theme-color" content="#080b10">
+  <link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="shared-styles.css">
+  <title>Téléchargement — Sentinel Quantum Vanguard AI Pro</title>
+</head>
+<body>
+<script src="shared-navigation.js" defer></script>
+
+<main id="main-content" class="page-shell sq-home">
+  <section class="sq-hero" aria-labelledby="download-title">
+    <div class="sq-hero-copy">
+      <span class="sq-kicker">Distribution · gate de release</span>
+      <h1 id="download-title" class="sq-title">Pas de binaire public <span class="sq-title-emphasis">avant preuve de release.</span></h1>
+      <p class="sq-lede">Le code Android et la chaîne CI existent, mais aucun APK public signé et validé sur appareil réel n’est actuellement proposé depuis ce site. Aucun contrôle de téléchargement n’est affiché tant que le canal officiel n’est pas ouvert.</p>
+      <div class="sq-actions">
+        <a class="btn" href="phone-intelligence.html">Utiliser l’annuaire gratuit</a>
+        <a class="btn btn-secondary" href="roadmap.html">Voir les critères de sortie</a>
+      </div>
+    </div>
+    <aside class="sq-command-panel" aria-label="État des canaux de distribution">
+      <div class="sq-command-head"><strong>Canaux</strong><span>État actuel</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>APK Android</strong><small>Build CI présent, validation physique et signature de distribution requises.</small></div><span class="sq-status-value">Fermé</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Play Console / AAB</strong><small>AAB non signé utilisé pour valider l’empaquetage ; la production passe par une release signée séparée.</small></div><span class="sq-status-value">Validation</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot"></span><div class="sq-status-copy"><strong>PC</strong><small>Aucun installateur Windows, macOS ou Linux n’existe aujourd’hui.</small></div><span class="sq-status-value">Planifié</span></div>
+    </aside>
+  </section>
+
+  <section class="notice warning"><strong>Statut de distribution :</strong> APK non téléchargeable. Aucun paiement n’est demandé et aucun ancien fichier externe n’est exposé par cette page.</section>
+
+  <section class="sq-section" aria-labelledby="android-release-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Android</span><h2 id="android-release-title">Le téléchargement s’ouvrira uniquement après le gate complet.</h2></div>
+      <p>Un artefact généré n’est pas encore un produit distribué. La signature, l’installation réelle et les scénarios Phone Core doivent correspondre exactement au commit publié.</p>
+    </div>
+
+    <div class="sq-grid">
+      <article class="sq-card sq-card-accent span-7">
+        <span class="sq-state validation">Distribution fermée</span>
+        <h3>Application Android Sentinel</h3>
+        <p>Recherche téléphonique et fonctions de protection gratuites. Les modules professionnels resteront séparés.</p>
+        <div class="download-row">
+          <div><strong>APK public</strong><p>Indisponible actuellement. Un lien ne sera affiché qu’après validation du canal officiel, avec checksum et preuve de release correspondante.</p></div>
+        </div>
+      </article>
+
+      <article class="sq-card span-5">
+        <span class="sq-state validation">Critères de sortie</span>
+        <h3>Avant ouverture du canal</h3>
+        <ol>
+          <li>Construire APK et AAB depuis la source Android officielle dans la chaîne de livraison contrôlée.</li>
+          <li>Signer l’artefact avec la stratégie de clés prévue pour le canal choisi.</li>
+          <li>Vérifier installation, permissions, rôles et scénarios Phone Core sur appareil réel.</li>
+          <li>Publier checksum SHA-256 et preuves correspondant exactement au commit distribué.</li>
+        </ol>
+      </article>
+    </div>
+  </section>
+
+  <section class="sq-section" aria-labelledby="channels-title">
+    <div class="sq-section-head">
+      <div><span class="eyebrow">Surfaces</span><h2 id="channels-title">Web disponible. Android en validation. PC planifié.</h2></div>
+      <p>Les trois surfaces ont des états de livraison distincts et ne doivent jamais être présentées comme équivalentes.</p>
+    </div>
+    <div class="sq-grid">
+      <article class="sq-card sq-card-success span-4"><span class="sq-state ready">Disponible</span><h3>Web</h3><p>Annuaire téléphonique gratuit et documentation publique utilisables aujourd’hui.</p></article>
+      <article class="sq-card span-4"><span class="sq-state validation">En validation</span><h3>Android</h3><p>Base native et builds CI présents ; aucun APK public avant validation physique et distribution contrôlée.</p></article>
+      <article class="sq-card span-4"><span class="sq-state planned">Planifié</span><h3>PC</h3><p>Aucun paquet Electron/Tauri, <code>.exe</code>, <code>.msi</code>, macOS ou Linux n’est actuellement livré.</p></article>
+    </div>
+  </section>
+
+  <section class="sq-callout">
+    <div><span class="eyebrow">Canal officiel</span><h2>Télécharger uniquement lorsque cette page publiera la preuve correspondante.</h2><p>La signature, le checksum et le statut de validation feront partie du canal de distribution, pas d’un lien externe improvisé.</p></div>
+    <a class="btn btn-secondary" href="mobile-security.html">État Android détaillé</a>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><h2>Téléchargement Sentinel</h2><p>Aucun APK public pour le moment. Le canal s’ouvrira après validation de release.</p></div>
+    <div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="mobile-security.html">Android</a></li></ul></div>
+    <div><h3>Accès</h3><ul><li><a href="phone-intelligence.html">Annuaire gratuit</a></li><li><a href="espace-client.html">Espace client</a></li></ul></div>
+    <div><h3>Preuves</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="security.html">Sécurité</a></li></ul></div>
+  </div>
+</footer>
+</body>
+</html>

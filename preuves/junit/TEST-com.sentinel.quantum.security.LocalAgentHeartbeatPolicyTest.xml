@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.LocalAgentHeartbeatPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.372Z" hostname="localhost" time="0.01">
+  <properties/>
+  <testcase name="missingHeartbeatIsUnknown" classname="com.sentinel.quantum.security.LocalAgentHeartbeatPolicyTest" time="0.009"/>
+  <testcase name="futureTimestampCannotProduceNegativeAge" classname="com.sentinel.quantum.security.LocalAgentHeartbeatPolicyTest" time="0.0"/>
+  <testcase name="recentHeartbeatIsHealthy" classname="com.sentinel.quantum.security.LocalAgentHeartbeatPolicyTest" time="0.0"/>
+  <testcase name="missedHeartbeatsBecomeDegradedThenOffline" classname="com.sentinel.quantum.security.LocalAgentHeartbeatPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

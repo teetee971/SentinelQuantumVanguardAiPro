@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.CommunityReportEvidenceAdapterTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.736Z" hostname="localhost" time="0.03">
+  <properties/>
+  <testcase name="pending_report_is_context_only_and_has_no_score_or_raw_number" classname="com.sentinel.quantum.intelligence.CommunityReportEvidenceAdapterTest" time="0.029"/>
+  <testcase name="unknown_remote_status_remains_unknown" classname="com.sentinel.quantum.intelligence.CommunityReportEvidenceAdapterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.AuthorizedLanProbeTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.703Z" hostname="localhost" time="0.043">
+  <properties/>
+  <testcase name="paidLabEntitlementRemainsMandatory" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.016"/>
+  <testcase name="activeProbeRequiresExplicitAuthorizedLabSession" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.001"/>
+  <testcase name="ipv6UniqueLocalLiteralIsAllowedWithoutNameLookup" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.001"/>
+  <testcase name="internetTargetsAndOversizedRequestsFailClosed" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.001"/>
+  <testcase name="hostnameResolutionAndAmbiguousNumericTargetsFailClosed" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.001"/>
+  <testcase name="executionRejectsHostnamesBeforeOpeningSockets" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.005"/>
+  <testcase name="labSimulationRemainsBehindAuthorizationGate" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.006"/>
+  <testcase name="unspecifiedAddressesFailClosed" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.001"/>
+  <testcase name="packetCaptureIsBoundedAndNeverAllowsDecryption" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.01"/>
+  <testcase name="connectionBudgetIsGlobalAndCountsDistinctPorts" classname="com.sentinel.quantum.security.AuthorizedLanProbeTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

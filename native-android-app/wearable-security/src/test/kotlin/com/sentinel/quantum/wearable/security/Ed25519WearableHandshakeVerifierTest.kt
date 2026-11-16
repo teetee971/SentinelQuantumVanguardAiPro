@@ -1,0 +1,206 @@
+package com.sentinel.quantum.wearable.security
+
+import java.security.KeyPairGenerator
+import java.security.MessageDigest
+import java.security.Signature
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Test
+
+class Ed25519WearableHandshakeVerifierTest {
+    private val pair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+    private val fingerprint = MessageDigest.getInstance("SHA-256")
+        .digest(pair.public.encoded).joinToString("") { "%02x".format(it) }
+    private val phoneHpkeFingerprint = "1".repeat(64)
+    private val wearableHpkeFingerprint = "2".repeat(64)
+
+    private fun candidate(
+        stableId: String = "watch-1",
+        sessionId: String = "session-1",
+        capabilities: Set<String> = setOf("SENTINEL_ALERTS"),
+        challengeNonce: String = "AAAAAAAAAAAAAAAAAAAAAA",
+        issuedAtMs: Long = 100_000L
+    ): WearableHandshakeCandidate {
+        val transcript = WearableHandshakeTranscriptCodec.encode(
+            stableId, fingerprint, sessionId, 1, capabilities, challengeNonce, issuedAtMs
+        )
+        val signer = Signature.getInstance("Ed25519")
+        signer.initSign(pair.private)
+        signer.update(transcript)
+        return WearableHandshakeCandidate(
+            stableId, fingerprint, sessionId, 1, capabilities, challengeNonce, issuedAtMs,
+            transcript, signer.sign()
+        )
+    }
+
+    @Test fun acceptsAuthenticCanonicalTranscript() {
+        assertNotNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(candidate()))
+    }
+
+    @Test fun rejectsCapabilityDelimiterSubstitutionWithPreviouslyValidSignature() {
+        val original = candidate(capabilities = setOf("QUICK_ACTIONS", "SENTINEL_ALERTS"))
+        val changed = original.copy(capabilities = setOf("QUICK_ACTIONS,SENTINEL_ALERTS"))
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test fun rejectsLossyIdentityEncodingWithPreviouslyValidSignature() {
+        val original = candidate(stableId = "watch-?")
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded)
+            .verify(original.copy(stableId = "watch-\uD800")))
+    }
+
+    @Test fun rejectsLossySessionEncodingWithPreviouslyValidSignature() {
+        val original = candidate(sessionId = "session-?")
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded)
+            .verify(original.copy(sessionId = "session-\uDC00")))
+    }
+
+    @Test fun rejectsLossyCapabilityEncodingWithPreviouslyValidSignature() {
+        val original = candidate(capabilities = setOf("CAPABILITY_?"))
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded)
+            .verify(original.copy(capabilities = setOf("CAPABILITY_\uD800"))))
+    }
+
+    @Test fun validUnicodeIdentityRemainsAuthentic() {
+        assertNotNull(Ed25519WearableHandshakeVerifier(pair.public.encoded)
+            .verify(candidate(stableId = "montre-é-\uD83D\uDCDF", sessionId = "séance-1")))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun refusesAmbiguousCapabilityEncoding() {
+        candidate(capabilities = setOf("QUICK_ACTIONS,SENTINEL_ALERTS"))
+    }
+
+    @Test fun malformedSignatureFailsClosedWithoutThrowing() {
+        val changed = candidate().copy(signature = byteArrayOf(1))
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test(expected = UnsupportedOperationException::class)
+    fun authenticatedCapabilitiesCannotBeExpandedByTransportConsumer() {
+        val proof = requireNotNull(
+            Ed25519WearableHandshakeVerifier(pair.public.encoded)
+                .verify(candidate(capabilities = setOf("QUICK_ACTIONS", "SENTINEL_ALERTS")))
+        )
+        (proof.capabilities as MutableSet<String>).add("UNSIGNED_CAPABILITY")
+    }
+
+    @Test fun rejectsFieldSubstitutionEvenWithPreviouslyValidSignature() {
+        val original = candidate()
+        val changed = original.copy(sessionId = "session-2")
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test fun rejectsChallengeNonceSubstitutionEvenWithPreviouslyValidSignature() {
+        val original = candidate()
+        val changed = original.copy(challengeNonce = "BBBBBBBBBBBBBBBBBBBBBB")
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test fun rejectsIssuedAtSubstitutionEvenWithPreviouslyValidSignature() {
+        val original = candidate()
+        val changed = original.copy(issuedAtMs = original.issuedAtMs + 1)
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test fun rejectsWrongBoundKeyFingerprint() {
+        val original = candidate()
+        val changed = original.copy(keyFingerprintSha256 = "b".repeat(64))
+        assertNull(Ed25519WearableHandshakeVerifier(pair.public.encoded).verify(changed))
+    }
+
+    @Test fun rejectsSignatureFromDifferentKey() {
+        val original = candidate()
+        val other = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+        val signer = Signature.getInstance("Ed25519")
+        signer.initSign(other.private)
+        signer.update(original.signedTranscript)
+        assertNull(
+            Ed25519WearableHandshakeVerifier(pair.public.encoded)
+                .verify(original.copy(signature = signer.sign()))
+        )
+    }
+
+    @Test fun canonicalizationMakesCapabilityOrderIrrelevant() {
+        val a = WearableHandshakeTranscriptCodec.encode(
+            "watch-1", fingerprint, "session-1", 1, linkedSetOf("QUICK_ACTIONS", "SENTINEL_ALERTS"), "AAAAAAAAAAAAAAAAAAAAAA", 100_000L
+        )
+        val b = WearableHandshakeTranscriptCodec.encode(
+            "watch-1", fingerprint, "session-1", 1, linkedSetOf("SENTINEL_ALERTS", "QUICK_ACTIONS"), "AAAAAAAAAAAAAAAAAAAAAA", 100_000L
+        )
+        org.junit.Assert.assertArrayEquals(a, b)
+    }
+
+    @Test fun protocolV2TranscriptBindsBothHpkePublicKeyFingerprints() {
+        val baseline = WearableHandshakeTranscriptCodec.encode(
+            stableId = "watch-1",
+            keyFingerprintSha256 = fingerprint,
+            sessionId = "session-2",
+            protocolVersion = 2,
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
+            phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint,
+            wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+        )
+        val changedPhone = WearableHandshakeTranscriptCodec.encode(
+            stableId = "watch-1",
+            keyFingerprintSha256 = fingerprint,
+            sessionId = "session-2",
+            protocolVersion = 2,
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
+            phoneHpkePublicKeyFingerprintSha256 = "3".repeat(64),
+            wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+        )
+        val changedWearable = WearableHandshakeTranscriptCodec.encode(
+            stableId = "watch-1",
+            keyFingerprintSha256 = fingerprint,
+            sessionId = "session-2",
+            protocolVersion = 2,
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+            issuedAtMs = 100_000L,
+            phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint,
+            wearableHpkePublicKeyFingerprintSha256 = "4".repeat(64)
+        )
+
+        assertFalse(baseline.contentEquals(changedPhone))
+        assertFalse(baseline.contentEquals(changedWearable))
+    }
+
+    @Test fun protocolV1CannotCarrySecureHpkeBindings() {
+        assertThrows(IllegalArgumentException::class.java) {
+            WearableHandshakeTranscriptCodec.encode(
+                stableId = "watch-1",
+                keyFingerprintSha256 = fingerprint,
+                sessionId = "session-1",
+                protocolVersion = 1,
+                capabilities = setOf("SENTINEL_ALERTS"),
+                challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+                issuedAtMs = 100_000L,
+                phoneHpkePublicKeyFingerprintSha256 = phoneHpkeFingerprint,
+                wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+            )
+        }
+    }
+
+    @Test fun protocolV2RejectsMalformedHpkeFingerprint() {
+        assertThrows(IllegalArgumentException::class.java) {
+            WearableHandshakeTranscriptCodec.encode(
+                stableId = "watch-1",
+                keyFingerprintSha256 = fingerprint,
+                sessionId = "session-2",
+                protocolVersion = 2,
+                capabilities = setOf("SENTINEL_ALERTS"),
+                challengeNonce = "AAAAAAAAAAAAAAAAAAAAAA",
+                issuedAtMs = 100_000L,
+                phoneHpkePublicKeyFingerprintSha256 = "not-a-sha256",
+                wearableHpkePublicKeyFingerprintSha256 = wearableHpkeFingerprint
+            )
+        }
+    }
+}

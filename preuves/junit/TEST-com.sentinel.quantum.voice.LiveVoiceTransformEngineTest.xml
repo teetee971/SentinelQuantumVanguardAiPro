@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.voice.LiveVoiceTransformEngineTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.963Z" hostname="localhost" time="0.01">
+  <properties/>
+  <testcase name="liveEffectsPreserveFrameLengthRangeAndChangeAudio" classname="com.sentinel.quantum.voice.LiveVoiceTransformEngineTest" time="0.003"/>
+  <testcase name="naturalEffectIsBitExactAndKeepsFrameLength" classname="com.sentinel.quantum.voice.LiveVoiceTransformEngineTest" time="0.001"/>
+  <testcase name="preservesWebRtcFloatS16AmplitudeInsteadOfNormalizingToOne" classname="com.sentinel.quantum.voice.LiveVoiceTransformEngineTest" time="0.001"/>
+  <testcase name="resetMakesProcessingDeterministicAcrossCalls" classname="com.sentinel.quantum.voice.LiveVoiceTransformEngineTest" time="0.001"/>
+  <testcase name="transformedEffectsNeutralizeNonFiniteSamples" classname="com.sentinel.quantum.voice.LiveVoiceTransformEngineTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

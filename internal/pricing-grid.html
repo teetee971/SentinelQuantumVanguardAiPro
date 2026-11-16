@@ -1,0 +1,207 @@
+<!--
+═══════════════════════════════════════════════════════════════════════════════
+  SENTINEL QUANTUM VANGUARD AI PRO — GRILLE TARIFAIRE INDICATIVE
+  
+  ⚠️ USAGE INTERNE UNIQUEMENT — NON AFFICHÉ PUBLIQUEMENT
+  
+  Cette grille de prix est INDICATIVE et NON CONTRACTUELLE
+  Elle sert de base de réflexion pour la monétisation future
+  
+  STATUS: PRÉPARATION — Aucun engagement client
+═══════════════════════════════════════════════════════════════════════════════
+-->
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[INTERNE] Grille Tarifaire Sentinel</title>
+  <style>
+    /* Styling identique au reste du site mais marqué INTERNE */
+    :root{
+      --bg-dark:#0a0a0a;
+      --bg-card:#1a1a1a;
+      --border:#333;
+      --text-primary:#fff;
+      --text-secondary:#aaa;
+      --green:#10b981;
+      --yellow:#f59e0b;
+      --blue:#3b82f6;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-primary);
+      padding:2rem;
+    }
+    .warning{
+      background:#ef4444;
+      color:#fff;
+      padding:2rem;
+      border-radius:12px;
+      margin-bottom:2rem;
+      font-weight:700;
+      text-align:center;
+    }
+    .pricing-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:2rem;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .pricing-card{
+      background:var(--bg-card);
+      border:2px solid var(--border);
+      border-radius:12px;
+      padding:2rem;
+    }
+    .pricing-card.featured{
+      border-color:var(--green);
+    }
+    .tier-name{
+      font-size:1.5rem;
+      font-weight:700;
+      margin-bottom:0.5rem;
+    }
+    .tier-price{
+      font-size:2.5rem;
+      font-weight:700;
+      margin-bottom:0.5rem;
+      color:var(--green);
+    }
+    .tier-period{
+      color:var(--text-secondary);
+      margin-bottom:2rem;
+    }
+    .features{
+      list-style:none;
+    }
+    .features li{
+      padding:0.75rem 0;
+      border-bottom:1px solid var(--border);
+      color:var(--text-secondary);
+    }
+    .features li:last-child{
+      border-bottom:none;
+    }
+    .note{
+      background:var(--bg-dark);
+      border:1px solid var(--yellow);
+      border-radius:8px;
+      padding:1.5rem;
+      margin-top:2rem;
+      color:var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="warning">
+    ⚠️ DOCUMENT INTERNE — TARIFICATION INDICATIVE NON CONTRACTUELLE
+    <br>NE PAS AFFICHER PUBLIQUEMENT — PRÉPARATION UNIQUEMENT
+  </div>
+
+  <h1 style="text-align:center;font-size:2.5rem;margin-bottom:3rem">
+    Grille Tarifaire Sentinel — Préparation Interne
+  </h1>
+
+  <div class="pricing-grid">
+
+    <!-- FREE TIER -->
+    <div class="pricing-card">
+      <div class="tier-name">Free</div>
+      <div class="tier-price">0€</div>
+      <div class="tier-period">Gratuit à vie</div>
+      <ul class="features">
+        <li>✅ SOC Live - Visualisation menaces mondiales</li>
+        <li>✅ Threat Intelligence - Sources publiques</li>
+        <li>✅ Fil d'actualités cyber (5 sources)</li>
+        <li>✅ Dashboard de base</li>
+        <li>✅ Carte mondiale animée</li>
+        <li>✅ Journal SOC (lecture seule)</li>
+        <li>❌ Accès API limitée</li>
+        <li>❌ Pas d'export données</li>
+        <li>❌ Support communautaire</li>
+      </ul>
+    </div>
+
+    <!-- PRO TIER -->
+    <div class="pricing-card featured">
+      <div class="tier-name">Pro</div>
+      <div class="tier-price">29€</div>
+      <div class="tier-period">par mois</div>
+      <ul class="features">
+        <li>✅ Tout du plan Free</li>
+        <li>✅ Threat Intelligence avancée</li>
+        <li>✅ 20+ sources d'actualités</li>
+        <li>✅ Accès API complète</li>
+        <li>✅ Export données (CSV, JSON)</li>
+        <li>✅ Alertes personnalisées</li>
+        <li>✅ Historique 90 jours</li>
+        <li>✅ Rapports mensuels</li>
+        <li>✅ Support email prioritaire</li>
+        <li>🟡 EDR en développement (futur)</li>
+      </ul>
+    </div>
+
+    <!-- ENTERPRISE TIER -->
+    <div class="pricing-card">
+      <div class="tier-name">Enterprise</div>
+      <div class="tier-price">Sur devis</div>
+      <div class="tier-period">Contactez-nous</div>
+      <ul class="features">
+        <li>✅ Tout du plan Pro</li>
+        <li>✅ SOC dédié personnalisé</li>
+        <li>✅ Threat Intelligence sur mesure</li>
+        <li>✅ Intégration SIEM/SOAR</li>
+        <li>✅ API illimitée</li>
+        <li>✅ Multi-tenancy</li>
+        <li>✅ White-label disponible</li>
+        <li>✅ SLA garanti 99.9%</li>
+        <li>✅ Support 24/7 dédié</li>
+        <li>✅ Formation équipe</li>
+        <li>🟡 EDR complet (futur)</li>
+        <li>🟡 Antivirus IA (futur)</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="note">
+    <h2 style="margin-bottom:1rem;color:var(--yellow)">📋 Notes Importantes</h2>
+    <ul style="margin-left:2rem">
+      <li><strong>Tarification indicative</strong> — Peut évoluer avant lancement commercial</li>
+      <li><strong>Non contractuelle</strong> — Aucun engagement client à ce stade</li>
+      <li><strong>Future uniquement</strong> — Actuellement en mode démonstration</li>
+      <li><strong>Modules EDR/Antivirus</strong> — En développement, pas encore disponibles</li>
+      <li><strong>Plan Free</strong> — Toujours gratuit pour SOC Live et Threat Intelligence basique</li>
+      <li><strong>Prix HT</strong> — TVA applicable selon pays</li>
+      <li><strong>Révision possible</strong> — Cette grille peut être complètement modifiée</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:3rem;color:var(--text-secondary)">
+    <p>Document interne Sentinel Quantum Vanguard AI Pro</p>
+    <p>Version 1.0 — Décembre 2024 — Préparation monétisation</p>
+    <p style="margin-top:1rem;color:var(--yellow)">
+      ⚠️ Ne pas partager publiquement avant validation finale
+    </p>
+  </div>
+
+</body>
+</html>
+
+<!--
+═══════════════════════════════════════════════════════════════════════════════
+  HISTORIQUE DES MODIFICATIONS
+  
+  v1.0 - 2024-12-13 - Création grille tarifaire indicative
+                    - 3 tiers: Free, Pro (29€/mois), Enterprise (sur devis)
+                    - Focus sur SOC Live et Threat Intelligence
+                    - Modules EDR/AV marqués comme futurs
+  
+═══════════════════════════════════════════════════════════════════════════════
+-->

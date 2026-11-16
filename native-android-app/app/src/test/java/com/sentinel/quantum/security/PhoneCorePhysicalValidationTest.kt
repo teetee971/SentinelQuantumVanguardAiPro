@@ -1,0 +1,408 @@
+package com.sentinel.quantum.security
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class PhoneCorePhysicalValidationTest {
+    private fun event(
+        kind: PhonePrivateTimeline.Kind,
+        direction: String,
+        signal: String,
+        timestampMs: Long = 1_000L
+    ) = PhonePrivateTimeline.Event(
+        kind = kind,
+        timestampMs = timestampMs,
+        direction = direction,
+        signal = signal
+    )
+
+    private fun almostCompleteEvents() = listOf(
+        event(PhonePrivateTimeline.Kind.CALL, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
+        event(PhonePrivateTimeline.Kind.CALL, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX + "ALLOW:NO_MATCHING_RULE:NONE"
+        ),
+        event(PhonePrivateTimeline.Kind.SMS, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED),
+        event(
+            PhonePrivateTimeline.Kind.SMS,
+            "OUTGOING",
+            PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_SENT
+        ),
+        event(
+            PhonePrivateTimeline.Kind.SMS,
+            "OUTGOING",
+            PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED
+        ),
+        event(
+            PhonePrivateTimeline.Kind.MMS,
+            "OUTGOING",
+            PhoneCorePhysicalValidation.SIGNAL_MMS_SENT_OK
+        ),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+        ),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_USER_OBSERVED
+        ),
+        event(
+            PhonePrivateTimeline.Kind.SMS,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_SMS_NOTIFICATION_POSTED
+        ),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
+        ),
+        event(
+            PhonePrivateTimeline.Kind.CALL,
+            "LOCAL",
+            PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
+        )
+    )
+
+    @Test fun schemaV6RequiresAllFourteenPhoneCoreChecks() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = almostCompleteEvents(),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true
+        )
+        assertEquals(13, evidence.completedCount)
+        assertEquals(14, evidence.requiredCount)
+        assertFalse(evidence.fullyValidated)
+        assertFalse(evidence.incomingMmsSafePreview)
+        assertTrue(evidence.outgoingSmsSubmitted)
+        assertTrue(evidence.outgoingSmsDeliveredSuccessfully)
+        assertTrue(evidence.callScreeningObserved)
+    }
+
+    @Test fun safeIncomingMmsCompletesLocalOperationalValidation() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = almostCompleteEvents() + event(
+                PhonePrivateTimeline.Kind.MMS,
+                "INCOMING",
+                "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+            ),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true
+        )
+        assertTrue(evidence.fullyValidated)
+        assertEquals(14, evidence.completedCount)
+        assertEquals("local_technical_qualification", evidence.evidenceScope)
+        assertFalse("Fourteen runtime observations cannot attest physical hardware or a carrier", evidence.physicalDeviceValidated)
+    }
+
+    @Test fun rawFragmentCallbacksDoNotProveMultipartSuccess() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(PhonePrivateTimeline.Kind.CALL, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
+                event(PhonePrivateTimeline.Kind.CALL, "OUTGOING", PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE),
+                event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX + "ALLOW:NO_MATCHING_RULE:NONE"
+        ),
+                event(PhonePrivateTimeline.Kind.SMS, "INCOMING", PhoneCorePhysicalValidation.SIGNAL_SMS_RECEIVED),
+                event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_OK"),
+                event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "DELIVERED_OK"),
+                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_SAFE_PREVIEW_READY"),
+            ),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true
+        )
+        assertFalse(evidence.outgoingSmsSubmitted)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
+        assertEquals(7, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun aggregateSendWithoutSuccessfulDeliveryDoesNotCompleteValidation() {
+        val withoutDelivery = almostCompleteEvents()
+            .filterNot { it.signal == PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED }
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = withoutDelivery + event(
+                PhonePrivateTimeline.Kind.MMS,
+                "INCOMING",
+                "MMS_SAFE_PREVIEW_READY"
+            ),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true
+        )
+        assertTrue(evidence.outgoingSmsSubmitted)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
+        assertEquals(13, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun deliveryErrorNeverCountsAsSuccessfulPhysicalDelivery() {
+        val withoutSuccessfulDelivery = almostCompleteEvents()
+            .filterNot { it.signal == PhoneCorePhysicalValidation.SIGNAL_SMS_ALL_PARTS_DELIVERED }
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = withoutSuccessfulDelivery +
+                event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "DELIVERY_ERROR_2") +
+                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_SAFE_PREVIEW_READY"),
+            contactsProviderReady = true,
+            callHistoryProviderReady = true
+        )
+        assertTrue(evidence.outgoingSmsSubmitted)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
+        assertEquals(13, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun providersAreRequiredEvenWhenTransportSignalsExist() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = almostCompleteEvents() + event(
+                PhonePrivateTimeline.Kind.MMS,
+                "INCOMING",
+                "MMS_SAFE_PREVIEW_READY"
+            ),
+            contactsProviderReady = false,
+            callHistoryProviderReady = false
+        )
+        assertEquals(12, evidence.completedCount)
+        assertFalse(evidence.contactsProviderReady)
+        assertFalse(evidence.callHistoryProviderReady)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun ignoresEvidenceFromBeforeCurrentApkInstall() {
+        val old = event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE,
+            timestampMs = 999L
+        )
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(old),
+            notBeforeMs = 1_000L
+        )
+        assertEquals(0, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
+
+    @Test fun unrelatedIncomingCallEventDoesNotProveScreening() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(PhonePrivateTimeline.Kind.CALL, "INCOMING", "SHORT_RING")
+            )
+        )
+        assertFalse(evidence.callScreeningObserved)
+        assertEquals(0, evidence.completedCount)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun screeningCountsButFailedSendAndQuarantinedMmsDoNot() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+            PhonePrivateTimeline.Kind.CALL,
+            "INCOMING",
+            PhoneCorePhysicalValidation.SIGNAL_CALL_SCREENED_PREFIX + "ALLOW:NO_MATCHING_RULE:NONE"
+        ),
+                event(PhonePrivateTimeline.Kind.SMS, "OUTGOING", "SENT_ERROR_1"),
+                event(PhonePrivateTimeline.Kind.MMS, "INCOMING", "MMS_LOCAL_QUARANTINE")
+            )
+        )
+        assertEquals(1, evidence.completedCount)
+        assertTrue(evidence.callScreeningObserved)
+        assertFalse(evidence.outgoingSmsSubmitted)
+        assertFalse(evidence.outgoingSmsDeliveredSuccessfully)
+        assertFalse(evidence.incomingMmsSafePreview)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun outgoingMmsRequiresAndroidSuccessCallback() {
+        val success = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.MMS,
+                    "OUTGOING",
+                    PhoneCorePhysicalValidation.SIGNAL_MMS_SENT_OK
+                )
+            )
+        )
+        assertTrue(success.outgoingMmsSentSuccessfully)
+        assertEquals(1, success.completedCount)
+
+        val failure = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(PhonePrivateTimeline.Kind.MMS, "OUTGOING", "MMS_SEND_ERROR_5")
+            )
+        )
+        assertFalse(failure.outgoingMmsSentSuccessfully)
+        assertEquals(0, failure.completedCount)
+    }
+
+    @Test fun notificationPublicationProofsAreIndependent() {
+        val callOnly = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_POSTED
+                )
+            )
+        )
+        assertTrue(callOnly.incomingCallNotificationPosted)
+        assertFalse(callOnly.incomingCallNotificationObserved)
+        assertFalse(callOnly.incomingSmsNotificationPosted)
+        assertEquals(0, callOnly.completedCount)
+        assertTrue("incoming_call_notification" in callOnly.missingCriteria)
+
+        val observedCall = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALL_NOTIFICATION_USER_OBSERVED
+                )
+            )
+        )
+        assertFalse(observedCall.incomingCallNotificationPosted)
+        assertTrue(observedCall.incomingCallNotificationObserved)
+        assertEquals(1, observedCall.completedCount)
+
+        val smsOnly = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.SMS,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_SMS_NOTIFICATION_POSTED
+                )
+            )
+        )
+        assertFalse(smsOnly.incomingCallNotificationPosted)
+        assertTrue(smsOnly.incomingSmsNotificationPosted)
+        assertEquals(1, smsOnly.completedCount)
+    }
+
+    @Test fun callerIdAndInCallUiProofsAreIndependentAndRequired() {
+        val callerIdOnly = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALLER_ID_UI_SHOWN
+                )
+            )
+        )
+        assertTrue(callerIdOnly.callerIdUiShown)
+        assertFalse(callerIdOnly.inCallUiShown)
+        assertEquals(1, callerIdOnly.completedCount)
+
+        val inCallOnly = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "LOCAL",
+                    PhoneCorePhysicalValidation.SIGNAL_INCALL_UI_SHOWN
+                )
+            )
+        )
+        assertFalse(inCallOnly.callerIdUiShown)
+        assertTrue(inCallOnly.inCallUiShown)
+        assertEquals(1, inCallOnly.completedCount)
+    }
+
+    @Test fun exposesExactMissingCertificationCriteria() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(
+            events = listOf(
+                event(
+                    PhonePrivateTimeline.Kind.CALL,
+                    "INCOMING",
+                    PhoneCorePhysicalValidation.SIGNAL_CALL_ACTIVE
+                )
+            )
+        )
+        assertFalse("incoming_call_connected" in evidence.missingCriteria)
+        assertTrue("outgoing_call_connected" in evidence.missingCriteria)
+        assertTrue("outgoing_sms_delivered" in evidence.missingCriteria)
+        assertTrue("outgoing_mms_sent" in evidence.missingCriteria)
+        assertEquals(evidence.requiredCount - evidence.completedCount, evidence.missingCriteria.size)
+        assertFalse(evidence.fullyValidated)
+    }
+
+    @Test fun everyPhysicalCriterionHasAUserFacingLabel() {
+        val evidence = PhoneCorePhysicalValidation.evaluate(emptyList())
+        assertEquals(14, evidence.missingCriteria.size)
+        evidence.missingCriteria.forEach { criterion ->
+            val label = PhoneCorePhysicalValidation.criterionLabel(criterion)
+            assertFalse(label.isBlank())
+            assertFalse(label.contains("_"))
+            assertFalse(label == "Effectuer le test physique requis")
+        }
+    }
+
+    @Test fun providerChecksAreAutomaticAndTransportEvidenceIsOperational() {
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK,
+            PhoneCorePhysicalValidation.criterionKind("contacts_provider_ready")
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK,
+            PhoneCorePhysicalValidation.criterionKind("call_history_provider_ready")
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
+            PhoneCorePhysicalValidation.criterionKind("incoming_call_connected")
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
+            PhoneCorePhysicalValidation.criterionKind("outgoing_sms_delivered")
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST,
+            PhoneCorePhysicalValidation.criterionKind("outgoing_mms_sent")
+        )
+    }
+
+    @Test fun localCriteriaDoNotPresentSyntheticCallbacksAsPhysicalOrCarrierValidation() {
+        val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
+        assertEquals(14, criteria.size)
+        criteria.forEach { criterion ->
+            val label = PhoneCorePhysicalValidation.criterionLabel(criterion).lowercase()
+            assertFalse(label, label.contains("réel") || label.contains("opérateur") || label.contains("physique"))
+        }
+    }
+
+    @Test fun allSchemaV5CriteriaHaveExplicitKindsAndUnknownFailsClosed() {
+        val criteria = PhoneCorePhysicalValidation.evaluate(emptyList()).missingCriteria
+        assertEquals(14, criteria.size)
+        assertEquals(
+            2,
+            criteria.count {
+                PhoneCorePhysicalValidation.criterionKind(it) ==
+                    PhoneCorePhysicalValidation.CriterionKind.AUTOMATIC_CHECK
+            }
+        )
+        assertEquals(
+            12,
+            criteria.count {
+                PhoneCorePhysicalValidation.criterionKind(it) ==
+                    PhoneCorePhysicalValidation.CriterionKind.OPERATIONAL_TEST
+            }
+        )
+        assertEquals(
+            0,
+            criteria.count {
+                PhoneCorePhysicalValidation.criterionKind(it) ==
+                    PhoneCorePhysicalValidation.CriterionKind.UNKNOWN
+            }
+        )
+        assertEquals(
+            PhoneCorePhysicalValidation.CriterionKind.UNKNOWN,
+            PhoneCorePhysicalValidation.criterionKind("future_or_misspelled_criterion")
+        )
+    }
+
+}

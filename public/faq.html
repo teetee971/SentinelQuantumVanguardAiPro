@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="FAQ Sentinel : gratuité du téléphone, état Android, téléchargements, tarifs cibles, VPN, PC et preuves de validation.">
+<meta name="theme-color" content="#080b10">
+<link rel="icon" href="/public/icon.svg" type="image/svg+xml">
+<title>FAQ — Sentinel Quantum Vanguard AI Pro</title>
+<link rel="stylesheet" href="shared-styles.css">
+<link rel="stylesheet" href="faq.css">
+</head>
+<body>
+<script src="shared-navigation.js" defer></script>
+
+<main id="main-content" class="page-shell faq-page">
+  <section class="sq-hero" aria-labelledby="faq-title">
+    <div class="sq-hero-copy">
+      <span class="sq-kicker">FAQ · réponses factuelles</span>
+      <h1 id="faq-title" class="sq-title">Ce qui existe, ce qui reste gratuit et <span class="sq-title-emphasis">ce qui n’est pas encore livré.</span></h1>
+      <p class="sq-lede">Les réponses ci-dessous suivent le même contrat de vérité que la roadmap : code présent, validation réelle et disponibilité publique restent des états différents.</p>
+      <div class="sq-actions">
+        <a class="btn" href="phone-intelligence.html">Annuaire gratuit</a>
+        <a class="btn btn-secondary" href="roadmap.html">Roadmap</a>
+        <a class="btn btn-secondary" href="download-guide.html">Téléchargement</a>
+      </div>
+    </div>
+    <aside class="sq-command-panel" aria-label="Résumé FAQ">
+      <div class="sq-command-head"><strong>À retenir</strong><span>État actuel</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot ready"></span><div class="sq-status-copy"><strong>Recherche téléphone</strong><small>Accessible gratuitement sur le Web.</small></div><span class="sq-status-value">Disponible</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot validation"></span><div class="sq-status-copy"><strong>Android</strong><small>Code natif et CI, sans APK public validé.</small></div><span class="sq-status-value">Validation</span></div>
+      <div class="sq-status-row"><span class="sq-status-dot planned"></span><div class="sq-status-copy"><strong>Offres payantes</strong><small>Modèle cible, aucune commercialisation active.</small></div><span class="sq-status-value">Planifié</span></div>
+    </aside>
+  </section>
+
+  <section class="faq-list" aria-label="Questions fréquentes">
+    <details class="faq-item" open>
+      <summary><span class="faq-index">01</span>La recherche téléphonique est-elle gratuite ?</summary>
+      <div class="faq-answer"><p>Oui. La recherche Web, l’exploration des attributions ARCEP, l’analyse locale de SMS et les listes personnelles restent gratuites. Les fonctions téléphone Android resteront elles aussi gratuites lorsqu’une version validée sera distribuée.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">02</span>Puis-je télécharger l’application Android aujourd’hui ?</summary>
+      <div class="faq-answer"><p>Non. Le bouton APK reste volontairement désactivé. Il ne sera activé qu’après signature, checksum, validations CI correspondant au commit publié et tests sur appareil réel.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">03</span>Pourquoi un build CI vert ne suffit-il pas ?</summary>
+      <div class="faq-answer"><p>Parce qu’une CI ne peut prouver que les scénarios qu’elle exécute. Les appels réels, les opérateurs, le double-SIM, les permissions Android, les notifications et certains comportements matériels doivent être observés sur des appareils physiques.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">04</span>Qu’est-ce qui pourrait devenir payant ?</summary>
+      <div class="faq-answer"><p>Les add-ons professionnels : veille avancée, investigations, exports, gouvernance d’organisation, connecteurs, support ou déploiements dédiés. Ils ne retireront aucune fonction au socle téléphone gratuit.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">05</span>Les tarifs affichés sont-ils déjà commercialisés ?</summary>
+      <div class="faq-answer"><p>Non. Aucune offre payante n’est actuellement commercialisée. Les prix affichés servent à tester le modèle économique ; paiement, licences, CGV, support et distribution doivent être validés ensemble avant toute vente.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">06</span>Existe-t-il un client PC ?</summary>
+      <div class="faq-answer"><p>Non. Aucun client PC Electron/Tauri, installateur Windows/macOS/Linux ou canal de distribution bureau n’est livré aujourd’hui.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">07</span>À quoi sert l’AAB ?</summary>
+      <div class="faq-answer"><p>Un AAB est destiné à Play Console et n’est pas un fichier d’installation directe classique. Pour un test direct sur téléphone, il faut un APK approprié ou une piste de test Play configurée.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">08</span>Sentinel est-il un antivirus, un EDR ou une garantie de sécurité totale ?</summary>
+      <div class="faq-answer"><p>Non. Sentinel ne doit pas être présenté comme une garantie absolue ni comme une certification externe acquise. Chaque capacité reste proportionnée aux preuves et aux validations effectivement disponibles.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">09</span>Sentinel fournit-il un VPN opérationnel ?</summary>
+      <div class="faq-answer"><p>Le client VPN Sentinel utilise désormais <code>VpnService</code> et WireGuard avec des garde-fous fail-closed. Aucune passerelle Sentinel de sortie n’est toutefois déployée et validée ; le service VPN public n’est donc pas opérationnel.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">10</span>Sentinel fournit-il le chiffrement du téléphone ou les protections d’un OS renforcé ?</summary>
+      <div class="faq-answer"><p>Non. Le chiffrement, Direct Boot, Verified Boot, certains profils, les modes USB-C ou des mécanismes tels que Storage Scopes et Contact Scopes relèvent d’Android, du constructeur ou d’un OS renforcé tel que GrapheneOS. Sentinel reste une application.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">11</span>L’Espace Client est-il un vrai portail ?</summary>
+      <div class="faq-answer"><p>Non. Il s’agit d’une démonstration statique. Aucun compte, paiement, activation d’organisation, entitlement serveur ou téléchargement privé n’est connecté.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">12</span>Que se passerait-il si un abonnement futur expirait ?</summary>
+      <div class="faq-answer"><p>Le principe retenu est une régression déterministe vers le niveau public : les add-ons privés seraient désactivés, mais le socle téléphone gratuit resterait accessible.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">13</span>Quelles fonctions sensibles pourraient exister plus tard ?</summary>
+      <div class="faq-answer"><p>Les capacités de test actif, inspection autorisée ou simulation adversariale resteraient une option séparée, réservée à des équipements possédés, administrés ou explicitement autorisés. Elles ne sont pas intégrées implicitement au Freemium ni aux offres standard.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">14</span>Où vérifier l’état réel d’une capacité ?</summary>
+      <div class="faq-answer"><p>La <a href="roadmap.html">roadmap</a> indique les états et dépendances. Pour une preuve technique, il faut également regarder la révision, les validations réellement exécutées, les artefacts, les tests physiques applicables et la documentation alignée.</p></div>
+    </details>
+
+    <details class="faq-item">
+      <summary><span class="faq-index">15</span>Qu’en est-il de l’OSINT, de l’e-mail et de la défense contre l’ingérence ?</summary>
+      <div class="faq-answer"><p>La <a href="capabilities-roadmap.html">feuille de route fonctionnelle</a> documente ces orientations. Elles restent défensives, soumises aux droits d’accès aux sources, à la provenance, au cadre juridique et à une revue humaine lorsqu’une décision pourrait avoir un impact.</p></div>
+    </details>
+  </section>
+
+  <section class="sq-callout">
+    <div><span class="eyebrow">Toujours un doute ?</span><h2>Regarder l’état, la dépendance et le critère de sortie.</h2><p>Un nom de fonctionnalité seul ne dit rien sur son niveau de disponibilité réel.</p></div>
+    <a class="btn" href="roadmap.html">Ouvrir la roadmap</a>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><h2>FAQ Sentinel</h2><p>Réponses factuelles sur le produit, Android, la gratuité et le modèle cible.</p></div>
+    <div><h3>Produit</h3><ul><li><a href="produit.html">Présentation</a></li><li><a href="mobile-security.html">Android</a></li></ul></div>
+    <div><h3>Accès</h3><ul><li><a href="phone-intelligence.html">Annuaire gratuit</a></li><li><a href="download-guide.html">Téléchargement</a></li></ul></div>
+    <div><h3>Preuves</h3><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="security.html">Sécurité</a></li></ul></div>
+  </div>
+</footer>
+</body>
+</html>

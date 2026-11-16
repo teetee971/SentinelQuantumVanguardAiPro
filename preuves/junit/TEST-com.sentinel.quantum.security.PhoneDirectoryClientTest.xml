@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneDirectoryClientTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.884Z" hostname="localhost" time="0.022">
+  <properties/>
+  <testcase name="rtr_normalizes_austrian_numbers" classname="com.sentinel.quantum.security.PhoneDirectoryClientTest" time="0.005"/>
+  <testcase name="arcep_finds_matching_allocation_and_rejects_wrong_schema" classname="com.sentinel.quantum.security.PhoneDirectoryClientTest" time="0.009"/>
+  <testcase name="rtr_returns_allocated_and_ambiguous_without_silently_picking_first" classname="com.sentinel.quantum.security.PhoneDirectoryClientTest" time="0.007"/>
+  <testcase name="arcep_normalizes_french_numbers_and_short_codes" classname="com.sentinel.quantum.security.PhoneDirectoryClientTest" time="0.001"/>
+  <testcase name="rtr_maps_negative_holder_index_to_explicit_status" classname="com.sentinel.quantum.security.PhoneDirectoryClientTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

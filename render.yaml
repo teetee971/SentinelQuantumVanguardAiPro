@@ -1,0 +1,102 @@
+services:
+  - type: web
+    name: sentinel-moteur-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/wangiri-api/Dockerfile
+    dockerContext: ./backend/wangiri-api
+    healthCheckPath: /health/ready
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: REDIS_URL
+        sync: false
+      - key: PHONE_HASH_PEPPER
+        generateValue: true
+      - key: PUBLIC_REPORT_PEPPER
+        generateValue: true
+      - key: INDICATOR_HASH_PEPPER
+        generateValue: true
+      - key: EXPOSURE_HASH_PEPPER
+        generateValue: true
+      - key: EXPOSURE_API_KEY
+        generateValue: true
+      - key: EXPOSURE_AUTH_JWKS_URL
+        sync: false
+      - key: EXPOSURE_AUTH_ISSUER
+        sync: false
+      - key: EXPOSURE_AUTH_AUDIENCE
+        sync: false
+      - key: REPORT_API_KEY
+        generateValue: true
+      - key: MODERATION_API_KEY
+        generateValue: true
+      - key: RATE_LIMIT_PEPPER
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://sentinelquantumvanguardaipro.pages.dev
+      - key: HIGH_RISK_COUNTRIES
+        value: MV,SO,VU
+      - key: GLOBAL_RATE_LIMIT_PER_MINUTE
+        value: "120"
+      - key: EVALUATE_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: REPORT_RATE_LIMIT_PER_MINUTE
+        value: "10"
+      - key: PUBLIC_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "3"
+      - key: MODERATION_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: INTEL_FINGERPRINT_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: INTEL_PUBLIC_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "5"
+      - key: INTEL_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "20"
+      - key: INTEL_RELATIONSHIP_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_GRAPH_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_EXPOSURE_REPORT_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_EXPOSURE_LOOKUP_RATE_LIMIT_PER_MINUTE
+        value: "30"
+      - key: INTEL_MODERATION_RATE_LIMIT_PER_MINUTE
+        value: "30"
+
+  - type: web
+    name: sentinel-voice-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/voice-api/Dockerfile
+    dockerContext: ./backend/voice-api
+    healthCheckPath: /health/ready
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: VOICE_SERVICE_ENABLED
+        value: "false"
+      - key: VOICE_REDIS_URL
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: VOICE_AUTH_JWKS_URL
+        sync: false
+      - key: VOICE_AUTH_ISSUER
+        sync: false
+      - key: VOICE_AUTH_AUDIENCE
+        sync: false
+      - key: VOICE_ENTITLEMENT_CLAIM
+        value: https://sentinel-voice.onrender.com/claims/entitled
+      - key: VOICE_DEVICE_CLAIM
+        value: https://sentinel-voice.onrender.com/claims/device_ids
+      - key: VOICE_TOKEN_TTL_SECONDS
+        value: "120"
+      - key: VOICE_RATE_LIMIT_PER_MINUTE
+        value: "30"

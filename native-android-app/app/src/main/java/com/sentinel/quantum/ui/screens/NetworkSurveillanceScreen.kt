@@ -1,0 +1,1314 @@
+package com.sentinel.quantum.ui.screens
+import com.sentinel.quantum.security.WifiBand
+import kotlinx.coroutines.launch
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.sentinel.quantum.navigation.Screen
+import com.sentinel.quantum.security.BluetoothDeviceKind
+import com.sentinel.quantum.security.BluetoothRiskEvaluator
+import com.sentinel.quantum.security.BluetoothScanner
+import com.sentinel.quantum.security.CovertDetectionSupport
+import com.sentinel.quantum.security.CovertDeviceDetectionCapabilities
+import com.sentinel.quantum.security.DiscoveredBluetoothDevice
+import com.sentinel.quantum.security.DiscoveredWifiNetwork
+import com.sentinel.quantum.security.GatewayChangeMemory
+import com.sentinel.quantum.background.TrackerWatchPreferences
+import com.sentinel.quantum.background.TrackerWatchScheduler
+import com.sentinel.quantum.security.JoinedAddressOutcome
+import com.sentinel.quantum.security.JoinedAddressScan
+import com.sentinel.quantum.security.JoinedHost
+import com.sentinel.quantum.security.JoinedLanAnnouncement
+import com.sentinel.quantum.security.JoinedLanDiscovery
+import com.sentinel.quantum.security.JoinedLanDiscoveryUpdate
+import com.sentinel.quantum.security.JoinedLanSighting
+import com.sentinel.quantum.security.JoinedLanSightingMemory
+import com.sentinel.quantum.security.NetworkServiceExposureAnalyzer
+import com.sentinel.quantum.security.NetworkServiceExposureAssessment
+import com.sentinel.quantum.security.LocalLogger
+import com.sentinel.quantum.security.NetworkRiskLevel
+import com.sentinel.quantum.security.NetworkTimelineEventKind
+import com.sentinel.quantum.security.NetworkTimelineSnapshot
+import com.sentinel.quantum.security.NetworkTimelineStore
+import com.sentinel.quantum.security.NetworkTrustStore
+import com.sentinel.quantum.security.WifiConnect
+import com.sentinel.quantum.security.WifiConnectPlan
+import com.sentinel.quantum.security.WifiIntrusionFinding
+import com.sentinel.quantum.security.WifiIntrusionHints
+import com.sentinel.quantum.security.WifiRiskEvaluator
+import com.sentinel.quantum.security.WifiJoinedLink
+import com.sentinel.quantum.security.WifiJoinedLinkReader
+import com.sentinel.quantum.security.WifiRadioAnalyzer
+import com.sentinel.quantum.security.WifiScanResultTruth
+import com.sentinel.quantum.security.WifiScanner
+import com.sentinel.quantum.security.WifiSecurityType
+import com.sentinel.quantum.security.JoinedLanServiceCatalog
+import com.sentinel.quantum.ui.design.SentinelGlassCard
+import com.sentinel.quantum.ui.design.SentinelHeroVisual
+import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+import com.sentinel.quantum.ui.design.SentinelSectionHeader
+import com.sentinel.quantum.ui.design.SentinelStatus
+import com.sentinel.quantum.ui.design.SentinelStatusChip
+import com.sentinel.quantum.ui.design.SentinelTopBar
+
+private enum class SurveillanceTab(val label: String) {
+    WIFI("Wi-Fi"),
+    BLUETOOTH("Bluetooth")
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NetworkSurveillanceScreen(navController: NavController) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val logger = remember(context) { LocalLogger(context) }
+    val wifiScanner = remember(context) { WifiScanner(context) }
+    val bluetoothScanner = remember(context) { BluetoothScanner(context) }
+    val networkTimelineStore = remember(context) { NetworkTimelineStore(context) }
+    val trustStore = remember(context) { NetworkTrustStore(context) }
+    val motionLevel = remember(context) {
+        val animatorScale = runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f
+            )
+        }.getOrDefault(1f)
+        val powerSave = context.getSystemService(PowerManager::class.java)?.isPowerSaveMode == true
+        SentinelMotionPolicy.resolve(animatorScale, powerSave)
+    }
+
+    var selectedTab by rememberSaveable { mutableStateOf(SurveillanceTab.WIFI) }
+    var wifiNetworks by remember { mutableStateOf<List<DiscoveredWifiNetwork>>(emptyList()) }
+    val lanDiscovery = remember(context) { JoinedLanDiscovery(context) }
+    var joinedLink by remember { mutableStateOf<WifiJoinedLink?>(null) }
+    var gatewayNote by remember { mutableStateOf<String?>(null) }
+    var dnsNote by remember { mutableStateOf<String?>(null) }
+    var accessPointNote by remember { mutableStateOf<String?>(null) }
+    var securityNote by remember { mutableStateOf<String?>(null) }
+    val gatewayMemory = remember(context) { GatewayChangeMemory(context) }
+    var lanServices by remember { mutableStateOf<List<JoinedLanAnnouncement>>(emptyList()) }
+    val lanMemory = remember(context) { JoinedLanSightingMemory(context) }
+    var lanKnown by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var addressOutcome by remember { mutableStateOf<JoinedAddressOutcome?>(null) }
+    var addressRunning by remember { mutableStateOf(false) }
+    var trustRevision by remember { mutableIntStateOf(0) }
+    val watchPreferences = remember(context) { TrackerWatchPreferences(context) }
+    var watchEnabled by remember { mutableStateOf(watchPreferences.enabled) }
+    val wifiConnect = remember(context) { WifiConnect(context) }
+    var connectTarget by remember { mutableStateOf<DiscoveredWifiNetwork?>(null) }
+    var connectKey by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    var lanAssessment by remember { mutableStateOf<NetworkServiceExposureAssessment?>(null) }
+    var bluetoothDevices by remember { mutableStateOf<List<DiscoveredBluetoothDevice>>(emptyList()) }
+    var statusMessage by remember { mutableStateOf<String?>(null) }
+    var permissionDenied by remember { mutableStateOf(false) }
+    var isScanning by remember { mutableStateOf(false) }
+    var lanRunning by remember { mutableStateOf(false) }
+    var covertDeviceAlerted by remember { mutableStateOf(setOf<String>()) }
+    var timelineSnapshot by remember {
+        mutableStateOf(
+            NetworkTimelineSnapshot(
+                acceptedEvents = emptyList(),
+                rejectedEvents = 0,
+                prunedEvents = 0,
+                firstObservedAtMs = null,
+                lastObservedAtMs = null,
+                highSeverityCount = 0,
+                warningCount = 0
+            )
+        )
+    }
+
+    val visibleRiskLevels = when (selectedTab) {
+        SurveillanceTab.WIFI -> wifiNetworks.map { it.assessment.riskLevel }
+        SurveillanceTab.BLUETOOTH -> bluetoothDevices.map { it.assessment.riskLevel }
+    }
+    val aggregateStatus = NetworkVpnPresentation.aggregateNetworkStatus(visibleRiskLevels)
+    val hasEvidence = visibleRiskLevels.isNotEmpty()
+    val heroSubtitle = when {
+        isScanning -> "Analyse locale en cours. Sentinel attend des observations Android avant d’établir un état."
+        !hasEvidence -> "Aucune preuve de scan disponible. Lancez une analyse locale pour observer ce qu’Android rend réellement visible."
+        aggregateStatus == SentinelStatus.BAD -> "Au moins un signal à risque élevé a été observé localement. Vérifiez les détails avant toute action."
+        aggregateStatus == SentinelStatus.WARN -> "Des signaux intermédiaires nécessitent une vérification. Ils ne constituent pas à eux seuls une preuve de compromission."
+        else -> "Aucun signal moyen ou élevé n’est présent dans les résultats visibles. Cela ne prouve pas que l’environnement est sûr."
+    }
+
+    LaunchedEffect(networkTimelineStore) {
+        timelineSnapshot = withContext(Dispatchers.IO) { networkTimelineStore.read() }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            wifiScanner.close()
+            bluetoothScanner.close()
+            lanDiscovery.close()
+        }
+    }
+
+    fun openWifiConnectionPanel() {
+        val action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Settings.Panel.ACTION_WIFI
+        } else {
+            Settings.ACTION_WIFI_SETTINGS
+        }
+        runCatching { context.startActivity(Intent(action)) }
+            .onFailure { statusMessage = "Impossible d’ouvrir les réglages Wi-Fi sur cet appareil." }
+    }
+
+    fun openBluetoothConnectionPanel() {
+        runCatching { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }
+            .onFailure { statusMessage = "Impossible d’ouvrir les réglages Bluetooth sur cet appareil." }
+    }
+
+    fun runWifiScan() {
+        if (!wifiScanner.isWifiEnabled()) {
+            isScanning = false
+            statusMessage = "Le Wi-Fi est désactivé. Activez-le puis relancez le scan."
+            return
+        }
+        isScanning = true
+        wifiScanner.scan(
+            onResults = { outcome ->
+                val results = outcome.networks
+                wifiNetworks = results
+                joinedLink = runCatching { WifiJoinedLinkReader.read(context) }.getOrNull()
+                gatewayNote = joinedLink?.let { gatewayMemory.note(it.ssid, it.gateway) }
+                dnsNote = joinedLink?.let { gatewayMemory.noteDns(it.ssid, it.dns) }
+                accessPointNote = joinedLink?.let { gatewayMemory.noteAccessPoint(it.ssid, it.bssid) }
+                securityNote = joinedLink?.let { link ->
+                    wifiNetworks.firstOrNull { it.bssid.equals(link.bssid, ignoreCase = true) }
+                        ?.let { gatewayMemory.noteSecurity(it.ssid, it.bssid, it.assessment.securityType) }
+                }
+                lanServices = emptyList()
+                lanAssessment = null
+                lanRunning = joinedLink != null
+                if (joinedLink != null) {
+                    lanDiscovery.start { update: JoinedLanDiscoveryUpdate ->
+                        val prints = update.services.map { it.service.subjectFingerprint }
+                        lanKnown = lanMemory.known(prints)
+                        if (!update.running) lanMemory.remember(prints)
+                        lanServices = update.services
+                        lanRunning = update.running
+                        lanAssessment = NetworkServiceExposureAnalyzer.assess(
+                            update.services.map { it.service }
+                        )
+                    }
+                } else {
+                    lanRunning = false
+                    lanDiscovery.stop()
+                }
+                isScanning = false
+                statusMessage = WifiScanResultTruth.statusMessage(outcome.source, results.size)
+                logger.log(
+                    LocalLogger.LogLevel.INFO,
+                    "NetworkSurveillance",
+                    "Scan Wi-Fi local terminé : source=" + outcome.source.name +
+                        ", " + results.size + " réseau(x), " +
+                        results.count { it.assessment.riskLevel == NetworkRiskLevel.HIGH } +
+                        " à risque élevé."
+                )
+            },
+            onTimelineUpdated = { snapshot -> timelineSnapshot = snapshot },
+            onError = { message ->
+                isScanning = false
+                statusMessage = message
+            }
+        )
+    }
+
+    fun runBluetoothScan() {
+        isScanning = true
+        bluetoothScanner.scan(
+            onResults = { results ->
+                bluetoothDevices = results
+                val fresh = results.filter { device ->
+                    val key = device.alertKey ?: device.address
+                    val interesting = device.assessment.likelyTracker ||
+                        device.assessment.announcesFindMy ||
+                        device.assessment.announcesKnownTracker ||
+                        device.assessment.likelyCameraOrRecorder ||
+                        device.assessment.likelyBeacon ||
+                        device.assessment.announcesUnpairedInput
+                    interesting && key !in covertDeviceAlerted && !trustStore.isAllowed("tracker:$key")
+                }
+                if (fresh.isNotEmpty()) {
+                    covertDeviceAlerted = covertDeviceAlerted + fresh.map { it.alertKey ?: it.address }
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
+            },
+            onError = { message ->
+                isScanning = false
+                statusMessage = message
+            },
+            onScanFinished = {
+                isScanning = false
+                statusMessage = if (bluetoothDevices.isEmpty()) "Aucun appareil détecté pour l'instant." else null
+                logger.log(
+                    LocalLogger.LogLevel.INFO,
+                    "NetworkSurveillance",
+                    "Scan Bluetooth local terminé : ${bluetoothDevices.size} appareil(s), " +
+                        "${bluetoothDevices.count { it.assessment.likelyTracker }} nom(s) explicite(s), " +
+                        "${bluetoothDevices.count { it.assessment.announcesFindMy || it.assessment.announcesKnownTracker }} annonce(s)."
+                )
+            },
+            onTimelineUpdated = { snapshot -> timelineSnapshot = snapshot }
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        val granted = when (selectedTab) {
+            SurveillanceTab.WIFI -> wifiScanner.hasPermissions()
+            SurveillanceTab.BLUETOOTH -> bluetoothScanner.hasPermissions()
+        }
+        permissionDenied = !granted
+        if (!granted) {
+            isScanning = false
+            statusMessage = "Autorisation obligatoire manquante : le scan local ne peut pas s'exécuter."
+        } else {
+            statusMessage = null
+            when (selectedTab) {
+                SurveillanceTab.WIFI -> runWifiScan()
+                SurveillanceTab.BLUETOOTH -> runBluetoothScan()
+            }
+        }
+    }
+
+    fun startScan() {
+        statusMessage = null
+        when (selectedTab) {
+            SurveillanceTab.WIFI ->
+                if (wifiScanner.hasPermissions()) {
+                    runWifiScan()
+                } else {
+                    permissionLauncher.launch(wifiScanner.requiredPermissions)
+                }
+            SurveillanceTab.BLUETOOTH ->
+                if (bluetoothScanner.hasPermissions()) {
+                    runBluetoothScan()
+                } else {
+                    permissionLauncher.launch(bluetoothScanner.requiredPermissions)
+                }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            SentinelTopBar(
+                title = stringResource(Screen.NetworkSurveillance.titleRes),
+                subtitle = "Wi-Fi, Bluetooth & détection locale",
+                onBack = { navController.popBackStack() }
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { if (!isScanning) startScan() },
+                icon = { Icon(Icons.Default.Radar, contentDescription = null) },
+                text = { Text(if (isScanning) "Scan en cours…" else "Scanner") }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            TabRow(selectedTabIndex = selectedTab.ordinal) {
+                SurveillanceTab.entries.forEach { tab ->
+                    Tab(
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        text = { Text(tab.label) }
+                    )
+                }
+            }
+
+            connectTarget?.let { target ->
+                AlertDialog(
+                    onDismissRequest = {
+                        connectKey = ""
+                        connectTarget = null
+                    },
+                    title = { Text("Se connecter") },
+                    text = {
+                        Column {
+                            Text(
+                                "Saisissez votre clé pour « ${target.ssid} ». Elle n’est pas enregistrée. Le code WPS n’est pas utilisé.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            OutlinedTextField(
+                                value = connectKey,
+                                onValueChange = { connectKey = it },
+                                visualTransformation = PasswordVisualTransformation(),
+                                label = { Text("Clé Wi-Fi") },
+                                singleLine = true
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            statusMessage = wifiConnect.request(
+                                target.ssid,
+                                target.bssid,
+                                target.assessment.securityType,
+                                connectKey
+                            )
+                            connectKey = ""
+                            connectTarget = null
+                        }) { Text("Demander à Android") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            connectKey = ""
+                            connectTarget = null
+                        }) { Text("Annuler") }
+                    }
+                )
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    SentinelHeroVisual(
+                        status = aggregateStatus,
+                        title = if (selectedTab == SurveillanceTab.WIFI) "Observation Wi-Fi" else "Observation Bluetooth",
+                        subtitle = heroSubtitle,
+                        modifier = Modifier.testTag("network-command-center"),
+                        motionLevel = motionLevel
+                    )
+                }
+
+                item {
+                    SentinelGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("network-local-evidence")
+                    ) {
+                        SentinelStatusChip(status = aggregateStatus)
+                        Text(
+                            text = if (hasEvidence) {
+                                "${visibleRiskLevels.size} résultat(s) actuellement visibles pour ce canal."
+                            } else {
+                                "Aucun résultat local disponible pour ce canal."
+                            },
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "L’absence d’alerte ou un signal classé LOW reste non concluant : Sentinel ne transforme jamais cela en preuve de sûreté.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                item {
+                    SentinelSectionHeader(
+                        title = "Historique réseau local",
+                        subtitle = "Chronologie bornée des observations Wi‑Fi/Bluetooth, sans MAC ni BSSID en clair."
+                    )
+                    SentinelGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("network-timeline")
+                    ) {
+                        if (timelineSnapshot.acceptedEvents.isEmpty()) {
+                            Text("Aucune observation réseau persistée.")
+                        } else {
+                            Text(
+                                "${timelineSnapshot.acceptedEvents.size} observation(s) conservée(s) localement.",
+                                fontWeight = FontWeight.Bold
+                            )
+                            timelineSnapshot.acceptedEvents.take(MAX_VISIBLE_TIMELINE_EVENTS).forEach { event ->
+                                Text(
+                                    "${networkTimelineKindLabel(event.kind)} · ${event.summary}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        if (timelineSnapshot.rejectedEvents > 0 || timelineSnapshot.prunedEvents > 0) {
+                            Text(
+                                "${timelineSnapshot.rejectedEvents} rejetée(s), ${timelineSnapshot.prunedEvents} expirée(s) — la chronologie reste bornée.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    SentinelSectionHeader(
+                        title = if (selectedTab == SurveillanceTab.WIFI) "Wi-Fi à proximité" else "Appareils Bluetooth",
+                        subtitle = "Scannez d’abord. Sentinel affiche ensuite uniquement ce qu’Android rend réellement observable."
+                    )
+                }
+
+                item {
+                    FilledTonalButton(
+                        onClick = {
+                            when (selectedTab) {
+                                SurveillanceTab.WIFI -> openWifiConnectionPanel()
+                                SurveillanceTab.BLUETOOTH -> openBluetoothConnectionPanel()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            if (selectedTab == SurveillanceTab.WIFI) Icons.Default.Wifi else Icons.Default.Bluetooth,
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (selectedTab == SurveillanceTab.WIFI) "Choisir un réseau Wi-Fi"
+                            else "Connecter / appairer un appareil Bluetooth"
+                        )
+                    }
+                }
+
+                statusMessage?.let { message ->
+                    item {
+                        SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                            Text(message, style = MaterialTheme.typography.bodyMedium)
+                            if (permissionDenied) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val intent = Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", context.packageName, null)
+                                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        context.startActivity(intent)
+                                    }
+                                ) {
+                                    Text("Ouvrir les paramètres d'autorisations")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                when (selectedTab) {
+                    SurveillanceTab.WIFI -> {
+                        if (wifiNetworks.isEmpty()) {
+                            item { EmptyStateCard("Lancez un scan pour lister les réseaux Wi-Fi environnants.") }
+                        } else {
+                            item {
+                                WifiSurveyCard(
+                                    survey = WifiRadioAnalyzer.survey(wifiNetworks),
+                                    joined = joinedLink,
+                                    quiet24 = WifiRadioAnalyzer.quietestChannel(
+                                        WifiBand.BAND_2_4_GHZ,
+                                        wifiNetworks
+                                    ),
+                                    quiet5 = WifiRadioAnalyzer.quietestChannel(
+                                        WifiBand.BAND_5_GHZ,
+                                        wifiNetworks
+                                    ),
+                                    intrusions = WifiIntrusionHints.assess(wifiNetworks, joinedLink) +
+                                        listOfNotNull(
+                                            gatewayNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
+                                            dnsNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
+                                            accessPointNote?.let { WifiIntrusionFinding(NetworkRiskLevel.MEDIUM, it) },
+                                            securityNote?.let { WifiIntrusionFinding(NetworkRiskLevel.HIGH, it) }
+                                        )
+                                )
+                            }
+                            item {
+                                val networkKey = joinedLink?.bssid
+                                    ?.takeIf { it.isNotBlank() && !it.equals("02:00:00:00:00:00", ignoreCase = true) }
+                                    ?.let { "network:${it.lowercase()}" }
+                                val networkBlocked = networkKey != null &&
+                                    trustRevision >= 0 &&
+                                    trustStore.isBlocked(networkKey)
+                                JoinedLanCard(
+                                    services = lanServices,
+                                    assessment = lanAssessment,
+                                    running = lanRunning,
+                                    joined = joinedLink != null,
+                                    knownFingerprints = lanKnown,
+                                    networkBlocked = networkBlocked,
+                                    canBlockNetwork = networkKey != null,
+                                    onBlockNetwork = {
+                                        if (networkKey != null) {
+                                            trustStore.block(networkKey)
+                                            trustRevision += 1
+                                        }
+                                    },
+                                    onClearNetwork = {
+                                        if (networkKey != null) {
+                                            trustStore.clear(networkKey)
+                                            trustRevision += 1
+                                        }
+                                    },
+                                    mine = { fingerprint ->
+                                        trustRevision >= 0 && trustStore.isAllowed("service:$fingerprint")
+                                    },
+                                    blocked = { fingerprint ->
+                                        trustStore.isBlocked("service:$fingerprint") || networkBlocked
+                                    },
+                                    onMine = { fingerprint ->
+                                        trustStore.allow("service:$fingerprint")
+                                        trustRevision += 1
+                                    },
+                                    onBlock = { fingerprint ->
+                                        trustStore.block("service:$fingerprint")
+                                        trustRevision += 1
+                                    },
+                                    onClear = { fingerprint ->
+                                        trustStore.clear("service:$fingerprint")
+                                        trustRevision += 1
+                                    }
+                                )
+                            }
+                            item {
+                                AddressSearchCard(
+                                    outcome = addressOutcome,
+                                    running = addressRunning,
+                                    enabled = joinedLink?.ipv4 != null,
+                                    mine = { host -> trustStore.isAllowed(hostMineKey(host)) },
+                                    blocked = { host ->
+                                        trustStore.isBlocked(hostMineKey(host)) ||
+                                            (joinedLink?.bssid
+                                                ?.takeIf { it.isNotBlank() && !it.equals("02:00:00:00:00:00", ignoreCase = true) }
+                                                ?.let { trustStore.isBlocked("network:${it.lowercase()}") } == true)
+                                    },
+                                    revision = trustRevision,
+                                    networkBlocked = joinedLink?.bssid
+                                        ?.takeIf { it.isNotBlank() && !it.equals("02:00:00:00:00:00", ignoreCase = true) }
+                                        ?.let { trustRevision >= 0 && trustStore.isBlocked("network:${it.lowercase()}") } == true,
+                                    onSearch = {
+                                        val link = joinedLink
+                                        if (link?.ipv4 == null) return@AddressSearchCard
+                                        addressRunning = true
+                                        scope.launch(Dispatchers.IO) {
+                                            val outcome = JoinedAddressScan().discover(link.ipv4, link.prefixLength)
+                                            withContext(Dispatchers.Main) {
+                                                addressOutcome = outcome
+                                                addressRunning = false
+                                            }
+                                        }
+                                    },
+                                    onMine = { host ->
+                                        trustStore.allow(hostMineKey(host))
+                                        trustRevision += 1
+                                    },
+                                    onBlock = { host ->
+                                        trustStore.block(hostMineKey(host))
+                                        trustRevision += 1
+                                    },
+                                    onClear = { host ->
+                                        trustStore.clear(hostMineKey(host))
+                                        trustRevision += 1
+                                    }
+                                )
+                            }
+                            items(wifiNetworks, key = { it.bssid + it.ssid + it.frequencyMhz }) { network ->
+                                WifiNetworkCard(
+                                    network = network,
+                                    sameChannel = WifiRadioAnalyzer.sameChannelCount(
+                                        network.radio.channel,
+                                        network.band,
+                                        wifiNetworks,
+                                        exceptBssid = network.bssid
+                                    ),
+                                    overlap24 = WifiRadioAnalyzer.overlapping24Count(
+                                        network.radio.channel,
+                                        wifiNetworks
+                                    ),
+                                    joinedHere = network.bssid.isNotBlank() &&
+                                        network.bssid.equals(joinedLink?.bssid, ignoreCase = true),
+                                    onAllow = {
+                                        trustStore.allow(network.bssid)
+                                        runWifiScan()
+                                    },
+                                    onBlock = {
+                                        trustStore.block(network.bssid)
+                                        runWifiScan()
+                                    },
+                                    onConnect = {
+                                        val type = network.assessment.securityType
+                                        if (WifiConnectPlan.needsKey(type)) {
+                                            connectTarget = network
+                                            connectKey = ""
+                                        } else {
+                                            statusMessage = wifiConnect.request(
+                                                network.ssid,
+                                                network.bssid,
+                                                type,
+                                                null
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    SurveillanceTab.BLUETOOTH -> {
+                        item {
+                            SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+                                Text("Prévenir plus tard", fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Android relance un court scan environ toutes les 15 minutes. Une notification part seulement si un objet déjà vu change de réseau. Un objet marqué « à moi » reste silencieux.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                OutlinedButton(onClick = {
+                                    watchEnabled = !watchEnabled
+                                    watchPreferences.enabled = watchEnabled
+                                    TrackerWatchScheduler.sync(context, watchEnabled)
+                                }) {
+                                    Text(if (watchEnabled) "Arrêter les alertes" else "Activer les alertes")
+                                }
+                            }
+                        }
+                        if (bluetoothDevices.isEmpty()) {
+                            item { EmptyStateCard("Lancez un scan pour lister les appareils Bluetooth environnants.") }
+                        } else {
+                            items(bluetoothDevices, key = { it.address }) { device ->
+                                val key = device.alertKey ?: device.address
+                                BluetoothDeviceCard(
+                                    device = device,
+                                    mine = trustRevision >= 0 && trustStore.isAllowed("tracker:$key"),
+                                    blocked = trustStore.isBlocked("tracker:$key"),
+                                    onMine = {
+                                        trustStore.allow("tracker:$key")
+                                        trustRevision += 1
+                                    },
+                                    onBlock = {
+                                        trustStore.block("tracker:$key")
+                                        trustRevision += 1
+                                    },
+                                    onClear = {
+                                        trustStore.clear("tracker:$key")
+                                        trustRevision += 1
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    SentinelSectionHeader(
+                        title = "Comprendre les résultats",
+                        subtitle = "Limites Android et capacités de détection, sans surévaluer un signal."
+                    )
+                }
+                item {
+                    EducationalCard(
+                        title = "Scanner et se connecter",
+                        bullets = listOf(
+                            "Le scan décrit chaque point d'accès visible : canal, largeur, norme, chiffrement, PMF, signal et fabricant quand l'adresse n'est pas privée.",
+                            "Les appareils raccordés à un autre réseau ne sont pas visibles. Seul le Wi-Fi rejoint expose son adresse, sa passerelle et ses DNS.",
+                            "La connexion ou l’appairage est confirmé dans le panneau sécurisé Android : Sentinel ne contourne pas les protections du système.",
+                            when (selectedTab) {
+                                SurveillanceTab.WIFI -> WifiRiskEvaluator.OPEN_NETWORK_ADVICE
+                                SurveillanceTab.BLUETOOTH -> BluetoothRiskEvaluator.TRACKER_ADVICE
+                            }
+                        )
+                    )
+                }
+                item {
+                    EducationalCard(
+                        title = "Détection d’appareils cachés",
+                        bullets = CovertDeviceDetectionCapabilities.channels.map { capability ->
+                            val status = when (capability.support) {
+                                CovertDetectionSupport.ACTIVE_LOCAL -> "Actif localement"
+                                CovertDetectionSupport.ACTIVE_HEURISTIC -> "Actif · heuristique"
+                                CovertDetectionSupport.USER_CAMERA_REQUIRED -> "Caméra requise · module à activer"
+                                CovertDetectionSupport.EXTERNAL_RF_HARDWARE_REQUIRED -> "Matériel RF externe requis"
+                            }
+                            "${capability.label} — $status. ${capability.limitation}"
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+private const val MAX_VISIBLE_TIMELINE_EVENTS = 5
+
+private fun networkTimelineKindLabel(kind: NetworkTimelineEventKind): String = when (kind) {
+    NetworkTimelineEventKind.FIRST_SEEN -> "Première observation"
+    NetworkTimelineEventKind.RETURNED -> "Observation renouvelée"
+    NetworkTimelineEventKind.DISAPPEARED -> "Disparition observée"
+    NetworkTimelineEventKind.IDENTITY_CHANGE -> "Identité modifiée"
+    NetworkTimelineEventKind.TOPOLOGY_CHANGE -> "Topologie modifiée"
+    NetworkTimelineEventKind.COVERT_DEVICE_HINT -> "Indice local"
+    NetworkTimelineEventKind.FLOW_ANOMALY -> "Anomalie de flux"
+    NetworkTimelineEventKind.BEHAVIOR_ANOMALY -> "Anomalie comportementale"
+    NetworkTimelineEventKind.RISK_SCORE_CHANGED -> "Risque modifié"
+}
+
+@Composable
+private fun WifiSurveyCard(
+    survey: com.sentinel.quantum.security.WifiRadioSurvey,
+    joined: WifiJoinedLink?,
+    quiet24: Int?,
+    quiet5: Int?,
+    intrusions: List<WifiIntrusionFinding>
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text("Lecture radio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(
+            "${survey.accessPointCount} point(s) d'accès · ${survey.distinctSsids} nom(s) · ${survey.openCount} ouvert(s)",
+            style = MaterialTheme.typography.bodySmall
+        )
+        if (survey.busiest.isEmpty()) {
+            Text("Aucun canal calculable.", style = MaterialTheme.typography.bodySmall)
+        } else {
+            survey.busiest.forEach { load ->
+                Text(
+                    "${bandLabel(load.band)} · canal ${load.channel} · ${load.accessPoints} point(s)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        if (quiet24 != null) {
+            Text(
+                "Canal 2,4 GHz le moins chargé parmi 1, 6 et 11 : $quiet24. Observation seulement, aucun changement n’est appliqué.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (quiet5 != null) {
+            Text(
+                "Canal 5 GHz le moins chargé parmi les canaux usuels et ceux déjà vus : $quiet5.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text("Sécurité", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        if (intrusions.isEmpty()) {
+            Text(
+                "Aucun indice d’intrusion dans ce scan. Cela ne prouve pas qu’il n’y en a pas.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            intrusions.forEach { finding ->
+                Text(
+                    finding.text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (finding.level == NetworkRiskLevel.HIGH) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
+        if (joined == null) {
+            Text(
+                "Aucun Wi-Fi rejoint observable. Les autres réseaux restent des points d'accès, pas des réseaux visités.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else {
+            Text(
+                "Réseau rejoint : ${joined.ssid}",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "IPv4 ${joined.ipv4 ?: "non lue"}" +
+                    (joined.prefixLength?.let { "/$it" } ?: "") +
+                    " · passerelle ${joined.gateway ?: "non lue"} · " +
+                    "${joined.linkSpeedMbps} Mb/s · ${joined.rssiDbm} dBm",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "Cet appareil : ${Build.MANUFACTURER} ${Build.MODEL}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (joined.wifiStandard != null) {
+                Text(
+                    "Norme négociée : ${WifiRadioAnalyzer.standardLabel(joined.wifiStandard, joined.frequencyMhz)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (joined.maxRxLinkMbps != null || joined.maxTxLinkMbps != null) {
+                Text(
+                    "Maximum annoncé du lien : ↓ ${joined.maxRxLinkMbps ?: "non lu"} Mb/s · " +
+                        "↑ ${joined.maxTxLinkMbps ?: "non lu"} Mb/s",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (joined.rxLinkSpeedMbps != null || joined.txLinkSpeedMbps != null) {
+                Text(
+                    "Débit annoncé du lien : ↓ ${joined.rxLinkSpeedMbps ?: "non lu"} Mb/s · " +
+                        "↑ ${joined.txLinkSpeedMbps ?: "non lu"} Mb/s",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (joined.dns.isNotEmpty()) {
+                Text(
+                    "DNS ${joined.dns.joinToString()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun JoinedLanCard(
+    services: List<JoinedLanAnnouncement>,
+    assessment: NetworkServiceExposureAssessment?,
+    running: Boolean,
+    joined: Boolean,
+    knownFingerprints: Set<String>,
+    networkBlocked: Boolean,
+    canBlockNetwork: Boolean,
+    onBlockNetwork: () -> Unit,
+    onClearNetwork: () -> Unit,
+    mine: (String) -> Boolean,
+    blocked: (String) -> Boolean,
+    onMine: (String) -> Unit,
+    onBlock: (String) -> Unit,
+    onClear: (String) -> Unit
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "Réseau rejoint",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        if (canBlockNetwork) {
+            if (networkBlocked) {
+                Text(
+                    "Tout le réseau rejoint est marqué bloqué sur ce téléphone. Aucun appareil n’est déconnecté du routeur. Un appareil marqué « à moi » reste une exception.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedButton(onClick = onClearNetwork) { Text("Retirer le blocage du réseau") }
+            } else {
+                OutlinedButton(onClick = onBlockNetwork) { Text("Bloquer tout le réseau") }
+            }
+        }
+        if (!joined) {
+            Text(
+                "Aucun Wi-Fi rejoint. Les annonces locales ne sont pas recherchées.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else if (running && services.isEmpty()) {
+            Text(
+                "Recherche des annonces mDNS en cours. Aucun balayage d’adresses.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else if (services.isEmpty()) {
+            Text(
+                "Aucun service mDNS annoncé. La recherche ne balaie pas les adresses et ne teste aucun port.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        } else {
+            services.take(12).forEach { service ->
+                val cameraHint = JoinedLanServiceCatalog.looksLikeCamera(
+                    service.name,
+                    service.host,
+                    service.type
+                )
+                Text(
+                    buildString {
+                        append("${service.name} · ${service.host} · port ${service.port}")
+                        if (cameraHint) append(" · nom compatible avec une caméra")
+                        append(
+                            " · " + JoinedLanSighting.label(
+                                service.service.subjectFingerprint in knownFingerprints
+                            )
+                        )
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
+                val fingerprint = service.service.subjectFingerprint
+                OwnershipActions(
+                    mine = mine(fingerprint),
+                    blocked = blocked(fingerprint),
+                    networkWide = networkBlocked,
+                    onMine = { onMine(fingerprint) },
+                    onBlock = { onBlock(fingerprint) },
+                    onClear = { onClear(fingerprint) }
+                )
+            }
+            if (running) {
+                Text(
+                    "Recherche encore en cours.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        val findings = assessment?.findings.orEmpty()
+        if (findings.isEmpty()) {
+            Text(
+                "Aucune exposition classée. Cela ne prouve pas que le réseau est sûr.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            findings.take(6).forEach { finding ->
+                Text("• ${finding.explanation}", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        Text(
+            "La sonde TCP du laboratoire n’est pas lancée : aucune session autorisée n’est ouverte.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (joined && !running) {
+            Text(
+                "Aucune caméra reconnue parmi les appareils annoncés. Cela ne prouve pas qu’il n’y en a pas : une Imou peut être en ligne sous un autre nom, ou sans nom.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun WifiNetworkCard(
+    network: DiscoveredWifiNetwork,
+    sameChannel: Int,
+    overlap24: Int,
+    joinedHere: Boolean,
+    onAllow: () -> Unit,
+    onBlock: () -> Unit,
+    onConnect: () -> Unit
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = network.ssid,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            RiskBadge(network.assessment.riskLevel, "Risque")
+        }
+        if (joinedHere) {
+            Text(
+                "Point d'accès rejoint",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Text(
+            text = "${bandLabel(network.band)} · ${network.rssiDbm} dBm · signal ${network.radio.signalLabel}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "${network.radio.securityDetail} · ${network.radio.pmfLabel}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = network.radio.beaconLoadLabel,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (network.radio.phyDetailLabel != "détails Wi-Fi 6/7 non annoncés") {
+            Text(
+                text = network.radio.phyDetailLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (network.radio.occupiedLabel != "plage non déduite") {
+            Text(
+                text = "Plage déduite du centre annoncé : ${network.radio.occupiedLabel}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            text = "Canal ${network.radio.channel ?: "?"} · ${network.frequencyMhz} MHz · " +
+                "${network.radio.widthLabel} · ${network.radio.standardLabel}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "${network.radio.vendorLabel} · $sameChannel autre(s) point(s) sur ce canal" +
+                if (network.band == WifiBand.BAND_2_4_GHZ) " · $overlap24 chevauchement(s)" else "",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = network.seenAgeLabel,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (network.bssid.isNotBlank()) {
+            Text(
+                text = "BSSID : ${network.bssid}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (network.assessment.likelyCameraOrRecorder) {
+            Text(
+                text = "Appareil vidéo/enregistreur Wi-Fi potentiel — vérification physique recommandée.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (network.assessment.captivePortalSuspected) {
+            Text(
+                text = "Réseau sans chiffrement avec indice de portail captif.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        network.assessment.reasons.forEach { reason ->
+            Text("• $reason", style = MaterialTheme.typography.bodySmall)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onAllow, enabled = network.bssid.isNotBlank()) {
+                Text("Réseau de confiance")
+            }
+            OutlinedButton(onClick = onBlock, enabled = network.bssid.isNotBlank()) {
+                Text("Marquer suspect")
+            }
+            OutlinedButton(onClick = onConnect, enabled = network.ssid.isNotBlank()) {
+                Text("Se connecter")
+            }
+        }
+    }
+}
+
+private fun hostMineKey(host: JoinedHost): String = "lan:${host.mac.ifBlank { host.ipv4 }}"
+
+@Composable
+private fun AddressSearchCard(
+    outcome: JoinedAddressOutcome?,
+    running: Boolean,
+    enabled: Boolean,
+    mine: (JoinedHost) -> Boolean,
+    blocked: (JoinedHost) -> Boolean,
+    networkBlocked: Boolean,
+    revision: Int,
+    onSearch: () -> Unit,
+    onMine: (JoinedHost) -> Unit,
+    onBlock: (JoinedHost) -> Unit,
+    onClear: (JoinedHost) -> Unit
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text("Adresses du réseau rejoint", fontWeight = FontWeight.Bold)
+        Text(
+            "Envoie une question locale, sans tester les ports. Une caméra qui ne répond pas n’apparaît pas.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        OutlinedButton(onClick = onSearch, enabled = enabled && !running) {
+            Text(if (running) "Question en cours" else "Chercher les adresses")
+        }
+        outcome?.let { result ->
+            Text(result.note, style = MaterialTheme.typography.bodySmall)
+            result.hosts.forEach { host ->
+                Text(
+                    "${host.ipv4} · ${host.vendor} · ${host.mac}" +
+                        if (host.appearedAfterQuestion) " · apparu après la question" else " · déjà connu du téléphone",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OwnershipActions(
+                    mine = revision >= 0 && mine(host),
+                    blocked = blocked(host),
+                    networkWide = networkBlocked,
+                    onMine = { onMine(host) },
+                    onBlock = { onBlock(host) },
+                    onClear = { onClear(host) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BluetoothDeviceCard(
+    device: DiscoveredBluetoothDevice,
+    mine: Boolean,
+    blocked: Boolean,
+    onMine: () -> Unit,
+    onBlock: () -> Unit,
+    onClear: () -> Unit
+) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = device.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            RiskBadge(device.assessment.riskLevel, "Risque")
+        }
+        Text(
+            text = "${device.address} · ${device.rssiDbm} dBm · ${kindLabel(device)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (device.assessment.likelyTracker) {
+            Text("Nom compatible avec un traceur. Ce n'est pas une preuve.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (device.assessment.announcesFindMy || device.assessment.announcesKnownTracker) {
+            Text(
+                "Annonce de traceur connu. Une seule observation ne prouve pas un suivi.",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (device.assessment.likelyCameraOrRecorder) {
+            Text("Caméra ou enregistreur sans fil potentiel.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (device.assessment.likelyBeacon) {
+            Text("Balise BLE potentielle.", style = MaterialTheme.typography.bodySmall)
+        }
+        if (device.randomizedAddress) {
+            Text(
+                text = "Adresse possiblement aléatoire (BLE) : elle peut changer entre deux scans.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        device.assessment.reasons.forEach { reason ->
+            Text("• $reason", style = MaterialTheme.typography.bodySmall)
+        }
+        OwnershipActions(mine, blocked, false, onMine, onBlock, onClear)
+    }
+}
+
+@Composable
+private fun OwnershipActions(
+    mine: Boolean,
+    blocked: Boolean,
+    networkWide: Boolean,
+    onMine: () -> Unit,
+    onBlock: () -> Unit,
+    onClear: () -> Unit
+) {
+    when {
+        mine -> {
+            Text("Marqué comme à vous.", style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = onBlock) { Text("Bloquer") }
+        }
+        blocked && networkWide -> Text(
+            "Bloqué avec le réseau. Le routeur ne le déconnecte pas.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        blocked -> {
+            Text(
+                "Marqué comme bloqué sur ce téléphone. Le routeur ne le déconnecte pas.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedButton(onClick = onClear) { Text("Retirer la marque") }
+        }
+        else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onMine) { Text("C’est à moi") }
+            OutlinedButton(onClick = onBlock) { Text("Bloquer") }
+        }
+    }
+}
+
+@Composable
+private fun RiskBadge(level: NetworkRiskLevel, prefix: String = "Risque") {
+    val label = when (level) {
+        NetworkRiskLevel.HIGH -> "$prefix : élevé"
+        NetworkRiskLevel.MEDIUM -> "$prefix : moyen"
+        NetworkRiskLevel.LOW -> "$prefix : non concluant"
+    }
+    SentinelStatusChip(
+        status = NetworkVpnPresentation.networkStatus(level),
+        label = label
+    )
+}
+
+@Composable
+private fun EducationalCard(title: String, bullets: List<String>) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        bullets.forEach { bullet ->
+            Text("• $bullet", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun EmptyStateCard(message: String) {
+    SentinelGlassCard(modifier = Modifier.fillMaxWidth()) {
+        SentinelStatusChip(status = SentinelStatus.UNKNOWN)
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+private fun securityLabel(type: WifiSecurityType): String = when (type) {
+    WifiSecurityType.OPEN -> "Ouvert (non chiffré)"
+    WifiSecurityType.WEP -> "WEP"
+    WifiSecurityType.WPA -> "WPA"
+    WifiSecurityType.WPA2 -> "WPA2"
+    WifiSecurityType.WPA2_ENTERPRISE -> "WPA2-Enterprise"
+    WifiSecurityType.WPA3 -> "WPA3"
+    WifiSecurityType.UNKNOWN -> "Chiffrement inconnu"
+}
+
+private fun bandLabel(band: WifiBand): String = when (band) {
+    WifiBand.BAND_2_4_GHZ -> "2,4 GHz"
+    WifiBand.BAND_5_GHZ -> "5 GHz"
+    WifiBand.BAND_6_GHZ -> "6 GHz"
+    WifiBand.UNKNOWN -> "Bande inconnue"
+}
+
+private fun kindLabel(device: DiscoveredBluetoothDevice): String = when (device.kind) {
+    BluetoothDeviceKind.AUDIO -> "Audio/vidéo"
+    BluetoothDeviceKind.PHONE -> "Téléphone"
+    BluetoothDeviceKind.COMPUTER -> "Ordinateur"
+    BluetoothDeviceKind.WEARABLE -> "Objet porté"
+    BluetoothDeviceKind.UNKNOWN -> "Type inconnu"
+}

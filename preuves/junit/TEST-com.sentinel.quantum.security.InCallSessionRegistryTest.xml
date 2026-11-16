@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.InCallSessionRegistryTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:47.007Z" hostname="localhost" time="0.076">
+  <properties/>
+  <testcase name="obsoleteServiceCannotClearOrPublishOverTheCurrentCall" classname="com.sentinel.quantum.security.InCallSessionRegistryTest" time="0.075"/>
+  <testcase name="emptyAndDisconnectedObservationsAreDistinctAndAtomic" classname="com.sentinel.quantum.security.InCallSessionRegistryTest" time="0.0"/>
+  <testcase name="publishedListsCannotBeMutatedByTheProducerAfterPublication" classname="com.sentinel.quantum.security.InCallSessionRegistryTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

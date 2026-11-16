@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.039Z" hostname="localhost" time="0.05">
+  <properties/>
+  <testcase name="stale and unknown freshness remain explicit" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentationTest" time="0.023"/>
+  <testcase name="fresh snapshot maps bounded diagnostics without identity material" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentationTest" time="0.026"/>
+  <testcase name="community evidence presentation never emits enforcement decision" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CommunicationsHubPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.479Z" hostname="localhost" time="0.012">
+  <properties/>
+  <testcase name="privateConversationReadingIsNeverImplicitlyGranted" classname="com.sentinel.quantum.security.CommunicationsHubPolicyTest" time="0.011"/>
+  <testcase name="externalMessagingRequiresExplicitUserGesture" classname="com.sentinel.quantum.security.CommunicationsHubPolicyTest" time="0.0"/>
+  <testcase name="nativeChannelsAreNotExternalLaunches" classname="com.sentinel.quantum.security.CommunicationsHubPolicyTest" time="0.0"/>
+  <testcase name="connectedAccountChannelsAreNotTreatedAsSimpleDeepLinks" classname="com.sentinel.quantum.security.CommunicationsHubPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

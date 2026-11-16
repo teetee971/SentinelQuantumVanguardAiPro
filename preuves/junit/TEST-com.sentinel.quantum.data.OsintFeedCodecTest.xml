@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.data.OsintFeedCodecTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.306Z" hostname="localhost" time="0.019">
+  <properties/>
+  <testcase name="decode rejects malformed input" classname="com.sentinel.quantum.data.OsintFeedCodecTest" time="0.006"/>
+  <testcase name="all text fields are bounded on encode" classname="com.sentinel.quantum.data.OsintFeedCodecTest" time="0.006"/>
+  <testcase name="round trip preserves all fields" classname="com.sentinel.quantum.data.OsintFeedCodecTest" time="0.001"/>
+  <testcase name="description longer than bound is truncated on encode" classname="com.sentinel.quantum.data.OsintFeedCodecTest" time="0.002"/>
+  <testcase name="decode rejects oversized raw cache entry before parsing" classname="com.sentinel.quantum.data.OsintFeedCodecTest" time="0.0"/>
+  <testcase name="round trip escapes separator and backslash characters embedded in fields" classname="com.sentinel.quantum.data.OsintFeedCodecTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

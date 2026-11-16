@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.CallerIdIntelligenceIntegrationTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.713Z" hostname="localhost" time="0.016">
+  <properties/>
+  <testcase name="caller id does not use intelligence snapshot as an enforcement authority" classname="com.sentinel.quantum.intelligence.CallerIdIntelligenceIntegrationTest" time="0.008"/>
+  <testcase name="caller id reads intelligence snapshot off the main thread and maps it for presentation" classname="com.sentinel.quantum.intelligence.CallerIdIntelligenceIntegrationTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

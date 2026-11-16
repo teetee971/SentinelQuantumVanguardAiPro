@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearableMessageGuardTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.593Z" hostname="localhost" time="0.011">
+  <properties/>
+  <testcase name="rejectsMessageFromPreviousSession" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.005"/>
+  <testcase name="timestampWindowsDoNotOverflowNearLongMaximum" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.001"/>
+  <testcase name="negativeTimestampCannotExploitAgeArithmeticOverflow" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.0"/>
+  <testcase name="rejectsDuplicateAndLowerSequenceAsReplay" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.0"/>
+  <testcase name="rejectsUnsupportedProtocolAndUnnegotiatedCapability" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.0"/>
+  <testcase name="acceptsFutureTimestampWithinConfiguredSkewAndRejectsBeyondBoundary" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.001"/>
+  <testcase name="acceptsFreshMessageForCurrentSessionAndNegotiatedCapability" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.0"/>
+  <testcase name="fullReplayLedgerRequiresRekeyWithoutEvictingOldSessionsOrBlockingCurrentChannel" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.001"/>
+  <testcase name="retiredSessionSnapshotCannotResetCounterOrRegainAuthority" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.0"/>
+  <testcase name="rejectedMessageDoesNotAdvanceReplayWindow" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.001"/>
+  <testcase name="rejectsExpiredAndFarFutureMessages" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.0"/>
+  <testcase name="newSessionResetsReplayWindowWithoutAcceptingOldSessionMessages" classname="com.sentinel.quantum.security.WearableMessageGuardTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

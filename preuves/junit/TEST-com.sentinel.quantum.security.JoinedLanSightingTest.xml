@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.JoinedLanSightingTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.343Z" hostname="localhost" time="0.004">
+  <properties/>
+  <testcase name="onlyAFullFingerprintIsRemembered" classname="com.sentinel.quantum.security.JoinedLanSightingTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

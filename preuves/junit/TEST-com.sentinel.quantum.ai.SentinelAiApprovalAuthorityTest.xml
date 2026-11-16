@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiApprovalAuthorityTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.877Z" hostname="localhost" time="0.094">
+  <properties/>
+  <testcase name="approvalIsSingleUse" classname="com.sentinel.quantum.ai.SentinelAiApprovalAuthorityTest" time="0.09"/>
+  <testcase name="globalRevocationBlocksApproval" classname="com.sentinel.quantum.ai.SentinelAiApprovalAuthorityTest" time="0.001"/>
+  <testcase name="rejectingOneProposalPreservesAnother" classname="com.sentinel.quantum.ai.SentinelAiApprovalAuthorityTest" time="0.001"/>
+  <testcase name="rejectedProposalCannotBeApproved" classname="com.sentinel.quantum.ai.SentinelAiApprovalAuthorityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

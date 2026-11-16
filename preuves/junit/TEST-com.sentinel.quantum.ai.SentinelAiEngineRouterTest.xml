@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:40.122Z" hostname="localhost" time="0.05">
+  <properties/>
+  <testcase name="incompatibleModelIsRejected" classname="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" time="0.04"/>
+  <testcase name="blankIdentifiersAreRejected" classname="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" time="0.001"/>
+  <testcase name="remoteRequiresExplicitAuthorization" classname="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" time="0.001"/>
+  <testcase name="noCandidatesMeansNoSelection" classname="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" time="0.005"/>
+  <testcase name="selectionDoesNotDependOnInputOrder" classname="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" time="0.0"/>
+  <testcase name="unavailableEngineIsRejected" classname="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" time="0.0"/>
+  <testcase name="localEngineHasPriority" classname="com.sentinel.quantum.ai.SentinelAiEngineRouterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

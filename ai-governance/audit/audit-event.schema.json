@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.invalid/schemas/audit-event.schema.json",
+  "title": "Sentinel Governance Audit Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["trace_id", "decision_id", "evidence_refs", "model_id", "model_version", "policy_version", "action", "result", "timestamp", "previous_hash", "hash"],
+  "properties": {
+    "trace_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "decision_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "evidence_refs": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 256 }, "maxItems": 1000 },
+    "model_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "model_version": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "policy_version": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "action": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "result": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "previous_hash": { "type": "string", "pattern": "^[a-f0-9]{0,64}$" },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

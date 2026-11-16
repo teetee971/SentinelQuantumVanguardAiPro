@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NetworkDeviceEventRegistryTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.920Z" hostname="localhost" time="0.028">
+  <properties/>
+  <testcase name="suppressesSameSignalInsideDuplicateWindow" classname="com.sentinel.quantum.security.NetworkDeviceEventRegistryTest" time="0.026"/>
+  <testcase name="reducesMultipleSourcesIntoOneLocalDeviceEntry" classname="com.sentinel.quantum.security.NetworkDeviceEventRegistryTest" time="0.001"/>
+  <testcase name="invalidRawLikeIdentifierIsRejected" classname="com.sentinel.quantum.security.NetworkDeviceEventRegistryTest" time="0.0"/>
+  <testcase name="sameDeviceDifferentEventTypeIsNotSuppressed" classname="com.sentinel.quantum.security.NetworkDeviceEventRegistryTest" time="0.0"/>
+  <testcase name="separateFingerprintsRemainSeparateEntries" classname="com.sentinel.quantum.security.NetworkDeviceEventRegistryTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsLocalInboxTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.110Z" hostname="localhost" time="0.131">
+  <properties/>
+  <testcase name="rejectsEmptyAndOversizedPdusAndBoundsLimit" classname="com.sentinel.quantum.security.MmsLocalInboxTest" time="0.109"/>
+  <testcase name="listsOnlyBoundedPduFilesNewestFirst" classname="com.sentinel.quantum.security.MmsLocalInboxTest" time="0.022"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

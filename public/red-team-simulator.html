@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Red Team Simulator — Sentinel Defensive Security</title>
+  <link rel="stylesheet" href="shared-styles.css">
+  <link rel="stylesheet" href="red-team-simulator.css">
+</head>
+<body>
+  <script src="shared-navigation.js"></script>
+
+  <main class="container">
+    <header class="page-header">
+      <h1 class="page-title">Red Team Simulator</h1>
+      <p class="page-subtitle">Simulation adversariale basée sur MITRE ATT&CK — Formation et audit de détection</p>
+      <div class="legal-notice"><strong>Simulation défensive contrôlée</strong> — Aucun accès non autorisé. Usage audit, formation et évaluation uniquement.</div>
+    </header>
+
+    <section class="grid-2" aria-label="Configuration de la simulation">
+      <div class="card">
+        <h2 class="card-title">Scénarios disponibles</h2>
+        <div id="scenarioList"></div>
+        <div class="action-row">
+          <button class="btn btn-primary" id="startBtn" type="button" disabled>Démarrer la simulation</button>
+          <button class="btn btn-danger results-hidden" id="stopBtn" type="button" disabled>Arrêter</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Statut de la simulation</h2>
+        <div id="simulationStatus">
+          <div class="status-panel">
+            <p class="muted">Aucune simulation active. Sélectionnez un scénario pour commencer.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resultsSection" class="results-section results-hidden" aria-label="Résultats de la simulation">
+      <h2 class="results-title">Résultats de la simulation</h2>
+      <div class="metric-grid">
+        <div class="metric-card"><div class="metric-value" id="metricEvents">0</div><div class="metric-label">Événements générés</div></div>
+        <div class="metric-card"><div class="metric-value" id="metricIOCs">0</div><div class="metric-label">IOCs produits</div></div>
+        <div class="metric-card"><div class="metric-value" id="metricTactics">0</div><div class="metric-label">Tactiques utilisées</div></div>
+        <div class="metric-card"><div class="metric-value" id="metricTechniques">0</div><div class="metric-label">Techniques employées</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="card-title">Timeline d'attaque</h2>
+          <div class="timeline" id="timeline"></div>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Indicateurs de compromission (IOCs)</h2>
+          <div class="ioc-list" id="iocList"></div>
+        </div>
+      </div>
+
+      <div class="card card-spaced">
+        <h2 class="card-title">Couverture MITRE ATT&CK</h2>
+        <div class="mitre-matrix" id="mitreMatrix"></div>
+      </div>
+
+      <div class="action-row card-spaced" aria-label="Export des résultats">
+        <button class="btn btn-secondary" id="exportJsonBtn" type="button">Export JSON</button>
+        <button class="btn btn-secondary" id="exportCsvBtn" type="button">Export CSV</button>
+        <button class="btn btn-secondary" id="exportCefBtn" type="button">Export CEF (SIEM)</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="offensive-simulation-engine.js"></script>
+  <script src="red-team-simulator-ui.js"></script>
+</body>
+</html>

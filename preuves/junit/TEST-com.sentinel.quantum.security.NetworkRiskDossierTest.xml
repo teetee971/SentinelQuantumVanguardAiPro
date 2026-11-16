@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NetworkRiskDossierTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.108Z" hostname="localhost" time="0.049">
+  <properties/>
+  <testcase name="duplicateEvidenceDoesNotInflateDossier" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.036"/>
+  <testcase name="threeSourcesCreateStrongCorroborationAndScoreIsBounded" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.001"/>
+  <testcase name="rawMacStyleSubjectIsRejected" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.0"/>
+  <testcase name="topReasonsAreRankedByContributionAndBounded" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.001"/>
+  <testcase name="noEvidenceNeverClaimsSafety" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.001"/>
+  <testcase name="invalidEvidenceIsDiscarded" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.001"/>
+  <testcase name="oneSourceRemainsIndicative" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.003"/>
+  <testcase name="twoIndependentSourcesBecomeCorroborated" classname="com.sentinel.quantum.security.NetworkRiskDossierTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

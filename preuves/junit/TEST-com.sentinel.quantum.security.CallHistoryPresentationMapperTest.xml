@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallHistoryPresentationMapperTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.960Z" hostname="localhost" time="0.046">
+  <properties/>
+  <testcase name="projectionDoesNotExposeFingerprintValue" classname="com.sentinel.quantum.security.CallHistoryPresentationMapperTest" time="0.044"/>
+  <testcase name="allPresentationTokensAreSanitizedBeforeFrenchMapping" classname="com.sentinel.quantum.security.CallHistoryPresentationMapperTest" time="0.0"/>
+  <testcase name="commonAllowDecisionIsFullyFrench" classname="com.sentinel.quantum.security.CallHistoryPresentationMapperTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

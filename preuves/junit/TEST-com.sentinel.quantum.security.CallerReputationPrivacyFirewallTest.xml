@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallerReputationPrivacyFirewallTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.222Z" hostname="localhost" time="0.019">
+  <properties/>
+  <testcase name="dynamicGateAllowsCurrentExplicitState" classname="com.sentinel.quantum.security.CallerReputationPrivacyFirewallTest" time="0.001"/>
+  <testcase name="enhancedWithExplicitConsentAllowsEgressGate" classname="com.sentinel.quantum.security.CallerReputationPrivacyFirewallTest" time="0.013"/>
+  <testcase name="dynamicGateFailsClosedAfterConsentIsRevoked" classname="com.sentinel.quantum.security.CallerReputationPrivacyFirewallTest" time="0.001"/>
+  <testcase name="localOnlyFailsClosedBeforeNetwork" classname="com.sentinel.quantum.security.CallerReputationPrivacyFirewallTest" time="0.001"/>
+  <testcase name="dynamicGateFailsClosedWhenStateReadThrows" classname="com.sentinel.quantum.security.CallerReputationPrivacyFirewallTest" time="0.0"/>
+  <testcase name="enhancedWithoutConsentFailsClosedBeforeNetwork" classname="com.sentinel.quantum.security.CallerReputationPrivacyFirewallTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

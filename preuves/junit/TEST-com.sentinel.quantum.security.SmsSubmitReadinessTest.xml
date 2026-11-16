@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsSubmitReadinessTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.228Z" hostname="localhost" time="0.011">
+  <properties/>
+  <testcase name="recreatedComposerObservesProcessStableSubmissionAdmission" classname="com.sentinel.quantum.security.SmsSubmitReadinessTest" time="0.003"/>
+  <testcase name="blocksMultiSimUntilExplicitLineSelected" classname="com.sentinel.quantum.security.SmsSubmitReadinessTest" time="0.007"/>
+  <testcase name="singleActiveLineDoesNotRequireManualSelection" classname="com.sentinel.quantum.security.SmsSubmitReadinessTest" time="0.0"/>
+  <testcase name="blocksSubmissionWhileAnotherMessageIsInFlight" classname="com.sentinel.quantum.security.SmsSubmitReadinessTest" time="0.0"/>
+  <testcase name="blocksStaleSelectionAndMissingActiveSim" classname="com.sentinel.quantum.security.SmsSubmitReadinessTest" time="0.0"/>
+  <testcase name="preservesActivationAndContentGatesForSmsAndMmsTransport" classname="com.sentinel.quantum.security.SmsSubmitReadinessTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

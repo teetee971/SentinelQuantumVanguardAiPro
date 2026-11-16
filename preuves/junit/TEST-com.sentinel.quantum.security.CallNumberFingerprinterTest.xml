@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallNumberFingerprinterTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:43.081Z" hostname="localhost" time="0.14">
+  <properties/>
+  <testcase name="differentInputsProduceDifferentFingerprints" classname="com.sentinel.quantum.security.CallNumberFingerprinterTest" time="0.132"/>
+  <testcase name="differentKeysProduceDifferentFingerprintsForTheSameInput" classname="com.sentinel.quantum.security.CallNumberFingerprinterTest" time="0.002"/>
+  <testcase name="fingerprintIsSixtyFourHexCharactersLong" classname="com.sentinel.quantum.security.CallNumberFingerprinterTest" time="0.001"/>
+  <testcase name="fingerprintIsStableForTheSameInputAndKey" classname="com.sentinel.quantum.security.CallNumberFingerprinterTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

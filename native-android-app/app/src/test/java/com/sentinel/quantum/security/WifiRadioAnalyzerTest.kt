@@ -1,0 +1,153 @@
+package com.sentinel.quantum.security
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class WifiRadioAnalyzerTest {
+    @Test
+    fun channelsFollowTheStandardNumbering() {
+        assertEquals(6, WifiRadioAnalyzer.channel(2437))
+        assertEquals(14, WifiRadioAnalyzer.channel(2484))
+        assertEquals(36, WifiRadioAnalyzer.channel(5180))
+        assertEquals(1, WifiRadioAnalyzer.channel(5955))
+        assertEquals(null, WifiRadioAnalyzer.channel(1000))
+    }
+
+    @Test
+    fun locallyAdministeredAddressHidesTheVendor() {
+        assertEquals(
+            "adresse privée · fabricant masqué",
+            WifiRadioAnalyzer.vendorLabel("02:00:00:00:00:01")
+        )
+        assertEquals("Ubiquiti", WifiRadioAnalyzer.vendorLabel("24:A4:3C:10:20:30"))
+        assertEquals("fabricant hors table locale", WifiRadioAnalyzer.vendorLabel("00:11:22:33:44:55"))
+    }
+
+    @Test
+    fun securityAndPmfAreReadFromCapabilities() {
+        val capabilities = "[WPA2-PSK-CCMP][WPA3-SAE-CCMP][MFPC][MFPR]"
+        assertTrue(WifiRadioAnalyzer.securityDetail(capabilities).contains("WPA3-SAE"))
+        assertTrue(WifiRadioAnalyzer.securityDetail("[WPA2-PSK-CCMP][WPS]").contains("WPS activé"))
+        assertEquals("PMF obligatoire", WifiRadioAnalyzer.pmfLabel(capabilities))
+        assertEquals("WEP", WifiRadioAnalyzer.securityDetail("[WEP]"))
+        val button = wpsElement(0x1008, byteArrayOf(0x00, 0x80.toByte()))
+        val pin = wpsElement(0x1008, byteArrayOf(0x00, 0x04))
+        val locked = wpsElement(0x1057, byteArrayOf(0x01))
+        assertEquals("WPS annoncé : bouton", WifiRadioAnalyzer.wpsAnnounced(button))
+        assertEquals("WPS annoncé : code", WifiRadioAnalyzer.wpsAnnounced(pin))
+        assertEquals("WPS annoncé verrouillé", WifiRadioAnalyzer.wpsAnnounced(locked))
+        assertTrue(WifiRadioAnalyzer.securityDetail("[WPA2-PSK-CCMP]", pin).contains("code"))
+    }
+
+    @Test
+    fun surveyCountsCoChannelAndOverlapping24GhzNetworks() {
+        val first = sample(ssid = "A", bssid = "24:a4:3c:00:00:01", frequency = 2437)
+        val second = sample(ssid = "B", bssid = "24:a4:3c:00:00:02", frequency = 2437)
+        val adjacent = sample(ssid = "C", bssid = "24:a4:3c:00:00:03", frequency = 2452)
+        val networks = listOf(first, second, adjacent)
+        assertEquals(2, WifiRadioAnalyzer.sameChannelCount(6, WifiBand.BAND_2_4_GHZ, networks))
+        assertEquals(1, WifiRadioAnalyzer.overlapping24Count(6, networks))
+        val survey = WifiRadioAnalyzer.survey(networks)
+        assertEquals(3, survey.accessPointCount)
+        assertEquals(3, survey.distinctSsids)
+        assertEquals(6, survey.busiest.first().channel)
+        assertEquals(2, survey.busiest.first().accessPoints)
+        assertEquals(1, WifiRadioAnalyzer.quietestChannel(WifiBand.BAND_2_4_GHZ, networks))
+        assertEquals(36, WifiRadioAnalyzer.quietestChannel(WifiBand.BAND_5_GHZ, networks))
+        assertEquals(
+            "5490–5650 MHz · centre annoncé 5570",
+            WifiRadioAnalyzer.occupiedLabel(5570, 3)
+        )
+        assertEquals("plage non déduite", WifiRadioAnalyzer.occupiedLabel(5500, 4))
+        val load = byteArrayOf(2, 0, 8, 0, 0)
+        assertEquals(
+            "2 client(s) annoncé(s) par la borne · occupation annoncée 3 %",
+            WifiRadioAnalyzer.beaconLoadLabel(listOf(11 to load))
+        )
+        assertEquals(
+            "charge non annoncée par la borne",
+            WifiRadioAnalyzer.beaconLoadLabel(emptyList())
+        )
+        assertEquals("Wi-Fi 6E · 802.11ax", WifiRadioAnalyzer.standardLabel(6, 6135))
+        assertEquals("Wi-Fi 6 · 802.11ax", WifiRadioAnalyzer.standardLabel(6, 5500))
+        val he = ByteArray(20)
+        he[0] = 35
+        he[18] = 0xAA.toByte()
+        he[19] = 0xFF.toByte()
+        val color = byteArrayOf(36, 0, 0, 0, 7)
+        assertEquals(
+            "jusqu'à 4 flux annoncés · couleur BSS annoncée 7 · capacités Wi-Fi 7 annoncées · MLO annoncé",
+            WifiRadioAnalyzer.phyDetailLabel(
+                listOf(
+                    255 to he,
+                    255 to color,
+                    255 to byteArrayOf(108),
+                    107 to byteArrayOf(0)
+                )
+            )
+        )
+    }
+
+    @Test
+    fun duplicateBssidKeepsTheStrongestSignalAndAnEmptyTypeWaitsLess() {
+        val weak = sample("Livebox", "2c:93:fb:3a:4a:10", 5500).copy(rssiDbm = -70)
+        val strong = sample("Livebox", "2C:93:FB:3A:4A:10", 5500).copy(rssiDbm = -37)
+        val distinct = WifiRadioAnalyzer.distinctAccessPoints(listOf(weak, strong))
+        assertEquals(1, distinct.size)
+        assertEquals(-37, distinct.first().rssiDbm)
+        assertEquals(900L, JoinedLanPace.nextWindowMs(0))
+        assertEquals(2_500L, JoinedLanPace.nextWindowMs(1))
+        val he = ByteArray(8)
+        he[0] = 35
+        he[7] = 0x08
+        assertEquals("160 MHz annoncé", WifiRadioAnalyzer.heWidthLabel(he))
+        assertEquals("vu à l'instant", WifiRadioAnalyzer.seenAgeLabel(1_000L))
+        assertEquals("vu il y a 4 min", WifiRadioAnalyzer.seenAgeLabel(4 * 60_000L))
+        assertEquals("âge non lu", WifiRadioAnalyzer.seenAgeLabel(-1L))
+        assertEquals("Sercomm", WifiRadioAnalyzer.vendorLabel("2C:93:FB:3A:4A:10"))
+        val alone = sample("Livebox", "2c:93:fb:3a:4a:10", 5500)
+        val neighbor = sample("Voisin", "24:a4:3c:00:00:09", 5500)
+        assertEquals(
+            1,
+            WifiRadioAnalyzer.sameChannelCount(100, WifiBand.BAND_5_GHZ, listOf(alone, neighbor), alone.bssid)
+        )
+        assertEquals(2_500L, BluetoothScanPace.remainingQuietMs(0L))
+        assertEquals(1_000L, BluetoothScanPace.remainingQuietMs(9_000L))
+    }
+
+    private fun sample(ssid: String, bssid: String, frequency: Int): DiscoveredWifiNetwork {
+        val radio = WifiRadioAnalyzer.describe(
+            frequencyMhz = frequency,
+            centerMhz = frequency,
+            channelWidth = 0,
+            wifiStandard = 4,
+            capabilities = "[WPA2-PSK-CCMP]",
+            bssid = bssid,
+            rssiDbm = -55
+        )
+        return DiscoveredWifiNetwork(
+            ssid = ssid,
+            bssid = bssid,
+            rssiDbm = -55,
+            frequencyMhz = frequency,
+            band = WifiRiskEvaluator.band(frequency),
+            assessment = WifiRiskEvaluator.evaluate(ssid, "[WPA2-PSK-CCMP]", -55),
+            radio = radio
+        )
+    }
+
+    private fun wpsElement(type: Int, value: ByteArray): List<Pair<Int, ByteArray>> {
+        val header = byteArrayOf(
+            0x00,
+            0x50,
+            0xF2.toByte(),
+            0x04,
+            (type shr 8).toByte(),
+            type.toByte(),
+            (value.size shr 8).toByte(),
+            value.size.toByte()
+        )
+        return listOf(221 to header + value)
+    }
+}

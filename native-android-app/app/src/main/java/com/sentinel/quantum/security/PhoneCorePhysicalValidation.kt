@@ -1,0 +1,244 @@
+package com.sentinel.quantum.security
+
+/**
+ * Observes the fourteen local technical criteria from runtime metadata and provider probes.
+ * These observations can also come from an emulator. Even a complete local certificate does
+ * not establish physical hardware, carrier-network validation or commercial readiness.
+ * No phone number, contact name, message body, URL or subscription identifier is retained.
+ */
+object PhoneCorePhysicalValidation {
+    const val CERTIFICATION_SCHEMA_VERSION = 6
+    data class Evidence(
+        val incomingCallConnected: Boolean,
+        val outgoingCallConnected: Boolean,
+        val callScreeningObserved: Boolean,
+        val contactsProviderReady: Boolean,
+        val callHistoryProviderReady: Boolean,
+        val incomingSmsReceived: Boolean,
+        val outgoingSmsSubmitted: Boolean,
+        val outgoingSmsDeliveredSuccessfully: Boolean,
+        val incomingMmsSafePreview: Boolean,
+        val outgoingMmsSentSuccessfully: Boolean,
+        /** Technical fact: Android accepted the notification publication. Not user observation. */
+        val incomingCallNotificationPosted: Boolean,
+        /** Separate criterion requiring an independently observed notification surface. */
+        val incomingCallNotificationObserved: Boolean,
+        val incomingSmsNotificationPosted: Boolean,
+        val callerIdUiShown: Boolean,
+        val inCallUiShown: Boolean
+    ) {
+        val evidenceScope: String get() = "local_technical_qualification"
+        // This model consumes no independently verified hardware/carrier evidence.
+        // Keep that claim separate from the fourteen observable runtime criteria below.
+        val physicalDeviceValidated: Boolean get() = false
+
+        val completedCount: Int
+            get() = listOf(
+                incomingCallConnected,
+                outgoingCallConnected,
+                callScreeningObserved,
+                contactsProviderReady,
+                callHistoryProviderReady,
+                incomingSmsReceived,
+                outgoingSmsSubmitted,
+                outgoingSmsDeliveredSuccessfully,
+                incomingMmsSafePreview,
+                outgoingMmsSentSuccessfully,
+                incomingCallNotificationObserved,
+                incomingSmsNotificationPosted,
+                callerIdUiShown,
+                inCallUiShown
+            ).count { it }
+
+        val requiredCount: Int get() = 14
+
+        val missingCriteria: List<String>
+            get() = buildList {
+                if (!incomingCallConnected) add("incoming_call_connected")
+                if (!outgoingCallConnected) add("outgoing_call_connected")
+                if (!callScreeningObserved) add("call_screening_observed")
+                if (!contactsProviderReady) add("contacts_provider_ready")
+                if (!callHistoryProviderReady) add("call_history_provider_ready")
+                if (!incomingSmsReceived) add("incoming_sms_received")
+                if (!outgoingSmsSubmitted) add("outgoing_sms_submitted")
+                if (!outgoingSmsDeliveredSuccessfully) add("outgoing_sms_delivered")
+                if (!incomingMmsSafePreview) add("incoming_mms_safe_preview")
+                if (!outgoingMmsSentSuccessfully) add("outgoing_mms_sent")
+                if (!incomingCallNotificationObserved) add("incoming_call_notification")
+                if (!incomingSmsNotificationPosted) add("incoming_sms_notification")
+                if (!callerIdUiShown) add("caller_id_ui_shown")
+                if (!inCallUiShown) add("in_call_ui_shown")
+            }
+
+        /** Completeness of the local technical certificate only, not physical validation. */
+        val fullyValidated: Boolean
+            get() = missingCriteria.isEmpty() && completedCount == requiredCount
+    }
+
+    enum class CriterionKind { AUTOMATIC_CHECK, OPERATIONAL_TEST, UNKNOWN }
+
+    private val automaticCriteria = setOf(
+        "contacts_provider_ready",
+        "call_history_provider_ready"
+    )
+
+    private val operationalCriteria = setOf(
+        "incoming_call_connected",
+        "outgoing_call_connected",
+        "call_screening_observed",
+        "incoming_sms_received",
+        "outgoing_sms_submitted",
+        "outgoing_sms_delivered",
+        "incoming_mms_safe_preview",
+        "outgoing_mms_sent",
+        "incoming_call_notification",
+        "incoming_sms_notification",
+        "caller_id_ui_shown",
+        "in_call_ui_shown"
+    )
+
+    fun criterionKind(id: String): CriterionKind = when (id) {
+        in automaticCriteria -> CriterionKind.AUTOMATIC_CHECK
+        in operationalCriteria -> CriterionKind.OPERATIONAL_TEST
+        else -> CriterionKind.UNKNOWN
+    }
+
+    fun criterionLabel(id: String): String = when (id) {
+        "incoming_call_connected" -> "Observer un appel entrant connecté dans Android"
+        "outgoing_call_connected" -> "Observer un appel sortant connecté dans Android"
+        "call_screening_observed" -> "Observer le filtrage d’un appel entrant"
+        "contacts_provider_ready" -> "Vérifier l’accès aux contacts Android"
+        "call_history_provider_ready" -> "Vérifier l’accès à l’historique d’appels Android"
+        "incoming_sms_received" -> "Observer la réception d’un SMS dans Android"
+        "outgoing_sms_submitted" -> "Observer les callbacks Android d’envoi SMS"
+        "outgoing_sms_delivered" -> "Observer les callbacks Android de livraison SMS"
+        "incoming_mms_safe_preview" -> "Observer la réception et l’aperçu sécurisé d’un MMS"
+        "outgoing_mms_sent" -> "Observer le callback Android de succès MMS"
+        "incoming_call_notification" -> "Observer une notification d’appel entrant"
+        "incoming_sms_notification" -> "Observer une notification de SMS entrant"
+        "caller_id_ui_shown" -> "Observer l’identification d’appel à l’écran"
+        "in_call_ui_shown" -> "Observer l’interface Sentinel pendant un appel"
+        else -> "Observation technique requise"
+    }
+
+    fun evaluateCertification(
+        events: List<PhonePrivateTimeline.Event>,
+        activeScope: PhoneCoreCertificationProvenance.Scope?,
+        notBeforeMs: Long = 0L,
+        contactsProviderReady: Boolean = false,
+        callHistoryProviderReady: Boolean = false
+    ): Evidence {
+        val normalized = activeScope?.let(PhoneCoreCertificationProvenance::normalize)
+            ?: return evaluate(emptyList(), notBeforeMs, contactsProviderReady, callHistoryProviderReady)
+        val certified = events.filter {
+            PhoneCoreCertificationProvenance.belongsTo(it.provenance, normalized)
+        }
+        return evaluate(certified, notBeforeMs, contactsProviderReady, callHistoryProviderReady)
+    }
+
+    fun evaluate(
+        events: List<PhonePrivateTimeline.Event>,
+        notBeforeMs: Long = 0L,
+        contactsProviderReady: Boolean = false,
+        callHistoryProviderReady: Boolean = false
+    ): Evidence {
+        val currentBuildEvents = events.filter { it.timestampMs >= notBeforeMs.coerceAtLeast(0L) }
+        fun has(kind: PhonePrivateTimeline.Kind, direction: String, signal: String): Boolean =
+            currentBuildEvents.any {
+                it.kind == kind &&
+                    it.direction == direction &&
+                    it.signal == signal
+            }
+
+        val screeningObserved = currentBuildEvents.any {
+            it.kind == PhonePrivateTimeline.Kind.CALL &&
+                it.direction == "INCOMING" &&
+                it.signal?.startsWith(SIGNAL_CALL_SCREENED_PREFIX) == true
+        }
+
+        return Evidence(
+            incomingCallConnected = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "INCOMING",
+                SIGNAL_CALL_ACTIVE
+            ),
+            outgoingCallConnected = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "OUTGOING",
+                SIGNAL_CALL_ACTIVE
+            ),
+            callScreeningObserved = screeningObserved,
+            contactsProviderReady = contactsProviderReady,
+            callHistoryProviderReady = callHistoryProviderReady,
+            incomingSmsReceived = has(
+                PhonePrivateTimeline.Kind.SMS,
+                "INCOMING",
+                SIGNAL_SMS_RECEIVED
+            ),
+            outgoingSmsSubmitted = has(
+                PhonePrivateTimeline.Kind.SMS,
+                "OUTGOING",
+                SIGNAL_SMS_ALL_PARTS_SENT
+            ),
+            outgoingSmsDeliveredSuccessfully = has(
+                PhonePrivateTimeline.Kind.SMS,
+                "OUTGOING",
+                SIGNAL_SMS_ALL_PARTS_DELIVERED
+            ),
+            incomingMmsSafePreview = currentBuildEvents.any {
+                it.kind == PhonePrivateTimeline.Kind.MMS &&
+                    it.direction == "INCOMING" &&
+                    it.signal in MMS_SAFE_SIGNALS
+            },
+            outgoingMmsSentSuccessfully = has(
+                PhonePrivateTimeline.Kind.MMS,
+                "OUTGOING",
+                SIGNAL_MMS_SENT_OK
+            ),
+            incomingCallNotificationPosted = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "INCOMING",
+                SIGNAL_CALL_NOTIFICATION_POSTED
+            ),
+            incomingCallNotificationObserved = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "INCOMING",
+                SIGNAL_CALL_NOTIFICATION_USER_OBSERVED
+            ),
+            incomingSmsNotificationPosted = has(
+                PhonePrivateTimeline.Kind.SMS,
+                "INCOMING",
+                SIGNAL_SMS_NOTIFICATION_POSTED
+            ),
+            callerIdUiShown = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "INCOMING",
+                SIGNAL_CALLER_ID_UI_SHOWN
+            ),
+            inCallUiShown = has(
+                PhonePrivateTimeline.Kind.CALL,
+                "LOCAL",
+                SIGNAL_INCALL_UI_SHOWN
+            )
+        )
+    }
+
+    const val SIGNAL_CALL_ACTIVE = "INCALL_ACTIVE"
+    const val SIGNAL_CALL_SCREENED_PREFIX = "CALL_SCREENED:"
+    const val SIGNAL_SMS_RECEIVED = "SMS_RECEIVED"
+    const val SIGNAL_SMS_ALL_PARTS_SENT = "SMS_ALL_PARTS_SENT"
+    const val SIGNAL_SMS_ALL_PARTS_DELIVERED = "SMS_ALL_PARTS_DELIVERED"
+    const val SIGNAL_MMS_SENT_OK = "MMS_SENT_OK"
+    /** Publication is a technical fact and never proves that a user saw the notification. */
+    const val SIGNAL_CALL_NOTIFICATION_POSTED = "CALL_NOTIFICATION_POSTED"
+    /** Must be supplied by a separate observation; SentinelInCallService never emits it. */
+    const val SIGNAL_CALL_NOTIFICATION_USER_OBSERVED = "CALL_NOTIFICATION_USER_OBSERVED"
+    const val SIGNAL_SMS_NOTIFICATION_POSTED = "SMS_NOTIFICATION_POSTED"
+    const val SIGNAL_CALLER_ID_UI_SHOWN = "CALLER_ID_UI_SHOWN"
+    const val SIGNAL_INCALL_UI_SHOWN = "INCALL_UI_SHOWN"
+
+    private val MMS_SAFE_SIGNALS = setOf(
+        "MMS_SAFE_PREVIEW_READY",
+        "MMS_DOWNLOAD_SAFE_PREVIEW_READY"
+    )
+}

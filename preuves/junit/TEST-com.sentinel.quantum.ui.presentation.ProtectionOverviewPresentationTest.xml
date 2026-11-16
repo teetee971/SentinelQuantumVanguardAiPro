@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentationTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.503Z" hostname="localhost" time="0.007">
+  <properties/>
+  <testcase name="missingPhoneCorePrerequisitesRequireAttention" classname="com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentationTest" time="0.005"/>
+  <testcase name="softwareReadinessRemainsLimitedWithoutGlobalPhysicalProof" classname="com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentationTest" time="0.0"/>
+  <testcase name="missingPrerequisiteChannelRequiresAttention" classname="com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentationTest" time="0.0"/>
+  <testcase name="inconsistentReadyFlagFailsConservatively" classname="com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentationTest" time="0.0"/>
+  <testcase name="readyPrerequisiteChannelIsLimitedNotOk" classname="com.sentinel.quantum.ui.presentation.ProtectionOverviewPresentationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

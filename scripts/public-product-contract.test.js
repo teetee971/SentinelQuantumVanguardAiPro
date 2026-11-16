@@ -1,0 +1,111 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const read = (path) => readFileSync(resolve(path), 'utf8');
+const index = read('index.html');
+const navigation = read('public/shared-navigation.js');
+const pricing = read('public/pricing.html');
+const downloadGuide = read('public/download-guide.html');
+const clientSpace = read('public/espace-client.html');
+const faq = read('public/faq.html');
+const mobileSecurity = read('public/mobile-security.html');
+const serviceWorker = read('public/sw.js');
+const roadmap = read('public/roadmap.html');
+const readme = read('README.md');
+
+test('roadmap keeps Zero Trust, SOC automation and sovereignty claims evidence-based', () => {
+  assert.match(roadmap, /Zero Trust généralisé/);
+  assert.match(roadmap, /SOC automatisé sous contrôle humain/);
+  assert.match(roadmap, /Aucune action offensive autonome/);
+  assert.match(roadmap, /dépend encore de services externes/);
+  assert.match(roadmap, /ne peut donc pas être qualifiée de souveraine aujourd’hui/);
+});
+
+test('the free phone directory remains a first-class public route', () => {
+  assert.match(navigation, /phone-intelligence\.html[^\n]+Annuaire gratuit/);
+  assert.match(index, /Rechercher un numéro — gratuit/);
+  assert.match(pricing, /Téléphone gratuit/);
+  assert.match(pricing, /Protection appels\/SMS Android gratuite/);
+});
+
+test('RTR coverage and NDR roadmap do not overstate availability or identity', () => {
+  assert.match(roadmap, /Index locaux — France et Autriche/);
+  assert.match(roadmap, /date de publication de ces CSV n’est pas connue/);
+  assert.match(roadmap, /Conception — non opérationnel/);
+  assert.match(roadmap, /Aucun capteur NDR ni mécanisme de quarantaine n’est livré/);
+  assert.match(roadmap, /approbation humaine/);
+  assert.match(readme, /synchronisation de cet index avec Android reste à construire/);
+});
+
+test('no Android package is publicly downloadable before the release gate', () => {
+  const publicPages = [index, pricing, downloadGuide, clientSpace].join('\n');
+  assert.doesNotMatch(publicPages, /chatgpt\.com\/api\/library/i);
+  assert.doesNotMatch(publicPages, /href=["'][^"']+\.(?:apk|aab)(?:[?#][^"']*)?["']/i);
+  assert.match(downloadGuide, /Aucun contrôle de téléchargement n’est affiché/);
+  assert.match(downloadGuide, /AAB non signé utilisé pour valider l’empaquetage/);
+  assert.doesNotMatch(downloadGuide, /<button\b/i);
+  assert.match(clientSpace, /APK indisponible/);
+  assert.doesNotMatch(clientSpace, /<(?:button|input|form)\b/i);
+  assert.doesNotMatch(downloadGuide, /APK[^<\n]*réservé[^<\n]*licences actives/i);
+});
+
+test('organization activation stays informative instead of exposing dead controls', () => {
+  assert.match(clientSpace, /Activation d’organisation non disponible/);
+  assert.match(clientSpace, /service d’identité et d’autorisation côté serveur/);
+  assert.match(clientSpace, /codes à durée limitée/);
+  assert.doesNotMatch(clientSpace, /<(?:button|input|form)\b/i);
+  assert.doesNotMatch(clientSpace, /Activer — bientôt disponible|Fonction bientôt disponible/);
+});
+
+test('the Sentinel command-center visual is optimized and identified', () => {
+  assert.match(index, /sentinel-command-center\.webp/);
+  assert.match(index, /alt="[^"]*[Ss]entinel[^"]*"/);
+  assert.match(index, /loading="lazy"/);
+  assert.ok(statSync(resolve('assets/images/sentinel-command-center.webp')).size <= 150_000);
+});
+
+test('unversioned interface code is not served cache-first', () => {
+  assert.match(serviceWorker, /const CACHE_VERSION = 'sentinel-v\d+\.\d+\.\d+';/);
+  assert.match(serviceWorker, /event\.respondWith\(networkFirst\(request\)\)/);
+  assert.doesNotMatch(serviceWorker, /return \['\.css', '\.js'/);
+});
+
+test('desktop and paid offers are not presented as delivered products', () => {
+  const publicPages = [index, pricing, downloadGuide, clientSpace, faq].join('\n');
+  assert.doesNotMatch(publicPages, /Après activation de licence, le client récupère l'installateur/i);
+  assert.doesNotMatch(publicPages, /<li>Application PC locale<\/li>/i);
+  assert.doesNotMatch(publicPages, /<li>PC \+ Android pour cette génération produit<\/li>/i);
+  assert.match(pricing, /Client PC installable[^<]*<\/td><td>Non livré/);
+  assert.match(clientSpace, /Aucun installateur PC n’existe aujourd’hui/);
+  assert.match(pricing, /Aucune offre payante n’est actuellement commercialisée/);
+});
+
+test('mobile security claims identify the capability owner and current VPN state', () => {
+  assert.match(mobileSecurity, /Sentinel est une application Android, pas un système d’exploitation/);
+  assert.match(mobileSecurity, /backend client WireGuard Android est désormais présent dans le code/);
+  assert.match(mobileSecurity, /aucune passerelle Sentinel de sortie n’est encore provisionnée/);
+  assert.match(mobileSecurity, /Client présent · passerelle absente/);
+  assert.match(mobileSecurity, /Capacités du téléphone ou du système — pas de Sentinel/);
+  assert.match(mobileSecurity, /GrapheneOS/);
+  assert.match(mobileSecurity, /CallScreeningService/);
+  assert.match(faq, /Le client VPN Sentinel utilise désormais/);
+});
+
+test('the public roadmap uses a Sentinel API boundary instead of exposing provider origins', () => {
+  assert.match(roadmap, /contrat d’origine Sentinel/);
+  assert.match(roadmap, /Gateway Sentinel validé E2E/);
+  assert.match(roadmap, /éviter d’exposer ou de disperser les hostnames des fournisseurs d’infrastructure/);
+  assert.doesNotMatch(roadmap, /sentinel-moteur-api\.onrender\.com/i);
+  assert.doesNotMatch(roadmap, /upstash\.com/i);
+});
+
+test('the ad blocker roadmap is explicit about scope, privacy and Android VPN limits', () => {
+  assert.match(roadmap, /Anti-publicité et anti-traceurs/);
+  assert.match(roadmap, /VpnService/);
+  assert.match(roadmap, /Un seul service VPN Android peut être actif à la fois/);
+  assert.match(roadmap, /ne déchiffrera pas HTTPS/);
+  assert.match(roadmap, /Aucun bloqueur n’est livré aujourd’hui/);
+  assert.match(roadmap, /la vitrine Web ne peut pas filtrer les autres sites/);
+});

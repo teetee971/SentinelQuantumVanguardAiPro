@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.DomainFilterListParserTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.766Z" hostname="localhost" time="0.09">
+  <properties/>
+  <testcase name="ignoresUnsupportedSyntaxAndInvalidHosts" classname="com.sentinel.quantum.security.DomainFilterListParserTest" time="0.019"/>
+  <testcase name="parsesPlainAndHostsStyleRules" classname="com.sentinel.quantum.security.DomainFilterListParserTest" time="0.001"/>
+  <testcase name="rejectsOversizedLists" classname="com.sentinel.quantum.security.DomainFilterListParserTest" time="0.067"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

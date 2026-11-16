@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MailRelayProvenanceAnalyzerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.441Z" hostname="localhost" time="0.042">
+  <properties/>
+  <testcase name="boundsUntrustedChain" classname="com.sentinel.quantum.security.MailRelayProvenanceAnalyzerTest" time="0.036"/>
+  <testcase name="extractsPublicRelayAsIndicativeInfrastructure" classname="com.sentinel.quantum.security.MailRelayProvenanceAnalyzerTest" time="0.001"/>
+  <testcase name="filtersPrivateAndDocumentationIpv4" classname="com.sentinel.quantum.security.MailRelayProvenanceAnalyzerTest" time="0.0"/>
+  <testcase name="acceptsPublicIpv6AndRejectsDocumentationIpv6" classname="com.sentinel.quantum.security.MailRelayProvenanceAnalyzerTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

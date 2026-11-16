@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.InternationalNumberIdentityTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.154Z" hostname="localhost" time="0.088">
+  <properties/>
+  <testcase name="tariffLabelDoesNotChangeTheScreeningDecision" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.019"/>
+  <testcase name="frenchHomeStillFoldsNationalAndOverseasNumbers" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.0"/>
+  <testcase name="nonFrenchHomeDoesNotRewriteANationalNumberAsFrance" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.009"/>
+  <testcase name="otherNationalPlansFoldOnlyWhenValidForThatRegion" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.003"/>
+  <testcase name="premiumSilenceIsOptInAndDoesNotReject" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.003"/>
+  <testcase name="userCountrySilenceDoesNotRejectAndLetsContactsRing" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.002"/>
+  <testcase name="foreignAndPremiumLabelsDoNotBlock" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.016"/>
+  <testcase name="countryPrefixStillMatchesTheCanonicalInternationalForm" classname="com.sentinel.quantum.security.InternationalNumberIdentityTest" time="0.033"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

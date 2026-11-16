@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.ContactPresentationPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.591Z" hostname="localhost" time="0.036">
+  <properties/>
+  <testcase name="keepsDistinctNumbers" classname="com.sentinel.quantum.security.ContactPresentationPolicyTest" time="0.003"/>
+  <testcase name="filtersAreExplicit" classname="com.sentinel.quantum.security.ContactPresentationPolicyTest" time="0.007"/>
+  <testcase name="alphabetSectionHandlesSupplementaryPlaneLetters" classname="com.sentinel.quantum.security.ContactPresentationPolicyTest" time="0.002"/>
+  <testcase name="sectionOrderingGroupsNormalizedInitialsBeforePagination" classname="com.sentinel.quantum.security.ContactPresentationPolicyTest" time="0.016"/>
+  <testcase name="alphabetSectionNormalizesAccentsAndNonLetters" classname="com.sentinel.quantum.security.ContactPresentationPolicyTest" time="0.002"/>
+  <testcase name="collapsesVisualDuplicatesWithoutChangingDisplayedValue" classname="com.sentinel.quantum.security.ContactPresentationPolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

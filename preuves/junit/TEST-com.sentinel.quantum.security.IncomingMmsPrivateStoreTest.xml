@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:47.173Z" hostname="localhost" time="18.757">
+  <properties/>
+  <testcase name="corruptStableIdentityFailsClosedWithoutOverwrite" classname="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" time="0.059"/>
+  <testcase name="replayUsesOneStableFile" classname="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" time="0.086"/>
+  <testcase name="unpinnedOverflowFailsWithoutDeletingPinnedProofs" classname="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" time="6.214"/>
+  <testcase name="concurrentSamePduCreatesExactlyOneCommittedFile" classname="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" time="0.108"/>
+  <testcase name="pinnedDigestSurvivesRetention" classname="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" time="6.176"/>
+  <testcase name="retentionNeverExceedsBound" classname="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" time="6.064"/>
+  <testcase name="stalePartialIsRemovedBeforeCommittedWrite" classname="com.sentinel.quantum.security.IncomingMmsPrivateStoreTest" time="0.046"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

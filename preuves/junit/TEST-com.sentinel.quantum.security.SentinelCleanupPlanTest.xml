@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelCleanupPlanTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.809Z" hostname="localhost" time="0.013">
+  <properties/>
+  <testcase name="verifiedRemovedItemsAreExcludedFromReclaimablePlan" classname="com.sentinel.quantum.security.SentinelCleanupPlanTest" time="0.012"/>
+  <testcase name="inaccessibleExternalDataIsCountedButNotExecutable" classname="com.sentinel.quantum.security.SentinelCleanupPlanTest" time="0.001"/>
+  <testcase name="unknownSizesAreNotInventedIntoTotal" classname="com.sentinel.quantum.security.SentinelCleanupPlanTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

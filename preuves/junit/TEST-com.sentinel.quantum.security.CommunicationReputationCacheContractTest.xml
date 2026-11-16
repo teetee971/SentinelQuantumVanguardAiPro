@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.390Z" hostname="localhost" time="0.041">
+  <properties/>
+  <testcase name="equivalentFrenchNumbersUseTheSameOpaqueCacheKey" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.011"/>
+  <testcase name="storageReadFailureIsBoundedToMissingEvidence" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.007"/>
+  <testcase name="unboundedOrMalformedMetadataIsRejected" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.008"/>
+  <testcase name="expiredEntryIsNotUsableAndIsRemoved" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.001"/>
+  <testcase name="storageWriteFailureIsBoundedToFalse" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.001"/>
+  <testcase name="persistedPayloadNeverContainsRawOrCanonicalPhoneNumber" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.001"/>
+  <testcase name="freshEntryRoundTripsWithBoundedMetadata" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.004"/>
+  <testcase name="futureTimestampAndNonPositiveTtlAreRejectedBeforePersistence" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.001"/>
+  <testcase name="invalidNumberCannotCreateOrPersistAnEntry" classname="com.sentinel.quantum.security.CommunicationReputationCacheContractTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

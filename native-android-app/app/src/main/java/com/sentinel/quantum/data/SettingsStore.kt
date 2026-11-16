@@ -1,0 +1,245 @@
+package com.sentinel.quantum.data
+
+import android.content.Context
+import com.sentinel.quantum.security.ProtectionMode
+import com.sentinel.quantum.security.ProtectionModePolicy
+import com.sentinel.quantum.security.FamilySafetyPolicy
+import com.sentinel.quantum.security.PublishedCatalogRefreshPreference
+
+/** User-facing theme preference. [SYSTEM] follows the device's day/night setting. */
+enum class ThemeMode {
+    SYSTEM, LIGHT, DARK
+}
+
+/**
+ * Bounded, local-only store for user-adjustable application preferences: theme choice and
+ * the opt-in flag gating the optional signed call-reputation sync feature. Backed by
+ * SharedPreferences, mirroring [OsintFeedCache]. No network access is performed by this class.
+ *
+ * The signed-rule sync flag is only ever read alongside
+ * [com.sentinel.quantum.security.CallRuleSyncConfig.SYNC_ENABLED]; while that compile-time
+ * constant is `false`, enabling this flag has no effect and no network call is offered.
+ */
+class SettingsStore(context: Context) {
+    private val appContext = context.applicationContext
+    private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+
+    fun getThemeMode(): ThemeMode = try {
+        ThemeMode.valueOf(preferences.getString(THEME_MODE, null) ?: ThemeMode.DARK.name)
+    } catch (_: IllegalArgumentException) {
+        ThemeMode.DARK
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        preferences.edit().putString(THEME_MODE, mode.name).apply()
+    }
+
+    fun isRuleSyncEnabled(): Boolean = preferences.getBoolean(RULE_SYNC_ENABLED, false)
+
+    fun setRuleSyncEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(RULE_SYNC_ENABLED, enabled).apply()
+    }
+
+    /**
+     * Official ARCEP and RTR allocation copies. Absent key means the user has not consented.
+     * A stored true is kept. These copies never carry a block or silence instruction.
+     */
+    fun isPublishedCatalogRefreshEnabled(): Boolean =
+        PublishedCatalogRefreshPreference.resolved(storedPublishedCatalogRefresh())
+
+    fun setPublishedCatalogRefreshEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(PUBLISHED_CATALOG_REFRESH_ENABLED, enabled).apply()
+    }
+
+    private fun storedPublishedCatalogRefresh(): Boolean? =
+        if (preferences.contains(PUBLISHED_CATALOG_REFRESH_ENABLED)) {
+            preferences.getBoolean(PUBLISHED_CATALOG_REFRESH_ENABLED, false)
+        } else {
+            null
+        }
+
+    /** Privacy boundary for remote protection features. Invalid/missing values fail closed. */
+    var protectionMode: ProtectionMode
+        get() = try {
+            ProtectionMode.valueOf(
+                preferences.getString(PROTECTION_MODE, null) ?: ProtectionMode.LOCAL_ONLY.name
+            )
+        } catch (_: IllegalArgumentException) {
+            ProtectionMode.LOCAL_ONLY
+        }
+        set(value) {
+            CALLER_REPUTATION_BOUNDARY.change {
+                if (value == ProtectionMode.ENHANCED) {
+                    preferences.edit().putString(PROTECTION_MODE, value.name).apply()
+                } else {
+                    check(
+                        preferences.edit().putString(PROTECTION_MODE, value.name).commit()
+                    ) {
+                        "Unable to persist protection mode downgrade"
+                    }
+                    check(purgeCommunicationReputation()) {
+                        "Unable to purge cached communication reputation"
+                    }
+                }
+            }
+        }
+
+    /**
+     * Optional post-screening caller reputation enrichment.
+     * Disabled by default because enabling it sends the incoming caller number to the
+     * configured Sentinel reputation service after the platform screening decision.
+     *
+     * Revocation is committed synchronously before cached remote-derived reputation is purged.
+     * This ordering prevents an already-authorized in-flight response from repopulating the
+     * cache after the user has withdrawn consent. The install-local HMAC secret is stored in a
+     * separate preferences file and is intentionally retained.
+     */
+    var callerReputationEnrichmentEnabled: Boolean
+        get() = preferences.getBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
+        set(value) {
+            CALLER_REPUTATION_BOUNDARY.change {
+                if (value) {
+                    preferences.edit().putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, true).apply()
+                } else {
+                    check(
+                        preferences.edit()
+                            .putBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
+                            .commit()
+                    ) {
+                        "Unable to persist caller reputation consent revocation"
+                    }
+                    check(purgeCommunicationReputation()) {
+                        "Unable to purge cached communication reputation"
+                    }
+                }
+            }
+        }
+
+    /** Call only after network evaluation, on an IO dispatcher; revocation uses the same lock. */
+    fun <T : Any> acceptCallerReputationResult(
+        result: T,
+        persist: () -> Boolean,
+        publish: () -> Unit
+    ): T? = CALLER_REPUTATION_BOUNDARY.accept(
+        isEligible = {
+            callerReputationEnrichmentEnabled &&
+                ProtectionModePolicy.permitsCallerNumberEnrichment(protectionMode)
+        },
+        result = result,
+        persist = persist,
+        publish = publish
+    )
+
+    /**
+     * Local assisted-calling profile. STANDARD is the fail-open default.
+     * ASSISTED may add warnings or confirmation for locally recognized risky callbacks,
+     * but it never overrides Android's emergency routing.
+     */
+    var familySafetyProfile: FamilySafetyPolicy.Profile
+        get() = try {
+            FamilySafetyPolicy.Profile.valueOf(
+                preferences.getString(FAMILY_SAFETY_PROFILE, null)
+                    ?: FamilySafetyPolicy.Profile.STANDARD.name
+            )
+        } catch (_: IllegalArgumentException) {
+            FamilySafetyPolicy.Profile.STANDARD
+        }
+        set(value) {
+            preferences.edit().putString(FAMILY_SAFETY_PROFILE, value.name).apply()
+        }
+
+    data class RestorablePreferences(
+        val themeMode: ThemeMode,
+        val protectionMode: ProtectionMode,
+        val familySafetyProfile: FamilySafetyPolicy.Profile,
+        val callerReputationEnrichmentEnabled: Boolean,
+        val osintRefreshIntervalHours: Int,
+        val osintNotificationsEnabled: Boolean,
+        val smsNotificationPreviewEnabled: Boolean
+    )
+
+    /**
+     * Commits the restore-safe settings as one SharedPreferences transaction.
+     * Returns false instead of claiming success when durable persistence fails.
+     */
+    fun applyRestorablePreferences(value: RestorablePreferences): Boolean =
+        CALLER_REPUTATION_BOUNDARY.change {
+            val committed = preferences.edit()
+                .putString(THEME_MODE, value.themeMode.name)
+                .putString(PROTECTION_MODE, value.protectionMode.name)
+                .putString(FAMILY_SAFETY_PROFILE, value.familySafetyProfile.name)
+                .putBoolean(
+                    CALLER_REPUTATION_ENRICHMENT_ENABLED,
+                    value.callerReputationEnrichmentEnabled
+                )
+                .putInt(
+                    OSINT_INTERVAL_HOURS,
+                    sanitizeInterval(value.osintRefreshIntervalHours)
+                )
+                .putBoolean(OSINT_NOTIFICATIONS_ENABLED, value.osintNotificationsEnabled)
+                .putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value.smsNotificationPreviewEnabled)
+                .commit()
+            committed && if (
+                !value.callerReputationEnrichmentEnabled ||
+                !ProtectionModePolicy.permitsCallerNumberEnrichment(value.protectionMode)
+            ) purgeCommunicationReputation() else true
+        }
+
+    private fun purgeCommunicationReputation(): Boolean =
+        appContext.getSharedPreferences(
+            COMMUNICATION_REPUTATION_PREFERENCES,
+            Context.MODE_PRIVATE
+        ).edit().clear().commit()
+
+    /**
+     * Refresh interval in hours, restricted to the supported values.
+     * [INTERVAL_NEVER] disables the periodic watch entirely.
+     */
+    var osintRefreshIntervalHours: Int
+        get() = sanitizeInterval(preferences.getInt(OSINT_INTERVAL_HOURS, INTERVAL_NEVER))
+        set(value) {
+            preferences.edit().putInt(OSINT_INTERVAL_HOURS, sanitizeInterval(value)).apply()
+        }
+
+    /** When false, the worker still refreshes the cache but never posts a notification. */
+    var osintNotificationsEnabled: Boolean
+        get() = preferences.getBoolean(OSINT_NOTIFICATIONS_ENABLED, true)
+        set(value) {
+            preferences.edit().putBoolean(OSINT_NOTIFICATIONS_ENABLED, value).apply()
+        }
+
+    /**
+     * Explicit opt-in for sender/message text in SMS notifications.
+     * False by default so lock-screen and heads-up notifications do not expose message content.
+     */
+    var smsNotificationPreviewEnabled: Boolean
+        get() = preferences.getBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, false)
+        set(value) {
+            preferences.edit().putBoolean(SMS_NOTIFICATION_PREVIEW_ENABLED, value).apply()
+        }
+
+    companion object {
+        private val CALLER_REPUTATION_BOUNDARY = CallerReputationAcceptanceBoundary()
+        const val INTERVAL_NEVER = 0
+
+        /** Supported periodic intervals, in hours. Kept small and explicit on purpose. */
+        val SUPPORTED_INTERVALS_HOURS = listOf(INTERVAL_NEVER, 4, 12, 24)
+
+        /** Any unsupported value falls back to [INTERVAL_NEVER] (fail closed: no background work). */
+        fun sanitizeInterval(hours: Int): Int =
+            if (SUPPORTED_INTERVALS_HOURS.contains(hours)) hours else INTERVAL_NEVER
+
+        private const val PREFERENCES = "sentinel_settings"
+        private const val COMMUNICATION_REPUTATION_PREFERENCES =
+            "sentinel_communication_reputation"
+        private const val THEME_MODE = "theme_mode"
+        private const val RULE_SYNC_ENABLED = "rule_sync_enabled"
+        private const val PUBLISHED_CATALOG_REFRESH_ENABLED = "published_catalog_refresh_enabled"
+        private const val PROTECTION_MODE = "protection_mode"
+        private const val CALLER_REPUTATION_ENRICHMENT_ENABLED = "caller_reputation_enrichment_enabled"
+        private const val FAMILY_SAFETY_PROFILE = "family_safety_profile"
+        private const val OSINT_INTERVAL_HOURS = "osint_refresh_interval_hours"
+        private const val OSINT_NOTIFICATIONS_ENABLED = "osint_notifications_enabled"
+        private const val SMS_NOTIFICATION_PREVIEW_ENABLED = "sms_notification_preview_enabled"
+    }
+}

@@ -1,0 +1,24 @@
+name: ITU Numbering Reference Audit
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/itu-numbering-reference-audit.yml'
+      - 'scripts/numbering-sources/common/itu-reference-audit*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reference-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate read-only discovery safety
+        run: python3 scripts/numbering-sources/common/itu-reference-audit.test.py
+      - name: Retrieve official ITU reference evidence without publishing datasets
+        run: python3 scripts/numbering-sources/common/itu-reference-audit.py

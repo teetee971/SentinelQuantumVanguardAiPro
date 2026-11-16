@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.navigation.ScreenTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.565Z" hostname="localhost" time="0.038">
+  <properties/>
+  <testcase name="routeContractRemainsStable" classname="com.sentinel.quantum.navigation.ScreenTest" time="0.037"/>
+  <testcase name="routesAreUniqueAndNonBlank" classname="com.sentinel.quantum.navigation.ScreenTest" time="0.001"/>
+  <testcase name="osintDetailRouteDeclaresItemIdArgument" classname="com.sentinel.quantum.navigation.ScreenTest" time="0.0"/>
+  <testcase name="titlesUseResources" classname="com.sentinel.quantum.navigation.ScreenTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

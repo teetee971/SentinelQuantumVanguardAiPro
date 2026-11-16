@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.VoiceStudioRoomIsolationContractTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.598Z" hostname="localhost" time="0.005">
+  <properties/>
+  <testcase name="diagnostic_voice_room_is_derived_from_the_verified_device" classname="com.sentinel.quantum.VoiceStudioRoomIsolationContractTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

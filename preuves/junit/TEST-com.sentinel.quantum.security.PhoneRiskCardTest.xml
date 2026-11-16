@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneRiskCardTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.985Z" hostname="localhost" time="0.002">
+  <properties/>
+  <testcase name="staleReputationIsNotPresentedAsCurrentRisk" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.001"/>
+  <testcase name="unknownStructuredCategoryIsIgnoredRatherThanInferred" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.0"/>
+  <testcase name="riskBandsMirrorBackendDecisionBoundaries" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.001"/>
+  <testcase name="invalidScoreDoesNotBecomeMaximumRisk" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.0"/>
+  <testcase name="futureDatedReputationIsNotPresentedAsCurrentRisk" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.0"/>
+  <testcase name="missingEvidenceStaysUnknown" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.0"/>
+  <testcase name="scoreWithoutFreshnessMetadataKeepsFreshnessUnknown" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.0"/>
+  <testcase name="freshExplicitScoreMapsToDisplayBandOnly" classname="com.sentinel.quantum.security.PhoneRiskCardTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

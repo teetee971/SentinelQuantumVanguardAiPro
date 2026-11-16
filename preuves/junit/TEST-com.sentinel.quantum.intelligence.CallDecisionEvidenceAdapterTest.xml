@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.CallDecisionEvidenceAdapterTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.642Z" hostname="localhost" time="0.043">
+  <properties/>
+  <testcase name="maps_call_rule_decision_without_exporting_number" classname="com.sentinel.quantum.intelligence.CallDecisionEvidenceAdapterTest" time="0.042"/>
+  <testcase name="signed_reputation_rule_remains_silence_not_block" classname="com.sentinel.quantum.intelligence.CallDecisionEvidenceAdapterTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

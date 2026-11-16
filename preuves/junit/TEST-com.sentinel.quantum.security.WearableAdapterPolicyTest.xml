@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearableAdapterPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.558Z" hostname="localhost" time="0.011">
+  <properties/>
+  <testcase name="platformLinkStateRemainsIndependentFromSentinelReachability" classname="com.sentinel.quantum.security.WearableAdapterPolicyTest" time="0.01"/>
+  <testcase name="privilegedCapabilitiesRequireFreshChannelAndNegotiation" classname="com.sentinel.quantum.security.WearableAdapterPolicyTest" time="0.0"/>
+  <testcase name="companionAssociationAloneNeverMeansSentinelReachable" classname="com.sentinel.quantum.security.WearableAdapterPolicyTest" time="0.0"/>
+  <testcase name="unavailableAdapterCannotBeReachableEvenWithFreshChannelProof" classname="com.sentinel.quantum.security.WearableAdapterPolicyTest" time="0.0"/>
+  <testcase name="staleChannelRemovesPrivilegedCapabilities" classname="com.sentinel.quantum.security.WearableAdapterPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

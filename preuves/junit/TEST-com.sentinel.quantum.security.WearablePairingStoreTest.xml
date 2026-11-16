@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearablePairingStoreTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.639Z" hostname="localhost" time="0.028">
+  <properties/>
+  <testcase name="mismatchedFingerprintCannotBePersisted" classname="com.sentinel.quantum.security.WearablePairingStoreTest" time="0.008"/>
+  <testcase name="existingIdentityCannotBeSilentlyReplaced" classname="com.sentinel.quantum.security.WearablePairingStoreTest" time="0.007"/>
+  <testcase name="confirmedIdentityPersistsAcrossStoreReload" classname="com.sentinel.quantum.security.WearablePairingStoreTest" time="0.002"/>
+  <testcase name="removalRequiresExplicitCall" classname="com.sentinel.quantum.security.WearablePairingStoreTest" time="0.002"/>
+  <testcase name="failedRemovalCannotBeReportedAsSuccessful" classname="com.sentinel.quantum.security.WearablePairingStoreTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

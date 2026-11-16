@@ -1,0 +1,115 @@
+{
+  "id": "phishing-campaign-001",
+  "name": "Spearphishing Campaign Simulation",
+  "description": "Synthetic, non-executable simulation fixture for defensive detection testing.",
+  "simulated": true,
+  "mitreTactics": [
+    {
+      "id": "TA0001",
+      "name": "Initial Access",
+      "techniques": [
+        {
+          "id": "T1566.001",
+          "name": "Phishing: Spearphishing Attachment",
+          "platform": ["Windows", "macOS", "Linux"],
+          "dataSource": ["Email Gateway", "Email Content", "File Monitoring"]
+        }
+      ]
+    },
+    {
+      "id": "TA0002",
+      "name": "Execution",
+      "techniques": [
+        {
+          "id": "T1204.002",
+          "name": "User Execution: Malicious File",
+          "platform": ["Windows", "macOS", "Linux"],
+          "dataSource": ["Process Monitoring", "Command Execution"]
+        },
+        {
+          "id": "T1059.001",
+          "name": "Command and Scripting Interpreter: PowerShell",
+          "platform": ["Windows"],
+          "dataSource": ["PowerShell Logs", "Script Execution"]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "stepNumber": 1,
+      "description": "Simulate delivery of a suspicious attachment.",
+      "techniqueId": "T1566.001",
+      "action": {
+        "type": "synthetic_event",
+        "parameters": {
+          "target": "recipient@example.invalid",
+          "subject": "Synthetic security-training message",
+          "attachment": "synthetic-document.txt",
+          "payload": "none"
+        },
+        "logicalOutcome": "Synthetic email-delivery event generated locally; no message is sent."
+      },
+      "expectedResult": "Detection pipeline receives a synthetic phishing indicator.",
+      "timingOffset": 0,
+      "simulated": true
+    },
+    {
+      "stepNumber": 2,
+      "description": "Simulate a user opening a suspicious document.",
+      "techniqueId": "T1204.002",
+      "action": {
+        "type": "synthetic_event",
+        "parameters": {
+          "file": "synthetic-document.txt",
+          "action": "simulated-open",
+          "payload-type": "none"
+        },
+        "logicalOutcome": "Synthetic user-execution event generated locally; no file is executed."
+      },
+      "expectedResult": "Detection pipeline receives a synthetic user-execution indicator.",
+      "timingOffset": 3,
+      "simulated": true
+    },
+    {
+      "stepNumber": 3,
+      "description": "Simulate a PowerShell execution indicator without providing executable commands.",
+      "techniqueId": "T1059.001",
+      "action": {
+        "type": "synthetic_event",
+        "parameters": {
+          "interpreter": "PowerShell",
+          "command": "[REDACTED-SYNTHETIC-NONEXECUTABLE]",
+          "obfuscation": "not-applicable"
+        },
+        "logicalOutcome": "Synthetic process event generated locally; no shell is invoked and no network connection is made."
+      },
+      "expectedResult": "Detection pipeline receives a synthetic scripting indicator.",
+      "timingOffset": 6,
+      "simulated": true
+    }
+  ],
+  "expectedDetectionIndicators": [
+    {
+      "type": "network",
+      "indicator": "Synthetic email event with suspicious attachment metadata",
+      "confidence": "medium",
+      "techniqueId": "T1566.001"
+    },
+    {
+      "type": "file",
+      "indicator": "Synthetic document opened from an untrusted-source scenario",
+      "confidence": "high",
+      "techniqueId": "T1204.002"
+    },
+    {
+      "type": "process",
+      "indicator": "Synthetic PowerShell execution event",
+      "confidence": "high",
+      "techniqueId": "T1059.001"
+    }
+  ],
+  "impact": "medium",
+  "difficulty": "intermediate",
+  "estimatedDuration": 60
+}

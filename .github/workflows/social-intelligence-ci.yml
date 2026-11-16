@@ -1,0 +1,29 @@
+name: Social Intelligence CI
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/SOCIAL-INTELLIGENCE-EVIDENCE-MODEL.md'
+      - 'docs/DISARM-FR-INTEGRATION.md'
+      - 'social-intelligence/**'
+      - 'scripts/check-social-intelligence-boundaries.js'
+      - '.github/workflows/social-intelligence-ci.yml'
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-boundaries:
+    name: Social Intelligence evidence boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - name: Verify Social Intelligence boundaries
+        run: node scripts/check-social-intelligence-boundaries.js

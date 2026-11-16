@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.InCallIntelligenceUiIntegrationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.774Z" hostname="localhost" time="0.028">
+  <properties/>
+  <testcase name="in call UI exposes bounded intelligence diagnostics without enforcement authority" classname="com.sentinel.quantum.intelligence.InCallIntelligenceUiIntegrationTest" time="0.011"/>
+  <testcase name="ended call renders useful session summary and caller card action" classname="com.sentinel.quantum.intelligence.InCallIntelligenceUiIntegrationTest" time="0.009"/>
+  <testcase name="in call UI reads intelligence snapshot off main thread for presentation" classname="com.sentinel.quantum.intelligence.InCallIntelligenceUiIntegrationTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

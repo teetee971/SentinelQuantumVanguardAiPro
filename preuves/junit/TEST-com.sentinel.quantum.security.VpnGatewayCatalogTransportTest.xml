@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.VpnGatewayCatalogTransportTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.380Z" hostname="localhost" time="0.08">
+  <properties/>
+  <testcase name="acceptsCanonicalHttpsEndpointConfiguration" classname="com.sentinel.quantum.security.VpnGatewayCatalogTransportTest" time="0.038"/>
+  <testcase name="rejectsCredentialsQueryAndFragment" classname="com.sentinel.quantum.security.VpnGatewayCatalogTransportTest" time="0.015"/>
+  <testcase name="rejectsEndpointOutsideAllowedHosts" classname="com.sentinel.quantum.security.VpnGatewayCatalogTransportTest" time="0.006"/>
+  <testcase name="defaultClientDisablesRedirects" classname="com.sentinel.quantum.security.VpnGatewayCatalogTransportTest" time="0.004"/>
+  <testcase name="rejectsClientThatFollowsRedirects" classname="com.sentinel.quantum.security.VpnGatewayCatalogTransportTest" time="0.009"/>
+  <testcase name="rejectsHttpEndpoint" classname="com.sentinel.quantum.security.VpnGatewayCatalogTransportTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

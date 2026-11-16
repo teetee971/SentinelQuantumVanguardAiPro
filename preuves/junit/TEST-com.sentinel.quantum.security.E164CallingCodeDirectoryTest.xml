@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.E164CallingCodeDirectoryTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:46.542Z" hostname="localhost" time="0.001">
+  <properties/>
+  <testcase name="resolvesLongestNanpPrefixBeforeSharedZone" classname="com.sentinel.quantum.security.E164CallingCodeDirectoryTest" time="0.001"/>
+  <testcase name="preservesFrenchOverseasCodes" classname="com.sentinel.quantum.security.E164CallingCodeDirectoryTest" time="0.0"/>
+  <testcase name="marksSharedAndGlobalCodesAsNonCountryTruth" classname="com.sentinel.quantum.security.E164CallingCodeDirectoryTest" time="0.0"/>
+  <testcase name="containsBroadGlobalCoverage" classname="com.sentinel.quantum.security.E164CallingCodeDirectoryTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

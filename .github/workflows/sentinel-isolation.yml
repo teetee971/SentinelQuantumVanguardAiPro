@@ -1,0 +1,52 @@
+name: Sentinel Isolation Security Gate
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolation:
+    name: Block cross-project and forbidden SDK contamination
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Run repository-wide isolation scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-sentinel-isolation.js
+
+      - name: Run independent source-control isolation gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          FIREBASE='fire''base'
+          GOOGLE_SERVICES='google-''services'
+          GOOGLE_SERVICE_INFO='google''service-info'
+          PATTERN="${GOOGLE_SERVICES}\\.json|${GOOGLE_SERVICE_INFO}\\.plist|com\\.google\\.${FIREBASE}|${FIREBASE}-messaging|${FIREBASE}-admin|${FIREBASE}-functions|@${FIREBASE}/|@react-native-${FIREBASE}/|${FIREBASE^^}_[A-Z0-9_]*|${FIREBASE}Config"
+          EXCLUDES=(
+            ':!scripts/check-sentinel-isolation.js'
+            ':!scripts/check-sentinel-isolation.test.js'
+          )
+          if git grep -nEi -- "$PATTERN" -- '*.js' '*.mjs' '*.cjs' '*.json' '*.yml' '*.yaml' '*.ts' '*.tsx' '*.jsx' '*.html' '*.css' '*.xml' '*.properties' '*.gradle' '*.kts' '*.kt' '*.toml' '*.lock' "${EXCLUDES[@]}"; then
+            echo '::error::Forbidden external SDK/configuration reference detected.'
+            exit 1
+          fi
+          if git ls-files | grep -Ei "(^|/)(${GOOGLE_SERVICES}\\.json|${GOOGLE_SERVICE_INFO}\\.plist)$"; then
+            echo '::error::Forbidden SDK configuration filename detected.'
+            exit 1
+          fi
+          echo 'Independent isolation gate passed.'

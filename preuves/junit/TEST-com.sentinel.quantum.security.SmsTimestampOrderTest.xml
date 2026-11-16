@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsTimestampOrderTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.315Z" hostname="localhost" time="0.012">
+  <properties/>
+  <testcase name="aLimitedConversationWindowDoesNotHideNormalMessagesBehindFutureRows" classname="com.sentinel.quantum.security.SmsTimestampOrderTest" time="0.01"/>
+  <testcase name="futureMessageCannotHideTheRealLatestMessage" classname="com.sentinel.quantum.security.SmsTimestampOrderTest" time="0.0"/>
+  <testcase name="preservesPastAndSmallFutureSkew" classname="com.sentinel.quantum.security.SmsTimestampOrderTest" time="0.0"/>
+  <testcase name="isDeterministicForFixedClock" classname="com.sentinel.quantum.security.SmsTimestampOrderTest" time="0.0"/>
+  <testcase name="classifiesBoundaryNegativeDatesAndLongOverflow" classname="com.sentinel.quantum.security.SmsTimestampOrderTest" time="0.0"/>
+  <testcase name="placesImplausibleFutureTimestampAfterNormalDates" classname="com.sentinel.quantum.security.SmsTimestampOrderTest" time="0.0"/>
+  <testcase name="sparseConversationRetainsOriginalAnomalousDatesOnlyInRemainingCapacity" classname="com.sentinel.quantum.security.SmsTimestampOrderTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

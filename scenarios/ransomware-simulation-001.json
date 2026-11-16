@@ -1,0 +1,217 @@
+{
+  "id": "ransomware-simulation-001",
+  "name": "Ransomware Kill Chain Simulation",
+  "description": "Full kill chain simulation of ransomware attack from initial access to impact",
+  "mitreTactics": [
+    {
+      "id": "TA0001",
+      "name": "Initial Access",
+      "techniques": [
+        {
+          "id": "T1078.003",
+          "name": "Valid Accounts: Local Accounts",
+          "platform": ["Windows", "Linux", "macOS"],
+          "dataSource": ["Authentication Logs", "Windows Event Logs"]
+        }
+      ]
+    },
+    {
+      "id": "TA0004",
+      "name": "Privilege Escalation",
+      "techniques": [
+        {
+          "id": "T1055.001",
+          "name": "Process Injection: Dynamic-link Library Injection",
+          "platform": ["Windows"],
+          "dataSource": ["Process Monitoring", "DLL Monitoring"]
+        }
+      ]
+    },
+    {
+      "id": "TA0005",
+      "name": "Defense Evasion",
+      "techniques": [
+        {
+          "id": "T1070.001",
+          "name": "Indicator Removal: Clear Windows Event Logs",
+          "platform": ["Windows"],
+          "dataSource": ["Windows Event Logs", "File Monitoring"]
+        }
+      ]
+    },
+    {
+      "id": "TA0007",
+      "name": "Discovery",
+      "techniques": [
+        {
+          "id": "T1083",
+          "name": "File and Directory Discovery",
+          "platform": ["Windows", "Linux", "macOS"],
+          "dataSource": ["Process Monitoring", "Command Execution"]
+        }
+      ]
+    },
+    {
+      "id": "TA0040",
+      "name": "Impact",
+      "techniques": [
+        {
+          "id": "T1486",
+          "name": "Data Encrypted for Impact",
+          "platform": ["Windows", "Linux", "macOS"],
+          "dataSource": ["File Monitoring", "Process Monitoring"]
+        },
+        {
+          "id": "T1490",
+          "name": "Inhibit System Recovery",
+          "platform": ["Windows", "Linux", "macOS"],
+          "dataSource": ["Process Monitoring", "Command Execution"]
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "stepNumber": 1,
+      "description": "Authenticate using compromised local administrator credentials",
+      "techniqueId": "T1078.003",
+      "action": {
+        "type": "access",
+        "parameters": {
+          "account": "local_admin",
+          "method": "rdp",
+          "source": "external-ip"
+        },
+        "logicalOutcome": "Successful authentication, RDP session established"
+      },
+      "expectedResult": "Initial access to target system",
+      "timingOffset": 0,
+      "simulated": true
+    },
+    {
+      "stepNumber": 2,
+      "description": "Inject malicious DLL into legitimate system process for privilege escalation",
+      "techniqueId": "T1055.001",
+      "action": {
+        "type": "execution",
+        "parameters": {
+          "targetProcess": "svchost.exe",
+          "dll": "malicious_library.dll",
+          "method": "reflective-loading"
+        },
+        "logicalOutcome": "DLL injected, running with SYSTEM privileges"
+      },
+      "expectedResult": "Elevated privileges obtained",
+      "timingOffset": 2,
+      "simulated": true
+    },
+    {
+      "stepNumber": 3,
+      "description": "Clear Windows Event Logs to evade detection",
+      "techniqueId": "T1070.001",
+      "action": {
+        "type": "persistence",
+        "parameters": {
+          "logs": ["Security", "System", "Application"],
+          "method": "wevtutil-clear"
+        },
+        "logicalOutcome": "Event logs cleared, forensic trail removed"
+      },
+      "expectedResult": "Defense evasion successful",
+      "timingOffset": 4,
+      "simulated": true
+    },
+    {
+      "stepNumber": 4,
+      "description": "Enumerate file shares and identify high-value targets for encryption",
+      "techniqueId": "T1083",
+      "action": {
+        "type": "scan",
+        "parameters": {
+          "scope": "network-shares",
+          "filter": "*.docx,*.xlsx,*.pdf,*.db,*.bak",
+          "depth": "recursive"
+        },
+        "logicalOutcome": "Discovered 2,345 high-value files across 15 network shares"
+      },
+      "expectedResult": "Target data identified",
+      "timingOffset": 6,
+      "simulated": true
+    },
+    {
+      "stepNumber": 5,
+      "description": "Delete volume shadow copies to prevent recovery",
+      "techniqueId": "T1490",
+      "action": {
+        "type": "impact",
+        "parameters": {
+          "command": "vssadmin delete shadows /all /quiet",
+          "target": "all-volumes"
+        },
+        "logicalOutcome": "All shadow copies deleted, recovery disabled"
+      },
+      "expectedResult": "System recovery inhibited",
+      "timingOffset": 8,
+      "simulated": true
+    },
+    {
+      "stepNumber": 6,
+      "description": "Encrypt files with strong cryptography and drop ransom note",
+      "techniqueId": "T1486",
+      "action": {
+        "type": "impact",
+        "parameters": {
+          "algorithm": "AES-256",
+          "targets": "high-value-files",
+          "extension": ".encrypted",
+          "ransom-note": "README_DECRYPT.txt"
+        },
+        "logicalOutcome": "2,345 files encrypted, ransom note deployed to all directories"
+      },
+      "expectedResult": "Data encrypted for ransom",
+      "timingOffset": 10,
+      "simulated": true
+    }
+  ],
+  "expectedDetectionIndicators": [
+    {
+      "type": "network",
+      "indicator": "RDP connection from unusual geographic location",
+      "confidence": "medium",
+      "techniqueId": "T1078.003"
+    },
+    {
+      "type": "process",
+      "indicator": "Suspicious DLL loaded into system process",
+      "confidence": "high",
+      "techniqueId": "T1055.001"
+    },
+    {
+      "type": "behavioral",
+      "indicator": "Event log clearing activity detected",
+      "confidence": "critical",
+      "techniqueId": "T1070.001"
+    },
+    {
+      "type": "process",
+      "indicator": "Volume shadow copy deletion commands",
+      "confidence": "critical",
+      "techniqueId": "T1490"
+    },
+    {
+      "type": "file",
+      "indicator": "Mass file modification with encryption signature",
+      "confidence": "critical",
+      "techniqueId": "T1486"
+    },
+    {
+      "type": "behavioral",
+      "indicator": "Rapid sequential file access pattern across network shares",
+      "confidence": "high",
+      "techniqueId": "T1486"
+    }
+  ],
+  "impact": "critical",
+  "difficulty": "advanced",
+  "estimatedDuration": 120
+}

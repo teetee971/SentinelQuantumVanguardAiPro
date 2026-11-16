@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsTextCharsetInteropTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.706Z" hostname="localhost" time="0.008">
+  <properties/>
+  <testcase name="ucs2ContentTypeParameterSurvivesDecodeBoundaryAndProjection" classname="com.sentinel.quantum.security.MmsTextCharsetInteropTest" time="0.002"/>
+  <testcase name="internationalCharsetAllowlistIsStrict" classname="com.sentinel.quantum.security.MmsTextCharsetInteropTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallScreeningPolicyTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:44.287Z" hostname="localhost" time="0.241">
+  <properties/>
+  <testcase name="olderRefreshCannotRepublishAfterRevocation" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.007"/>
+  <testcase name="disablingPreferencePublishesAnEmptyViewWithoutANewerTicket" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.0"/>
+  <testcase name="concurrentRevocationAlwaysEndsClosed" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.186"/>
+  <testcase name="silenceRequiresAndroid10AndBlockRejectsOnOlderPlatforms" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.018"/>
+  <testcase name="readyPublishIsDroppedWhenPermissionIsAlreadyGone" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.0"/>
+  <testcase name="directoryCapFailsOpenInsteadOfKeepingAPartialSet" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.001"/>
+  <testcase name="emergencyUnknownOrTrueFailsOpen" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.001"/>
+  <testcase name="coldDirectoryIsNotReady" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.0"/>
+  <testcase name="explicitChoiceIsPreservedAndTakesEffectWithoutClearingTheDirectory" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.019"/>
+  <testcase name="missingPreferenceDoesNotSilenceExistingUsers" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.002"/>
+  <testcase name="newerContactReloadWinsOverAnOlderOne" classname="com.sentinel.quantum.security.CallScreeningPolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

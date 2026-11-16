@@ -1,0 +1,131 @@
+name: Build Android App Bundle (Unsigned Validation)
+
+on:
+  push:
+    branches: [ "main" ]
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-aab-playconsole-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Android manifest security
+        run: node scripts/check-android-manifest.js
+
+      - name: Validate Android product truth
+        run: npm run test:android-product-truth
+
+      - name: Validate Android UI consistency
+        run: node scripts/check-android-ui-consistency.js
+
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools
+
+      - name: Validate Play Console packaging policy
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APPLICATION_ID=$(grep -m1 "applicationId" app/build.gradle | sed -E 's/.*applicationId[[:space:]]+"([^"]+)".*/\1/')
+          test "$APPLICATION_ID" = "com.sentinel.quantum"
+          echo "applicationId OK: $APPLICATION_ID"
+
+          TARGET_SDK=$(grep -m1 "targetSdk" app/build.gradle | grep -Eo '[0-9]+')
+          test -n "$TARGET_SDK"
+          test "$TARGET_SDK" -ge 34
+          echo "targetSdk OK: $TARGET_SDK (>= 34)"
+
+          VERSION_CODE=$(grep -m1 "versionCode" app/build.gradle | grep -Eo '[0-9]+')
+          test -n "$VERSION_CODE"
+          test "$VERSION_CODE" -gt 0
+          echo "versionCode OK: $VERSION_CODE"
+
+          VERSION_NAME=$(grep -m1 "versionName" app/build.gradle | awk -F'"' '{print $2}')
+          test -n "$VERSION_NAME"
+          echo "versionName OK: $VERSION_NAME"
+
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+        id: policy
+
+      - name: Grant execute permission for gradlew
+        working-directory: ./native-android-app
+        run: chmod +x ./gradlew
+
+      - name: Build unsigned Android App Bundle
+        working-directory: ./native-android-app
+        run: ./gradlew bundleReleaseUnsigned --stacktrace --no-daemon
+
+      - name: Locate, rename and verify AAB
+        id: aab
+        working-directory: ./native-android-app
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION_NAME="${{ steps.policy.outputs.version_name }}"
+          test -n "$VERSION_NAME"
+
+          AAB_PATH=$(find app/build/outputs/bundle -name "*.aab" -type f -print -quit)
+          test -n "$AAB_PATH"
+          test -s "$AAB_PATH"
+
+          NEW_NAME="SentinelQuantumVanguard-v${VERSION_NAME}-release-unsigned-validation.aab"
+          cp "$AAB_PATH" "$NEW_NAME"
+
+          echo "Built AAB: $NEW_NAME"
+          ls -lh "$NEW_NAME"
+
+          # This CI artifact is intentionally unsigned. Validate every ZIP entry
+          # and the exact Android App Bundle root metadata before artifact upload.
+          # Signature verification belongs to the separately gated production release.
+          unzip -tq "$NEW_NAME"
+          if ! unzip -Z1 "$NEW_NAME" | grep -Fx 'BundleConfig.pb' >/dev/null; then
+            echo "ERROR: unsigned AAB missing BundleConfig.pb" >&2
+            exit 1
+          fi
+          echo "Unsigned AAB ZIP CRC and BundleConfig.pb: OK"
+
+          if command -v bundletool >/dev/null 2>&1; then
+            bundletool validate --bundle="$NEW_NAME"
+          else
+            echo "bundletool unavailable: ZIP integrity verified, semantic bundle validation not claimed"
+          fi
+
+          echo "aab_name=${NEW_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SentinelQuantumVanguard-AAB-UNSIGNED-VALIDATION-${{ github.sha }}
+          path: native-android-app/${{ steps.aab.outputs.aab_name }}
+          if-no-files-found: error
+          retention-days: 14

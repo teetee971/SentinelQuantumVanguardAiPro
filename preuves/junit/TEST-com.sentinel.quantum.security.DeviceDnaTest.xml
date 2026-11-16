@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.DeviceDnaTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.678Z" hostname="localhost" time="0.024">
+  <properties/>
+  <testcase name="emptyEvidenceIsIgnoredAndLongLabelsAreBounded" classname="com.sentinel.quantum.security.DeviceDnaTest" time="0.021"/>
+  <testcase name="userTrustRaisesConfidenceButDoesNotExceedOneHundred" classname="com.sentinel.quantum.security.DeviceDnaTest" time="0.001"/>
+  <testcase name="aggregatesDistinctLocalEvidenceWithoutClaimingIdentityProof" classname="com.sentinel.quantum.security.DeviceDnaTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

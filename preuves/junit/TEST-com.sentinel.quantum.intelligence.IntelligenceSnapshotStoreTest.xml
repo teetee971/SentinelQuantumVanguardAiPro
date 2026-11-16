@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.103Z" hostname="localhost" time="0.173">
+  <properties/>
+  <testcase name="retention_enforces_maximum_age_and_count" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.068"/>
+  <testcase name="duplicate_event_id_is_an_idempotent_no_op" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.024"/>
+  <testcase name="serialized_storage_contains_no_raw_sensitive_fixtures" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.031"/>
+  <testcase name="call_screening_critical_path_does_not_reference_snapshot_store" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.005"/>
+  <testcase name="unknown_future_schema_fails_safely" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.01"/>
+  <testcase name="restart_rebuild_reproduces_snapshot_from_same_retained_evidence" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.012"/>
+  <testcase name="community_report_roundtrips_without_becoming_reputation" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.01"/>
+  <testcase name="corrupted_payload_returns_empty_state_instead_of_fabricated_facts" classname="com.sentinel.quantum.intelligence.IntelligenceSnapshotStoreTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

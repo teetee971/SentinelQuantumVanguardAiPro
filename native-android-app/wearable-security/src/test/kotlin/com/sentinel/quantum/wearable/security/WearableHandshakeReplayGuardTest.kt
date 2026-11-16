@@ -1,0 +1,132 @@
+package com.sentinel.quantum.wearable.security
+
+import java.security.SecureRandom
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class WearableHandshakeReplayGuardTest {
+    private var now = 100_000L
+    private var elapsed = 10_000L
+    private fun guard(maxPendingChallenges: Int = 1_024) = WearableHandshakeReplayGuard(
+        ttlMs = 5_000L,
+        clockMs = { now },
+        random = SecureRandom(),
+        elapsedClockMs = { elapsed },
+        maxPendingChallenges = maxPendingChallenges
+    )
+
+    private fun candidate(challenge: WearableHandshakeChallenge, stableId: String = challenge.stableId, issuedAtMs: Long = challenge.issuedAtMs) =
+        WearableHandshakeCandidate(
+            stableId = stableId,
+            keyFingerprintSha256 = "a".repeat(64),
+            sessionId = "session-1",
+            protocolVersion = 1,
+            capabilities = setOf("SENTINEL_ALERTS"),
+            challengeNonce = challenge.nonce,
+            issuedAtMs = issuedAtMs,
+            signedTranscript = byteArrayOf(1),
+            signature = byteArrayOf(2)
+        )
+
+    @Test fun consumesChallengeExactlyOnce() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        assertTrue(guard.consume(candidate(challenge)))
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun rejectsExpiredChallenge() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        now = challenge.expiresAtMs + 1
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun rejectsExpiredChallengeWhenWallClockIsFrozen() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        elapsed += 5_001L
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun wallClockRollbackPermanentlyInvalidatesChallenge() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        now--
+        assertFalse(guard.consume(candidate(challenge)))
+        now = challenge.issuedAtMs
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun monotonicClockRollbackPermanentlyInvalidatesChallenge() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        elapsed--
+        assertFalse(guard.consume(candidate(challenge)))
+        elapsed++
+        assertFalse(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun acceptsWithinBothClockWindows() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        now += 4_999L
+        elapsed += 4_999L
+        assertTrue(guard.consume(candidate(challenge)))
+    }
+
+    @Test(expected = ArithmeticException::class)
+    fun rejectsOverflowingWallClockDeadline() {
+        now = Long.MAX_VALUE - 1
+        guard().issue("watch-1")
+    }
+
+    @Test fun rejectsDifferentIdentityWithoutConsumingChallenge() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        assertFalse(guard.consume(candidate(challenge, stableId = "watch-2")))
+        assertTrue(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun rejectsUnknownNonce() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        val unknown = candidate(challenge).copy(challengeNonce = "BBBBBBBBBBBBBBBBBBBBBB")
+        assertFalse(guard.consume(unknown))
+    }
+
+    @Test fun rejectsTimestampThatDoesNotExactlyMatchChallengeIssuance() {
+        val guard = guard()
+        val challenge = guard.issue("watch-1")
+        assertFalse(guard.consume(candidate(challenge, issuedAtMs = challenge.issuedAtMs - 1)))
+        assertFalse(guard.consume(candidate(challenge, issuedAtMs = challenge.issuedAtMs + 1)))
+        assertTrue(guard.consume(candidate(challenge)))
+    }
+
+    @Test fun boundsPendingChallengeStateAndRecoversAfterExpiry() {
+        val guard = guard(maxPendingChallenges = 2)
+        guard.issue("watch-1")
+        guard.issue("watch-2")
+        assertThrows(IllegalStateException::class.java) {
+            guard.issue("watch-3")
+        }
+
+        now += 5_001L
+        elapsed += 5_001L
+        guard.issue("watch-3")
+    }
+
+    @Test fun explicitRevokeInvalidatesOnlyTargetChallengeAndReleasesCapacity() {
+        val guard = guard(maxPendingChallenges = 2)
+        val first = guard.issue("watch-1")
+        val second = guard.issue("watch-2")
+
+        assertTrue(guard.revoke(first.nonce))
+        assertFalse(guard.revoke(first.nonce))
+        assertFalse(guard.consume(candidate(first)))
+        assertTrue(guard.consume(candidate(second)))
+        guard.issue("watch-3")
+    }
+}

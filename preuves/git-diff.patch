@@ -1,0 +1,76 @@
+diff --git a/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt b/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt
+index d2edaab1..60efd6aa 100644
+--- a/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt
++++ b/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt
+@@ -134,7 +134,7 @@ class BluetoothScanner(context: Context) {
+                 val firstSighting = sessionKey !in discovered
+                 discovered[sessionKey] = mapped
+                 if (firstSighting) {
+-                    armQuiet(scanCallback, onResults, onScanFinished, onTimelineUpdated)
++                    armQuiet(this, onResults, onScanFinished, onTimelineUpdated)
+                 }
+                 onResults(sortedResults())
+             }
+diff --git a/native-android-app/app/src/main/java/com/sentinel/quantum/security/TrackerRepeat.kt b/native-android-app/app/src/main/java/com/sentinel/quantum/security/TrackerRepeat.kt
+index dcffb1ed..011463dd 100644
+--- a/native-android-app/app/src/main/java/com/sentinel/quantum/security/TrackerRepeat.kt
++++ b/native-android-app/app/src/main/java/com/sentinel/quantum/security/TrackerRepeat.kt
+@@ -35,7 +35,9 @@ class TrackerRepeatMemory(context: Context) {
+     private val preferences = context.applicationContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+ 
+     fun read(identity: String): TrackerRepeatState = synchronized(LOCK) {
+-        parse(preferences.getString(KEY, null)).entries[identity] ?: TrackerRepeatState(0, 0)
++        parse(preferences.getString(KEY, null)).entries[identity]
++            ?.let { TrackerRepeatState(it.sightings, it.placeKeys.size) }
++            ?: TrackerRepeatState(0, 0)
+     }
+ 
+     fun record(identity: String, place: String?): TrackerRepeatState = synchronized(LOCK) {
+diff --git a/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiIntrusionHints.kt b/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiIntrusionHints.kt
+index 357585a7..e1cc11fa 100644
+--- a/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiIntrusionHints.kt
++++ b/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiIntrusionHints.kt
+@@ -17,7 +17,7 @@ object WifiIntrusionHints {
+             if (distinct.size < 2) return@forEach
+             val strong = distinct.filter { it.assessment.securityType in STRONG }
+             val weak = distinct.filter { it.assessment.securityType in WEAK }
+-            if (strong.isEmpty() || weak.isEmpty()) return@forEach
++            if (strong.isNotEmpty() && weak.isNotEmpty()) {
+             val name = distinct.first().ssid
+             val joinedToWeak = joined != null &&
+                 joined.ssid.trim().equals(name, ignoreCase = true) &&
+@@ -33,6 +33,7 @@ object WifiIntrusionHints {
+                     "Le nom « $name » est annoncé à la fois chiffré et en ouvert ou en WEP. Cela peut être une copie. Ce n’est pas une intrusion constatée."
+                 )
+             }
++            }
+             val enterprise = distinct.filter { it.assessment.securityType == WifiSecurityType.WPA2_ENTERPRISE }
+             val personal = distinct.filter { it.assessment.securityType in PERSONAL }
+             if (enterprise.isNotEmpty() && personal.isNotEmpty()) {
+diff --git a/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt b/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt
+index d8d90876..e8a4417f 100644
+--- a/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt
++++ b/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt
+@@ -1,4 +1,6 @@
+ package com.sentinel.quantum.ui.screens
++import com.sentinel.quantum.security.WifiBand
++import kotlinx.coroutines.launch
+ 
+ import android.content.Intent
+ import android.net.Uri
+@@ -69,6 +71,7 @@ import com.sentinel.quantum.security.WifiRadioAnalyzer
+ import com.sentinel.quantum.security.WifiScanResultTruth
+ import com.sentinel.quantum.security.WifiScanner
+ import com.sentinel.quantum.security.WifiSecurityType
++import com.sentinel.quantum.security.JoinedLanServiceCatalog
+ import com.sentinel.quantum.ui.design.SentinelGlassCard
+ import com.sentinel.quantum.ui.design.SentinelHeroVisual
+ import com.sentinel.quantum.ui.design.SentinelMotionPolicy
+@@ -130,6 +133,7 @@ fun NetworkSurveillanceScreen(navController: NavController) {
+     var statusMessage by remember { mutableStateOf<String?>(null) }
+     var permissionDenied by remember { mutableStateOf(false) }
+     var isScanning by remember { mutableStateOf(false) }
++    var lanRunning by remember { mutableStateOf(false) }
+     var covertDeviceAlerted by remember { mutableStateOf(setOf<String>()) }
+     var timelineSnapshot by remember {
+         mutableStateOf(

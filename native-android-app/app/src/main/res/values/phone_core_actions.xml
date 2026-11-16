@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_core_keypad">Clavier</string>
+    <string name="phone_core_call">Appeler</string>
+    <string name="phone_core_answer">Décrocher</string>
+    <string name="phone_core_hangup">Raccrocher</string>
+    <string name="phone_core_reply">Répondre</string>
+    <string name="phone_core_send">Envoyer</string>
+    <string name="phone_core_send_mms">Envoyer le MMS</string>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WifiRiskEvaluatorTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.173Z" hostname="localhost" time="0.001">
+  <properties/>
+  <testcase name="genericEncryptedSsidIsMediumRisk" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.001"/>
+  <testcase name="openNetworkIsHighRiskAndFlagsCaptivePortal" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="mapsFrequenciesToBands" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="detectsSecurityTypesFromCapabilities" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="hiddenSsidIsHighRisk" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="userBlocklistForcesHighRiskAndAllowlistNeverDowngradesOpenNetwork" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="veryStrongSignalWithUnknownEncryptionIsHighRisk" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="wepIsMediumRisk" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="cameraNameIsAHintNotAProofOfAbsence" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="modernEncryptionWithReasonableNameIsLowRisk" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="cameraLikeSsidIsFlaggedWithoutCallingItProof" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <testcase name="allowlistDowngradesGenericEncryptedNetwork" classname="com.sentinel.quantum.security.WifiRiskEvaluatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

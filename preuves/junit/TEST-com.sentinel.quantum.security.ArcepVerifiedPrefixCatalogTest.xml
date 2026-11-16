@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.638Z" hostname="localhost" time="0.052">
+  <properties/>
+  <testcase name="validatedRuntimeUsePublishesFreshPartialRegulatoryTruth" classname="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" time="0.011"/>
+  <testcase name="snapshotKeepsManualRulesSeparateFromEffectiveArcepRules" classname="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" time="0.0"/>
+  <testcase name="planLabelsDoNotSilence" classname="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" time="0.024"/>
+  <testcase name="guadeloupeRangesUseCanonicalE164Prefixes" classname="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" time="0.0"/>
+  <testcase name="runtimeValidationRejectsMalformedOrDuplicateCatalogEntries" classname="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" time="0.001"/>
+  <testcase name="allPublishedPrefixesAreCanonicalAndBounded" classname="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" time="0.0"/>
+  <testcase name="arcepPrefixCanBlockOnlyWhenPassedAsExplicitBlockingRule" classname="com.sentinel.quantum.security.ArcepVerifiedPrefixCatalogTest" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

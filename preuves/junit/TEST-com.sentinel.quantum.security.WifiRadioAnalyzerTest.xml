@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WifiRadioAnalyzerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.128Z" hostname="localhost" time="0.032">
+  <properties/>
+  <testcase name="securityAndPmfAreReadFromCapabilities" classname="com.sentinel.quantum.security.WifiRadioAnalyzerTest" time="0.0"/>
+  <testcase name="surveyCountsCoChannelAndOverlapping24GhzNetworks" classname="com.sentinel.quantum.security.WifiRadioAnalyzerTest" time="0.015"/>
+  <testcase name="channelsFollowTheStandardNumbering" classname="com.sentinel.quantum.security.WifiRadioAnalyzerTest" time="0.0"/>
+  <testcase name="locallyAdministeredAddressHidesTheVendor" classname="com.sentinel.quantum.security.WifiRadioAnalyzerTest" time="0.0"/>
+  <testcase name="duplicateBssidKeepsTheStrongestSignalAndAnEmptyTypeWaitsLess" classname="com.sentinel.quantum.security.WifiRadioAnalyzerTest" time="0.013"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

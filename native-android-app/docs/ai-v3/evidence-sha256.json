@@ -1,0 +1,23 @@
+{
+  "baseline-junit.log": "02190d6e1eaf7a07bdb6bd7c16823547c705df813590a3f3b609a3dbb5de7f11",
+  "reproduction.log": "a6fe093c382b75eac5ae345a37dd8aa7b9f20d94a16539da3d3f7f952b471cb6",
+  "gradle.log": "b1cedf775069bccfb1293e7e2203e41ca928b9f7bf1b924ef5eae087f6e9787c",
+  "baseline-source-sha256.json": "136356910c60e2cd1fca7cc8404a193e962e900cea1eef8feb06c697554f6434",
+  "qualified-jvm-run/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "qualified-jvm-run/java-version.log": "0fc83381287ccbc8623d257bce2b0d03997ba0e85ff4492d38b409aea37a8aa9",
+  "qualified-jvm-run/junit.log": "08af29b1d6b69b1776fcb4b2be6d84fec363f0b80b8ca55ed88494a851e6a417",
+  "qualified-jvm-run/kotlin-version.log": "4b2c28bbcb1f3a2bf91aa09c8d2bbe1818ee853fb1f3c1cbd93358b8bcaa985a",
+  "qualified-jvm-run/manifest.json": "309389355dc8649d0b1f252fd99862adcc4d6a16294803d7d646c167c00ed80e",
+  "qualified-jvm-run/runner-compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiActionGateHardeningTest.xml": "13043cd4e7517cfb64346cd349481892aea0341c21029c1f1447677b2cada821",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiActionGateTest.xml": "4e015ae3fe2045ccf407ea8ecfdf77abf840be3fd292ad54068be19a3cce45f3",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiApprovalAuthorityTest.xml": "14038d1507d4d9505b87dc62934ae6a64ac094fcf3dde793a833691edcc143da",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiApprovalBrokerTest.xml": "a3d889dfb7151e78a587634943b8d5759b62ae4ef9187b8b0440a3b49a371d0f",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiApprovalPortsTest.xml": "f8f73b0e304e11995baea09604b546c4d37f646f88f92d062de68a67e11a518d",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiBoundaryRegressionTest.xml": "61d26220a030a64c9e165cbf4d3813d3a20a2e70dd7444a78d03f162e043f82d",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiEngineRouterTest.xml": "05a13ecdc2088dc223fd8e21757b23ee9d1287c4f6de5d11e5960ca9385fb2a7",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest.xml": "a18120d8d4b8f873744634ecf889cccf4b383228217871d900e295c6fc6afff3",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiSecureControllerTest.xml": "e96f7a761f319828b74f2ddad8eddc0f56f1b3ed39661016beea99797ca75be3",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiSessionScopeTest.xml": "48da9b35b3a3fd7f3e712257cbd597f0dbb8af62143b26adf8a5d75d5f5d6198",
+  "qualified-jvm-run/xml/TEST-com.sentinel.quantum.ai.SentinelAiV3ConfigTest.xml": "378bd7d40d90a62f45e8aa69ac5ec6a8f86d7a71532b5ff965f7d688dde026d6"
+}

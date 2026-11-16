@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:46.671Z" hostname="localhost" time="0.097">
+  <properties/>
+  <testcase name="oversizedMessageIsRejected" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.018"/>
+  <testcase name="mismatchesAndMisleadingLinkAreDetected" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.021"/>
+  <testcase name="auditDoesNotCopyContents" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.002"/>
+  <testcase name="decodesRfc2231AttachmentNameBeforeCheckingExtension" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.009"/>
+  <testcase name="authenticationFailuresProduceHighRisk" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.004"/>
+  <testcase name="completeOfflineAnalysisFindsHeadersIocsAttachmentsAndLookalikes" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.008"/>
+  <testcase name="decodesContinuedRfc2231AttachmentName" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.004"/>
+  <testcase name="detectsLookalikeInSenderHeaderWithoutBodyLink" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.005"/>
+  <testcase name="cleanObservedAuthenticationRemainsLowRisk" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.006"/>
+  <testcase name="tooManyReceivedHopsAreRejected" classname="com.sentinel.quantum.security.EmailSecurityAnalyzerTest" time="0.016"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

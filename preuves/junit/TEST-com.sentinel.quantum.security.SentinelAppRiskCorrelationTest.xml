@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.673Z" hostname="localhost" time="0.006">
+  <properties/>
+  <testcase name="accessibilityPlusOverlayIsElevatedButNotCritical" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.005"/>
+  <testcase name="accessibilityOverlayAndUnknownInstallIsCriticalCombination" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.0"/>
+  <testcase name="vpnAccessibilityOverlayAndUnknownInstallIsCriticalButNotMalwareVerdict" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.0"/>
+  <testcase name="singleNonVpnSensitiveCapabilityStaysWarning" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.0"/>
+  <testcase name="vpnAloneIsInformationalNotRiskWarning" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.0"/>
+  <testcase name="noConfirmedSignalsIsOkForCorrelationOnly" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.0"/>
+  <testcase name="vpnAccessibilityAndOverlayIsWarningWithoutUnknownInstall" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.001"/>
+  <testcase name="deviceAdminPlusUnknownInstallIsElevated" classname="com.sentinel.quantum.security.SentinelAppRiskCorrelationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

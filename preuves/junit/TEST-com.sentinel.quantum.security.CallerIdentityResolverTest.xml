@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallerIdentityResolverTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:44.872Z" hostname="localhost" time="0.288">
+  <properties/>
+  <testcase name="normalizes overseas national prefixes before geographic resolution" classname="com.sentinel.quantum.security.CallerIdentityResolverTest" time="0.045"/>
+  <testcase name="normalizes French national number and identifies mobile" classname="com.sentinel.quantum.security.CallerIdentityResolverTest" time="0.001"/>
+  <testcase name="does not overclaim a country for shared plus 590 calling code" classname="com.sentinel.quantum.security.CallerIdentityResolverTest" time="0.001"/>
+  <testcase name="classifies French service number" classname="com.sentinel.quantum.security.CallerIdentityResolverTest" time="0.169"/>
+  <testcase name="does not invent an identity" classname="com.sentinel.quantum.security.CallerIdentityResolverTest" time="0.069"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

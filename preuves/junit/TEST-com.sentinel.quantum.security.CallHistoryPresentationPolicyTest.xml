@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallHistoryPresentationPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:43.016Z" hostname="localhost" time="0.008">
+  <properties/>
+  <testcase name="cachedNameKeepsMaskedNumberVisible" classname="com.sentinel.quantum.security.CallHistoryPresentationPolicyTest" time="0.007"/>
+  <testcase name="unnamedCallUsesNumberAsPrimaryLabel" classname="com.sentinel.quantum.security.CallHistoryPresentationPolicyTest" time="0.0"/>
+  <testcase name="blankNumberKeepsMaskedNumberVisible" classname="com.sentinel.quantum.security.CallHistoryPresentationPolicyTest" time="0.0"/>
+  <testcase name="unnamedMaskedCallUsesMaskedPrimaryLabel" classname="com.sentinel.quantum.security.CallHistoryPresentationPolicyTest" time="0.0"/>
+  <testcase name="namedCallShowsNumberAsSecondaryLabel" classname="com.sentinel.quantum.security.CallHistoryPresentationPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

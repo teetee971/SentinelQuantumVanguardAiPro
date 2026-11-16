@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.EmailHeaderAnalyzerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:46.554Z" hostname="localhost" time="0.044">
+  <properties/>
+  <testcase name="detectsReceivedTimestampInversionAndMissingHeaders" classname="com.sentinel.quantum.security.EmailHeaderAnalyzerTest" time="0.015"/>
+  <testcase name="rejectsOversizedUnfoldedHeaderValues" classname="com.sentinel.quantum.security.EmailHeaderAnalyzerTest" time="0.023"/>
+  <testcase name="preservesOrdinaryHeaderFolding" classname="com.sentinel.quantum.security.EmailHeaderAnalyzerTest" time="0.001"/>
+  <testcase name="requiresMimeVersionOnlyWhenMimeContentIsDeclared" classname="com.sentinel.quantum.security.EmailHeaderAnalyzerTest" time="0.001"/>
+  <testcase name="acceptsNormalPrivateToPublicRelayChain" classname="com.sentinel.quantum.security.EmailHeaderAnalyzerTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

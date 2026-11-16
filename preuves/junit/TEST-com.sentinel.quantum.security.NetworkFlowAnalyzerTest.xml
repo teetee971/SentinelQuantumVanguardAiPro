@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NetworkFlowAnalyzerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.020Z" hostname="localhost" time="0.028">
+  <properties/>
+  <testcase name="rejectsOverlongNormalizedEndpointsWithoutSilentTruncation" classname="com.sentinel.quantum.security.NetworkFlowAnalyzerTest" time="0.022"/>
+  <testcase name="aggregatesFlowMetadataByDestinationProtocolAndPort" classname="com.sentinel.quantum.security.NetworkFlowAnalyzerTest" time="0.001"/>
+  <testcase name="saturatesPerDestinationCountersInsteadOfOverflowing" classname="com.sentinel.quantum.security.NetworkFlowAnalyzerTest" time="0.001"/>
+  <testcase name="distinctProtocolsRemainSeparate" classname="com.sentinel.quantum.security.NetworkFlowAnalyzerTest" time="0.001"/>
+  <testcase name="rejectsMalformedMetadataWithoutInspectingPayloads" classname="com.sentinel.quantum.security.NetworkFlowAnalyzerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

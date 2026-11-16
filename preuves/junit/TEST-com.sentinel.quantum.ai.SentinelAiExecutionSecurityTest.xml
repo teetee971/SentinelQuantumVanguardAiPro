@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" tests="29" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:40.196Z" hostname="localhost" time="0.563">
+  <properties/>
+  <testcase name="defaultAuthenticationDeniesEvenWithCatalog" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.005"/>
+  <testcase name="gateRollbackCannotBeRecoveredByRevocation" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.002"/>
+  <testcase name="expirationAfterApprovalBlocksExecutionAtExactBoundary" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.002"/>
+  <testcase name="modifiedExpiryDoesNotApproveOrExecuteOriginal" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.001"/>
+  <testcase name="proposalCapabilityHasNoDecisionOrExecutionInterface" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.011"/>
+  <testcase name="strictCatalogRejectsUnknownActionAndParameters" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.002"/>
+  <testcase name="rollbackAfterApprovalInvalidatesAllGrants" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.001"/>
+  <testcase name="reentrantGlobalRevocationDuringAuthenticationWins" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.002"/>
+  <testcase name="permissionExceptionNeverExecutes" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.003"/>
+  <testcase name="concurrentExecutionIsExactlyOnce" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.028"/>
+  <testcase name="unapprovedProposalCannotExecute" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.012"/>
+  <testcase name="reentrantRevocationDuringPermissionCheckWins" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.008"/>
+  <testcase name="revocationWaitsForStartedEffectAndBlocksFutureEffects" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.123"/>
+  <testcase name="globalRevocationAfterApprovalBlocksExecution" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.002"/>
+  <testcase name="clockExceptionPoisonsControllerPermanently" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.011"/>
+  <testcase name="authenticationFailureConsumesProposal" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.006"/>
+  <testcase name="exceptionAfterEffectIsUnknownAndNeverRetried" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.007"/>
+  <testcase name="reentrantApprovalCannotDuplicateCapability" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.003"/>
+  <testcase name="concurrentApprovalIsExactlyOnce" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.029"/>
+  <testcase name="confirmationRacingRevocationCannotExecuteAfterBothReturn" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.224"/>
+  <testcase name="successfulExecutionAndApprovalAreSingleUse" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.002"/>
+  <testcase name="authenticationCannotReentrantlyFillProposalCapacity" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.008"/>
+  <testcase name="defaultRootHasNoActions" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.004"/>
+  <testcase name="rejectingDuringAuthenticationCancelsApproval" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.004"/>
+  <testcase name="boundedParametersRejectBeforeValidator" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.003"/>
+  <testcase name="authenticationExceptionFailsClosed" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.008"/>
+  <testcase name="sessionRevocationAfterApprovalBlocksExecution" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.001"/>
+  <testcase name="permissionsAreRecheckedAndFailureConsumesGrant" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.001"/>
+  <testcase name="approvedButUnusedCapabilitiesAreBounded" classname="com.sentinel.quantum.ai.SentinelAiExecutionSecurityTest" time="0.027"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

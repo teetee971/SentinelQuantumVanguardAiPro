@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallRuleBoundaryTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:43.280Z" hostname="localhost" time="0.006">
+  <properties/>
+  <testcase name="malformedCallerIdFailsOpen" classname="com.sentinel.quantum.security.CallRuleBoundaryTest" time="0.0"/>
+  <testcase name="explicitUserPrefixCanBlock" classname="com.sentinel.quantum.security.CallRuleBoundaryTest" time="0.002"/>
+  <testcase name="signedReputationCanSilenceButNeverBlock" classname="com.sentinel.quantum.security.CallRuleBoundaryTest" time="0.002"/>
+  <testcase name="internationalAndFrenchRepresentationsRemainEquivalentForMatching" classname="com.sentinel.quantum.security.CallRuleBoundaryTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

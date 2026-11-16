@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsRoleMigrationPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.168Z" hostname="localhost" time="0.001">
+  <properties/>
+  <testcase name="incompleteClientCannotRequestRole" classname="com.sentinel.quantum.security.SmsRoleMigrationPolicyTest" time="0.0"/>
+  <testcase name="fullyValidatedDefaultHandlerIsActive" classname="com.sentinel.quantum.security.SmsRoleMigrationPolicyTest" time="0.0"/>
+  <testcase name="playReviewRemainsSeparateAfterPhysicalValidation" classname="com.sentinel.quantum.security.SmsRoleMigrationPolicyTest" time="0.0"/>
+  <testcase name="emptyClientRemainsManualScannerWithoutSmsPermissions" classname="com.sentinel.quantum.security.SmsRoleMigrationPolicyTest" time="0.0"/>
+  <testcase name="completeSoftwareClientCanRequestRoleBeforePhysicalValidation" classname="com.sentinel.quantum.security.SmsRoleMigrationPolicyTest" time="0.0"/>
+  <testcase name="defaultHandlerMayUseSmsPermissionsForPhysicalValidation" classname="com.sentinel.quantum.security.SmsRoleMigrationPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

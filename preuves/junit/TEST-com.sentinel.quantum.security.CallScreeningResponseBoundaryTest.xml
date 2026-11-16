@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallScreeningResponseBoundaryTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:44.637Z" hostname="localhost" time="0.057">
+  <properties/>
+  <testcase name="boundaries_are_isolated_per_call" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryTest" time="0.01"/>
+  <testcase name="concurrent_submission_cannot_run_before_response_returns" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryTest" time="0.02"/>
+  <testcase name="throwing_response_never_opens_boundary" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryTest" time="0.007"/>
+  <testcase name="duplicate_response_delivery_is_rejected" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryTest" time="0.003"/>
+  <testcase name="successful_response_allows_post_response_work" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryTest" time="0.013"/>
+  <testcase name="submission_before_response_is_rejected_without_running_work" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

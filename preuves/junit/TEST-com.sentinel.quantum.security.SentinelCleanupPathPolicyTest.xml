@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelCleanupPathPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.745Z" hostname="localhost" time="0.055">
+  <properties/>
+  <testcase name="siblingPrefixDoesNotPassBoundary" classname="com.sentinel.quantum.security.SentinelCleanupPathPolicyTest" time="0.018"/>
+  <testcase name="cacheRootItselfCannotBeDeletedAsCandidate" classname="com.sentinel.quantum.security.SentinelCleanupPathPolicyTest" time="0.007"/>
+  <testcase name="childFileIsInsideRoot" classname="com.sentinel.quantum.security.SentinelCleanupPathPolicyTest" time="0.008"/>
+  <testcase name="traversalNormalizesOutsideRoot" classname="com.sentinel.quantum.security.SentinelCleanupPathPolicyTest" time="0.011"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

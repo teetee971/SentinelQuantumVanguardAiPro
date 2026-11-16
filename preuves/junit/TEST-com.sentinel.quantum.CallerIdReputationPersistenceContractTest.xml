@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.CallerIdReputationPersistenceContractTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.197Z" hostname="localhost" time="0.083">
+  <properties/>
+  <testcase name="successfulConsentedEnrichmentFeedsTheLocalCommunicationCache" classname="com.sentinel.quantum.CallerIdReputationPersistenceContractTest" time="0.073"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

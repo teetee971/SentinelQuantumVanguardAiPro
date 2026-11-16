@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneWearableLivenessFailureRevocationTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.195Z" hostname="localhost" time="0.031">
+  <properties/>
+  <testcase name="lateFailureForSupersededSessionCannotRevokeReplacement" classname="com.sentinel.quantum.security.PhoneWearableLivenessFailureRevocationTest" time="0.025"/>
+  <testcase name="synchronousProbeTransportFailureRevokesMatchingSecureSessionImmediately" classname="com.sentinel.quantum.security.PhoneWearableLivenessFailureRevocationTest" time="0.002"/>
+  <testcase name="authenticatedTruthCallbackExceptionRevokesActiveSession" classname="com.sentinel.quantum.security.PhoneWearableLivenessFailureRevocationTest" time="0.002"/>
+  <testcase name="asynchronousProbeTransportFailureRevokesMatchingSecureSessionImmediately" classname="com.sentinel.quantum.security.PhoneWearableLivenessFailureRevocationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

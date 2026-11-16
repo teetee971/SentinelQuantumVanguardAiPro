@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelDuplicateGroupsTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.989Z" hostname="localhost" time="0.011">
+  <properties/>
+  <testcase name="canonicalAliasesDoNotCreateDuplicateGroup" classname="com.sentinel.quantum.security.SentinelDuplicateGroupsTest" time="0.005"/>
+  <testcase name="repeatedStableIdDoesNotCreateDuplicateGroup" classname="com.sentinel.quantum.security.SentinelDuplicateGroupsTest" time="0.0"/>
+  <testcase name="unknownSizeDoesNotInventReclaimableBytes" classname="com.sentinel.quantum.security.SentinelDuplicateGroupsTest" time="0.0"/>
+  <testcase name="threeCopiesCountOnlyTwoAsReclaimable" classname="com.sentinel.quantum.security.SentinelDuplicateGroupsTest" time="0.003"/>
+  <testcase name="contradictoryKnownSizesInvalidateHashGroup" classname="com.sentinel.quantum.security.SentinelDuplicateGroupsTest" time="0.001"/>
+  <testcase name="staleHashEvidenceDoesNotCreateDuplicateGroup" classname="com.sentinel.quantum.security.SentinelDuplicateGroupsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

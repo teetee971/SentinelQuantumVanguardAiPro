@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NetworkSnapshotDiffTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.219Z" hostname="localhost" time="0.105">
+  <properties/>
+  <testcase name="canonicalizesPeerEdges" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.056"/>
+  <testcase name="reportsRiskDirectionAndMaterialIncrease" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.005"/>
+  <testcase name="invalidChronologyOrThresholdFailsClosed" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.0"/>
+  <testcase name="malformedItemsAreRejected" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.01"/>
+  <testcase name="fingerprintNormalizationIsCaseInsensitive" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.0"/>
+  <testcase name="oversizedRiskMapFailsClosed" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.025"/>
+  <testcase name="missingRiskDoesNotInventDelta" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.0"/>
+  <testcase name="detectsAddedAndRemovedDevices" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.001"/>
+  <testcase name="detectsOpenedAndClosedServices" classname="com.sentinel.quantum.security.NetworkSnapshotDiffTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

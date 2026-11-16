@@ -1,0 +1,22 @@
+{
+  "name": "Sentinel Quantum Vanguard AI Pro",
+  "short_name": "Sentinel AI",
+  "description": "Plateforme défensive de cybersécurité, de veille et d’aide à la décision.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080b10",
+  "theme_color": "#080b10",
+  "icons": [
+    {
+      "src": "/public/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["security", "productivity", "utilities"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

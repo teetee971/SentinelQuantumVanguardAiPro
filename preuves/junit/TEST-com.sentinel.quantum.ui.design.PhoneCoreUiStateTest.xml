@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.306Z" hostname="localhost" time="0.013">
+  <properties/>
+  <testcase name="softwareReadyWithoutPhysicalProofIsReady" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.007"/>
+  <testcase name="unavailableWins" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.0"/>
+  <testcase name="blockedWinsOverReadiness" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.0"/>
+  <testcase name="carrierEnvironmentDoesNotReplaceMissingSoftwareOrProof" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.0"/>
+  <testcase name="thirteenOfFourteenCannotClaimValidated" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.0"/>
+  <testcase name="unknownHasDistinctNonMeasuredLabel" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.003"/>
+  <testcase name="phoneCoreHeadlinesFollowTruthState" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.001"/>
+  <testcase name="onlyFourteenOfFourteenIsValidated" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.0"/>
+  <testcase name="completedProofWithUnavailableCarrierEnvironmentIsDegraded" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.001"/>
+  <testcase name="partialPhysicalProofRemainsToTest" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.0"/>
+  <testcase name="missingSoftwareNeverClaimsReady" classname="com.sentinel.quantum.ui.design.PhoneCoreUiStateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

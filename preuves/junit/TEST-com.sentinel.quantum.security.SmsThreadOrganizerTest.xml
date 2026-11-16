@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsThreadOrganizerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.263Z" hostname="localhost" time="0.014">
+  <properties/>
+  <testcase name="deliveryVocabularyMapsToDelivery" classname="com.sentinel.quantum.security.SmsThreadOrganizerTest" time="0.011"/>
+  <testcase name="ordinaryConversationRemainsOther" classname="com.sentinel.quantum.security.SmsThreadOrganizerTest" time="0.001"/>
+  <testcase name="transactionVocabularyMapsToTransactions" classname="com.sentinel.quantum.security.SmsThreadOrganizerTest" time="0.0"/>
+  <testcase name="otpContextWinsOverOtherCategories" classname="com.sentinel.quantum.security.SmsThreadOrganizerTest" time="0.001"/>
+  <testcase name="allFilterMatchesEveryConversation" classname="com.sentinel.quantum.security.SmsThreadOrganizerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

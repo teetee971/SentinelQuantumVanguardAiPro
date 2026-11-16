@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.integration.IntegrationStateTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.594Z" hostname="localhost" time="0.018">
+  <properties/>
+  <testcase name="nonConnectedStatusRequiresDiagnosticReason" classname="com.sentinel.quantum.integration.IntegrationStateTest" time="0.007"/>
+  <testcase name="productStatesAreExactlyTheApprovedFiveValues" classname="com.sentinel.quantum.integration.IntegrationStateTest" time="0.0"/>
+  <testcase name="unknownCapabilityIdIsRejectedFailClosed" classname="com.sentinel.quantum.integration.IntegrationStateTest" time="0.005"/>
+  <testcase name="connectedStatusCannotCarryADegradedDiagnosticReason" classname="com.sentinel.quantum.integration.IntegrationStateTest" time="0.002"/>
+  <testcase name="stableCapabilityIdsCoverCanonicalRegistryFamilies" classname="com.sentinel.quantum.integration.IntegrationStateTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

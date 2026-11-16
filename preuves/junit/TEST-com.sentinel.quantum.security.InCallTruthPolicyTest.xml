@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.InCallTruthPolicyTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:47.097Z" hostname="localhost" time="0.013">
+  <properties/>
+  <testcase name="legacyDirectionDistinguishesIncomingAndOutgoingSetup" classname="com.sentinel.quantum.security.InCallTruthPolicyTest" time="0.011"/>
+  <testcase name="holdRequiresCurrentCapabilityAndRejectsGenericConference" classname="com.sentinel.quantum.security.InCallTruthPolicyTest" time="0.0"/>
+  <testcase name="muteAvailabilityMatchesCurrentAndroidCapability" classname="com.sentinel.quantum.security.InCallTruthPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

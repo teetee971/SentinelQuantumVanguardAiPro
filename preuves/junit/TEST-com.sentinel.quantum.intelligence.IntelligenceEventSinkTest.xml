@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.IntelligenceEventSinkTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.987Z" hostname="localhost" time="0.044">
+  <properties/>
+  <testcase name="closed_sink_rejects_without_throwing_into_producer" classname="com.sentinel.quantum.intelligence.IntelligenceEventSinkTest" time="0.007"/>
+  <testcase name="consumer_failure_never_escapes_publish_and_is_counted" classname="com.sentinel.quantum.intelligence.IntelligenceEventSinkTest" time="0.006"/>
+  <testcase name="queue_capacity_is_bounded_and_overflow_is_observable" classname="com.sentinel.quantum.intelligence.IntelligenceEventSinkTest" time="0.006"/>
+  <testcase name="successful_consumer_publishes_fresh_runtime_truth" classname="com.sentinel.quantum.intelligence.IntelligenceEventSinkTest" time="0.011"/>
+  <testcase name="duplicate_pending_event_id_is_not_enqueued_twice" classname="com.sentinel.quantum.intelligence.IntelligenceEventSinkTest" time="0.006"/>
+  <testcase name="publish_returns_promptly_while_consumer_is_blocked" classname="com.sentinel.quantum.intelligence.IntelligenceEventSinkTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,214 @@
+name: Frontend Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'index.html'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - '_headers'
+      - '_redirects'
+      - 'frontend/**'
+      - 'assets/**'
+      - 'config/**'
+      - 'scripts/**'
+      - 'ai-governance/**'
+      - 'ai-orchestrator/**'
+      - 'decision-plane/**'
+      - 'osint-intelligence/**'
+      - 'security/**'
+      - 'security-digital-twin/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.node-version'
+      - '.github/workflows/frontend-validation.yml'
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-frontend:
+    name: Validate static frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Validate credential hygiene
+        run: npm run test:credential-hygiene
+
+      - name: Validate generated public product truth contract
+        run: node --test scripts/generate-public-product-truth.test.js
+
+      - name: Validate JavaScript syntax
+        run: npm run test:syntax
+
+      - name: Validate HTML files
+        run: |
+          set -euo pipefail
+          test -f index.html
+          for file in index.html public/*.html; do
+            if [ -f "$file" ]; then
+              grep -qi '<html' "$file"
+              grep -qi '</html>' "$file"
+            fi
+          done
+
+      - name: Validate local links and assets
+        run: npm run test:static-links
+
+      - name: Validate shared navigation accessibility
+        run: npm run test:frontend-accessibility
+
+      - name: Protect the public product contract
+        run: npm run test:public-product-contract
+
+      - name: Validate module continuity
+        run: npm run test:module-continuity
+
+      - name: Validate module interface contracts
+        run: npm run test:module-interface-contracts
+
+      - name: Validate module cycles
+        run: npm run test:module-cycles
+
+      - name: Classify module usage
+        run: npm run test:module-usage-report
+
+      - name: Enforce module inventory
+        run: npm run test:module-inventory
+
+      - name: Validate public claims
+        run: npm run test:public-claims
+
+      - name: Test phone and SMS intelligence
+        run: npm run test:phone-intelligence
+
+      - name: Test GeoIntel evidence and source contracts
+        run: npm run test:geointel
+
+      - name: Test frontend size reporter
+        run: npm run test:frontend-size-report
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Validate generated product truth output
+        run: |
+          set -euo pipefail
+          test -s frontend/dist/public/product-truth.generated.json
+          test -s frontend/dist/public/product-truth.js
+          node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('frontend/dist/public/product-truth.generated.json','utf8')); if(p.schema_version!==1) process.exit(1); if(!Array.isArray(p.capabilities)||!Array.isArray(p.modules)) process.exit(1); if(Object.prototype.hasOwnProperty.call(p.capabilities[0]||{},'blockers')) process.exit(1);"
+          page_count=0
+          while IFS= read -r -d '' page; do
+            page_count=$((page_count + 1))
+            if ! grep -q 'product-truth.js' "$page"; then
+              echo "ERROR: product truth runtime missing from generated page: $page"
+              exit 1
+            fi
+          done < <(find frontend/dist -type f -name '*.html' -print0)
+          if [ "$page_count" -lt 1 ]; then
+            echo 'ERROR: no generated HTML pages found'
+            exit 1
+          fi
+          echo "Product truth runtime present on all ${page_count} generated HTML pages."
+
+      - name: Validate generated output
+        run: |
+          set -euo pipefail
+          test -s frontend/dist/index.html
+          test -s frontend/dist/robots.txt
+          test -s frontend/dist/sitemap.xml
+          test -s frontend/dist/_headers
+          test -s frontend/dist/_redirects
+          grep -q '^User-agent:' frontend/dist/robots.txt
+          grep -q 'Sitemap: https://sentinelquantumvanguardaipro.pages.dev/sitemap.xml' frontend/dist/robots.txt
+          grep -q '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' frontend/dist/sitemap.xml
+          grep -Eq '^/about[[:space:]]+/public/about[[:space:]]+301' frontend/dist/_redirects
+          grep -Eq '^/pricing[[:space:]]+/public/pricing[[:space:]]+301' frontend/dist/_redirects
+          grep -Eq '^/roadmap[[:space:]]+/public/roadmap[[:space:]]+301' frontend/dist/_redirects
+          if grep -Eq '/public/(about|pricing|roadmap)\.html[[:space:]]+301' frontend/dist/_redirects; then
+            echo 'ERROR: redirect targets must use Cloudflare canonical extensionless URLs'
+            exit 1
+          fi
+          if grep -q '\.html</loc>' frontend/dist/sitemap.xml; then
+            echo 'ERROR: sitemap must contain canonical extensionless Cloudflare URLs'
+            exit 1
+          fi
+          if grep -q '^/\\*[[:space:]]' frontend/dist/_redirects; then
+            echo 'ERROR: catch-all rewrite is forbidden because it masks missing static assets and SEO files'
+            exit 1
+          fi
+          test -d frontend/dist/public
+          test -s frontend/dist/public/manifest.json
+          test -s frontend/dist/public/sw.js
+          test -s frontend/dist/public/icon.svg
+
+      - name: Generate frontend size report
+        run: npm run report:frontend-size
+
+      - name: Upload frontend size report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-size-report-${{ github.sha }}
+          path: artifacts/frontend/size-report.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Validate generated output isolation
+        env:
+          SENTINEL_SCAN_GENERATED: '1'
+        run: node scripts/check-sentinel-isolation.js
+
+      - name: Validate no tracking scripts
+        run: |
+          set -euo pipefail
+          if grep -RniE 'google-analytics|gtag|googletagmanager|fbq|facebook\\.com/tr' \
+            --include='*.html' --include='*.js' --exclude-dir=node_modules --exclude-dir=dist .; then
+            echo 'ERROR: Tracking scripts detected'
+            exit 1
+          fi
+
+      - name: Validate current legal pages
+        run: |
+          set -euo pipefail
+          for page in public/legal.html public/privacy.html public/security.html public/faq.html; do
+            test -f "$page"
+          done
+
+      - name: Validate forbidden local/API endpoints
+        run: |
+          set -euo pipefail
+          if grep -RniE 'http://localhost|https://api\\.sentinel' \
+            --include='*.html' --include='*.js' --include='*.json' \
+            --exclude-dir=node_modules --exclude-dir=dist public config; then
+            echo 'ERROR: Forbidden hardcoded local/API endpoint detected'
+            exit 1
+          fi
+
+      - name: Validate generated credentials are absent
+        run: |
+          set -euo pipefail
+          ! find . -type f \( -name 'google-''services.json' -o -name '*.keystore' -o -name '*.jks' \) \
+            -not -path './node_modules/*' -not -path './.git/*' | grep .
+
+      - name: Summary
+        if: always()
+        run: echo 'Frontend validation completed.'

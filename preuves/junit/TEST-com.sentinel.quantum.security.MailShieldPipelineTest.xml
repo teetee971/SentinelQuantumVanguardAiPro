@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MailShieldPipelineTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.492Z" hostname="localhost" time="0.03">
+  <properties/>
+  <testcase name="lowRiskMailRemainsNormal" classname="com.sentinel.quantum.security.MailShieldPipelineTest" time="0.02"/>
+  <testcase name="classifiesDangerousHighRiskAttachmentAsQuarantineCandidateOnly" classname="com.sentinel.quantum.security.MailShieldPipelineTest" time="0.008"/>
+  <testcase name="rejectsMalformedInputWithoutAnyMailboxAction" classname="com.sentinel.quantum.security.MailShieldPipelineTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

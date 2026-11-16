@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.ContactSearchPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.637Z" hostname="localhost" time="0.007">
+  <properties/>
+  <testcase name="nameSearchIsCaseInsensitive" classname="com.sentinel.quantum.security.ContactSearchPolicyTest" time="0.003"/>
+  <testcase name="formattedPhoneMatchesCompactQuery" classname="com.sentinel.quantum.security.ContactSearchPolicyTest" time="0.0"/>
+  <testcase name="unrelatedQueryDoesNotMatch" classname="com.sentinel.quantum.security.ContactSearchPolicyTest" time="0.001"/>
+  <testcase name="compactPhoneMatchesFormattedQuery" classname="com.sentinel.quantum.security.ContactSearchPolicyTest" time="0.0"/>
+  <testcase name="blankQueryMatchesEveryVisibleContact" classname="com.sentinel.quantum.security.ContactSearchPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

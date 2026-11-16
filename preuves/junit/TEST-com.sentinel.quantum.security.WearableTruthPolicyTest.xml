@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearableTruthPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:13.984Z" hostname="localhost" time="0.001">
+  <properties/>
+  <testcase name="authenticatedButNotActiveDoesNotEnableSentinelCapabilities" classname="com.sentinel.quantum.security.WearableTruthPolicyTest" time="0.0"/>
+  <testcase name="activeChannelWithoutFreshProofFailsClosedAsStale" classname="com.sentinel.quantum.security.WearableTruthPolicyTest" time="0.0"/>
+  <testcase name="freshActiveChannelEnablesNegotiatedSentinelCapabilities" classname="com.sentinel.quantum.security.WearableTruthPolicyTest" time="0.0"/>
+  <testcase name="futureDatedProofFailsClosed" classname="com.sentinel.quantum.security.WearableTruthPolicyTest" time="0.0"/>
+  <testcase name="vendorBridgeCanBeActiveWithoutBluetoothBond" classname="com.sentinel.quantum.security.WearableTruthPolicyTest" time="0.0"/>
+  <testcase name="platformAndSentinelChannelRemainOrthogonal" classname="com.sentinel.quantum.security.WearableTruthPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.PhoneCoreSetupConfigurableStepTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.380Z" hostname="localhost" time="0.009">
+  <properties/>
+  <testcase name="unavailableSmsRoleSkipsSmsAndMmsPermissionsButKeepsTruthBlocked" classname="com.sentinel.quantum.PhoneCoreSetupConfigurableStepTest" time="0.001"/>
+  <testcase name="unavailableDialerNeverUnlocksDialerDependentRuntimePermissions" classname="com.sentinel.quantum.PhoneCoreSetupConfigurableStepTest" time="0.007"/>
+  <testcase name="unavailablePhoneRolesDoNotBlockIndependentSmsActivation" classname="com.sentinel.quantum.PhoneCoreSetupConfigurableStepTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

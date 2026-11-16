@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CommunityReportEgressPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:45.538Z" hostname="localhost" time="0.005">
+  <properties/>
+  <testcase name="dynamicGateRejectsRevokedMode" classname="com.sentinel.quantum.security.CommunityReportEgressPolicyTest" time="0.001"/>
+  <testcase name="enhancedRejectsWithoutExplicitConsent" classname="com.sentinel.quantum.security.CommunityReportEgressPolicyTest" time="0.0"/>
+  <testcase name="localOnlyRejectsEvenWithConsent" classname="com.sentinel.quantum.security.CommunityReportEgressPolicyTest" time="0.0"/>
+  <testcase name="enhancedExplicitConsentPassesPolicy" classname="com.sentinel.quantum.security.CommunityReportEgressPolicyTest" time="0.0"/>
+  <testcase name="dynamicGateAllowsCurrentEnhancedMode" classname="com.sentinel.quantum.security.CommunityReportEgressPolicyTest" time="0.001"/>
+  <testcase name="dynamicGateFailsClosedWhenStateReadFails" classname="com.sentinel.quantum.security.CommunityReportEgressPolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallScreeningResponseBoundaryIntegrationContractTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:44.539Z" hostname="localhost" time="0.072">
+  <properties/>
+  <testcase name="optional_work_uses_existing_bounded_worker_only_through_boundary" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryIntegrationContractTest" time="0.006"/>
+  <testcase name="screening_service_routes_every_platform_response_through_per_call_boundary" classname="com.sentinel.quantum.security.CallScreeningResponseBoundaryIntegrationContractTest" time="0.065"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

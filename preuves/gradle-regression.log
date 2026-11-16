@@ -1,0 +1,139 @@
+Picked up JAVA_TOOL_OPTIONS: -Dorg.sqlite.lib.path=/root/sentinel-sqlite-linux -Dorg.sqlite.lib.name=libsqlitejdbc.so
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.aapt2FromMavenOverride=/data/data/com.termux/files/home/sentinel-arm64-tools/extracted/build-tools/37.0.0/aapt2' is experimental.
+Add android.sync.suppressAgpWarnings=UNSUPPORTED_PROJECT_OPTION_USE to the gradle.properties file to suppress this warning.
+
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar
+> Task :wearable-security:compileTestFixturesKotlin
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar
+> Task :wearable-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-contract:compileKotlin
+> Task :wearable-contract:compileJava NO-SOURCE
+> Task :wearable-contract:processResources NO-SOURCE
+> Task :wearable-contract:classes UP-TO-DATE
+> Task :wearable-contract:jar
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:processDebugNavigationResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/MainActivity.kt:82:66 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:688:56 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:716:43 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreActivationActivity.kt:784:56 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/PhoneCoreLocalDiagnostics.kt:108:84 'val isVoiceCapable: Boolean' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:797:33 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:973:60 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1011:25 'fun ScrollableTabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., edgePadding: Dp = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryScrollableTabRow and SecondaryScrollableTabRow tab variants.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelDialerActivity.kt:1729:79 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SentinelInCallActivity.kt:586:42 'val Icons.Rounded.VolumeUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.VolumeUp.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:501:68 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:524:25 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeActivity.kt:764:52 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/integration/IntegrationSnapshot.kt:3:32 Non-public primary constructor is exposed via the generated 'copy()' method of the 'data' class.
+
+The generated 'copy()' will change its visibility in future releases.
+
+To suppress the warning do one of the following:
+- Annotate the data class with the '@ConsistentCopyVisibility' annotation.
+- Use the '-Xconsistent-data-class-copy-visibility' compiler flag.
+- Annotate the data class with the '@ExposedCopyVisibility' annotation 
+  (Discouraged, but can be used to keep binary compatibility).
+
+To learn more, see the documentation of the '@ConsistentCopyVisibility' and '@ExposedCopyVisibility' annotations.
+
+This will become an error in language version 2.5. See https://youtrack.jetbrains.com/issue/KT-11914.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt:250:23 Condition is always 'true'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/BluetoothScanner.kt:256:23 Condition is always 'true'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/InternationalNumberParser.kt:94:20 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/OwnerDeviceKeyManager.kt:71:52 'val isInsideSecureHardware: Boolean' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:180:23 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:183:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:183:71 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:198:45 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:235:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:438:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:442:45 Redundant call of conversion method.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:466:53 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:470:18 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:505:28 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:658:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:658:63 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:663:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:668:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:673:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:679:22 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt:703:26 'val state: Int' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelVpnController.kt:266:24 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelVpnController.kt:284:29 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/WearOsDataLayerAdapter.kt:65:39 Unnecessary safe call on a non-null receiver of type 'String'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiScanner.kt:213:42 'field SSID: String!' is deprecated. Deprecated in Java.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiScanner.kt:309:42 Unnecessary safe call on a non-null receiver of type '(Mutable)List<ScanResult.InformationElement!>'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/PhoneCoreWorkspace.kt:82:24 'fun rememberSwipeToDismissBoxState(initialValue: SwipeToDismissBoxValue = ..., confirmValueChange: (SwipeToDismissBoxValue) -> Boolean = ..., positionalThreshold: (Float) -> Float = ...): SwipeToDismissBoxState' is deprecated. confirmValueChange is deprecated without replacement. Rather than relying on a callback to veto state changes, the anchor set should not include disallowed anchors. See androidx.compose.foundation.samples.AnchoredDraggableDynamicAnchorsSample for an example of using dynamic anchors over confirmValueChange.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/EmailSecurityScreen.kt:35:21 'val LocalClipboardManager: ProvidableCompositionLocal<ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/NetworkSurveillanceScreen.kt:348:13 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/main/java/com/sentinel/quantum/ui/screens/PhoneSecurityScreen.kt:459:40 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+
+> Task :app:javaPreCompileDebug
+> Task :app:compileDebugJavaWithJavac
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:compileDebugNavigationResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiExecutionSecurityTest.kt:100:117 Expression is unused.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiExecutionSecurityTest.kt:158:104 Expression is unused.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/BoundedPostResponseExecutorTest.kt:36:32 Expression is unused.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/BoundedPostResponseExecutorTest.kt:40:36 Expression is unused.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallScreeningResponseBoundaryTest.kt:26:36 Expression is unused.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/CallScreeningResponseBoundaryTest.kt:88:33 Expression is unused.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/SmsCallbackProgressTest.kt:266:25 Unnecessary non-null assertion (!!) on a non-null receiver of type 'SmsCallbackProgress.State'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/VpnGatewayCatalogTransportTest.kt:68:20 Check for instance is always 'true'.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/WearablePairingStoreTest.kt:74:31 The corresponding parameter in the supertype 'WearablePairingBackend' is named 'record'. This may cause problems when calling this function with named arguments.
+w: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/app/src/test/java/com/sentinel/quantum/security/WearableSecureHandshakeCoordinatorTest.kt:50:33 The corresponding parameter in the supertype 'WearableHandshakeVerifier' is named 'candidate'. This may cause problems when calling this function with named arguments.
+
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS: -Dorg.sqlite.lib.path=/root/sentinel-sqlite-linux -Dorg.sqlite.lib.name=libsqlitejdbc.so
+
+[Incubating] Problems report is available at: file:///data/data/com.termux/files/home/sentinel-ai-v3-p0-validation-20261116/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 7m 22s
+34 actionable tasks: 34 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html

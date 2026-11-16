@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallBlockMetadataTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.889Z" hostname="localhost" time="0.008">
+  <properties/>
+  <testcase name="permanentBlockHasNoExpiry" classname="com.sentinel.quantum.security.CallBlockMetadataTest" time="0.0"/>
+  <testcase name="expiryOverflowFailsClosedAtMaxLong" classname="com.sentinel.quantum.security.CallBlockMetadataTest" time="0.0"/>
+  <testcase name="temporaryBlockExpiresDeterministically" classname="com.sentinel.quantum.security.CallBlockMetadataTest" time="0.0"/>
+  <testcase name="reasonIsBoundedAndNormalized" classname="com.sentinel.quantum.security.CallBlockMetadataTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

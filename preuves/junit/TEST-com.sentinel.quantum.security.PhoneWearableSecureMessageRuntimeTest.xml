@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneWearableSecureMessageRuntimeTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.378Z" hostname="localhost" time="0.049">
+  <properties/>
+  <testcase name="activeAuthorityWithFreshLivenessDoesNotAcceptInvalidCiphertext" classname="com.sentinel.quantum.security.PhoneWearableSecureMessageRuntimeTest" time="0.025"/>
+  <testcase name="oversizedPeerKeyIsRejectedBeforeMaterialIsUsed" classname="com.sentinel.quantum.security.PhoneWearableSecureMessageRuntimeTest" time="0.007"/>
+  <testcase name="revokedAndAbsentLivenessNeverDecryptsApplicationFrames" classname="com.sentinel.quantum.security.PhoneWearableSecureMessageRuntimeTest" time="0.008"/>
+  <testcase name="messageIsRejectedWithoutAuthenticatedSession" classname="com.sentinel.quantum.security.PhoneWearableSecureMessageRuntimeTest" time="0.0"/>
+  <testcase name="rejectedActivationDoesNotInstallUntrustedCrypto" classname="com.sentinel.quantum.security.PhoneWearableSecureMessageRuntimeTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

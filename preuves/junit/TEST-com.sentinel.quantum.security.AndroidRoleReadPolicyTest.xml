@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.AndroidRoleReadPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.615Z" hostname="localhost" time="0.011">
+  <properties/>
+  <testcase name="boolean role reads fail closed on platform errors" classname="com.sentinel.quantum.security.AndroidRoleReadPolicyTest" time="0.006"/>
+  <testcase name="nullable role reads fail closed on platform errors" classname="com.sentinel.quantum.security.AndroidRoleReadPolicyTest" time="0.002"/>
+  <testcase name="boolean role reads preserve valid results" classname="com.sentinel.quantum.security.AndroidRoleReadPolicyTest" time="0.001"/>
+  <testcase name="nullable role reads preserve successful values" classname="com.sentinel.quantum.security.AndroidRoleReadPolicyTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

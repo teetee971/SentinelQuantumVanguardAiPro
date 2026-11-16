@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.UnifiedProviderMessageTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.354Z" hostname="localhost" time="0.005">
+  <properties/>
+  <testcase name="mmsProviderBoxesRemainFactuallyDistinct" classname="com.sentinel.quantum.security.UnifiedProviderMessageTest" time="0.004"/>
+  <testcase name="mmsIdsUseANonCollidingNegativeNamespace" classname="com.sentinel.quantum.security.UnifiedProviderMessageTest" time="0.0"/>
+  <testcase name="sentMmsNeverManufacturesRecipientDelivery" classname="com.sentinel.quantum.security.UnifiedProviderMessageTest" time="0.0"/>
+  <testcase name="mmsDatesConvertSecondsWithoutOverflow" classname="com.sentinel.quantum.security.UnifiedProviderMessageTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

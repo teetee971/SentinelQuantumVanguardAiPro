@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.SentinelApplicationColdStartBoundaryTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.489Z" hostname="localhost" time="0.04">
+  <properties/>
+  <testcase name="maintenance_is_owned_by_post_response_screening_work" classname="com.sentinel.quantum.SentinelApplicationColdStartBoundaryTest" time="0.007"/>
+  <testcase name="foreground_resume_keeps_sms_mms_maintenance_alive" classname="com.sentinel.quantum.SentinelApplicationColdStartBoundaryTest" time="0.008"/>
+  <testcase name="maintenance_is_not_started_by_main_activity" classname="com.sentinel.quantum.SentinelApplicationColdStartBoundaryTest" time="0.004"/>
+  <testcase name="application_onCreate_does_not_start_non_critical_screening_work" classname="com.sentinel.quantum.SentinelApplicationColdStartBoundaryTest" time="0.011"/>
+  <testcase name="wearable_observation_is_foreground_only_and_retries_after_failure" classname="com.sentinel.quantum.SentinelApplicationColdStartBoundaryTest" time="0.004"/>
+  <testcase name="failed_post_response_maintenance_reopens_gate_for_retry" classname="com.sentinel.quantum.SentinelApplicationColdStartBoundaryTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

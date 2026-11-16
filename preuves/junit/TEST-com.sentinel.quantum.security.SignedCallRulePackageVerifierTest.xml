@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:10.633Z" hostname="localhost" time="0.131">
+  <properties/>
+  <testcase name="rejectsExpiredFutureAndExcessiveLifetimePackages" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.062"/>
+  <testcase name="rejectsUnknownKeyWrongCurveAndMalformedEnvelope" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.023"/>
+  <testcase name="acceptsValidFreshIncreasingPackage" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.006"/>
+  <testcase name="rejectsForgedOrMutatedPackage" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.008"/>
+  <testcase name="overlyBroadReputationPrefixIsRejected" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.007"/>
+  <testcase name="envelopeKeyMustMatchTheSignedPayloadKey" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.005"/>
+  <testcase name="rejectsUnsortedDuplicateOrNonCanonicalPrefixes" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.009"/>
+  <testcase name="rejectsRollbackAndReplaySequence" classname="com.sentinel.quantum.security.SignedCallRulePackageVerifierTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

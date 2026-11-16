@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.827Z" hostname="localhost" time="0.087">
+  <properties/>
+  <testcase name="input_order_does_not_change_snapshot" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.075"/>
+  <testcase name="evidence_without_ttl_has_unknown_freshness_not_fresh" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.0"/>
+  <testcase name="expired_reputation_is_stale_and_contributes_no_numeric_risk" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.001"/>
+  <testcase name="same_evidence_and_clock_yield_equal_snapshot" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.001"/>
+  <testcase name="conflicting_contact_and_signed_reputation_are_both_preserved_as_reasons" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.001"/>
+  <testcase name="future_timestamp_outside_allowed_skew_is_unknown_and_not_numeric" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.001"/>
+  <testcase name="revision_changes_only_when_accepted_evidence_set_changes" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.001"/>
+  <testcase name="duplicate_event_id_is_idempotent_and_revision_counts_accepted_set_only" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.0"/>
+  <testcase name="community_only_reputation_cannot_grant_blocking_authority" classname="com.sentinel.quantum.intelligence.IntelligenceAggregatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

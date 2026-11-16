@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsSubscriptionStateTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.252Z" hostname="localhost" time="0.007">
+  <properties/>
+  <testcase name="keepsExplicitSelectionWhileSimRemainsActive" classname="com.sentinel.quantum.security.SmsSubscriptionStateTest" time="0.006"/>
+  <testcase name="selectsOnlyActiveSimWhenChoiceIsUnambiguous" classname="com.sentinel.quantum.security.SmsSubscriptionStateTest" time="0.0"/>
+  <testcase name="clearsStaleSelectionWhenMultipleSimsRemain" classname="com.sentinel.quantum.security.SmsSubscriptionStateTest" time="0.0"/>
+  <testcase name="clearsSelectionWhenNoSimIsActive" classname="com.sentinel.quantum.security.SmsSubscriptionStateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ui.screens.NetworkVpnPresentationTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.739Z" hostname="localhost" time="0.017">
+  <properties/>
+  <testcase name="VPN is OK only after backend reports PROTECTED" classname="com.sentinel.quantum.ui.screens.NetworkVpnPresentationTest" time="0.012"/>
+  <testcase name="network risk never promotes low heuristic risk to OK" classname="com.sentinel.quantum.ui.screens.NetworkVpnPresentationTest" time="0.001"/>
+  <testcase name="unavailable gateway remains locked and never protected" classname="com.sentinel.quantum.ui.screens.NetworkVpnPresentationTest" time="0.0"/>
+  <testcase name="network summary stays truthful and is dominated by strongest observed risk" classname="com.sentinel.quantum.ui.screens.NetworkVpnPresentationTest" time="0.0"/>
+  <testcase name="protected surface is reserved for the controller protected state" classname="com.sentinel.quantum.ui.screens.NetworkVpnPresentationTest" time="0.004"/>
+  <testcase name="missing or stale runtime observation never presents a protected tunnel" classname="com.sentinel.quantum.ui.screens.NetworkVpnPresentationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

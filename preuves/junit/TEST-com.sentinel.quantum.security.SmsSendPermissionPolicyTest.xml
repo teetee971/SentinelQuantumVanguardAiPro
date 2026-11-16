@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.175Z" hostname="localhost" time="0.019">
+  <properties/>
+  <testcase name="send path requests only send and phone state permissions" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.009"/>
+  <testcase name="send path requests only the actually missing send permission" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.0"/>
+  <testcase name="activation path completes send phase before exposing inbox permissions" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.004"/>
+  <testcase name="inbox path is fail closed unless sms role is held" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.003"/>
+  <testcase name="activation path exposes inbox phase after send phase is complete" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.0"/>
+  <testcase name="inbox path requests only read and receive permissions when sms role is held" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.0"/>
+  <testcase name="send path returns no unrelated permissions when only inbox permissions are missing" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.001"/>
+  <testcase name="activation path is empty when all runtime permissions are satisfied" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.0"/>
+  <testcase name="activation path is fail closed until sms role is held" classname="com.sentinel.quantum.security.SmsSendPermissionPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

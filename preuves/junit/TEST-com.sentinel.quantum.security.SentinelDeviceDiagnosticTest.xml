@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelDeviceDiagnosticTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.898Z" hostname="localhost" time="0.009">
+  <properties/>
+  <testcase name="emptyReportIsUnknownNotHealthy" classname="com.sentinel.quantum.security.SentinelDeviceDiagnosticTest" time="0.002"/>
+  <testcase name="inaccessibleEvidenceNeverBecomesHealthy" classname="com.sentinel.quantum.security.SentinelDeviceDiagnosticTest" time="0.001"/>
+  <testcase name="unknownEvidenceNeverBecomesHealthy" classname="com.sentinel.quantum.security.SentinelDeviceDiagnosticTest" time="0.0"/>
+  <testcase name="onlyObservedOkEvidenceCanBeHealthy" classname="com.sentinel.quantum.security.SentinelDeviceDiagnosticTest" time="0.0"/>
+  <testcase name="criticalDominatesEveryOtherState" classname="com.sentinel.quantum.security.SentinelDeviceDiagnosticTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

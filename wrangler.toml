@@ -1,0 +1,4 @@
+# Cloudflare Pages configuration for Sentinel Quantum Vanguard AI Pro
+name = "sentinel-quantum-vanguard-ai-pro"
+compatibility_date = "2026-09-02"
+pages_build_output_dir = "frontend/dist"

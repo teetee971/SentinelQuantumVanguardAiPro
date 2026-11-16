@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.CallerIdentityFusionPolicyTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:44.808Z" hostname="localhost" time="0.051">
+  <properties/>
+  <testcase name="community identity can never become verified" classname="com.sentinel.quantum.security.CallerIdentityFusionPolicyTest" time="0.035"/>
+  <testcase name="heuristic identity can never become verified" classname="com.sentinel.quantum.security.CallerIdentityFusionPolicyTest" time="0.001"/>
+  <testcase name="expired authoritative evidence is not trusted" classname="com.sentinel.quantum.security.CallerIdentityFusionPolicyTest" time="0.0"/>
+  <testcase name="signed proof requires proof id before verified status" classname="com.sentinel.quantum.security.CallerIdentityFusionPolicyTest" time="0.002"/>
+  <testcase name="verified fresh evidence outranks community evidence" classname="com.sentinel.quantum.security.CallerIdentityFusionPolicyTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

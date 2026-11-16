@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapterTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.400Z" hostname="localhost" time="0.047">
+  <properties/>
+  <testcase name="failed_sms_delivery_maps_failure_without_provider_identifiers" classname="com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapterTest" time="0.015"/>
+  <testcase name="mms_adapter_accepts_only_bounded_states_and_codes" classname="com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapterTest" time="0.007"/>
+  <testcase name="arbitrary_message_content_cannot_be_smuggled_as_category_code" classname="com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapterTest" time="0.001"/>
+  <testcase name="sms_delivery_event_maps_only_bounded_transport_metadata" classname="com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapterTest" time="0.001"/>
+  <testcase name="incoming_analysis_maps_risk_without_message_content_or_urls" classname="com.sentinel.quantum.intelligence.SmsMmsEvidenceAdapterTest" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

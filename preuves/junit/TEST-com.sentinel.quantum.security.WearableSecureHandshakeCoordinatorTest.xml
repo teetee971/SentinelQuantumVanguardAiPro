@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.746Z" hostname="localhost" time="2.128">
+  <properties/>
+  <testcase name="existingPairingRejectsKeyReplacementEvenWithConfirmation" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="0.022"/>
+  <testcase name="invalidSignatureDoesNotBurnChallenge" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="0.007"/>
+  <testcase name="checkedPersistenceFailureRevokesActivatedAuthorityAndFailsClosed" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="0.019"/>
+  <testcase name="concurrentFirstPairingCannotPersistReplayLoser" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="2.031"/>
+  <testcase name="replayFailsAfterSuccessfulActivation" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="0.002"/>
+  <testcase name="firstPairingStartsWithoutPlatformIdentityAndRequiresFingerprintBoundConfirmation" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="0.036"/>
+  <testcase name="missingConfirmationStaysPendingWithoutBurningChallenge" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="0.002"/>
+  <testcase name="protocolV1AndHpkeBindingSubstitutionFailClosed" classname="com.sentinel.quantum.security.WearableSecureHandshakeCoordinatorTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

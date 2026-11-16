@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.588Z" hostname="localhost" time="0.016">
+  <properties/>
+  <testcase name="exposesExactMissingCertificationCriteria" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="notificationPublicationProofsAreIndependent" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.0"/>
+  <testcase name="callerIdAndInCallUiProofsAreIndependentAndRequired" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="screeningCountsButFailedSendAndQuarantinedMmsDoNot" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="unrelatedIncomingCallEventDoesNotProveScreening" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.0"/>
+  <testcase name="everyPhysicalCriterionHasAUserFacingLabel" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="providersAreRequiredEvenWhenTransportSignalsExist" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="schemaV6RequiresAllFourteenPhoneCoreChecks" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.002"/>
+  <testcase name="rawFragmentCallbacksDoNotProveMultipartSuccess" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="allSchemaV5CriteriaHaveExplicitKindsAndUnknownFailsClosed" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.004"/>
+  <testcase name="providerChecksAreAutomaticAndTransportEvidenceIsOperational" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.0"/>
+  <testcase name="deliveryErrorNeverCountsAsSuccessfulPhysicalDelivery" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="outgoingMmsRequiresAndroidSuccessCallback" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.0"/>
+  <testcase name="safeIncomingMmsCompletesLocalOperationalValidation" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.0"/>
+  <testcase name="aggregateSendWithoutSuccessfulDeliveryDoesNotCompleteValidation" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.0"/>
+  <testcase name="localCriteriaDoNotPresentSyntheticCallbacksAsPhysicalOrCarrierValidation" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <testcase name="ignoresEvidenceFromBeforeCurrentApkInstall" classname="com.sentinel.quantum.security.PhoneCorePhysicalValidationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

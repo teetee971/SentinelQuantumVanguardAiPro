@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.IncomingMmsThreadResolverTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.040Z" hostname="localhost" time="0.016">
+  <properties/>
+  <testcase name="directIncomingMmsUsesSenderThreadWithoutRequiringSelfNumber" classname="com.sentinel.quantum.security.IncomingMmsThreadResolverTest" time="0.009"/>
+  <testcase name="addressComparisonNormalizesPhonesAndEmailCase" classname="com.sentinel.quantum.security.IncomingMmsThreadResolverTest" time="0.0"/>
+  <testcase name="groupMmsFailsClosedWhenSelfIdentityIsUnavailable" classname="com.sentinel.quantum.security.IncomingMmsThreadResolverTest" time="0.005"/>
+  <testcase name="groupMmsExcludesSelfAndKeepsOtherParticipants" classname="com.sentinel.quantum.security.IncomingMmsThreadResolverTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

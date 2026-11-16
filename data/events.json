@@ -1,0 +1,32 @@
+[
+  {
+    "date": "2025-12-17 13:24:15",
+    "type": "Connexion réseau",
+    "level": "INFO",
+    "explanation": "Connexion établie au réseau WiFi sécurisé"
+  },
+  {
+    "date": "2025-12-17 12:45:32",
+    "type": "Permission demandée",
+    "level": "WARNING",
+    "explanation": "Application a demandé accès à la localisation"
+  },
+  {
+    "date": "2025-12-17 11:15:08",
+    "type": "Scan sécurité",
+    "level": "INFO",
+    "explanation": "Audit de sécurité terminé - Aucune anomalie"
+  },
+  {
+    "date": "2025-12-17 10:30:44",
+    "type": "Appel bloqué",
+    "level": "SUCCESS",
+    "explanation": "Numéro spam détecté et bloqué"
+  },
+  {
+    "date": "2025-12-17 09:12:21",
+    "type": "Mise à jour",
+    "level": "INFO",
+    "explanation": "Base de signatures mise à jour"
+  }
+]

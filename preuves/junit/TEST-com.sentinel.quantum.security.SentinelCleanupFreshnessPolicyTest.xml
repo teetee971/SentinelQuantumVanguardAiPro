@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelCleanupFreshnessPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.731Z" hostname="localhost" time="0.006">
+  <properties/>
+  <testcase name="changedSizeIsStaleEvenWhenTimestampIsPreserved" classname="com.sentinel.quantum.security.SentinelCleanupFreshnessPolicyTest" time="0.004"/>
+  <testcase name="changedTimestampIsStaleEvenWhenSizeIsPreserved" classname="com.sentinel.quantum.security.SentinelCleanupFreshnessPolicyTest" time="0.0"/>
+  <testcase name="unknownDiscoveryFieldsDoNotInventEvidence" classname="com.sentinel.quantum.security.SentinelCleanupFreshnessPolicyTest" time="0.0"/>
+  <testcase name="unchangedObservationIsFresh" classname="com.sentinel.quantum.security.SentinelCleanupFreshnessPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearableSecureTransportInboxTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:13.927Z" hostname="localhost" time="0.003">
+  <properties/>
+  <testcase name="missingHandlerFailsClosed" classname="com.sentinel.quantum.security.WearableSecureTransportInboxTest" time="0.001"/>
+  <testcase name="handlerFailureCannotEscapeTransportBoundary" classname="com.sentinel.quantum.security.WearableSecureTransportInboxTest" time="0.001"/>
+  <testcase name="successfulHandlerIsReportedAsDispatched" classname="com.sentinel.quantum.security.WearableSecureTransportInboxTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

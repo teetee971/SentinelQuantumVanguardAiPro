@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:05.984Z" hostname="localhost" time="0.018">
+  <properties/>
+  <testcase name="atLeastOneRealProtocolRecoveryIdentityIsRequired" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.003"/>
+  <testcase name="senderMustBeProtocolExplicitNotInvented" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.0"/>
+  <testcase name="boundedReferencedRelatedPresentationProducesFaithfulProviderPlan" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.009"/>
+  <testcase name="malformedUtf8TextRemainsQuarantinedInsteadOfBeingSilentlyReplaced" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.001"/>
+  <testcase name="explicitSenderAndProtocolIdentityProduceProviderReadyPlan" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.0"/>
+  <testcase name="alternativeMultipartStaysPrivateUntilTopLevelPresentationChoiceIsPreserved" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.0"/>
+  <testcase name="messageSizeMustCoverDecodedPayloadAndStayWithinProviderBound" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.0"/>
+  <testcase name="invalidSubscriptionAndPrivateIdentityFailClosed" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.0"/>
+  <testcase name="transactionIdAloneIsAcceptedWithoutManufacturingMessageId" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.001"/>
+  <testcase name="relatedMultipartRequiresOneSmilAndReferencesForEveryMediaPart" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.0"/>
+  <testcase name="textOnlyTruthComesFromActuallyProjectedParts" classname="com.sentinel.quantum.security.IncomingMmsProjectionPlanTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

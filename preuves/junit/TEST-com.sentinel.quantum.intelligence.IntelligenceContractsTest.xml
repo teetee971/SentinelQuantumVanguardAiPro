@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.IntelligenceContractsTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:41.930Z" hostname="localhost" time="0.038">
+  <properties/>
+  <testcase name="durable_evidence_requires_explicit_durable_classification" classname="com.sentinel.quantum.intelligence.IntelligenceContractsTest" time="0.002"/>
+  <testcase name="name_equality_cannot_create_identity_alias" classname="com.sentinel.quantum.intelligence.IntelligenceContractsTest" time="0.008"/>
+  <testcase name="event_rejects_invalid_observed_time_and_non_positive_identity_version" classname="com.sentinel.quantum.intelligence.IntelligenceContractsTest" time="0.003"/>
+  <testcase name="phone_identity_key_is_versioned_and_never_raw_number_namespace" classname="com.sentinel.quantum.intelligence.IntelligenceContractsTest" time="0.002"/>
+  <testcase name="event_requires_source_provenance_and_observed_time" classname="com.sentinel.quantum.intelligence.IntelligenceContractsTest" time="0.0"/>
+  <testcase name="privacy_contract_has_no_raw_phone_message_url_sender_or_otp_fields" classname="com.sentinel.quantum.intelligence.IntelligenceContractsTest" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

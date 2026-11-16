@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.IncomingCallAlertPolicyTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:47.122Z" hostname="localhost" time="0.012">
+  <properties/>
+  <testcase name="waitingCallAlertsOverAnOngoingNotification" classname="com.sentinel.quantum.security.IncomingCallAlertPolicyTest" time="0.005"/>
+  <testcase name="firstIncomingCallAlertsButItsUpdatesDoNot" classname="com.sentinel.quantum.security.IncomingCallAlertPolicyTest" time="0.001"/>
+  <testcase name="unpublishedIncomingCallMayRetryAndOngoingDoesNotAlert" classname="com.sentinel.quantum.security.IncomingCallAlertPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ui.HomeVisualSourceContractTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.205Z" hostname="localhost" time="0.088">
+  <properties/>
+  <testcase name="primaryActionRetainsButtonSemanticsAndActivationCallback" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.012"/>
+  <testcase name="homeReadsRoleAvailabilityAndDoesNotOfferActivationAsTheRemedyForUnavailableRoles" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.006"/>
+  <testcase name="clockGuardRejectsParenthesizedAndCommentSeparatedFalse" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.008"/>
+  <testcase name="activitySummaryIsExplicitlyUnavailableWithoutAnEventSource" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.011"/>
+  <testcase name="homeNoLongerPromotesSoftwarePrerequisitesAsGreenProtection" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.005"/>
+  <testcase name="homeInstrumentationKeepsComposeClockAutoAdvanceEnabled" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.015"/>
+  <testcase name="homeWiresPremiumCommandCenterAndStableSemantics" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.006"/>
+  <testcase name="phoneCoreDoesNotClaimObservedEvidenceFromSoftwarePrerequisites" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.005"/>
+  <testcase name="primaryActivationActionPrecedesTheTallHeroAndModuleList" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.008"/>
+  <testcase name="clockGuardIgnoresCommentsAndStringLiterals" classname="com.sentinel.quantum.ui.HomeVisualSourceContractTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

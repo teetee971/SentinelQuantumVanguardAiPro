@@ -1,0 +1,210 @@
+#!/usr/bin/env node
+import { createHash } from 'node:crypto';
+import { existsSync, lstatSync, readFileSync } from 'node:fs';
+import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const EXPECTED_REPOSITORY = 'teetee971/SentinelQuantumVanguardAiPro';
+const HASH = /^[a-f0-9]{64}$/i;
+const COMMIT = /^[a-f0-9]{40}$/i;
+
+function fail(code) {
+  throw new Error(code);
+}
+
+function sha256(path) {
+  return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
+
+function safeFile(root, declaredPath) {
+  if (typeof declaredPath !== 'string' || !declaredPath || isAbsolute(declaredPath)) fail('INVALID_ARTIFACT_PATH');
+  const exact = resolve(root, declaredPath);
+  if (relative(root, exact).startsWith('..')) fail('ARTIFACT_OUTSIDE_ROOT');
+  const candidate = existsSync(exact) ? exact : resolve(root, basename(declaredPath));
+  if (relative(root, candidate).startsWith('..')) fail('ARTIFACT_OUTSIDE_ROOT');
+  if (!existsSync(candidate)) fail(`ARTIFACT_MISSING:${basename(declaredPath)}`);
+  const stat = lstatSync(candidate);
+  if (!stat.isFile() || stat.isSymbolicLink()) fail(`ARTIFACT_NOT_REGULAR:${basename(declaredPath)}`);
+  return candidate;
+}
+
+function validateRecord(record, path) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) fail('INVALID_ARTIFACT_RECORD');
+  if (!HASH.test(record.sha256 || '')) fail('INVALID_RECORDED_HASH');
+  const stat = lstatSync(path);
+  if (Number.isInteger(record.bytes) && record.bytes !== stat.size) fail(`SIZE_MISMATCH:${basename(path)}`);
+  if (sha256(path) !== record.sha256.toLowerCase()) fail(`HASH_MISMATCH:${basename(path)}`);
+}
+
+function parseArguments(args) {
+  let root = '.';
+  let evidence = 'release-evidence.json';
+  for (let index = 0; index < args.length; index += 2) {
+    const key = args[index];
+    const value = args[index + 1];
+    if (!value || !['--root', '--evidence'].includes(key)) fail('INVALID_ARGUMENTS');
+    if (key === '--root') root = value;
+    else evidence = value;
+  }
+  return { root, evidence };
+}
+
+export function verifyAndroidReleaseEvidence({ root = '.', evidence = 'release-evidence.json' } = {}) {
+  const rootPath = resolve(root);
+  if (!existsSync(rootPath) || !lstatSync(rootPath).isDirectory() || lstatSync(rootPath).isSymbolicLink()) fail('INVALID_RELEASE_ROOT');
+  const evidencePath = safeFile(rootPath, evidence);
+  if (lstatSync(evidencePath).size > 1_000_000) fail('EVIDENCE_TOO_LARGE');
+
+  let document;
+  try {
+    document = JSON.parse(readFileSync(evidencePath, 'utf8'));
+  } catch {
+    fail('INVALID_EVIDENCE_JSON');
+  }
+  if (document?.schema_version !== 2) fail('UNSUPPORTED_EVIDENCE_SCHEMA');
+  const provenance = document.provenance;
+  if (provenance?.repository !== EXPECTED_REPOSITORY) fail('REPOSITORY_MISMATCH');
+  if (!COMMIT.test(provenance.commit || '')) fail('INVALID_COMMIT');
+  if (provenance.workflow !== 'Android Release') fail('WORKFLOW_MISMATCH');
+  if (!/^refs\/tags\/v\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/.test(provenance.ref || '')) fail('INVALID_RELEASE_REF');
+  const tagRef = provenance.ref;
+  const workflowRef = `${EXPECTED_REPOSITORY}/.github/workflows/android-release.yml@${tagRef}`;
+  if (provenance.workflow_ref !== workflowRef) fail('WORKFLOW_REF_MISMATCH');
+  if (!/^\d+$/.test(provenance.run_id || '') || !/^\d+$/.test(provenance.run_attempt || '')) fail('INVALID_RUN_IDENTITY');
+
+  if (!document.sbom || !HASH.test(document.sbom.sha256 || '')) fail('INVALID_SBOM_RECORD');
+  const sbomPath = safeFile(rootPath, document.sbom.path);
+  if (sha256(sbomPath) !== document.sbom.sha256.toLowerCase()) fail('SBOM_HASH_MISMATCH');
+
+  if (!Array.isArray(document.artifacts) || document.artifacts.length !== 7) fail('INVALID_ARTIFACT_SET');
+  const names = document.artifacts.map((entry) => basename(entry?.path || ''));
+  if (new Set(names).size !== names.length) fail('DUPLICATE_ARTIFACT_NAME');
+
+  const apkRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk'));
+  const apkChecksumRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk.sha256'));
+  const apkCertificateRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.apk.certificates.txt'));
+  const aabRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab'));
+  const aabChecksumRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.sha256'));
+  const aabCertificateRecord = document.artifacts.find((entry) => typeof entry?.path === 'string' && entry.path.endsWith('.aab.certificates.txt'));
+  const nativeDependencyRecord = document.artifacts.find(
+    (entry) => entry?.path === 'native-android-app/app/build/reports/release-dependencies.json'
+  );
+  if (!apkRecord || !apkChecksumRecord || !apkCertificateRecord || !aabRecord || !aabChecksumRecord || !aabCertificateRecord || !nativeDependencyRecord) {
+    fail('REQUIRED_ARTIFACT_MISSING');
+  }
+
+  const apkPath = safeFile(rootPath, apkRecord.path);
+  const apkChecksumPath = safeFile(rootPath, apkChecksumRecord.path);
+  const apkCertificatePath = safeFile(rootPath, apkCertificateRecord.path);
+  const aabPath = safeFile(rootPath, aabRecord.path);
+  const aabChecksumPath = safeFile(rootPath, aabChecksumRecord.path);
+  const aabCertificatePath = safeFile(rootPath, aabCertificateRecord.path);
+  const nativeDependencyPath = safeFile(rootPath, nativeDependencyRecord.path);
+
+  for (const [record, path] of [
+    [apkRecord, apkPath],
+    [apkChecksumRecord, apkChecksumPath],
+    [apkCertificateRecord, apkCertificatePath],
+    [aabRecord, aabPath],
+    [aabChecksumRecord, aabChecksumPath],
+    [aabCertificateRecord, aabCertificatePath],
+    [nativeDependencyRecord, nativeDependencyPath],
+  ]) validateRecord(record, path);
+
+  const verifyChecksumReport = (artifactPath, checksumPath, code) => {
+    if (lstatSync(checksumPath).size > 4096) fail('CHECKSUM_REPORT_TOO_LARGE');
+    const checksum = readFileSync(checksumPath, 'utf8').trim().match(/^([a-f0-9]{64})\s+\*?(.+)$/i);
+    if (!checksum || checksum[1].toLowerCase() !== sha256(artifactPath) || basename(checksum[2]) !== basename(artifactPath)) fail(code);
+  };
+  verifyChecksumReport(apkPath, apkChecksumPath, 'APK_CHECKSUM_MISMATCH');
+  verifyChecksumReport(aabPath, aabChecksumPath, 'AAB_CHECKSUM_MISMATCH');
+
+  if (lstatSync(nativeDependencyPath).size > 5_000_000) fail('NATIVE_DEPENDENCY_INVENTORY_TOO_LARGE');
+  let nativeInventory;
+  try {
+    nativeInventory = JSON.parse(readFileSync(nativeDependencyPath, 'utf8'));
+  } catch {
+    fail('INVALID_NATIVE_DEPENDENCY_INVENTORY_JSON');
+  }
+  if (nativeInventory?.schema_version !== 2 || nativeInventory?.configuration !== 'releaseRuntimeClasspath') {
+    fail('INVALID_NATIVE_DEPENDENCY_INVENTORY');
+  }
+  if (
+    !Number.isInteger(nativeInventory.component_count) ||
+    !Number.isInteger(nativeInventory.relationship_count) ||
+    !Array.isArray(nativeInventory.components) ||
+    !Array.isArray(nativeInventory.relationships) ||
+    nativeInventory.component_count !== nativeInventory.components.length ||
+    nativeInventory.relationship_count !== nativeInventory.relationships.length ||
+    nativeInventory.component_count < 1 ||
+    nativeInventory.relationship_count < 1
+  ) fail('INVALID_NATIVE_DEPENDENCY_GRAPH_COUNTS');
+
+  const componentKeys = new Set();
+  for (const component of nativeInventory.components) {
+    if (!component || typeof component !== 'object' || Array.isArray(component)) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT');
+    if (typeof component.key !== 'string' || !component.key || componentKeys.has(component.key)) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT_KEY');
+    if (typeof component.display_name !== 'string' || !component.display_name) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT');
+    if (!['module', 'project', 'component'].includes(component.type)) fail('INVALID_NATIVE_DEPENDENCY_COMPONENT_TYPE');
+    if (component.type === 'module') {
+      if (
+        typeof component.group !== 'string' || !component.group ||
+        typeof component.name !== 'string' || !component.name ||
+        typeof component.version !== 'string' || !component.version ||
+        typeof component.purl !== 'string' || component.purl !== component.key ||
+        !component.purl.startsWith('pkg:maven/')
+      ) fail('INVALID_NATIVE_DEPENDENCY_MODULE');
+    }
+    if (component.type === 'project') {
+      if (
+        typeof component.project_path !== 'string' || !component.project_path.startsWith(':') ||
+        typeof component.build_tree_path !== 'string' || !component.build_tree_path.startsWith(':') ||
+        component.key !== `gradle-project:${component.build_tree_path}`
+      ) fail('INVALID_NATIVE_DEPENDENCY_PROJECT');
+    }
+    componentKeys.add(component.key);
+  }
+  if (typeof nativeInventory.root_component !== 'string' || !componentKeys.has(nativeInventory.root_component)) {
+    fail('INVALID_NATIVE_DEPENDENCY_ROOT');
+  }
+
+  for (const relationship of nativeInventory.relationships) {
+    if (!relationship || typeof relationship !== 'object' || Array.isArray(relationship)) fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP');
+    if (!componentKeys.has(relationship.from) || !componentKeys.has(relationship.to)) fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP_ENDPOINT');
+    if (typeof relationship.requested !== 'string' || !relationship.requested) fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP');
+    if (typeof relationship.constraint !== 'boolean') fail('INVALID_NATIVE_DEPENDENCY_RELATIONSHIP');
+  }
+
+  if (lstatSync(apkCertificatePath).size > 65_536 || lstatSync(aabCertificatePath).size > 65_536) fail('CERTIFICATE_REPORT_TOO_LARGE');
+  const apkCertificate = readFileSync(apkCertificatePath, 'utf8');
+  const apkCertificateDigest = apkCertificate.match(/Signer #1 certificate SHA-256 digest:\s*([a-f0-9]{64})/i)?.[1]?.toLowerCase();
+  if (!apkCertificateDigest || /BEGIN [A-Z ]*PRIVATE KEY/i.test(apkCertificate)) fail('INVALID_APK_CERTIFICATE_REPORT');
+
+  const aabCertificate = readFileSync(aabCertificatePath, 'utf8');
+  const aabFingerprint = aabCertificate.match(/SHA256:\s*((?:[A-F0-9]{2}:){31}[A-F0-9]{2})/i)?.[1];
+  const aabCertificateDigest = aabFingerprint?.replaceAll(':', '').toLowerCase();
+  if (!aabCertificateDigest || /BEGIN [A-Z ]*PRIVATE KEY/i.test(aabCertificate)) fail('INVALID_AAB_CERTIFICATE_REPORT');
+  if (apkCertificateDigest !== aabCertificateDigest) fail('SIGNER_MISMATCH');
+
+  return Object.freeze({
+    verified: true,
+    repository: provenance.repository,
+    commit: provenance.commit,
+    ref: provenance.ref,
+    apk: basename(apkPath),
+    apk_sha256: sha256(apkPath),
+    apk_certificate_sha256: apkCertificateDigest,
+    aab: basename(aabPath),
+    aab_sha256: sha256(aabPath),
+    aab_certificate_sha256: aabCertificateDigest,
+  });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    console.log(JSON.stringify(verifyAndroidReleaseEvidence(parseArguments(process.argv.slice(2))), null, 2));
+  } catch (error) {
+    console.error(`Android release verification: ${error.message}`);
+    process.exitCode = 1;
+  }
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.419Z" hostname="localhost" time="0.032">
+  <properties/>
+  <testcase name="firstMissingPermissionReturnsNullWhenAllGranted" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="setupProgressMatchesRoleFirstFlowAndCompleteIsTerminal" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="firstMissingPermissionIsDeterministic" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.002"/>
+  <testcase name="refusedAtomicTargetDoesNotAutoLoop" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.014"/>
+  <testcase name="completedSetupStaysClosedOnlyWhileRuntimeFactsRemainReady" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="everySetupStepHasRationaleAndPrivacyCopy" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.007"/>
+  <testcase name="globalNotificationDisableBelongsToNotificationStepNotCorePermissions" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="runtimePermissionsNeverPrecedePhoneRoles" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="unavailableRoleRemainsBlockingButIsNotActionable" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="externalSettingsProgressOffersExplicitContinueInsteadOfStalling" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="everyRepairStepHasAUserFacingFrenchLabel" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.001"/>
+  <testcase name="firstSetupTargetStillAutoLaunchesWithoutPriorAttempt" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="externalSettingsReturnAdvancesVisualTargetWithoutAutoPrompt" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="completeTargetNeverNeedsAutomaticLaunch" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.001"/>
+  <testcase name="firstMissingStateDeterminesStepInLeastPrivilegeOrder" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="incompleteSetupStillOpensEvenWhenRuntimeFactsAreCurrentlyReady" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="availableMissingRoleRemainsActionable" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="atomicTargetChangesWhenNextPermissionBecomesCurrent" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="completeRequiresEverySequentialPrerequisite" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="wizardSequentialFlowAllowsAutoPromptWithinActiveSession" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="softwareReadinessUsesRuntimeFactsNotPersistence" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="completedSetupReopensAfterRuntimeRevocation" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <testcase name="earlierRegressionMovesWizardBackToRealMissingState" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.001"/>
+  <testcase name="permissionLabelsAreHumanReadableAndFrench" classname="com.sentinel.quantum.PhoneCoreSetupWizardStoreTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

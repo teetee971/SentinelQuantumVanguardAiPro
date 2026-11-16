@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelVpnDiagnosticTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:10.406Z" hostname="localhost" time="0.012">
+  <properties/>
+  <testcase name="connectingIsUnknownUntilBackendReportsFinalState" classname="com.sentinel.quantum.security.SentinelVpnDiagnosticTest" time="0.011"/>
+  <testcase name="degradedAndFailedAreWarnings" classname="com.sentinel.quantum.security.SentinelVpnDiagnosticTest" time="0.0"/>
+  <testcase name="onlyProtectedRuntimeMeansVpnCapabilityEnabled" classname="com.sentinel.quantum.security.SentinelVpnDiagnosticTest" time="0.0"/>
+  <testcase name="consentRequiredNeverMeansProtected" classname="com.sentinel.quantum.security.SentinelVpnDiagnosticTest" time="0.0"/>
+  <testcase name="protectedRuntimeIsObservedOk" classname="com.sentinel.quantum.security.SentinelVpnDiagnosticTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,51 @@
+name: Sentinel OSINT Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'osint-intelligence/**'
+      - '.node-version'
+      - '.github/workflows/osint-validation.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'osint-intelligence/**'
+      - '.node-version'
+      - '.github/workflows/osint-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osint-validation:
+    name: Validate defensive OSINT engines
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup pinned Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Run foreign influence registry intelligence tests
+        run: node --test osint-intelligence/foreign-influence/registry-intelligence.test.js
+
+      - name: Run correlation tests
+        run: node osint-intelligence/correlation/campaign-correlation-engine.test.js
+
+      - name: Run bounded OSINT orchestration tests
+        run: node --test osint-intelligence/orchestration/campaign-analysis.test.js
+
+      - name: Run OSINT engine smoke tests
+        run: node osint-intelligence/osint-engine-smoke.test.js
+
+      - name: Run repository-wide isolation scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-sentinel-isolation.js

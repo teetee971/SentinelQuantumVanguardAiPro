@@ -1,0 +1,60 @@
+name: Wangiri API Validation
+
+on:
+  pull_request:
+    paths:
+      - "backend/wangiri-api/**"
+      - "render.yaml"
+      - ".github/workflows/wangiri-api.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/wangiri-api/**"
+      - "render.yaml"
+      - ".github/workflows/wangiri-api.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      SENTINEL_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+    defaults:
+      run:
+        working-directory: backend/wangiri-api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/wangiri-api/requirements.txt
+            backend/wangiri-api/requirements-dev.txt
+      - run: python -m pip install --requirement requirements-dev.txt
+      - name: Audit Python dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir pip-audit==2.10.1
+          python -m pip_audit --requirement requirements.txt --strict --progress-spinner off
+      - run: python -m pytest -q
+      - run: python -m compileall -q app_redis.py app_exposure_bridge.py collective_intel.py collective_exposure.py collective_exposure_user.py exposure_identity.py
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build --tag sentinel-wangiri-api:test backend/wangiri-api
+      - name: Verify container imports production app
+        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_exposure_bridge; assert app_exposure_bridge.app is not None"
+      - name: Verify Collective Defense routes are packaged
+        run: docker run --rm --entrypoint python sentinel-wangiri-api:test -c "import app_exposure_bridge; paths=set(app_exposure_bridge.app.openapi()['paths']); assert {'/v1/intelligence/lookup', '/v1/intelligence/lookup-fingerprint', '/v1/intelligence/report-public', '/v1/intelligence/relationships/report', '/v1/intelligence/graph/lookup', '/v1/intelligence/exposures/report', '/v1/intelligence/exposures/lookup', '/v1/intelligence/exposures/report-user', '/v1/intelligence/exposures/lookup-user'} <= paths"

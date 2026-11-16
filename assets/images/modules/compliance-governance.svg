@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="corpBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#141a24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a2332;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="800" height="500" fill="url(#corpBg)"/>
+  
+  <!-- Document/compliance layers -->
+  <!-- Back document -->
+  <rect x="180" y="140" width="380" height="280" rx="4" fill="#0f1419" stroke="#2a3544" stroke-width="2" opacity="0.6"/>
+  
+  <!-- Middle document -->
+  <rect x="200" y="120" width="380" height="280" rx="4" fill="#0f1419" stroke="#2a3544" stroke-width="2" opacity="0.8"/>
+  
+  <!-- Front document -->
+  <rect x="220" y="100" width="380" height="280" rx="4" fill="#1a2332" stroke="#2a3544" stroke-width="2"/>
+  
+  <!-- Document header -->
+  <rect x="220" y="100" width="380" height="45" rx="4" fill="#1f2938"/>
+  <rect x="220" y="140" width="380" height="2" fill="#2a3544"/>
+  
+  <!-- Header icon (shield/compliance) -->
+  <path d="M 260 122.5 L 275 115 L 290 122.5 L 290 140 L 275 147.5 L 260 140 Z" 
+        fill="none" stroke="#4a90e2" stroke-width="2" opacity="0.6"/>
+  <path d="M 275 120 L 275 142" stroke="#4a90e2" stroke-width="1.5" opacity="0.5"/>
+  <path d="M 268 130 L 282 130" stroke="#4a90e2" stroke-width="1.5" opacity="0.5"/>
+  
+  <!-- Title lines -->
+  <rect x="310" y="115" width="120" height="8" rx="2" fill="#4a90e2" opacity="0.4"/>
+  <rect x="310" y="128" width="80" height="6" rx="2" fill="#2a3544" opacity="0.6"/>
+  
+  <!-- Document content - sections -->
+  <!-- Section 1 -->
+  <rect x="245" y="165" width="330" height="25" rx="3" fill="#0f1419" stroke="#2a3544" stroke-width="1"/>
+  <rect x="255" y="173" width="60" height="4" rx="2" fill="#4a90e2" opacity="0.5"/>
+  <rect x="255" y="181" width="200" height="3" rx="1.5" fill="#2a3544" opacity="0.5"/>
+  
+  <!-- Checkmark/status -->
+  <circle cx="550" cy="177.5" r="8" fill="none" stroke="#4a90e2" stroke-width="1.5" opacity="0.6"/>
+  <path d="M 546 177.5 L 549 180.5 L 554 174" stroke="#4a90e2" stroke-width="1.5" opacity="0.6" fill="none"/>
+  
+  <!-- Section 2 -->
+  <rect x="245" y="200" width="330" height="25" rx="3" fill="#0f1419" stroke="#2a3544" stroke-width="1"/>
+  <rect x="255" y="208" width="75" height="4" rx="2" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="255" y="216" width="180" height="3" rx="1.5" fill="#2a3544" opacity="0.5"/>
+  
+  <circle cx="550" cy="212.5" r="8" fill="none" stroke="#5ba3f5" stroke-width="1.5" opacity="0.6"/>
+  <path d="M 546 212.5 L 549 215.5 L 554 209" stroke="#5ba3f5" stroke-width="1.5" opacity="0.6" fill="none"/>
+  
+  <!-- Section 3 -->
+  <rect x="245" y="235" width="330" height="25" rx="3" fill="#0f1419" stroke="#2a3544" stroke-width="1"/>
+  <rect x="255" y="243" width="55" height="4" rx="2" fill="#4a90e2" opacity="0.5"/>
+  <rect x="255" y="251" width="220" height="3" rx="1.5" fill="#2a3544" opacity="0.5"/>
+  
+  <circle cx="550" cy="247.5" r="8" fill="none" stroke="#4a90e2" stroke-width="1.5" opacity="0.6"/>
+  <path d="M 546 247.5 L 549 250.5 L 554 244" stroke="#4a90e2" stroke-width="1.5" opacity="0.6" fill="none"/>
+  
+  <!-- Section 4 -->
+  <rect x="245" y="270" width="330" height="25" rx="3" fill="#0f1419" stroke="#2a3544" stroke-width="1"/>
+  <rect x="255" y="278" width="70" height="4" rx="2" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="255" y="286" width="190" height="3" rx="1.5" fill="#2a3544" opacity="0.5"/>
+  
+  <circle cx="550" cy="282.5" r="8" fill="none" stroke="#5ba3f5" stroke-width="1.5" opacity="0.6"/>
+  <path d="M 546 282.5 L 549 285.5 L 554 279" stroke="#5ba3f5" stroke-width="1.5" opacity="0.6" fill="none"/>
+  
+  <!-- Progress bar at bottom -->
+  <rect x="245" y="320" width="330" height="35" rx="4" fill="#0f1419" stroke="#2a3544" stroke-width="1"/>
+  
+  <!-- Compliance metrics -->
+  <rect x="260" y="332" width="80" height="12" rx="6" fill="#1a2332" stroke="#2a3544" stroke-width="1"/>
+  <rect x="264" y="336" width="60" height="4" rx="2" fill="#4a90e2" opacity="0.6"/>
+  
+  <rect x="355" y="332" width="80" height="12" rx="6" fill="#1a2332" stroke="#2a3544" stroke-width="1"/>
+  <rect x="359" y="336" width="68" height="4" rx="2" fill="#5ba3f5" opacity="0.5"/>
+  
+  <rect x="450" y="332" width="80" height="12" rx="6" fill="#1a2332" stroke="#2a3544" stroke-width="1"/>
+  <rect x="454" y="336" width="55" height="4" rx="2" fill="#4a90e2" opacity="0.6"/>
+  
+  <!-- Certification badge (top right corner) -->
+  <circle cx="680" cy="160" r="45" fill="#1a2332" stroke="#4a90e2" stroke-width="2" opacity="0.7"/>
+  <circle cx="680" cy="160" r="32" fill="none" stroke="#4a90e2" stroke-width="1.5" opacity="0.5"/>
+  
+  <!-- Star/seal shape -->
+  <path d="M 680 135 L 685 150 L 700 150 L 688 159 L 693 174 L 680 165 L 667 174 L 672 159 L 660 150 L 675 150 Z" 
+        fill="none" stroke="#5ba3f5" stroke-width="1.5" opacity="0.6"/>
+  
+  <!-- EU stars suggestion (subtle, not political) -->
+  <circle cx="670" cy="155" r="2" fill="#4a90e2" opacity="0.4"/>
+  <circle cx="690" cy="155" r="2" fill="#4a90e2" opacity="0.4"/>
+  <circle cx="680" cy="148" r="2" fill="#4a90e2" opacity="0.4"/>
+  <circle cx="680" cy="172" r="2" fill="#4a90e2" opacity="0.4"/>
+  
+  <!-- Bottom security footer elements -->
+  <rect x="100" y="440" width="600" height="2" fill="#2a3544" opacity="0.5"/>
+  
+  <!-- Lock icons (small, subtle) -->
+  <rect x="130" y="450" width="8" height="10" rx="1" fill="none" stroke="#4a90e2" stroke-width="1" opacity="0.5"/>
+  <rect x="132" y="455" width="4" height="5" rx="0.5" fill="#4a90e2" opacity="0.4"/>
+  <circle cx="134" cy="452" r="2.5" fill="none" stroke="#4a90e2" stroke-width="1" opacity="0.5"/>
+  
+  <rect x="660" y="450" width="8" height="10" rx="1" fill="none" stroke="#4a90e2" stroke-width="1" opacity="0.5"/>
+  <rect x="662" y="455" width="4" height="5" rx="0.5" fill="#4a90e2" opacity="0.4"/>
+  <circle cx="664" cy="452" r="2.5" fill="none" stroke="#4a90e2" stroke-width="1" opacity="0.5"/>
+</svg>

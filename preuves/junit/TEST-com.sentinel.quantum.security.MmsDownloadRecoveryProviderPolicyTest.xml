@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsDownloadRecoveryProviderPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.076Z" hostname="localhost" time="0.025">
+  <properties/>
+  <testcase name="providerPlanQuarantineIsImmediatelyPrivateRecoverable" classname="com.sentinel.quantum.security.MmsDownloadRecoveryProviderPolicyTest" time="0.008"/>
+  <testcase name="envelopeOrBodyQuarantineRetriesUntilFinalDeadline" classname="com.sentinel.quantum.security.MmsDownloadRecoveryProviderPolicyTest" time="0.0"/>
+  <testcase name="cleanupKeepsStagingWhileRecoveryStillRetries" classname="com.sentinel.quantum.security.MmsDownloadRecoveryProviderPolicyTest" time="0.0"/>
+  <testcase name="providerRejectionMayFinalizePrivateOnlyAtCleanupDeadline" classname="com.sentinel.quantum.security.MmsDownloadRecoveryProviderPolicyTest" time="0.007"/>
+  <testcase name="providerRejectionRetriesBeforeCleanupDeadline" classname="com.sentinel.quantum.security.MmsDownloadRecoveryProviderPolicyTest" time="0.0"/>
+  <testcase name="successfulProviderProjectionNeverRequestsRecoveryRetry" classname="com.sentinel.quantum.security.MmsDownloadRecoveryProviderPolicyTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

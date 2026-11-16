@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ui.screens.SmsThreatPresentationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.863Z" hostname="localhost" time="0.014">
+  <properties/>
+  <testcase name="rejectedAnalysisRemainsUnknown" classname="com.sentinel.quantum.ui.screens.SmsThreatPresentationTest" time="0.009"/>
+  <testcase name="mediumAndHighRiskMapToWarningAndDanger" classname="com.sentinel.quantum.ui.screens.SmsThreatPresentationTest" time="0.004"/>
+  <testcase name="lowRiskDoesNotClaimAbsoluteSafety" classname="com.sentinel.quantum.ui.screens.SmsThreatPresentationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

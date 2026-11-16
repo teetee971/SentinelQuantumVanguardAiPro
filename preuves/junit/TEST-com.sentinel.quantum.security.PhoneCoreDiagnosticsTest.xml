@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.545Z" hostname="localhost" time="0.006">
+  <properties/>
+  <testcase name="fullValidationRequiresSoftwareAndPhysicalDevice" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="phoneCoreReadinessDoesNotExposeWifiAsACapability" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="receiveWapPushPermissionIsRequiredForMmsReadiness" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="phoneStateIsSoftwarePrerequisiteButCarrierLineIsPhysicalEnvironment" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="activeSimLimitsOperationalSmsButDoesNotBlockSoftwarePrerequisites" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.002"/>
+  <testcase name="receiveMmsPermissionIsRequiredForMmsReadiness" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="completedEvidenceDoesNotClaimValidationAfterCarrierEnvironmentLoss" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.001"/>
+  <testcase name="doesNotClaimReadyWithoutRuntimePrerequisites" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.001"/>
+  <testcase name="softwareReadyDoesNotClaimPhysicalValidation" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="readySoftwareWithoutPhysicalEvidenceOnlyInvitesTesting" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="smsRoleIsRequiredForMmsReadiness" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="notificationsAreFirstClassSoftwareReadiness" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <testcase name="receiveSmsPermissionIsRequiredForConversationReadiness" classname="com.sentinel.quantum.security.PhoneCoreDiagnosticsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

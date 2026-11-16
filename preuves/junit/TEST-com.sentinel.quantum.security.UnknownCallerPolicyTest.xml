@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.UnknownCallerPolicyTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:11.364Z" hostname="localhost" time="0.009">
+  <properties/>
+  <testcase name="repeatCallCanPass" classname="com.sentinel.quantum.security.UnknownCallerPolicyTest" time="0.008"/>
+  <testcase name="explicitAllowlistWins" classname="com.sentinel.quantum.security.UnknownCallerPolicyTest" time="0.0"/>
+  <testcase name="unknownCallerIsSilencedOnlyWhenModeEnabled" classname="com.sentinel.quantum.security.UnknownCallerPolicyTest" time="0.0"/>
+  <testcase name="emergencyAlwaysAllowed" classname="com.sentinel.quantum.security.UnknownCallerPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

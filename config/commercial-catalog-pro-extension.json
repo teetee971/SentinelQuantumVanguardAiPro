@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-04",
+  "modules": [
+    {
+      "id": "sentinel_api_pro",
+      "name": "Sentinel API Pro",
+      "tier": "PRO",
+      "offer": "NOT_FOR_SALE",
+      "permanent_free": false,
+      "trial_candidate": false,
+      "trial_eligible": false,
+      "cost_class": "LOW_SERVER",
+      "billable_remote_workload": true,
+      "required_capabilities": ["saas_identity"],
+      "fallback": "REVOKE_API_ACCESS_KEEP_FREE_CLIENT",
+      "notes": "External B2B API remains unavailable until tenant identity, scoped credentials, quotas, metering, licensing and dedicated API readiness gates exist. Internal and administrative services are not part of the customer contract."
+    }
+  ]
+}

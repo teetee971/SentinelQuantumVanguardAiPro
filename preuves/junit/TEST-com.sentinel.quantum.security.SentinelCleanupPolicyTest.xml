@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelCleanupPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:09.830Z" hostname="localhost" time="0.004">
+  <properties/>
+  <testcase name="offeringCleanupNeverCountsAsCleaned" classname="com.sentinel.quantum.security.SentinelCleanupPolicyTest" time="0.0"/>
+  <testcase name="externalAppPrivateDataIsNeverDirectlyCleanable" classname="com.sentinel.quantum.security.SentinelCleanupPolicyTest" time="0.0"/>
+  <testcase name="alreadyAbsentDoesNotClaimPreviouslyObservedBytesAsFreed" classname="com.sentinel.quantum.security.SentinelCleanupPolicyTest" time="0.0"/>
+  <testcase name="onlyVerifiedRemovalProducesFreedBytes" classname="com.sentinel.quantum.security.SentinelCleanupPolicyTest" time="0.001"/>
+  <testcase name="directExecutionRequiresExecutableState" classname="com.sentinel.quantum.security.SentinelCleanupPolicyTest" time="0.0"/>
+  <testcase name="userSelectedFilesRequireUserSelection" classname="com.sentinel.quantum.security.SentinelCleanupPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

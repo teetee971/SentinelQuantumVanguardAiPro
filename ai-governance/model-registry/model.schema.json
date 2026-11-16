@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.invalid/schemas/model-registry/model.schema.json",
+  "title": "Sentinel Governed Model",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model_id", "version", "provider", "deployment", "capabilities", "allowed_data_classes", "approval"],
+  "properties": {
+    "model_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$"},
+    "version": {"type": "string", "minLength": 1, "maxLength": 128},
+    "provider": {"type": "string", "minLength": 1, "maxLength": 128},
+    "deployment": {"enum": ["local", "private", "approved_remote"]},
+    "capabilities": {"type": "array", "items": {"type": "string", "enum": ["text", "vision", "embeddings", "reasoning", "structured_output", "tool_calling"]}, "uniqueItems": true},
+    "allowed_data_classes": {"type": "array", "items": {"enum": ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "HIGHLY_RESTRICTED"]}, "uniqueItems": true},
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "policy_version"],
+      "properties": {
+        "status": {"enum": ["pending", "approved", "suspended", "revoked"]},
+        "policy_version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "approved_for_production": {"type": "boolean"}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "suite_version", "model_id", "model_version"],
+      "properties": {
+        "status": {"enum": ["passed", "failed", "expired"]},
+        "suite_version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "model_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "model_version": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    }
+  }
+}

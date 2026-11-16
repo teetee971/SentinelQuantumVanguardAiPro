@@ -1,0 +1,83 @@
+{
+  "id": "INSIDER_THREAT_SIM",
+  "publicName": "Insider Threat (Malicious Employee) - SIMULATION",
+  "type": "InsiderThreat",
+  "motivations": [
+    "Vengeance professionnelle",
+    "Gain financier (vente de données)",
+    "Préparation départ concurrent",
+    "Idéologie ou mécontentement"
+  ],
+  "supposedCountry": "Interne - Employé ou sous-traitant",
+  "mitreTechniques": [
+    "T1078.002",
+    "T1005",
+    "T1074.001",
+    "T1048.003",
+    "T1567.002",
+    "T1485",
+    "T1489"
+  ],
+  "attackChains": [
+    {
+      "phase": "Initial Access",
+      "techniques": ["T1078.002"],
+      "duration": 0,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Collection",
+      "techniques": ["T1005", "T1114.002", "T1213"],
+      "duration": 240,
+      "stealthLevel": "high"
+    },
+    {
+      "phase": "Discovery",
+      "techniques": ["T1083", "T1087.002", "T1069.002"],
+      "duration": 120,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Exfiltration",
+      "techniques": ["T1048.003", "T1567.002", "T1052.001"],
+      "duration": 180,
+      "stealthLevel": "medium"
+    },
+    {
+      "phase": "Impact",
+      "techniques": ["T1485", "T1489", "T1561.001"],
+      "duration": 60,
+      "stealthLevel": "low"
+    }
+  ],
+  "typicalObjectives": [
+    "Vol de propriété intellectuelle",
+    "Exfiltration données clients",
+    "Sabotage systèmes avant départ",
+    "Revente d'informations sensibles"
+  ],
+  "behavioralSignatures": [
+    {
+      "category": "timing",
+      "pattern": "Activité inhabituelle hors horaires normaux, accès week-ends",
+      "confidence": 80
+    },
+    {
+      "category": "tools",
+      "pattern": "Utilisation outils légitimes de l'entreprise (cloud storage, email, USB)",
+      "confidence": 90
+    },
+    {
+      "category": "infrastructure",
+      "pattern": "Comptes personnels (Gmail, Dropbox), devices personnels",
+      "confidence": 85
+    },
+    {
+      "category": "targeting",
+      "pattern": "Accès anormal à données hors périmètre fonction, downloads massifs",
+      "confidence": 95
+    }
+  ],
+  "sophisticationLevel": "medium",
+  "ttpFingerprint": "INSIDER-LEGITACCESS-COLLECT-EXFIL-SABOTAGE"
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsSendResultClassifierTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.684Z" hostname="localhost" time="0.003">
+  <properties/>
+  <testcase name="everySignalCanBePersistedByPrivateTimelineSanitizer" classname="com.sentinel.quantum.security.MmsSendResultClassifierTest" time="0.001"/>
+  <testcase name="successIsTheOnlySuccessfulOutcome" classname="com.sentinel.quantum.security.MmsSendResultClassifierTest" time="0.0"/>
+  <testcase name="httpStatusIsBoundedAndPersistedOnlyForHttpFailure" classname="com.sentinel.quantum.security.MmsSendResultClassifierTest" time="0.0"/>
+  <testcase name="unknownCodesFailClosedAndRemainDiagnosable" classname="com.sentinel.quantum.security.MmsSendResultClassifierTest" time="0.0"/>
+  <testcase name="everyDocumentedMmsFailureMapsToStableFactualState" classname="com.sentinel.quantum.security.MmsSendResultClassifierTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

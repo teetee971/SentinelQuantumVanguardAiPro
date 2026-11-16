@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SmsCallbackProgressTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:10.999Z" hostname="localhost" time="0.039">
+  <properties/>
+  <testcase name="deliveryFailureDoesNotTurnIntoSendFailure" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="lateSuccessCannotEraseMultipartSendFailure" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="failedMultipartDeliveryNeverEmitsSuccessfulDeliveryProof" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="duplicateFinalSentCallbackDoesNotRepeatCertificationProof" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="duplicateFailureIsIgnoredAndFailureCanDowngradePriorSuccess" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="statusBusReplaysFastPiiFreeCallbackForLateCollector" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.015"/>
+  <testcase name="fiftyPartDeliveryEmitsOnlyOneSentAndOneDeliveredProof" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.002"/>
+  <testcase name="deliveryBeforeFinalSentCallbackPreservesBothCertificationSignals" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="rejectsPartCountMismatchAndOutOfRangeIndex" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.001"/>
+  <testcase name="multipartSentWaitsForEveryPart" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="maximumSupportedMultipartMessageRetainsEveryObservedCallback" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.016"/>
+  <testcase name="duplicateCallbacksAreIdempotent" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="lateSuccessCannotEraseMultipartDeliveryFailure" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="failureFirstStillPreservesLaterMultipartSentCallbacks" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="multipartSendFailureWaitsForEverySentCallbackBeforeTerminal" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <testcase name="deliveryCompletesOnlyAfterEveryPart" classname="com.sentinel.quantum.security.SmsCallbackProgressTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

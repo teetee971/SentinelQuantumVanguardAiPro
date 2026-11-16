@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.voice.VoiceAddonPolicyTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:15.118Z" hostname="localhost" time="0.011">
+  <properties/>
+  <testcase name="paidCheckoutRequiresTheCompleteSentinelOwnedCallPath" classname="com.sentinel.quantum.voice.VoiceAddonPolicyTest" time="0.003"/>
+  <testcase name="liveTransformationIsARequiredIntegratedProductCapability" classname="com.sentinel.quantum.voice.VoiceAddonPolicyTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

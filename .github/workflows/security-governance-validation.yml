@@ -1,0 +1,118 @@
+name: Security Governance Validation
+
+on:
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-governance:
+    name: Security governance regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup pinned Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Verify external reference-brand isolation
+        run: node scripts/check-reference-brand-isolation.js
+
+      - name: Verify GitHub Actions supply-chain pinning
+        run: node scripts/check-github-actions-pinning.js
+
+      - name: Verify GitHub Actions least privilege
+        run: |
+          node --test scripts/check-actions-permissions.test.js
+          node scripts/check-actions-permissions.js
+
+      - name: Verify Android emulator gate policy
+        run: node --test scripts/android-emulator-gate-policy.test.js
+
+      - name: Verify Android release publication policy
+        run: npm run test:android-release-policy
+
+      - name: Verify Android release evidence validator
+        run: npm run test:android-release-evidence
+
+      - name: Verify Node.js runtime
+        run: node --version
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Run syntax validation
+        run: npm run test:syntax
+
+      - name: Run security governance suite
+        run: npm run test:security-governance
+
+      - name: Verify security-sensitive URL canonicalization
+        run: npm run test:url-canonicalization
+
+      - name: Run owner administrative access regression tests
+        run: node --test decision-plane/policy/owner-access.test.js
+
+      - name: Run owner recovery regression tests
+        run: node --test decision-plane/policy/owner-recovery.test.js
+
+      - name: Run owner device verifier regression tests
+        run: node --test decision-plane/policy/owner-device-verifier.test.js
+
+      - name: Run governance fuzzing
+        run: npm run test:security-fuzz
+
+  security-execution-postgres:
+    name: Execution binding and PostgreSQL anti-replay integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: sentinel_ci_test_password
+          POSTGRES_DB: sentinel_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d sentinel_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/sentinel_test
+      PGPASSWORD: sentinel_ci_test_password
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup pinned Node runtime
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify PostgreSQL client
+        run: psql --version
+
+      - name: Run execution boundary and PostgreSQL integration tests
+        run: npm run test:security-execution

@@ -1,0 +1,55 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const workflow = readFileSync(resolve('.github/workflows/android-release.yml'), 'utf8');
+const androidBuild = readFileSync(resolve('native-android-app/app/build.gradle'), 'utf8');
+
+test('production Android releases require the protected environment and current main head', () => {
+  assert.match(workflow, /environment:\s*\n\s+name: android-production/);
+  assert.match(workflow, /\[\[ "\$SHA" != "\$MAIN_SHA" \]\]/);
+  assert.match(workflow, /"\$TAG" != "v\$VERSION_NAME"/);
+});
+
+test('release integrity records APK and AAB signer evidence and verifies checksums', () => {
+  assert.match(workflow, /apksigner verify --verbose --print-certs/);
+  assert.match(workflow, /\.apk\.certificates\.txt/);
+  assert.match(workflow, /sha256sum -c/);
+  assert.match(workflow, /expected exactly one release APK/);
+  assert.match(workflow, /bundleRelease/);
+  assert.match(workflow, /expected exactly one signed release AAB/);
+  assert.match(workflow, /jarsigner -verify -strict/);
+  assert.match(workflow, /keytool -printcert -jarfile/);
+  assert.match(workflow, /\.aab\.sha256/);
+  assert.match(workflow, /\.aab\.certificates\.txt/);
+  assert.match(workflow, /verify-android-release-evidence\.js --root \./);
+});
+
+test('the workflow creates a draft rather than a publicly downloadable release', () => {
+  assert.match(workflow, /Publish GitHub Release[\s\S]+draft: true/);
+  assert.doesNotMatch(workflow, /Publish GitHub Release[\s\S]+draft: false/);
+});
+
+test('production signing never falls back to a debug keystore', () => {
+  assert.doesNotMatch(workflow, /debug\.keystore|assembleDebug|signingConfig\s+debug/i);
+});
+
+
+test('releaseUnsigned explicitly clears any signing config inherited from release', () => {
+  const block = androidBuild.match(/releaseUnsigned\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
+  assert.match(block, /initWith\s+release/);
+  assert.match(block, /signingConfig\s*=\s*null/);
+});
+
+test('the next Android release is version 1.0.9 with a monotonic version code', () => {
+  assert.match(androidBuild, /versionCode\s+10\b/);
+  assert.match(androidBuild, /versionName\s+"1\.0\.9"/);
+});
+
+test('Auth0 Android dependency is pinned to the exact qualified version', () => {
+  const declaration = androidBuild.match(/implementation\s+['"]com\.auth0\.android:auth0:([^'"]+)['"]/);
+  assert.ok(declaration, 'Auth0 Android dependency must be declared');
+  assert.equal(declaration[1], '3.21.1-beta.0');
+  assert.doesNotMatch(declaration[1], /[+*]|latest\./i);
+});

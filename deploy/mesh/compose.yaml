@@ -1,0 +1,71 @@
+services:
+  mesh:
+    build:
+      context: ../..
+      dockerfile: deploy/mesh/Dockerfile
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    volumes:
+      - mesh-state:/var/lib/sentinel-mesh
+    expose:
+      - "8788"
+    ports:
+      - "3479:3479/udp"
+      - "3480:3480/udp"
+    environment:
+      MESH_BIND_HOST: 0.0.0.0
+      MESH_PORT: "8788"
+      MESH_ALLOW_REMOTE_BIND: "true"
+      MESH_ADMIN_TOKEN: ${MESH_ADMIN_TOKEN:?MESH_ADMIN_TOKEN is required}
+      MESH_STATE_PATH: /var/lib/sentinel-mesh/state.json
+      MESH_STATE_SECRET: ${MESH_STATE_SECRET:?MESH_STATE_SECRET is required}
+      MESH_NAT_PROBE_ENABLED: "true"
+      MESH_NAT_PROBE_HOST: 0.0.0.0
+      MESH_NAT_PROBE_PORT: "3479"
+      MESH_RELAY_ENABLED: "true"
+      MESH_RELAY_HOST: 0.0.0.0
+      MESH_RELAY_PORT: "3480"
+      MESH_RELAY_PUBLIC_ENDPOINT: ${MESH_RELAY_PUBLIC_ENDPOINT:?MESH_RELAY_PUBLIC_ENDPOINT is required}
+    networks:
+      - mesh-private
+
+  edge:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      mesh:
+        condition: service_healthy
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "443:443/udp"
+    environment:
+      MESH_PUBLIC_DOMAIN: ${MESH_PUBLIC_DOMAIN:?MESH_PUBLIC_DOMAIN is required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - mesh-private
+
+networks:
+  mesh-private:
+    internal: false
+
+volumes:
+  mesh-state:
+  caddy-data:
+  caddy-config:

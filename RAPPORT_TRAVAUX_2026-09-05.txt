@@ -1,0 +1,240 @@
+RAPPORT DES TRAVAUX — 5 SEPTEMBRE 2026
+Repository : teetee971/SentinelQuantumVanguardAiPro
+
+1. OBJET
+
+La journée a porté sur :
+- une analyse de performance mesurée ;
+- le rétablissement des contrôles de gouvernance et de sécurité ;
+- le renforcement des preuves de release ;
+- la correction des échecs CI actionnables ;
+- l'identification d'un blocage CodeQL externe à la source versionnée.
+
+Le logiciel n'est pas présenté comme « impiratable », « militaire », certifié,
+sans vulnérabilité ou prêt pour la production sans preuves d'exécution et
+évaluations externes applicables.
+
+2. BASELINE PERFORMANCE MESURÉE
+
+2.1 Export de sources Sentinel
+
+Hotspot confirmé par le workflow GitHub Actions :
+- Run : 33960627498 ;
+- durée totale : 125 secondes ;
+- checkout avec historique complet : 44 secondes ;
+- construction/vérification de l'export : 63 secondes ;
+- téléversement : 9 secondes ;
+- artefact téléversé : 764 304 845 octets (~729 Mio).
+
+Conclusion : c'est le principal coût CI mesuré. L'export inclut un bundle Git
+complet, un snapshot, un patch, des historiques et sommes de contrôle. Toute
+optimisation future devra préserver bundle vérifiable, SHA-256, manifeste et
+provenance.
+
+2.2 Threat Intelligence
+
+Harnais isolé : Node 22, 11 exécutions/scénario, AbortController avec délai de
+8 secondes, comparaison de l'implémentation séquentielle actuelle avec un
+équivalent Promise.allSettled parallèle.
+
+Scénario                       Séquentiel p50/p95     Parallèle p50/p95
+Sources rapides (20 ms)        40,6 / 41,2 ms         20,2 / 20,3 ms
+GitHub lent (500 ms)           521,0 / 521,1 ms       500,9 / 501,8 ms
+NVD lent (500 ms)              521,0 / 521,1 ms       500,9 / 501,0 ms
+Un timeout                     8 020,7 / 8 021,8 ms   8 008,5 / 8 008,5 ms
+Deux timeouts                  16 016,7 / 16 016,8 ms 8 008,4 / 8 008,5 ms
+
+Conclusion : deux échecs fournisseurs coûtent actuellement environ 16 secondes
+parce que les requêtes sont séquentielles. Le rendu DOM est borné à dix éléments
+et ne constitue pas un hotspot mesuré.
+
+2.3 Coordination OSINT
+
+Harnais isolé : Node 22 avec --expose-gc, 11 exécutions par taille.
+
+findClusters, pair scores activés / désactivés :
+- n=100 : 8,6 / 5,1 ms ; 54 / 53 Mio RSS ; 4 950 paires ;
+- n=250 : 22,8 / 16,2 ms ; 66 / 53 Mio RSS ; 31 125 paires ;
+- n=500 : 118,1 / 67,4 ms ; 106 / 53 Mio RSS ; 124 750 paires ;
+- n=707 : 230,8 / 136,9 ms ; 151 / 53 Mio RSS ; 249 571 paires ;
+- n=708 : 243,9 / 134,0 ms ; tronqué à 250 000 paires ;
+- n=750 : 225,8 / 136,3 ms ; tronqué à 250 000 paires.
+
+correlateCandidateCampaigns, n=500 :
+- cluster dense : p50 393,2 ms, p95 425,1 ms, un candidat ;
+- données clairsemées : p50 35,8 ms, p95 43,6 ms, aucun candidat.
+
+Conclusion : l'évaluation est quadratique et la rétention de pair_scores est
+le principal coût mémoire. Les limites et la troncature fail-closed sont
+correctes et ne doivent pas être supprimées.
+
+2.4 Scripts de validation Node
+
+11 exécutions chaudes :
+- check-public-claims.js : p50 30 ms, p95 30 ms, RSS max 53,8 Mio ;
+- check-client-security.js : p50 30 ms, p95 30 ms, RSS max 53,9 Mio ;
+- check-sentinel-isolation.js : p50 90 ms, p95 100 ms, RSS max 54,7 Mio ;
+- sentinel-watchdog.js : p50 30 ms, p95 30 ms, RSS max 47,9 Mio.
+
+Le scanner d'isolation a parcouru 180 fichiers et 349 entrées après correction.
+Les scripts ne sont pas des hotspots actuels ; le coût CI vient plutôt du
+provisionnement de runners et de la répétition inter-workflows.
+
+2.5 Service Worker
+
+Harnais reproductible : Chromium 151 piloté par DevTools Protocol, service
+worker réel, serveur HTTP local.
+
+- cache statique actuel : 11 entrées, lookup p50 0,2 ms, p95 0,3 ms ;
+- cache dynamique à 1 000 entrées : 1 488,4 ms d'écriture totale ;
+  lookup p50 0,3 ms, p95 0,6 ms ;
+- cache dynamique à 10 000 entrées : 16 275,2 ms d'écriture totale ;
+  lookup p50 0,3 ms, p95 0,6 ms ;
+- offline non mis en cache : réponse 503 confirmée.
+
+Conclusion : l'absence d'éviction dynamique est un risque de capacité, non un
+hotspot de lookup prouvé. Aucune éviction n'a été ajoutée.
+
+3. CORRECTIONS DE SÉCURITÉ ET GOUVERNANCE
+
+Les contrôles suivants ont été restaurés ou renforcés :
+- correction du calcul de confiance afin que la somme des poids atteigne 1 ;
+- la vérification de chaîne de preuves rejette désormais les entrées non-tableau
+  sans exception non gérée ;
+- simulation d'impact rendue plus conservative pour les petits graphes ;
+- assertion d'audit alignée sur son contrat de validation strict ;
+- les rapports autonomous-engineering incluent désormais la provenance exacte
+  de l'exécution CI ;
+- le workflow Autonomous Maintenance exécute evidence-trust.js ;
+- ajout de generate-release-evidence.js et de ses tests ;
+- génération d'un SBOM CycloneDX depuis package-lock.json pour une release
+  Android ;
+- génération de release-evidence.json, contenant les hashes du SBOM et des
+  APK/checksums, liés au repository, commit, workflow, workflow_ref, run,
+  tentative et ref GitHub Actions ;
+- ajout de docs/security/ASSURANCE-BASELINE.md ;
+- SECURITY.md enrichi avec les trois zones Control Plane, Analysis Plane et
+  Action Plane, les règles fail-closed, la rotation/révocation des secrets et
+  les limites des allégations d'assurance.
+
+Les décisions critiques restent conditionnées par politique, intégrité de
+preuve, confiance, simulation sûre, autorisation de cible et validation humaine.
+Le dépôt ne fournit pas d'exécuteur d'action sensible généraliste.
+
+4. CORRECTIONS CI
+
+4.1 Liens statiques
+
+Réparés :
+- public/architecture-securite.html : référence vers l'architecture de
+  validation actuelle ;
+- public/changelog.html : même correction ;
+- public/comparatif.html et public/glossary.html : retour vers ../index.html.
+
+Résultat : npm run test:static-links passe.
+
+4.2 Contrôle d'isolation
+
+Le scanner canonique excluait explicitement des workflows contenant des motifs
+interdits à des fins de détection. Le contrôle Git indépendant ne les excluait
+pas tous et produisait donc un faux positif. Les exclusions ont été alignées
+sans retirer de règle de détection sur le code applicatif.
+
+Résultat : npm run test:isolation passe ; contrôle de pinning des Actions passe.
+
+4.3 Build Android
+
+Cause observée : le workflow de build debug échouait durant la configuration
+Gradle car les secrets de signature release étaient obligatoires, même pour
+assembleDebug.
+
+Correction :
+- la configuration de signature release n'est créée que si les quatre variables
+  de signature sont présentes ;
+- toute tâche contenant « release » reste bloquée si elles sont absentes ;
+- les builds debug peuvent donc rester non signés sans secret ;
+- versions Gradle/AGP/Kotlin alignées dans les fichiers Gradle.
+
+État : la validation de configuration locale reste bloquée par l'impossibilité
+de résoudre le plugin Android depuis le dépôt Google dans cet environnement.
+Le mode fail-closed des releases a été conservé.
+
+5. VALIDATIONS EXÉCUTÉES
+
+Succès local :
+- npm run test:security-governance ;
+- npm run test:security-fuzz ;
+- npm run test:static-links ;
+- npm run test:isolation ;
+- npm run test:public-claims ;
+- node scripts/check-github-actions-pinning.js ;
+- scan de secrets sur les fichiers modifiés : aucun secret détecté ;
+- analyse CodeQL de validation : 0 alerte Actions/JavaScript.
+
+6. BLOCAGE EXTERNE RESTANT
+
+Le workflow CodeQL GitHub versionné s'exécute, génère et téléverse son SARIF,
+mais GitHub le refuse car CodeQL Default Setup est simultanément activé dans les
+paramètres du dépôt.
+
+Message GitHub observé :
+"CodeQL analyses from advanced configurations cannot be processed when the
+default setup is enabled."
+
+Action requise :
+Settings -> Code security -> Code scanning -> CodeQL analysis ->
+désactiver Default setup.
+
+Le workflow .github/workflows/codeql-analysis.yml doit être conservé. Le
+désactiver pour obtenir un statut vert supprimerait l'analyse avancée et ne
+constituerait pas une correction acceptable.
+
+7. FICHIERS PRINCIPAUX MODIFIÉS
+
+- ai-governance/trust-engine/trust-engine.js
+- ai-governance/evidence-provenance/chain.js
+- ai-governance/audit/audit-event.test.js
+- decision-plane/simulation/impact-engine.js
+- scripts/autonomous-engineering-check.js
+- scripts/generate-release-evidence.js
+- scripts/generate-release-evidence.test.js
+- scripts/check-sentinel-isolation.js
+- scripts/check-sentinel-isolation.test.js
+- package.json
+- SECURITY.md
+- docs/security/ASSURANCE-BASELINE.md
+- .github/workflows/autonomous-maintenance.yml
+- .github/workflows/android-release.yml
+- .github/workflows/sentinel-isolation.yml
+- native-android-app/app/build.gradle
+- native-android-app/build.gradle
+- native-android-app/gradle/wrapper/gradle-wrapper.properties
+- public/architecture-securite.html
+- public/changelog.html
+- public/comparatif.html
+- public/glossary.html
+
+8. PRIORITES RECOMMANDEES
+
+P0 :
+- désactiver CodeQL Default Setup dans les paramètres GitHub puis relancer le
+  workflow avancé ;
+- confirmer un build debug Android vert depuis un runner ayant accès aux
+  repositories Google/Maven nécessaires ;
+- conserver l'échec fail-closed de toute release sans secrets de signature.
+
+P1 :
+- paralléliser les deux fetches Threat Intelligence en conservant timeout,
+  statut individuel et absence de données inventées ;
+- maintenir include_pair_scores=false dans les chemins normaux de corrélation ;
+- obtenir un listing d'artefact depuis un checkout Git complet avant de réduire
+  les redondances de l'export de sources.
+
+P2 :
+- définir puis tester une politique d'éviction pour le cache dynamique du
+  service worker, sans réduire les protections same-origin ni le fallback
+  offline ;
+- mesurer les workflows CI réussis sur plusieurs exécutions avant de consolider
+  des contrôles de sécurité répétitifs.
+
+FIN DU RAPPORT

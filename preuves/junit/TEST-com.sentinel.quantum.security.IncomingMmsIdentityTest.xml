@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.IncomingMmsIdentityTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:47.150Z" hostname="localhost" time="0.014">
+  <properties/>
+  <testcase name="uppercaseDigestIsNormalizedBeforeFileNaming" classname="com.sentinel.quantum.security.IncomingMmsIdentityTest" time="0.007"/>
+  <testcase name="invalidInputsAndDigestNamesFailClosed" classname="com.sentinel.quantum.security.IncomingMmsIdentityTest" time="0.002"/>
+  <testcase name="oneByteDifferenceProducesDifferentIdentity" classname="com.sentinel.quantum.security.IncomingMmsIdentityTest" time="0.001"/>
+  <testcase name="identityIsStableAndUsesFullSha256" classname="com.sentinel.quantum.security.IncomingMmsIdentityTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

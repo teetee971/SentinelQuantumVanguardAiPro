@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.VoiceStudioPttGestureContractTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.586Z" hostname="localhost" time="0.005">
+  <properties/>
+  <testcase name="ptt_is_hold_to_talk_and_forces_release_when_activity_stops" classname="com.sentinel.quantum.VoiceStudioPttGestureContractTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

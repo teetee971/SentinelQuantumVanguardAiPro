@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiActionGateTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:39.804Z" hostname="localhost" time="0.063">
+  <properties/>
+  <testcase name="revokedRequestIsRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="changedParametersAreRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="wrongActionIsRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="replayIsRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="concurrentConfirmationSucceedsExactlyOnce" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.056"/>
+  <testcase name="unknownTokenIsRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="matchingConfirmationSucceeds" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="expiredRequestIsRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="timestampOverflowIsRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <testcase name="invalidLifetimeIsRejected" classname="com.sentinel.quantum.ai.SentinelAiActionGateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.757Z" hostname="localhost" time="0.022">
+  <properties/>
+  <testcase name="detectsCameraRecorderAndBeaconNames" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.006"/>
+  <testcase name="trackerRemainsHighRiskEvenForKnownDeviceKind" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.011"/>
+  <testcase name="cameraAndBeaconAreMediumRiskSignals" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.0"/>
+  <testcase name="appleFindMyAnnouncementIsNotProofOfStalking" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.001"/>
+  <testcase name="unpairedKeyboardIsAHintAndABondedOneIsNot" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.0"/>
+  <testcase name="knownPhonesAndAudioDevicesAreLowRisk" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.0"/>
+  <testcase name="detectsCommonTrackerNames" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.0"/>
+  <testcase name="doesNotFlagOrdinaryDeviceNames" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.0"/>
+  <testcase name="trackerIsHighRisk" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.0"/>
+  <testcase name="unknownDeviceIsMediumRisk" classname="com.sentinel.quantum.security.BluetoothRiskEvaluatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

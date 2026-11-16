@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.NeighborNumberMatcherTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:07.752Z" hostname="localhost" time="0.003">
+  <properties/>
+  <testcase name="oneSubstitutedDigitIsNear" classname="com.sentinel.quantum.security.NeighborNumberMatcherTest" time="0.003"/>
+  <testcase name="anEmptyDirectoryDoesNotLabelAnyone" classname="com.sentinel.quantum.security.NeighborNumberMatcherTest" time="0.0"/>
+  <testcase name="shortAndNonInternationalNumbersAreNotNear" classname="com.sentinel.quantum.security.NeighborNumberMatcherTest" time="0.0"/>
+  <testcase name="twoDigitsOrADifferentLengthAreNotNear" classname="com.sentinel.quantum.security.NeighborNumberMatcherTest" time="0.0"/>
+  <testcase name="exactContactIsNotNear" classname="com.sentinel.quantum.security.NeighborNumberMatcherTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

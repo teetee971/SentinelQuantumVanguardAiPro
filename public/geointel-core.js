@@ -1,0 +1,96 @@
+export const GEOINTEL_LAYERS = Object.freeze(["conflicts","hotspots","sanctions","weather","outages","natural"]);
+
+export function normalizeEvent(raw) {
+  if (!raw || typeof raw !== "object") throw new TypeError("GeoIntel event required");
+  if (typeof raw.id!=="string" || !raw.id.trim()) throw new RangeError("Event id required");
+  if (typeof raw.title!=="string" || !raw.title.trim()) throw new RangeError("Event title required");
+  if (!GEOINTEL_LAYERS.includes(raw.layer)) throw new RangeError("Unsupported GeoIntel layer");
+  const {lat,lon,severity}=raw;
+  const confidence=raw.confidence==null?null:raw.confidence;
+  if (typeof lat!=="number"||!Number.isFinite(lat)||lat < -90||lat > 90||typeof lon!=="number"||!Number.isFinite(lon)||lon < -180||lon > 180) throw new RangeError("Invalid coordinates");
+  if (typeof severity!=="number"||!Number.isFinite(severity)||severity < 1||severity > 5) throw new RangeError("Severity must be 1..5");
+  if (confidence!==null&&(typeof confidence!=="number"||!Number.isFinite(confidence)||confidence < 0||confidence > 1)) throw new RangeError("Confidence must be null or 0..1");
+  if (raw.occurredAt==null) throw new RangeError("occurredAt required");
+  const occurredAt=new Date(raw.occurredAt);
+  if (Number.isNaN(occurredAt.getTime())) throw new RangeError("Invalid occurredAt");
+  const detectedAt=raw.detectedAt==null?null:new Date(raw.detectedAt);
+  if (detectedAt && Number.isNaN(detectedAt.getTime())) throw new RangeError("Invalid detectedAt");
+  const ingestedAt=raw.ingestedAt==null?null:new Date(raw.ingestedAt);
+  if (ingestedAt && Number.isNaN(ingestedAt.getTime())) throw new RangeError("Invalid ingestedAt");
+  if (detectedAt && detectedAt.getTime()<occurredAt.getTime()) throw new RangeError("detectedAt cannot precede occurredAt");
+  if (detectedAt && ingestedAt && ingestedAt.getTime()<detectedAt.getTime()) throw new RangeError("ingestedAt cannot precede detectedAt");
+  const collectorState=["HEALTHY","DEGRADED","DOWN"].includes(raw.collectorState)?raw.collectorState:"UNKNOWN";
+  const sourceEventId=typeof raw.sourceEventId==="string"&&raw.sourceEventId.trim()
+    ? raw.sourceEventId.trim()
+    : (typeof raw.sourceEventId==="number"&&Number.isFinite(raw.sourceEventId)?String(raw.sourceEventId):null);
+  const sourceName=typeof raw.sourceName==="string"&&raw.sourceName.trim()?raw.sourceName.trim():"Source non renseignée";
+  const sourceUrl=typeof raw.sourceUrl==="string"&&raw.sourceUrl.trim()?raw.sourceUrl.trim():null;
+  return Object.freeze({id:raw.id.trim(),sourceEventId,layer:raw.layer,title:raw.title.trim(),lat,lon,severity,confidence,occurredAt:occurredAt.toISOString(),detectedAt:detectedAt?detectedAt.toISOString():null,ingestedAt:ingestedAt?ingestedAt.toISOString():null,sourceName,sourceUrl,collectorState,status:raw.status==="verified"?"verified":"unverified"});
+}
+
+export function provenanceKey(event) {
+  const e=normalizeEvent(event);
+  if (!e.sourceEventId) return null;
+  const source=e.sourceName.trim().toLowerCase();
+  if (!source || source==="source non renseignée") return null;
+  return source+"::"+e.sourceEventId;
+}
+
+export function deduplicateEvents(events) {
+  const seen=new Map(), passthrough=[];
+  for (const raw of events) {
+    const e=normalizeEvent(raw), key=provenanceKey(e);
+    if (!key) { passthrough.push(e); continue; }
+    const prior=seen.get(key);
+    if (!prior || Date.parse(e.ingestedAt||e.detectedAt||e.occurredAt)>Date.parse(prior.ingestedAt||prior.detectedAt||prior.occurredAt)) seen.set(key,e);
+  }
+  return [...seen.values(),...passthrough];
+}
+
+export function riskScore(event) {
+  const e=normalizeEvent(event);
+  if (e.confidence===null) return null;
+  return Math.round((e.severity/5)*e.confidence*100);
+}
+
+export function filterEvents(events,{layers=GEOINTEL_LAYERS,timeRangeDays=7,now=Date.now()}={}) {
+  if (!Array.isArray(events)) throw new TypeError("events must be an array");
+  if (!Array.isArray(layers)||layers.some(layer=>!GEOINTEL_LAYERS.includes(layer))) throw new RangeError("layers must contain supported GeoIntel layers");
+  if (!Number.isFinite(timeRangeDays)||timeRangeDays<=0) throw new RangeError("timeRangeDays must be positive");
+  if (!Number.isFinite(now)) throw new RangeError("now must be finite");
+  const allowed=new Set(layers);
+  const cutoff=now-(timeRangeDays*86400000);
+  return events.map(normalizeEvent).filter(e=>allowed.has(e.layer)&&Date.parse(e.occurredAt)>=cutoff&&Date.parse(e.occurredAt)<=now);
+}
+
+export function projectEquirectangular(lat,lon,width,height) {
+  return {x:((lon+180)/360)*width,y:((90-lat)/180)*height};
+}
+
+export const FreshnessState=Object.freeze({CURRENT:"CURRENT",STALE:"STALE",UNKNOWN:"UNKNOWN"});
+
+export function freshnessState(event,{now=Date.now(),ttlMs=6*60*60*1000}={}) {
+  if (!Number.isFinite(ttlMs)||ttlMs<=0) throw new RangeError("ttlMs must be positive");
+  const e=normalizeEvent(event);
+  const detected=e.detectedAt ? Date.parse(e.detectedAt) : NaN;
+  if (!Number.isFinite(now)) throw new RangeError("now must be finite");
+  if (!Number.isFinite(detected)||detected>now) return FreshnessState.UNKNOWN;
+  if (e.ingestedAt && Date.parse(e.ingestedAt)>now) return FreshnessState.UNKNOWN;
+  return now-detected<=ttlMs ? FreshnessState.CURRENT : FreshnessState.STALE;
+}
+
+export function evidenceState(event,options={}) {
+  const e=normalizeEvent(event);
+  const freshness=freshnessState(e,options);
+  if (e.status!=="verified") return Object.freeze({trust:"UNVERIFIED",freshness});
+  if (!provenanceKey(e)) return Object.freeze({trust:"DEGRADED",freshness});
+  if (e.collectorState!=="HEALTHY") return Object.freeze({trust:"DEGRADED",freshness});
+  if (freshness!=="CURRENT") return Object.freeze({trust:"DEGRADED",freshness});
+  return Object.freeze({trust:"SOURCE_VERIFIED_CURRENT",freshness});
+}
+
+export function selectMostRecentEvents(events,{limit=500}={}) {
+  if (!Array.isArray(events)) throw new TypeError("events must be an array");
+  if (!Number.isInteger(limit)||limit<=0) throw new RangeError("limit must be a positive integer");
+  return events.map(normalizeEvent).sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt)||a.id.localeCompare(b.id)).slice(0,limit);
+}

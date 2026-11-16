@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:40.777Z" hostname="localhost" time="0.116">
+  <properties/>
+  <testcase name="validApprovalIsSingleUse" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.002"/>
+  <testcase name="clockRollbackIsRejected" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.002"/>
+  <testcase name="revokeAllMustNotReactivateRevokedSession" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.003"/>
+  <testcase name="revokedSessionTrackingMustBeBounded" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.028"/>
+  <testcase name="concurrentConfirmationIsSingleUse" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.036"/>
+  <testcase name="expiredApprovalIsRejected" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.002"/>
+  <testcase name="globalRevocationInvalidatesAllApprovals" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.002"/>
+  <testcase name="revokedSessionIsRejected" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.004"/>
+  <testcase name="clockRollbackCannotBeClearedByRevokeAll" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.005"/>
+  <testcase name="activeSessionsAreBounded" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.004"/>
+  <testcase name="capacityIsBounded" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.009"/>
+  <testcase name="unknownSessionCannotRequest" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.002"/>
+  <testcase name="wrongSessionIsRejected" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.001"/>
+  <testcase name="wrongParametersConsumeApproval" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.003"/>
+  <testcase name="expiredEntriesReleaseCapacity" classname="com.sentinel.quantum.ai.SentinelAiSecureControllerTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="auditBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f141f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a2332;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="800" height="500" fill="url(#auditBg)"/>
+  
+  <!-- Main audit screen/terminal -->
+  <rect x="120" y="80" width="560" height="340" rx="6" fill="#0d1117" stroke="#2a3544" stroke-width="2"/>
+  
+  <!-- Terminal header -->
+  <rect x="120" y="80" width="560" height="35" rx="6" fill="#1a2332"/>
+  <rect x="120" y="107" width="560" height="2" fill="#2a3544"/>
+  
+  <!-- Window controls -->
+  <circle cx="140" cy="97" r="5" fill="#2a3544" opacity="0.6"/>
+  <circle cx="158" cy="97" r="5" fill="#2a3544" opacity="0.6"/>
+  <circle cx="176" cy="97" r="5" fill="#2a3544" opacity="0.6"/>
+  
+  <!-- Log entries (realistic terminal look) -->
+  <!-- Line 1 -->
+  <rect x="145" y="135" width="4" height="10" fill="#4a90e2" opacity="0.6"/>
+  <rect x="155" y="137" width="200" height="6" rx="1" fill="#2a3544" opacity="0.5"/>
+  <rect x="155" y="137" width="120" height="6" rx="1" fill="#4a90e2" opacity="0.3"/>
+  <rect x="370" y="137" width="80" height="6" rx="1" fill="#5ba3f5" opacity="0.25"/>
+  
+  <!-- Line 2 -->
+  <rect x="145" y="155" width="4" height="10" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="155" y="157" width="200" height="6" rx="1" fill="#2a3544" opacity="0.5"/>
+  <rect x="155" y="157" width="150" height="6" rx="1" fill="#4a90e2" opacity="0.3"/>
+  <rect x="370" y="157" width="100" height="6" rx="1" fill="#4a90e2" opacity="0.25"/>
+  
+  <!-- Line 3 -->
+  <rect x="145" y="175" width="4" height="10" fill="#4a90e2" opacity="0.6"/>
+  <rect x="155" y="177" width="200" height="6" rx="1" fill="#2a3544" opacity="0.5"/>
+  <rect x="155" y="177" width="90" height="6" rx="1" fill="#5ba3f5" opacity="0.3"/>
+  <rect x="370" y="177" width="120" height="6" rx="1" fill="#4a90e2" opacity="0.25"/>
+  
+  <!-- Line 4 -->
+  <rect x="145" y="195" width="4" height="10" fill="#4a90e2" opacity="0.6"/>
+  <rect x="155" y="197" width="200" height="6" rx="1" fill="#2a3544" opacity="0.5"/>
+  <rect x="155" y="197" width="140" height="6" rx="1" fill="#4a90e2" opacity="0.3"/>
+  
+  <!-- Line 5 -->
+  <rect x="145" y="215" width="4" height="10" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="155" y="217" width="200" height="6" rx="1" fill="#2a3544" opacity="0.5"/>
+  <rect x="155" y="217" width="110" height="6" rx="1" fill="#5ba3f5" opacity="0.3"/>
+  <rect x="370" y="217" width="90" height="6" rx="1" fill="#4a90e2" opacity="0.25"/>
+  
+  <!-- Line 6 -->
+  <rect x="145" y="235" width="4" height="10" fill="#4a90e2" opacity="0.6"/>
+  <rect x="155" y="237" width="200" height="6" rx="1" fill="#2a3544" opacity="0.5"/>
+  <rect x="155" y="237" width="130" height="6" rx="1" fill="#4a90e2" opacity="0.3"/>
+  
+  <!-- Chart/graph section -->
+  <rect x="145" y="270" width="230" height="130" rx="4" fill="#0a0e14" stroke="#2a3544" stroke-width="1"/>
+  
+  <!-- Bar chart -->
+  <rect x="165" y="340" width="15" height="40" fill="#4a90e2" opacity="0.5"/>
+  <rect x="190" y="325" width="15" height="55" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="215" y="335" width="15" height="45" fill="#4a90e2" opacity="0.5"/>
+  <rect x="240" y="315" width="15" height="65" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="265" y="330" width="15" height="50" fill="#4a90e2" opacity="0.5"/>
+  <rect x="290" y="345" width="15" height="35" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="315" y="335" width="15" height="45" fill="#4a90e2" opacity="0.5"/>
+  
+  <!-- Grid lines -->
+  <line x1="165" y1="310" x2="345" y2="310" stroke="#2a3544" stroke-width="0.5" opacity="0.5"/>
+  <line x1="165" y1="330" x2="345" y2="330" stroke="#2a3544" stroke-width="0.5" opacity="0.5"/>
+  <line x1="165" y1="350" x2="345" y2="350" stroke="#2a3544" stroke-width="0.5" opacity="0.5"/>
+  <line x1="165" y1="370" x2="345" y2="370" stroke="#2a3544" stroke-width="0.5" opacity="0.5"/>
+  
+  <!-- Stats panel -->
+  <rect x="405" y="270" width="250" height="130" rx="4" fill="#0a0e14" stroke="#2a3544" stroke-width="1"/>
+  
+  <!-- Status indicators -->
+  <circle cx="425" cy="295" r="6" fill="#4a90e2" opacity="0.6"/>
+  <rect x="440" y="290" width="80" height="4" rx="2" fill="#2a3544" opacity="0.5"/>
+  <rect x="440" y="290" width="55" height="4" rx="2" fill="#4a90e2" opacity="0.4"/>
+  <rect x="440" y="298" width="60" height="3" rx="1.5" fill="#2a3544" opacity="0.4"/>
+  
+  <circle cx="425" cy="325" r="6" fill="#5ba3f5" opacity="0.5"/>
+  <rect x="440" y="320" width="80" height="4" rx="2" fill="#2a3544" opacity="0.5"/>
+  <rect x="440" y="320" width="65" height="4" rx="2" fill="#5ba3f5" opacity="0.4"/>
+  <rect x="440" y="328" width="70" height="3" rx="1.5" fill="#2a3544" opacity="0.4"/>
+  
+  <circle cx="425" cy="355" r="6" fill="#4a90e2" opacity="0.6"/>
+  <rect x="440" y="350" width="80" height="4" rx="2" fill="#2a3544" opacity="0.5"/>
+  <rect x="440" y="350" width="48" height="4" rx="2" fill="#4a90e2" opacity="0.4"/>
+  <rect x="440" y="358" width="55" height="3" rx="1.5" fill="#2a3544" opacity="0.4"/>
+  
+  <!-- Percentage indicators -->
+  <rect x="565" y="290" width="70" height="18" rx="3" fill="#1a2332" stroke="#2a3544" stroke-width="1"/>
+  <rect x="573" y="296" width="24" height="6" rx="2" fill="#4a90e2" opacity="0.5"/>
+  
+  <rect x="565" y="320" width="70" height="18" rx="3" fill="#1a2332" stroke="#2a3544" stroke-width="1"/>
+  <rect x="573" y="326" width="32" height="6" rx="2" fill="#5ba3f5" opacity="0.5"/>
+  
+  <rect x="565" y="350" width="70" height="18" rx="3" fill="#1a2332" stroke="#2a3544" stroke-width="1"/>
+  <rect x="573" y="356" width="20" height="6" rx="2" fill="#4a90e2" opacity="0.5"/>
+  
+  <!-- Subtle scan effect -->
+  <rect x="120" y="115" width="560" height="2" fill="#4a90e2" opacity="0.2">
+    <animate attributeName="y" from="115" to="420" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0.3;0.3;0" dur="3s" repeatCount="indefinite"/>
+  </rect>
+</svg>

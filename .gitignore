@@ -1,0 +1,87 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+artifacts/frontend/
+public/product-truth.generated.json
+*.apk
+*.aab
+
+# Canonical Android build outputs
+native-android-app/.gradle/
+native-android-app/build/
+native-android-app/app/build/
+native-android-app/local.properties
+
+# Signing material
+*.keystore
+*.jks
+*.p12
+*.pfx
+**/debug.keystore
+**/release.keystore
+**/google-services.json
+
+# Local credentials / shell state
+.git-credentials
+**/.git-credentials
+.ssh/
+**/.ssh/
+.bash_history
+**/.bash_history
+.zsh_history
+**/.zsh_history
+.sh_history
+**/.sh_history
+.config/configstore/firebase-tools.json
+**/.config/configstore/firebase-tools.json
+.config/firebase/
+**/.config/firebase/
+**/id_rsa
+**/id_dsa
+**/id_ecdsa
+**/id_ed25519
+*.pem
+*.key
+.npmrc
+**/.npmrc
+.netrc
+**/.netrc
+secrets/
+**/secrets/
+
+# Gradle
+.gradle/
+gradle-app.setting
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Temporary files
+/tmp/
+*.tmp
+*.log
+
+# Local/backup files
+*.old
+*.disabled
+index-old.html
+index.html.backup
+native-android-app/.kotlin/

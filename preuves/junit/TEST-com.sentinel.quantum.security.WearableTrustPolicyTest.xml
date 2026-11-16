@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearableTrustPolicyTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:13.959Z" hostname="localhost" time="0.014">
+  <properties/>
+  <testcase name="rejectsRadioStyleOrMalformedFingerprintAsCryptographicProof" classname="com.sentinel.quantum.security.WearableTrustPolicyTest" time="0.0"/>
+  <testcase name="sameDisplayOrRadioIdentityCannotSubstituteStableIdentity" classname="com.sentinel.quantum.security.WearableTrustPolicyTest" time="0.011"/>
+  <testcase name="matchingFreshKeyBoundIdentityIsTrusted" classname="com.sentinel.quantum.security.WearableTrustPolicyTest" time="0.0"/>
+  <testcase name="proofFromBeforeCurrentSessionCannotAuthenticateIt" classname="com.sentinel.quantum.security.WearableTrustPolicyTest" time="0.0"/>
+  <testcase name="changedKeyForSameStableIdFailsClosed" classname="com.sentinel.quantum.security.WearableTrustPolicyTest" time="0.0"/>
+  <testcase name="matchingStableIdWithoutKeyBindingFailsClosed" classname="com.sentinel.quantum.security.WearableTrustPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

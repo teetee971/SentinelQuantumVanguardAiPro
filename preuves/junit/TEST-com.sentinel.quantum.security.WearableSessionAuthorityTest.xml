@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.WearableSessionAuthorityTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:13.942Z" hostname="localhost" time="0.003">
+  <properties/>
+  <testcase name="differentIdentitiesRemainIndependent" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.0"/>
+  <testcase name="capabilityMutationCannotExpandActivatedAuthority" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.001"/>
+  <testcase name="newerHandshakeSupersedesOlderAttemptForSameIdentity" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.0"/>
+  <testcase name="proofCannotActivateAnotherIdentityOrSession" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.0"/>
+  <testcase name="proofWithExtraCapabilityCannotAuthorizeNarrowerSession" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.001"/>
+  <testcase name="unsignedCapabilitiesCannotReplaceExistingAuthority" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.0"/>
+  <testcase name="signedProtocolCannotAuthorizeAnotherProtocol" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.0"/>
+  <testcase name="activationAtomicallyReplacesPreviousSession" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.0"/>
+  <testcase name="revocationClearsPendingAndActiveAuthority" classname="com.sentinel.quantum.security.WearableSessionAuthorityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

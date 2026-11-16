@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelVpnControllerTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:10.263Z" hostname="localhost" time="0.127">
+  <properties/>
+  <testcase name="rejectsIpv6OnlyConfiguration" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.087"/>
+  <testcase name="rejectsFullTunnelWithoutDns" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.006"/>
+  <testcase name="rejectsHostnameAsGatewayDnsPin" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.004"/>
+  <testcase name="rejectsOversizedConfigurationBeforeParsing" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.002"/>
+  <testcase name="rejectsUnpinnedExternalDns" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.009"/>
+  <testcase name="rejectsIpv4OnlyConfiguration" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.006"/>
+  <testcase name="acceptsOnlyDnsPinnedToAvailableGateway" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.005"/>
+  <testcase name="acceptsDualStackFullTunnelConfiguration" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.005"/>
+  <testcase name="rejectsAvailableGatewayWithoutDnsPins" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.001"/>
+  <testcase name="rejectsNulBytes" classname="com.sentinel.quantum.security.SentinelVpnControllerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.PhoneProtectionListTruthTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:08.968Z" hostname="localhost" time="0.012">
+  <properties/>
+  <testcase name="moderatedMultiSignalLabelCanBeShownAsProbableButNeverAutoBlocks" classname="com.sentinel.quantum.security.PhoneProtectionListTruthTest" time="0.007"/>
+  <testcase name="expiredSourceCannotBePresentedAsActive" classname="com.sentinel.quantum.security.PhoneProtectionListTruthTest" time="0.005"/>
+  <testcase name="oneCommunitySignalNeverBecomesSpamConsensus" classname="com.sentinel.quantum.security.PhoneProtectionListTruthTest" time="0.0"/>
+  <testcase name="absentOrUnverifiedSourceIsNeverActive" classname="com.sentinel.quantum.security.PhoneProtectionListTruthTest" time="0.0"/>
+  <testcase name="zeroSignalsRemainUnevaluated" classname="com.sentinel.quantum.security.PhoneProtectionListTruthTest" time="0.0"/>
+  <testcase name="verifiedSourceReflectsUserActivation" classname="com.sentinel.quantum.security.PhoneProtectionListTruthTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

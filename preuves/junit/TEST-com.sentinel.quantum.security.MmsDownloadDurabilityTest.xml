@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.MmsDownloadDurabilityTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:06.997Z" hostname="localhost" time="0.068">
+  <properties/>
+  <testcase name="oldCallbackCannotChangeANewerIdentity" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.008"/>
+  <testcase name="identicalDigestIsAReplayAndADifferentDigestIsRejected" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.001"/>
+  <testcase name="schema1JournalWithoutShaStaysReadable" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.006"/>
+  <testcase name="twoCallersCannotReplaceACommittedDigest" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.015"/>
+  <testcase name="stagingStaysUntilPrivateRereadAndJournalBothSucceed" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.004"/>
+  <testcase name="diagnoseAndRetryBothKeepStagingWhileCleanupRuns" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.018"/>
+  <testcase name="missingPrivateCopyIsKeptAndHistoricalAbsenceIsNotDeleted" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.01"/>
+  <testcase name="absentShaCanBeAppliedOnceButAMissingRecordIsNotRecreated" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.001"/>
+  <testcase name="roleRevocationDoesNotDeleteStaging" classname="com.sentinel.quantum.security.MmsDownloadDurabilityTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

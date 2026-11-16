@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.SentinelNetworkPostureDiagnosticTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:10.077Z" hostname="localhost" time="0.008">
+  <properties/>
+  <testcase name="validatedInternetWithVpnIsObservedWithoutSecurityVerdict" classname="com.sentinel.quantum.security.SentinelNetworkPostureDiagnosticTest" time="0.007"/>
+  <testcase name="vpnAbsenceAloneIsNotAWarning" classname="com.sentinel.quantum.security.SentinelNetworkPostureDiagnosticTest" time="0.0"/>
+  <testcase name="noActiveNetworkIsWarningNotCompromise" classname="com.sentinel.quantum.security.SentinelNetworkPostureDiagnosticTest" time="0.0"/>
+  <testcase name="collectionFailureRemainsUnknown" classname="com.sentinel.quantum.security.SentinelNetworkPostureDiagnosticTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

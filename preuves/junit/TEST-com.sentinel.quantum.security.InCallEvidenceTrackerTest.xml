@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.security.InCallEvidenceTrackerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:46.943Z" hostname="localhost" time="0.028">
+  <properties/>
+  <testcase name="callbackFromRemovedGenerationCannotCompleteReaddedCall" classname="com.sentinel.quantum.security.InCallEvidenceTrackerTest" time="0.015"/>
+  <testcase name="concurrentBeginsForOneCallAllowOnlyOneWriteAttempt" classname="com.sentinel.quantum.security.InCallEvidenceTrackerTest" time="0.007"/>
+  <testcase name="oneCallCanHaveIndependentEvidenceKindsInFlight" classname="com.sentinel.quantum.security.InCallEvidenceTrackerTest" time="0.001"/>
+  <testcase name="destroyRejectsCallbacksThatFinishAfterServiceTeardown" classname="com.sentinel.quantum.security.InCallEvidenceTrackerTest" time="0.0"/>
+  <testcase name="simultaneousEqualCallsKeepTheirIdentityAndEvidenceSeparate" classname="com.sentinel.quantum.security.InCallEvidenceTrackerTest" time="0.0"/>
+  <testcase name="removalDuringWriteRejectsLateCompletion" classname="com.sentinel.quantum.security.InCallEvidenceTrackerTest" time="0.0"/>
+  <testcase name="storageFailureClearsFlightAndAllowsAnExplicitRetry" classname="com.sentinel.quantum.security.InCallEvidenceTrackerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

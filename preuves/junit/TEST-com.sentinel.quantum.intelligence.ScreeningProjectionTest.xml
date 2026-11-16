@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.intelligence.ScreeningProjectionTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:18:42.348Z" hostname="localhost" time="0.041">
+  <properties/>
+  <testcase name="cache replacement is atomic and never mutates the previous projection" classname="com.sentinel.quantum.intelligence.ScreeningProjectionTest" time="0.037"/>
+  <testcase name="expired signed rules are excluded while user rules remain" classname="com.sentinel.quantum.intelligence.ScreeningProjectionTest" time="0.001"/>
+  <testcase name="projection defensively copies mutable rule inputs" classname="com.sentinel.quantum.intelligence.ScreeningProjectionTest" time="0.001"/>
+  <testcase name="projection exposes only pre-authorized call rules" classname="com.sentinel.quantum.intelligence.ScreeningProjectionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

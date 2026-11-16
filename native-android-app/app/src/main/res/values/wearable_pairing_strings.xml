@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wearable_pairing_title">Confirmer la montre Sentinel</string>
+    <string name="wearable_pairing_body">Une montre a prouvé cryptographiquement cette identité. Confirmez uniquement si vous êtes en train d’associer cette montre.\n\nIdentité : %1$s\nEmpreinte Ed25519 : %2$s</string>
+    <string name="wearable_pairing_accept">Associer</string>
+    <string name="wearable_pairing_reject">Refuser</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.voice.PushToTalkSessionTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-16T20:19:14.979Z" hostname="localhost" time="0.041">
+  <properties/>
+  <testcase name="duplicatePressIsRejectedWithoutReopeningTheMicrophone" classname="com.sentinel.quantum.voice.PushToTalkSessionTest" time="0.007"/>
+  <testcase name="failedMicrophoneEnableFailsClosed" classname="com.sentinel.quantum.voice.PushToTalkSessionTest" time="0.008"/>
+  <testcase name="microphoneIsEnabledOnlyWhileTheTalkButtonIsPressed" classname="com.sentinel.quantum.voice.PushToTalkSessionTest" time="0.014"/>
+  <testcase name="closeCutsMicrophoneBeforeClosingTheSession" classname="com.sentinel.quantum.voice.PushToTalkSessionTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

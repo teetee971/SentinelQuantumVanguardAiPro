@@ -1,0 +1,252 @@
+package com.sentinel.quantum.security
+
+import android.app.Activity
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+
+/**
+ * Records only delivery state; no destination or message body is logged.
+ *
+ * Android telephony callbacks are validated synchronously, then processed on one private serial
+ * executor via goAsync(). Serial processing preserves multipart provider transitions while keeping
+ * ContentResolver, preferences and timeline I/O off BroadcastReceiver's main thread.
+ */
+class SentinelSmsStatusReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val callbackUri = intent.data ?: return
+        if (
+            callbackUri.scheme != CALLBACK_URI_SCHEME ||
+            callbackUri.host != CALLBACK_URI_HOST
+        ) return
+
+        val path = callbackUri.pathSegments
+        if (path.size != 5) return
+        val uriSendToken = path[0].toIntOrNull()?.takeIf { it > 0 } ?: return
+        val uriProviderMessageId = path[1].toLongOrNull()?.takeIf { it > 0L } ?: return
+        val uriPartIndex = path[2].toIntOrNull() ?: return
+        val uriPartCount = path[3].toIntOrNull() ?: return
+        val callbackKind = path[4]
+
+        val sendToken = intent.getIntExtra(SentinelSmsSender.EXTRA_SEND_TOKEN, -1)
+        val providerMessageId =
+            intent.getLongExtra(SentinelSmsSender.EXTRA_PROVIDER_MESSAGE_ID, -1L)
+        val partIndex = intent.getIntExtra(SentinelSmsSender.EXTRA_PART_INDEX, -1)
+        val partCount = intent.getIntExtra(SentinelSmsSender.EXTRA_PART_COUNT, -1)
+
+        if (
+            sendToken != uriSendToken ||
+            providerMessageId != uriProviderMessageId ||
+            partIndex != uriPartIndex ||
+            partCount != uriPartCount ||
+            partCount !in 1..SmsCallbackProgress.MAX_PARTS ||
+            partIndex !in 0 until partCount
+        ) return
+
+        val stage = when {
+            intent.action == SentinelSmsSender.ACTION_SENT && callbackKind == "sent" ->
+                SmsDeliveryStatusBus.Stage.SENT
+            intent.action == SentinelSmsSender.ACTION_DELIVERED && callbackKind == "delivered" ->
+                SmsDeliveryStatusBus.Stage.DELIVERED
+            else -> return
+        }
+
+        val androidResultCode = resultCode
+        val successful = androidResultCode == Activity.RESULT_OK
+        val appContext = context.applicationContext
+        val pendingResult = goAsync()
+
+        try {
+            CALLBACK_EXECUTOR.execute {
+                try {
+                    processValidatedCallback(
+                        context = appContext,
+                        stage = stage,
+                        sendToken = sendToken,
+                        providerMessageId = providerMessageId,
+                        partIndex = partIndex,
+                        partCount = partCount,
+                        successful = successful,
+                        androidResultCode = androidResultCode
+                    )
+                } finally {
+                    pendingResult.finish()
+                }
+            }
+        } catch (_: RuntimeException) {
+            pendingResult.finish()
+        }
+    }
+
+    private fun processValidatedCallback(
+        context: Context,
+        stage: SmsDeliveryStatusBus.Stage,
+        sendToken: Int,
+        providerMessageId: Long,
+        partIndex: Int,
+        partCount: Int,
+        successful: Boolean,
+        androidResultCode: Int
+    ) {
+        val event = when (stage) {
+            SmsDeliveryStatusBus.Stage.SENT ->
+                if (successful) "SENT_OK" else "SENT_ERROR_" + androidResultCode
+            SmsDeliveryStatusBus.Stage.DELIVERED ->
+                if (successful) "DELIVERED_OK" else "DELIVERY_ERROR_" + androidResultCode
+        }
+
+        val progressStore = SmsCallbackProgressStore(context)
+        var progressPersistenceFailed = false
+        val progress = runCatching {
+            progressStore.record(
+                sendToken = sendToken,
+                providerMessageId = providerMessageId,
+                partIndex = partIndex,
+                partCount = partCount,
+                stage = stage,
+                successful = successful,
+                onPersistenceFailure = { progressPersistenceFailed = true }
+            )
+        }.getOrElse {
+            progressPersistenceFailed = true
+            null
+        }
+        if (progress == null) {
+            if (progressPersistenceFailed) {
+                val statusEvent = SmsDeliveryStatusBus.Event(
+                    sendToken = sendToken,
+                    providerMessageId = providerMessageId,
+                    partIndex = partIndex,
+                    partCount = partCount,
+                    stage = stage,
+                    successful = successful,
+                    providerWriteSucceeded = false
+                )
+                publishValidatedStatus(context, statusEvent)
+                LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Persistance du statut SMS indisponible")
+            }
+            return
+        }
+
+        if (progressPersistenceFailed) {
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Persistance du statut SMS indisponible")
+        }
+        val conversationStore = SmsConversationStore(context)
+        val providerUpdated = SmsProviderPersistence.persist(
+            progress = progress,
+            markFailed = { conversationStore.markOutgoingFailed(providerMessageId) },
+            markSent = { conversationStore.markOutgoingSent(providerMessageId) },
+            markDelivery = { conversationStore.markDeliveryResult(providerMessageId, it) }
+        )
+        if (providerUpdated && !runCatching {
+                progressStore.markProviderApplied(sendToken, providerMessageId, progress.state)
+            }.getOrDefault(false)) {
+            progressPersistenceFailed = true
+        }
+        if (!providerUpdated) {
+            queueProviderRepair(context)
+            LocalLogger(context).log(LocalLogger.LogLevel.WARNING, "SmsStatus", "Écriture du statut dans le provider SMS non confirmée")
+        }
+
+        val statusEvent = SmsDeliveryStatusBus.Event(
+            sendToken = sendToken,
+            providerMessageId = providerMessageId,
+            partIndex = partIndex,
+            partCount = partCount,
+            stage = stage,
+            successful = successful,
+            providerWriteSucceeded = providerUpdated && !progressPersistenceFailed
+        )
+        publishValidatedStatus(context, statusEvent)
+        LocalLogger(context).log(LocalLogger.LogLevel.SECURITY, "DefaultSms", event)
+        val timeline = PhonePrivateTimelineStore(context)
+        val timestampMs = System.currentTimeMillis()
+        runCatching {
+            check(timeline.append(
+                PhonePrivateTimeline.Event(
+                    kind = PhonePrivateTimeline.Kind.SMS,
+                    timestampMs = timestampMs,
+                    direction = "OUTGOING",
+                    signal = event
+                )
+            )) { "Timeline write not confirmed" }
+        }.onFailure {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "SmsStatus",
+                "Chronologie privée indisponible; le traitement du statut SMS continue"
+            )
+        }
+
+        if (providerUpdated && !progressPersistenceFailed) progress.certificationSignals.forEach { signal ->
+            runCatching {
+                check(timeline.append(
+                    PhonePrivateTimeline.Event(
+                        kind = PhonePrivateTimeline.Kind.SMS,
+                        timestampMs = timestampMs,
+                        direction = "OUTGOING",
+                        signal = signal
+                    )
+                )) { "Timeline write not confirmed" }
+            }.onFailure {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "SmsStatus",
+                    "Chronologie privée indisponible; le traitement du statut SMS continue"
+                )
+            }
+        }
+    }
+
+    private fun publishValidatedStatus(context: Context, statusEvent: SmsDeliveryStatusBus.Event) {
+        SmsDeliveryStatusBus.publish(statusEvent)
+        runCatching {
+            IntelligenceCoreRuntime.publishSmsDelivery(
+                context = context,
+                providerMessageId = statusEvent.providerMessageId,
+                event = statusEvent
+            )
+        }
+    }
+
+    companion object {
+        private val repairQueued = AtomicBoolean(false)
+
+        fun queueProviderRepair(context: Context) {
+            if (!repairQueued.compareAndSet(false, true)) return
+            val appContext = context.applicationContext
+            CALLBACK_EXECUTOR.schedule({
+                repairQueued.set(false)
+                val store = SmsCallbackProgressStore(appContext)
+                var retry = false
+                val pending = runCatching { store.pendingProviderWrites() }.getOrElse {
+                    retry = true
+                    emptyList()
+                }
+                val conversations = SmsConversationStore(appContext)
+                for (write in pending) {
+                    val id = write.providerMessageId
+                    val applied = SmsProviderPersistence.persist(write.outcome,
+                        { conversations.markOutgoingFailed(id) },
+                        { conversations.markOutgoingSent(id) },
+                        { conversations.markDeliveryResult(id, it) })
+                    if (!applied || !runCatching {
+                            store.markProviderApplied(write.sendToken, id, write.outcome.state)
+                        }.getOrDefault(false)) retry = true
+                }
+                // Repair is a provider projection only; it must never manufacture physical proofs.
+                if (retry) queueProviderRepair(appContext)
+            }, 60L, TimeUnit.SECONDS)
+        }
+
+        const val CALLBACK_URI_SCHEME = "sentinel-sms-status"
+        const val CALLBACK_URI_HOST = "callback"
+        private val CALLBACK_EXECUTOR = Executors.newSingleThreadScheduledExecutor { runnable ->
+            Thread(runnable, "SentinelSmsStatus").apply { isDaemon = true }
+        }
+    }
+}
