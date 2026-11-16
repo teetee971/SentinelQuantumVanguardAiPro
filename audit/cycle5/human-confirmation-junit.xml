@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-16T23:42:24.036Z" hostname="a029fdcc4328" time="0.005">
+  <properties/>
+  <testcase name="concurrentConsumersHaveOneWinner" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.004"/>
+  <testcase name="cancellationNeverAuthenticates" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.0"/>
+  <testcase name="revocationRejectsLateSystemResult" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.0"/>
+  <testcase name="wrongProposalBurnsProof" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.0"/>
+  <testcase name="expiryBoundaryRejectsCompletion" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.0"/>
+  <testcase name="oldResultCannotCompleteNewChallenge" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.0"/>
+  <testcase name="clockRollbackPermanentlyPoisonsProof" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.0"/>
+  <testcase name="completedHumanChallengeIsConsumedOnce" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.0"/>
+  <testcase name="mereProposalNeverAuthenticates" classname="com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
