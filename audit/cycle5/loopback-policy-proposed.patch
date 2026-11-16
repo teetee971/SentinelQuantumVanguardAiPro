@@ -1,0 +1,22 @@
+--- a/native-android-app/app/src/main/AndroidManifest.xml
++++ b/native-android-app/app/src/main/AndroidManifest.xml
+@@ -47,7 +47,8 @@
+         android:logo="@drawable/ic_sentinel_launcher_foreground"
+         android:supportsRtl="true"
+         android:theme="@style/Theme.SentinelQuantum"
+-        android:usesCleartextTraffic="false">
++        android:usesCleartextTraffic="false"
++        android:networkSecurityConfig="@xml/sentinel_ai_local_network_security">
+
+         <service
+             android:name=".security.SentinelCallScreeningService"
+--- /dev/null
++++ b/native-android-app/app/src/main/res/xml/sentinel_ai_local_network_security.xml
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<network-security-config>
++    <base-config cleartextTrafficPermitted="false" />
++    <domain-config cleartextTrafficPermitted="true">
++        <domain includeSubdomains="false">127.0.0.1</domain>
++    </domain-config>
++</network-security-config>

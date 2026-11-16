@@ -1,0 +1,160 @@
+{
+  "junit": {
+    "suites": 342,
+    "tests": 1623,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "protected_files_checked": 101,
+  "expected_manifest_only_difference": true,
+  "permissions_and_existing_components_unchanged": true,
+  "added_activity_exported": false,
+  "proposed_network_policy_applied": false,
+  "apk": [
+    {
+      "kind": "app",
+      "argv": [
+        "/workspace/work/integral-audit/cycle2/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "/workspace/work/integral-audit/project/native-android-app/app/build/outputs/apk/debug/app-debug.apk"
+      ],
+      "exit_code": 0,
+      "bytes": 99472730,
+      "sha256": "77421636c563679259f9adc883e98e707e74f5922bbfb4022c36b05ddb975b31"
+    },
+    {
+      "kind": "test",
+      "argv": [
+        "/workspace/work/integral-audit/cycle2/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "/workspace/work/integral-audit/project/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+      ],
+      "exit_code": 0,
+      "bytes": 1129273,
+      "sha256": "c85c854d03b11ff4c9d133062a2b1a54af0c8627cd98ef7774e20cb9a2c07bd9"
+    }
+  ],
+  "instrumented_tests_executed": false,
+  "hardware_reason": "No ADB devices",
+  "gradle": [
+    {
+      "label": "cycle5-proof-red",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--tests",
+        "com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 1
+    },
+    {
+      "label": "cycle5-proof-green",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--tests",
+        "com.sentinel.quantum.ai.SentinelAiHumanConfirmationTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle5-callback-units",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle5-frozen-instrumentation",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:compileDebugAndroidTestKotlin",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle5-frozen-apk",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:assembleDebug",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle5-frozen-test-apk",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:assembleDebugAndroidTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "javascript": {
+    "tests": 1328,
+    "failures": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "real_model_proposal": {
+    "host": "x86_64",
+    "android": false,
+    "real_model": true,
+    "result": {
+      "reply": "Je suis prêt à vous proposer un point de contrôle dans le journal IA. Veuillez me donner plus de détails sur la demande et la nature de l'audit que vous souhaitez effectuer.",
+      "action": "CREATE_AUDIT_CHECKPOINT"
+    },
+    "expected_action": "CREATE_AUDIT_CHECKPOINT",
+    "matched": true,
+    "executed": false
+  },
+  "manifest_extract": {
+    "argv": [
+      "/workspace/work/integral-audit/cycle2/android-sdk/cmdline-tools/latest/bin/apkanalyzer",
+      "manifest",
+      "print",
+      "/workspace/work/integral-audit/project/native-android-app/app/build/outputs/apk/debug/app-debug.apk"
+    ],
+    "exit_code": 0
+  },
+  "adb_command": [
+    "/workspace/work/integral-audit/cycle2/android-sdk/platform-tools/adb",
+    "devices",
+    "-l"
+  ]
+}

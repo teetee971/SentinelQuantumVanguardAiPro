@@ -412,6 +412,11 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            OutlinedButton(
+                onClick = { context.startActivity(Intent(context, com.sentinel.quantum.ai.SentinelAiActivity::class.java)) },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Agent IA local (expérimental, non qualifié)") }
+
             SentinelSectionHeader(
                 title = "Studio voix",
                 subtitle = "Aperçu local du moteur vocal · transformation en appel Sentinel obligatoire avant livraison de l’add-on."
