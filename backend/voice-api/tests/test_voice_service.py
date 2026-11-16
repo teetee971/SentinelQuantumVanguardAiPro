@@ -1,3 +1,4 @@
+from revocation_fixture import FakeMediaRevoker
 import json
 import sys
 import time
@@ -109,6 +110,7 @@ def make_client(principal=entitled_principal()):
         redis_client=FakeRedis(),
         identity_verifier=FakeIdentityVerifier(principal),
         token_issuer=issuer,
+        media_revoker=FakeMediaRevoker(),
     )
     return TestClient(app), issuer
 
@@ -153,6 +155,7 @@ def test_redis_failure_returns_unavailable_instead_of_server_error():
         redis_client=BrokenRedis(),
         identity_verifier=FakeIdentityVerifier(entitled_principal()),
         token_issuer=FakeTokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app) as client:
@@ -210,6 +213,7 @@ def test_legacy_idempotency_replay_cannot_bypass_room_authorization():
         redis_client=redis,
         identity_verifier=FakeIdentityVerifier(entitled_principal()),
         token_issuer=issuer,
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app) as client:
@@ -250,6 +254,7 @@ def test_legacy_valid_room_replay_is_not_reused_after_room_binding_change():
         redis_client=redis,
         identity_verifier=FakeIdentityVerifier(entitled_principal()),
         token_issuer=issuer,
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app) as client:
@@ -289,7 +294,7 @@ def test_session_creation_is_idempotent_and_room_scoped():
     assert mismatch.status_code == 403
     assert mismatch.json()["detail"] == "Voice destination unavailable"
     assert len(issuer.calls) == 1
-    assert issuer.calls[0]["identity"] == "user-1"
+    assert issuer.calls[0]["identity"] == "sentinel-session-" + first.json()["session_id"]
     assert issuer.calls[0]["ttl_seconds"] == 120
     assert issuer.calls[0]["room"].startswith("sentinel-ptt-")
 
@@ -343,6 +348,7 @@ def test_close_requires_the_device_that_created_the_session():
         redis_client=redis_client,
         identity_verifier=verifier,
         token_issuer=FakeTokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
     with TestClient(app) as client:
         created = client.post(
@@ -371,6 +377,7 @@ def test_repeated_close_keeps_account_and_device_authorization():
         redis_client=redis_client,
         identity_verifier=verifier,
         token_issuer=FakeTokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
     with TestClient(app) as client:
         created = client.post(
@@ -421,6 +428,8 @@ def test_livekit_token_is_room_scoped_and_capped_at_120_seconds():
         "room": "sentinel-ptt-room",
         "canPublish": True,
         "canSubscribe": True,
+        "canPublishSources": ["microphone"],
+        "canPublishData": False,
     }
 
 

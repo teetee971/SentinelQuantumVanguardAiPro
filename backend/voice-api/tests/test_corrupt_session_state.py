@@ -1,3 +1,4 @@
+from revocation_fixture import FakeMediaRevoker
 from pathlib import Path
 import sys
 
@@ -91,6 +92,7 @@ def test_create_fails_closed_when_idempotency_record_is_corrupt():
         redis_client=redis_client,
         identity_verifier=FakeIdentityVerifier(),
         token_issuer=FakeTokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app, raise_server_exceptions=False) as client:
@@ -115,6 +117,7 @@ def test_close_fails_closed_when_open_session_record_is_corrupt():
         redis_client=redis_client,
         identity_verifier=FakeIdentityVerifier(),
         token_issuer=FakeTokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app, raise_server_exceptions=False) as client:
@@ -135,6 +138,7 @@ def test_close_fails_closed_when_replay_record_is_corrupt():
         redis_client=redis_client,
         identity_verifier=FakeIdentityVerifier(),
         token_issuer=FakeTokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app, raise_server_exceptions=False) as client:

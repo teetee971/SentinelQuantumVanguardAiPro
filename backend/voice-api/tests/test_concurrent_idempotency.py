@@ -1,3 +1,4 @@
+from revocation_fixture import FakeMediaRevoker
 import json
 import sys
 from pathlib import Path
@@ -41,9 +42,9 @@ class RaceRedis:
             # A competing winner stores both indexes atomically, like the real Redis script.
             self.values["voice:session:v1:winner-session"] = json.dumps({
                 "subject": "user-1", "device_id": "device-1", "session_id": "winner-session",
-                "status": "open", "room": _room_name(
+                "status": "open", "identity": "sentinel-session-winner-session", "room": _room_name(
                     demo_room_id_for_device("device-1"), subject="user-1", device_id="device-1"
-                ),
+                ) + "-winner-session",
             })
             self.values[key] = json.dumps(winner, separators=(",", ":"))
             return False
@@ -122,6 +123,7 @@ def test_losing_idempotency_race_does_not_write_orphan_session():
         redis_client=redis_client,
         identity_verifier=IdentityVerifier(),
         token_issuer=TokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app) as client:
@@ -146,6 +148,7 @@ def test_session_reservation_uses_atomic_redis_primitive_when_available():
         redis_client=redis_client,
         identity_verifier=IdentityVerifier(),
         token_issuer=TokenIssuer(),
+        media_revoker=FakeMediaRevoker(),
     )
 
     with TestClient(app, raise_server_exceptions=False) as client:

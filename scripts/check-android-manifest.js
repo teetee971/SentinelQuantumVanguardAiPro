@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { validateAndroidStartupContracts, validateWifiLocationContract } from './android-startup-contracts.js';
 
 const manifestPath = path.resolve('native-android-app/app/src/main/AndroidManifest.xml');
 const manifest = fs.readFileSync(manifestPath, 'utf8');
@@ -34,8 +35,8 @@ const scopedExceptions = new Map([
   [
     'ACCESS_COARSE_LOCATION',
     {
-      requiredAttributes: { 'android:maxSdkVersion': '32' },
-      reason: 'required by Android 12 alongside the bounded fine-location scan permission'
+      requiredAttributes: {},
+      reason: 'paired approximate/precise consent remains required for scan requests on Android 12 and later'
     }
   ]
 ]);
@@ -363,20 +364,21 @@ if (!manifest.includes('android:allowBackup="false"')) {
 }
 
 if (!manifest.includes('android:name=".SentinelApplication"')) {
-  errors.push('Android manifest must register SentinelApplication so call-rule HMAC keys load before onScreenCall().');
+  errors.push('Android manifest must register SentinelApplication for lifecycle-owned maintenance.');
 }
 
 const applicationSource = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/SentinelApplication.kt'),
   'utf8'
 );
-if (!applicationSource.includes('val screeningSnapshot = store.prepareScreeningSnapshot()') ||
-    !applicationSource.includes('screeningSnapshot.blockedNumberHashes.isNotEmpty()') ||
-    !applicationSource.includes('store.prepareFingerprintKeys()') ||
-    applicationSource.includes('sentinel-call-key-warmup') ||
-    applicationSource.includes('kotlin.concurrent.thread')) {
-  errors.push('Exact-number call-rule keys must load synchronously before CallScreeningService without background warm-up races.');
-}
+const screeningServiceSource = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelCallScreeningService.kt'), 'utf8'
+);
+const locationScannerSource = fs.readFileSync(
+  path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/WifiScanner.kt'), 'utf8'
+);
+errors.push(...validateAndroidStartupContracts(applicationSource, screeningServiceSource));
+errors.push(...validateWifiLocationContract(declarations, locationScannerSource));
 
 const inCallService = fs.readFileSync(
   path.resolve('native-android-app/app/src/main/java/com/sentinel/quantum/security/SentinelInCallService.kt'),

@@ -141,6 +141,16 @@ class IdentityVerifier(Protocol):
     async def verify(self, authorization: str | None) -> dict[str, Any] | None: ...
 
 
+class MediaRevocationAuthority(Protocol):
+    """Trusted provider adapter, not a caller assertion.
+
+    True must mean existing media is stopped AND previously issued credentials
+    cannot rejoin. Removing a participant or JWT expiry alone does not suffice.
+    No production adapter is configured: enabled service stays unavailable.
+    """
+    async def revoke(self, *, session_id: str, room: str, identity: str) -> bool: ...
+
+
 class TokenIssuer(Protocol):
     def issue(self, *, identity: str, room: str, ttl_seconds: int) -> str: ...
 
@@ -201,6 +211,8 @@ class LiveKitTokenIssuer:
                 "room": room,
                 "canPublish": True,
                 "canSubscribe": True,
+                "canPublishSources": ["microphone"],
+                "canPublishData": False,
             },
         }
         return jwt.encode(
@@ -292,10 +304,26 @@ async def _replay_open_session(
     if (
         session["subject"] != subject or session["device_id"] != device_id
         or session["session_id"] != session_id or session["status"] != "open"
-        or session["room"] != room
+        or session["room"] != f"{room}-{session_id}"
     ):
         raise HTTPException(status_code=503, detail="Voice service unavailable")
     return response
+
+
+async def _release_close_lock(client: Any, key: str, owner: str) -> None:
+    """Atomic owner-checked release on Redis; an expired owner never deletes a successor."""
+    try:
+        evaluate = getattr(client, "eval", None)
+        if callable(evaluate):
+            await evaluate(
+                "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end",
+                1, key, owner,
+            )
+        elif await client.get(key) == owner:
+            # In-memory test adapters; production Redis always uses the Lua branch.
+            await client.delete(key)
+    except (RedisError, TimeoutError, OSError):
+        pass  # TTL is the bounded recovery path; never remove an unverified lock owner.
 
 
 async def _reserve_session(
@@ -365,6 +393,7 @@ def create_app(
     redis_client: Any | None = None,
     identity_verifier: IdentityVerifier | None = None,
     token_issuer: TokenIssuer | None = None,
+    media_revoker: MediaRevocationAuthority | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings.from_env()
     resolved_identity = identity_verifier or (
@@ -411,6 +440,7 @@ def create_app(
     app.state.voice_redis = redis_client
     app.state.voice_identity = resolved_identity
     app.state.voice_issuer = resolved_issuer
+    app.state.voice_media_revoker = media_revoker
     app.state.voice_configuration_error = configuration_error
     app.state.voice_owned_redis = False
 
@@ -420,6 +450,7 @@ def create_app(
             or app.state.voice_configuration_error
             or app.state.voice_identity is None
             or app.state.voice_issuer is None
+            or app.state.voice_media_revoker is None
         ):
             raise HTTPException(status_code=503, detail="Voice service unavailable")
         client = getattr(request.app.state, "voice_redis", None)
@@ -521,9 +552,13 @@ def create_app(
             )
 
         session_id = str(uuid.uuid4())
+        # A new lease has its own room and participant identity. Old credentials
+        # must not join a later session even while the original JWT has not expired.
+        media_room = f"{room}-{session_id}"
+        media_identity = f"sentinel-session-{session_id}"
         token = app.state.voice_issuer.issue(
-            identity=subject,
-            room=room,
+            identity=media_identity,
+            room=media_room,
             ttl_seconds=resolved_settings.token_ttl_seconds,
         )
         response = {
@@ -544,7 +579,8 @@ def create_app(
             "device_id": body.client.device_id,
             "session_id": session_id,
             "status": "open",
-            "room": room,
+            "room": media_room,
+            "identity": media_identity,
         }
         session_key = f"voice:session:v1:{session_id}"
         try:
@@ -593,46 +629,72 @@ def create_app(
         )
         if not principal or not isinstance(principal.get("subject"), str):
             raise HTTPException(status_code=401, detail="Authentication required")
-        session_key = f"voice:session:v1:{session_id}"
-        closed_key = f"voice:closed:v1:{session_id}"
+        if not ROOM_ID_PATTERN.fullmatch(session_id):
+            raise HTTPException(status_code=422, detail="Invalid voice session identifier")
+        lock_key = f"voice:close-lock:v1:{session_id}"
+        lock_owner = str(uuid.uuid4())
         try:
-            record = await client.get(session_key)
-            if not record:
-                closed_record = await client.get(closed_key)
-                if closed_record:
-                    closed_session = _load_state_record(
-                        closed_record, ("subject", "device_id")
-                    )
-                    if (
-                        closed_session["subject"] != principal["subject"]
-                        or closed_session["device_id"]
-                        not in _principal_device_ids(principal)
-                    ):
-                        raise HTTPException(status_code=403, detail="Voice access denied")
-                    return {"session_id": session_id, "status": "closed"}
-                raise HTTPException(status_code=404, detail="Voice session not found")
-            session = _load_state_record(record, ("subject", "device_id"))
-            if (
-                session["subject"] != principal["subject"]
-                or session["device_id"] not in _principal_device_ids(principal)
-            ):
-                raise HTTPException(status_code=403, detail="Voice access denied")
-            await client.set(
-                closed_key,
-                json.dumps(
-                    {
-                        "subject": session["subject"],
-                        "device_id": session["device_id"],
-                    },
-                    separators=(",", ":"),
-                ),
-                ex=3600,
-            )
-            await client.delete(session_key)
-        except HTTPException:
-            raise
+            acquired = await client.set(lock_key, lock_owner, ex=30, nx=True)
         except (RedisError, TimeoutError, OSError) as exc:
             raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
+        if not acquired:
+            raise HTTPException(status_code=409, detail="Voice closure already in progress")
+        try:
+            session_key = f"voice:session:v1:{session_id}"
+            closed_key = f"voice:closed:v1:{session_id}"
+            try:
+                record = await client.get(session_key)
+                if not record:
+                    closed_record = await client.get(closed_key)
+                    if closed_record:
+                        closed_session = _load_state_record(
+                            closed_record, ("subject", "device_id")
+                        )
+                        if (
+                            closed_session["subject"] != principal["subject"]
+                            or closed_session["device_id"]
+                            not in _principal_device_ids(principal)
+                        ):
+                            raise HTTPException(status_code=403, detail="Voice access denied")
+                        if closed_session.get("revocation") != "confirmed":
+                            raise HTTPException(status_code=503, detail="Media revocation unconfirmed")
+                        return {"session_id": session_id, "status": "closed"}
+                    raise HTTPException(status_code=404, detail="Voice session not found")
+                session = _load_state_record(record, ("subject", "device_id"))
+                if (
+                    session["subject"] != principal["subject"]
+                    or session["device_id"] not in _principal_device_ids(principal)
+                ):
+                    raise HTTPException(status_code=403, detail="Voice access denied")
+                if not isinstance(session.get("room"), str) or not isinstance(session.get("identity"), str):
+                    raise HTTPException(status_code=503, detail="Media revocation unconfirmed")
+                closed_state = {
+                    "subject": session["subject"], "device_id": session["device_id"],
+                    "revocation": "pending",
+                }
+                # Durable tombstone precedes provider I/O. Network error/cancellation must
+                # leave cached creation replay blocked and retain the session for repair.
+                await client.set(closed_key, json.dumps(closed_state), ex=3600)
+                try:
+                    revoked = await asyncio.wait_for(
+                        app.state.voice_media_revoker.revoke(
+                            session_id=session_id, room=session["room"], identity=session["identity"]
+                        ), timeout=3.0,
+                    )
+                except Exception as exc:
+                    raise HTTPException(status_code=503, detail="Media revocation unconfirmed") from exc
+                if revoked is not True:
+                    raise HTTPException(status_code=503, detail="Media revocation unconfirmed")
+                closed_state["revocation"] = "confirmed"
+                await client.set(closed_key, json.dumps(closed_state), ex=3600)
+                await client.delete(session_key)
+            except HTTPException:
+                raise
+            except (RedisError, TimeoutError, OSError) as exc:
+                raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
+        finally:
+            await _release_close_lock(client, lock_key, lock_owner)
+
         return {"session_id": session_id, "status": "closed"}
 
     return app
