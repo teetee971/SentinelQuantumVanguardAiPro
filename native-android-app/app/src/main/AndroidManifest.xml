@@ -47,7 +47,8 @@
         android:logo="@drawable/ic_sentinel_launcher_foreground"
         android:supportsRtl="true"
         android:theme="@style/Theme.SentinelQuantum"
-        android:usesCleartextTraffic="false">
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/sentinel_ai_local_network_security">
 
         <service
             android:name=".security.SentinelCallScreeningService"
