@@ -1,0 +1,8 @@
+E: network-security-config (line=2)
+    E: base-config (line=3)
+      A: cleartextTrafficPermitted=false
+    E: domain-config (line=4)
+      A: cleartextTrafficPermitted=true
+        E: domain (line=5)
+          A: includeSubdomains=false
+            T: '127.0.0.1'
