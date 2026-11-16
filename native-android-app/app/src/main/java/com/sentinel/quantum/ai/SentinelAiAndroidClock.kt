@@ -13,8 +13,15 @@ object SentinelAiAndroidClock {
     fun elapsedRealtimeMs(): Long =
         SystemClock.elapsedRealtime()
 
+    @Deprecated("Use createOwner with trusted authentication and action catalog")
     fun createController(): SentinelAiSecureController =
         SentinelAiSecureController(
             clock = ::elapsedRealtimeMs
         )
+    fun createOwner(
+        actions: Map<String, SentinelAiActionPolicy>,
+        authenticated: (SentinelAiApprovalAuthority.Proposal) -> Boolean
+    ): SentinelAiApprovalPorts.Owner = SentinelAiApprovalPorts.createOwner(
+        ::elapsedRealtimeMs, actions, authenticated
+    )
 }

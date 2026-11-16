@@ -21,6 +21,18 @@ class SentinelAiActionGate {
     )
 
     private val pending = mutableMapOf<String, Request>()
+    private var lastObservedTimeMs = -1L
+    private var invalidClock = false
+
+    private fun observe(nowMs: Long) {
+        check(!invalidClock) { "Clock invalidated" }
+        if (nowMs < 0 || nowMs < lastObservedTimeMs) {
+            invalidClock = true
+            pending.clear()
+            throw IllegalStateException("Clock rollback")
+        }
+        lastObservedTimeMs = nowMs
+    }
 
     companion object {
         const val MAX_PENDING_REQUESTS = 128
@@ -33,10 +45,12 @@ class SentinelAiActionGate {
         nowMs: Long,
         ttlMs: Long = 30_000L
     ): Request {
-        require(actionId.isNotBlank())
+        require(SentinelAiInputBounds.valid(actionId, parameters))
         require(nowMs >= 0L)
         require(ttlMs in 1L..60_000L)
         require(nowMs <= Long.MAX_VALUE - ttlMs)
+
+        observe(nowMs)
 
         // Remove expired entries before enforcing capacity.
         pending.entries.removeAll {
@@ -70,6 +84,7 @@ class SentinelAiActionGate {
         parameters: String,
         nowMs: Long
     ): Boolean {
+        observe(nowMs)
         val request = pending.remove(token) ?: return false
 
         return nowMs >= request.createdAtMs &&

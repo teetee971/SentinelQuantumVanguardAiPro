@@ -7,7 +7,7 @@ class SentinelAiApprovalPortsTest {
 
     @Test
     fun proposalPortDoesNotExposeApproval() {
-        val owner = SentinelAiApprovalPorts.createOwner { 1000L }
+        val owner = testOwner()
         val methods = owner.proposals.javaClass.interfaces
             .flatMap { it.methods.toList() }
             .map { it.name }
@@ -20,7 +20,7 @@ class SentinelAiApprovalPortsTest {
 
     @Test
     fun proposalRequiresDecisionPort() {
-        val owner = SentinelAiApprovalPorts.createOwner { 1000L }
+        val owner = testOwner()
         val session = owner.openSession()
 
         val proposal = owner.proposals.propose(
@@ -36,7 +36,7 @@ class SentinelAiApprovalPortsTest {
 
     @Test
     fun revocationBlocksApproval() {
-        val owner = SentinelAiApprovalPorts.createOwner { 1000L }
+        val owner = testOwner()
         val session = owner.openSession()
 
         val proposal = owner.proposals.propose(
@@ -52,7 +52,7 @@ class SentinelAiApprovalPortsTest {
 
     @Test
     fun rejectedProposalDoesNotInvalidateUnrelatedProposal() {
-        val owner = SentinelAiApprovalPorts.createOwner { 1000L }
+        val owner = testOwner()
         val session = owner.openSession()
 
         val first = owner.proposals.propose(session, "A", "1")

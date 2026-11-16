@@ -7,7 +7,7 @@ class SentinelAiApprovalAuthorityTest {
 
     @Test
     fun rejectingOneProposalPreservesAnother() {
-        val authority = SentinelAiApprovalAuthority { 1000L }
+        val authority = testAuthority()
         val session = authority.openSession()
         val proposals = authority.proposalPort()
         val decisions = authority.decisionPort()
@@ -23,7 +23,7 @@ class SentinelAiApprovalAuthorityTest {
 
     @Test
     fun rejectedProposalCannotBeApproved() {
-        val authority = SentinelAiApprovalAuthority { 1000L }
+        val authority = testAuthority()
         val session = authority.openSession()
         val proposal = authority.proposalPort()
             .propose(session, "SCAN_LOCAL", "scope=local")
@@ -35,7 +35,7 @@ class SentinelAiApprovalAuthorityTest {
 
     @Test
     fun approvalIsSingleUse() {
-        val authority = SentinelAiApprovalAuthority { 1000L }
+        val authority = testAuthority()
         val session = authority.openSession()
         val proposal = authority.proposalPort()
             .propose(session, "SCAN_LOCAL", "scope=local")
@@ -46,7 +46,7 @@ class SentinelAiApprovalAuthorityTest {
 
     @Test
     fun globalRevocationBlocksApproval() {
-        val authority = SentinelAiApprovalAuthority { 1000L }
+        val authority = testAuthority()
         val session = authority.openSession()
         val proposal = authority.proposalPort()
             .propose(session, "SCAN_LOCAL", "scope=local")

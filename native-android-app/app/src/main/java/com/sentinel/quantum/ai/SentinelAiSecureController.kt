@@ -33,7 +33,12 @@ class SentinelAiSecureController(
 
     private fun trustedNow(): Long {
         check(!clockInvalid) { "Clock invalidated" }
-        val now = clock()
+        val now = try { clock() } catch (error: Exception) {
+            clockInvalid = true
+            activeSessions.clear()
+            pending.clear()
+            throw IllegalStateException("Clock unavailable", error)
+        }
         if (now < 0L || now < lastObservedTimeMs) {
             clockInvalid = true
             activeSessions.clear()
@@ -63,7 +68,7 @@ class SentinelAiSecureController(
         parameters: String,
         ttlMs: Long = 30_000L
     ): Approval {
-        require(actionId.isNotBlank())
+        require(SentinelAiInputBounds.valid(actionId, parameters))
         require(ttlMs in 1L..MAX_TTL_MS)
 
         val now = trustedNow()
@@ -143,6 +148,13 @@ class SentinelAiSecureController(
         activeSessions.clear()
         pending.clear()
     }
+
+    // Used by the trusted authority while it holds its execution/revocation lock.
+    @Synchronized
+    internal fun nowMs(): Long = trustedNow()
+
+    @Synchronized
+    internal fun isSessionActive(sessionId: String): Boolean = sessionId in activeSessions
 
     @Synchronized
     fun pendingCount(): Int = pending.size

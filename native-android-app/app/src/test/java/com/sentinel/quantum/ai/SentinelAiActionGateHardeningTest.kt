@@ -12,14 +12,10 @@ class SentinelAiActionGateHardeningTest {
             "change_setting", "enabled=true", 1000L
         )
 
-        assertFalse(
-            gate.confirm(
-                request.token,
-                "change_setting",
-                "enabled=true",
-                999L
-            )
-        )
+        assertThrows(IllegalStateException::class.java) {
+            gate.confirm(request.token, "change_setting", "enabled=true", 999L)
+        }
+        assertEquals(0, gate.pendingCount())
     }
 
     @Test
