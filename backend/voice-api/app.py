@@ -269,6 +269,35 @@ def _load_state_record(raw: str, required_keys: tuple[str, ...]) -> dict[str, An
     return record
 
 
+async def _replay_open_session(
+    client: Any, response: Any, *, subject: str, device_id: str, room: str,
+) -> dict[str, Any]:
+    """Cached creation data cannot reopen a closed session.
+
+    Credentials already delivered still need separate media-plane revocation.
+    """
+    if not isinstance(response, dict):
+        raise HTTPException(status_code=503, detail="Voice service unavailable")
+    session_id = response.get("session_id")
+    if not isinstance(session_id, str) or not 1 <= len(session_id) <= 128:
+        raise HTTPException(status_code=503, detail="Voice service unavailable")
+    try:
+        closed = await client.get(f"voice:closed:v1:{session_id}")
+        raw = await client.get(f"voice:session:v1:{session_id}")
+    except (RedisError, TimeoutError, OSError) as exc:
+        raise HTTPException(status_code=503, detail="Voice service unavailable") from exc
+    if closed or not raw:
+        raise HTTPException(status_code=409, detail="Voice session no longer open")
+    session = _load_state_record(raw, ("subject", "device_id", "session_id", "status", "room"))
+    if (
+        session["subject"] != subject or session["device_id"] != device_id
+        or session["session_id"] != session_id or session["status"] != "open"
+        or session["room"] != room
+    ):
+        raise HTTPException(status_code=503, detail="Voice service unavailable")
+    return response
+
+
 async def _reserve_session(
     client: Any,
     *,
@@ -486,9 +515,10 @@ def create_app(
             record = _load_state_record(existing, ("request_fingerprint", "response"))
             if record["request_fingerprint"] != request_fingerprint:
                 raise HTTPException(status_code=409, detail="Idempotency-Key reused")
-            if not isinstance(record["response"], dict):
-                raise HTTPException(status_code=503, detail="Voice service unavailable")
-            return record["response"]
+            return await _replay_open_session(
+                client, record["response"], subject=subject,
+                device_id=body.client.device_id, room=room,
+            )
 
         session_id = str(uuid.uuid4())
         token = app.state.voice_issuer.issue(
@@ -541,9 +571,10 @@ def create_app(
                 )
                 if replay_record["request_fingerprint"] != request_fingerprint:
                     raise HTTPException(status_code=409, detail="Idempotency-Key reused")
-                if not isinstance(replay_record["response"], dict):
-                    raise HTTPException(status_code=503, detail="Voice service unavailable")
-                return replay_record["response"]
+                return await _replay_open_session(
+                    client, replay_record["response"], subject=subject,
+                    device_id=body.client.device_id, room=room,
+                )
             raise HTTPException(status_code=503, detail="Voice service unavailable")
         return response
 

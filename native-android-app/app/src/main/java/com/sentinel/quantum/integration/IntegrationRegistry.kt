@@ -6,6 +6,8 @@ class IntegrationRegistry(
 ) {
     private val baseline = baselineStatuses.toMap()
     private val observations = mutableMapOf<IntegrationCapabilityId, IntegrationObservation>()
+    private var lastSnapshotTimeMs = -1L
+    private var clockInvalid = false
 
     init {
         require(observationTtlMs >= 0L) { "observationTtlMs must be non-negative" }
@@ -13,6 +15,7 @@ class IntegrationRegistry(
 
     @Synchronized
     fun publish(observation: IntegrationObservation): Boolean {
+        if (clockInvalid) return false
         val current = observations[observation.capabilityId]
         if (current == null) {
             observations[observation.capabilityId] = observation
@@ -35,9 +38,18 @@ class IntegrationRegistry(
 
     @Synchronized
     fun snapshot(nowMs: Long): IntegrationSnapshot {
+        // A backward/invalid clock must never resurrect expired executable evidence.
+        // Recovery requires a new registry and new observations, not replaying old timestamps.
+        if (nowMs < 0L || nowMs < lastSnapshotTimeMs) {
+            clockInvalid = true
+            observations.clear()
+        }
+        if (!clockInvalid) lastSnapshotTimeMs = nowMs
         val statuses = IntegrationCapabilityId.entries.associateWith { capabilityId ->
             val observed = observations[capabilityId]
-            if (isFresh(observed, nowMs)) {
+            if (clockInvalid) {
+                IntegrationSnapshot.FAIL_CLOSED_STATUS
+            } else if (isFresh(observed, nowMs)) {
                 observed!!.status
             } else {
                 baseline[capabilityId] ?: IntegrationSnapshot.FAIL_CLOSED_STATUS

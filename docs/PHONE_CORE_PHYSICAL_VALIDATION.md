@@ -1,6 +1,6 @@
-# Protocole de validation physique — Phone Core v5
+# Protocole de validation physique — Phone Core v6
 
-**Révision :** 5 octobre 2026  
+**Révision :** 16 novembre 2026
 **Statut :** protocole prêt à exécuter ; aucun résultat terrain renseigné  
 **Référence logicielle :** utiliser le SHA exact et l’artefact exact qui auront passé les gates avant l’essai terrain.
 

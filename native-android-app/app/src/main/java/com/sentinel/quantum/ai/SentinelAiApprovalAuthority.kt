@@ -55,6 +55,19 @@ class SentinelAiApprovalAuthority(
         throw error
     }
 
+    /** Denial must remain available when the clock is poisoned/unavailable.
+     * reject observes the clock and may throw after invalidating the controller.
+     * On any cleanup uncertainty revoke every grant; never propagate a denial failure
+     * into the UI or retain a previously approved capability.
+     */
+    private fun discard(proposal: Proposal) {
+        try {
+            controller.reject(proposal.token, proposal.sessionId)
+        } catch (_: Exception) {
+            revokeAll()
+        }
+    }
+
     private fun prune(at: Long) {
         entries.entries.removeAll { at >= it.value.proposal.expiresAtMs }
     }
@@ -91,7 +104,7 @@ class SentinelAiApprovalAuthority(
             val valid = try { checked { authenticated(proposal) } } catch (_: Exception) { false }
                 finally { checking.remove(proposal.token) }
             if (!valid || version != generation) {
-                controller.reject(proposal.token, proposal.sessionId)
+                discard(proposal)
                 return@synchronized false
             }
             val confirmed = try {
@@ -110,7 +123,7 @@ class SentinelAiApprovalAuthority(
             // Every attempt consumes the capability, including policy/permission failures.
             entries.remove(proposal.token)
             if (!entry.approved) {
-                controller.reject(proposal.token, proposal.sessionId)
+                discard(proposal)
                 return@synchronized ExecutionResult.REJECTED
             }
             val version = generation
@@ -136,7 +149,7 @@ class SentinelAiApprovalAuthority(
             if (matches(proposal) != null || checking[proposal.token] == proposal) {
                 generation++
                 entries.remove(proposal.token)
-                controller.reject(proposal.token, proposal.sessionId)
+                discard(proposal)
             }
         }
 

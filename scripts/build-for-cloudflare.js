@@ -12,6 +12,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { writePublicProductTruth } from './generate-public-product-truth.js';
 import { renderCapabilityConsumers } from './render-product-capabilities.js';
+import { includePublicArtifact } from './static-artifact-filter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -100,7 +101,7 @@ for (const { src, dest, required } of filesToCopy) {
 
   if (existsSync(srcPath)) {
     try {
-      cpSync(srcPath, destPath, { recursive: true });
+      cpSync(srcPath, destPath, { recursive: true, filter: includePublicArtifact });
       console.log(`Copied: ${src}`);
       copiedCount++;
     } catch (error) {

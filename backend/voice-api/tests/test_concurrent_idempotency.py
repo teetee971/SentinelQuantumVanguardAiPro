@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import Settings, create_app, demo_room_id_for_device  # noqa: E402
+from app import Settings, create_app, demo_room_id_for_device, _room_name  # noqa: E402
 
 
 class RaceRedis:
@@ -38,6 +38,13 @@ class RaceRedis:
             winner = json.loads(value)
             winner["response"] = dict(candidate["response"])
             winner["response"]["session_id"] = "winner-session"
+            # A competing winner stores both indexes atomically, like the real Redis script.
+            self.values["voice:session:v1:winner-session"] = json.dumps({
+                "subject": "user-1", "device_id": "device-1", "session_id": "winner-session",
+                "status": "open", "room": _room_name(
+                    demo_room_id_for_device("device-1"), subject="user-1", device_id="device-1"
+                ),
+            })
             self.values[key] = json.dumps(winner, separators=(",", ":"))
             return False
         if key.startswith("voice:session:v1:"):

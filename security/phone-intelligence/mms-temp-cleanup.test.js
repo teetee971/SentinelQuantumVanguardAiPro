@@ -66,7 +66,8 @@ test('incoming MMS journals identity before staging and binds both safety nets b
   assert.match(downloadWorker, /setInputData\(workDataOf\(KEY_FILE_NAME to fileName\)\)/);
   assert.match(downloadWorker, /allowQuarantine = true/);
   assert.match(downloadWorker, /val expired = MmsDownloadCoordinator\.expire\(applicationContext, fileName\)/);
-  assert.match(downloadWorker, /if \(!expired\)[\s\S]*return Result\.retry\(\)/);
+  assert.match(downloadWorker, /if \(!expired\)[\s\S]*return@exclusively Result\.retry\(\)/);
+  assert.match(downloadWorker, /return MmsDownloadRecovery\.exclusively\(fileName\)/);
   assert.match(downloadWorker, /setBackoffCriteria\(BackoffPolicy\.EXPONENTIAL, 30L, TimeUnit\.SECONDS\)/);
   assert.match(downloadWorker, /ExistingWorkPolicy\.KEEP/);
   assert.doesNotMatch(downloadWorker, /ExistingWorkPolicy\.REPLACE/);

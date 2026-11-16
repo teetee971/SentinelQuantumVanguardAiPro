@@ -8,6 +8,23 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 
+export function validateSharedComponents(chromeSource, glassComponentsSource, chromeName = 'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelChrome.kt', glassName = 'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelGlassComponents.kt') {
+  const componentErrors = [];
+  const assertSharedComponent = (source, component, relativePath) => {
+    if (!source || !source.includes(`fun ${component}(`)) {
+      componentErrors.push(`shared UI component missing: ${component} (${relativePath})`);
+    }
+  };
+
+  for (const component of ['SentinelTopBar', 'SentinelHero', 'SentinelPanel']) {
+    assertSharedComponent(chromeSource, component, chromeName);
+  }
+  assertSharedComponent(glassComponentsSource, 'SentinelSectionHeader', glassName);
+  return componentErrors;
+}
+
+// Module imports expose the pure validator only; repository checks belong to CLI execution.
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 const androidRoot = path.join(
   root,
   'native-android-app/app/src/main/java/com/sentinel/quantum'
@@ -24,7 +41,7 @@ function readRequired(relativePath) {
   const absolutePath = path.join(root, relativePath);
   if (!fs.existsSync(absolutePath)) {
     errors.push(`missing UI surface: ${relativePath}`);
-    return null;
+    return '';
   }
   return fs.readFileSync(absolutePath, 'utf8');
 }
@@ -689,8 +706,11 @@ const inCallServiceSource = readRequired(inCallServicePath);
 if (inCallServiceSource) {
   for (const marker of [
     'private val timelineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)',
-    'connectedEvidenceInFlight',
-    'incomingNotificationEvidenceInFlight',
+    'private val evidenceTracker = InCallEvidenceTracker<Call>()',
+    'InCallEvidenceTracker.Kind.CONNECTED',
+    'InCallEvidenceTracker.Kind.INCOMING_NOTIFICATION',
+    'evidenceTracker.begin(',
+    'evidenceTracker.complete(token, stored)',
     'timelineScope.launch',
   ]) {
     if (!inCallServiceSource.includes(marker)) {
@@ -864,21 +884,6 @@ const chrome = readRequired(chromePath);
 const glassComponentsPath =
   'native-android-app/app/src/main/java/com/sentinel/quantum/ui/design/SentinelGlassComponents.kt';
 const glassComponents = readRequired(glassComponentsPath);
-export function validateSharedComponents(chromeSource, glassComponentsSource, chromeName = chromePath, glassName = glassComponentsPath) {
-  const componentErrors = [];
-  const assertSharedComponent = (source, component, relativePath) => {
-    if (!source || !source.includes(`fun ${component}(`)) {
-      componentErrors.push(`shared UI component missing: ${component} (${relativePath})`);
-    }
-  };
-
-  for (const component of ['SentinelTopBar', 'SentinelHero', 'SentinelPanel']) {
-    assertSharedComponent(chromeSource, component, chromeName);
-  }
-  assertSharedComponent(glassComponentsSource, 'SentinelSectionHeader', glassName);
-  return componentErrors;
-}
-
 errors.push(...validateSharedComponents(chrome, glassComponents));
 
 if (errors.length) {
@@ -891,3 +896,4 @@ console.log(
   `Android UI consistency check passed for ${discoveredScreens.length} discovered screens, ` +
     `${topBarActivities.length} top-bar activities, primary navigation, and 2 immersive Phone Core surfaces.`
 );
+}
