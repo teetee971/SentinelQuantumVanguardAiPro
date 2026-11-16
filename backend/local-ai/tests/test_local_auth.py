@@ -65,12 +65,12 @@ def test_prompt_uses_stdin_and_never_process_arguments(monkeypatch):
     seen = {}
     class Process:
         returncode = 0
-        async def communicate(self, content):
-            seen['stdin'] = content
+        async def communicate(self):
             return b'{"reply":"fixture","action":"NONE"}', b''
     async def launch(*args, **kwargs):
         seen['args'] = args
-        assert kwargs['stdin'] == asyncio.subprocess.PIPE
+        assert hasattr(kwargs['stdin'], 'read')
+        seen['stdin'] = kwargs['stdin'].read()
         return Process()
     monkeypatch.setattr(module.asyncio, 'create_subprocess_exec', launch)
     runtime = object.__new__(module.LlamaRuntime)
@@ -86,7 +86,7 @@ def test_cancelled_generation_terminates_and_reaps_process(monkeypatch):
     state = {'killed': False, 'reaped': False}
     class Process:
         returncode = None
-        async def communicate(self, content):
+        async def communicate(self):
             raise asyncio.CancelledError()
         def kill(self):
             state['killed'] = True

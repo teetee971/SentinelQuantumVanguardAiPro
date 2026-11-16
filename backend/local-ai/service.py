@@ -54,10 +54,19 @@ class LlamaRuntime:
                     '--temp', '0', '--seed', '42', '--no-display-prompt', '--no-conversation',
                     '--json-schema', json.dumps(SCHEMA)]
             env = {'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'LLAMA_OFFLINE': '1', 'HF_HUB_OFFLINE': '1'}
-            process = await asyncio.create_subprocess_exec(*args, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-                                                          stderr=asyncio.subprocess.PIPE, env=env)
+            # uvloop uses a socket for stdin=PIPE; llama.cpp reopens /dev/stdin,
+            # which cannot reopen that socket. Supply a real, private OS pipe instead.
+            encoded = prompt.encode('utf-8')
+            if len(encoded) > 4096:
+                raise HTTPException(422, 'Prompt too large')
+            read_fd, write_fd = os.pipe()
+            with os.fdopen(read_fd, 'rb') as source:
+                with os.fdopen(write_fd, 'wb') as sink:
+                    sink.write(encoded)
+                process = await asyncio.create_subprocess_exec(*args, stdin=source, stdout=asyncio.subprocess.PIPE,
+                                                              stderr=asyncio.subprocess.PIPE, env=env)
             try:
-                stdout, _ = await asyncio.wait_for(process.communicate(prompt.encode('utf-8')), 30)
+                stdout, _ = await asyncio.wait_for(process.communicate(), 30)
             except BaseException:
                 if process.returncode is None:
                     process.kill()
