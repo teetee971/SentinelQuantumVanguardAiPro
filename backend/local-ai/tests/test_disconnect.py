@@ -42,29 +42,34 @@ def test_http_disconnect_kills_real_child_and_releases_busy_lock(tmp_path):
                 await asyncio.sleep(.02)
             assert server.started
             async with httpx.AsyncClient(base_url=f'http://127.0.0.1:{port}', trust_env=False) as client:
-                challenge = (await client.get('/challenge', params={'client_nonce': 'a' * 64})).json()
-                nonce = challenge['nonce']
-                raw = json.dumps({'message': 'test-only cancellation fixture'})
-                proof = service.mac(KEY, 'client\0' + nonce + '\0' + raw)
-                _, writer = await asyncio.open_connection('127.0.0.1', port)
-                body = raw.encode()
-                headers = (f'POST /infer HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: {len(body)}\r\n'
-                           f'X-Sentinel-Nonce: {nonce}\r\nX-Sentinel-Mac: {proof}\r\n\r\n').encode()
-                writer.write(headers + body);await writer.drain()
-                for _ in range(150):
-                    if pidfile.exists():break
-                    await asyncio.sleep(.02)
-                assert pidfile.exists(), 'Test child was not started'
-                child_pid = int(pidfile.read_text())
-                assert Path(f'/proc/{child_pid}').exists()
-                writer.close();await writer.wait_closed()
-                for _ in range(50):
-                    if not Path(f'/proc/{child_pid}').exists() and not runtime.busy.locked():break
-                    await asyncio.sleep(.02)
-                assert not Path(f'/proc/{child_pid}').exists(), 'Child survived HTTP disconnect'
-                assert not runtime.busy.locked(), 'Model remained busy after disconnect'
-                replay = await client.post('/infer', content=body, headers={'X-Sentinel-Nonce':nonce, 'X-Sentinel-Mac':proof})
-                assert replay.status_code == 409
+                baseline_fds = None
+                for _attempt in range(3):
+                    if pidfile.exists():pidfile.unlink()  # This test's own stale PID fixture only.
+                    challenge = (await client.get('/challenge', params={'client_nonce': 'a' * 64})).json()
+                    if baseline_fds is None:baseline_fds = len(os.listdir('/proc/self/fd'))
+                    nonce = challenge['nonce']
+                    raw = json.dumps({'message': 'test-only cancellation fixture'})
+                    proof = service.mac(KEY, 'client\0' + nonce + '\0' + raw)
+                    _, writer = await asyncio.open_connection('127.0.0.1', port)
+                    body = raw.encode()
+                    headers = (f'POST /infer HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: {len(body)}\r\n'
+                               f'X-Sentinel-Nonce: {nonce}\r\nX-Sentinel-Mac: {proof}\r\n\r\n').encode()
+                    writer.write(headers + body);await writer.drain()
+                    for _ in range(150):
+                        if pidfile.exists():break
+                        await asyncio.sleep(.02)
+                    assert pidfile.exists(), 'Test child was not started'
+                    child_pid = int(pidfile.read_text())
+                    assert Path(f'/proc/{child_pid}').exists()
+                    writer.close();await writer.wait_closed()
+                    for _ in range(50):
+                        if not Path(f'/proc/{child_pid}').exists() and not runtime.busy.locked():break
+                        await asyncio.sleep(.02)
+                    assert not Path(f'/proc/{child_pid}').exists(), 'Child survived HTTP disconnect'
+                    assert not runtime.busy.locked(), 'Model remained busy after disconnect'
+                    replay = await client.post('/infer', content=body, headers={'X-Sentinel-Nonce':nonce, 'X-Sentinel-Mac':proof})
+                    assert replay.status_code == 409
+                    assert len(os.listdir('/proc/self/fd')) <= baseline_fds + 2, "Descriptors accumulated after cancellation"
         finally:
             if writer is not None:writer.close()
             if child_pid is not None:
