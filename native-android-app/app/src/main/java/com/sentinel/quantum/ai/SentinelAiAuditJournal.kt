@@ -13,7 +13,7 @@ import javax.crypto.SecretKey
  * Approvals, messages, responses and identifiers are NEVER persisted here.
  */
 internal class SentinelAiAuditJournal private constructor(private val directory: File, private val key: SecretKey) {
-    enum class Kind { SESSION_OPEN, REQUEST, PROPOSED, REJECTED, AUTHENTICATED, CHECKPOINT, REVOKED, ERROR }
+    enum class Kind { SESSION_OPEN, REQUEST, PROPOSED, REJECTED, AUTHENTICATED, CHECKPOINT, REVOKED, PROCESS_REVOKED, ERROR }
     data class Receipt(val sequence: Long, val digest: String)
     companion object {
         const val MAX_EVENTS = 256

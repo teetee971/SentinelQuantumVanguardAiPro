@@ -19,16 +19,20 @@ import java.util.concurrent.atomic.AtomicReference
  * its result still needs a live exact ticket, foreground consent and the authority's expiry checks.
  */
 class SentinelAiActivity : ComponentActivity() {
+    companion object { private val processGate = SentinelAiProcessGate() }
     private data class Runtime(val owner: SentinelAiApprovalPorts.Owner,
-                               val session: SentinelAiApprovalPorts.Session, val journal: SentinelAiAuditJournal)
+                               val session: SentinelAiApprovalPorts.Session, val journal: SentinelAiAuditJournal,
+                               val lease: SentinelAiProcessGate.Lease)
     private val worker = Executors.newSingleThreadExecutor()
     private val lock = Any()
     private var generation = 0L
     private var runtime: Runtime? = null
+    private var consentLease: SentinelAiProcessGate.Lease? = null
     private val engine = AtomicReference<SentinelAiLocalEngine?>(null)
     private val proof = SentinelAiHumanConfirmation(SentinelAiAndroidClock::elapsedRealtimeMs)
     @Volatile private var foreground = false
     @Volatile private var consent = false
+    @Volatile private var globalRevocationPending = false
     private var busy = false
     private var expiryTask: Runnable? = null
     private var clearing = false
@@ -51,7 +55,7 @@ class SentinelAiActivity : ComponentActivity() {
         val active = synchronized(lock) { runtime }
         val epoch = epoch()
         pending = null
-        if (!foreground || !consent || active == null || !proof.complete(current, resultCode == Activity.RESULT_OK)) {
+        if (!valid(epoch) || active == null || !proof.complete(current, resultCode == Activity.RESULT_OK)) {
             proof.revoke()
             active?.owner?.decisions?.reject(proposal)
             if (active != null) worker.execute {
@@ -88,7 +92,11 @@ class SentinelAiActivity : ComponentActivity() {
         }
     }
     private fun epoch(): Long = synchronized(lock) { generation }
-    private fun valid(epoch: Long): Boolean = synchronized(lock) { foreground && consent && generation == epoch }
+    private fun valid(epoch: Long): Boolean = synchronized(lock) {
+        foreground && consent && !globalRevocationPending && generation == epoch &&
+            (consentLease?.let { processGate.isActive(it) } == true) &&
+            (runtime?.let { processGate.isActive(it.lease) } ?: true)
+    }
     private fun localPolicy(): Boolean = NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted("127.0.0.1")
     private fun secureDevice(): Boolean = getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
     private fun ui(epoch: Long, block: () -> Unit) = runOnUiThread {
@@ -124,11 +132,20 @@ class SentinelAiActivity : ComponentActivity() {
         label("Seule action disponible : enregistrer un point de contrôle sans données personnelles dans le journal IA.")
         approve = Button(this).apply { text = "Confirmer le point de contrôle avec le verrouillage Android"; content.addView(this) }
         val cancel = Button(this).apply { text = "Annuler et révoquer la session"; content.addView(this); setOnClickListener { revoke() } }
+        Button(this).apply {
+            text = "Révoquer les autorisations IA de tous les écrans (ce processus)"
+            tag = "sentinel_ai_revoke_all"; content.addView(this)
+            setOnClickListener { revokeProcess() }
+        }
         status = label(if (localPolicy()) "Indisponible jusqu’au consentement et à la connexion au moteur local."
                       else "Indisponible : le transport local HTTP n’est pas autorisé par la politique Android actuelle.")
         setContentView(ScrollView(this).apply { addView(content) })
         consentView.setOnCheckedChangeListener { _, checked ->
-            consent = checked
+            synchronized(lock) {
+                consent = checked
+                // Capture at the user's consent, never later in a queued worker request.
+                consentLease = if (checked) processGate.capture() else null
+            }
             if (!clearing && !checked) revoke()
             refresh()
         }
@@ -137,8 +154,9 @@ class SentinelAiActivity : ComponentActivity() {
         refresh()
     }
     private fun refresh() {
-        send.isEnabled = foreground && consent && !busy && localPolicy()
-        approve.isEnabled = foreground && consent && !busy && pending != null && secureDevice()
+        consentView.isEnabled = !globalRevocationPending
+        send.isEnabled = valid(epoch()) && !busy && localPolicy()
+        approve.isEnabled = valid(epoch()) && !busy && pending != null && secureDevice()
     }
     override fun onStart() { foreground = true; super.onStart(); if (::send.isInitialized) refresh() }
     override fun onStop() {
@@ -149,26 +167,34 @@ class SentinelAiActivity : ComponentActivity() {
     }
     override fun onDestroy() { foreground = false; revoke(); worker.shutdown(); super.onDestroy() }
     private fun state(epoch: Long): Runtime {
-        synchronized(lock) { runtime?.let { return it } }
+        synchronized(lock) { runtime?.let { check(valid(epoch)); return it } }
         check(valid(epoch))
+        val lease = synchronized(lock) { checkNotNull(consentLease) }
         val journal = SentinelAiAndroidAuditJournal.open(this)
         journal.append(SentinelAiAuditJournal.Kind.SESSION_OPEN, SentinelAiAndroidClock.elapsedRealtimeMs())
         val owner = SentinelAiAndroidClock.createOwner(mapOf(
             "CREATE_AUDIT_CHECKPOINT" to SentinelAiActionPolicy(
                 validate = { it.isEmpty() },
                 permitted = { valid(epoch) && secureDevice() && journal.verify().sequence < SentinelAiAuditJournal.MAX_EVENTS },
-                execute = { journal.append(SentinelAiAuditJournal.Kind.CHECKPOINT, SentinelAiAndroidClock.elapsedRealtimeMs()); Unit }
+                execute = {
+                    processGate.execute(lease) {
+                        check(valid(epoch) && secureDevice())
+                        journal.append(SentinelAiAuditJournal.Kind.CHECKPOINT, SentinelAiAndroidClock.elapsedRealtimeMs())
+                    }
+                    Unit
+                }
             )
         ), authenticated = { proposal -> valid(epoch) && secureDevice() && proof.consume(proposal) })
-        val result = Runtime(owner, owner.openSessionScope(), journal)
+        val result = Runtime(owner, owner.openSessionScope(), journal, lease)
         synchronized(lock) {
-            if (!valid(epoch)) { owner.revokeAll(); result.session.close(); error("Session closed") }
+            if (!valid(epoch) || !processGate.isActive(lease)) { owner.revokeAll(); result.session.close(); error("Session closed") }
             runtime = result
         }
         return result
     }
     private fun request() {
         if (!foreground || !consent || busy || !localPolicy()) return
+        if (!valid(epoch())) { revoke(); status.text = "Session invalidée ; un nouveau consentement est requis."; return }
         val raw = pairing.text.toString().trim()
         if (!Regex("[0-9a-fA-F]{64}").matches(raw) || message.text.isEmpty()) {
             status.text = "Clé locale ou demande invalide."; return
@@ -217,6 +243,7 @@ class SentinelAiActivity : ComponentActivity() {
     private fun authenticate() {
         val proposal = pending ?: return
         if (!foreground || !consent || busy || !secureDevice()) return
+        if (!valid(epoch())) { revoke(); status.text = "Session invalidée ; authentification refusée."; return }
         val intent = getSystemService(KeyguardManager::class.java)?.createConfirmDeviceCredentialIntent(
             "Confirmer le point de contrôle IA", "Cette action écrit uniquement un événement sans contenu personnel dans le journal IA.")
         if (intent == null) { status.text = "Authentification Android indisponible."; return }
@@ -229,6 +256,30 @@ class SentinelAiActivity : ComponentActivity() {
             busy = true; refresh(); credential?.launch(intent)
         } catch (_: Exception) { ticket = null; revoke(); status.text = "Authentification non démarrée ; action refusée." }
     }
+    private fun revokeProcess() {
+        if (globalRevocationPending) return
+        globalRevocationPending = true
+        revoke()
+        val epoch = epoch()
+        status.text = "Révocation des autorisations IA du processus demandée…"
+        worker.execute {
+            // Acknowledgement only after every already-running guarded effect has finished.
+            val revoked = try { processGate.revokeAll(); true } catch (_: Exception) { false }
+            // Denial must succeed independently of a full, corrupt or unavailable audit store.
+            val recorded = if (revoked) try {
+                SentinelAiAndroidAuditJournal.open(this).append(SentinelAiAuditJournal.Kind.PROCESS_REVOKED,
+                    SentinelAiAndroidClock.elapsedRealtimeMs())
+                true
+            } catch (_: Exception) { false } else false
+            globalRevocationPending = false
+            ui(epoch) {
+                status.text = if (revoked && recorded) "Autorisations IA révoquées dans ce processus et événement journalisé."
+                              else if (revoked) "Autorisations IA révoquées dans ce processus ; journal indisponible."
+                              else "Révocation du processus non confirmée ; aucune réussite revendiquée."
+                refresh()
+            }
+        }
+    }
     private fun revoke() {
         proof.revoke()
         credential?.unregister(); credential = null
@@ -236,7 +287,7 @@ class SentinelAiActivity : ComponentActivity() {
         expiryTask = null
         val epoch: Long
         val old: Runtime?
-        synchronized(lock) { generation++; epoch = generation; old = runtime; runtime = null; engine.getAndSet(null)?.close() }
+        synchronized(lock) { generation++; epoch = generation; old = runtime; runtime = null; consentLease = null; engine.getAndSet(null)?.close() }
         pending = null; ticket = null; consent = false; busy = false
         if (::consentView.isInitialized) {
             clearing = true; consentView.isChecked = false; clearing = false
@@ -247,7 +298,7 @@ class SentinelAiActivity : ComponentActivity() {
             old?.owner?.revokeAll(); old?.session?.close()
             val recorded = try { old?.journal?.append(SentinelAiAuditJournal.Kind.REVOKED, SentinelAiAndroidClock.elapsedRealtimeMs()); true }
                            catch (_: Exception) { false }
-            ui(epoch) { if (!busy) status.text = if (recorded) "Session révoquée." else "Session révoquée ; journal indisponible." }
+            ui(epoch) { if (!busy && !globalRevocationPending) status.text = if (recorded) "Session révoquée." else "Session révoquée ; journal indisponible." }
         }
     }
 }

@@ -1,0 +1,145 @@
+{
+  "junit": {
+    "suites": 343,
+    "tests": 1630,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "javascript": {
+    "tests": 1328,
+    "failures": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "static_policy_tests": 3,
+  "instrumented_tests_executed": false,
+  "reason": "No ADB devices",
+  "protected_files_checked": 101,
+  "protected_differences_from_cycle6": [],
+  "apk_checks": [
+    {
+      "kind": "app",
+      "argv": [
+        "/workspace/work/integral-audit/cycle2/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "/workspace/work/integral-audit/project/native-android-app/app/build/outputs/apk/debug/app-debug.apk"
+      ],
+      "exit_code": 0,
+      "bytes": 100607675,
+      "sha256": "9b014a26af35b3c2948f927ed93e03ce364173c97db8c20020ae2c6acfa32bbc"
+    },
+    {
+      "kind": "test",
+      "argv": [
+        "/workspace/work/integral-audit/cycle2/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "/workspace/work/integral-audit/project/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+      ],
+      "exit_code": 0,
+      "bytes": 1129863,
+      "sha256": "712c2845cb265bc8b29592c0a652060f963b5bb96926a067edc6c903a591aaec"
+    }
+  ],
+  "gradle": [
+    {
+      "label": "cycle7-process-red",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--tests",
+        "com.sentinel.quantum.ai.SentinelAiProcessGateTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 1
+    },
+    {
+      "label": "cycle7-process-green",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--tests",
+        "com.sentinel.quantum.ai.SentinelAiProcessGateTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle7-frozen-kotlin",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:compileDebugKotlin",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle7-frozen-units",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle7-frozen-instrumentation",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:compileDebugAndroidTestKotlin",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle7-frozen-apk",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:assembleDebug",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle7-frozen-test-apk",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:assembleDebugAndroidTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    }
+  ]
+}
