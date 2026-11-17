@@ -1,0 +1,646 @@
+diff --git a/audit/cycle9/validation/AndroidManifest.xml b/audit/cycle9/validation/AndroidManifest.xml
+new file mode 100644
+index 0000000..a84761f
+--- /dev/null
++++ b/audit/cycle9/validation/AndroidManifest.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools">
++    <application android:label="Sentinel IA validation C9" tools:replace="android:label" />
++</manifest>
+diff --git a/audit/cycle9/validation/collect_device.sh b/audit/cycle9/validation/collect_device.sh
+new file mode 100755
+index 0000000..bd67404
+--- /dev/null
++++ b/audit/cycle9/validation/collect_device.sh
+@@ -0,0 +1,17 @@
++#!/usr/bin/env bash
++# Read-only collection. No permissions/roles/settings are granted or changed.
++set -euo pipefail
++DEST=${1:?Usage: collect_device.sh NEW_OUTPUT_DIRECTORY}
++if [[ -e "$DEST" ]]; then printf 'Refusing to replace existing evidence: %s\n' "$DEST" >&2; exit 1; fi
++mkdir -m 700 "$DEST"
++adb get-state > "$DEST/adb-state.txt"
++for property in ro.product.model ro.product.cpu.abi ro.build.version.release ro.build.version.sdk ro.build.version.security_patch; do
++  adb shell getprop "$property" > "$DEST/$property.txt"
++done
++for role in SMS DIALER CALL_SCREENING; do
++  adb shell cmd role get-role-holders "android.app.role.$role" > "$DEST/role-$role.txt"
++done
++adb shell settings get secure always_on_vpn_app > "$DEST/always-on-vpn.txt"
++adb shell settings get secure always_on_vpn_lockdown > "$DEST/vpn-lockdown.txt"
++adb shell dumpsys package com.sentinel.quantum.aivalidation > "$DEST/validation-package.txt"
++printf 'Collected evidence only; no PASS or production qualification inferred.\n'
+diff --git a/audit/cycle9/validation/init.gradle b/audit/cycle9/validation/init.gradle
+new file mode 100644
+index 0000000..bc0fbec
+--- /dev/null
++++ b/audit/cycle9/validation/init.gradle
+@@ -0,0 +1,11 @@
++// Explicit qualification build only. Never applied by the normal production build.
++allprojects { project ->
++    project.plugins.withId('com.android.application') {
++        project.androidComponents.finalizeDsl { dsl ->
++            dsl.defaultConfig.applicationId = 'com.sentinel.quantum.aivalidation'
++            dsl.defaultConfig.ndk.abiFilters.add('arm64-v8a')
++        }
++        def overlay = new File(project.rootDir, '../audit/cycle9/validation/AndroidManifest.xml')
++        project.android.sourceSets.getByName('debug').manifest.srcFile(overlay)
++    }
++}
+diff --git a/audit/cycle9/validation/monitor_runtime.py b/audit/cycle9/validation/monitor_runtime.py
+new file mode 100755
+index 0000000..217815b
+--- /dev/null
++++ b/audit/cycle9/validation/monitor_runtime.py
+@@ -0,0 +1,73 @@
++#!/usr/bin/env python3
++"""Collect own inference-process observations. Never declares Android/AI qualification PASS."""
++import argparse
++import hashlib
++import json
++import os
++from pathlib import Path
++import platform
++import time
++
++
++def status(pid):
++    values = {}
++    for line in Path(f'/proc/{pid}/status').read_text().splitlines():
++        if ':' in line:
++            key, value = line.split(':', 1);values[key] = value.strip()
++    return values
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--service-pid', required=True, type=int)
++    parser.add_argument('--binary', required=True, type=Path)
++    parser.add_argument('--seconds', type=float, default=90)
++    parser.add_argument('--output', required=True, type=Path)
++    args = parser.parse_args()
++    if not 0 < args.seconds <= 600:parser.error('duration must be in (0,600]')
++    uid = status(os.getpid())['Uid'].split()[0]
++    if status(args.service_pid)['Uid'].split()[0] != uid:parser.error('service must belong to this user')
++    with args.binary.open('rb') as source:digest = hashlib.file_digest(source, 'sha256').hexdigest()
++    report = {'machine':platform.machine(), 'kernel':platform.release(), 'service_pid':args.service_pid,
++              'binary_sha256':digest, 'android_device_verified':False, 'automatic_verdict':'NONE', 'frames':[]}
++    started = time.monotonic();seen = False
++    while time.monotonic()-started < args.seconds:
++        frame = {'elapsed_s':round(time.monotonic()-started,3), 'service_alive':False, 'models':[], 'errors':[]}
++        try:
++            service = status(args.service_pid)
++            frame['service_alive'] = True
++            frame['service_fds'] = len(list(Path(f'/proc/{args.service_pid}/fd').iterdir()))
++            child_file=Path(f'/proc/{args.service_pid}/task/{args.service_pid}/children')
++            if child_file.exists():children=child_file.read_text().split()
++            else:
++                children=[]
++                for item in Path('/proc').iterdir():
++                    if not item.name.isdigit():continue
++                    try:
++                        info=status(item.name)
++                        if info.get('PPid')==str(args.service_pid) and info.get('Uid','').split()[0]==uid:children.append(item.name)
++                    except (OSError,IndexError):continue
++            for pid in children:
++                try:
++                    info = status(pid)
++                    if info['Uid'].split()[0] != uid:continue
++                    executable = Path(f'/proc/{pid}/exe')
++                    if executable.readlink().name != args.binary.name:continue
++                    with executable.open('rb') as source:actual = hashlib.file_digest(source,'sha256').hexdigest()
++                    if actual != digest:
++                        frame['errors'].append('child binary fingerprint mismatch');continue
++                    frame['models'].append({'pid':int(pid),'rss':info.get('VmRSS','unknown'),'threads':info.get('Threads','unknown')})
++                    seen = True
++                except FileNotFoundError:pass  # Child exited during the snapshot.
++                except (PermissionError,OSError,KeyError) as error:frame['errors'].append(type(error).__name__)
++        except (OSError,KeyError) as error:frame['errors'].append(type(error).__name__)
++        report['frames'].append(frame)
++        time.sleep(.2)
++    report['observed_model_process'] = seen
++    report['inconclusive_if_no_model_observed'] = not seen
++    # Exclusive creation: never replace previous evidence, keys or user files.
++    with args.output.open('x') as output:json.dump(report,output,indent=2)
++    print(json.dumps({'output':str(args.output),'observed_model_process':seen,'automatic_verdict':'NONE'}))
++
++
++if __name__ == '__main__':main()
+diff --git a/audit/cycle9/validation/probe_cancel.py b/audit/cycle9/validation/probe_cancel.py
+new file mode 100644
+index 0000000..5e859ef
+--- /dev/null
++++ b/audit/cycle9/validation/probe_cancel.py
+@@ -0,0 +1,93 @@
++#!/usr/bin/env python3
++"""Real local Qwen HTTP cancellation probe. Never certifies Android or human authentication."""
++import argparse
++import asyncio
++import hashlib
++import hmac
++import json
++import platform
++from pathlib import Path
++import secrets
++import time
++import httpx
++
++MODEL_SHA = '74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db'
++
++def mac(key, text):return hmac.new(key,text.encode(),hashlib.sha256).hexdigest()
++
++def children(parent):
++    path=Path(f'/proc/{parent}/task/{parent}/children')
++    if path.exists():return [int(v) for v in path.read_text().split()]
++    # Some Android/container kernels omit task/children. PPid is an observation fallback.
++    own_uid=next(line.split()[1] for line in Path('/proc/self/status').read_text().splitlines() if line.startswith('Uid:'))
++    found=[]
++    for item in Path('/proc').iterdir():
++        if not item.name.isdigit():continue
++        try:
++            values={line.split(':',1)[0]:line.split(':',1)[1].strip() for line in (item/'status').read_text().splitlines() if ':' in line}
++            if values.get('PPid')==str(parent) and values.get('Uid','').split()[0]==own_uid:found.append(int(item.name))
++        except (OSError,IndexError):continue
++    return found
++
++async def run(args):
++    key=bytes.fromhex(args.pairing_file.read_text().strip())
++    if len(key)!=32:raise ValueError('Pairing key length rejected')
++    with args.binary.open('rb') as source:binary_sha=hashlib.file_digest(source,'sha256').hexdigest()
++    def models():
++        found=[]
++        for pid in children(args.service_pid):
++            try:
++                path=Path(f'/proc/{pid}/exe')
++                if path.readlink().name!=args.binary.name:continue
++                with path.open('rb') as source:digest=hashlib.file_digest(source,'sha256').hexdigest()
++                if digest==binary_sha:found.append(pid)
++            except FileNotFoundError:pass
++        return found
++    if models():raise RuntimeError('Service must be idle; do not interrupt another request')
++    async with httpx.AsyncClient(base_url='http://127.0.0.1:18080',trust_env=False,timeout=40) as client:
++        async def signed(message):
++            nonce_client=secrets.token_hex(32)
++            response=await client.get('/challenge',params={'client_nonce':nonce_client});response.raise_for_status()
++            challenge=response.json();nonce=challenge['nonce']
++            assert challenge['model_sha256']==MODEL_SHA
++            assert hmac.compare_digest(challenge['proof'],mac(key,'server\0'+nonce_client+'\0'+nonce+'\0'+MODEL_SHA))
++            raw=json.dumps({'message':message},ensure_ascii=False)
++            return raw.encode(),{'X-Sentinel-Nonce':nonce,'X-Sentinel-Mac':mac(key,'client\0'+nonce+'\0'+raw)},nonce
++        body,headers,_=await signed('Donne environ 200 caractères de conseils de sécurité numérique, sans action.')
++        request=asyncio.create_task(client.post('/infer',content=body,headers=headers))
++        running=[];start=time.monotonic()
++        try:
++            while not request.done() and time.monotonic()-start<5:
++                running=models()
++                if running:break
++                await asyncio.sleep(.02)
++            assert running and not request.done(), 'No active model process observed; cancellation is inconclusive'
++            await asyncio.sleep(.1)
++            assert not request.done(), 'Model completed before cancellation; inconclusive'
++            cancelled=time.monotonic();request.cancel();await asyncio.gather(request,return_exceptions=True)
++            while time.monotonic()-cancelled<2 and any(Path(f'/proc/{pid}').exists() for pid in running):await asyncio.sleep(.02)
++            assert not any(Path(f'/proc/{pid}').exists() for pid in running), 'Model process survived cancellation'
++            released=time.monotonic()-cancelled
++            replay=await client.post('/infer',content=body,headers=headers)
++            assert replay.status_code==409
++            follow,auth,nonce=await signed('Combien font 2 + 2 ?')
++            response=await client.post('/infer',content=follow,headers=auth);response.raise_for_status()
++            assert hmac.compare_digest(response.headers['X-Sentinel-Mac'],mac(key,'response\0'+nonce+'\0'+response.text))
++            answer=response.json();assert '4' in answer['reply'] and answer['action']=='NONE'
++            result={'machine':platform.machine(),'binary_sha256':binary_sha,'model_sha256':MODEL_SHA,
++                    'observed_model_pids':running,'stopped_after_cancel_s':released,'replay_http':409,
++                    'authenticated_followup':answer,'android_device_evidence':'REQUIRED_SEPARATELY',
++                    'human_authentication_tested':False,'production_go':False}
++            with args.output.open('x') as output:json.dump(result,output,ensure_ascii=False,indent=2)
++            print(json.dumps(result,ensure_ascii=False))
++        finally:
++            if not request.done():request.cancel()
++            await asyncio.gather(request,return_exceptions=True)
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--service-pid',type=int,required=True)
++    parser.add_argument('--binary',type=Path,required=True)
++    parser.add_argument('--pairing-file',type=Path,required=True)
++    parser.add_argument('--output',type=Path,required=True)
++    asyncio.run(run(parser.parse_args()))
+diff --git a/backend/local-ai/service.py b/backend/local-ai/service.py
+index 9c66f32..266ad49 100644
+--- a/backend/local-ai/service.py
++++ b/backend/local-ai/service.py
+@@ -84,6 +84,43 @@ class LlamaRuntime:
+                 raise HTTPException(502, 'Local model output rejected') from exc
+ 
+ 
++
++async def _read_bounded_body(request):
++    data = bytearray()
++    async for chunk in request.stream():
++        if len(data) + len(chunk) > 4096:
++            raise HTTPException(413, 'Request too large')
++        data.extend(chunk)
++    return data
++
++
++async def _generate_while_connected(runtime, message, request):
++    """After the bounded body is consumed, only disconnect events are expected.
++    Never let an abandoned HTTP request keep the single inference slot occupied.
++    """
++    generation = asyncio.create_task(runtime.generate(message))
++    async def disconnected():
++        event = await request.receive()
++        return event.get('type') == 'http.disconnect'
++    gone = asyncio.create_task(disconnected())
++    tasks = (generation, gone)
++    try:
++        done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
++        if gone in done:
++            try:
++                confirmed = gone.result()
++            except Exception:
++                confirmed = False
++            raise HTTPException(499 if confirmed else 503, 'Client disconnected' if confirmed else 'Connection unavailable')
++        return generation.result()
++    finally:
++        for task in tasks:
++            if not task.done():
++                task.cancel()
++        # LlamaRuntime cancellation kills and reaps its subprocess before releasing busy.
++        await asyncio.gather(*tasks, return_exceptions=True)
++
++
+ def make_app(runtime, key, clock=time.monotonic):
+     if not isinstance(key, bytes) or len(key) != 32:
+         raise ValueError('Pairing key must be 256 bits')
+@@ -119,11 +156,10 @@ def make_app(runtime, key, clock=time.monotonic):
+ 
+     @app.post('/infer')
+     async def infer(request: Request):
+-        data = bytearray()
+-        async for chunk in request.stream():
+-            data.extend(chunk)
+-            if len(data) > 4096:
+-                raise HTTPException(413, 'Request too large')
++        try:
++            data = await asyncio.wait_for(_read_bounded_body(request), 2)
++        except asyncio.TimeoutError as exc:
++            raise HTTPException(408, 'Request body timeout') from exc
+         nonce = request.headers.get('X-Sentinel-Nonce', '')
+         expiry = pending.pop(nonce, None)  # Every attempt consumes its server-issued capability.
+         if expiry is None or now() >= expiry:
+@@ -141,7 +177,7 @@ def make_app(runtime, key, clock=time.monotonic):
+                     not isinstance(body['message'], str) or not 1 <= len(body['message']) <= 512 or
+                     '\x00' in body['message']):
+                 raise ValueError('Invalid message')
+-            result = checked_result(await runtime.generate(body['message']))
++            result = checked_result(await _generate_while_connected(runtime, body['message'], request))
+         except (ValueError, TypeError) as exc:
+             raise HTTPException(422, 'Invalid message or recommendation') from exc
+         raw = json.dumps(result, ensure_ascii=False, separators=(',', ':'))
+diff --git a/backend/local-ai/tests/test_disconnect.py b/backend/local-ai/tests/test_disconnect.py
+new file mode 100644
+index 0000000..611591d
+--- /dev/null
++++ b/backend/local-ai/tests/test_disconnect.py
+@@ -0,0 +1,140 @@
++"""Tests only: real HTTP sockets and a sleeping child, never a fake production AI reply."""
++import asyncio
++import importlib.util
++import json
++import os
++from pathlib import Path
++import signal
++import socket
++import sys
++
++import httpx
++import uvicorn
++
++spec = importlib.util.spec_from_file_location('disconnect_service', Path(__file__).parents[1] / 'service.py')
++service = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(service)
++KEY = bytes(range(32))  # Test fixture only.
++
++
++def test_http_disconnect_kills_real_child_and_releases_busy_lock(tmp_path):
++    async def run():
++        pidfile = tmp_path / 'child.pid'
++        binary = tmp_path / 'sleeping-fixture'
++        binary.write_text(f'#!{sys.executable}\nimport os,time\nfrom pathlib import Path\n'
++                          f'Path({str(pidfile)!r}).write_text(str(os.getpid()))\ntime.sleep(60)\n')
++        binary.chmod(0o700)
++        runtime = object.__new__(service.LlamaRuntime)
++        runtime.binary = binary
++        runtime.model = tmp_path / 'unused-test-model'
++        runtime.busy = asyncio.Lock()
++        app = service.make_app(runtime, KEY)
++        listener = socket.socket()
++        listener.bind(('127.0.0.1', 0));listener.listen(8);listener.setblocking(False)
++        port = listener.getsockname()[1]
++        server = uvicorn.Server(uvicorn.Config(app, log_level='critical', access_log=False, lifespan='off'))
++        serving = asyncio.create_task(server.serve(sockets=[listener]))
++        writer = None
++        child_pid = None
++        try:
++            for _ in range(150):
++                if server.started:break
++                await asyncio.sleep(.02)
++            assert server.started
++            async with httpx.AsyncClient(base_url=f'http://127.0.0.1:{port}', trust_env=False) as client:
++                baseline_fds = None
++                for _attempt in range(3):
++                    if pidfile.exists():pidfile.unlink()  # This test's own stale PID fixture only.
++                    challenge = (await client.get('/challenge', params={'client_nonce': 'a' * 64})).json()
++                    if baseline_fds is None:baseline_fds = len(os.listdir('/proc/self/fd'))
++                    nonce = challenge['nonce']
++                    raw = json.dumps({'message': 'test-only cancellation fixture'})
++                    proof = service.mac(KEY, 'client\0' + nonce + '\0' + raw)
++                    _, writer = await asyncio.open_connection('127.0.0.1', port)
++                    body = raw.encode()
++                    headers = (f'POST /infer HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: {len(body)}\r\n'
++                               f'X-Sentinel-Nonce: {nonce}\r\nX-Sentinel-Mac: {proof}\r\n\r\n').encode()
++                    writer.write(headers + body);await writer.drain()
++                    for _ in range(150):
++                        if pidfile.exists():break
++                        await asyncio.sleep(.02)
++                    assert pidfile.exists(), 'Test child was not started'
++                    child_pid = int(pidfile.read_text())
++                    assert Path(f'/proc/{child_pid}').exists()
++                    writer.close();await writer.wait_closed()
++                    for _ in range(50):
++                        if not Path(f'/proc/{child_pid}').exists() and not runtime.busy.locked():break
++                        await asyncio.sleep(.02)
++                    assert not Path(f'/proc/{child_pid}').exists(), 'Child survived HTTP disconnect'
++                    assert not runtime.busy.locked(), 'Model remained busy after disconnect'
++                    replay = await client.post('/infer', content=body, headers={'X-Sentinel-Nonce':nonce, 'X-Sentinel-Mac':proof})
++                    assert replay.status_code == 409
++                    assert len(os.listdir('/proc/self/fd')) <= baseline_fds + 2, "Descriptors accumulated after cancellation"
++        finally:
++            if writer is not None:writer.close()
++            if child_pid is not None:
++                try:os.kill(child_pid, signal.SIGKILL)
++                except ProcessLookupError:pass
++            server.should_exit = True
++            try:await asyncio.wait_for(serving, 3)
++            except asyncio.TimeoutError:
++                serving.cancel();await asyncio.gather(serving, return_exceptions=True)
++            listener.close()
++    asyncio.run(run())
++
++
++def test_disconnect_racing_with_generation_never_returns_a_success():
++    async def run():
++        from fastapi.testclient import TestClient
++        disconnected = asyncio.Event()
++        class FixtureRuntime:
++            async def generate(self, message):
++                disconnected.set()
++                await asyncio.sleep(0)
++                return {'reply': 'test fixture only', 'action': 'NONE'}
++        app = service.make_app(FixtureRuntime(), KEY)
++        challenge = TestClient(app).get('/challenge', params={'client_nonce': 'a'*64}).json()
++        nonce = challenge['nonce'];raw = json.dumps({'message': 'test fixture'})
++        proof = service.mac(KEY, 'client\0'+nonce+'\0'+raw)
++        first = True
++        async def receive():
++            nonlocal first
++            if first:
++                first = False
++                return {'type':'http.request', 'body':raw.encode(), 'more_body':False}
++            await disconnected.wait()
++            return {'type':'http.disconnect'}
++        statuses = []
++        async def send(message):
++            if message['type'] == 'http.response.start':statuses.append(message['status'])
++        scope = {'type':'http','asgi':{'version':'3.0'},'http_version':'1.1','method':'POST',
++                 'scheme':'http','path':'/infer','raw_path':b'/infer','query_string':b'',
++                 'root_path':'','headers':[(b'x-sentinel-nonce',nonce.encode()),(b'x-sentinel-mac',proof.encode())],
++                 'client':('127.0.0.1',12345),'server':('127.0.0.1',18080)}
++        await asyncio.wait_for(app(scope, receive, send), 2)
++        assert statuses == [499], 'Observed disconnect must not produce a successful ASGI response'
++    asyncio.run(run())
++
++
++def test_incomplete_unauthenticated_body_has_a_total_deadline():
++    async def run():
++        class UnusedRuntime:
++            async def generate(self, message):
++                raise AssertionError('Unauthenticated body must not reach inference')
++        app = service.make_app(UnusedRuntime(), KEY)
++        first = True
++        async def receive():
++            nonlocal first
++            if first:
++                first = False
++                return {'type':'http.request','body':b'{','more_body':True}
++            await asyncio.Event().wait()
++        statuses=[]
++        async def send(message):
++            if message['type']=='http.response.start':statuses.append(message['status'])
++        scope={'type':'http','asgi':{'version':'3.0'},'http_version':'1.1','method':'POST','scheme':'http',
++               'path':'/infer','raw_path':b'/infer','query_string':b'','root_path':'','headers':[],
++               'client':('127.0.0.1',12345),'server':('127.0.0.1',18080)}
++        await asyncio.wait_for(app(scope,receive,send),3)
++        assert statuses==[408]
++    asyncio.run(run())
+diff --git a/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiActionJournalEvidenceTest.kt b/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiActionJournalEvidenceTest.kt
+new file mode 100644
+index 0000000..e2e3b3a
+--- /dev/null
++++ b/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiActionJournalEvidenceTest.kt
+@@ -0,0 +1,65 @@
++package com.sentinel.quantum.ai
++
++import android.os.Bundle
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import androidx.test.platform.app.InstrumentationRegistry
++import java.io.File
++import java.security.KeyStore
++import org.junit.Assert.*
++import org.junit.Test
++import org.junit.runner.RunWith
++
++/** Read-only window check after MANUAL real model/Keyguard interaction. Never fabricates a result.
++ * Default baseline mode is not an executed-action qualification and reports verified=false.
++ */
++@RunWith(AndroidJUnit4::class)
++class SentinelAiActionJournalEvidenceTest {
++    @Test fun actionJournalEvidenceProtocol() {
++        val instrumentation=InstrumentationRegistry.getInstrumentation()
++        val context=instrumentation.targetContext
++        val args=InstrumentationRegistry.getArguments()
++        val phase=args.getString("sentinel_ai_action_phase") ?: "baseline"
++        check(phase in setOf("baseline","verify"))
++        if (phase=="verify") check(context.packageName=="com.sentinel.quantum.aivalidation")
++        val directory=File(context.noBackupFilesDir,"sentinel-ai-audit-v1")
++        val keys=KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
++        val present=keys.containsAlias("sentinel_ai_audit_v1")
++        check(present==directory.isDirectory) { "Application journal/key state inconsistent" }
++        if (!present) {
++            check(phase=="baseline") { "Real application journal is missing" }
++            instrumentation.sendStatus(0,Bundle().apply {
++                putString("cycle9_baseline_sequence","0")
++                putString("cycle9_baseline_digest","0".repeat(64))
++                putString("cycle9_action_window_verified","false")
++            })
++            return
++        }
++        val journal=SentinelAiAndroidAuditJournal.open(context)
++        val receipt=journal.verify()
++        val records=File(directory,"events").readText().removeSuffix("\n").split('\n').drop(1)
++        assertEquals(receipt,journal.verify()) // A concurrent write makes this snapshot inconclusive.
++        assertEquals(receipt.sequence,records.size.toLong())
++        if (records.isNotEmpty()) assertEquals(receipt.digest,records.last().split('|').last())
++        var verified=false
++        if (phase=="verify") {
++            val start=checkNotNull(args.getString("sentinel_ai_start_sequence")).toInt()
++            val digest=checkNotNull(args.getString("sentinel_ai_start_digest"))
++            check(start in 0..records.size)
++            assertEquals(if(start==0) "0".repeat(64) else records[start-1].split('|').last(),digest)
++            val kinds=records.drop(start).map { it.split('|')[2] }
++            val expected=checkNotNull(args.getString("sentinel_ai_expected_checkpoints")).toInt()
++            check(expected in 0..1)
++            assertEquals(expected,kinds.count { it=="CHECKPOINT" })
++            if(expected==1) {
++                val authenticated=kinds.indexOf("AUTHENTICATED")
++                assertTrue("Authenticated event must precede the checkpoint",authenticated>=0 && authenticated<kinds.indexOf("CHECKPOINT"))
++            }
++            verified=true
++        }
++        instrumentation.sendStatus(0,Bundle().apply {
++            putString("cycle9_baseline_sequence",receipt.sequence.toString())
++            putString("cycle9_baseline_digest",receipt.digest)
++            putString("cycle9_action_window_verified",verified.toString())
++        })
++    }
++}
+diff --git a/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiPersistenceQualificationTest.kt b/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiPersistenceQualificationTest.kt
+new file mode 100644
+index 0000000..9122859
+--- /dev/null
++++ b/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiPersistenceQualificationTest.kt
+@@ -0,0 +1,121 @@
++package com.sentinel.quantum.ai
++
++import android.os.Bundle
++import android.os.Process
++import android.os.SystemClock
++import android.provider.Settings
++import android.security.keystore.KeyGenParameterSpec
++import android.security.keystore.KeyProperties
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import androidx.test.platform.app.InstrumentationRegistry
++import java.io.File
++import java.io.FileOutputStream
++import java.security.KeyStore
++import java.security.MessageDigest
++import java.util.UUID
++import java.util.concurrent.Executors
++import java.util.concurrent.TimeUnit
++import javax.crypto.KeyGenerator
++import javax.crypto.Mac
++import javax.crypto.SecretKey
++import org.junit.Assert.*
++import org.junit.Test
++import org.junit.runner.RunWith
++
++/** Physical-device protocol. Default roundtrip is NOT proof of process/device restart.
++ * Only explicit verify mode can report restart_verified=true. Never touches the production alias.
++ */
++@RunWith(AndroidJUnit4::class)
++class SentinelAiPersistenceQualificationTest {
++    private fun store() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
++    private fun createKey(alias: String): SecretKey = KeyGenerator.getInstance(
++        KeyProperties.KEY_ALGORITHM_HMAC_SHA256, "AndroidKeyStore").run {
++        init(KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY)
++            .setDigests(KeyProperties.DIGEST_SHA256).build())
++        generateKey()
++    }
++    private fun sign(key: SecretKey, value: String) = Mac.getInstance("HmacSHA256").run {
++        init(key)
++        doFinal(("cycle9-restart-fixture|"+value).toByteArray(Charsets.US_ASCII))
++            .joinToString("") { "%02x".format(it) }
++    }
++    @Test fun concurrentAndroidKeystoreJournalWriters() {
++        val context = InstrumentationRegistry.getInstrumentation().targetContext
++        val alias = "sentinel_ai_concurrency_test_" + UUID.randomUUID()
++        val directory = File(context.cacheDir, alias)
++        val keys = store();val pool = Executors.newFixedThreadPool(4)
++        try {
++            val key = createKey(alias);assertNull(key.encoded)
++            val journal = SentinelAiAuditJournal.create(directory, key)
++            val writers = List(4) { SentinelAiAuditJournal.open(directory, keys.getKey(alias,null) as SecretKey) }
++            val results = (0 until 20).map { index -> pool.submit<Long> {
++                writers[index % 4].append(SentinelAiAuditJournal.Kind.REQUEST, SystemClock.elapsedRealtime()).sequence
++            } }.map { it.get(15, TimeUnit.SECONDS) }
++            assertEquals((1L..20L).toSet(), results.toSet())
++            assertEquals(20L, journal.verify().sequence)
++        } finally {
++            pool.shutdownNow()
++            if (keys.containsAlias(alias)) keys.deleteEntry(alias)
++            directory.deleteRecursively() // UUID-named fixture only.
++        }
++    }
++    @Test fun journalPersistenceFixtureProtocol() {
++        val instrumentation = InstrumentationRegistry.getInstrumentation()
++        val context = instrumentation.targetContext
++        val arguments = InstrumentationRegistry.getArguments()
++        val phase = arguments.getString("sentinel_ai_restart_phase") ?: "roundtrip"
++        check(phase in setOf("roundtrip", "prepare", "verify", "cleanup")) { "Unknown fixture phase" }
++        if (phase != "roundtrip") check(context.packageName == "com.sentinel.quantum.aivalidation") {
++            "Persistent fixture phases require the isolated validation APK"
++        }
++        val alias = if (phase == "roundtrip") "sentinel_ai_restart_test_"+UUID.randomUUID()
++                    else "sentinel_ai_cycle9_restart_fixture_only"
++        val directory = File(context.noBackupFilesDir, alias)
++        val keys = store()
++        var cleanup = phase == "roundtrip" || phase == "cleanup"
++        var restarted = false
++        var rebooted = false
++        try {
++            if (phase == "cleanup") return
++            if (phase == "prepare" || phase == "roundtrip") {
++                check(!directory.exists() && !keys.containsAlias(alias)) { "Fixture exists: verify it or explicitly clean up; never overwrite" }
++                val key = createKey(alias);assertNull(key.encoded)
++                val journal = SentinelAiAuditJournal.create(directory,key)
++                journal.append(SentinelAiAuditJournal.Kind.SESSION_OPEN,SystemClock.elapsedRealtime())
++                val boot = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT,-1)
++                val metadata = "${Process.myPid()}|$boot"
++                FileOutputStream(File(directory,"restart-metadata")).use { out ->
++                    out.write((metadata+"|"+sign(key,metadata)).toByteArray(Charsets.US_ASCII));out.fd.sync()
++                }
++                assertEquals(1L, SentinelAiAuditJournal.open(directory,keys.getKey(alias,null) as SecretKey).verify().sequence)
++            } else {
++                check(keys.containsAlias(alias) && directory.isDirectory) { "Prepared fixture missing" }
++                val key = keys.getKey(alias,null) as SecretKey;assertNull(key.encoded)
++                val parts = File(directory,"restart-metadata").readText().split('|')
++                check(parts.size==3)
++                val metadata=parts.take(2).joinToString("|")
++                check(MessageDigest.isEqual(sign(key,metadata).toByteArray(),parts[2].toByteArray())) { "Fixture metadata altered" }
++                val previousPid=parts[0].toInt();val previousBoot=parts[1].toInt()
++                val boot=Settings.Global.getInt(context.contentResolver,Settings.Global.BOOT_COUNT,-1)
++                rebooted=previousBoot>=0 && boot>previousBoot
++                restarted=rebooted || previousPid!=Process.myPid()
++                check(restarted) { "A process restart was not demonstrated" }
++                if (arguments.getString("sentinel_ai_require_reboot")=="true") check(rebooted) { "A device reboot was not demonstrated" }
++                val journal=SentinelAiAuditJournal.open(directory,key)
++                assertEquals(1L,journal.verify().sequence)
++                assertEquals(2L,journal.append(SentinelAiAuditJournal.Kind.REVOKED,SystemClock.elapsedRealtime()).sequence)
++                cleanup=true // Successful fixture verification only; preserve evidence on failure.
++            }
++        } finally {
++            if (cleanup) {
++                if (keys.containsAlias(alias)) keys.deleteEntry(alias)
++                directory.deleteRecursively() // Only the named fixture, never sentinel-ai-audit-v1.
++            }
++            instrumentation.sendStatus(0,Bundle().apply {
++                putString("cycle9_phase",phase)
++                putString("cycle9_restart_verified",restarted.toString())
++                putString("cycle9_reboot_verified",rebooted.toString())
++            })
++        }
++    }
++}

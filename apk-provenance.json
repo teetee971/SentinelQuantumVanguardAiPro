@@ -1,0 +1,41 @@
+{
+  "android_source_commit": "bf233ec93e08015fec5e86e35fb52c1f033e44f5",
+  "build_init": "audit/cycle9/validation/init.gradle",
+  "build_init_sha256": "e69a6d711526a953ce050d9dccd3a8b2341b00489b5c61dc7507a4aa7a583e4c",
+  "artifacts": [
+    {
+      "kind": "app",
+      "file": "sentinel-ai-cycle9-arm64-validation.apk",
+      "package": "com.sentinel.quantum.aivalidation",
+      "sha256": "54d1bc3a3dec687258d9dd557cb4aafe4adb740a350911c217217c2485a68525",
+      "bytes": 48941602,
+      "abis": [
+        "arm64-v8a"
+      ],
+      "authorities": [
+        "com.sentinel.quantum.aivalidation.fileprovider",
+        "com.sentinel.quantum.aivalidation.androidx-startup"
+      ],
+      "min_sdk": "24",
+      "target_sdk": "36",
+      "signature_verification": "exit0",
+      "manifest_verification": "exit0"
+    },
+    {
+      "kind": "test",
+      "file": "sentinel-ai-cycle9-instrumentation.apk",
+      "package": "com.sentinel.quantum.aivalidation.test",
+      "sha256": "22f197c8649843fdac75c1bbf438eee5ca8b7a2b8306ec2f03ae26742518d118",
+      "bytes": 1138768,
+      "abis": [],
+      "authorities": [],
+      "min_sdk": null,
+      "target_sdk": null,
+      "signature_verification": "exit0",
+      "manifest_verification": "exit0"
+    }
+  ],
+  "installed_on_S24": false,
+  "instrumented_tests_executed": false,
+  "production_go": false
+}
