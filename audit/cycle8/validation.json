@@ -1,0 +1,173 @@
+{
+  "junit": {
+    "suites": 344,
+    "tests": 1633,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "http_test_cases": [
+    {
+      "name": "closeCancelsARealBlockedRead",
+      "seconds": "0.163"
+    },
+    {
+      "name": "slowChallengeCannotExtendTheTotalDeadlineWithDrippedBytes",
+      "seconds": "2.005"
+    },
+    {
+      "name": "redirectDoesNotReachAnotherLoopbackEndpoint",
+      "seconds": "0.406"
+    }
+  ],
+  "javascript": {
+    "tests": 1328,
+    "failures": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "static_policy_tests": 3,
+  "instrumented_tests_executed": false,
+  "reason": "No ADB devices",
+  "protected_files_checked": 101,
+  "protected_differences_from_cycle7": [],
+  "apk_checks": [
+    {
+      "kind": "app",
+      "argv": [
+        "/workspace/work/integral-audit/cycle2/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "/workspace/work/integral-audit/project/native-android-app/app/build/outputs/apk/debug/app-debug.apk"
+      ],
+      "exit_code": 0,
+      "bytes": 100607675,
+      "sha256": "49aa712578d2331f90ec08762c70df05f99fe65c8729255cb6d530ccdea58228"
+    },
+    {
+      "kind": "test",
+      "argv": [
+        "/workspace/work/integral-audit/cycle2/android-sdk/build-tools/36.0.0/apksigner",
+        "verify",
+        "--verbose",
+        "--print-certs",
+        "/workspace/work/integral-audit/project/native-android-app/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+      ],
+      "exit_code": 0,
+      "bytes": 1129863,
+      "sha256": "712c2845cb265bc8b29592c0a652060f963b5bb96926a067edc6c903a591aaec"
+    }
+  ],
+  "gradle": [
+    {
+      "label": "cycle8-http-red",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--tests",
+        "com.sentinel.quantum.ai.SentinelAiLocalHttpTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 1
+    },
+    {
+      "label": "cycle8-http-green",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--tests",
+        "com.sentinel.quantum.ai.SentinelAiLocalHttpTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle8-kotlin",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:compileDebugKotlin",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle8-units",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:testDebugUnitTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle8-instrumentation",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:compileDebugAndroidTestKotlin",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle8-apk",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:assembleDebug",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "cycle8-test-apk",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "-Porg.gradle.java.installations.paths=/workspace/work/integral-audit/cycle2/tools/jdk-17.0.21+9",
+        ":app:assembleDebugAndroidTest",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "host_model_smoke": {
+    "argv": [
+      "/workspace/work/integral-audit/cycle2/tools/jdk-21.0.13+9/bin/java",
+      "-cp",
+      "/workspace/work/integral-audit/project/native-android-app/app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes:/workspace/work/integral-audit/cycle2/gradle-home/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.20/94c1451890d164aed65d43b3db0b7ecef7c183e7/kotlin-stdlib-2.4.20.jar:/workspace/work/integral-audit/cycle2/gradle-home/caches/modules-2/files-2.1/org.json/json/20260814/a1d979d4b336516526d00ff423e4a8d4ba27670f/json-20260814.jar:/workspace/work/integral-audit/cycle2/gradle-home/caches/modules-2/files-2.1/com.squareup.okio/okio-jvm/3.18.1/a3a8128bb3a0157d23ecc18c17e8330d9c0ac96c/okio-jvm-3.18.1.jar:/workspace/work/integral-audit/cycle2/gradle-home/caches/9.8.0/transforms/956148b7a474733d87306c392b04ee36/transformed/okhttp-runtime.jar:/workspace/work/integral-audit/cycle3:/workspace/work/integral-audit/cycle2/gradle-home/caches/9.8.0/transforms/8e092850448b94676e60c8e91596a47d/transformed/android.jar",
+      "LocalEngineSmoke",
+      "/workspace/work/integral-audit/cycle8/pairing-private.key"
+    ],
+    "exit_code": 0,
+    "architecture": "x86_64",
+    "android_framework": "Gradle mockable jar for host testing only",
+    "android_device": false,
+    "real_model": true
+  }
+}
