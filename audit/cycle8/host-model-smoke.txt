@@ -1,0 +1,15 @@
+Possibly running android unit test without robolectric
+java.lang.RuntimeException: Method isLoggable in android.util.Log not mocked. See https://developer.android.com/r/studio-ui/build/not-mocked for details.
+	at android.util.Log.isLoggable(Log.java)
+	at okhttp3.internal.platform.android.AndroidLog.enableLogging(AndroidLog.kt:132)
+	at okhttp3.internal.platform.android.AndroidLog.enable(AndroidLog.kt:109)
+	at okhttp3.internal.platform.PlatformRegistry.findPlatform(PlatformRegistry.kt:25)
+	at okhttp3.internal.platform.Platform$Companion.findPlatform(Platform.kt:252)
+	at okhttp3.internal.platform.Platform$Companion.access$findPlatform(Platform.kt:230)
+	at okhttp3.internal.platform.Platform.<clinit>(Platform.kt:231)
+	at okhttp3.OkHttpClient$Builder.<init>(OkHttpClient.kt:607)
+	at com.sentinel.quantum.ai.SentinelAiLocalEngine$LoopbackTransport.<clinit>(SentinelAiLocalEngine.kt:123)
+	at com.sentinel.quantum.ai.SentinelAiLocalEngine.<init>(SentinelAiLocalEngine.kt:27)
+	at LocalEngineSmoke.main(LocalEngineSmoke.java:8)
+REAL_LOCAL_HTTP_SMOKE: reply=2 + 2 = 4; action=NONE; seconds=2.111045234
+HOST=x86_64; ANDROID_DEVICE_EXECUTION=false; AUTHENTICATED_PROTOCOL=true; NO_ACTION_EXECUTED=true

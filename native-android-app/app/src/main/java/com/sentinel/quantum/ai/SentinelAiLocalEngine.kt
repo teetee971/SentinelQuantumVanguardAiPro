@@ -2,19 +2,23 @@ package com.sentinel.quantum.ai
 
 import org.json.JSONObject
 import java.io.IOException
-import java.net.HttpURLConnection
 import java.net.Proxy
-import java.net.URL
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.TimeUnit
+import okhttp3.Call
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /** Local recommendation provider only. Owns no approval port, action adapter or Android permission.
  * Call infer off the main thread. The trusted UI must obtain consent before supplying text.
- * Not yet connected to an Android composition root; HTTP policy is deliberately unchanged.
+ * Consent, human authentication and execution authority belong to the trusted Android composition.
  */
 class SentinelAiLocalEngine internal constructor(
     pairingKey: ByteArray,
@@ -110,57 +114,65 @@ class SentinelAiLocalEngine internal constructor(
         transport.close()
     }
 
-    private class LoopbackTransport : Transport {
+    /** Internal composition can choose a loopback port; the public engine always uses18080.
+     * No host override is accepted. Tests use isolated real loopback ports, not a remote service.
+     */
+    internal class LoopbackTransport(private val port: Int = 18080) : Transport {
+        init { require(port in 1..65535) }
+        companion object {
+            private val HTTP = OkHttpClient.Builder()
+                .proxy(Proxy.NO_PROXY)
+                .connectTimeout(2, TimeUnit.SECONDS)
+                .writeTimeout(2, TimeUnit.SECONDS)
+                .readTimeout(35, TimeUnit.SECONDS)
+                .callTimeout(35, TimeUnit.SECONDS)
+                .followRedirects(false)
+                .followSslRedirects(false)
+                .retryOnConnectionFailure(false)
+                .build()
+            private val JSON = "application/json; charset=utf-8".toMediaType()
+        }
         private val closed = AtomicBoolean(false)
-        private val active = AtomicReference<HttpURLConnection?>(null)
+        private val active = AtomicReference<Call?>(null)
         override fun exchange(path: String, body: String?, headers: Map<String, String>): Packet {
             if (closed.get()) throw IOException("Local transport closed")
-            // Fixed loopback origin, no system proxy or redirects, no caller-supplied URL.
-            val connection = URL("http://127.0.0.1:18080$path")
-                .openConnection(Proxy.NO_PROXY) as HttpURLConnection
-            if (!active.compareAndSet(null, connection)) {
-                connection.disconnect()
+            val builder = Request.Builder().url("http://127.0.0.1:$port$path")
+                .header("Connection", "close")
+            for ((name, value) in headers) builder.header(name, value)
+            if (body != null) builder.post(body.toRequestBody(JSON))
+            val call = HTTP.newCall(builder.build())
+            // Total deadline includes connection, headers and complete body, not each read.
+            call.timeout().timeout(if (body == null) 2L else 35L, TimeUnit.SECONDS)
+            if (!active.compareAndSet(null, call)) {
+                call.cancel()
                 throw IOException("Local transport busy")
             }
             try {
                 if (closed.get()) throw IOException("Local transport closed")
-                connection.instanceFollowRedirects = false
-                connection.connectTimeout = 2000
-                connection.readTimeout = 35000
-                connection.useCaches = false
-                connection.setRequestProperty("Connection", "close")
-                for ((name, value) in headers) connection.setRequestProperty(name, value)
-                if (body != null) {
-                    connection.requestMethod = "POST"
-                    connection.doOutput = true
-                    connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                    val bytes = body.toByteArray(Charsets.UTF_8)
-                    connection.setFixedLengthStreamingMode(bytes.size)
-                    connection.outputStream.use { it.write(bytes) }
-                }
-                val status = connection.responseCode
-                if (status != 200) return Packet(status, "", null)
-                val bytes = connection.inputStream.use { stream ->
-                    val out = java.io.ByteArrayOutputStream()
-                    val buffer = ByteArray(1024)
-                    while (true) {
-                        val count = stream.read(buffer)
-                        if (count < 0) break
-                        if (out.size() + count > 8192) throw IOException("Local response too large")
-                        out.write(buffer, 0, count)
+                return call.execute().use { response ->
+                    if (response.code != 200) return@use Packet(response.code, "", null)
+                    val bytes = response.body.byteStream().use { stream ->
+                        val out = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(1024)
+                        while (true) {
+                            val count = stream.read(buffer)
+                            if (count < 0) break
+                            if (out.size() + count > 8192) throw IOException("Local response too large")
+                            out.write(buffer, 0, count)
+                        }
+                        out.toByteArray()
                     }
-                    out.toByteArray()
+                    if (closed.get()) throw IOException("Local transport closed")
+                    Packet(response.code, String(bytes, Charsets.UTF_8), response.header("X-Sentinel-Mac"))
                 }
-                if (closed.get()) throw IOException("Local transport closed")
-                return Packet(status, String(bytes, Charsets.UTF_8), connection.getHeaderField("X-Sentinel-Mac"))
             } finally {
-                active.compareAndSet(connection, null)
-                connection.disconnect()
+                active.compareAndSet(call, null)
+                call.cancel()
             }
         }
         override fun close() {
             closed.set(true)
-            active.getAndSet(null)?.disconnect()
+            active.getAndSet(null)?.cancel()
         }
     }
 }
