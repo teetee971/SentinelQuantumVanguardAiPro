@@ -1,0 +1,781 @@
+diff --git a/audit/cycle10/REPORT.md b/audit/cycle10/REPORT.md
+new file mode 100644
+index 0000000..bc87824
+--- /dev/null
++++ b/audit/cycle10/REPORT.md
+@@ -0,0 +1,27 @@
++# Cycle 10 — bornes de sortie et appariement — NO-GO
++
++Base: 8ff3ceb38745846d07b7a593aba2fde3dad32822.
++Sources locales et deux correctifs reçus dans l'archive SHA256 21f18eb1fa390768d5df84372152a33125e3fd4fe95c6e99a67a016c45b9f524 préservés au commit 3ad6864.
++Code corrigé et compilé: 8b7f388e82dd9c01855bba78e80c2d37c4404682. Aucun fichier du téléphone remplacé par ce travail cloud.
++
++## Corrections
++- Lectures stdout/stderr concurrentes plafonnées avant ajout en mémoire (8192/65536 octets, chunks <=4096). Sur dépassement: refus502, arrêt du processus direct puis récupération, pipes vidés sans accumulation. Expiration30s et annulation simple/double conservent le nettoyage avant libération du verrou occupé.
++- Barrière d'appariement commune aux activités du processus, tickets capturés avant mise en file. Oublier invalide immédiatement les anciens tickets; aucune sauvegarde tardive autorisée. Suppression effective hors UI; échec garde les nouveaux accès bloqués dans ce processus. Révocation de session sérialisée avec les opérations existantes. La sauvegarde passe également par la barrière de révocation du processus.
++- Mémorisation AES-GCM, copie utilisateur et réutilisation du secret côté service transférées et conservées. Aucune nouvelle fonctionnalité ajoutée.
++
++## Exécutions
++Python: six nouveaux cas bornes/nettoyage d'abord rouges (deux reproductions d'overflow et quatre cas API initialement absente); six réussites après correction. Régression locale complète:22 tests réussis, zéro échec/erreur/ignoré, trois avertissements dépréciation. Deux faux processus des tests historiques ont dû adopter les flux/attente; assertions stdin/kill/reap conservées. Une tentative intermédiaire comptait20 réussites et2 échecs pour ces anciens doubles, consignée.
++Coordinateur: sept tests JUnit réussis, dont ordres contrôlés par CountDownLatch. Mutation dans une copie de test supprimant l'invalidation de génération: trois échecs attendus; mutation jamais ajoutée aux sources livrées.
++Kotlin Android: compilation réussie. Suite Android JVM complète:345 suites,1640 tests, zéro échec/erreur/ignoré, tâche relancée explicitement. Les sept tests du coordinateur sont INCLUS dans1640; les trois correctifs horloge/MAC sont INCLUS dans22.
++Compilation des tests instrumentés et assemblage des deux APK: réussis. Vérification apksigner v2 et inspection manifestes: réussies. Paquet application com.sentinel.quantum.aivalidation, test .test, sept bibliothèques AArch64. Même certificat debug que le cycle9, aucun secret de signature livré.
++Qwen réel exécuté sur l'hôte x86_64 avec le service corrigé: réponse2+2=4, actionNONE, verrou occupé libéré. Ce smoke n'est PAS une exécution Android.
++
++## Préservation et limites
++Diff code limité à huit chemins IA/tests par rapport à la base; PhoneCore, SMS/MMS, VPN, Wi-Fi/Bluetooth, Tracker, permissions, manifeste source et schémas Room inchangés.
++Aucun appareil connecté au cloud, aucun nouveau test instrumenté exécuté. Les preuves physiques du cycle9 restent attachées à ses anciens APK. Il faut rejouer les parcours d'appariement, autorisation humaine, HMAC, refus/erreurs et annulation sur le NOUVEL APK avec le NOUVEAU service.
++La barrière est limitée à ce processus Android; elle n'est pas une révocation distante du secret serveur. Les I/O de stockage déjà commencées peuvent finir avant l'acquittement d'une révocation. Aucun effacement rétroactif n'est revendiqué.
++Le nettoyage garantit le processus direct du moteur: pas de qualification d'exécutables tiers qui créent leurs propres descendants. Les plafonds ne bornent pas la mémoire du modèle lui-même.
++Restent: restauration conjointe des deux fichiers HMAC, transaction effet/journal, LiveKit réel, politique Play/contenus IA, signalement des réponses et marquage sensible du presse-papiers. Pas de production GO.
++Aucune régression JavaScript ou voix/Redis relancée, ces composants n'ont pas changé. Budget0USD, aucune GitHub Action utilisée pour compiler ou tester.
++
++Voir S24_VALIDATION.md pour les essais physiques à exécuter. S'arrêter aux erreurs, conserver les journaux, ne jamais désinstaller l'application habituelle ni effacer les données.
+diff --git a/audit/cycle10/S24_VALIDATION.md b/audit/cycle10/S24_VALIDATION.md
+new file mode 100644
+index 0000000..78bebd2
+--- /dev/null
++++ b/audit/cycle10/S24_VALIDATION.md
+@@ -0,0 +1,20 @@
++# Validation S24+ du correctif bornes et appariement — NO-GO
++
++Les preuves du cycle 9 qualifient ses APK seulement. Ne pas effacer les données ni désinstaller Sentinel habituel.
++Le nouveau paquet de qualification doit rester com.sentinel.quantum.aivalidation. La variante copyui locale est distincte et doit être préservée.
++Avant installation: vérifier SHA-256, certificat de signature et référence source du paquet livré. Ne pas utiliser install -g ni modifier les rôles Téléphone/SMS/VPN.
++
++1. Collecter le modèle, ABI, SDK, patch Android et les rôles avant/après avec audit/cycle9/validation/collect_device.sh (nouveaux dossiers).
++2. Installer l'APK de validation et son APK de tests avec adb install -r et adb install -t -r. Refus de signature: conserver les données et transmettre l'erreur, aucune désinstallation automatique.
++3. Rejouer les cinq classes instrumentées du cycle 9 et conserver le journal complet. Les modes par défaut ne prouvent ni action ni reboot.
++4. Avec le service local corrigé et le modèle SHA approuvé, effectuer une requête mathématique synthétique. Vérifier réponse JSON/HMAC et refus du rejeu.
++5. Mémoriser volontairement l'appariement, effectuer une requête puis annuler/révoquer pendant une nouvelle requête. Aucun ancien résultat ne doit rétablir les droits ou enregistrer un nouveau secret après révocation effective.
++6. Déclencher Oublier pendant une requête: après confirmation de l'oubli, une requête sans clé explicite doit échouer; aucun ancien écran ne doit restaurer l'appariement. Un nouvel appariement explicitement consenti reste possible.
++7. Révoquer les autorisations du processus depuis un autre écran: aucune sauvegarde/action avec un ancien bail après confirmation de révocation. Le périmètre est le processus Android, pas une révocation serveur du secret.
++8. Déconnexion et annulation: utiliser probe_cancel.py avec le PID du service et le vrai binaire ARM64, sans partager la clé. Le processus doit disparaître, le rejeu être refusé, une requête suivante fonctionner.
++9. Parcours réel: proposition CREATE_AUDIT_CHECKPOINT -> consentement -> verrouillage Android accepté -> un checkpoint HMAC. Annulation/refus/expiration -> zéro checkpoint; utiliser le protocole baseline/verify de SentinelAiActionJournalEvidenceTest.
++10. Refaire les phases prepare/verify et prepare/reboot/verify de SentinelAiPersistenceQualificationTest, une seule préparation par tentative. Un échec conserve la fixture.
++
++Tous ces essais sur le NOUVEL APK sont NON EXÉCUTÉS dans le cloud. Les tests JVM contrôlent l'ordre des courses du coordinateur; ils ne simulent pas une authentification Android réussie.
++
++Limites conservées: appariement oublié localement ne révoque pas le secret du service; barrière d'appariement limitée au processus; restauration conjointe événements+ancre HMAC non détectable; transaction effet/journal non atomique; LiveKit réel et conformité Play non qualifiés. Le service tue/récupère le processus direct llama.cpp; les tests ne certifient pas un exécutable tiers qui créerait ses propres descendants.
+diff --git a/backend/local-ai/service.py b/backend/local-ai/service.py
+index 266ad49..53b04a2 100644
+--- a/backend/local-ai/service.py
++++ b/backend/local-ai/service.py
+@@ -4,6 +4,7 @@ import asyncio
+ import hashlib
+ import hmac
+ import json
++import math
+ import os
+ import secrets
+ import time
+@@ -31,6 +32,52 @@ def checked_result(data):
+     return data
+ 
+ 
++async def _communicate_bounded(process, timeout_seconds=30):
++    """Drain both streams concurrently, limiting retained bytes before extending."""
++    async def read(stream, limit):
++        data = bytearray()
++        while True:
++            chunk = await stream.read(min(4096, limit - len(data) + 1))
++            if not chunk:
++                return bytes(data)
++            if len(data) + len(chunk) > limit:
++                raise HTTPException(502, 'Local generation output limit exceeded')
++            data.extend(chunk)
++
++    tasks = [asyncio.create_task(read(process.stdout, 8192)),
++             asyncio.create_task(read(process.stderr, 65536)),
++             asyncio.create_task(process.wait())]
++    try:
++        stdout, stderr, _ = await asyncio.wait_for(asyncio.gather(*tasks), timeout_seconds)
++        return stdout, stderr
++    except BaseException:
++        # Cancellation is acknowledged only after the direct model child is reaped.
++        # Shield cleanup even against repeated cancellation from a disconnect/timeout race.
++        async def cleanup():
++            if process.returncode is None:
++                try:
++                    process.kill()
++                except ProcessLookupError:
++                    pass
++            for task in tasks:
++                task.cancel()
++            await asyncio.gather(*tasks, return_exceptions=True)
++            # Discard pipe buffers after killing the child. Otherwise a paused
++            # StreamReader transport can prevent process.wait() from completing.
++            async def discard(stream):
++                while await stream.read(4096):
++                    pass
++            await asyncio.gather(discard(process.stdout), discard(process.stderr), process.wait())
++        pending = asyncio.create_task(cleanup())
++        while not pending.done():
++            try:
++                await asyncio.shield(pending)
++            except asyncio.CancelledError:
++                continue
++        pending.result()
++        raise
++
++
+ class LlamaRuntime:
+     def __init__(self, binary, model):
+         self.binary, self.model = Path(binary).resolve(), Path(model).resolve()
+@@ -66,7 +113,7 @@ class LlamaRuntime:
+                 process = await asyncio.create_subprocess_exec(*args, stdin=source, stdout=asyncio.subprocess.PIPE,
+                                                               stderr=asyncio.subprocess.PIPE, env=env)
+             try:
+-                stdout, _ = await asyncio.wait_for(process.communicate(), 30)
++                stdout, _ = await _communicate_bounded(process)
+             except BaseException:
+                 if process.returncode is None:
+                     process.kill()
+@@ -132,7 +179,7 @@ def make_app(runtime, key, clock=time.monotonic):
+     def now():
+         nonlocal last_time, poisoned
+         value = clock()
+-        if poisoned or value < 0 or value < last_time:
++        if poisoned or not math.isfinite(value) or value < 0 or value < last_time:
+             poisoned = True
+             pending.clear()
+             raise HTTPException(503, 'Clock unavailable')
+@@ -169,7 +216,10 @@ def make_app(runtime, key, clock=time.monotonic):
+         except UnicodeError as exc:
+             raise HTTPException(422, 'Invalid request') from exc
+         expected = mac(key, 'client\0' + nonce + '\0' + text)
+-        if not hmac.compare_digest(expected, request.headers.get('X-Sentinel-Mac', '')):
++        supplied_mac = request.headers.get('X-Sentinel-Mac', '')
++        if (len(supplied_mac) != 64
++                or any(c not in '0123456789abcdef' for c in supplied_mac)
++                or not hmac.compare_digest(expected, supplied_mac)):
+             raise HTTPException(401, 'Pairing authentication failed')
+         try:
+             body = json.loads(text)
+@@ -191,12 +241,29 @@ if __name__ == '__main__':
+     parser.add_argument('--binary', required=True)
+     parser.add_argument('--model', required=True)
+     parser.add_argument('--pairing-file', required=True, help='NEW private file; contents are never printed')
++    parser.add_argument('--reuse-pairing-file', action='store_true')
+     args = parser.parse_args()
+     runtime = LlamaRuntime(args.binary, args.model)
+-    key = secrets.token_bytes(32)
+-    fd = os.open(args.pairing_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+-    with os.fdopen(fd, 'w') as output:
+-        output.write(key.hex() + '\n')
++    if args.reuse_pairing_file:
++        import stat
++        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
++        fd = os.open(args.pairing_file, flags)
++        with os.fdopen(fd, 'rb') as source:
++            info = os.fstat(source.fileno())
++            if (not stat.S_ISREG(info.st_mode)
++                    or info.st_uid != os.getuid()
++                    or stat.S_IMODE(info.st_mode) != 0o600):
++                raise ValueError('Pairing file must be private, owned, and mode 0600')
++            raw = source.read(66)
++        if (len(raw) != 65 or raw[-1:] != b'\n'
++                or any(c not in b'0123456789abcdef' for c in raw[:64])):
++            raise ValueError('Invalid pairing file')
++        key = bytes.fromhex(raw[:64].decode('ascii'))
++    else:
++        key = secrets.token_bytes(32)
++        fd = os.open(args.pairing_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
++        with os.fdopen(fd, 'w') as output:
++            output.write(key.hex() + '\n')
+     import uvicorn
+     # Fixed loopback binding. No public host, remote model endpoint or billing setting.
+     uvicorn.run(make_app(runtime, key), host='127.0.0.1', port=18080, access_log=False)
+diff --git a/backend/local-ai/tests/test_clock_mac_regressions.py b/backend/local-ai/tests/test_clock_mac_regressions.py
+new file mode 100644
+index 0000000..6dd36f4
+--- /dev/null
++++ b/backend/local-ai/tests/test_clock_mac_regressions.py
+@@ -0,0 +1,44 @@
++import asyncio
++import importlib.util
++from pathlib import Path
++import unittest
++import httpx
++
++spec = importlib.util.spec_from_file_location('service', Path(__file__).resolve().parents[1] / 'service.py')
++service = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(service)
++
++class Runtime:
++    async def generate(self, message):
++        return {'reply': 'Réponse locale', 'action': 'NONE'}
++
++class ServiceTests(unittest.IsolatedAsyncioTestCase):
++    async def client(self, clock=lambda: 1.0):
++        return httpx.AsyncClient(transport=httpx.ASGITransport(app=service.make_app(Runtime(), b'k'*32, clock)), base_url='http://local')
++
++    async def test_non_finite_clock_rejected_and_poisoned(self):
++        for invalid in (float('nan'), float('inf'), -float('inf')):
++            values = iter([invalid, 1.0])
++            async with await self.client(lambda: next(values)) as client:
++                for _ in range(2):
++                    response = await client.get('/challenge', params={'client_nonce': 'a'*64})
++                    self.assertEqual(response.status_code, 503)
++
++    async def test_non_ascii_mac_rejected(self):
++        async with await self.client() as client:
++            nonce = (await client.get('/challenge', params={'client_nonce': 'a'*64})).json()['nonce']
++            response = await client.post('/infer', content='{"message":"test"}', headers={b'X-Sentinel-Nonce': nonce.encode(), b'X-Sentinel-Mac': b'\xff'})
++            self.assertEqual(response.status_code, 401)
++
++    async def test_response_authenticated_and_nonce_single_use(self):
++        async with await self.client() as client:
++            nonce = (await client.get('/challenge', params={'client_nonce': 'a'*64})).json()['nonce']
++            raw = '{"message":"test"}'
++            headers = {'X-Sentinel-Nonce': nonce, 'X-Sentinel-Mac': service.mac(b'k'*32, 'client\0'+nonce+'\0'+raw)}
++            response = await client.post('/infer', content=raw, headers=headers)
++            self.assertEqual(response.status_code, 200)
++            self.assertEqual(response.headers['X-Sentinel-Mac'], service.mac(b'k'*32, 'response\0'+nonce+'\0'+response.text))
++            self.assertEqual((await client.post('/infer', content=raw, headers=headers)).status_code, 409)
++
++if __name__ == '__main__':
++    unittest.main()
+diff --git a/backend/local-ai/tests/test_local_auth.py b/backend/local-ai/tests/test_local_auth.py
+index 538ce54..28d89fe 100644
+--- a/backend/local-ai/tests/test_local_auth.py
++++ b/backend/local-ai/tests/test_local_auth.py
+@@ -65,8 +65,12 @@ def test_prompt_uses_stdin_and_never_process_arguments(monkeypatch):
+     seen = {}
+     class Process:
+         returncode = 0
+-        async def communicate(self):
+-            return b'{"reply":"fixture","action":"NONE"}', b''
++        def __init__(self):
++            self.stdout = asyncio.StreamReader();self.stderr = asyncio.StreamReader()
++            self.stdout.feed_data(b'{"reply":"fixture","action":"NONE"}')
++            self.stdout.feed_eof();self.stderr.feed_eof()
++        async def wait(self):
++            return 0
+     async def launch(*args, **kwargs):
+         seen['args'] = args
+         assert hasattr(kwargs['stdin'], 'read')
+@@ -86,16 +90,26 @@ def test_cancelled_generation_terminates_and_reaps_process(monkeypatch):
+     state = {'killed': False, 'reaped': False}
+     class Process:
+         returncode = None
+-        async def communicate(self):
+-            raise asyncio.CancelledError()
++        def __init__(self):
++            self.stdout = asyncio.StreamReader();self.stderr = asyncio.StreamReader()
++            self.killed = asyncio.Event()
+         def kill(self):
+             state['killed'] = True
++            self.returncode = -9
++            self.stdout.feed_eof();self.stderr.feed_eof();self.killed.set()
+         async def wait(self):
++            await self.killed.wait()
+             state['reaped'] = True
++            return self.returncode
+     async def launch(*args, **kwargs):return Process()
+     monkeypatch.setattr(module.asyncio, 'create_subprocess_exec', launch)
+     runtime = object.__new__(module.LlamaRuntime)
+     runtime.binary = Path('/test-only/runtime');runtime.model = Path('/test-only/model');runtime.busy = asyncio.Lock()
+-    with pytest.raises(asyncio.CancelledError):asyncio.run(runtime.generate('test'))
++    async def run():
++        task = asyncio.create_task(runtime.generate('test'))
++        await asyncio.sleep(.02)
++        task.cancel()
++        with pytest.raises(asyncio.CancelledError):await task
++    asyncio.run(run())
+     assert state == {'killed': True, 'reaped': True}
+     assert not runtime.busy.locked()
+diff --git a/backend/local-ai/tests/test_output_bounds.py b/backend/local-ai/tests/test_output_bounds.py
+new file mode 100644
+index 0000000..be2322e
+--- /dev/null
++++ b/backend/local-ai/tests/test_output_bounds.py
+@@ -0,0 +1,72 @@
++"""Real child-process fixtures, not model inference or canned production answers."""
++import asyncio
++import importlib.util
++from pathlib import Path
++import sys
++import pytest
++from fastapi import HTTPException
++
++spec = importlib.util.spec_from_file_location('bounded_service', Path(__file__).parents[1] / 'service.py')
++service = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(service)
++
++
++@pytest.mark.parametrize('fd', [1, 2])
++def test_generation_rejects_output_overflow_before_child_exits(tmp_path, fd):
++    async def run():
++        pidfile = tmp_path / 'pid'
++        binary = tmp_path / 'flood'
++        binary.write_text(f'#!{sys.executable}\nimport os,time\n'
++                          f'open({str(pidfile)!r},"w").write(str(os.getpid()))\n'
++                          f'os.write({fd},b"x"*200000)\ntime.sleep(60)\n')
++        binary.chmod(0o700)
++        runtime = object.__new__(service.LlamaRuntime)
++        runtime.binary = binary; runtime.model = tmp_path / 'unused'
++        runtime.busy = asyncio.Lock()
++        try:
++            with pytest.raises(HTTPException) as exc:
++                await asyncio.wait_for(runtime.generate('fixture'), 2)
++            assert exc.value.status_code == 502
++        finally:
++            assert not runtime.busy.locked()
++            if pidfile.exists():
++                assert not Path('/proc/' + pidfile.read_text()).exists(), 'Overflow child not reaped'
++    asyncio.run(run())
++
++
++@pytest.mark.parametrize('reason', ['timeout', 'cancel', 'double_cancel'])
++def test_bounded_reader_reaps_child_on_interruption(reason):
++    async def run():
++        process = await asyncio.create_subprocess_exec(sys.executable, '-c',
++            'import time; time.sleep(60)', stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
++        try:
++            task = asyncio.create_task(service._communicate_bounded(process, .05 if reason == 'timeout' else 30))
++            if reason != 'timeout':
++                await asyncio.sleep(.02)
++                task.cancel()
++                if reason == 'double_cancel':
++                    asyncio.get_running_loop().call_soon(task.cancel)
++            with pytest.raises(asyncio.TimeoutError if reason == 'timeout' else asyncio.CancelledError):
++                await task
++            assert process.returncode is not None
++            assert not Path(f'/proc/{process.pid}').exists()
++        finally:
++            if process.returncode is None:
++                process.kill(); await process.wait()
++    asyncio.run(run())
++
++
++def test_bounded_reader_drains_both_pipes_without_deadlock():
++    async def run():
++        process = await asyncio.create_subprocess_exec(sys.executable, '-c',
++            'import os; os.write(1,b"a"*8192); os.write(2,b"b"*65536)',
++            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
++        try:
++            stdout, stderr = await service._communicate_bounded(process, 2)
++            assert stdout == b'a'*8192
++            assert stderr == b'b'*65536
++            assert process.returncode == 0
++        finally:
++            if process.returncode is None:
++                process.kill(); await process.wait()
++    asyncio.run(run())
+diff --git a/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiActivity.kt b/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiActivity.kt
+index 3726efd..d9b7e65 100644
+--- a/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiActivity.kt
++++ b/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiActivity.kt
+@@ -19,7 +19,10 @@ import java.util.concurrent.atomic.AtomicReference
+  * its result still needs a live exact ticket, foreground consent and the authority's expiry checks.
+  */
+ class SentinelAiActivity : ComponentActivity() {
+-    companion object { private val processGate = SentinelAiProcessGate() }
++    companion object {
++        private val processGate = SentinelAiProcessGate()
++        private val pairingGate = SentinelAiPairingCoordinator()
++    }
+     private data class Runtime(val owner: SentinelAiApprovalPorts.Owner,
+                                val session: SentinelAiApprovalPorts.Session, val journal: SentinelAiAuditJournal,
+                                val lease: SentinelAiProcessGate.Lease)
+@@ -29,6 +32,7 @@ class SentinelAiActivity : ComponentActivity() {
+     private var runtime: Runtime? = null
+     private var consentLease: SentinelAiProcessGate.Lease? = null
+     private val engine = AtomicReference<SentinelAiLocalEngine?>(null)
++    private val pairingLease = AtomicReference<SentinelAiPairingCoordinator.Lease?>(null)
+     private val proof = SentinelAiHumanConfirmation(SentinelAiAndroidClock::elapsedRealtimeMs)
+     @Volatile private var foreground = false
+     @Volatile private var consent = false
+@@ -39,6 +43,7 @@ class SentinelAiActivity : ComponentActivity() {
+     private var pending: SentinelAiApprovalAuthority.Proposal? = null
+     private var ticket: SentinelAiHumanConfirmation.Ticket? = null
+     private lateinit var consentView: CheckBox
++    private lateinit var rememberPairing: CheckBox
+     private lateinit var pairing: EditText
+     private lateinit var message: EditText
+     private lateinit var output: TextView
+@@ -121,6 +126,39 @@ class SentinelAiActivity : ComponentActivity() {
+             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+             isSaveEnabled = false; content.addView(this)
+         }
++        rememberPairing = CheckBox(this).apply {
++            text = "Mémoriser l’appariement sur cet appareil"
++            isSaveEnabled = false
++            isChecked = SentinelAiPairingStore.exists(this@SentinelAiActivity)
++            content.addView(this)
++        }
++        Button(this).apply {
++            text = "Oublier l’appariement mémorisé"
++            content.addView(this)
++            setOnClickListener {
++                // Invalidate all older requests immediately, before queued deletion.
++                val deletion = pairingGate.beginForget()
++                revoke()
++                val forgetEpoch = epoch()
++                rememberPairing.isChecked = false
++                busy = true
++                refresh()
++                worker.execute {
++                    val forgotten = try {
++                        pairingGate.finishForget(deletion) {
++                            SentinelAiPairingStore.forget(this@SentinelAiActivity)
++                        }
++                        true
++                    } catch (_: Exception) { false }
++                    ui(forgetEpoch) {
++                        busy = false
++                        status.text = if (forgotten) "Appariement oublié sur cet appareil ; le secret du service n’est pas révoqué."
++                            else "Échec de suppression ; appariement bloqué jusqu’à un nouvel oubli réussi."
++                        refresh()
++                    }
++                }
++            }
++        }
+         message = EditText(this).apply {
+             hint = "Demande au modèle local (512 caractères maximum)"
+             filters = arrayOf(android.text.InputFilter.LengthFilter(512))
+@@ -128,7 +166,25 @@ class SentinelAiActivity : ComponentActivity() {
+         }
+         send = Button(this).apply { text = "Demander une proposition"; tag = "sentinel_ai_send"; content.addView(this) }
+         label("Réponse du modèle (ne constitue pas une autorisation) :")
+-        output = label("")
++        output = label("").apply { setTextIsSelectable(true) }
++        Button(this).apply {
++            text = "Copier la réponse et le statut"
++            tag = "sentinel_ai_copy"
++            content.addView(this)
++            setOnClickListener {
++                val reply = output.text.toString()
++                if (reply.isBlank()) {
++                    Toast.makeText(this@SentinelAiActivity, "Aucune réponse à copier.", Toast.LENGTH_SHORT).show()
++                } else {
++                    val clipboard = getSystemService(android.content.ClipboardManager::class.java)
++                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
++                        "Réponse IA locale",
++                        reply + "\n\nStatut : " + status.text.toString()
++                    ))
++                    Toast.makeText(this@SentinelAiActivity, "Réponse et statut copiés.", Toast.LENGTH_SHORT).show()
++                }
++            }
++        }
+         label("Seule action disponible : enregistrer un point de contrôle sans données personnelles dans le journal IA.")
+         approve = Button(this).apply { text = "Confirmer le point de contrôle avec le verrouillage Android"; content.addView(this) }
+         val cancel = Button(this).apply { text = "Annuler et révoquer la session"; content.addView(this); setOnClickListener { revoke() } }
+@@ -139,6 +195,7 @@ class SentinelAiActivity : ComponentActivity() {
+         }
+         status = label(if (localPolicy()) "Indisponible jusqu’au consentement et à la connexion au moteur local."
+                       else "Indisponible : le transport local HTTP n’est pas autorisé par la politique Android actuelle.")
++        status.setTextIsSelectable(true)
+         setContentView(ScrollView(this).apply { addView(content) })
+         consentView.setOnCheckedChangeListener { _, checked ->
+             synchronized(lock) {
+@@ -196,10 +253,18 @@ class SentinelAiActivity : ComponentActivity() {
+         if (!foreground || !consent || busy || !localPolicy()) return
+         if (!valid(epoch())) { revoke(); status.text = "Session invalidée ; un nouveau consentement est requis."; return }
+         val raw = pairing.text.toString().trim()
+-        if (!Regex("[0-9a-fA-F]{64}").matches(raw) || message.text.isEmpty()) {
++        val remember = rememberPairing.isChecked
++        val useStored = raw.isEmpty() && remember
++        if ((!useStored && !Regex("[0-9a-fA-F]{64}").matches(raw)) || message.text.isEmpty()) {
+             status.text = "Clé locale ou demande invalide."; return
+         }
+-        val key = ByteArray(32) { raw.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
++        val pairingToken = try { pairingGate.capture() } catch (_: Exception) {
++            status.text = "Appariement bloqué : terminer ou renouveler son oubli."; return
++        }
++        pairingLease.getAndSet(pairingToken)?.let { pairingGate.revoke(it) }
++        val key = if (useStored) ByteArray(32) else ByteArray(32) {
++            raw.substring(it * 2, it * 2 + 2).toInt(16).toByte()
++        }
+         val text = message.text.toString()
+         pairing.text.clear(); message.text.clear()
+         val epoch = epoch()
+@@ -210,12 +275,20 @@ class SentinelAiActivity : ComponentActivity() {
+             try {
+                 val current = state(epoch)
+                 current.journal.append(SentinelAiAuditJournal.Kind.REQUEST, SentinelAiAndroidClock.elapsedRealtimeMs())
++                if (useStored) {
++                    val saved = pairingGate.use(pairingToken) { SentinelAiPairingStore.load(this) }
++                    try { saved.copyInto(key) } finally { saved.fill(0) }
++                }
+                 val local = SentinelAiLocalEngine(key)
+-                key.fill(0)
+                 synchronized(lock) { if (!valid(epoch)) { local.close(); error("Session closed") }; engine.set(local) }
+                 val answer = local.use { it.infer(text) }
+                 engine.compareAndSet(local, null)
+                 check(valid(epoch))
++                if (remember) pairingGate.use(pairingToken) {
++                    // Process revocation and storage have one ordered completion barrier.
++                    processGate.execute(current.lease) { SentinelAiPairingStore.save(this, key) }
++                }
++                check(valid(epoch))
+                 val proposal = if (answer.action == "CREATE_AUDIT_CHECKPOINT") current.session.propose(answer.action, "") else null
+                 if (proposal != null) current.journal.append(SentinelAiAuditJournal.Kind.PROPOSED, SentinelAiAndroidClock.elapsedRealtimeMs())
+                 ui(epoch) {
+@@ -236,7 +309,12 @@ class SentinelAiActivity : ComponentActivity() {
+                 }
+             } catch (_: Exception) {
+                 ui(epoch) { revoke(); status.text = "Indisponible : moteur, appariement, sécurité ou journal en échec." }
+-            } finally { key.fill(0); engine.getAndSet(null)?.close() }
++            } finally {
++                key.fill(0)
++                pairingLease.compareAndSet(pairingToken, null)
++                pairingGate.revoke(pairingToken)
++                engine.getAndSet(null)?.close()
++            }
+         }
+     }
+     @Suppress("DEPRECATION")
+@@ -281,6 +359,8 @@ class SentinelAiActivity : ComponentActivity() {
+         }
+     }
+     private fun revoke() {
++        // Never hold the activity lock while waiting for a storage operation.
++        pairingLease.getAndSet(null)?.let { pairingGate.revoke(it) }
+         proof.revoke()
+         credential?.unregister(); credential = null
+         if (::send.isInitialized) expiryTask?.let { send.removeCallbacks(it) }
+diff --git a/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiPairingCoordinator.kt b/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiPairingCoordinator.kt
+new file mode 100644
+index 0000000..8cce3c5
+--- /dev/null
++++ b/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiPairingCoordinator.kt
+@@ -0,0 +1,49 @@
++package com.sentinel.quantum.ai
++
++/** Process-local barrier for pairing storage, never an action approval capability.
++ * A successful forget invalidates every previously captured lease. Failure keeps
++ * new pairing operations blocked until a later explicit forget succeeds.
++ * Revocation waits for an already-started storage operation; it cannot undo it.
++ */
++internal class SentinelAiPairingCoordinator {
++    class Lease internal constructor(internal val owner: Any, internal val stamp: Any) {
++        internal var revoked = false
++    }
++    class Forget internal constructor(internal val owner: Any, internal val stamp: Any)
++    private val owner = Any()
++    private var stamp = Any()
++    private var forgetting = false
++    private var insideEffect = false
++
++    @Synchronized fun capture(): Lease {
++        check(!forgetting) { "Pairing deletion pending or failed" }
++        return Lease(owner, stamp)
++    }
++    @Synchronized fun revoke(lease: Lease) {
++        check(!insideEffect && lease.owner === owner) { "Invalid pairing revocation" }
++        lease.revoked = true
++    }
++    @Synchronized fun <T> use(lease: Lease, effect: () -> T): T {
++        check(!insideEffect && !forgetting && lease.owner === owner && lease.stamp === stamp && !lease.revoked) {
++            "Pairing request revoked"
++        }
++        insideEffect = true
++        try { return effect() } finally { insideEffect = false }
++    }
++    @Synchronized fun beginForget(): Forget {
++        check(!insideEffect) { "Reentrant pairing deletion" }
++        stamp = Any()
++        forgetting = true
++        return Forget(owner, stamp)
++    }
++    @Synchronized fun finishForget(token: Forget, delete: () -> Unit) {
++        check(!insideEffect && forgetting && token.owner === owner && token.stamp === stamp) {
++            "Obsolete pairing deletion"
++        }
++        insideEffect = true
++        try {
++            delete()
++            forgetting = false
++        } finally { insideEffect = false }
++    }
++}
+diff --git a/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiPairingStore.kt b/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiPairingStore.kt
+new file mode 100644
+index 0000000..d814321
+--- /dev/null
++++ b/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiPairingStore.kt
+@@ -0,0 +1,92 @@
++package com.sentinel.quantum.ai
++
++import android.content.Context
++import android.security.keystore.KeyGenParameterSpec
++import android.security.keystore.KeyProperties
++import android.util.AtomicFile
++import java.io.File
++import java.security.KeyStore
++import javax.crypto.Cipher
++import javax.crypto.KeyGenerator
++import javax.crypto.SecretKey
++import javax.crypto.spec.GCMParameterSpec
++
++internal object SentinelAiPairingStore {
++    private const val ALIAS = "sentinel_ai_pairing_aes_v1"
++
++    private fun file(context: Context) = AtomicFile(
++        File(context.applicationContext.noBackupFilesDir, "sentinel-ai-pairing-v1")
++    )
++
++    fun exists(context: Context): Boolean {
++        val base = file(context).baseFile
++        return base.exists() || File(base.path + ".bak").exists()
++    }
++
++    private fun store() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
++
++    private fun key(create: Boolean): SecretKey {
++        val store = store()
++        if (store.containsAlias(ALIAS)) {
++            return store.getKey(ALIAS, null) as? SecretKey
++                ?: error("Pairing key unavailable")
++        }
++        check(create) { "Pairing key unavailable" }
++        return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
++            init(KeyGenParameterSpec.Builder(
++                ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
++            ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
++                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
++                .setKeySize(256)
++                .build())
++            generateKey()
++        }
++    }
++
++    @Synchronized fun save(context: Context, pairing: ByteArray) {
++        require(pairing.size == 32)
++        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
++        cipher.init(Cipher.ENCRYPT_MODE, key(true))
++        val iv = cipher.iv
++        check(iv.size == 12)
++        val encrypted = cipher.doFinal(pairing)
++        val target = file(context)
++        val output = target.startWrite()
++        try {
++            output.write(byteArrayOf(1))
++            output.write(iv)
++            output.write(encrypted)
++            target.finishWrite(output)
++        } catch (error: Exception) {
++            target.failWrite(output)
++            throw error
++        }
++    }
++
++    @Synchronized fun load(context: Context): ByteArray {
++        val data = file(context).openRead().use { input ->
++            val buffer = ByteArray(62)
++            var count = 0
++            while (count < buffer.size) {
++                val n = input.read(buffer, count, buffer.size - count)
++                if (n < 0) break
++                count += n
++            }
++            buffer.copyOf(count)
++        }
++        check(data.size == 61 && data[0] == 1.toByte()) { "Pairing data rejected" }
++        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
++        cipher.init(Cipher.DECRYPT_MODE, key(false),
++            GCMParameterSpec(128, data.copyOfRange(1, 13)))
++        return cipher.doFinal(data.copyOfRange(13, 61)).also {
++            check(it.size == 32)
++        }
++    }
++
++    @Synchronized fun forget(context: Context) {
++        val store = store()
++        if (store.containsAlias(ALIAS)) store.deleteEntry(ALIAS)
++        file(context).delete()
++        check(!exists(context)) { "Pairing deletion failed" }
++    }
++}
+diff --git a/native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiPairingCoordinatorTest.kt b/native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiPairingCoordinatorTest.kt
+new file mode 100644
+index 0000000..071c675
+--- /dev/null
++++ b/native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiPairingCoordinatorTest.kt
+@@ -0,0 +1,84 @@
++package com.sentinel.quantum.ai
++
++import org.junit.Assert.*
++import org.junit.Test
++import java.util.concurrent.CountDownLatch
++import java.util.concurrent.Executors
++import java.util.concurrent.TimeUnit
++
++class SentinelAiPairingCoordinatorTest {
++    @Test fun forgottenPairingCannotBeRestoredByAnOlderRequest() {
++        val gate = SentinelAiPairingCoordinator()
++        val old = gate.capture()
++        val forget = gate.beginForget()
++        var stored = true
++        gate.finishForget(forget) { stored = false }
++        assertThrows(IllegalStateException::class.java) { gate.use(old) { stored = true } }
++        assertFalse(stored)
++        gate.use(gate.capture()) { stored = true }
++        assertTrue(stored)
++    }
++    @Test fun sessionRevocationRejectsItsPendingSaveWithoutRevokingOtherSessions() {
++        val gate = SentinelAiPairingCoordinator()
++        val revoked = gate.capture(); val other = gate.capture()
++        gate.revoke(revoked)
++        assertThrows(IllegalStateException::class.java) { gate.use(revoked) { fail("Late save") } }
++        assertEquals(42, gate.use(other) { 42 })
++    }
++    @Test fun forgetDeniesNewRequestsUntilDeletionSucceeds() {
++        val gate = SentinelAiPairingCoordinator()
++        val token = gate.beginForget()
++        assertThrows(IllegalStateException::class.java) { gate.capture() }
++        assertThrows(IllegalStateException::class.java) { gate.finishForget(token) { error("Disk error") } }
++        assertThrows(IllegalStateException::class.java) { gate.capture() }
++        gate.finishForget(gate.beginForget()) { }
++        gate.use(gate.capture()) { }
++    }
++    @Test fun obsoleteForgetCompletionCannotUnlockANewerForget() {
++        val gate = SentinelAiPairingCoordinator()
++        val old = gate.beginForget();val current = gate.beginForget()
++        assertThrows(IllegalStateException::class.java) { gate.finishForget(old) { fail("Obsolete delete") } }
++        assertThrows(IllegalStateException::class.java) { gate.capture() }
++        gate.finishForget(current) { }
++        gate.capture()
++    }
++    @Test fun foreignTicketsAreRejected() {
++        val first = SentinelAiPairingCoordinator();val second = SentinelAiPairingCoordinator()
++        assertThrows(IllegalStateException::class.java) { second.use(first.capture()) { fail("Foreign save") } }
++    }
++    @Test fun forgetWaitsForEarlierSaveThenPreventsLateSaveAcrossThreads() {
++        val gate = SentinelAiPairingCoordinator();val ticket = gate.capture()
++        val entered = CountDownLatch(1);val release = CountDownLatch(1);val requested = CountDownLatch(1)
++        val pool = Executors.newFixedThreadPool(2)
++        var stored = false
++        try {
++            val save = pool.submit { gate.use(ticket) {
++                entered.countDown();check(release.await(3, TimeUnit.SECONDS));stored = true
++            } }
++            assertTrue(entered.await(3, TimeUnit.SECONDS))
++            val forget = pool.submit {
++                requested.countDown()
++                val token = gate.beginForget()
++                gate.finishForget(token) { stored = false }
++            }
++            assertTrue(requested.await(3, TimeUnit.SECONDS))
++            assertFalse(forget.isDone)
++            release.countDown();save.get(3, TimeUnit.SECONDS);forget.get(3, TimeUnit.SECONDS)
++            assertFalse(stored)
++            assertThrows(IllegalStateException::class.java) { gate.use(ticket) { stored = true } }
++        } finally { release.countDown();pool.shutdownNow() }
++    }
++    @Test fun revokeWaitsForEarlierSaveBeforeAcknowledgingCompletion() {
++        val gate = SentinelAiPairingCoordinator();val ticket = gate.capture()
++        val entered = CountDownLatch(1);val release = CountDownLatch(1);val requested = CountDownLatch(1)
++        val pool = Executors.newFixedThreadPool(2)
++        try {
++            val save = pool.submit { gate.use(ticket) { entered.countDown();check(release.await(3,TimeUnit.SECONDS)) } }
++            assertTrue(entered.await(3,TimeUnit.SECONDS))
++            val revoke = pool.submit { requested.countDown();gate.revoke(ticket) }
++            assertTrue(requested.await(3,TimeUnit.SECONDS));assertFalse(revoke.isDone)
++            release.countDown();save.get(3,TimeUnit.SECONDS);revoke.get(3,TimeUnit.SECONDS)
++            assertThrows(IllegalStateException::class.java) { gate.use(ticket) { fail("Save after revoke") } }
++        } finally { release.countDown();pool.shutdownNow() }
++    }
++}

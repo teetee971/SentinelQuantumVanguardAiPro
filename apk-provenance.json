@@ -1,0 +1,27 @@
+{
+  "build_source_commit": "8b7f388e82dd9c01855bba78e80c2d37c4404682",
+  "android_tree": "a494b00e21584e5c7833675b727bffd92a021c4b",
+  "artifacts": [
+    {
+      "kind": "app",
+      "file": "sentinel-cycle10-arm64-validation.apk",
+      "bytes": 48957986,
+      "sha256": "8e06f769235c19abe14aea571012a217cbc3abe0efe3ebe9626074bc55393557",
+      "package": "com.sentinel.quantum.aivalidation",
+      "certificate_sha256": "c45c6e78bc19ffa9b8fc41a6b10520fc3eefe788857bb466dd143c852096c6f6",
+      "native_libraries": 7
+    },
+    {
+      "kind": "test",
+      "file": "sentinel-cycle10-instrumentation.apk",
+      "bytes": 1138768,
+      "sha256": "22f197c8649843fdac75c1bbf438eee5ca8b7a2b8306ec2f03ae26742518d118",
+      "package": "com.sentinel.quantum.aivalidation.test",
+      "certificate_sha256": "c45c6e78bc19ffa9b8fc41a6b10520fc3eefe788857bb466dd143c852096c6f6",
+      "native_libraries": 0
+    }
+  ],
+  "physical_instrumentation_executed": false,
+  "production_go": false,
+  "delivery_source_commit": "0bfb6c26f7f9b5086a448949f406d17e0466f9a7"
+}
