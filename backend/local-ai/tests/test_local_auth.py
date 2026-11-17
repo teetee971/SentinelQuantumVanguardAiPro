@@ -65,8 +65,12 @@ def test_prompt_uses_stdin_and_never_process_arguments(monkeypatch):
     seen = {}
     class Process:
         returncode = 0
-        async def communicate(self):
-            return b'{"reply":"fixture","action":"NONE"}', b''
+        def __init__(self):
+            self.stdout = asyncio.StreamReader();self.stderr = asyncio.StreamReader()
+            self.stdout.feed_data(b'{"reply":"fixture","action":"NONE"}')
+            self.stdout.feed_eof();self.stderr.feed_eof()
+        async def wait(self):
+            return 0
     async def launch(*args, **kwargs):
         seen['args'] = args
         assert hasattr(kwargs['stdin'], 'read')
@@ -86,16 +90,26 @@ def test_cancelled_generation_terminates_and_reaps_process(monkeypatch):
     state = {'killed': False, 'reaped': False}
     class Process:
         returncode = None
-        async def communicate(self):
-            raise asyncio.CancelledError()
+        def __init__(self):
+            self.stdout = asyncio.StreamReader();self.stderr = asyncio.StreamReader()
+            self.killed = asyncio.Event()
         def kill(self):
             state['killed'] = True
+            self.returncode = -9
+            self.stdout.feed_eof();self.stderr.feed_eof();self.killed.set()
         async def wait(self):
+            await self.killed.wait()
             state['reaped'] = True
+            return self.returncode
     async def launch(*args, **kwargs):return Process()
     monkeypatch.setattr(module.asyncio, 'create_subprocess_exec', launch)
     runtime = object.__new__(module.LlamaRuntime)
     runtime.binary = Path('/test-only/runtime');runtime.model = Path('/test-only/model');runtime.busy = asyncio.Lock()
-    with pytest.raises(asyncio.CancelledError):asyncio.run(runtime.generate('test'))
+    async def run():
+        task = asyncio.create_task(runtime.generate('test'))
+        await asyncio.sleep(.02)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):await task
+    asyncio.run(run())
     assert state == {'killed': True, 'reaped': True}
     assert not runtime.busy.locked()

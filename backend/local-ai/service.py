@@ -32,6 +32,52 @@ def checked_result(data):
     return data
 
 
+async def _communicate_bounded(process, timeout_seconds=30):
+    """Drain both streams concurrently, limiting retained bytes before extending."""
+    async def read(stream, limit):
+        data = bytearray()
+        while True:
+            chunk = await stream.read(min(4096, limit - len(data) + 1))
+            if not chunk:
+                return bytes(data)
+            if len(data) + len(chunk) > limit:
+                raise HTTPException(502, 'Local generation output limit exceeded')
+            data.extend(chunk)
+
+    tasks = [asyncio.create_task(read(process.stdout, 8192)),
+             asyncio.create_task(read(process.stderr, 65536)),
+             asyncio.create_task(process.wait())]
+    try:
+        stdout, stderr, _ = await asyncio.wait_for(asyncio.gather(*tasks), timeout_seconds)
+        return stdout, stderr
+    except BaseException:
+        # Cancellation is acknowledged only after the direct model child is reaped.
+        # Shield cleanup even against repeated cancellation from a disconnect/timeout race.
+        async def cleanup():
+            if process.returncode is None:
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            # Discard pipe buffers after killing the child. Otherwise a paused
+            # StreamReader transport can prevent process.wait() from completing.
+            async def discard(stream):
+                while await stream.read(4096):
+                    pass
+            await asyncio.gather(discard(process.stdout), discard(process.stderr), process.wait())
+        pending = asyncio.create_task(cleanup())
+        while not pending.done():
+            try:
+                await asyncio.shield(pending)
+            except asyncio.CancelledError:
+                continue
+        pending.result()
+        raise
+
+
 class LlamaRuntime:
     def __init__(self, binary, model):
         self.binary, self.model = Path(binary).resolve(), Path(model).resolve()
@@ -67,7 +113,7 @@ class LlamaRuntime:
                 process = await asyncio.create_subprocess_exec(*args, stdin=source, stdout=asyncio.subprocess.PIPE,
                                                               stderr=asyncio.subprocess.PIPE, env=env)
             try:
-                stdout, _ = await asyncio.wait_for(process.communicate(), 30)
+                stdout, _ = await _communicate_bounded(process)
             except BaseException:
                 if process.returncode is None:
                     process.kill()

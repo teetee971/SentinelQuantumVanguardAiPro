@@ -19,7 +19,10 @@ import java.util.concurrent.atomic.AtomicReference
  * its result still needs a live exact ticket, foreground consent and the authority's expiry checks.
  */
 class SentinelAiActivity : ComponentActivity() {
-    companion object { private val processGate = SentinelAiProcessGate() }
+    companion object {
+        private val processGate = SentinelAiProcessGate()
+        private val pairingGate = SentinelAiPairingCoordinator()
+    }
     private data class Runtime(val owner: SentinelAiApprovalPorts.Owner,
                                val session: SentinelAiApprovalPorts.Session, val journal: SentinelAiAuditJournal,
                                val lease: SentinelAiProcessGate.Lease)
@@ -29,6 +32,7 @@ class SentinelAiActivity : ComponentActivity() {
     private var runtime: Runtime? = null
     private var consentLease: SentinelAiProcessGate.Lease? = null
     private val engine = AtomicReference<SentinelAiLocalEngine?>(null)
+    private val pairingLease = AtomicReference<SentinelAiPairingCoordinator.Lease?>(null)
     private val proof = SentinelAiHumanConfirmation(SentinelAiAndroidClock::elapsedRealtimeMs)
     @Volatile private var foreground = false
     @Volatile private var consent = false
@@ -132,22 +136,25 @@ class SentinelAiActivity : ComponentActivity() {
             text = "Oublier l’appariement mémorisé"
             content.addView(this)
             setOnClickListener {
+                // Invalidate all older requests immediately, before queued deletion.
+                val deletion = pairingGate.beginForget()
                 revoke()
+                val forgetEpoch = epoch()
                 rememberPairing.isChecked = false
                 busy = true
                 refresh()
                 worker.execute {
                     val forgotten = try {
-                        SentinelAiPairingStore.forget(this@SentinelAiActivity)
+                        pairingGate.finishForget(deletion) {
+                            SentinelAiPairingStore.forget(this@SentinelAiActivity)
+                        }
                         true
                     } catch (_: Exception) { false }
-                    runOnUiThread {
-                        if (!isDestroyed) {
-                            busy = false
-                            status.text = if (forgotten) "Appariement oublié sur cet appareil."
-                                else "Échec de la suppression de l’appariement."
-                            refresh()
-                        }
+                    ui(forgetEpoch) {
+                        busy = false
+                        status.text = if (forgotten) "Appariement oublié sur cet appareil ; le secret du service n’est pas révoqué."
+                            else "Échec de suppression ; appariement bloqué jusqu’à un nouvel oubli réussi."
+                        refresh()
                     }
                 }
             }
@@ -251,6 +258,10 @@ class SentinelAiActivity : ComponentActivity() {
         if ((!useStored && !Regex("[0-9a-fA-F]{64}").matches(raw)) || message.text.isEmpty()) {
             status.text = "Clé locale ou demande invalide."; return
         }
+        val pairingToken = try { pairingGate.capture() } catch (_: Exception) {
+            status.text = "Appariement bloqué : terminer ou renouveler son oubli."; return
+        }
+        pairingLease.getAndSet(pairingToken)?.let { pairingGate.revoke(it) }
         val key = if (useStored) ByteArray(32) else ByteArray(32) {
             raw.substring(it * 2, it * 2 + 2).toInt(16).toByte()
         }
@@ -265,7 +276,7 @@ class SentinelAiActivity : ComponentActivity() {
                 val current = state(epoch)
                 current.journal.append(SentinelAiAuditJournal.Kind.REQUEST, SentinelAiAndroidClock.elapsedRealtimeMs())
                 if (useStored) {
-                    val saved = SentinelAiPairingStore.load(this)
+                    val saved = pairingGate.use(pairingToken) { SentinelAiPairingStore.load(this) }
                     try { saved.copyInto(key) } finally { saved.fill(0) }
                 }
                 val local = SentinelAiLocalEngine(key)
@@ -273,7 +284,10 @@ class SentinelAiActivity : ComponentActivity() {
                 val answer = local.use { it.infer(text) }
                 engine.compareAndSet(local, null)
                 check(valid(epoch))
-                if (remember) SentinelAiPairingStore.save(this, key)
+                if (remember) pairingGate.use(pairingToken) {
+                    // Process revocation and storage have one ordered completion barrier.
+                    processGate.execute(current.lease) { SentinelAiPairingStore.save(this, key) }
+                }
                 check(valid(epoch))
                 val proposal = if (answer.action == "CREATE_AUDIT_CHECKPOINT") current.session.propose(answer.action, "") else null
                 if (proposal != null) current.journal.append(SentinelAiAuditJournal.Kind.PROPOSED, SentinelAiAndroidClock.elapsedRealtimeMs())
@@ -295,7 +309,12 @@ class SentinelAiActivity : ComponentActivity() {
                 }
             } catch (_: Exception) {
                 ui(epoch) { revoke(); status.text = "Indisponible : moteur, appariement, sécurité ou journal en échec." }
-            } finally { key.fill(0); engine.getAndSet(null)?.close() }
+            } finally {
+                key.fill(0)
+                pairingLease.compareAndSet(pairingToken, null)
+                pairingGate.revoke(pairingToken)
+                engine.getAndSet(null)?.close()
+            }
         }
     }
     @Suppress("DEPRECATION")
@@ -340,6 +359,8 @@ class SentinelAiActivity : ComponentActivity() {
         }
     }
     private fun revoke() {
+        // Never hold the activity lock while waiting for a storage operation.
+        pairingLease.getAndSet(null)?.let { pairingGate.revoke(it) }
         proof.revoke()
         credential?.unregister(); credential = null
         if (::send.isInitialized) expiryTask?.let { send.removeCallbacks(it) }
