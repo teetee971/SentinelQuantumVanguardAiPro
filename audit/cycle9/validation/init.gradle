@@ -1,0 +1,10 @@
+// Explicit qualification build only. Never applied by the normal production build.
+allprojects { project ->
+    project.plugins.withId('com.android.application') {
+        project.androidComponents.finalizeDsl { dsl ->
+            dsl.defaultConfig.applicationId = 'com.sentinel.quantum.aivalidation'
+        }
+        def overlay = new File(project.rootDir, '../audit/cycle9/validation/AndroidManifest.xml')
+        project.android.sourceSets.getByName('debug').manifest.srcFile(overlay)
+    }
+}

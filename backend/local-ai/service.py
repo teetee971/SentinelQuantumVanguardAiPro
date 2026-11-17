@@ -84,6 +84,34 @@ class LlamaRuntime:
                 raise HTTPException(502, 'Local model output rejected') from exc
 
 
+
+async def _generate_while_connected(runtime, message, request):
+    """After the bounded body is consumed, only disconnect events are expected.
+    Never let an abandoned HTTP request keep the single inference slot occupied.
+    """
+    generation = asyncio.create_task(runtime.generate(message))
+    async def disconnected():
+        event = await request.receive()
+        return event.get('type') == 'http.disconnect'
+    gone = asyncio.create_task(disconnected())
+    tasks = (generation, gone)
+    try:
+        done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        if gone in done:
+            try:
+                confirmed = gone.result()
+            except Exception:
+                confirmed = False
+            raise HTTPException(499 if confirmed else 503, 'Client disconnected' if confirmed else 'Connection unavailable')
+        return generation.result()
+    finally:
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        # LlamaRuntime cancellation kills and reaps its subprocess before releasing busy.
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
 def make_app(runtime, key, clock=time.monotonic):
     if not isinstance(key, bytes) or len(key) != 32:
         raise ValueError('Pairing key must be 256 bits')
@@ -141,7 +169,7 @@ def make_app(runtime, key, clock=time.monotonic):
                     not isinstance(body['message'], str) or not 1 <= len(body['message']) <= 512 or
                     '\x00' in body['message']):
                 raise ValueError('Invalid message')
-            result = checked_result(await runtime.generate(body['message']))
+            result = checked_result(await _generate_while_connected(runtime, body['message'], request))
         except (ValueError, TypeError) as exc:
             raise HTTPException(422, 'Invalid message or recommendation') from exc
         raw = json.dumps(result, ensure_ascii=False, separators=(',', ':'))
