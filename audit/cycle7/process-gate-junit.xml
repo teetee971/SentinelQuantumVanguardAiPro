@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sentinel.quantum.ai.SentinelAiProcessGateTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-17T00:26:11.956Z" hostname="a029fdcc4328" time="0.009">
+  <properties/>
+  <testcase name="nestedEffectsAreRejected" classname="com.sentinel.quantum.ai.SentinelAiProcessGateTest" time="0.001"/>
+  <testcase name="reentrantRevocationCannotClaimCompletionInsideAnEffect" classname="com.sentinel.quantum.ai.SentinelAiProcessGateTest" time="0.001"/>
+  <testcase name="failingEffectDoesNotPoisonLockOrInventSuccess" classname="com.sentinel.quantum.ai.SentinelAiProcessGateTest" time="0.001"/>
+  <testcase name="revocationInvalidatesEveryPreviouslyCapturedLease" classname="com.sentinel.quantum.ai.SentinelAiProcessGateTest" time="0.001"/>
+  <testcase name="queuedOldLeasesNeverExecuteAfterEffectiveRevocation" classname="com.sentinel.quantum.ai.SentinelAiProcessGateTest" time="0.003"/>
+  <testcase name="revocationWaitsForAlreadyRunningSynchronousEffect" classname="com.sentinel.quantum.ai.SentinelAiProcessGateTest" time="0.002"/>
+  <testcase name="freshExplicitSessionDoesNotReactivateOldLease" classname="com.sentinel.quantum.ai.SentinelAiProcessGateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
