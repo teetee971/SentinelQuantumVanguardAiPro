@@ -39,6 +39,7 @@ class SentinelAiActivity : ComponentActivity() {
     private var pending: SentinelAiApprovalAuthority.Proposal? = null
     private var ticket: SentinelAiHumanConfirmation.Ticket? = null
     private lateinit var consentView: CheckBox
+    private lateinit var rememberPairing: CheckBox
     private lateinit var pairing: EditText
     private lateinit var message: EditText
     private lateinit var output: TextView
@@ -121,6 +122,36 @@ class SentinelAiActivity : ComponentActivity() {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             isSaveEnabled = false; content.addView(this)
         }
+        rememberPairing = CheckBox(this).apply {
+            text = "Mémoriser l’appariement sur cet appareil"
+            isSaveEnabled = false
+            isChecked = SentinelAiPairingStore.exists(this@SentinelAiActivity)
+            content.addView(this)
+        }
+        Button(this).apply {
+            text = "Oublier l’appariement mémorisé"
+            content.addView(this)
+            setOnClickListener {
+                revoke()
+                rememberPairing.isChecked = false
+                busy = true
+                refresh()
+                worker.execute {
+                    val forgotten = try {
+                        SentinelAiPairingStore.forget(this@SentinelAiActivity)
+                        true
+                    } catch (_: Exception) { false }
+                    runOnUiThread {
+                        if (!isDestroyed) {
+                            busy = false
+                            status.text = if (forgotten) "Appariement oublié sur cet appareil."
+                                else "Échec de la suppression de l’appariement."
+                            refresh()
+                        }
+                    }
+                }
+            }
+        }
         message = EditText(this).apply {
             hint = "Demande au modèle local (512 caractères maximum)"
             filters = arrayOf(android.text.InputFilter.LengthFilter(512))
@@ -128,7 +159,25 @@ class SentinelAiActivity : ComponentActivity() {
         }
         send = Button(this).apply { text = "Demander une proposition"; tag = "sentinel_ai_send"; content.addView(this) }
         label("Réponse du modèle (ne constitue pas une autorisation) :")
-        output = label("")
+        output = label("").apply { setTextIsSelectable(true) }
+        Button(this).apply {
+            text = "Copier la réponse et le statut"
+            tag = "sentinel_ai_copy"
+            content.addView(this)
+            setOnClickListener {
+                val reply = output.text.toString()
+                if (reply.isBlank()) {
+                    Toast.makeText(this@SentinelAiActivity, "Aucune réponse à copier.", Toast.LENGTH_SHORT).show()
+                } else {
+                    val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText(
+                        "Réponse IA locale",
+                        reply + "\n\nStatut : " + status.text.toString()
+                    ))
+                    Toast.makeText(this@SentinelAiActivity, "Réponse et statut copiés.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
         label("Seule action disponible : enregistrer un point de contrôle sans données personnelles dans le journal IA.")
         approve = Button(this).apply { text = "Confirmer le point de contrôle avec le verrouillage Android"; content.addView(this) }
         val cancel = Button(this).apply { text = "Annuler et révoquer la session"; content.addView(this); setOnClickListener { revoke() } }
@@ -139,6 +188,7 @@ class SentinelAiActivity : ComponentActivity() {
         }
         status = label(if (localPolicy()) "Indisponible jusqu’au consentement et à la connexion au moteur local."
                       else "Indisponible : le transport local HTTP n’est pas autorisé par la politique Android actuelle.")
+        status.setTextIsSelectable(true)
         setContentView(ScrollView(this).apply { addView(content) })
         consentView.setOnCheckedChangeListener { _, checked ->
             synchronized(lock) {
@@ -196,10 +246,14 @@ class SentinelAiActivity : ComponentActivity() {
         if (!foreground || !consent || busy || !localPolicy()) return
         if (!valid(epoch())) { revoke(); status.text = "Session invalidée ; un nouveau consentement est requis."; return }
         val raw = pairing.text.toString().trim()
-        if (!Regex("[0-9a-fA-F]{64}").matches(raw) || message.text.isEmpty()) {
+        val remember = rememberPairing.isChecked
+        val useStored = raw.isEmpty() && remember
+        if ((!useStored && !Regex("[0-9a-fA-F]{64}").matches(raw)) || message.text.isEmpty()) {
             status.text = "Clé locale ou demande invalide."; return
         }
-        val key = ByteArray(32) { raw.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+        val key = if (useStored) ByteArray(32) else ByteArray(32) {
+            raw.substring(it * 2, it * 2 + 2).toInt(16).toByte()
+        }
         val text = message.text.toString()
         pairing.text.clear(); message.text.clear()
         val epoch = epoch()
@@ -210,11 +264,16 @@ class SentinelAiActivity : ComponentActivity() {
             try {
                 val current = state(epoch)
                 current.journal.append(SentinelAiAuditJournal.Kind.REQUEST, SentinelAiAndroidClock.elapsedRealtimeMs())
+                if (useStored) {
+                    val saved = SentinelAiPairingStore.load(this)
+                    try { saved.copyInto(key) } finally { saved.fill(0) }
+                }
                 val local = SentinelAiLocalEngine(key)
-                key.fill(0)
                 synchronized(lock) { if (!valid(epoch)) { local.close(); error("Session closed") }; engine.set(local) }
                 val answer = local.use { it.infer(text) }
                 engine.compareAndSet(local, null)
+                check(valid(epoch))
+                if (remember) SentinelAiPairingStore.save(this, key)
                 check(valid(epoch))
                 val proposal = if (answer.action == "CREATE_AUDIT_CHECKPOINT") current.session.propose(answer.action, "") else null
                 if (proposal != null) current.journal.append(SentinelAiAuditJournal.Kind.PROPOSED, SentinelAiAndroidClock.elapsedRealtimeMs())

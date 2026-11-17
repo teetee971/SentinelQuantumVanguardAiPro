@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import math
 import os
 import secrets
 import time
@@ -132,7 +133,7 @@ def make_app(runtime, key, clock=time.monotonic):
     def now():
         nonlocal last_time, poisoned
         value = clock()
-        if poisoned or value < 0 or value < last_time:
+        if poisoned or not math.isfinite(value) or value < 0 or value < last_time:
             poisoned = True
             pending.clear()
             raise HTTPException(503, 'Clock unavailable')
@@ -169,7 +170,10 @@ def make_app(runtime, key, clock=time.monotonic):
         except UnicodeError as exc:
             raise HTTPException(422, 'Invalid request') from exc
         expected = mac(key, 'client\0' + nonce + '\0' + text)
-        if not hmac.compare_digest(expected, request.headers.get('X-Sentinel-Mac', '')):
+        supplied_mac = request.headers.get('X-Sentinel-Mac', '')
+        if (len(supplied_mac) != 64
+                or any(c not in '0123456789abcdef' for c in supplied_mac)
+                or not hmac.compare_digest(expected, supplied_mac)):
             raise HTTPException(401, 'Pairing authentication failed')
         try:
             body = json.loads(text)
@@ -191,12 +195,29 @@ if __name__ == '__main__':
     parser.add_argument('--binary', required=True)
     parser.add_argument('--model', required=True)
     parser.add_argument('--pairing-file', required=True, help='NEW private file; contents are never printed')
+    parser.add_argument('--reuse-pairing-file', action='store_true')
     args = parser.parse_args()
     runtime = LlamaRuntime(args.binary, args.model)
-    key = secrets.token_bytes(32)
-    fd = os.open(args.pairing_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(fd, 'w') as output:
-        output.write(key.hex() + '\n')
+    if args.reuse_pairing_file:
+        import stat
+        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+        fd = os.open(args.pairing_file, flags)
+        with os.fdopen(fd, 'rb') as source:
+            info = os.fstat(source.fileno())
+            if (not stat.S_ISREG(info.st_mode)
+                    or info.st_uid != os.getuid()
+                    or stat.S_IMODE(info.st_mode) != 0o600):
+                raise ValueError('Pairing file must be private, owned, and mode 0600')
+            raw = source.read(66)
+        if (len(raw) != 65 or raw[-1:] != b'\n'
+                or any(c not in b'0123456789abcdef' for c in raw[:64])):
+            raise ValueError('Invalid pairing file')
+        key = bytes.fromhex(raw[:64].decode('ascii'))
+    else:
+        key = secrets.token_bytes(32)
+        fd = os.open(args.pairing_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, 'w') as output:
+            output.write(key.hex() + '\n')
     import uvicorn
     # Fixed loopback binding. No public host, remote model endpoint or billing setting.
     uvicorn.run(make_app(runtime, key), host='127.0.0.1', port=18080, access_log=False)
