@@ -37,7 +37,16 @@ def main():
             service = status(args.service_pid)
             frame['service_alive'] = True
             frame['service_fds'] = len(list(Path(f'/proc/{args.service_pid}/fd').iterdir()))
-            children = Path(f'/proc/{args.service_pid}/task/{args.service_pid}/children').read_text().split()
+            child_file=Path(f'/proc/{args.service_pid}/task/{args.service_pid}/children')
+            if child_file.exists():children=child_file.read_text().split()
+            else:
+                children=[]
+                for item in Path('/proc').iterdir():
+                    if not item.name.isdigit():continue
+                    try:
+                        info=status(item.name)
+                        if info.get('PPid')==str(args.service_pid) and info.get('Uid','').split()[0]==uid:children.append(item.name)
+                    except (OSError,IndexError):continue
             for pid in children:
                 try:
                     info = status(pid)

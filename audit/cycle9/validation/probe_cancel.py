@@ -17,7 +17,17 @@ def mac(key, text):return hmac.new(key,text.encode(),hashlib.sha256).hexdigest()
 
 def children(parent):
     path=Path(f'/proc/{parent}/task/{parent}/children')
-    return [int(v) for v in path.read_text().split()]
+    if path.exists():return [int(v) for v in path.read_text().split()]
+    # Some Android/container kernels omit task/children. PPid is an observation fallback.
+    own_uid=next(line.split()[1] for line in Path('/proc/self/status').read_text().splitlines() if line.startswith('Uid:'))
+    found=[]
+    for item in Path('/proc').iterdir():
+        if not item.name.isdigit():continue
+        try:
+            values={line.split(':',1)[0]:line.split(':',1)[1].strip() for line in (item/'status').read_text().splitlines() if ':' in line}
+            if values.get('PPid')==str(parent) and values.get('Uid','').split()[0]==own_uid:found.append(int(item.name))
+        except (OSError,IndexError):continue
+    return found
 
 async def run(args):
     key=bytes.fromhex(args.pairing_file.read_text().strip())

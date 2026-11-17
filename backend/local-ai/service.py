@@ -85,6 +85,15 @@ class LlamaRuntime:
 
 
 
+async def _read_bounded_body(request):
+    data = bytearray()
+    async for chunk in request.stream():
+        if len(data) + len(chunk) > 4096:
+            raise HTTPException(413, 'Request too large')
+        data.extend(chunk)
+    return data
+
+
 async def _generate_while_connected(runtime, message, request):
     """After the bounded body is consumed, only disconnect events are expected.
     Never let an abandoned HTTP request keep the single inference slot occupied.
@@ -147,11 +156,10 @@ def make_app(runtime, key, clock=time.monotonic):
 
     @app.post('/infer')
     async def infer(request: Request):
-        data = bytearray()
-        async for chunk in request.stream():
-            data.extend(chunk)
-            if len(data) > 4096:
-                raise HTTPException(413, 'Request too large')
+        try:
+            data = await asyncio.wait_for(_read_bounded_body(request), 2)
+        except asyncio.TimeoutError as exc:
+            raise HTTPException(408, 'Request body timeout') from exc
         nonce = request.headers.get('X-Sentinel-Nonce', '')
         expiry = pending.pop(nonce, None)  # Every attempt consumes its server-issued capability.
         if expiry is None or now() >= expiry:

@@ -114,3 +114,27 @@ def test_disconnect_racing_with_generation_never_returns_a_success():
         await asyncio.wait_for(app(scope, receive, send), 2)
         assert statuses == [499], 'Observed disconnect must not produce a successful ASGI response'
     asyncio.run(run())
+
+
+def test_incomplete_unauthenticated_body_has_a_total_deadline():
+    async def run():
+        class UnusedRuntime:
+            async def generate(self, message):
+                raise AssertionError('Unauthenticated body must not reach inference')
+        app = service.make_app(UnusedRuntime(), KEY)
+        first = True
+        async def receive():
+            nonlocal first
+            if first:
+                first = False
+                return {'type':'http.request','body':b'{','more_body':True}
+            await asyncio.Event().wait()
+        statuses=[]
+        async def send(message):
+            if message['type']=='http.response.start':statuses.append(message['status'])
+        scope={'type':'http','asgi':{'version':'3.0'},'http_version':'1.1','method':'POST','scheme':'http',
+               'path':'/infer','raw_path':b'/infer','query_string':b'','root_path':'','headers':[],
+               'client':('127.0.0.1',12345),'server':('127.0.0.1',18080)}
+        await asyncio.wait_for(app(scope,receive,send),3)
+        assert statuses==[408]
+    asyncio.run(run())
