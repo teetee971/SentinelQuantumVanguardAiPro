@@ -14,6 +14,7 @@ Décision produit du 18 novembre 2026 : lancement public gratuit, sans abonnemen
 | Divulgations visibles | [divulgations-visibles-v1.md](divulgations-visibles-v1.md) | Textes de divulgation et de consentement, avec ce qui est déjà dans l’application |
 | Vérification de l’offre | [verification-offre-v1.md](verification-offre-v1.md) | Paiement, publicité, compte, fiche, permissions et deux écarts techniques |
 | Compte développeur personnel | [compte-developpeur-personnel.md](compte-developpeur-personnel.md) | Obligations lues pour un compte personnel, sans supposer leur applicabilité |
+| Audit contradictoire | [AUDIT-CONTRADICTOIRE-20261118.md](AUDIT-CONTRADICTOIRE-20261118.md) | Verdict NO-GO. Conteste les conclusions précédentes. |
 
 ## Identité du build examiné
 

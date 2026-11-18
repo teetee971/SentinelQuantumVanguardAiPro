@@ -29,20 +29,24 @@ Cette décision ne crée pas une société, une entreprise individuelle, ni un a
 
 ## Qui est responsable
 
-La personne qui publie l’application est une personne physique. Son identité légale n’est pas écrite ici.
+La personne qui publie l’application est une personne physique. Les éléments ci-dessous reprennent ce qui a été établi le 4 novembre 2026 pour le compte Play déjà ouvert. Ils ne créent pas une société.
 
 | Information | Valeur |
 | --- | --- |
-| Application | Sentinel Phone Core |
-| Statut professionnel déclaré | Aucune société ni entreprise individuelle immatriculée n’est déclarée au 18 novembre 2026 |
-| Nom du développeur affiché sur Google Play | [[À COMPLÉTER : nom choisi pour la fiche, qui peut différer du nom légal]] |
-| Nom légal de la personne | [[À COMPLÉTER : nom figurant sur la pièce d’identité utilisée pour le compte Play]] |
-| Pays de l’adresse légale | [[À COMPLÉTER : pays]] |
-| Adresse postale légale | [[À COMPLÉTER : adresse exigée par le compte développeur. Ne pas l’inventer.]] |
-| E-mail affiché sur Google Play | [[À COMPLÉTER : adresse e-mail surveillée]] |
-| E-mail de support | [[À COMPLÉTER : adresse e-mail de support, si elle est distincte]] |
-| Téléphone du compte développeur | [[À COMPLÉTER : numéro communiqué à Google, s’il ne doit pas être public le préciser]] |
+| Application annoncée dans la Console | Le développeur indique « Sentinel Quantum Pro », déjà créée. Ce nom n’a pas été relu dans la Console. Le libellé du profil V1 dans le source est Sentinel Phone Core. Les deux doivent être alignés avant publication. |
+| Paquet de publication | `com.sentinel.quantum` |
+| Compte développeur | Personnel, déjà créé. Ne pas en ouvrir un second. |
+| Statut commercial déclaré en novembre 2026 | Non-professionnel, non-trader. Ce statut n’est pas une autorisation permanente. Il doit rester vrai par rapport à l’activité réelle. [Déclaration trader](https://support.google.com/googleplay/android-developer/answer/17594752). |
+| Statut professionnel | Aucune société ni entreprise individuelle immatriculée n’est déclarée |
+| Éditeur déclaré | Thierry Naud, personne physique |
+| Nom légal à faire correspondre à la pièce d’identité | Thierry Naud, sous réserve que la Console et la pièce portent exactement ce nom. [[À COMPLÉTER : confirmer l’orthographe enregistrée dans le profil Payments.]] |
+| Pays de l’adresse légale | [[À COMPLÉTER : pays enregistré dans le compte]] |
+| Adresse postale légale | [[À COMPLÉTER : adresse déjà enregistrée dans le compte. Ne pas l’inventer.]] |
+| E-mail Play, support et confidentialité | sentinelquantumvanguardaipro@gmail.com |
+| Téléphone du compte développeur | [[À COMPLÉTER : numéro déjà communiqué à Google, s’il existe]] |
 | Délégué à la protection des données | [[À COMPLÉTER : nom et contact, ou la mention exacte « non désigné »]] |
+
+L’adresse `sentinelquantumvanguardaipro@gmail.com` est le seul contact fourni. Elle peut recevoir les demandes de confidentialité et le support en plus du contact Play. Une seule boîte convient si elle est lue. Cette revue n’a pas envoyé de message et ne confirme pas que la boîte est surveillée.
 
 Google indique qu’un compte personnel affiche le nom légal, le pays et l’e-mail développeur. L’adresse complète est affichée si l’application est monétisée. Cette version n’est pas monétisée. Le nom qui apparaîtra sur la fiche doit être le même dans cette politique. [Informations exigées pour un compte personnel](https://support.google.com/googleplay/android-developer/answer/13628312).
 
@@ -112,7 +116,7 @@ Les empreintes de numéros utilisent HMAC-SHA256 et une clé du coffre Android. 
 
 Aucun compte n’est prévu pour cette version. La suppression d’un compte en ligne ne s’applique donc pas. Cette affirmation vient de la décision produit du 18 novembre 2026 et du graphe V1, qui n’ouvre pas d’écran de connexion. Elle doit être revérifiée sur l’AAB signé soumis : le code Auth0 reste compilé dans le module, même si ses activités sont retirées du manifeste V1.
 
-Pour une demande portant sur une donnée que la personne qui publie détiendrait réellement, écrire à [[À COMPLÉTER : e-mail confidentialité]]. Cette personne ne peut pas, depuis un serveur, effacer le répertoire, les SMS ou le journal d’appels qui ne sont présents que sur le téléphone.
+Pour une demande portant sur une donnée que Thierry Naud détiendrait réellement, écrire à sentinelquantumvanguardaipro@gmail.com. Il ne peut pas, depuis un serveur, effacer le répertoire, les SMS ou le journal d’appels qui ne sont présents que sur le téléphone.
 
 ## Base du traitement
 

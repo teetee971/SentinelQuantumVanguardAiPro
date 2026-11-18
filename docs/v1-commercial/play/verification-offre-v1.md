@@ -48,8 +48,8 @@ Ils sont toujours ouverts. Cette revue ne modifie pas le code.
 
 | Écart | Preuve relue | Effet |
 | --- | --- | --- |
-| Lien de confidentialité | `CommercialPhoneCoreScreens.kt` ouvre la politique de la vitrine. | La politique User Data n’est pas satisfaite tant que l’URL publiée et le bouton ne montrent pas la politique V1. |
-| Téléchargement des catalogues | L’interrupteur des paramètres commande le travail périodique. `SentinelDialerActivity.lookup()` appelle les clients ARCEP ou RTR, qui téléchargent la copie si elle n’est pas déjà en mémoire. | Une recherche manuelle peut sortir du téléphone sans le choix écrit dans `divulgations-visibles-v1.md`. |
+| Lien de confidentialité | `CommercialPhoneCoreScreens.kt` lignes 134-137 ouvrent `public/privacy.html`. | La politique User Data n’est pas satisfaite tant que l’URL publiée et le bouton ne montrent pas la politique V1. |
+| Téléchargement des catalogues | L’interrupteur ne commande que WorkManager. `SentinelDialerActivity.lookup()` et, sans geste de recherche, `CallerIdActivity` lignes 172-179 appellent `ArcepDirectoryClient.lookup()`, qui télécharge la copie si elle n’est pas déjà en mémoire. | Le premier appel français affiché peut provoquer un GET sans le consentement de l’interrupteur. |
 
 ## 6. Compte développeur personnel
 

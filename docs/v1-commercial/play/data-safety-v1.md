@@ -10,41 +10,33 @@ Ce brouillon ne reprend pas `docs/PLAY-DATA-SAFETY.md`. Ce fichier-là décrit l
 
 | Question du formulaire | Réponse proposée | Pourquoi |
 | --- | --- | --- |
-| L’application collecte-t-elle ou partage-t-elle des types de données du formulaire ? | Oui | Deux transmissions sortent du téléphone : les appels, SMS et MMS remis à l’opérateur, et le téléchargement HTTPS des catalogues. |
-| Toutes les données collectées sont-elles chiffrées en transit ? | Non | Les catalogues sont en HTTPS. Les SMS et la voix passent par l’opérateur. L’application n’ajoute pas de chiffrement de bout en bout. Répondre Oui serait faux. |
+| L’application collecte-t-elle ou partage-t-elle des types de données du formulaire ? | Non démontré pour les appels et les SMS. Ouvert pour les catalogues. | Le texte d’aide dit que collecter signifie transmettre une donnée hors du téléphone. Il excepte le traitement qui reste sur l’appareil. Aucun code V1 relu n’envoie le corps d’un SMS, le journal ou l’audio d’un appel à un serveur Sentinel. Le transport opérateur n’est pas, à lui seul, une collecte par le développeur. Le GET des catalogues, lui, sort du téléphone. |
+| Toutes les données collectées sont-elles chiffrées en transit ? | Ne pas répondre tant que le périmètre de collecte n’est pas figé. | Si la seule transmission retenue est le GET HTTPS des catalogues, le chiffrement en transit de cette requête est HTTPS. Cela ne chiffre pas les SMS ni la voix de l’opérateur. |
 | Les personnes peuvent-elles demander la suppression des données collectées ? | Oui, pour les données détenues sur le téléphone par l’application. Non pour un compte, qui n’existe pas. | Historique de filtrage, journal de diagnostic, préférences et désinstallation. L’éditeur ne détient pas de copie serveur du répertoire, des SMS ou du journal. [[À COMPLÉTER : conservation réelle des journaux d’hébergement des catalogues, et moyen de les effacer.]] |
 | L’application permet-elle de créer un compte ? | Non | Décision produit du 18 novembre 2026. Le graphe V1 n’ouvre pas `SettingsScreen` ni Auth0. Les activités Auth0 sont retirées du manifeste. Le code Auth0 reste compilé : le reconfirmer sur l’AAB signé. L’URL de suppression de compte n’est pas exigée tant qu’aucun compte n’existe. [Suppression de compte](https://support.google.com/googleplay/android-developer/answer/13327111). |
 | L’application contient-elle des annonces ? | Non | Aucun SDK `play-services-ads` ni autre SDK publicitaire dans les fichiers Gradle du module Android. Aucun écran publicitaire dans le graphe V1. [Déclaration Annonces](https://support.google.com/googleplay/android-developer/answer/9859455). |
 | Fonctions financières | L’application ne fournit aucune fonction financière | Pas de bibliothèque Billing, pas d’achat, pas de portefeuille. Les SMS ne servent pas au suivi budgétaire ni au paiement. [Déclaration Financial features](https://support.google.com/googleplay/android-developer/answer/13849271). |
 
-## Types à déclarer comme collectés
+## Correction du 18 novembre 2026 au soir
 
-### Numéro de téléphone
+Une version précédente de cette feuille classait le numéro, les SMS et les MMS comme collectés parce que l’opérateur les achemine. Cette classification est retirée. Elle dépassait la preuve : le code V1 relu ne transmet pas ces contenus à un serveur du développeur. Le transport de l’opérateur reste le transport de l’opérateur.
 
-- Collecté : oui. Partagé : non, au sens Play, si l’opérateur est traité comme le réseau qui achemine l’appel ou le message demandé, et si aucun serveur de l’éditeur ne reçoit le numéro.
-- Éphémère côté éditeur : oui, seulement si l’éditeur confirme qu’il ne conserve aucune copie. Le formulaire demande quand même de le déclarer. L’opérateur peut conserver ses propres traces : l’éditeur ne les contrôle pas.
-- Facultatif : oui. L’accueil s’ouvre sans rôle. Le numéro sort du téléphone quand la personne passe un appel ou envoie un message.
-- Finalité : fonctionnalité de l’application. Pas d’analyse d’audience, de publicité, de personnalisation ni de gestion de compte.
-- Ne pas déclarer le numéro comme identifiant publicitaire.
+## Types à ne pas déclarer comme collectés par le développeur, sur la preuve actuelle
 
-### SMS ou MMS
+### Numéro de téléphone, SMS et MMS
 
-- Collecté : oui, pour le message que la personne envoie et pour le MMS téléchargé via l’API opérateur. Le message reçu, lu ensuite dans le fournisseur Android et non renvoyé, reste un traitement local.
-- Partagé : non vers l’éditeur. L’export de 100 SMS n’est pas un partage à déclarer s’il reste une action choisie, avec confirmation, vers l’application que la personne désigne. Le décrire dans la politique reste obligatoire. [User Data](https://support.google.com/googleplay/android-developer/answer/10144311).
-- Éphémère côté éditeur : oui, sous la même réserve que le numéro. Le fournisseur Android, lui, conserve le message sur le téléphone.
-- Facultatif : oui. Sans rôle SMS, l’envoi et la lecture sont fermés.
-- Finalité : fonctionnalité de l’application.
-- Chiffrement : ne pas déclarer les SMS comme chiffrés en transit par Sentinel.
+- Lecture et envoi : locaux, ou remis à Android puis à l’opérateur.
+- Aucune requête relue ne place le numéro ou le texte dans un URL ou un corps envoyé à `pages.dev` ou à `onrender.com` lorsque le profil V1 est actif. La réputation distante est coupée par `COMMERCIAL_PHONE_CORE_V1`.
+- L’export de 100 SMS est une action choisie, avec confirmation, vers l’application que la personne désigne. Le décrire dans la politique. Ne pas le déclarer comme un partage vers le développeur. [User Data](https://support.google.com/googleplay/android-developer/answer/10144311).
+- Ne pas répondre « chiffré de bout en bout » pour les SMS ou la voix.
 
-### Identifiants d’appareil ou autres identifiants
+### Identifiants d’appareil
 
-- Collecté : oui pour l’adresse IP vue par l’hôte lors du GET des catalogues. La requête ne contient pas le numéro recherché. L’en-tête ajouté par le code est `Accept: application/json`. OkHttp ajoute son en-tête technique habituel.
-- Adresses : `https://sentinelquantumvanguardaipro.pages.dev/public/data/arcep-numbering.json` et `https://sentinelquantumvanguardaipro.pages.dev/public/data/rtr-numbering.json`.
-- Partagé : non, si l’hébergeur n’est qu’un sous-traitant qui délivre le fichier pour l’éditeur. [[À COMPLÉTER : nom du sous-traitant, instruction de traitement, et absence de revente.]]
-- Éphémère : [[À COMPLÉTER : oui seulement si les journaux ne sont pas conservés au-delà de la requête. Sinon, non.]]
-- Facultatif : oui pour l’actualisation périodique, qui est un interrupteur désactivé par défaut. La recherche manuelle peut télécharger sans cet interrupteur. Tant que ce chemin existe, ne pas présenter la collecte comme entièrement coupée par le réglage. Voir le blocage dans les divulgations.
-- Finalité : fonctionnalité de l’application.
-- Ne pas déclarer une position approximative déduite de l’adresse IP : le code ne fait pas cette déduction. Si l’hébergeur le fait de son côté, l’éditeur doit le déclarer. [[À COMPLÉTER : confirmer l’absence d’usage de l’IP comme position.]]
+Le client des catalogues ne lit pas l’adresse IP et ne l’écrit pas dans la requête. La requête est un GET sans paramètre de numéro. L’hôte voit néanmoins l’adresse IP de la connexion. La durée de conservation de ces journaux n’est pas connue. Ne pas cocher « identifiant d’appareil collecté » tant que ce point n’est pas établi. Ne pas cocher non plus « aucune donnée ne sort » : le GET a lieu.
+
+Les URL concernées sont `https://sentinelquantumvanguardaipro.pages.dev/public/data/arcep-numbering.json` et `https://sentinelquantumvanguardaipro.pages.dev/public/data/rtr-numbering.json`. L’en-tête ajouté par le code est `Accept: application/json`. [[À COMPLÉTER : conservation des journaux de l’hôte, et usage ou non de l’adresse IP comme position.]]
+
+L’interrupteur d’actualisation ne coupe pas le GET déclenché par la fiche d’appel ni par la recherche du composeur. Voir l’audit contradictoire.
 
 ## Types à ne pas cocher comme collectés
 
@@ -53,7 +45,7 @@ Ces données sont lues ou écrites sur le téléphone et ne sont pas transmises 
 | Type Play | Traitement V1 |
 | --- | --- |
 | Contacts | Lecture locale du nom et de l’organisation après autorisation. Pas d’envoi. |
-| Journal d’appels, au-delà du numéro remis à l’opérateur pour l’appel en cours | Lecture locale des récents après le rôle Téléphone. Pas d’envoi du journal. |
+| Journal d’appels | Lecture locale des récents après le rôle Téléphone. Pas d’envoi du journal à un serveur Sentinel. |
 | SMS stockés, hors message en cours d’envoi | Lecture locale après le rôle SMS. |
 | Photos, vidéos, fichiers audio, micro | `RECORD_AUDIO` et `CAMERA` sont retirés du manifeste V1. Pas d’enregistrement d’appel. |
 | Position | Les permissions de position, Wi-Fi et Bluetooth sont retirées. |
