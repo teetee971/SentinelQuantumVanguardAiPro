@@ -1,0 +1,861 @@
+Sentinel IA P0 — validation du 18 novembre 2026
+Référence : 0bfb6c26f7f9b5086a448949f406d17e0466f9a7
+Code qualifié en local : 5a6678f5df1dea4c26ee9c1f675cb0e9b225e56e
+
+Exécution Gradle finale, depuis native-android-app, avec Gradle 9.8.0, JDK 17, SDK 37.0 et Build-Tools 36.0.0 via le proxy local :
+gradle --no-daemon --max-workers=2 :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin --rerun :app:testDebugUnitTest --rerun :wear-app:testDebugUnitTest --rerun :wearable-contract:test --rerun :wearable-security:test --rerun
+gradle --no-daemon --max-workers=2 -I ../audit/cycle9/validation/init.gradle :app:assembleDebug :app:assembleDebugAndroidTest
+Gradle 9.8.0 SHA-256 publié : bafd5ce9cfaea0fbccfdc8439a1ac42fbd4cd9c89dc9a988228d8a2639a58e6c
+
+Les espaces de fin de ligne des sorties copiées sont supprimés.
+Les résultats JVM et la compilation ne valent que pour les entrées documentées.
+
+===== Découverte et contrôle Git de la référence =====
+## HEAD (no branch)
+0bfb6c26f7f9b5086a448949f406d17e0466f9a7
+
+===== Tentative Gradle initiale — BLOCKED, connexion Java =====
+Fetching distribution.
+Downloading https://services.gradle.org/distributions/gradle-9.8.0-bin.zip
+
+Attempt 1/1 failed. Reason: Connection refused (connect failed)
+Exception in thread "main" java.net.ConnectException: Connection refused (connect failed)
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:694)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:549)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:351)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at java.base/sun.security.ssl.SSLSocketImpl.connect(SSLSocketImpl.java:304)
+	at java.base/sun.net.NetworkClient.doConnect(NetworkClient.java:178)
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:539)
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:644)
+	at java.base/sun.net.www.protocol.https.HttpsClient.<init>(HttpsClient.java:265)
+	at java.base/sun.net.www.protocol.https.HttpsClient.New(HttpsClient.java:378)
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.getNewHttpClient(AbstractDelegateHttpsURLConnection.java:196)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1260)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1146)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:1075)
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:181)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1707)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1632)
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:531)
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307)
+	at org.gradle.wrapper.Download.download(SourceFile:1)
+	at org.gradle.wrapper.Install.forceFetch(SourceFile)
+	at org.gradle.wrapper.Install.lambda$createDist$0(SourceFile:9)
+	at org.gradle.wrapper.Install.createDist(SourceFile:24)
+	at org.gradle.wrapper.GradleWrapperMain.lambda$prepareWrapper$0(SourceFile:2)
+	at org.gradle.wrapper.GradleWrapperMain.main(SourceFile:2)
+
+===== Tests historiques ciblés sur la référence — PASS =====
+JUnit version 4.13.2
+..............
+Time: 0.04
+
+OK (14 tests)
+
+===== Sondes déterministes sur la référence — FAIL attendu =====
+JUnit version 4.13.2
+.E.E.E
+Time: 0.023
+There were 3 failures:
+1) executeDuringDrainRejectsWithoutQueueingBehindHeldEffect(com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe)
+java.lang.AssertionError: Old execution queued behind effect after revocation entered
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.executeDuringDrainRejectsWithoutQueueingBehindHeldEffect$lambda$0(SentinelAiProcessGateBaselineProbe.kt:49)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.withBlockedRevocation(SentinelAiProcessGateBaselineProbe.kt:75)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.executeDuringDrainRejectsWithoutQueueingBehindHeldEffect(SentinelAiProcessGateBaselineProbe.kt:33)
+2) revokeRequestInvalidatesOldLeaseBeforeHeldEffectReturns(com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe)
+java.lang.AssertionError: Old lease remains active after revocation has entered
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertFalse(Assert.java:65)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.revokeRequestInvalidatesOldLeaseBeforeHeldEffectReturns$lambda$0(SentinelAiProcessGateBaselineProbe.kt:15)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.withBlockedRevocation(SentinelAiProcessGateBaselineProbe.kt:75)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.revokeRequestInvalidatesOldLeaseBeforeHeldEffectReturns(SentinelAiProcessGateBaselineProbe.kt:14)
+3) captureDuringDrainDoesNotProduceAnActiveLease(com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe)
+java.lang.AssertionError: Capture during revocation returned an active lease
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.captureDuringDrainDoesNotProduceAnActiveLease$lambda$0(SentinelAiProcessGateBaselineProbe.kt:27)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.withBlockedRevocation(SentinelAiProcessGateBaselineProbe.kt:75)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateBaselineProbe.captureDuringDrainDoesNotProduceAnActiveLease(SentinelAiProcessGateBaselineProbe.kt:21)
+
+FAILURES!!!
+Tests run: 3,  Failures: 3
+
+===== Empreinte et contrôle avant application du patch =====
+b6b2636682262361d57cb057fec33aed54727498460bf5bedd42fa06dab0f16e  /workspace/attachments/4e62b592-9c3f-4d71-8237-189eaf552caa/Sentinel_IA_Revocation_P0.patch
+/workspace/attachments/4e62b592-9c3f-4d71-8237-189eaf552caa/Sentinel_IA_Revocation_P0.patch: OK
+0bfb6c26f7f9b5086a448949f406d17e0466f9a7
+git apply --check exit 0
+Switched to a new branch 'fix/sentinel-ai-revocation-barrier-20261118'
+## fix/sentinel-ai-revocation-barrier-20261118
+ M native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiProcessGate.kt
+ M native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiProcessGateTest.kt
+
+===== Commit reproduisant exactement le patch =====
+cc0ba093fd98a74771869a8bdedc632ffb929fc4
+
+===== Premier essai Gradle avec proxy — BLOCKED, packages SDK =====
+
+Welcome to Gradle 9.8.0!
+
+Here are the highlights of this release:
+ - Java 27 support
+ - Maven mirror settings reuse
+ - Linked problem locations in build output
+
+For more details see https://docs.gradle.org/9.8.0/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+Checking the license for package Android SDK Build-Tools 36 in /workspace/work/sentinel-tooling/sdk/licenses
+Warning: License for package Android SDK Build-Tools 36 not accepted.
+Checking the license for package Android SDK Platform 37.0 in /workspace/work/sentinel-tooling/sdk/licenses
+Warning: License for package Android SDK Platform 37.0 not accepted.
+
+[Incubating] Problems report is available at: file:///workspace/work/sentinel-reference/native-android-app/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine the dependencies of task ':app:compileDebugKotlin'.
+> Failed to install the following Android SDK packages as some licences have not been accepted.
+     build-tools;36.0.0 Android SDK Build-Tools 36
+     platforms;android-37.0 Android SDK Platform 37.0
+  To build this project, accept the SDK license agreements and install the missing components using the Android Studio SDK Manager.
+  All licenses can be accepted using the sdkmanager command line tool:
+  sdkmanager --licenses
+  Or, to transfer the license agreements from one workstation to another, see https://developer.android.com/studio/intro/update.html#download-with-gradle
+
+  Using Android SDK: /workspace/work/sentinel-tooling/sdk
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 55s
+
+===== Nouveaux tests sur le patch importé — FAIL attendu =====
+cc0ba093fd98a74771869a8bdedc632ffb929fc4
+info: kotlinc-jvm 2.4.20 (JRE 21.0.13+9-1-deb13u2-Debian)
+JUnit version 4.13.2
+..........E...E.E.E.E
+Time: 5.057
+There were 5 failures:
+1) onlyTheExactTicketCanAcknowledgeTheCurrentCycle(com.sentinel.quantum.ai.SentinelAiProcessGateTest)
+java.lang.IllegalStateException: Revocation ticket no longer active
+	at com.sentinel.quantum.ai.SentinelAiProcessGate.awaitRevocation(SentinelAiProcessGate.kt:73)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateTest.onlyTheExactTicketCanAcknowledgeTheCurrentCycle(SentinelAiProcessGateTest.kt:225)
+2) revokeAllInvalidatesLeasesWhileWaitingForAnEffect(com.sentinel.quantum.ai.SentinelAiProcessGateTest)
+java.lang.AssertionError: The old lease must already be invalid
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertFalse(Assert.java:65)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateTest.revokeAllInvalidatesLeasesWhileWaitingForAnEffect(SentinelAiProcessGateTest.kt:109)
+3) executionSubmittedDuringRevocationIsDeniedWithoutWaitingForTheEffect(com.sentinel.quantum.ai.SentinelAiProcessGateTest)
+java.util.concurrent.TimeoutException
+	at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:204)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateTest.executionSubmittedDuringRevocationIsDeniedWithoutWaitingForTheEffect(SentinelAiProcessGateTest.kt:168)
+4) reentrantSplitRequestCannotStrandTheGateInRevocation(com.sentinel.quantum.ai.SentinelAiProcessGateTest)
+java.lang.AssertionError: expected java.lang.IllegalStateException to be thrown, but nothing was thrown
+	at org.junit.Assert.assertThrows(Assert.java:1028)
+	at org.junit.Assert.assertThrows(Assert.java:981)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateTest.reentrantSplitRequestCannotStrandTheGateInRevocation$lambda$0(SentinelAiProcessGateTest.kt:251)
+	at com.sentinel.quantum.ai.SentinelAiProcessGate.execute(SentinelAiProcessGate.kt:47)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateTest.reentrantSplitRequestCannotStrandTheGateInRevocation(SentinelAiProcessGateTest.kt:250)
+5) simultaneousRequestsShareTheTicketAndBothAcknowledgeAfterTheEffect(com.sentinel.quantum.ai.SentinelAiProcessGateTest)
+java.lang.AssertionError: expected same:<com.sentinel.quantum.ai.SentinelAiProcessGate$Revocation@5f2050f6> was not:<com.sentinel.quantum.ai.SentinelAiProcessGate$Revocation@3b81a1bc>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotSame(Assert.java:829)
+	at org.junit.Assert.assertSame(Assert.java:772)
+	at org.junit.Assert.assertSame(Assert.java:783)
+	at com.sentinel.quantum.ai.SentinelAiProcessGateTest.simultaneousRequestsShareTheTicketAndBothAcknowledgeAfterTheEffect(SentinelAiProcessGateTest.kt:205)
+
+FAILURES!!!
+Tests run: 16,  Failures: 5
+
+===== Tests ciblés sur les fichiers de barrière corrigés — PASS =====
+cc0ba093fd98a74771869a8bdedc632ffb929fc4
+d83457700f552c203c3c626a9edae50ded5ea6a1bb8bc07e06aee648388abc21  native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiProcessGate.kt
+871428ebc68c601df068f00b5db76eec1b24c15195d8ec0691e07f7d2ade6c85  native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiProcessGateTest.kt
+info: kotlinc-jvm 2.4.20 (JRE 21.0.13+9-1-deb13u2-Debian)
+JUnit version 4.13.2
+........................
+Time: 0.146
+
+OK (24 tests)
+
+===== Relances du test de barrière — PASS =====
+dc11c4992033cbd9b87132f1611bd43945dba42f85e5d87ad6ac51bb28df8d92  /workspace/work/sentinel-probe/gate-tests-final.jar
+Iteration 1
+JUnit version 4.13.2
+.................
+Time: 0.189
+
+OK (17 tests)
+
+Iteration 2
+JUnit version 4.13.2
+.................
+Time: 0.098
+
+OK (17 tests)
+
+Iteration 3
+JUnit version 4.13.2
+.................
+Time: 0.236
+
+OK (17 tests)
+
+Iteration 4
+JUnit version 4.13.2
+.................
+Time: 0.151
+
+OK (17 tests)
+
+Iteration 5
+JUnit version 4.13.2
+.................
+Time: 0.204
+
+OK (17 tests)
+
+Iteration 6
+JUnit version 4.13.2
+.................
+Time: 0.114
+
+OK (17 tests)
+
+Iteration 7
+JUnit version 4.13.2
+.................
+Time: 0.113
+
+OK (17 tests)
+
+Iteration 8
+JUnit version 4.13.2
+.................
+Time: 0.16
+
+OK (17 tests)
+
+Iteration 9
+JUnit version 4.13.2
+.................
+Time: 0.127
+
+OK (17 tests)
+
+Iteration 10
+JUnit version 4.13.2
+.................
+Time: 0.166
+
+OK (17 tests)
+
+Iteration 11
+JUnit version 4.13.2
+.................
+Time: 0.116
+
+OK (17 tests)
+
+Iteration 12
+JUnit version 4.13.2
+.................
+Time: 0.151
+
+OK (17 tests)
+
+Iteration 13
+JUnit version 4.13.2
+.................
+Time: 0.118
+
+OK (17 tests)
+
+Iteration 14
+JUnit version 4.13.2
+.................
+Time: 0.171
+
+OK (17 tests)
+
+Iteration 15
+JUnit version 4.13.2
+.................
+Time: 0.184
+
+OK (17 tests)
+
+Iteration 16
+JUnit version 4.13.2
+.................
+Time: 0.213
+
+OK (17 tests)
+
+Iteration 17
+JUnit version 4.13.2
+.................
+Time: 0.198
+
+OK (17 tests)
+
+Iteration 18
+JUnit version 4.13.2
+.................
+Time: 0.106
+
+OK (17 tests)
+
+Iteration 19
+JUnit version 4.13.2
+.................
+Time: 0.169
+
+OK (17 tests)
+
+Iteration 20
+JUnit version 4.13.2
+.................
+Time: 0.107
+
+OK (17 tests)
+
+Iteration 21
+JUnit version 4.13.2
+.................
+Time: 0.132
+
+OK (17 tests)
+
+Iteration 22
+JUnit version 4.13.2
+.................
+Time: 0.148
+
+OK (17 tests)
+
+Iteration 23
+JUnit version 4.13.2
+.................
+Time: 0.15
+
+OK (17 tests)
+
+Iteration 24
+JUnit version 4.13.2
+.................
+Time: 0.129
+
+OK (17 tests)
+
+Iteration 25
+JUnit version 4.13.2
+.................
+Time: 0.129
+
+OK (17 tests)
+
+Iteration 26
+JUnit version 4.13.2
+.................
+Time: 0.191
+
+OK (17 tests)
+
+Iteration 27
+JUnit version 4.13.2
+.................
+Time: 0.159
+
+OK (17 tests)
+
+Iteration 28
+JUnit version 4.13.2
+.................
+Time: 0.15
+
+OK (17 tests)
+
+Iteration 29
+JUnit version 4.13.2
+.................
+Time: 0.113
+
+OK (17 tests)
+
+Iteration 30
+JUnit version 4.13.2
+.................
+Time: 0.166
+
+OK (17 tests)
+
+===== Kotlin Android et suite JVM sur le commit 5a6678f5 — PASS =====
+5a6678f5df1dea4c26ee9c1f675cb0e9b225e56e
+## fix/sentinel-ai-revocation-barrier-20261118
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-contract:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-contract:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-contract:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-contract:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-contract:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :wearable-security:compileTestFixturesKotlin UP-TO-DATE
+> Task :wearable-security:compileTestFixturesJava NO-SOURCE
+> Task :wearable-security:processTestFixturesResources NO-SOURCE
+> Task :wearable-security:testFixturesClasses UP-TO-DATE
+> Task :wearable-security:testFixturesJar UP-TO-DATE
+> Task :wear-app:preBuild UP-TO-DATE
+> Task :wear-app:preDebugBuild UP-TO-DATE
+> Task :wear-app:generateDebugResources FROM-CACHE
+> Task :wear-app:packageDebugResources
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :wear-app:processDebugNavigationResources
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:mergeDebugAndroidTestManifest UP-TO-DATE
+> Task :app:processDebugAndroidTestManifest UP-TO-DATE
+> Task :app:generateDebugAndroidTestBuildConfig UP-TO-DATE
+> Task :app:generateDebugAndroidTestResources UP-TO-DATE
+> Task :app:packageDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :app:parseDebugAndroidTestLocalResources UP-TO-DATE
+> Task :app:generateDebugAndroidTestRFile UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :wear-app:parseDebugLocalResources FROM-CACHE
+> Task :wear-app:generateDebugRFile
+> Task :app:kspDebugKotlin
+
+> Task :app:compileDebugKotlin
+w: file:///workspace/work/sentinel-reference/native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiActivity.kt:272:21 Expression is unused.
+
+> Task :wear-app:compileDebugKotlin
+> Task :wear-app:javaPreCompileDebug FROM-CACHE
+> Task :wear-app:compileDebugJavaWithJavac NO-SOURCE
+> Task :wear-app:checkDebugAarMetadata
+> Task :wear-app:mapDebugSourceSetPaths
+> Task :wear-app:compileDebugNavigationResources FROM-CACHE
+> Task :wear-app:mergeDebugResources
+> Task :wear-app:createDebugCompatibleScreenManifests
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :wear-app:extractDeepLinksDebug
+> Task :wear-app:processDebugMainManifest
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :wear-app:processDebugManifest
+> Task :wear-app:processDebugManifestForPackage
+> Task :app:kspDebugAndroidTestKotlin
+> Task :wear-app:processDebugResources
+> Task :wear-app:bundleDebugClassesToRuntimeJar
+> Task :wear-app:bundleDebugClassesToCompileJar
+> Task :wear-app:preDebugUnitTestBuild UP-TO-DATE
+
+> Task :wear-app:compileDebugUnitTestKotlin
+w: file:///workspace/work/sentinel-reference/native-android-app/wear-app/src/test/java/com/sentinel/quantum/wear/WearableSecureTransportInboxTest.kt:77:61 Expression is unused.
+
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:compileDebugAndroidTestKotlin
+w: file:///workspace/work/sentinel-reference/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/AllStaticNavigationSurfacesInstrumentationTest.kt:20:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/work/sentinel-reference/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/HomeVisualContractTest.kt:28:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/work/sentinel-reference/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/OsintTruthInstrumentationTest.kt:15:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/work/sentinel-reference/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/ProtectionVisualContractTest.kt:23:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+w: file:///workspace/work/sentinel-reference/native-android-app/app/src/androidTest/java/com/sentinel/quantum/ui/design/SentinelVisualPrimitivesTest.kt:34:23 'fun createComposeRule(effectContext: CoroutineContext = ...): ComposeContentTestRule' is deprecated. Use `androidx.compose.ui.test.junit4.v2.createComposeRule` instead. The v2 APIs use StandardTestDispatcher instead of UnconfinedTestDispatcher, which aligns with standard coroutine behavior by queuing tasks rather than executing them immediately. Tests relying on immediate execution may require explicit synchronization. Please refer to the migration guide for more details.
+
+> Task :wear-app:javaPreCompileDebugUnitTest FROM-CACHE
+> Task :wear-app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :wear-app:processDebugJavaRes
+> Task :wear-app:processDebugUnitTestJavaRes
+> Task :wear-app:testDebugUnitTest
+> Task :wearable-contract:compileTestKotlin UP-TO-DATE
+> Task :wearable-contract:compileTestJava NO-SOURCE
+> Task :wearable-contract:processTestResources NO-SOURCE
+> Task :wearable-contract:testClasses UP-TO-DATE
+> Task :wearable-contract:test
+> Task :wearable-security:compileTestKotlin UP-TO-DATE
+> Task :wearable-security:compileTestJava NO-SOURCE
+> Task :wearable-security:processTestResources NO-SOURCE
+> Task :wearable-security:testClasses UP-TO-DATE
+> Task :wearable-security:test
+> Task :app:testDebugUnitTest
+
+[Incubating] Problems report is available at: file:///workspace/work/sentinel-reference/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 58s
+72 actionable tasks: 29 executed, 5 from cache, 38 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+
+===== Décompte XML des quatre modules — PASS =====
+SentinelAiProcessGateTest: {'name': 'com.sentinel.quantum.ai.SentinelAiProcessGateTest', 'tests': '17', 'skipped': '0', 'failures': '0', 'errors': '0', 'timestamp': '2026-11-18T13:03:49.709Z', 'hostname': 'db39bad98756', 'time': '0.027'}
+app:testDebugUnitTest {'suites': 345, 'tests': 1650, 'failures': 0, 'errors': 0, 'skipped': 0}
+wear-app:testDebugUnitTest {'suites': 7, 'tests': 27, 'failures': 0, 'errors': 0, 'skipped': 0}
+wearable-contract:test {'suites': 2, 'tests': 6, 'failures': 0, 'errors': 0, 'skipped': 0}
+wearable-security:test {'suites': 4, 'tests': 37, 'failures': 0, 'errors': 0, 'skipped': 0}
+TOTAL {'suites': 358, 'tests': 1720, 'failures': 0, 'errors': 0, 'skipped': 0}
+
+===== Assemblage isolé sur le commit 5a6678f5 — PASS =====
+5a6678f5df1dea4c26ee9c1f675cb0e9b225e56e
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :wearable-security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-security:compileKotlin UP-TO-DATE
+> Task :wearable-security:compileJava NO-SOURCE
+> Task :wearable-security:processResources NO-SOURCE
+> Task :wearable-security:classes UP-TO-DATE
+> Task :wearable-security:jar UP-TO-DATE
+> Task :wearable-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :wearable-contract:compileKotlin UP-TO-DATE
+> Task :wearable-contract:compileJava NO-SOURCE
+> Task :wearable-contract:processResources NO-SOURCE
+> Task :wearable-contract:classes UP-TO-DATE
+> Task :wearable-contract:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugBuildConfig
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :app:generateDebugGlobalSynthetics
+> Task :app:kspDebugKotlin
+> Task :app:l8DexDesugarLibDebug
+> Task :app:checkDebugDuplicateClasses
+> Task :app:desugarDebugFileDependencies
+> Task :app:compileDebugKotlin
+> Task :app:mergeExtDexDebug
+> Task :app:compileDebugJavaWithJavac
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource
+> Task :app:mergeLibDexDebug
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugNativeLibs
+> Task :app:mergeProjectDexDebug
+> Task :app:stripDebugDebugSymbols
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:mergeDebugAndroidTestManifest
+> Task :app:processDebugAndroidTestManifest
+> Task :app:generateDebugAndroidTestBuildConfig
+> Task :app:generateDebugAndroidTestResources UP-TO-DATE
+> Task :app:packageDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestNavigationResources UP-TO-DATE
+> Task :app:parseDebugAndroidTestLocalResources UP-TO-DATE
+> Task :app:generateDebugAndroidTestRFile UP-TO-DATE
+> Task :app:kspDebugAndroidTestKotlin
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:javaPreCompileDebugAndroidTest FROM-CACHE
+> Task :app:generateDebugAndroidTestAssets UP-TO-DATE
+> Task :app:mergeDebugAndroidTestAssets
+> Task :app:compressDebugAndroidTestAssets
+> Task :app:generateDebugAndroidTestGlobalSynthetics FROM-CACHE
+> Task :app:checkDebugAndroidTestDuplicateClasses
+> Task :app:desugarDebugAndroidTestFileDependencies FROM-CACHE
+> Task :app:compileDebugAndroidTestKotlin
+> Task :app:mergeExtDexDebugAndroidTest
+> Task :app:compileDebugAndroidTestJavaWithJavac
+> Task :app:processDebugAndroidTestJavaRes
+> Task :app:mergeLibDexDebugAndroidTest
+> Task :app:checkDebugAndroidTestAarMetadata
+> Task :app:mergeDebugAndroidTestJavaResource
+> Task :app:mapDebugAndroidTestSourceSetPaths
+> Task :app:compileDebugAndroidTestNavigationResources FROM-CACHE
+> Task :app:mergeDebugAndroidTestJniLibFolders
+> Task :app:mergeDebugAndroidTestNativeLibs NO-SOURCE
+> Task :app:stripDebugAndroidTestDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebugAndroidTest
+> Task :app:writeDebugAndroidTestSigningConfigVersions
+> Task :app:mergeDebugAndroidTestResources
+> Task :app:processDebugAndroidTestResources
+> Task :app:dexBuilderDebugAndroidTest
+> Task :app:mergeProjectDexDebugAndroidTest
+> Task :app:packageDebugAndroidTest
+> Task :app:createDebugAndroidTestApkListingFileRedirect
+> Task :app:assembleDebugAndroidTest
+
+[Incubating] Problems report is available at: file:///workspace/work/sentinel-reference/native-android-app/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 3m 27s
+78 actionable tasks: 55 executed, 4 from cache, 19 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.0/userguide/configuration_cache_enabling.html
+190ac2fad7c4bbbacabd047a1c2c191f8b990d67abe81f68d2d6c5fff66edf20  app/build/outputs/apk/debug/app-debug.apk
+Signer #1 certificate DN: C=US, O=Android, CN=Android Debug
+Signer #1 certificate SHA-256 digest: 0d5e03ce9117817a0cfe55f2db1368f949218508abe34edf31a013cddde67275
+Signer #1 certificate SHA-1 digest: 216dbdecea8871cc540ea28d13e931f01b7df5e4
+Signer #1 certificate MD5 digest: 713109dc29aaa42aa2462c25e448872e
+package: name='com.sentinel.quantum.aivalidation' versionCode='10' versionName='1.0.9' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+native-code: 'arm64-v8a'
+f3c92b0c45899e31b665eccbad855d1119a7b17d1f3f42f1153f97b4bda70e36  app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+Signer #1 certificate DN: C=US, O=Android, CN=Android Debug
+Signer #1 certificate SHA-256 digest: 0d5e03ce9117817a0cfe55f2db1368f949218508abe34edf31a013cddde67275
+Signer #1 certificate SHA-1 digest: 216dbdecea8871cc540ea28d13e931f01b7df5e4
+Signer #1 certificate MD5 digest: 713109dc29aaa42aa2462c25e448872e
+package: name='com.sentinel.quantum.aivalidation.test' versionCode='' versionName='' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+
+===== Signatures v2 et runner du test, inventaire des appareils — PASS / BLOCKED =====
+      E: instrumentation (line=9)
+        A: http://schemas.android.com/apk/res/android:label(0x01010001)="Tests for com.sentinel.quantum.aivalidation" (Raw: "Tests for com.sentinel.quantum.aivalidation")
+        A: http://schemas.android.com/apk/res/android:name(0x01010003)="androidx.test.runner.AndroidJUnitRunner" (Raw: "androidx.test.runner.AndroidJUnitRunner")
+        A: http://schemas.android.com/apk/res/android:targetPackage(0x01010021)="com.sentinel.quantum.aivalidation" (Raw: "com.sentinel.quantum.aivalidation")
+        A: http://schemas.android.com/apk/res/android:handleProfiling(0x01010022)=false
+        A: http://schemas.android.com/apk/res/android:functionalTest(0x01010023)=false
+Verifies
+Verified using v2 scheme (APK Signature Scheme v2): true
+Number of signers: 1
+Verifies
+Verified using v2 scheme (APK Signature Scheme v2): true
+Number of signers: 1
+List of devices attached
+
+===== Régression du service IA local — PASS =====
+cc0ba093fd98a74771869a8bdedc632ffb929fc4
+b31bf204a050e092503a4b9a3423d49ccab1971beb1afc48ffd621c0b16528d2  backend/local-ai/README.md
+fe118cd20ae45d96fef04fee67ed719aa8c0bc661ab9e685bc080e0fdfc31770  backend/local-ai/requirements.txt
+1823522b2790f912d648b641ad2a73e57be1c0e730be44e06eb73df69d044c6e  backend/local-ai/service.py
+3156bde5b34570c4b4d58991c3e579efa83062a0094025d732407975cd83b696  backend/local-ai/tests/test_clock_mac_regressions.py
+56035483e5f69b87ebe431629f43c193e9babc57cb8f6584c5db4fe731bf2209  backend/local-ai/tests/test_disconnect.py
+130adf923ceba89b036706d7447349004f5d6d2e3a5e7fa5df524070b4b63c95  backend/local-ai/tests/test_local_auth.py
+6e31bb535e50eb7ec2d259bd61849b46028bd199f2e374c0ed323e2de705123b  backend/local-ai/tests/test_output_bounds.py
+annotated-doc==0.0.7
+annotated-types==0.8.0
+anyio==4.16.0
+certifi==2026.10.23
+click==8.5.1
+fastapi==0.143.0
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+iniconfig==2.3.1
+opentelemetry-api==1.45.2
+packaging==26.3
+pluggy==1.7.0
+pydantic==2.14.3
+pydantic_core==2.50.4
+Pygments==2.21.0
+pytest==9.2.0
+starlette==1.10.0
+typing-inspection==0.4.5
+typing_extensions==4.16.0
+uvicorn==0.35.0
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.2.0, pluggy-1.7.0 -- /workspace/work/sentinel-tooling/python/venv/bin/python
+rootdir: /workspace/work/sentinel-reference
+plugins: anyio-4.16.0
+collecting ... collected 22 items
+
+backend/local-ai/tests/test_clock_mac_regressions.py::ServiceTests::test_non_ascii_mac_rejected PASSED [  4%]
+backend/local-ai/tests/test_clock_mac_regressions.py::ServiceTests::test_non_finite_clock_rejected_and_poisoned PASSED [  9%]
+backend/local-ai/tests/test_clock_mac_regressions.py::ServiceTests::test_response_authenticated_and_nonce_single_use PASSED [ 13%]
+backend/local-ai/tests/test_disconnect.py::test_http_disconnect_kills_real_child_and_releases_busy_lock PASSED [ 18%]
+backend/local-ai/tests/test_disconnect.py::test_disconnect_racing_with_generation_never_returns_a_success PASSED [ 22%]
+backend/local-ai/tests/test_disconnect.py::test_incomplete_unauthenticated_body_has_a_total_deadline PASSED [ 27%]
+backend/local-ai/tests/test_local_auth.py::test_pairing_response_is_authenticated_and_nonce_is_single_use PASSED [ 31%]
+backend/local-ai/tests/test_local_auth.py::test_wrong_key_never_reaches_model_and_consumes_challenge PASSED [ 36%]
+backend/local-ai/tests/test_local_auth.py::test_expiration_and_clock_rollback_fail_closed PASSED [ 40%]
+backend/local-ai/tests/test_local_auth.py::test_payload_and_challenge_capacity_are_bounded PASSED [ 45%]
+backend/local-ai/tests/test_local_auth.py::test_unregistered_actions_and_extra_fields_are_rejected[value0] PASSED [ 50%]
+backend/local-ai/tests/test_local_auth.py::test_unregistered_actions_and_extra_fields_are_rejected[value1] PASSED [ 54%]
+backend/local-ai/tests/test_local_auth.py::test_unregistered_actions_and_extra_fields_are_rejected[value2] PASSED [ 59%]
+backend/local-ai/tests/test_local_auth.py::test_model_must_match_approved_fingerprint PASSED [ 63%]
+backend/local-ai/tests/test_local_auth.py::test_prompt_uses_stdin_and_never_process_arguments PASSED [ 68%]
+backend/local-ai/tests/test_local_auth.py::test_cancelled_generation_terminates_and_reaps_process PASSED [ 72%]
+backend/local-ai/tests/test_output_bounds.py::test_generation_rejects_output_overflow_before_child_exits[1] PASSED [ 77%]
+backend/local-ai/tests/test_output_bounds.py::test_generation_rejects_output_overflow_before_child_exits[2] PASSED [ 81%]
+backend/local-ai/tests/test_output_bounds.py::test_bounded_reader_reaps_child_on_interruption[timeout] PASSED [ 86%]
+backend/local-ai/tests/test_output_bounds.py::test_bounded_reader_reaps_child_on_interruption[cancel] PASSED [ 90%]
+backend/local-ai/tests/test_output_bounds.py::test_bounded_reader_reaps_child_on_interruption[double_cancel] PASSED [ 95%]
+backend/local-ai/tests/test_output_bounds.py::test_bounded_reader_drains_both_pipes_without_deadlock PASSED [100%]
+
+=============================== warnings summary ===============================
+../sentinel-tooling/python/venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/work/sentinel-tooling/python/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 22 passed, 1 warning in 5.72s =========================
+
+===== Politique réseau locale — PASS =====
+cc0ba093fd98a74771869a8bdedc632ffb929fc4
+test_global_policy_has_no_extra_overrides_or_trust_changes (__main__.LoopbackPolicyContract.test_global_policy_has_no_extra_overrides_or_trust_changes) ... ok
+test_manifest_uses_named_config_and_retains_global_false (__main__.LoopbackPolicyContract.test_manifest_uses_named_config_and_retains_global_false) ... ok
+test_only_exact_ipv4_loopback_is_excepted (__main__.LoopbackPolicyContract.test_only_exact_ipv4_loopback_is_excepted) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+OK
+
+===== Périmètre Git et inventaire des appareils — PASS / BLOCKED =====
+4ac285cf2587222305bc7449c9cbf6e14c32d66f
+M	native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiActivityInstrumentationTest.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiActivity.kt
+M	native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiProcessGate.kt
+M	native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiProcessGateTest.kt
+Diff boundary and whitespace checks exit 0
+List of devices attached
+
+===== Déclencheurs de workflows GitHub =====
+Proposed branch: fix/sentinel-ai-revocation-barrier-20261118
+Base: 0bfb6c26f7f9b5086a448949f406d17e0466f9a7
+Remote default-branch SHA at inspection: 935344423b2af2a4a57c58123f2c5c178b46ec03
+Working tree HEAD: cc0ba093fd98a74771869a8bdedc632ffb929fc4
+Tracked branch changes: ['native-android-app/app/src/androidTest/java/com/sentinel/quantum/ai/SentinelAiActivityInstrumentationTest.kt', 'native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiActivity.kt', 'native-android-app/app/src/main/java/com/sentinel/quantum/ai/SentinelAiProcessGate.kt', 'native-android-app/app/src/test/java/com/sentinel/quantum/ai/SentinelAiProcessGateTest.kt']
+
+Candidate tree: 47 workflows.
+acm-numbering-refresh.yml: push branch outside ['main']
+ai-governance-validation.yml: push branch outside ['main']
+android-emulation-qualification.yml: push branch outside ['main']
+android-instrumentation.yml: push branch outside ['main']
+android-release.yml: push tag push only
+arcep-numbering-refresh.yml: push branch outside ['main']
+autonomous-maintenance.yml: push branch outside ['main']
+build-aab-playconsole.yml: push branch outside ['main']
+build-native-android.yml: push branch outside ['main']
+ci-canary-matrix.yml: push branch outside ['main']
+ci-smoke.yml: push branch outside ['main']
+codeql-analysis.yml: push branch outside ['main']
+commercial-catalog-validation.yml: push branch outside ['main']
+copilot-setup-steps.yml: push none of the 4 changed paths match ['.github/workflows/copilot-setup-steps.yml', 'native-android-app/gradle/wrapper/gradle-wrapper.properties', 'native-android-app/build.gradle', 'native-android-app/app/build.gradle', 'native-android-app/settings.gradle']
+ctu-numbering-refresh.yml: push branch outside ['main']
+frontend-validation.yml: push branch outside ['main']
+fsma-warning-refresh.yml: push branch outside ['main']
+integrity-check.yml: push branch outside ['main']
+lighthouse-live.yml: push branch outside ['main']
+lighthouse-preproduction.yml: push branch outside ['main']
+ofcom-numbering-refresh.yml: push branch outside ['main']
+osint-validation.yml: push branch outside ['main']
+preproduction-final-gate.yml: push branch outside ['main']
+product-capability-truth.yml: push branch outside ['main']
+proprietary-boundary-validation.yml: push branch outside ['main']
+scheduled-vulnerability-watch.yml: push branch outside ['main']
+security-fuzz.yml: push branch outside ['main']
+security-governance-validation.yml: push branch outside ['main']
+security-validation.yml: push branch outside ['main']
+sentinel-api-origin-contract.yml: push branch outside ['main']
+sentinel-isolation.yml: push branch outside ['main']
+system-evolution-scout.yml: push branch outside ['main']
+voice-api.yml: push branch outside ['main']
+wangiri-api.yml: push branch outside ['main']
+Event counts: {'merge_group': 16, 'pull_request': 31, 'push': 34, 'schedule': 14, 'workflow_dispatch': 41}
+Branch update matches: []
+
+Remote default-branch tree: 46 workflows.
+acm-numbering-refresh.yml: push branch outside ['main']
+ai-governance-validation.yml: push branch outside ['main']
+android-emulation-qualification.yml: push branch outside ['main']
+android-instrumentation.yml: push branch outside ['main']
+android-release.yml: push tag push only
+arcep-numbering-refresh.yml: push branch outside ['main']
+autonomous-maintenance.yml: push branch outside ['main']
+build-aab-playconsole.yml: push branch outside ['main']
+build-native-android.yml: push branch outside ['main']
+ci-canary-matrix.yml: push branch outside ['main']
+ci-smoke.yml: push branch outside ['main']
+codeql-analysis.yml: push branch outside ['main']
+commercial-catalog-validation.yml: push branch outside ['main']
+copilot-setup-steps.yml: push none of the 4 changed paths match ['.github/workflows/copilot-setup-steps.yml', 'native-android-app/gradle/wrapper/gradle-wrapper.properties', 'native-android-app/build.gradle', 'native-android-app/app/build.gradle', 'native-android-app/settings.gradle']
+ctu-numbering-refresh.yml: push branch outside ['main']
+frontend-validation.yml: push branch outside ['main']
+integrity-check.yml: push branch outside ['main']
+lighthouse-live.yml: push branch outside ['main']
+lighthouse-preproduction.yml: push branch outside ['main']
+ofcom-numbering-refresh.yml: push branch outside ['main']
+osint-validation.yml: push branch outside ['main']
+preproduction-final-gate.yml: push branch outside ['main']
+product-capability-truth.yml: push branch outside ['main']
+proprietary-boundary-validation.yml: push branch outside ['main']
+scheduled-vulnerability-watch.yml: push branch outside ['main']
+security-fuzz.yml: push branch outside ['main']
+security-governance-validation.yml: push branch outside ['main']
+security-validation.yml: push branch outside ['main']
+sentinel-api-origin-contract.yml: push branch outside ['main']
+sentinel-isolation.yml: push branch outside ['main']
+system-evolution-scout.yml: push branch outside ['main']
+voice-api.yml: push branch outside ['main']
+wangiri-api.yml: push branch outside ['main']
+Event counts: {'merge_group': 16, 'pull_request': 31, 'push': 33, 'schedule': 13, 'workflow_dispatch': 40}
+Branch update matches: []
+
+Audit scope is checked-in workflow YAML and four tracked path changes. No remote mutation, dispatch or PR occurred.
