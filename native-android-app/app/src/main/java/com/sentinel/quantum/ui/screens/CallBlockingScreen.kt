@@ -80,6 +80,8 @@ fun CallBlockingScreen(navController: NavController) {
     val clearFailedText = stringResource(R.string.call_blocking_clear_failed)
     val prefixAddedText = stringResource(R.string.call_blocking_prefix_added)
     val prefixInvalidText = stringResource(R.string.call_blocking_prefix_invalid)
+    val silencePrefixAddedText = stringResource(R.string.call_blocking_silence_prefix_added)
+    val silencePrefixInvalidText = stringResource(R.string.call_blocking_silence_prefix_invalid)
     val syncFailedText = stringResource(R.string.call_blocking_sync_failed)
     val silenceNeedsContacts = stringResource(R.string.call_blocking_silence_unknown_needs_contacts)
     val silenceWaiting = stringResource(R.string.call_blocking_silence_unknown_waiting)
@@ -399,9 +401,9 @@ fun CallBlockingScreen(navController: NavController) {
             OutlinedButton(
                 onClick = {
                     status = if (store.addUserSilencePrefix(prefix)) {
-                        context.getString(R.string.call_blocking_silence_prefix_added)
+                        silencePrefixAddedText
                     } else {
-                        context.getString(R.string.call_blocking_silence_prefix_invalid)
+                        silencePrefixInvalidText
                     }
                     snapshot = store.snapshot()
                     prefix = ""

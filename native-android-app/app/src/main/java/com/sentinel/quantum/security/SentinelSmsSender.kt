@@ -61,14 +61,13 @@ class SentinelSmsSender(private val context: Context) {
         // SmsManager send call. A failure here is conclusively a preparation failure, not an
         // unknown telephony submission outcome.
         val prepared = try {
-            val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
-            val activeIds = runCatching {
-                subscriptionManager.activeSubscriptionInfoList
-                    .orEmpty()
-                    .map { it.subscriptionId }
-                    .filter { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID }
-                    .toSet()
-            }.getOrElse { return SendResult(false, "SMS_SUBSCRIPTION_LOOKUP_FAILED") }
+            val activeIds = when (val state = SmsSubscriptionState(context).load()) {
+                SmsSubscriptionState.Result.PermissionRequired ->
+                    return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
+                SmsSubscriptionState.Result.LookupFailed ->
+                    return SendResult(false, "SMS_SUBSCRIPTION_LOOKUP_FAILED")
+                is SmsSubscriptionState.Result.Available -> state.subscriptions.map { it.subscriptionId }.toSet()
+            }
             val defaultId = SubscriptionManager.getDefaultSmsSubscriptionId()
                 .takeUnless { it == SubscriptionManager.INVALID_SUBSCRIPTION_ID }
             val selection = SmsSubscriptionSelectionPolicy.select(
@@ -203,19 +202,25 @@ class SentinelSmsSender(private val context: Context) {
     }
 
     private fun checkOutboundAuthorization(subscriptionId: Int? = null): String? {
-        val active = subscriptionId?.let { id ->
-            runCatching {
-                context.getSystemService(SubscriptionManager::class.java)
-                    .activeSubscriptionInfoList.orEmpty().any { it.subscriptionId == id }
-            }
+        outboundPermissionDenial()?.let { return it }
+        if (subscriptionId == null) return null
+        val active = SmsSubscriptionState(context).load()
+        outboundPermissionDenial()?.let { return it }
+        return when (active) {
+            SmsSubscriptionState.Result.PermissionRequired -> "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
+            SmsSubscriptionState.Result.LookupFailed -> "SMS_SUBSCRIPTION_LOOKUP_FAILED"
+            is SmsSubscriptionState.Result.Available -> if (active.subscriptions.none { it.subscriptionId == subscriptionId }) {
+                "REQUESTED_SUBSCRIPTION_NOT_ACTIVE"
+            } else null
         }
+    }
+
+    private fun outboundPermissionDenial(): String? {
         if (!holdsSmsRole()) return "SMS_ROLE_NOT_HELD"
         if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) return "SEND_SMS_PERMISSION_NOT_GRANTED"
         if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
             return "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
         }
-        if (active?.isFailure == true) return "SMS_SUBSCRIPTION_LOOKUP_FAILED"
-        if (active?.getOrNull() == false) return "REQUESTED_SUBSCRIPTION_NOT_ACTIVE"
         return null
     }
 

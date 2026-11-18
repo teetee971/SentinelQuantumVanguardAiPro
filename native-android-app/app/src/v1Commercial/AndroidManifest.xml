@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
-    <uses-permission android:name="android.permission.CAMERA" tools:node="remove" />
+    <!-- Lint treats these removal markers as declarations. The merged manifest check asserts absence. -->
+    <uses-permission android:name="android.permission.CAMERA" tools:node="remove"
+        tools:ignore="PermissionImpliesUnsupportedChromeOsHardware" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove" />
@@ -46,9 +48,11 @@
         <activity android:name="com.auth0.android.provider.AuthenticationActivity" tools:node="remove" />
         <activity android:name="com.auth0.android.provider.RedirectActivity" tools:node="remove" />
         <activity android:name="androidx.credentials.playservices.HiddenActivity" tools:node="remove" />
-        <activity android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity" tools:node="remove" />
+        <activity android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+            tools:node="remove" tools:ignore="MissingClass" />
         <service android:name="androidx.credentials.playservices.CredentialProviderMetadataHolder" tools:node="remove" />
-        <service android:name="com.google.android.gms.auth.api.signin.RevocationBoundService" tools:node="remove" />
+        <service android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+            tools:node="remove" tools:ignore="MissingClass" />
         <service android:name="io.livekit.android.room.track.screencapture.ScreenCaptureService" tools:node="remove" />
         <service android:name="com.wireguard.android.backend.GoBackend$VpnService" tools:node="remove" />
     </application>
