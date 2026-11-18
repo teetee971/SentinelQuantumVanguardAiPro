@@ -36,4 +36,4 @@ Les résultats Android initiaux et le roundtrip rapportés par le propriétaire 
 | Candidat de distribution | `com.sentinel.quantum`, AAB Play. L’APK/AAB non signé sert à l’inspection locale. Signature de production, accès Play et soumission sont des étapes séparées |
 | Publication | Aucun canal public activé par ce dossier. Aucun tag release, aucune fusion ou exécution GitHub Actions payante |
 
-Les journaux d’inventaire et l’état Git final sont inclus dans le transfert V1 avec la liste exacte des chemins modifiés. Les quatre commits de code suivent la tête C11 sur la branche V1. Le commit de documentation conserve les octets du code générateur du candidat. [État de release](RELEASE_READINESS.md) · [Acceptation physique](S24_PHYSICAL_ACCEPTANCE.md)
+Les journaux d’inventaire et l’état Git final sont inclus dans le transfert V1 avec la liste exacte des chemins modifiés. Les quatre commits de code suivent la tête C11 sur la branche V1. Les commits de documentation conservent les octets du code générateur du candidat. [État de release](RELEASE_READINESS.md) · [Acceptation physique](S24_PHYSICAL_ACCEPTANCE.md)

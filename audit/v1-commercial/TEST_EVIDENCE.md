@@ -23,6 +23,8 @@
 | Lint debug | PASS · `lintDebug`, 0 erreur, 246 avertissements et 19 indications. `lintVitalReleaseUnsigned` a aussi réussi lors du build. |
 | APK debug ARM64 et APK de tests | PASS · CRC, portée du manifeste, ABI ARM64, signatures APK v2 et certificat commun. |
 | APK/AAB releaseUnsigned | PASS · assemblage, CRC, manifestes, validation bundletool et alignement 16 Kio. Variante d’inspection sans signature. |
+| Dépendances Android de la variante d’inspection | PASS · graphe `releaseUnsignedRuntimeClasspath` résolu. OSV n’a retourné aucune correspondance sur les 189 coordonnées Maven interrogées. Le résultat dépend de la couverture du catalogue OSV. |
+| Alertes Dependabot du dépôt | BLOCKED · GitHub indique six alertes sur `main`, dont une élevée. L’API de détails a répondu HTTP 403. Leur applicabilité au candidat reste à établir. |
 | Signature de livraison | BLOCKED · `:app:bundleRelease` a refusé de continuer faute de configuration de signature. Voir `release-signing-gate.log`. |
 | Installation et tests Android sur S24+ | BLOCKED · `adb devices -l` vide. Les sondes JVM et les fixtures de la mission servent aux régressions locales. |
 | Qwen, Wi-Fi/Bluetooth et distribution Play sur appareil | NOT RUN. |
@@ -39,6 +41,8 @@ bash gradlew -PsentinelCommercialV1=true --no-daemon --max-workers=2 \
   :app:compileDebugAndroidTestKotlin :app:assembleDebug :app:assembleDebugAndroidTest \
   :app:assembleReleaseUnsigned :app:bundleReleaseUnsigned
 bash gradlew -PsentinelCommercialV1=true --no-daemon :app:lintDebug
+bash gradlew -PsentinelCommercialV1=true --no-daemon :app:dependencies \
+  --configuration releaseUnsignedRuntimeClasspath
 bash gradlew -PsentinelCommercialV1=false --no-daemon --max-workers=2 \
   :app:testDebugUnitTest :wear-app:testDebugUnitTest :wearable-contract:test :wearable-security:test
 ```
