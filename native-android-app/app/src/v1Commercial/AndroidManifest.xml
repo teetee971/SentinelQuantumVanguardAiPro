@@ -55,5 +55,6 @@
             tools:node="remove" tools:ignore="MissingClass" />
         <service android:name="io.livekit.android.room.track.screencapture.ScreenCaptureService" tools:node="remove" />
         <service android:name="com.wireguard.android.backend.GoBackend$VpnService" tools:node="remove" />
+        <receiver android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver" tools:node="remove" />
     </application>
 </manifest>

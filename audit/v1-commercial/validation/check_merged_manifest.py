@@ -86,6 +86,11 @@ main = components.get(COMPONENT_PREFIX + "MainActivity")
 if main is not None:
     actions = {attribute(action, "name") for action in main.findall("./intent-filter/action")}
     require(actions == {"android.intent.action.MAIN"}, f"Launcher exposes unexpected actions: {actions}")
+require(any(
+    any(attribute(action, "name") == "android.intent.action.EDIT" for action in intent.findall("action"))
+    and any(attribute(data, "mimeType") == "vnd.android.cursor.item/contact" for data in intent.findall("data"))
+    for intent in root.findall("./queries/intent")
+), "System Contacts editor query is missing")
 provider = components.get("androidx.core.content.FileProvider")
 require(provider is not None and attribute(provider, "exported") == "false" and
         attribute(provider, "authorities") == args.package + ".fileprovider", "FileProvider isolation failed")
