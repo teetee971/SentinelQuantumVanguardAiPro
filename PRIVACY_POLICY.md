@@ -1,5 +1,7 @@
 # Politique de confidentialité — Sentinel Quantum Vanguard AI Pro
 
+> Profil Play Phone Core V1 : ne pas déposer ce fichier dans la Console. Il décrit le dépôt entier, y compris le Studio voix, WebRTC, la réputation distante et des accès retirés du profil `-PsentinelCommercialV1=true`. La politique V1 est dans `docs/v1-commercial/play/`.
+
 **Dernière mise à jour : septembre 2026**
 
 ## Périmètre

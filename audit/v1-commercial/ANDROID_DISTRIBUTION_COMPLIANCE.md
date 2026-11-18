@@ -29,7 +29,7 @@ Le formulaire de déclaration Play est requis pour les permissions SMS/Call Log 
 | --- | --- | --- |
 | App Content et déclaration des permissions | BLOCKED · accès Play indisponible | Déclarer permissions et usage essentiel, fournir instructions d’accès à la revue, audience, contenu, publicités et autres déclarations applicables. Consigner le retour Play. |
 | Data safety | BLOCKED · binaire de distribution et flux exacts à établir | Décrire la collecte/partage des données de l’app et de ses SDK. Les tracks fermés, ouverts et production exigent le formulaire. Une app exclusivement en test interne à Play bénéficie de l’exemption de cette rubrique. |
-| Confidentialité | PARTIEL · brouillons source disponibles | Politique accessible depuis la fiche et l’app, URL publique active sans géoblocage, identité éditrice et contact exacts, données, finalités, conservation et suppression. Le cas de création de compte exige aussi la suppression depuis l’app et une ressource Web. Vérifier le périmètre réel de V1 avant de déclarer cette condition applicable ou non. |
+| Confidentialité | PARTIEL · brouillon V1 rédigé, non publiable en l’état | Le texte V1 est dans `docs/v1-commercial/play/`. Il reste des placeholders d’éditeur. L’application ouvre encore la politique de la vitrine. Aucun compte n’est proposé dans le graphe V1 : l’URL de suppression de compte ne s’applique que si un compte est ajouté. |
 | Fiche Play et promesses | BLOCKED · périmètre et captures du build final | Limiter la fiche aux parcours observés. Distinguer l’exclusion éventuelle du transport expérimental C11 des preuves publiées sur C11. Exiger une preuve de distribution et d’activation avant toute mention « disponible ». |
 | Support | BLOCKED · adresse de support et accès opérationnel à confirmer | Adresse d’assistance surveillée, responsable d’incident, modèle de diagnostic expurgé et consignes pour rendre les rôles à l’app système. Tester le circuit avant publication. |
 | Accès production Play | BLOCKED · type et ancienneté du compte non vérifiés | Pour un compte personnel créé après le 13 novembre 2023, la documentation actuelle exige au moins 12 testeurs inscrits 14 jours consécutifs en test fermé avant la demande d’accès production. Vérifier l’applicabilité dans la Console. |
@@ -50,6 +50,8 @@ La fiche V1 doit correspondre à l’artefact distribué et à ses services acti
 - Publication · Activer les textes et le téléchargement à l’issue du dossier GO. Le registre commercial reste en attente.
 
 ### Notice de confidentialité V1 à vérifier sur le candidat signé
+
+Le texte complet proposé est [la politique V1](../../docs/v1-commercial/play/politique-confidentialite-v1.md). Il ne peut pas être publié tant que l’éditeur n’a pas rempli son identité, son contact et la conservation des journaux d’hébergement. La notice ci-dessous reste un résumé de travail.
 
 Les accès au journal d’appels, aux contacts et à la messagerie servent aux écrans et actions choisis par l’utilisateur. Les listes et règles locales résident dans le stockage privé de l’application. Les SMS/MMS transitent par la pile téléphonie Android et l’opérateur de la ligne sélectionnée. Le sélecteur système ouvre les fichiers choisis. L’éditeur Contacts système ouvre la fiche existante sur action explicite. Le rythme et le compte de synchronisation des contacts sont réglés dans les applications Android de contacts. Les données de diagnostic exportées quittent le stockage privé selon la destination choisie par l’utilisateur.
 

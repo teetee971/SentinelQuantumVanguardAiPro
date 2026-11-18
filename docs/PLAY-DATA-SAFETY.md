@@ -1,5 +1,7 @@
 # Google Play Data Safety — feuille de préparation Sentinel
 
+> Profil Play Phone Core V1 : ne pas recopier cette feuille dans le formulaire V1. Elle inclut le Studio voix et des appels VoIP absents du profil `-PsentinelCommercialV1=true`. Utiliser `docs/v1-commercial/play/data-safety-v1.md`.
+
 > Statut : document de préparation interne. Ce fichier n’est pas une déclaration Play Console soumise et ne doit pas être présenté comme telle.
 
 ## Principe
