@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.security.KeyStore
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -17,10 +18,11 @@ class SentinelAiActionJournalEvidenceTest {
     @Test fun actionJournalEvidenceProtocol() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext
+        assumeTrue("Application journal evidence requires the dedicated C11 validation APK",
+            context.packageName == SENTINEL_AI_C11_PACKAGE)
         val args=InstrumentationRegistry.getArguments()
         val phase=args.getString("sentinel_ai_action_phase") ?: "baseline"
         check(phase in setOf("baseline","verify"))
-        if (phase=="verify") check(context.packageName=="com.sentinel.quantum.aivalidation")
         val directory=File(context.noBackupFilesDir,"sentinel-ai-audit-v1")
         val keys=KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val present=keys.containsAlias("sentinel_ai_audit_v1")
@@ -28,9 +30,9 @@ class SentinelAiActionJournalEvidenceTest {
         if (!present) {
             check(phase=="baseline") { "Real application journal is missing" }
             instrumentation.sendStatus(0,Bundle().apply {
-                putString("cycle9_baseline_sequence","0")
-                putString("cycle9_baseline_digest","0".repeat(64))
-                putString("cycle9_action_window_verified","false")
+                putString("cycle11_baseline_sequence","0")
+                putString("cycle11_baseline_digest","0".repeat(64))
+                putString("cycle11_action_window_verified","false")
             })
             return
         }
@@ -57,9 +59,9 @@ class SentinelAiActionJournalEvidenceTest {
             verified=true
         }
         instrumentation.sendStatus(0,Bundle().apply {
-            putString("cycle9_baseline_sequence",receipt.sequence.toString())
-            putString("cycle9_baseline_digest",receipt.digest)
-            putString("cycle9_action_window_verified",verified.toString())
+            putString("cycle11_baseline_sequence",receipt.sequence.toString())
+            putString("cycle11_baseline_digest",receipt.digest)
+            putString("cycle11_action_window_verified",verified.toString())
         })
     }
 }

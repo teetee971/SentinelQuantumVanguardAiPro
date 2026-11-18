@@ -11,20 +11,17 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.io.FileOutputStream
 import java.security.KeyStore
-import java.security.MessageDigest
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.crypto.KeyGenerator
-import javax.crypto.Mac
 import javax.crypto.SecretKey
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Physical-device protocol. Default roundtrip is NOT proof of process/device restart.
- * Only explicit verify mode can report restart_verified=true. Never touches the production alias.
- */
+/** C11 persistence fixtures. A physical receipt requires a successful, explicit verify phase. */
 @RunWith(AndroidJUnit4::class)
 class SentinelAiPersistenceQualificationTest {
     private fun store() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -33,11 +30,6 @@ class SentinelAiPersistenceQualificationTest {
         init(KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY)
             .setDigests(KeyProperties.DIGEST_SHA256).build())
         generateKey()
-    }
-    private fun sign(key: SecretKey, value: String) = Mac.getInstance("HmacSHA256").run {
-        init(key)
-        doFinal(("cycle9-restart-fixture|"+value).toByteArray(Charsets.US_ASCII))
-            .joinToString("") { "%02x".format(it) }
     }
     @Test fun concurrentAndroidKeystoreJournalWriters() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -64,58 +56,91 @@ class SentinelAiPersistenceQualificationTest {
         val context = instrumentation.targetContext
         val arguments = InstrumentationRegistry.getArguments()
         val phase = arguments.getString("sentinel_ai_restart_phase") ?: "roundtrip"
-        check(phase in setOf("roundtrip", "prepare", "verify", "cleanup")) { "Unknown fixture phase" }
-        if (phase != "roundtrip") check(context.packageName == "com.sentinel.quantum.aivalidation") {
-            "Persistent fixture phases require the isolated validation APK"
+        check(phase in setOf("roundtrip", "prepare", "verify")) { "Unknown C11 fixture phase" }
+        val roundtrip = phase == "roundtrip"
+        if (!roundtrip) check(context.packageName == SENTINEL_AI_C11_PACKAGE) {
+            "Persistent fixtures require the dedicated C11 validation APK"
         }
-        val alias = if (phase == "roundtrip") "sentinel_ai_restart_test_"+UUID.randomUUID()
-                    else "sentinel_ai_cycle9_restart_fixture_only"
+        val kindArgument = arguments.getString("sentinel_ai_restart_kind") ?: "process"
+        val kind = SentinelAiRestartKind.entries.singleOrNull { it.argument == kindArgument }
+            ?: error("Unknown C11 restart kind")
+        val run = if (roundtrip) UUID.randomUUID().toString() else {
+            val value = checkNotNull(arguments.getString("sentinel_ai_run_id")) { "C11 run ID required" }
+            check(value.length == 36 && UUID.fromString(value).toString() == value) { "Invalid C11 run ID" }
+            value
+        }
+        val scope = if (roundtrip) "roundtrip" else kind.argument
+        val alias = "sentinel_ai_c11_restart_${scope}_$run"
         val directory = File(context.noBackupFilesDir, alias)
+        val metadataFile = File(directory, "restart-metadata")
         val keys = store()
-        var cleanup = phase == "roundtrip" || phase == "cleanup"
-        var restarted = false
-        var rebooted = false
+        val identity = SentinelAiRestartIdentity.fromProcStat(
+            File("/proc/self/stat").readText(Charsets.US_ASCII),
+            Process.myPid(),
+            Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, -1)
+        )
+
+        fun receipt(prepared: Boolean, verified: Boolean, sequence: Long) {
+            instrumentation.sendStatus(0, Bundle().apply {
+                putString("cycle11_phase", phase)
+                putString("cycle11_run_id", run)
+                putString("cycle11_restart_kind", kind.argument)
+                putString("cycle11_pid", identity.pid.toString())
+                putString("cycle11_start_ticks", identity.startTicks.toString())
+                putString("cycle11_boot_count", identity.bootCount.toString())
+                putString("cycle11_sequence", sequence.toString())
+                putString("cycle11_prepare_committed", prepared.toString())
+                putString("cycle11_restart_verified", (verified && kind == SentinelAiRestartKind.PROCESS).toString())
+                putString("cycle11_reboot_verified", (verified && kind == SentinelAiRestartKind.REBOOT).toString())
+            })
+        }
+
+        fun readIdentity(key: SecretKey): SentinelAiRestartIdentity {
+            check(metadataFile.length() in 1..SentinelAiRestartIdentity.MAX_AUTHENTICATED_LENGTH) {
+                "Missing or oversized C11 process metadata"
+            }
+            return SentinelAiRestartIdentity.verifyAuthenticated(metadataFile.readText(Charsets.US_ASCII), key, alias)
+        }
+
+        if (phase == "verify") {
+            check(keys.containsAlias(alias) && directory.isDirectory) { "Prepared C11 fixture missing" }
+            val key = keys.getKey(alias, null) as SecretKey
+            assertNull(key.encoded)
+            val previous = readIdentity(key)
+            check(identity.provesRestartFrom(previous, kind)) { "Requested C11 restart was not demonstrated" }
+            val journal = SentinelAiAuditJournal.open(directory, key)
+            assertEquals(1L, journal.verify().sequence)
+            val appended = journal.append(SentinelAiAuditJournal.Kind.REVOKED, SystemClock.elapsedRealtime())
+            assertEquals(2L, appended.sequence)
+            assertEquals(appended, journal.verify())
+            receipt(prepared = false, verified = true, sequence = appended.sequence)
+            return
+        }
+
+        check(!directory.exists() && !keys.containsAlias(alias)) { "C11 fixture exists; use a new run ID" }
+        val key = createKey(alias)
         try {
-            if (phase == "cleanup") return
-            if (phase == "prepare" || phase == "roundtrip") {
-                check(!directory.exists() && !keys.containsAlias(alias)) { "Fixture exists: verify it or explicitly clean up; never overwrite" }
-                val key = createKey(alias);assertNull(key.encoded)
-                val journal = SentinelAiAuditJournal.create(directory,key)
-                journal.append(SentinelAiAuditJournal.Kind.SESSION_OPEN,SystemClock.elapsedRealtime())
-                val boot = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT,-1)
-                val metadata = "${Process.myPid()}|$boot"
-                FileOutputStream(File(directory,"restart-metadata")).use { out ->
-                    out.write((metadata+"|"+sign(key,metadata)).toByteArray(Charsets.US_ASCII));out.fd.sync()
-                }
-                assertEquals(1L, SentinelAiAuditJournal.open(directory,keys.getKey(alias,null) as SecretKey).verify().sequence)
-            } else {
-                check(keys.containsAlias(alias) && directory.isDirectory) { "Prepared fixture missing" }
-                val key = keys.getKey(alias,null) as SecretKey;assertNull(key.encoded)
-                val parts = File(directory,"restart-metadata").readText().split('|')
-                check(parts.size==3)
-                val metadata=parts.take(2).joinToString("|")
-                check(MessageDigest.isEqual(sign(key,metadata).toByteArray(),parts[2].toByteArray())) { "Fixture metadata altered" }
-                val previousPid=parts[0].toInt();val previousBoot=parts[1].toInt()
-                val boot=Settings.Global.getInt(context.contentResolver,Settings.Global.BOOT_COUNT,-1)
-                rebooted=previousBoot>=0 && boot>previousBoot
-                restarted=rebooted || previousPid!=Process.myPid()
-                check(restarted) { "A process restart was not demonstrated" }
-                if (arguments.getString("sentinel_ai_require_reboot")=="true") check(rebooted) { "A device reboot was not demonstrated" }
-                val journal=SentinelAiAuditJournal.open(directory,key)
-                assertEquals(1L,journal.verify().sequence)
-                assertEquals(2L,journal.append(SentinelAiAuditJournal.Kind.REVOKED,SystemClock.elapsedRealtime()).sequence)
-                cleanup=true // Successful fixture verification only; preserve evidence on failure.
+            assertNull(key.encoded)
+            val journal = SentinelAiAuditJournal.create(directory, key)
+            val appended = journal.append(SentinelAiAuditJournal.Kind.SESSION_OPEN, SystemClock.elapsedRealtime())
+            FileOutputStream(metadataFile).use { output ->
+                output.write(identity.authenticate(key, alias).toByteArray(Charsets.US_ASCII))
+                output.fd.sync()
+            }
+            assertEquals(identity, readIdentity(key))
+            assertEquals(1L, appended.sequence)
+            assertEquals(appended, SentinelAiAuditJournal.open(directory, key).verify())
+            receipt(prepared = true, verified = false, sequence = appended.sequence)
+            if (!roundtrip) {
+                // Keep the instrumented target alive until the operator issues the explicit stop or reboot.
+                CountDownLatch(1).await(180, TimeUnit.SECONDS)
+                error("C11 prepare timed out waiting for the explicit stop or reboot")
             }
         } finally {
-            if (cleanup) {
-                if (keys.containsAlias(alias)) keys.deleteEntry(alias)
-                directory.deleteRecursively() // Only the named fixture, never sentinel-ai-audit-v1.
+            if (roundtrip) {
+                keys.deleteEntry(alias)
+                directory.deleteRecursively()
             }
-            instrumentation.sendStatus(0,Bundle().apply {
-                putString("cycle9_phase",phase)
-                putString("cycle9_restart_verified",restarted.toString())
-                putString("cycle9_reboot_verified",rebooted.toString())
-            })
         }
     }
 }

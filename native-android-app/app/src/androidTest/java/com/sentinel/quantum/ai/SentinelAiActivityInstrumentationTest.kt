@@ -48,7 +48,7 @@ class SentinelAiActivityInstrumentationTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         assumeTrue("Use the isolated validation package for a test that appends a revocation event",
-            context.packageName == "com.sentinel.quantum.aivalidation")
+            context.packageName == SENTINEL_AI_C11_PACKAGE)
 
         val activityClass = SentinelAiActivity::class.java
         val gate = activityClass.getDeclaredField("processGate").apply { isAccessible = true }
