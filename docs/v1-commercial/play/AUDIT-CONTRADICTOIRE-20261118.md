@@ -1,6 +1,8 @@
 # Audit contradictoire · Sentinel Phone Core V1
 
-**18 novembre 2026. Verdict : NO-GO production.**
+**18 novembre 2026, mis à jour après les correctifs P0 de code. Verdict : NO-GO production.**
+
+A2 et A3 sont corrigés dans le source : aucun GET de catalogue sans l’interrupteur, y compris la fiche d’appel, le composeur, l’écran de recherche et le worker. Une copie déjà en mémoire ou sur disque reste lisible. A1 reste bloquant : aucune URL HTTPS de la politique V1 n’a répondu autre chose que la coquille du site. Le bouton ouvre encore la politique de vitrine vérifiée, via `CommercialPrivacyPolicyLink`, et l’écran le dit. A4 reste non exécuté.
 
 Cet audit a lu le dépôt sur `cursor/v1-play-compliance-20261118-c39e` et les pages Play citées. Il n’a pas ouvert la Play Console, pas reconstruit l’AAB, pas capturé le réseau, pas exécuté les tests. Le compte Play n’est pas à recréer. Aucune fusion. La PR #1767 n’est pas modifiée.
 
@@ -14,9 +16,9 @@ Les déclarations du développeur (compte personnel déjà créé, application �
 
 | Id | Gravité | Constat | Preuve | Statut |
 | --- | --- | --- | --- | --- |
-| A1 | P0 | Le bouton « Politique de confidentialité » ouvre la politique de la vitrine, pas la politique V1. | `CommercialPhoneCoreScreens.kt` lignes 134-137, URL `https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html` | Confirmé dans le source. NON CORRIGÉ. |
-| A2 | P0 | Un appel français peut déclencher un GET de catalogue sans l’interrupteur de consentement. | `SentinelCallScreeningService.kt` lignes 157-174 ouvre `CallerIdActivity`. `CallerIdActivity.kt` lignes 172-179 appelle `lookup()` sans test de `COMMERCIAL_PHONE_CORE_V1` ni de l’interrupteur. `ArcepDirectoryClient.kt` lignes 44-54 télécharge si aucune copie fraîche n’est en mémoire. | Confirmé dans le source. NON EXÉCUTÉ sur appareil. |
-| A3 | P0 | La recherche du composeur télécharge aussi hors interrupteur. | `SentinelDialerActivity.kt` lignes 817-855. | Confirmé dans le source. |
+| A1 | P0 | Le bouton ouvre encore la politique de vitrine. La politique V1 n’est pas publiée : les URL candidates répondent par la coquille du site. | `CommercialPrivacyPolicyLink` garde `VERIFIED_V1_URL` nul. Le bouton utilise cette résolution et l’affiche. | BLOQUÉ. Le correctif d’adresse est préparé, pas activé. |
+| A2 | P0 | La fiche d’appel ne télécharge plus sans l’interrupteur. | `CallerIdActivity` passe `isPublishedCatalogRefreshEnabled`. `loadDirectory` lève `CatalogNetworkDisabled` avant tout HTTP. Le service de filtrage n’appelle pas le client. | CORRIGÉ dans le source. NON EXÉCUTÉ sur appareil. |
+| A3 | P0 | La recherche du composeur suit la même règle. | `SentinelDialerActivity.lookup` passe le même interrupteur. | CORRIGÉ dans le source. NON EXÉCUTÉ sur appareil. |
 | A4 | P0 | Pas d’AAB signé revérifié sur l’arbre courant, pas de manifeste fusionné produit dans cette session, pas de recette S24+. | `audit/v1-commercial/TEST_EVIDENCE.md` rattache ses PASS au commit `25c4e2c9`, antérieur à `113862500`. Cette session n’a pas relancé Gradle. | NON EXÉCUTÉ ici. Les PASS anciens ne couvrent pas l’arbre courant. |
 | B1 | P1 | La feuille Data safety classait les SMS et les appels comme collectés par le développeur. | Version corrigée dans `data-safety-v1.md`. Aucun envoi V1 relu vers un serveur Sentinel. | Affirmation précédente retirée. Risque résiduel : lecture large possible du mot « collect ». |
 | B2 | P1 | Auth0, LiveKit, WireGuard et Wear restent des dépendances Gradle. Leurs composants connus sont retirés du manifeste source V1. | `app/build.gradle` dépendances. `src/v1Commercial/AndroidManifest.xml` `tools:node="remove"`. | Absence à l’exécution NON DÉMONTRÉE. |

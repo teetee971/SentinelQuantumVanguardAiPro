@@ -52,6 +52,9 @@ import com.sentinel.quantum.intelligence.Freshness
 import com.sentinel.quantum.intelligence.IntelligenceCoreRuntime
 import com.sentinel.quantum.intelligence.IntelligenceSnapshotPresentation
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.CATALOG_LOCAL_COPY_ABSENT
+import com.sentinel.quantum.security.CatalogNetworkDisabled
+import com.sentinel.quantum.security.PublishedNumberCatalogStore
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CallerIdProvenance
 import com.sentinel.quantum.security.CommunicationReputationCache
@@ -176,7 +179,12 @@ class CallerIdActivity : ComponentActivity() {
                     } else {
                         officialStatus = "Recherche de l’attribution officielle…"
                         val result = withContext(Dispatchers.IO) {
-                            runCatching { officialDirectory.lookup(number) }
+                            PublishedNumberCatalogStore.bind(applicationContext)
+                            runCatching {
+                                officialDirectory.lookup(number) {
+                                    settingsStore.isPublishedCatalogRefreshEnabled()
+                                }
+                            }
                         }
                         if (!hasCurrentAuthority()) {
                             finish()
@@ -189,9 +197,13 @@ class CallerIdActivity : ComponentActivity() {
                             } else {
                                 "Attribution officielle ARCEP trouvée."
                             }
-                        }.onFailure {
+                        }.onFailure { error ->
                             officialAllocation = null
-                            officialStatus = "Index ARCEP temporairement indisponible."
+                            officialStatus = if (error is CatalogNetworkDisabled) {
+                                CATALOG_LOCAL_COPY_ABSENT
+                            } else {
+                                "Index ARCEP temporairement indisponible."
+                            }
                         }
                     }
                 }
