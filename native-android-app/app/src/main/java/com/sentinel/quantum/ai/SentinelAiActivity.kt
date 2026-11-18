@@ -12,6 +12,7 @@ import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicReference
 
 /** Internal experimental entry point. No Phone Core action is registered. No input/proof is saved.
@@ -238,7 +239,8 @@ class SentinelAiActivity : ComponentActivity() {
     override fun onStop() {
         foreground = false
         engine.getAndSet(null)?.close()
-        if (ticket == null) revoke()
+        // The process request already cleared every activity and blocks new consent.
+        if (ticket == null && !processAcknowledgementPending) revoke()
         super.onStop()
     }
     override fun onDestroy() {
@@ -395,34 +397,37 @@ class SentinelAiActivity : ComponentActivity() {
             activity.status.text = "Révocation des autorisations IA du processus demandée…"
             epoch
         }
+        fun acknowledge(result: String) {
+            processAcknowledgementPending = false
+            activities.forEach { activity ->
+                if (activity in epochs && (epochs[activity] == null || activity.epoch() == epochs[activity])) {
+                    activity.status.text = result
+                }
+                activity.refresh()
+            }
+        }
         if (epochs.containsValue(null)) {
             // Keep the gate closed. Another explicit request can retry this revocation.
-            processAcknowledgementPending = false
-            activities.forEach {
-                it.status.text = unconfirmed
-                it.refresh()
-            }
+            acknowledge(unconfirmed)
             return
         }
         val context = applicationContext
-        revocationWorker.execute {
-            val revoked = try { processGate.awaitRevocation(revocation); true } catch (_: Exception) { false }
-            // Denial must succeed independently of a full, corrupt or unavailable audit store.
-            val recorded = if (revoked) try {
-                SentinelAiAndroidAuditJournal.open(context).append(SentinelAiAuditJournal.Kind.PROCESS_REVOKED,
-                    SentinelAiAndroidClock.elapsedRealtimeMs())
-                true
-            } catch (_: Exception) { false } else false
-            val result = if (revoked && recorded) "Autorisations IA révoquées dans ce processus et événement journalisé."
-                         else if (revoked) "Autorisations IA révoquées dans ce processus ; journal indisponible."
-                         else unconfirmed
-            runOnUiThread {
-                processAcknowledgementPending = false
-                activities.forEach { activity ->
-                    if (activity.epoch() == epochs[activity]) activity.status.text = result
-                    activity.refresh()
-                }
+        try {
+            revocationWorker.execute {
+                val revoked = try { processGate.awaitRevocation(revocation); true } catch (_: Exception) { false }
+                // Denial must succeed independently of a full, corrupt or unavailable audit store.
+                val recorded = if (revoked) try {
+                    SentinelAiAndroidAuditJournal.open(context).append(SentinelAiAuditJournal.Kind.PROCESS_REVOKED,
+                        SentinelAiAndroidClock.elapsedRealtimeMs())
+                    true
+                } catch (_: Exception) { false } else false
+                val result = if (revoked && recorded) "Autorisations IA révoquées dans ce processus et événement journalisé."
+                             else if (revoked) "Autorisations IA révoquées dans ce processus ; journal indisponible."
+                             else unconfirmed
+                runOnUiThread { acknowledge(result) }
             }
+        } catch (_: RejectedExecutionException) {
+            acknowledge(unconfirmed)
         }
     }
     private fun clearConsentView() {
