@@ -40,8 +40,8 @@ La personne qui publie l’application est une personne physique. Les éléments
 | Statut | Personne physique, sans entreprise immatriculée. Aucun SIREN ni SIRET n’est déclaré. |
 | Statut Play déclaré en novembre 2026 | Non-professionnel, non-trader. Ce statut n’est pas une autorisation permanente. [Déclaration trader](https://support.google.com/googleplay/android-developer/answer/17594752). |
 | Éditeur | Thierry Naud |
-| Localisation | Guadeloupe, France. Ce n’est pas une adresse postale. |
-| Adresse postale | [[À COMPLÉTER : voie, code postal et commune. Ne pas les inventer. La Guadeloupe ne les remplace pas.]] |
+| Localisation confirmée | Commune de Morne-à-l’Eau, Guadeloupe, France. Le code postal de cette commune est 97111. Aucune voie et aucun numéro de bâtiment n’ont été fournis. |
+| Adresse de voie | [[À COMPLÉTER : numéro et nom de voie. Morne-à-l’Eau ne les remplace pas.]] |
 | E-mail de contact, support et confidentialité | SentinelQuantumVanguardAiPro@gmail.com |
 | Téléphone | [[À COMPLÉTER : numéro réellement utilisé, s’il doit être communiqué. Ne pas l’inventer.]] |
 | Délégué à la protection des données | [[À COMPLÉTER : nom et contact, ou la mention exacte « non désigné »]] |
