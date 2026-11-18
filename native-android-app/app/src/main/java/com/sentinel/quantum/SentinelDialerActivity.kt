@@ -3,6 +3,7 @@ package com.sentinel.quantum
 import android.Manifest
 import android.app.role.RoleManager
 import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,6 +14,7 @@ import android.telecom.TelecomManager
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.provider.CallLog
+import android.provider.ContactsContract
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -550,6 +552,23 @@ class SentinelDialerActivity : ComponentActivity() {
         }
     }.getOrDefault(0L)
 
+    private fun editSystemContact(contact: LocalContactLookup.Contact, lookupKey: String): Boolean {
+        val lookupUri = ContactsContract.Contacts.getLookupUri(contact.contactId, lookupKey) ?: return false
+        val intent = Intent(Intent.ACTION_EDIT).setDataAndType(lookupUri, ContactsContract.Contacts.CONTENT_ITEM_TYPE)
+        return try {
+            val editor = packageManager.queryIntentActivities(
+                intent,
+                PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY
+            ).mapNotNull { it.activityInfo }.firstOrNull { it.exported } ?: return false
+            startActivity(intent.setComponent(ComponentName(editor.packageName, editor.name)))
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         contactsPermissionGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
@@ -562,18 +581,18 @@ class SentinelDialerActivity : ComponentActivity() {
                         .isAppearanceLightStatusBars = false
                 }
                 var number by rememberSaveable { mutableStateOf(initialDialNumber()) }
-                var directoryStatus by remember { mutableStateOf("Saisissez un numéro pour l’identifier.") }
+                var directoryStatus by remember { mutableStateOf<String?>(null) }
                 var lookupRunning by remember { mutableStateOf(false) }
                 var contactStatus by remember { mutableStateOf<String?>(null) }
                 var reputationStatus by remember { mutableStateOf<String?>(null) }
                 var phoneTab by rememberSaveable { mutableStateOf(
                     if (intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) 2 else 0
                 ) }
-                var showContacts by remember { mutableStateOf(intent?.getBooleanExtra(EXTRA_OPEN_CONTACTS, false) == true) }
-                var showRecents by remember { mutableStateOf(false) }
                 var recentItems by remember { mutableStateOf(emptyList<SystemCallLogReader.Entry>()) }
                 var recentVisibleLimit by remember { mutableStateOf(CALL_HISTORY_PAGE_SIZE) }
                 var recentLoading by remember { mutableStateOf(false) }
+                var recentAccessGranted by remember { mutableStateOf(false) }
+                var recentGeneration by remember { mutableStateOf(0) }
                 val recentSummary = remember(recentItems) {
                     CallHistoryInsights.summarize(recentItems)
                 }
@@ -581,6 +600,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 var contactFilter by rememberSaveable { mutableStateOf(0) }
                 var favoriteRefreshEpoch by remember { mutableStateOf(0) }
                 var contactItems by remember { mutableStateOf(emptyList<LocalContactLookup.Contact>()) }
+                var contactGeneration by remember { mutableStateOf(0) }
                 var contactVisibleLimit by remember { mutableStateOf(CONTACTS_PAGE_SIZE) }
                 var contactsLoading by remember { mutableStateOf(false) }
                 var contactListStatus by remember { mutableStateOf<String?>(null) }
@@ -590,20 +610,57 @@ class SentinelDialerActivity : ComponentActivity() {
                 val favorites = remember { PhoneFavoriteStore(context) }
                 val installTimestampMs = remember { currentInstallTimestamp() }
                 var resumeEpoch by remember { mutableStateOf(0) }
+                var resumed by remember { mutableStateOf(false) }
+                val callLog = remember { SystemCallLogReader(context) }
+
+                fun clearRecents() {
+                    recentGeneration++
+                    recentItems = emptyList()
+                    recentAccessGranted = false
+                    recentLoading = false
+                }
+
+                fun clearContacts() {
+                    contactGeneration++
+                    contactItems = emptyList()
+                    contactsLoading = false
+                    contactListStatus = null
+                    contactStatus = null
+                    contactQuery = ""
+                }
+
+                fun canReadContactsNow(): Boolean = resumed && ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.READ_CONTACTS
+                ) == PackageManager.PERMISSION_GRANTED
+
+                fun refreshPrivateAccess() {
+                    contactsPermissionGranted = canReadContactsNow()
+                    if (!contactsPermissionGranted) clearContacts()
+                    recentAccessGranted = resumed && callLog.canRead()
+                    if (!recentAccessGranted) clearRecents()
+                }
+
                 DisposableEffect(context) {
                     val observer = LifecycleEventObserver { _, event ->
-                        if (event == Lifecycle.Event.ON_RESUME) {
-                            contactsPermissionGranted = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.READ_CONTACTS
-                            ) == PackageManager.PERMISSION_GRANTED
-                            callLogPermissionGranted = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.READ_CALL_LOG
-                            ) == PackageManager.PERMISSION_GRANTED
-                            phoneStatePermissionGranted = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.READ_PHONE_STATE
-                            ) == PackageManager.PERMISSION_GRANTED
-                            callLineRefreshEpoch++
-                            resumeEpoch++
+                        when (event) {
+                            Lifecycle.Event.ON_RESUME -> {
+                                resumed = true
+                                refreshPrivateAccess()
+                                callLogPermissionGranted = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.READ_CALL_LOG
+                                ) == PackageManager.PERMISSION_GRANTED
+                                phoneStatePermissionGranted = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.READ_PHONE_STATE
+                                ) == PackageManager.PERMISSION_GRANTED
+                                callLineRefreshEpoch++
+                                resumeEpoch++
+                            }
+                            Lifecycle.Event.ON_PAUSE -> {
+                                resumed = false
+                                clearRecents()
+                                clearContacts()
+                            }
+                            else -> Unit
                         }
                     }
                     context.lifecycle.addObserver(observer)
@@ -612,7 +669,7 @@ class SentinelDialerActivity : ComponentActivity() {
                 LaunchedEffect(lifecycle) {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                         PhoneCoreLiveRefresh.snapshots(applicationContext).collect { snapshot ->
-                            contactsPermissionGranted = snapshot.diagnostics.contactsPermission
+                            refreshPrivateAccess()
                             callLogPermissionGranted = snapshot.diagnostics.callLogPermission
                             phoneStatePermissionGranted = snapshot.diagnostics.phoneStatePermission
                             callLineRefreshEpoch++
@@ -624,45 +681,68 @@ class SentinelDialerActivity : ComponentActivity() {
                 val rtr = remember { RtrDirectoryClient() }
                 val contacts = remember { LocalContactLookup(context) }
                 val settings = remember { SettingsStore(context) }
+                val reputationEnabled = !BuildConfig.COMMERCIAL_PHONE_CORE_V1 &&
+                    settings.callerReputationEnrichmentEnabled &&
+                    ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
                 val reputation = remember {
                     CallerReputationClient(egressGate = {
-                        settings.callerReputationEnrichmentEnabled &&
+                        !BuildConfig.COMMERCIAL_PHONE_CORE_V1 && settings.callerReputationEnrichmentEnabled &&
                             ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
                     })
                 }
-                val callLog = remember { SystemCallLogReader(context) }
                 val scope = rememberCoroutineScope()
 
+                fun changeDialNumber(value: String) {
+                    if (number == value) return
+                    number = value
+                    directoryStatus = null
+                    contactStatus = null
+                    reputationStatus = null
+                }
+
                 fun refreshRecents() {
-                    if (recentLoading || !holdsDialerRole() || !callLogPermissionGranted) return
+                    if (!resumed || recentLoading) return
+                    if (!callLog.canRead()) {
+                        clearRecents()
+                        return
+                    }
+                    val generation = recentGeneration
                     recentLoading = true
                     scope.launch {
                         val loaded = withContext(Dispatchers.IO) {
                             callLog.recent(CALL_HISTORY_LOAD_LIMIT)
                         }
+                        if (generation != recentGeneration) return@launch
+                        if (!callLog.canRead()) {
+                            clearRecents()
+                            return@launch
+                        }
+                        recentAccessGranted = true
                         recentItems = loaded
                         recentVisibleLimit = CALL_HISTORY_PAGE_SIZE
-                        showRecents = true
-                        showContacts = false
                         recentLoading = false
                     }
                 }
 
                 fun refreshContacts() {
-                    if (contactsLoading || !contactsPermissionGranted) return
+                    if (contactsLoading || !canReadContactsNow()) return
+                    val generation = contactGeneration
                     contactsLoading = true
                     contactListStatus = null
                     scope.launch {
                         val result = withContext(Dispatchers.IO) {
                             contacts.listWithState()
                         }
+                        if (generation != contactGeneration) return@launch
+                        if (!canReadContactsNow()) {
+                            refreshPrivateAccess()
+                            return@launch
+                        }
                         contactsLoading = false
                         when (result.state) {
                             LocalContactLookup.ContactAccessState.READY -> {
                                 contactItems = result.contacts
                                 contactVisibleLimit = CONTACTS_PAGE_SIZE
-                                showContacts = true
-                                showRecents = false
                                 contactFilter = 0
                                 contactListStatus = when {
                                     result.contacts.isEmpty() ->
@@ -673,20 +753,21 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }
                             LocalContactLookup.ContactAccessState.PERMISSION_REQUIRED -> {
-                                showContacts = false
+                                contactItems = emptyList()
                                 contactListStatus = "Autorisation Contacts requise."
                             }
                             LocalContactLookup.ContactAccessState.PROVIDER_UNAVAILABLE -> {
-                                showContacts = false
+                                contactItems = emptyList()
                                 contactListStatus = "Répertoire Android temporairement indisponible."
                             }
                         }
                     }
                 }
 
-                LaunchedEffect(openRecentsAfterDialerRoleGrant) {
-                    if (openRecentsAfterDialerRoleGrant && holdsDialerRole()) {
+                LaunchedEffect(openRecentsAfterDialerRoleGrant, resumed) {
+                    if (openRecentsAfterDialerRoleGrant && resumed) {
                         openRecentsAfterDialerRoleGrant = false
+                        if (!holdsDialerRole()) return@LaunchedEffect
                         if (callLogPermissionGranted) {
                             refreshRecents()
                         } else {
@@ -696,15 +777,16 @@ class SentinelDialerActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(openRecentsAfterCallLogPermissionGrant) {
-                    if (
-                        openRecentsAfterCallLogPermissionGrant &&
-                        callLogPermissionGranted &&
-                        holdsDialerRole()
-                    ) {
+                LaunchedEffect(openRecentsAfterCallLogPermissionGrant, resumed) {
+                    if (openRecentsAfterCallLogPermissionGrant && resumed) {
                         openRecentsAfterCallLogPermissionGrant = false
                         refreshRecents()
                     }
+                }
+
+                LaunchedEffect(phoneTab, resumed, recentAccessGranted, contactsPermissionGranted) {
+                    if (resumed && phoneTab == 1 && recentAccessGranted) refreshRecents()
+                    if (resumed && phoneTab == 2 && contactsPermissionGranted) refreshContacts()
                 }
 
                 LaunchedEffect(Unit) {
@@ -738,16 +820,21 @@ class SentinelDialerActivity : ComponentActivity() {
                     lookupRunning = true
                     directoryStatus = "Recherche officielle…"
                     contactStatus = null
-                    val remoteReputationAllowed = settings.callerReputationEnrichmentEnabled &&
+                    val remoteReputationAllowed = !BuildConfig.COMMERCIAL_PHONE_CORE_V1 &&
+                        settings.callerReputationEnrichmentEnabled &&
                         ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)
                     reputationStatus = if (remoteReputationAllowed) "Réputation Sentinel : analyse…" else null
                     scope.launch {
-                        val localIdentity = withContext(Dispatchers.IO) {
-                            contacts.find(lookupNumber)
-                        }
-                        contactStatus = localIdentity?.let { identity ->
-                            "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
-                        }
+                        val identityGeneration = contactGeneration
+                        val localIdentity = if (canReadContactsNow()) {
+                            withContext(Dispatchers.IO) { contacts.find(lookupNumber) }
+                        } else null
+                        contactStatus = localIdentity
+                            ?.takeIf { identityGeneration == contactGeneration && canReadContactsNow() }
+                            ?.takeIf { number == lookupNumber }
+                            ?.let { identity ->
+                                "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
+                            }
                         val result = withContext(Dispatchers.IO) {
                             runCatching {
                                 val at = RtrDirectoryClient.normalize(lookupNumber)
@@ -769,9 +856,9 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }.getOrElse { "Répertoire officiel temporairement indisponible" }
                         }
-                        directoryStatus = result
-                        if (remoteReputationAllowed) {
-                            reputationStatus = withContext(Dispatchers.IO) {
+                        if (number == lookupNumber) directoryStatus = result
+                        if (remoteReputationAllowed && number == lookupNumber) {
+                            val remoteResult = withContext(Dispatchers.IO) {
                                 runCatching {
                                     val r = reputation.evaluate(
                                         callerNumber = lookupNumber,
@@ -789,6 +876,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                         if (r.flags.isNotEmpty()) " · " + r.flags.take(3).joinToString(", ") else ""
                                 }.getOrElse { "Réputation Sentinel temporairement indisponible" }
                             }
+                            if (number == lookupNumber) reputationStatus = remoteResult
                         }
                         lookupRunning = false
                     }
@@ -1114,10 +1202,7 @@ class SentinelDialerActivity : ComponentActivity() {
                                 OutlinedTextField(
                                     value = number,
                                     onValueChange = {
-                                        number = it.take(32)
-                                        directoryStatus = "Saisissez un numéro puis lancez la vérification."
-                                        contactStatus = null
-                                        reputationStatus = null
+                                        changeDialNumber(it.take(32))
                                     },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true,
@@ -1152,21 +1237,15 @@ class SentinelDialerActivity : ComponentActivity() {
                                 }
                             }
 
-                            PhoneCoreNumberPad(number = number, onChange = {
-                                number = it
-                                directoryStatus = "Saisissez un numéro puis lancez la vérification."
-                                contactStatus = null
-                                reputationStatus = null
-                            })
-                            if (contactStatus != null || reputationStatus != null || lookupRunning) {
+                            PhoneCoreNumberPad(number = number, onChange = ::changeDialNumber)
+                            if (directoryStatus != null || contactStatus != null || reputationStatus != null || lookupRunning) {
                                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
                                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text("Résultat Sentinel", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                         contactStatus?.let { Text(it, fontWeight = FontWeight.Bold) }
-                                        Text(directoryStatus, style = MaterialTheme.typography.bodySmall)
+                                        directoryStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                                         reputationStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                                        if (!settings.callerReputationEnrichmentEnabled ||
-                                            !ProtectionModePolicy.permitsCallerNumberEnrichment(settings.protectionMode)) {
+                                        if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1 && !reputationEnabled) {
                                             Text(
                                                 "Réputation distante désactivée · analyse locale et attribution officielle uniquement.",
                                                 style = MaterialTheme.typography.labelSmall,
@@ -1207,42 +1286,44 @@ class SentinelDialerActivity : ComponentActivity() {
                         if (phoneTab == 3) {
                             Text("Réglages Phone Core", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             data class ProtectionItem(val title: String, val detail: String, val state: SentinelState)
-                            val protectionItems = listOf(
-                                ProtectionItem(
+                            val protectionItems = buildList {
+                                add(ProtectionItem(
                                     "Filtrage d’appels",
                                     "Rôle Filtrage d’appels observé sur cet appareil",
                                     if (runtimeSetupFacts.callScreeningRoleHeld) SentinelState.READY else SentinelState.TO_CONFIGURE
-                                ),
-                                ProtectionItem(
+                                ))
+                                add(ProtectionItem(
                                     "Identification d’appel",
                                     "Accès Contacts observé sur cet appareil",
                                     if (contactsPermissionGranted) SentinelState.READY else SentinelState.TO_CONFIGURE
-                                ),
-                                ProtectionItem(
+                                ))
+                                add(ProtectionItem(
                                     "Protection SMS/MMS",
                                     if (smsMmsPrerequisitesReady)
                                         "Rôle SMS et autorisations SMS/MMS observés"
                                     else
                                         "Rôle ou autorisations SMS/MMS à finaliser",
                                     if (smsMmsPrerequisitesReady) SentinelState.READY else SentinelState.TO_CONFIGURE
-                                ),
-                                ProtectionItem(
-                                    "Enrichissement distant",
-                                    if (settings.callerReputationEnrichmentEnabled)
-                                        "Activé par l’utilisateur ; disponibilité réseau non mesurée ici"
-                                    else
-                                        "Désactivé par l’utilisateur",
-                                    if (settings.callerReputationEnrichmentEnabled) SentinelState.UNKNOWN else SentinelState.TO_CONFIGURE
-                                ),
-                                ProtectionItem(
+                                ))
+                                if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                                    add(ProtectionItem(
+                                        "Enrichissement distant",
+                                        if (reputationEnabled)
+                                            "Activé par l’utilisateur · disponibilité réseau à vérifier"
+                                        else
+                                            "Désactivé",
+                                        if (reputationEnabled) SentinelState.UNKNOWN else SentinelState.TO_CONFIGURE
+                                    ))
+                                }
+                                add(ProtectionItem(
                                     "Notifications téléphonie",
                                     if (runtimeSetupFacts.notificationChannelsReady)
                                         "Canaux appels/SMS observés comme disponibles"
                                     else
                                         "Canaux appels/SMS à vérifier",
                                     if (runtimeSetupFacts.notificationChannelsReady) SentinelState.READY else SentinelState.TO_CONFIGURE
-                                )
-                            )
+                                ))
+                            }
                             protectionItems.forEach { item ->
                                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
                                     Row(
@@ -1285,7 +1366,10 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (phoneTab == 1 && callLogPermissionGranted) {
+                        if (phoneTab == 1 && resumed && !recentAccessGranted) {
+                            Text("Le rôle Téléphone et l’autorisation Journal d’appels sont requis.")
+                        }
+                        if (phoneTab == 1 && recentAccessGranted) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(18.dp),
@@ -1327,16 +1411,8 @@ class SentinelDialerActivity : ComponentActivity() {
                                 )
                             }
                             recentItems.take(recentVisibleLimit).forEach { entry ->
-                                OutlinedButton(
-                                    onClick = {
-                                        entry.number?.let(ContactDialNumberPolicy::fromProvider)?.let {
-                                            number = it
-                                            phoneTab = 0
-                                            showRecents = false
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
+                                val dialable = entry.number?.let(ContactDialNumberPolicy::fromProvider)
+                                val details: @Composable () -> Unit = {
                                     Column(Modifier.fillMaxWidth()) {
                                         val recentLabels = CallHistoryPresentationPolicy.labels(
                                             entry.number,
@@ -1362,6 +1438,27 @@ class SentinelDialerActivity : ComponentActivity() {
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                    }
+                                }
+                                if (dialable == null) {
+                                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                                        Box(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                                            details()
+                                        }
+                                    }
+                                } else {
+                                    OutlinedButton(
+                                        onClick = {
+                                            if (!callLog.canRead()) {
+                                                clearRecents()
+                                                return@OutlinedButton
+                                            }
+                                            changeDialNumber(dialable)
+                                            phoneTab = 0
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        details()
                                     }
                                 }
                             }
@@ -1406,7 +1503,7 @@ class SentinelDialerActivity : ComponentActivity() {
                             )
                         }
 
-                        if (phoneTab == 2 && contactsPermissionGranted) {
+                        if (phoneTab == 2 && resumed && contactsPermissionGranted) {
                             val callableCount = remember(contactItems) {
                                 contactItems.count { it.phoneNumbers.isNotEmpty() }
                             }
@@ -1642,6 +1739,21 @@ class SentinelDialerActivity : ComponentActivity() {
                                             }
                                         }
 
+                                        if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                                            contact.lookupKey?.let { lookupKey ->
+                                                TextButton(onClick = {
+                                                    if (!canReadContactsNow()) {
+                                                        refreshPrivateAccess()
+                                                        return@TextButton
+                                                    }
+                                                    if (!editSystemContact(contact, lookupKey)) {
+                                                        contactListStatus = "Éditeur Contacts système indisponible."
+                                                    }
+                                                }) {
+                                                    Text("Modifier dans Contacts")
+                                                }
+                                            }
+                                        }
                                         if (displayNumbers.isEmpty()) {
                                             Text(
                                                 if (contact.providerHasPhoneNumber) {
@@ -1678,6 +1790,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         val isFavorite = dialable != null && dialable in favoriteNumbers
                                                         FilledTonalIconButton(
                                                             onClick = {
+                                                                if (!canReadContactsNow()) {
+                                                                    refreshPrivateAccess()
+                                                                    return@FilledTonalIconButton
+                                                                }
                                                                 if (dialable != null && favorites.setFavorite(dialable, !isFavorite)) {
                                                                     favoriteRefreshEpoch++
                                                                     contactListStatus = if (isFavorite) "Retiré des favoris." else "Ajouté aux favoris."
@@ -1692,8 +1808,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         }
                                                         FilledTonalIconButton(
                                                             onClick = {
+                                                                if (!canReadContactsNow()) {
+                                                                    refreshPrivateAccess()
+                                                                    return@FilledTonalIconButton
+                                                                }
                                                                 if (dialable != null) {
-                                                                    number = dialable
+                                                                    changeDialNumber(dialable)
                                                                     contactStatus = "Contact : " + contact.displayName
                                                                     if (holdsDialerRole()) {
                                                                         placeCallIfReady(dialable)
@@ -1711,6 +1831,10 @@ class SentinelDialerActivity : ComponentActivity() {
                                                         }
                                                         FilledTonalIconButton(
                                                             onClick = {
+                                                                if (!canReadContactsNow()) {
+                                                                    refreshPrivateAccess()
+                                                                    return@FilledTonalIconButton
+                                                                }
                                                                 if (dialable != null) {
                                                                     startActivity(
                                                                         Intent(
@@ -1733,25 +1857,31 @@ class SentinelDialerActivity : ComponentActivity() {
                                                     }
                                                 }
 
-                                                WhatsAppClickToChatPolicy.urlFor(phoneNumber)?.let { whatsappUrl ->
-                                                    TextButton(
-                                                        onClick = {
-                                                            try {
-                                                                startActivity(
-                                                                    Intent(
-                                                                        Intent.ACTION_VIEW,
-                                                                        Uri.parse(whatsappUrl)
+                                                if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                                                    WhatsAppClickToChatPolicy.urlFor(phoneNumber)?.let { whatsappUrl ->
+                                                        TextButton(
+                                                            onClick = {
+                                                                if (!canReadContactsNow()) {
+                                                                    refreshPrivateAccess()
+                                                                    return@TextButton
+                                                                }
+                                                                try {
+                                                                    startActivity(
+                                                                        Intent(
+                                                                            Intent.ACTION_VIEW,
+                                                                            Uri.parse(whatsappUrl)
+                                                                        )
                                                                     )
-                                                                )
-                                                            } catch (_: ActivityNotFoundException) {
-                                                                contactListStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
-                                                            } catch (_: SecurityException) {
-                                                                contactListStatus = "Ouverture WhatsApp bloquée par la sécurité Android."
-                                                            }
-                                                        },
-                                                        modifier = Modifier.align(Alignment.End)
-                                                    ) {
-                                                        Text("WhatsApp")
+                                                                } catch (_: ActivityNotFoundException) {
+                                                                    contactListStatus = "Aucune application ne peut ouvrir WhatsApp sur cet appareil."
+                                                                } catch (_: SecurityException) {
+                                                                    contactListStatus = "Ouverture WhatsApp bloquée par la sécurité Android."
+                                                                }
+                                                            },
+                                                            modifier = Modifier.align(Alignment.End)
+                                                        ) {
+                                                            Text("WhatsApp")
+                                                        }
                                                     }
                                                 }
                                             }

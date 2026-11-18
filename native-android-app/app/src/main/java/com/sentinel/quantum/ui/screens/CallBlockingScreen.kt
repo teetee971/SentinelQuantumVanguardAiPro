@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.R
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
@@ -254,21 +255,23 @@ fun CallBlockingScreen(navController: NavController) {
                 )
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.caller_id_remote_title), fontWeight = FontWeight.Bold)
-                    Text(
-                        stringResource(R.string.caller_id_remote_description),
-                        style = MaterialTheme.typography.bodySmall
+            if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.caller_id_remote_title), fontWeight = FontWeight.Bold)
+                        Text(
+                            stringResource(R.string.caller_id_remote_description),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Switch(
+                        checked = remoteEnrichmentEnabled,
+                        onCheckedChange = { enabled ->
+                            remoteEnrichmentEnabled = enabled
+                            settingsStore.callerReputationEnrichmentEnabled = enabled
+                        }
                     )
                 }
-                Switch(
-                    checked = remoteEnrichmentEnabled,
-                    onCheckedChange = { enabled ->
-                        remoteEnrichmentEnabled = enabled
-                        settingsStore.callerReputationEnrichmentEnabled = enabled
-                    }
-                )
             }
 
             HorizontalDivider()
@@ -483,76 +486,80 @@ fun CallBlockingScreen(navController: NavController) {
                 status = message
             }
 
-            HorizontalDivider()
-            Text("Règles Sentinel signées", fontWeight = FontWeight.Bold)
-            Text(
-                stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                "Ces règles de réputation peuvent seulement mettre un appel en silencieux ; elles ne deviennent jamais un blocage automatique à elles seules.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-            Text(
-                stringResource(R.string.call_blocking_reputation_note),
-                style = MaterialTheme.typography.bodySmall
-            )
+            if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            } else {
+                HorizontalDivider()
+                Text("Règles Sentinel signées", fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.call_blocking_signed_active, snapshot.signedSilencePrefixes.size),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    "Ces règles de réputation peuvent seulement mettre un appel en silencieux ; elles ne deviennent jamais un blocage automatique à elles seules.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                status?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                Text(
+                    stringResource(R.string.call_blocking_reputation_note),
+                    style = MaterialTheme.typography.bodySmall
+                )
 
-            HorizontalDivider()
-            Text(stringResource(R.string.call_blocking_sync_title), fontWeight = FontWeight.Bold)
-            if (CallRuleSyncConfig.SYNC_ENABLED && syncEnabledByUser) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            isSyncing = true
-                            try {
-                                syncStatus = withContext(Dispatchers.IO) {
-                                    runCatching {
-                                        val verifier = SignedCallRulePackageVerifier(
-                                            CallRuleSyncConfig.TRUSTED_KEYS,
-                                            CallRuleSyncConfig.EXPECTED_ISSUER_ID
+                HorizontalDivider()
+                Text(stringResource(R.string.call_blocking_sync_title), fontWeight = FontWeight.Bold)
+                if (CallRuleSyncConfig.SYNC_ENABLED && syncEnabledByUser) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isSyncing = true
+                                try {
+                                    syncStatus = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            val verifier = SignedCallRulePackageVerifier(
+                                                CallRuleSyncConfig.TRUSTED_KEYS,
+                                                CallRuleSyncConfig.EXPECTED_ISSUER_ID
+                                            )
+                                            val transport = OkHttpCallRulePackageTransport(
+                                                CallRuleSyncConfig.ENDPOINT,
+                                                CallRuleSyncConfig.ALLOWED_HOSTS
+                                            )
+                                            CallRuleSyncClient(transport, store, verifier).synchronize()
+                                        }.fold(
+                                            onSuccess = { result -> result.reason },
+                                            onFailure = { syncFailedText }
                                         )
-                                        val transport = OkHttpCallRulePackageTransport(
-                                            CallRuleSyncConfig.ENDPOINT,
-                                            CallRuleSyncConfig.ALLOWED_HOSTS
-                                        )
-                                        CallRuleSyncClient(transport, store, verifier).synchronize()
-                                    }.fold(
-                                        onSuccess = { result -> result.reason },
-                                        onFailure = { syncFailedText }
-                                    )
+                                    }
+                                    snapshot = store.snapshot()
+                                } finally {
+                                    isSyncing = false
                                 }
-                                snapshot = store.snapshot()
-                            } finally {
-                                isSyncing = false
                             }
-                        }
-                    },
-                    enabled = !isSyncing,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (isSyncing) stringResource(R.string.call_blocking_sync_checking) else stringResource(R.string.call_blocking_sync_check))
-                }
-                syncStatus?.let {
+                        },
+                        enabled = !isSyncing,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (isSyncing) stringResource(R.string.call_blocking_sync_checking) else stringResource(R.string.call_blocking_sync_check))
+                    }
+                    syncStatus?.let {
+                        Text(
+                            stringResource(R.string.call_blocking_sync_result, it),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                } else if (!CallRuleSyncConfig.SYNC_ENABLED || CallRuleSyncConfig.TRUSTED_KEYS.isEmpty()) {
                     Text(
-                        stringResource(R.string.call_blocking_sync_result, it),
-                        style = MaterialTheme.typography.bodySmall
+                        stringResource(R.string.call_blocking_sync_disabled_config),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        stringResource(R.string.call_blocking_sync_disabled_setting),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            } else if (!CallRuleSyncConfig.SYNC_ENABLED || CallRuleSyncConfig.TRUSTED_KEYS.isEmpty()) {
-                Text(
-                    stringResource(R.string.call_blocking_sync_disabled_config),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                Text(
-                    stringResource(R.string.call_blocking_sync_disabled_setting),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

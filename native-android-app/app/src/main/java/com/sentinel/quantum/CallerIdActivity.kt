@@ -87,8 +87,16 @@ class CallerIdActivity : ComponentActivity() {
     private var callerUiEvidenceRecorded = false
     private var callerUiEvidenceWriteInFlight = false
 
+    private fun hasCurrentAuthority(): Boolean =
+        !intent.hasExtra(EXTRA_ACTION) ||
+            com.sentinel.quantum.security.CallScreeningActivationPolicy.holdsRuntimeAuthority(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!hasCurrentAuthority()) {
+            finish()
+            return
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -105,10 +113,11 @@ class CallerIdActivity : ComponentActivity() {
         val reason = intent.getStringExtra(EXTRA_REASON).orEmpty()
         callerUiEvidenceEligible = action in setOf("ALLOW", "BLOCK", "SILENCE") && reason.isNotBlank()
         val settingsStore = SettingsStore(applicationContext)
-        val enrichmentEnabled = settingsStore.callerReputationEnrichmentEnabled &&
+        val enrichmentEnabled = !BuildConfig.COMMERCIAL_PHONE_CORE_V1 && settingsStore.callerReputationEnrichmentEnabled &&
             ProtectionModePolicy.permitsCallerNumberEnrichment(settingsStore.protectionMode)
         val communityReportingEnabled =
-            ProtectionModePolicy.permitsExplicitCommunityReport(settingsStore.protectionMode)
+            !BuildConfig.COMMERCIAL_PHONE_CORE_V1 &&
+                ProtectionModePolicy.permitsExplicitCommunityReport(settingsStore.protectionMode)
         setContent {
             SentinelQuantumTheme {
                 var remoteResult by remember { mutableStateOf<CallerReputationClient.Result?>(null) }
@@ -135,9 +144,10 @@ class CallerIdActivity : ComponentActivity() {
                 LaunchedEffect(number) {
                     if (number.isNotBlank() && number.any { it.isDigit() }) {
                         val localIdentity = withContext(Dispatchers.IO) {
+                            if (!hasCurrentAuthority()) return@withContext null
                             val lookup = LocalContactLookup(applicationContext)
                             val identity = lookup.find(number)
-                            IntelligenceCoreRuntime.publishContactObservation(
+                            if (hasCurrentAuthority()) IntelligenceCoreRuntime.publishContactObservation(
                                 context = applicationContext,
                                 contactList = lookup.listWithState(limit = 512),
                                 rawNumber = number,
@@ -145,6 +155,10 @@ class CallerIdActivity : ComponentActivity() {
                                 observedAtMs = System.currentTimeMillis()
                             )
                             identity
+                        }
+                        if (!hasCurrentAuthority()) {
+                            finish()
+                            return@LaunchedEffect
                         }
                         if (localIdentity != null) {
                             localName = localIdentity.displayName
@@ -163,6 +177,10 @@ class CallerIdActivity : ComponentActivity() {
                         officialStatus = "Recherche de l’attribution officielle…"
                         val result = withContext(Dispatchers.IO) {
                             runCatching { officialDirectory.lookup(number) }
+                        }
+                        if (!hasCurrentAuthority()) {
+                            finish()
+                            return@LaunchedEffect
                         }
                         result.onSuccess { allocation ->
                             officialAllocation = allocation
@@ -303,6 +321,10 @@ class CallerIdActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (!hasCurrentAuthority()) {
+            finish()
+            return
+        }
         if (
             callerUiEvidenceEligible &&
             !callerUiEvidenceRecorded &&
@@ -311,6 +333,7 @@ class CallerIdActivity : ComponentActivity() {
             callerUiEvidenceWriteInFlight = true
             lifecycleScope.launch {
                 val stored = withContext(Dispatchers.IO) {
+                    if (!hasCurrentAuthority()) return@withContext false
                     PhonePrivateTimelineStore(applicationContext).append(
                         PhonePrivateTimeline.Event(
                             kind = PhonePrivateTimeline.Kind.CALL,
@@ -391,7 +414,7 @@ private fun CallerCard(
         key1 = context,
         key2 = number
     ) {
-        value = withContext(Dispatchers.IO) {
+        if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) value = withContext(Dispatchers.IO) {
             IntelligenceCoreRuntime.snapshotForNumber(context.applicationContext, number)
                 ?.let { IntelligenceSnapshotPresentation.from(it) }
         }
@@ -582,13 +605,13 @@ private fun CallerCard(
                     )
                 }
             }
-        } else {
+        } else if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
             Text(
                 "Enrichissement distant désactivé. Activez-le explicitement dans Blocage d’appels pour autoriser l’envoi du numéro entrant au moteur Sentinel après la décision locale.",
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        Card(
+        if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) Card(
             colors = CardDefaults.cardColors(containerColor = SentinelD1.Card),
             shape = RoundedCornerShape(18.dp)
         ) {
@@ -653,7 +676,7 @@ private fun CallerCard(
             "Le pays est déduit de l’indicatif et peut être trompé. L’opérateur d’une tranche n’est pas forcément l’opérateur actuel après portabilité.",
             style = MaterialTheme.typography.bodySmall
         )
-        WhatsAppClickToChatPolicy.urlFor(number)?.let { whatsappUrl ->
+        if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) WhatsAppClickToChatPolicy.urlFor(number)?.let { whatsappUrl ->
             OutlinedButton(
                 onClick = {
                     try {

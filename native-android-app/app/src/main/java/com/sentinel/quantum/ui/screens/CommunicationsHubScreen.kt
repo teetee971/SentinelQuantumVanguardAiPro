@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.PhoneCoreRuntimeFacts
 import com.sentinel.quantum.PhoneCoreSetupWizardStore
 import com.sentinel.quantum.SentinelDialerActivity
@@ -90,7 +91,7 @@ fun CommunicationsHubScreen(navController: NavController) {
         topBar = {
             SentinelTopBar(
                 title = "Communications",
-                subtitle = "Téléphone, SMS/MMS & canaux externes",
+                subtitle = if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) "Téléphone et SMS/MMS" else "Téléphone, SMS/MMS & canaux externes",
                 onBack = { navController.popBackStack() }
             )
         }
@@ -102,7 +103,11 @@ fun CommunicationsHubScreen(navController: NavController) {
             SentinelHero(
                 eyebrow = "Communications",
                 title = "Canaux Sentinel",
-                body = "Téléphonie et messagerie locales, avec connexions externes séparées et état explicite. Un canal non raccordé reste affiché comme non raccordé.",
+                body = if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                    "Appels, SMS et MMS avec les rôles et autorisations Android nécessaires."
+                } else {
+                    "Téléphonie et messagerie locales, avec connexions externes séparées et état explicite. Un canal non raccordé reste affiché comme non raccordé."
+                },
                 badges = listOf(
                     "Local" to SentinelD1.Success,
                     "État explicite" to SentinelD1.Cyan
@@ -133,44 +138,47 @@ fun CommunicationsHubScreen(navController: NavController) {
             ) {
                 context.startActivity(Intent(context, SmsComposeActivity::class.java))
             }
-            SentinelSectionHeader(
-                title = "Canaux externes",
-                subtitle = "Pas de synchronisation silencieuse : les intégrations non configurées restent séparées."
-            )
-            OutlinedButton(
-                onClick = { showExternalChannels = !showExternalChannels },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    if (showExternalChannels) {
-                        "Masquer les canaux externes"
-                    } else {
-                        "Voir les canaux externes (${externalChannels.size})"
-                    }
+            if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                SentinelSectionHeader(
+                    title = "Canaux externes",
+                    subtitle = "Pas de synchronisation silencieuse : les intégrations non configurées restent séparées."
                 )
-            }
-            if (showExternalChannels) {
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
+                OutlinedButton(
+                    onClick = { showExternalChannels = !showExternalChannels },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    Text(
+                        if (showExternalChannels) {
+                            "Masquer les canaux externes"
+                        } else {
+                            "Voir les canaux externes (${externalChannels.size})"
+                        }
+                    )
+                }
+                if (showExternalChannels) {
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.elevatedCardColors(containerColor = SentinelD1.Card)
                     ) {
-                        externalChannels.forEach { (name, status) ->
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(name, style = MaterialTheme.typography.titleSmall)
-                                Text(
-                                    status,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                        Column(
+                            Modifier.fillMaxWidth().padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            externalChannels.forEach { (name, status) ->
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(name, style = MaterialTheme.typography.titleSmall)
+                                    Text(
+                                        status,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
             Text(
                 "Aucun message, contact ou contenu tiers n’est importé ou transmis par cet écran.",
                 style = MaterialTheme.typography.bodySmall

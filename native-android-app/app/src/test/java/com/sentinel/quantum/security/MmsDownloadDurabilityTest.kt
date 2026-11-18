@@ -76,6 +76,7 @@ class MmsDownloadDurabilityTest {
         assertNull(decoded.digestHex)
         assertEquals(7, decoded.subscriptionId)
         assertEquals(0, decoded.privateMissCount)
+        assertFalse(decoded.transportFailed)
         val again = MmsDownloadJournalMutation.decodeSchema1(
             fileName = fileName,
             raw = MmsDownloadJournalMutation.encode(decoded),
@@ -83,6 +84,35 @@ class MmsDownloadDurabilityTest {
             subscriptionAcceptable = { it > 0 }
         )
         assertEquals(decoded, again)
+    }
+
+    @Test
+    fun knownTransportFailureSurvivesRereadAndCannotAcquireADigest() {
+        val failed = snapshot().copy(transportFailed = true)
+        val restored = MmsDownloadJournalMutation.decodeSchema1(
+            fileName = fileName,
+            raw = MmsDownloadJournalMutation.encode(failed),
+            fileNameAcceptable = true,
+            subscriptionAcceptable = { it == 1 }
+        )
+        assertEquals(failed, restored)
+        assertEquals(
+            MmsDownloadJournalMutation.DigestCommit.TRANSPORT_FAILED,
+            MmsDownloadJournalMutation.decideDigest(restored, fileName, 1, 10L, digestA)
+        )
+    }
+
+    @Test
+    fun anExistingVerifiedDigestTakesPrecedenceOverAFailureFlag() {
+        val durable = snapshot(digestHex = digestA)
+        val raw = MmsDownloadJournalMutation.encode(durable).dropLast(1) + ",\"transport_failed\":true}"
+        val restored = MmsDownloadJournalMutation.decodeSchema1(
+            fileName = fileName,
+            raw = raw,
+            fileNameAcceptable = true,
+            subscriptionAcceptable = { it == 1 }
+        )
+        assertEquals(durable, restored)
     }
 
     @Test

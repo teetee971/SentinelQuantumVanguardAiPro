@@ -3,6 +3,7 @@ package com.sentinel.quantum.background
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.data.OsintFeedCache
 import com.sentinel.quantum.data.OsintRepository
 import com.sentinel.quantum.data.SettingsStore
@@ -18,6 +19,7 @@ class OsintRefreshWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
+        if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) return Result.success()
         val context = applicationContext
         val cache = OsintFeedCache(context)
         val repository = OsintRepository()

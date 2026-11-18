@@ -86,53 +86,28 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         if (!MmsSubscriptionResolver.isValidSubscriptionId(subscriptionId)) return
 
         MmsDownloadRecovery.exclusively(fileName) {
-        val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return
-        val directory = java.io.File(canonicalCache, MmsDownloadCoordinator.DOWNLOAD_DIRECTORY)
-        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return
-        if (canonicalDirectory.parentFile != canonicalCache) return
-
-        val target = runCatching { java.io.File(canonicalDirectory, fileName).canonicalFile }.getOrNull() ?: return
-        if (target.parentFile != canonicalDirectory || !target.isFile) return
-
-        if (
-            context.readSmsRoleStateFailClosed() !=
-                SmsActivationDiagnostics.SmsRoleState.HELD
-        ) {
-            val preserved = runCatching { target.readBytes() }.getOrNull()
-            val journal = MmsDownloadRecoveryJournal(context)
-            val record = journal.read(fileName)
-            if (preserved != null && preserved.isNotEmpty() && record != null) {
-                val persisted = IncomingMmsPrivateStore.confirmDurableCopy(
-                    context.filesDir,
-                    preserved,
-                    journal.pinnedDigests()
-                )
-                val digest = persisted?.digestHex
-                if (digest != null && journal.markDigest(
-                        fileName = fileName,
-                        digestHex = digest,
-                        expectedSubscriptionId = record.subscriptionId,
-                        expectedRequestedAtMs = record.requestedAtMs
-                    )
-                ) {
-                    IncomingMmsPrivateStore.releaseJournaled(digest)
-                }
-            }
-            LocalLogger(context).log(
-                LocalLogger.LogLevel.WARNING,
-                "MmsDownload",
-                "Callback MMS conservé : Sentinel n’est plus l’application SMS par défaut"
-            )
-            return
-        }
+        val journal = MmsDownloadRecoveryJournal(context)
+        val record = journal.read(fileName)
+        if (record != null && (record.subscriptionId != subscriptionId || record.transportFailed)) return
 
         if (deliveredResultCode != Activity.RESULT_OK) {
-            MmsDownloadCoordinator.delete(context, fileName)
+            // Recovery may already have independently verified and journaled a durable copy.
+            if (record == null || record.digestHex != null) return
+            val markedFailed = journal.markTransportFailed(record)
+            val retired = MmsDownloadCoordinator.delete(context, fileName)
+            if (!markedFailed && !retired) {
+                LocalLogger(context).log(
+                    LocalLogger.LogLevel.WARNING,
+                    "MmsDownload",
+                    "Échec MMS non journalisé et nettoyage non confirmé"
+                )
+            }
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "DefaultSms",
                 "Téléchargement MMS Android échoué; code=$deliveredResultCode"
             )
+            if (context.readSmsRoleStateFailClosed() != SmsActivationDiagnostics.SmsRoleState.HELD) return
             SmsNotificationHelper.notifyMessage(
                 context,
                 title = "MMS non téléchargé",
@@ -142,13 +117,23 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
+        val heldRoleBeforeRead = context.readSmsRoleStateFailClosed() == SmsActivationDiagnostics.SmsRoleState.HELD
+        if (!heldRoleBeforeRead && record == null) return
+
+        val canonicalCache = runCatching { context.cacheDir.canonicalFile }.getOrNull() ?: return
+        val directory = java.io.File(canonicalCache, MmsDownloadCoordinator.DOWNLOAD_DIRECTORY)
+        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return
+        if (canonicalDirectory.parentFile != canonicalCache) return
+
+        val target = runCatching { java.io.File(canonicalDirectory, fileName).canonicalFile }.getOrNull() ?: return
+        if (target.parentFile != canonicalDirectory || !target.isFile) return
+
         val size = target.length()
         if (size !in 1..MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
-            MmsDownloadCoordinator.delete(context, fileName)
             LocalLogger(context).log(
                 LocalLogger.LogLevel.SECURITY,
                 "DefaultSms",
-                "MMS téléchargé rejeté pour taille hors limite"
+                "PDU téléchargé non lu : taille hors limite; reprise conservée"
             )
             return
         }
@@ -157,8 +142,8 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
         // provider/quarantine decision complete. Otherwise a process death after private persist
         // but before provider projection would strand a durable PDU with no subscription metadata
         // available to the recovery worker.
-        val data = runCatching { target.readBytes() }.getOrNull()
-        if (data == null || data.isEmpty()) {
+        val data = IncomingMmsPduFileReader.read(target, size)
+        if (data == null) {
             LocalLogger(context).log(
                 LocalLogger.LogLevel.WARNING,
                 "MmsDownload",
@@ -167,8 +152,6 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
 
-        val journal = MmsDownloadRecoveryJournal(context)
-        val record = journal.read(fileName)
         val persistence = IncomingMmsPrivateStore.confirmDurableCopy(
             context.filesDir,
             data,
@@ -199,6 +182,15 @@ class SentinelMmsDownloadReceiver : BroadcastReceiver() {
             return
         }
         IncomingMmsPrivateStore.releaseJournaled(digest)
+
+        if (!heldRoleBeforeRead || context.readSmsRoleStateFailClosed() != SmsActivationDiagnostics.SmsRoleState.HELD) {
+            LocalLogger(context).log(
+                LocalLogger.LogLevel.WARNING,
+                "MmsDownload",
+                "Callback MMS conservé : Sentinel n’est plus l’application SMS par défaut"
+            )
+            return
+        }
 
         val prepared = IncomingMmsProjectionPipeline.prepare(data, digest, subscriptionId)
         val safePreview: MmsDecodePipeline.Result = when (prepared) {

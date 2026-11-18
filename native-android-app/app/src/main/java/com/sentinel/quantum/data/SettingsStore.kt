@@ -1,6 +1,7 @@
 package com.sentinel.quantum.data
 
 import android.content.Context
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.security.ProtectionMode
 import com.sentinel.quantum.security.ProtectionModePolicy
 import com.sentinel.quantum.security.FamilySafetyPolicy
@@ -34,7 +35,8 @@ class SettingsStore(context: Context) {
         preferences.edit().putString(THEME_MODE, mode.name).apply()
     }
 
-    fun isRuleSyncEnabled(): Boolean = preferences.getBoolean(RULE_SYNC_ENABLED, false)
+    fun isRuleSyncEnabled(): Boolean =
+        !BuildConfig.COMMERCIAL_PHONE_CORE_V1 && preferences.getBoolean(RULE_SYNC_ENABLED, false)
 
     fun setRuleSyncEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(RULE_SYNC_ENABLED, enabled).apply()
@@ -60,12 +62,15 @@ class SettingsStore(context: Context) {
 
     /** Privacy boundary for remote protection features. Invalid/missing values fail closed. */
     var protectionMode: ProtectionMode
-        get() = try {
-            ProtectionMode.valueOf(
-                preferences.getString(PROTECTION_MODE, null) ?: ProtectionMode.LOCAL_ONLY.name
-            )
-        } catch (_: IllegalArgumentException) {
-            ProtectionMode.LOCAL_ONLY
+        get() {
+            if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) return ProtectionMode.LOCAL_ONLY
+            return try {
+                ProtectionMode.valueOf(
+                    preferences.getString(PROTECTION_MODE, null) ?: ProtectionMode.LOCAL_ONLY.name
+                )
+            } catch (_: IllegalArgumentException) {
+                ProtectionMode.LOCAL_ONLY
+            }
         }
         set(value) {
             CALLER_REPUTATION_BOUNDARY.change {
@@ -95,7 +100,8 @@ class SettingsStore(context: Context) {
      * separate preferences file and is intentionally retained.
      */
     var callerReputationEnrichmentEnabled: Boolean
-        get() = preferences.getBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
+        get() = !BuildConfig.COMMERCIAL_PHONE_CORE_V1 &&
+            preferences.getBoolean(CALLER_REPUTATION_ENRICHMENT_ENABLED, false)
         set(value) {
             CALLER_REPUTATION_BOUNDARY.change {
                 if (value) {

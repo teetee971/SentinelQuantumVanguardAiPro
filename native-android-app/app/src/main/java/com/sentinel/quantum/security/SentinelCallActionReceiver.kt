@@ -19,15 +19,15 @@ class SentinelCallActionReceiver : BroadcastReceiver() {
         val kind = path[1]
         if (intent.getStringExtra(SentinelCallNotificationHelper.EXTRA_CALL_ID) != callId) return
 
-        // Call.answer()/reject() only submit a request to Telecom; they do not synchronously prove
-        // that the call changed state. Never cancel the ongoing incoming-call notification here.
-        // SentinelInCallService owns cancellation after it observes a real transition away from
-        // STATE_RINGING. If Telecom ignores a stale/racing request, the user must keep the call UI.
+        // These commands submit a request to Telecom. SentinelInCallService updates the
+        // notification when Telecom reports the resulting call state.
         when {
             intent.action == SentinelCallNotificationHelper.ACTION_ANSWER && kind == "answer" ->
                 SentinelInCallService.answer(callId)
             intent.action == SentinelCallNotificationHelper.ACTION_REJECT && kind == "reject" ->
                 SentinelInCallService.reject(callId)
+            intent.action == SentinelCallNotificationHelper.ACTION_DISCONNECT && kind == "disconnect" ->
+                SentinelInCallService.disconnect(callId)
         }
     }
 

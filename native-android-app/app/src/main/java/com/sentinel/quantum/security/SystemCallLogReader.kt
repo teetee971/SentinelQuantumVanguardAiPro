@@ -41,7 +41,7 @@ class SystemCallLogReader(private val context: Context) {
                 null,
                 null
             ) ?: return AccessState.PROVIDER_UNAVAILABLE
-            cursor.use { AccessState.READY }
+            cursor.use { if (canRead()) AccessState.READY else AccessState.ROLE_OR_PERMISSION_REQUIRED }
         } catch (_: SecurityException) {
             AccessState.ROLE_OR_PERMISSION_REQUIRED
         } catch (_: RuntimeException) {
@@ -68,6 +68,7 @@ class SystemCallLogReader(private val context: Context) {
                 null,
                 "${CallLog.Calls.DATE} DESC"
             )?.use { cursor ->
+                if (!canRead()) return emptyList()
                 val numberIndex = cursor.getColumnIndex(CallLog.Calls.NUMBER)
                 val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
                 val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
@@ -111,7 +112,7 @@ class SystemCallLogReader(private val context: Context) {
                     if (!duplicate) result += entry
                 }
             }
-            result
+            if (canRead()) result else emptyList()
         } catch (_: SecurityException) {
             emptyList()
         } catch (_: RuntimeException) {

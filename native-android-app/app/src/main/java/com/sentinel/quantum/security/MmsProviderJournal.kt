@@ -16,6 +16,7 @@ internal class MmsProviderJournal(context: Context) {
         READY,
         SUBMITTED,
         SUBMISSION_UNKNOWN,
+        REJECTED_BEFORE_TRANSPORT,
         RESULT_SENT,
         RESULT_FAILED
     }
@@ -50,10 +51,13 @@ internal class MmsProviderJournal(context: Context) {
         transition(token, providerMessageId, Phase.READY, nowMs)
 
     fun markSubmitted(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
-        transition(token, providerMessageId, Phase.SUBMITTED, nowMs)
+        transition(token, providerMessageId, Phase.SUBMITTED, nowMs, from = PENDING_TRANSPORT)
 
     fun markSubmissionUnknown(token: String, providerMessageId: Long, nowMs: Long = System.currentTimeMillis()): Boolean =
-        transition(token, providerMessageId, Phase.SUBMISSION_UNKNOWN, nowMs)
+        transition(token, providerMessageId, Phase.SUBMISSION_UNKNOWN, nowMs, from = setOf(Phase.READY))
+
+    fun markRejectedBeforeTransport(token: String, providerMessageId: Long, nowMs: Long): Boolean =
+        transition(token, providerMessageId, Phase.REJECTED_BEFORE_TRANSPORT, nowMs, from = PENDING_TRANSPORT)
 
     fun markResult(
         token: String,
@@ -85,8 +89,9 @@ internal class MmsProviderJournal(context: Context) {
         return changed
     }
 
-    fun remove(token: String): Boolean =
+    fun remove(token: String): Boolean = synchronized(MUTEX) {
         validToken(token) && preferences.edit().remove(key(token)).commit()
+    }
 
     fun read(token: String): Record? = if (validToken(token)) decode(
         token,
@@ -103,11 +108,20 @@ internal class MmsProviderJournal(context: Context) {
         .take(MAX_RECORDS)
         .toList()
 
-    private fun transition(token: String, providerMessageId: Long, phase: Phase, nowMs: Long): Boolean {
+    private fun transition(
+        token: String,
+        providerMessageId: Long,
+        phase: Phase,
+        nowMs: Long,
+        from: Set<Phase>? = null
+    ): Boolean = synchronized(MUTEX) {
         if (!validToken(token) || providerMessageId <= 0L || nowMs < 0L) return false
         val current = read(token) ?: return false
         if (current.providerMessageId != null && current.providerMessageId != providerMessageId) return false
-        return write(current.copy(providerMessageId = providerMessageId, phase = phase, updatedAtMs = nowMs))
+        // A callback can commit before the sender records the return or exception from SmsManager.
+        // Those later markers must leave a resolved outcome intact.
+        if (from != null && current.phase !in from) return current.phase == phase
+        write(current.copy(providerMessageId = providerMessageId, phase = phase, updatedAtMs = nowMs))
     }
 
     private fun write(record: Record): Boolean {
@@ -140,6 +154,8 @@ internal class MmsProviderJournal(context: Context) {
     private fun key(token: String) = KEY_PREFIX + token
 
     companion object {
+        private val MUTEX = Any()
+        private val PENDING_TRANSPORT = setOf(Phase.READY, Phase.SUBMISSION_UNKNOWN)
         private const val PREFS_NAME = "sentinel_mms_provider_journal_v1"
         private const val KEY_PREFIX = "record."
         private const val SCHEMA_VERSION = 1

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.CAMERA" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:node="remove" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="remove" />
+    <uses-feature android:name="android.hardware.wifi" tools:node="remove" />
+    <uses-feature android:name="android.hardware.bluetooth_le" tools:node="remove" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.EDIT" />
+            <data android:mimeType="vnd.android.cursor.item/contact" />
+        </intent>
+    </queries>
+
+    <application
+        android:label="${sentinelV1Label}"
+        tools:remove="android:networkSecurityConfig"
+        tools:replace="android:label">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SentinelQuantum"
+            tools:node="replace">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".VoiceStudioActivity" tools:node="remove" />
+        <activity android:name=".ai.SentinelAiActivity" tools:node="remove" />
+        <service android:name=".security.SentinelWearListenerService" tools:node="remove" />
+        <activity android:name="com.auth0.android.provider.AuthenticationActivity" tools:node="remove" />
+        <activity android:name="com.auth0.android.provider.RedirectActivity" tools:node="remove" />
+        <activity android:name="androidx.credentials.playservices.HiddenActivity" tools:node="remove" />
+        <activity android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity" tools:node="remove" />
+        <service android:name="androidx.credentials.playservices.CredentialProviderMetadataHolder" tools:node="remove" />
+        <service android:name="com.google.android.gms.auth.api.signin.RevocationBoundService" tools:node="remove" />
+        <service android:name="io.livekit.android.room.track.screencapture.ScreenCaptureService" tools:node="remove" />
+        <service android:name="com.wireguard.android.backend.GoBackend$VpnService" tools:node="remove" />
+    </application>
+</manifest>

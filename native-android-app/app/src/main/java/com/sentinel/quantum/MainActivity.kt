@@ -51,11 +51,13 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sentinel.quantum.data.SettingsStore
+import com.sentinel.quantum.data.ThemeMode
 import com.sentinel.quantum.background.CollectiveDefenseNotificationHelper
 import com.sentinel.quantum.background.CollectiveDefenseWorkScheduler
 import com.sentinel.quantum.background.OsintNotificationHelper
 import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.SharedTextHolder
+import com.sentinel.quantum.navigation.CommercialPhoneCoreNavGraph
 import com.sentinel.quantum.navigation.NavGraph
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.PhoneWearableSecureHandshakeRuntime
@@ -112,13 +114,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleShareIntent(intent)
-        // Local-only background watch: the notification channel and the periodic worker are
-        // (re)synchronised from the user preference on every start. No remote push is involved.
-        OsintNotificationHelper.ensureChannel(this)
-        WorkScheduler.sync(this)
-        CollectiveDefenseNotificationHelper.ensureChannel(this)
-        CollectiveDefenseWorkScheduler.sync(this)
+        val commercialV1 = BuildConfig.COMMERCIAL_PHONE_CORE_V1
+        if (!commercialV1) {
+            handleShareIntent(intent)
+            OsintNotificationHelper.ensureChannel(this)
+            WorkScheduler.sync(this)
+            CollectiveDefenseNotificationHelper.ensureChannel(this)
+            CollectiveDefenseWorkScheduler.sync(this)
+        }
         // First-run setup is user-visible and Android-controlled: Sentinel never grants a
         // permission or default-handler role silently. Opening the existing activation center
         // early removes the need to hunt through the app before configuring Phone Core.
@@ -146,6 +149,7 @@ class MainActivity : ComponentActivity() {
                 showBrandLoading = false
             }
             LaunchedEffect(Unit) {
+                if (commercialV1) return@LaunchedEffect
                 // A first-contact wearable identity becomes user-visible only after its Ed25519
                 // proof has already passed the secure handshake verifier. Polling reads process-
                 // local state only; it does not create trust and expired challenges disappear.
@@ -160,8 +164,14 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
+                    // Keep saved navigation state separate from older builds with optional destinations.
+                    val navController = if (commercialV1) {
+                        rememberNavController()
+                    } else {
+                        rememberNavController()
+                    }
                     val startDestination = when {
+                        commercialV1 -> Screen.Home.route
                         SharedTextHolder.hasPending() -> Screen.EmailSecurity.route
                         openCollectiveDefense -> Screen.CollectiveDefense.route
                         openOsintFeed -> Screen.OsintFeed.route
@@ -199,7 +209,14 @@ class MainActivity : ComponentActivity() {
                                             }
                                         },
                                         icon = { Icon(entry.icon, contentDescription = null) },
-                                        label = { Text(stringResource(entry.labelRes)) },
+                                            label = {
+                                                val label = if (commercialV1 && entry.target == BottomNavTarget.MORE) {
+                                                    R.string.nav_settings
+                                                } else {
+                                                    entry.labelRes
+                                                }
+                                                Text(stringResource(label))
+                                            },
                                         colors = NavigationBarItemDefaults.colors(
                                             selectedIconColor = SentinelD1.Cyan,
                                             selectedTextColor = SentinelD1.Cyan,
@@ -217,15 +234,24 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                                 .padding(paddingValues)
                         ) {
-                            NavGraph(
-                                navController = navController,
-                                startDestination = startDestination,
-                                themeMode = themeMode,
-                                onThemeModeChange = { mode ->
-                                    themeMode = mode
-                                    settingsStore.setThemeMode(mode)
-                                }
-                            )
+                            val updateTheme: (ThemeMode) -> Unit = { mode ->
+                                themeMode = mode
+                                settingsStore.setThemeMode(mode)
+                            }
+                            if (commercialV1) {
+                                CommercialPhoneCoreNavGraph(
+                                    navController = navController,
+                                    themeMode = themeMode,
+                                    onThemeModeChange = updateTheme
+                                )
+                            } else {
+                                NavGraph(
+                                    navController = navController,
+                                    startDestination = startDestination,
+                                    themeMode = themeMode,
+                                    onThemeModeChange = updateTheme
+                                )
+                            }
                         }
                     }
                     if (showBrandLoading) SentinelBrandLoading()
@@ -281,7 +307,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun maybeOpenPhoneCoreFirstRunSetup() {
-        if (intent?.action == Intent.ACTION_SEND) return
+        if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1 && intent?.action == Intent.ACTION_SEND) return
         val wizard = PhoneCoreSetupWizardStore(applicationContext)
         val runtimeFacts = PhoneCoreRuntimeFacts.read(applicationContext)
         var lifecycleState = wizard.lifecycleState()

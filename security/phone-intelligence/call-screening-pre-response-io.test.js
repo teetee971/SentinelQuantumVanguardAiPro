@@ -230,3 +230,14 @@ test('transitive helper contract catches hidden storage or Keystore regressions'
     'hidden AndroidKeyStore access in a pre-response helper must fail closed'
   );
 });
+
+test('role revocation after screening decision denies the effect and delayed work', () => {
+  const source = readFileSync(SERVICE_PATH, 'utf8');
+  const response = source.indexOf(MANDATORY_RESPONSE);
+  assert.ok(response > 0, 'Telecom response boundary missing');
+  assert.match(source.slice(source.indexOf('val response = CallResponse.Builder()'), response),
+    /if \(!holdsScreeningAuthority\(\)\) \{[\s\S]*respondToCall\(callDetails, CallResponse\.Builder\(\)\.build\(\)\)[\s\S]*return/);
+  const post = source.slice(source.indexOf('val submitted = responseBoundary.submitPostResponse'));
+  assert.match(post, /submitPostResponse \{\s*if \(!holdsScreeningAuthority\(\)\) return@submitPostResponse/);
+  assert.match(post, /runPostResponseMaintenance\(\)\s*if \(!holdsScreeningAuthority\(\)\) return@submitPostResponse/);
+});

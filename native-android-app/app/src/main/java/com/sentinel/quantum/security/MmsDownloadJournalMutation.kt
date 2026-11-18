@@ -12,7 +12,8 @@ internal object MmsDownloadJournalMutation {
         CONFLICTING_DIGEST,
         IDENTITY_MISMATCH,
         RECORD_ABSENT,
-        INVALID_DIGEST
+        INVALID_DIGEST,
+        TRANSPORT_FAILED
     }
 
     data class Snapshot(
@@ -20,7 +21,8 @@ internal object MmsDownloadJournalMutation {
         val subscriptionId: Int,
         val requestedAtMs: Long,
         val digestHex: String? = null,
-        val privateMissCount: Int = 0
+        val privateMissCount: Int = 0,
+        val transportFailed: Boolean = false
     )
 
     fun decideDigest(
@@ -40,6 +42,7 @@ internal object MmsDownloadJournalMutation {
         ) {
             return DigestCommit.IDENTITY_MISMATCH
         }
+        if (record.transportFailed) return DigestCommit.TRANSPORT_FAILED
         val existing = record.digestHex?.lowercase()
         return when {
             existing == null -> DigestCommit.APPLIED
@@ -73,7 +76,8 @@ internal object MmsDownloadJournalMutation {
                 subscriptionId = subscriptionId,
                 requestedAtMs = requestedAtMs,
                 digestHex = digest,
-                privateMissCount = json.optInt("private_miss_count", 0).coerceAtLeast(0)
+                privateMissCount = json.optInt("private_miss_count", 0).coerceAtLeast(0),
+                transportFailed = digest == null && json.optBoolean("transport_failed", false)
             )
         }.getOrNull()
     }
@@ -86,6 +90,7 @@ internal object MmsDownloadJournalMutation {
             .apply {
                 snapshot.digestHex?.let { put("sha256", it) }
                 if (snapshot.privateMissCount > 0) put("private_miss_count", snapshot.privateMissCount)
+                if (snapshot.transportFailed && snapshot.digestHex == null) put("transport_failed", true)
             }
             .toString()
 

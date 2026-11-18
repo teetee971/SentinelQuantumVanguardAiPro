@@ -40,30 +40,7 @@ class SentinelMmsSender(private val context: Context) {
         ) {
             return SendResult(false, "TELEPHONY_MESSAGING_UNAVAILABLE")
         }
-        if (
-            context.readSmsRoleStateFailClosed() !=
-                SmsActivationDiagnostics.SmsRoleState.HELD
-        ) {
-            return SendResult(false, "SMS_ROLE_NOT_HELD")
-        }
-        if (
-            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
-        }
-        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) {
-            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
-        }
-        if (
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
-        }
-        if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
-            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
-        }
+        checkOutboundAuthorization()?.let { return SendResult(false, it) }
 
         val normalizedDestination = CallRuleEngine.normalizeNumber(destination)
             ?: return SendResult(false, "INVALID_DESTINATION")
@@ -188,6 +165,12 @@ class SentinelMmsSender(private val context: Context) {
                 SmsManager.getSmsManagerForSubscriptionId(subscriptionId)
             }
 
+            checkOutboundAuthorization(subscriptionId)?.let { reason ->
+                // Known refusal before Android saw the staged PDU. Keep the user's provider row.
+                runCatching { providerStore.recordRejectedBeforeTransport(staged.token, providerMessageId) }
+                return SendResult(false, reason, subscriptionId, staged.token, providerMessageId)
+            }
+
             // From this instruction onward, a synchronous exception cannot prove that the platform
             // accepted no MMS bytes. Only callbacks may resolve that uncertainty.
             transportInvocationStarted = true
@@ -198,12 +181,16 @@ class SentinelMmsSender(private val context: Context) {
                 null,
                 callback
             )
-            if (!providerStore.markSubmitted(staged.token, providerMessageId)) {
-                LocalLogger(context).log(
-                    LocalLogger.LogLevel.WARNING,
-                    "MmsProvider",
-                    "Transport MMS soumis mais transition journal SUBMITTED non confirmée"
-                )
+            // Android returned normally. A later journal or diagnostic failure cannot change
+            // that submission into a refusal or trigger compensation of accepted content.
+            runCatching {
+                if (!providerStore.markSubmitted(staged.token, providerMessageId)) {
+                    LocalLogger(context).log(
+                        LocalLogger.LogLevel.WARNING,
+                        "MmsProvider",
+                        "Transport MMS soumis mais transition journal SUBMITTED non confirmée"
+                    )
+                }
             }
             SendResult(
                 accepted = true,
@@ -217,12 +204,14 @@ class SentinelMmsSender(private val context: Context) {
                 // The Android telephony call was entered. Keep both OUTBOX and staged PDU because
                 // a synchronous exception does not prove Android stopped consuming the content URI.
                 // The callback or the bounded cache-prune path owns PDU cleanup from this point.
-                if (!providerStore.markSubmissionUnknown(staged.token, providerMessageId)) {
-                    LocalLogger(context).log(
-                        LocalLogger.LogLevel.WARNING,
-                        "MmsProvider",
-                        "Issue de soumission MMS inconnue et journal SUBMISSION_UNKNOWN non confirmé"
-                    )
+                runCatching {
+                    if (!providerStore.markSubmissionUnknown(staged.token, providerMessageId)) {
+                        LocalLogger(context).log(
+                            LocalLogger.LogLevel.WARNING,
+                            "MmsProvider",
+                            "Issue de soumission MMS inconnue et journal SUBMISSION_UNKNOWN non confirmé"
+                        )
+                    }
                 }
                 SendResult(
                     accepted = false,
@@ -257,8 +246,29 @@ class SentinelMmsSender(private val context: Context) {
         }
     }
 
-    private fun hasEffectivePermission(permission: String): Boolean =
-        PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
+    private fun checkOutboundAuthorization(subscriptionId: Int? = null): String? {
+        val active = subscriptionId?.let { id ->
+            runCatching {
+                context.getSystemService(SubscriptionManager::class.java)
+                    .activeSubscriptionInfoList.orEmpty().any { it.subscriptionId == id }
+            }
+        }
+        if (context.readSmsRoleStateFailClosed() != SmsActivationDiagnostics.SmsRoleState.HELD) {
+            return "SMS_ROLE_NOT_HELD"
+        }
+        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) return "SEND_SMS_PERMISSION_NOT_GRANTED"
+        if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
+            return "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
+        }
+        if (active?.isFailure == true) return "MMS_SUBSCRIPTION_LOOKUP_FAILED"
+        if (active?.getOrNull() == false) return "REQUESTED_SUBSCRIPTION_NOT_ACTIVE"
+        return null
+    }
+
+    private fun hasEffectivePermission(permission: String): Boolean = runCatching {
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED &&
+            PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
+    }.getOrDefault(false)
 
     companion object {
         const val ACTION_SENT = "com.sentinel.quantum.MMS_SENT_RESULT"

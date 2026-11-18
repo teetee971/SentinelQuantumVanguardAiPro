@@ -133,11 +133,29 @@ test('recovery metadata is durably retired before cleanup or recovery workers ca
   assert.ok(recoveryCancelIndex > metadataFailureIndex, 'recovery worker cancellation must follow durable journal retirement');
 });
 
-test('secondary prune uses the same final recovery lifecycle instead of raw-unlinking valid staged MMS', () => {
-  assert.match(
-    downloadCoordinator,
-    /MmsDownloadRecoveryJournal\(context\)\.read\(file\.name\)[\s\S]*MmsDownloadRecovery\.recover\([\s\S]*allowQuarantine = true/
+test('secondary prune serializes recovery and preserves files awaiting retry or diagnosis', () => {
+  const prune = downloadCoordinator.slice(
+    downloadCoordinator.indexOf('private fun prune('),
+    downloadCoordinator.indexOf('private fun holdsSmsRole(')
   );
-  assert.match(downloadCoordinator, /expire\(context, file\.name\)/);
-  assert.match(downloadCoordinator, /!isValidStagedFileName\(it\.name\)/);
+  assert.match(
+    prune,
+    /MmsDownloadRecovery\.exclusively\(file\.name\)\s*\{\s*val outcome = runCatching\s*\{\s*MmsDownloadRecovery\.recover\([\s\S]*?allowQuarantine = true/
+  );
+  assert.match(prune, /\.getOrDefault\(MmsDownloadRecovery\.Outcome\.RETRY\)/);
+  assert.match(prune, /if \(!MmsDownloadRecovery\.cleanupMustKeepStaging\(outcome\)\)\s*\{\s*expire\(context, file\.name\)/);
+  assert.equal(prune.match(/expire\(context, file\.name\)/g)?.length, 1, 'all valid-name expiry must honor recovery');
+  assert.match(prune, /\}\s*else\s*\{\s*runCatching \{ file\.delete\(\) \}/);
+  assert.match(prune, /!isValidStagedFileName\(it\.name\)/);
+  assert.match(
+    downloadRecoveryWorker,
+    /fun cleanupMustKeepStaging\(outcome: Outcome\): Boolean =\s*outcome == Outcome\.RETRY \|\| outcome == Outcome\.DIAGNOSE/
+  );
+});
+
+test('central recovery refuses to read staged bytes without a durable descriptor', () => {
+  const descriptorIndex = downloadRecoveryWorker.indexOf('journal.read(fileName) ?: return Outcome.TERMINAL');
+  const stagedFileIndex = downloadRecoveryWorker.indexOf('val target = stagedFile(appContext, fileName)');
+  assert.ok(descriptorIndex >= 0, 'missing metadata must be terminal for recovery');
+  assert.ok(stagedFileIndex > descriptorIndex, 'recovery must establish durable metadata before opening staging');
 });

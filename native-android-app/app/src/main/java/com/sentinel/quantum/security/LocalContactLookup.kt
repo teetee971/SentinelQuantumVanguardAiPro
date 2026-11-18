@@ -16,7 +16,8 @@ class LocalContactLookup(private val context: Context) {
         val contactId: Long,
         val displayName: String,
         val phoneNumbers: List<String>,
-        val providerHasPhoneNumber: Boolean
+        val providerHasPhoneNumber: Boolean,
+        val lookupKey: String? = null
     )
 
     enum class ContactAccessState { READY, PERMISSION_REQUIRED, PROVIDER_UNAVAILABLE }
@@ -31,9 +32,7 @@ class LocalContactLookup(private val context: Context) {
     )
 
     fun listWithState(limit: Int = Int.MAX_VALUE): ContactListResult {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
-        }
+        if (!canRead()) return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
         val safeLimit = limit.coerceAtLeast(1)
         return try {
             val contactCursor = context.contentResolver.query(
@@ -41,22 +40,31 @@ class LocalContactLookup(private val context: Context) {
                 arrayOf(
                     ContactsContract.Contacts._ID,
                     ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
-                    ContactsContract.Contacts.HAS_PHONE_NUMBER
+                    ContactsContract.Contacts.HAS_PHONE_NUMBER,
+                    ContactsContract.Contacts.LOOKUP_KEY
                 ),
                 null,
                 null,
                 "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} COLLATE LOCALIZED ASC"
             ) ?: return ContactListResult(ContactAccessState.PROVIDER_UNAVAILABLE)
 
+            val lookupKeys = mutableMapOf<Long, String>()
             val contactSeeds = contactCursor.use { cursor ->
                 val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
                 val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
                 val hasPhoneIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+                val lookupIndex = cursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY)
                 buildList {
                     while (cursor.moveToNext() && size < safeLimit) {
+                        val contactId = cursor.getLong(idIndex)
+                        if (lookupIndex >= 0) {
+                            cursor.getString(lookupIndex)?.takeIf(String::isNotBlank)?.let {
+                                lookupKeys[contactId] = it
+                            }
+                        }
                         add(
                             ContactDirectoryPolicy.ContactSeed(
-                                contactId = cursor.getLong(idIndex),
+                                contactId = contactId,
                                 displayName = cursor.getString(nameIndex).orEmpty(),
                                 providerHasPhoneNumber = cursor.getInt(hasPhoneIndex) > 0
                             )
@@ -65,6 +73,7 @@ class LocalContactLookup(private val context: Context) {
                 }
             }
 
+            if (!canRead()) return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
             val selectedIds = contactSeeds.asSequence().map { it.contactId }.toHashSet()
             val phoneSeeds = if (selectedIds.isEmpty()) {
                 emptyList()
@@ -123,7 +132,8 @@ class LocalContactLookup(private val context: Context) {
                     contactId = entry.contactId,
                     displayName = displayName,
                     phoneNumbers = entry.phoneNumbers,
-                    providerHasPhoneNumber = entry.providerHasPhoneNumber
+                    providerHasPhoneNumber = entry.providerHasPhoneNumber,
+                    lookupKey = lookupKeys[entry.contactId]
                 )
             }.sortedWith(
                 compareBy<Contact> { it.displayName == "Sans nom" }
@@ -131,6 +141,7 @@ class LocalContactLookup(private val context: Context) {
                     .thenBy { it.contactId }
             )
 
+            if (!canRead()) return ContactListResult(ContactAccessState.PERMISSION_REQUIRED)
             val callableContacts = contacts.count { it.phoneNumbers.isNotEmpty() }
             val phoneNumberCount = contacts.sumOf { it.phoneNumbers.size }
             val providerMismatchCount = contacts.count {
@@ -152,6 +163,7 @@ class LocalContactLookup(private val context: Context) {
     }
 
     private fun resolveStructuredDisplayName(contactId: Long, canonicalPhone: String): String? {
+        if (!canRead()) return null
         return runCatching {
             context.contentResolver.query(
                 ContactsContract.Data.CONTENT_URI,
@@ -199,8 +211,7 @@ class LocalContactLookup(private val context: Context) {
 
     fun find(number: String?): Identity? {
         val safeNumber = number?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) !=
-            PackageManager.PERMISSION_GRANTED) return null
+        if (!canRead()) return null
 
         val lookupUri = Uri.withAppendedPath(
             ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
@@ -223,6 +234,7 @@ class LocalContactLookup(private val context: Context) {
             }
         }.getOrNull() ?: return null
 
+        if (!canRead()) return null
         val organisation = runCatching {
             context.contentResolver.query(
                 ContactsContract.Data.CONTENT_URI,
@@ -239,6 +251,11 @@ class LocalContactLookup(private val context: Context) {
             }
         }.getOrNull()
 
-        return Identity(contact.second, organisation)
+        return if (canRead()) Identity(contact.second, organisation) else null
+    }
+
+    private fun canRead(): Boolean = AndroidRoleReadPolicy.readBoolean {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
+            PackageManager.PERMISSION_GRANTED
     }
 }

@@ -50,25 +50,16 @@ internal object CallDirectoryCache {
     }
 
     /**
-     * Preference path. Disabling publishes an empty view on the caller thread and does not
-     * read contacts. Enabling reloads on the directory thread; until that publish, screening
-     * stays fail-open even though the snapshot flag is already true.
-     */
-    fun onSilencePreferenceChanged(context: Context, enabled: Boolean) {
-        onDirectoryObservationChanged(context, enabled)
-    }
-
-    /**
      * Loads the directory only when unknown-caller silence or the neighbor notice is on.
      * Disabling both publishes an empty view on the caller thread and does not read contacts.
      */
-    fun onDirectoryObservationChanged(context: Context, silenceHint: Boolean = false) {
-        val observe = silenceHint || observesDirectory(context)
-        if (!observe) {
-            refresh(context, false)
+    fun onDirectoryObservationChanged(context: Context) {
+        val ticket = publication.openRefresh()
+        if (!observesDirectory(context)) {
+            publication.publish(ticket, View(ready = false, numbers = emptySet()), permissionGranted = false)
             return
         }
-        executor.execute { refresh(context.applicationContext, true) }
+        executor.execute { refresh(context.applicationContext, ticket) }
     }
 
     private fun observesDirectory(context: Context): Boolean = runCatching {
@@ -81,26 +72,25 @@ internal object CallDirectoryCache {
      * Truncation, a missing permission and a query failure fail open: the published view is not ready,
      * never a partial set. A newer refresh or a detected revocation supersedes an older query.
      */
-    fun refresh(context: Context, silenceOutsideDirectory: Boolean): Boolean {
-        val app = context.applicationContext
+    fun refresh(context: Context): Boolean =
+        refresh(context.applicationContext, publication.openRefresh())
+
+    private fun refresh(app: Context, ticket: Int): Boolean {
+        if (!publication.isLatest(ticket)) return true
         ScreeningHomeRegion.capture(app)
         runCatching { InternationalNumberParser.warm() }
-        val ticket = publication.openRefresh()
         fun publish(next: View) = publication.publish(ticket, next, contactsPermissionGranted(app))
-        if (!silenceOutsideDirectory) {
+        if (!observesDirectory(app) || !contactsPermissionGranted(app)) {
             publish(View(ready = false, numbers = emptySet()))
             return true
         }
-        if (!contactsPermissionGranted(app)) {
-            publish(View(ready = false, numbers = emptySet()))
-            return true
-        }
+        if (!publication.isLatest(ticket)) return true
         val loaded = runCatching { loadNumbers(app) }.getOrElse {
             if (publication.isLatest(ticket)) publish(View(ready = false, numbers = emptySet()))
             return !publication.isLatest(ticket)
         }
         if (!publication.isLatest(ticket)) return true
-        if (!contactsPermissionGranted(app)) {
+        if (!observesDirectory(app) || !contactsPermissionGranted(app)) {
             publish(View(ready = false, numbers = emptySet()))
             return true
         }
@@ -138,7 +128,7 @@ internal object CallDirectoryCache {
         ) ?: return Load.Unavailable
         cursor.use { rows ->
             val index = rows.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            if (index < 0) return Load.Ready(emptySet())
+            if (index < 0) return Load.Unavailable
             while (rows.moveToNext()) {
                 if (!DirectoryPublication.hasRoom(numbers.size)) return Load.Truncated
                 val canonical = CallRuleEngine.normalizeNumber(rows.getString(index)) ?: continue
@@ -151,17 +141,16 @@ internal object CallDirectoryCache {
     private fun ensureObserving(context: Context) {
         if (!observing.compareAndSet(false, true)) return
         val app = context.applicationContext
-        app.contentResolver.registerContentObserver(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            true,
-            object : ContentObserver(Handler(Looper.getMainLooper())) {
-                override fun onChange(selfChange: Boolean) {
-                    executor.execute {
-                        val store = CallBlocklistStore(app)
-                        refresh(app, store.silenceOutsideDirectory() || store.neighborNoticeEnabled())
+        runCatching {
+            app.contentResolver.registerContentObserver(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                true,
+                object : ContentObserver(Handler(Looper.getMainLooper())) {
+                    override fun onChange(selfChange: Boolean) {
+                        onDirectoryObservationChanged(app)
                     }
                 }
-            }
-        )
+            )
+        }.onFailure { observing.set(false) }
     }
 }

@@ -3,6 +3,7 @@ package com.sentinel.quantum.background
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.security.CollectiveDefenseClient
 import com.sentinel.quantum.security.CollectiveDefenseWatchStore
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +14,7 @@ class CollectiveDefenseWatchWorker(
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) return@withContext Result.success()
         val context = applicationContext
         val store = CollectiveDefenseWatchStore(context)
         val watches = store.snapshot()

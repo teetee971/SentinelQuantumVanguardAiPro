@@ -30,6 +30,38 @@ class IncomingMmsReceiverContractTest {
         }
     }
 
+    @Test
+    fun downloadResultIsCheckedBeforeReadingAnyPayload() {
+        val source = readSecuritySource("SentinelMmsDownloadReceiver.kt")
+        val resultCheck = source.indexOf("if (deliveredResultCode != Activity.RESULT_OK)")
+        val payloadRead = listOf("target.readBytes()", "IncomingMmsPduFileReader.read(")
+            .map { source.indexOf(it) }
+            .filter { it >= 0 }
+            .minOrNull() ?: error("Missing staged PDU read")
+        assertTrue("Transport failure must be handled before any payload read", resultCheck in 0 until payloadRead)
+    }
+
+    @Test
+    fun callbackAndRecoveryDoNotReadFilesWithoutAnInReadBound() {
+        for (name in listOf(
+            "SentinelMmsDownloadReceiver.kt",
+            "MmsDownloadRecoveryWorker.kt",
+            "IncomingMmsPrivateStore.kt"
+        )) {
+            assertFalse("Unbounded PDU read in $name", readSecuritySource(name).contains(".readBytes()"))
+        }
+    }
+
+    @Test
+    fun opportunisticPruningHonorsTheRecoveryRetentionDecision() {
+        val source = readSecuritySource("MmsDownloadCoordinator.kt")
+        val prune = source.substringAfter("private fun prune(").substringBefore("private fun holdsSmsRole(")
+        assertTrue("Prune must preserve retry and diagnosis records", prune.contains("cleanupMustKeepStaging(outcome)"))
+    }
+
+    private fun readSecuritySource(name: String): String =
+        File(locateSourceRoot(), "com/sentinel/quantum/security/$name").readText()
+
     private fun locateSourceRoot(): File {
         val candidates = listOf(
             File("src/main/java"),

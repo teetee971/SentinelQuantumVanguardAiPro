@@ -33,6 +33,7 @@ fun LocalLogsScreen(navController: NavController) {
     var logs by remember { mutableStateOf<List<LocalLogger.LogEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var exporting by remember { mutableStateOf(false) }
+    var confirmClear by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(logger) {
@@ -64,14 +65,8 @@ fun LocalLogsScreen(navController: NavController) {
                 onBack = { navController.navigateUp() },
                 actions = {
                     TextButton(
-                        enabled = !loading && !exporting,
-                        onClick = {
-                            scope.launch {
-                                withContext(Dispatchers.IO) { logger.clearLogs() }
-                                logs = emptyList()
-                                shareStatus = null
-                            }
-                        }
+                        enabled = logs.isNotEmpty() && !loading && !exporting,
+                        onClick = { confirmClear = true }
                     ) {
                         Text(stringResource(R.string.action_clear))
                     }
@@ -242,6 +237,31 @@ fun LocalLogsScreen(navController: NavController) {
                 }
             }
         }
+    }
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("Effacer le journal courant ?") },
+            text = { Text("Cette action porte sur les entrées affichées dans ce journal local.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    loading = true
+                    scope.launch {
+                        try {
+                            logs = withContext(Dispatchers.IO) {
+                                logger.clearLogs()
+                                logger.getLogs()
+                            }
+                            shareStatus = if (logs.isEmpty()) null else "Des entrées restent disponibles."
+                        } finally {
+                            loading = false
+                        }
+                    }
+                }) { Text(stringResource(R.string.action_clear)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Annuler") } }
+        )
     }
 }
 

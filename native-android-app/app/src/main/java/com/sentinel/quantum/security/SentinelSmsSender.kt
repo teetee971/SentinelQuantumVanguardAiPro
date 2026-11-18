@@ -48,25 +48,7 @@ class SentinelSmsSender(private val context: Context) {
         if (body.isBlank() || body.length > MAX_BODY_CHARS) {
             return SendResult(false, "INVALID_MESSAGE")
         }
-        if (!holdsSmsRole()) return SendResult(false, "SMS_ROLE_NOT_HELD")
-        if (
-            ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
-        }
-        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) {
-            return SendResult(false, "SEND_SMS_PERMISSION_NOT_GRANTED")
-        }
-        if (
-            ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
-        }
-        if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
-            return SendResult(false, "READ_PHONE_STATE_PERMISSION_NOT_GRANTED")
-        }
+        checkOutboundAuthorization()?.let { return SendResult(false, it) }
         when (emergencyNumberState(normalized)) {
             EmergencyNumberState.EMERGENCY ->
                 return SendResult(false, "EMERGENCY_NUMBER_USE_DIALER")
@@ -167,6 +149,18 @@ class SentinelSmsSender(private val context: Context) {
             )
         }
 
+        checkOutboundAuthorization(prepared.subscriptionId)?.let { reason ->
+            // No telephony call was entered. If role loss prevents provider repair, preserve the row.
+            conversations.markOutgoingFailed(persistedMessageId)
+            return SendResult(
+                accepted = false,
+                reason = reason,
+                subscriptionId = prepared.subscriptionId,
+                providerMessageId = persistedMessageId,
+                partCount = parts.size
+            )
+        }
+
         // Only this call boundary can have an indeterminate synchronous outcome: SmsManager may
         // throw after Android has accepted one or more segments. Keep OUTBOX/PENDING in that case;
         // validated SENT callbacks remain the only conclusive durable transition.
@@ -208,8 +202,27 @@ class SentinelSmsSender(private val context: Context) {
         }
     }
 
-    private fun hasEffectivePermission(permission: String): Boolean =
-        PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
+    private fun checkOutboundAuthorization(subscriptionId: Int? = null): String? {
+        val active = subscriptionId?.let { id ->
+            runCatching {
+                context.getSystemService(SubscriptionManager::class.java)
+                    .activeSubscriptionInfoList.orEmpty().any { it.subscriptionId == id }
+            }
+        }
+        if (!holdsSmsRole()) return "SMS_ROLE_NOT_HELD"
+        if (!hasEffectivePermission(Manifest.permission.SEND_SMS)) return "SEND_SMS_PERMISSION_NOT_GRANTED"
+        if (!hasEffectivePermission(Manifest.permission.READ_PHONE_STATE)) {
+            return "READ_PHONE_STATE_PERMISSION_NOT_GRANTED"
+        }
+        if (active?.isFailure == true) return "SMS_SUBSCRIPTION_LOOKUP_FAILED"
+        if (active?.getOrNull() == false) return "REQUESTED_SUBSCRIPTION_NOT_ACTIVE"
+        return null
+    }
+
+    private fun hasEffectivePermission(permission: String): Boolean = runCatching {
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED &&
+            PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
+    }.getOrDefault(false)
 
     private fun sanitizeDestination(raw: String): String? {
         val value = raw.trim()

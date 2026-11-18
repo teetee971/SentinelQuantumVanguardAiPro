@@ -216,18 +216,18 @@ object MmsDownloadCoordinator {
             .forEach { file ->
                 val existedBefore = file.exists()
                 if (isValidStagedFileName(file.name)) {
-                    if (MmsDownloadRecoveryJournal(context).read(file.name) != null) {
-                        runCatching {
+                    MmsDownloadRecovery.exclusively(file.name) {
+                        val outcome = runCatching {
                             MmsDownloadRecovery.recover(
                                 context = context,
                                 fileName = file.name,
                                 allowQuarantine = true
                             )
+                        }.getOrDefault(MmsDownloadRecovery.Outcome.RETRY)
+                        if (!MmsDownloadRecovery.cleanupMustKeepStaging(outcome)) {
+                            expire(context, file.name)
                         }
                     }
-                    // Mirror the cleanup deadline even if final recovery could not complete: retire
-                    // the staged file, its recovery metadata and any pending recovery worker.
-                    expire(context, file.name)
                 } else {
                     runCatching { file.delete() }
                 }
@@ -245,7 +245,7 @@ object MmsDownloadCoordinator {
     const val EXTRA_FILE_NAME = "mms.download.file"
     const val EXTRA_SUBSCRIPTION_ID = "mms.download.subscription"
 
-    const val MAX_DOWNLOADED_PDU_BYTES = 17L * 1024L * 1024L
+    const val MAX_DOWNLOADED_PDU_BYTES = IncomingMmsPduFileReader.MAX_BYTES
     const val DOWNLOAD_TTL_MS = 24L * 60L * 60L * 1000L
 
     internal const val DOWNLOAD_DIRECTORY = "sentinel_mms_download"

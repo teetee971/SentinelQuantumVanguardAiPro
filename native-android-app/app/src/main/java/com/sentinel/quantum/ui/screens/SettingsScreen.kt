@@ -732,7 +732,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun ThemeOptionRow(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun ThemeOptionRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -157,7 +157,7 @@ internal object IncomingMmsPrivateStore {
         if (directory.parentFile != canonicalRoot || !directory.isDirectory) return null
         val target = runCatching { File(directory, name).canonicalFile }.getOrNull() ?: return null
         if (target.parentFile != directory || !target.isFile) return null
-        val data = runCatching { target.readBytes() }.getOrNull() ?: return null
+        val data = IncomingMmsPduFileReader.read(target, target.length()) ?: return null
         return data.takeIf { IncomingMmsIdentity.sha256Hex(it) == name.removeSuffix(".$PDU_EXTENSION") }
     }
 

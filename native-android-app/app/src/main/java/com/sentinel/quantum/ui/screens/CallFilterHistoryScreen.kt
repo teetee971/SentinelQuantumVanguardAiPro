@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import com.sentinel.quantum.security.CallHistoryPresentationMapper
 import com.sentinel.quantum.security.CallFilterLogStore
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import java.text.DateFormat
 import java.util.Date
 
@@ -42,6 +44,9 @@ fun CallFilterHistoryScreen(navController: NavController) {
     val context = LocalContext.current.applicationContext
     val store = remember(context) { CallFilterLogStore.get(context) }
     var history by remember { mutableStateOf<List<CallHistoryPresentation>>(emptyList()) }
+    var confirmClear by remember { mutableStateOf(false) }
+    var clearing by remember { mutableStateOf(false) }
+    var clearFailed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val reload: suspend () -> Unit = { history = store.history().map(CallHistoryPresentationMapper::from) }
     LaunchedEffect(store) { reload() }
@@ -53,7 +58,10 @@ fun CallFilterHistoryScreen(navController: NavController) {
                 subtitle = "Décisions locales · identifiants privés",
                 onBack = { navController.navigateUp() },
                 actions = {
-                    TextButton(onClick = { scope.launch { store.clear(); reload() } }) {
+                    TextButton(
+                        enabled = history.isNotEmpty() && !clearing,
+                        onClick = { confirmClear = true }
+                    ) {
                         Text(stringResource(R.string.call_history_clear))
                     }
                 }
@@ -66,6 +74,9 @@ fun CallFilterHistoryScreen(navController: NavController) {
                 Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodySmall
             )
+            if (clearFailed) {
+                Text("Effacement indisponible.", Modifier.padding(horizontal = 16.dp))
+            }
             if (history.isEmpty()) {
                 Text(
                     stringResource(R.string.call_history_empty),
@@ -83,6 +94,33 @@ fun CallFilterHistoryScreen(navController: NavController) {
                 }
             }
         }
+    }
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("Effacer l’historique du filtrage ?") },
+            text = { Text("Les décisions conservées par Sentinel dans cet historique seront supprimées.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    clearing = true
+                    clearFailed = false
+                    scope.launch {
+                        try {
+                            store.clear()
+                            reload()
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (_: Exception) {
+                            clearFailed = true
+                        } finally {
+                            clearing = false
+                        }
+                    }
+                }) { Text(stringResource(R.string.call_history_clear)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Annuler") } }
+        )
     }
 }
 

@@ -1,7 +1,10 @@
 package com.sentinel.quantum
 
 import android.app.Application
+import com.sentinel.quantum.background.CollectiveDefenseWorkScheduler
 import com.sentinel.quantum.background.PublishedNumberCatalogScheduler
+import com.sentinel.quantum.background.TrackerWatchScheduler
+import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallDirectoryCache
@@ -53,10 +56,15 @@ class SentinelApplication : Application() {
      * failed scheduling attempt reopens the gate so a later resume can retry.
      */
     fun launchForegroundMaintenance() {
-        launchWearableObservation()
+        if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) launchWearableObservation()
         if (catalogSyncStarted.compareAndSet(false, true)) {
             maintenanceScope.launch {
                 val started = runCatching {
+                    if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                        WorkScheduler.cancel(applicationContext)
+                        CollectiveDefenseWorkScheduler.cancel(applicationContext)
+                        TrackerWatchScheduler.sync(applicationContext, false)
+                    }
                     PublishedNumberCatalogStore.bind(applicationContext)
                     val enabled = SettingsStore(applicationContext).isPublishedCatalogRefreshEnabled()
                     PublishedNumberCatalogScheduler.sync(applicationContext, enabled)
@@ -100,10 +108,7 @@ class SentinelApplication : Application() {
         if (snapshot.blockedNumberHashes.isNotEmpty()) {
             store.prepareFingerprintKeys()
         }
-        return CallDirectoryCache.refresh(
-            applicationContext,
-            store.silenceOutsideDirectory() || store.neighborNoticeEnabled()
-        )
+        return CallDirectoryCache.refresh(applicationContext)
     }
 
     private fun performMaintenance(): Boolean {

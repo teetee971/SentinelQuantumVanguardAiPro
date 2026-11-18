@@ -20,8 +20,13 @@ class CallScreeningResponseBoundaryIntegrationContractTest {
         assertTrue(boundaryIndex >= 0)
         assertTrue(roleReadIndex > boundaryIndex)
         assertTrue(postResponseIndex > roleReadIndex)
-        assertEquals(4, Regex("responseBoundary\\.deliverResponse\\s*\\{").findAll(source).count())
-        assertEquals(4, Regex("respondToCall\\(callDetails,").findAll(source).count())
+        val deliveries = Regex("responseBoundary\\.deliverResponse\\s*\\{").findAll(source).count()
+        assertEquals("entry, emergency, failed decision, revoked decision and normal response", 5, deliveries)
+        assertEquals(deliveries, Regex("respondToCall\\(callDetails,").findAll(source).count())
+        val revokedDecision = source.indexOf("if (!holdsScreeningAuthority())")
+        val normalResponse = source.indexOf("respondToCall(callDetails, response.build())")
+        assertTrue("recheck the role before responding with the computed rule",
+            roleReadIndex < revokedDecision && revokedDecision < normalResponse && normalResponse < postResponseIndex)
         assertFalse(
             "no direct Telecom response may appear before the per-call boundary is created",
             source.substring(0, boundaryIndex).contains("respondToCall(callDetails,")

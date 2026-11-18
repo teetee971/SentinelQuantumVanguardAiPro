@@ -43,6 +43,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.sentinel.quantum.PhoneCoreActivationActivity
 import com.sentinel.quantum.PhoneCoreRuntimeFacts
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.R
 import com.sentinel.quantum.navigation.Screen
 import com.sentinel.quantum.security.ArcepVerifiedPrefixCatalog
@@ -349,62 +350,64 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                 }
             }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-            ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.phone_lists_signed_title), fontWeight = FontWeight.Bold)
-                            Text(stringResource(R.string.phone_lists_signed_meta), style = MaterialTheme.typography.bodySmall)
-                        }
-                        StatusText(signedStatus)
-                    }
-                    Text(
-                        stringResource(R.string.phone_lists_signed_stored, signedMetadata.storedPrefixCount),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    signedMetadata.acceptedSequence?.let {
-                        Text(stringResource(R.string.phone_lists_signed_sequence, it), style = MaterialTheme.typography.bodySmall)
-                    }
-                    signedMetadata.packageId?.let {
-                        Text(stringResource(R.string.phone_lists_signed_package, it), style = MaterialTheme.typography.bodySmall)
-                    }
-                    signedMetadata.issuerId?.let {
-                        Text(stringResource(R.string.phone_lists_signed_issuer, it), style = MaterialTheme.typography.bodySmall)
-                    }
-                    signedMetadata.keyId?.let {
-                        Text(stringResource(R.string.phone_lists_signed_key, it), style = MaterialTheme.typography.bodySmall)
-                    }
-                    signedMetadata.issuedAtMs?.let {
-                        Text(
-                            stringResource(R.string.phone_lists_signed_issued, formatDate(it)),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    signedMetadata.expiresAtMs?.let {
-                        Text(
-                            stringResource(R.string.phone_lists_signed_expires, formatDate(it)),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    Text(
-                        stringResource(
-                            if (CallRuleSyncConfig.SYNC_ENABLED && CallRuleSyncConfig.TRUSTED_KEYS.isNotEmpty()) {
-                                R.string.phone_lists_signed_channel_ready
-                            } else {
-                                R.string.phone_lists_signed_channel_missing
+            if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.phone_lists_signed_title), fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.phone_lists_signed_meta), style = MaterialTheme.typography.bodySmall)
                             }
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        stringResource(R.string.phone_lists_signed_disclaimer),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                            StatusText(signedStatus)
+                        }
+                        Text(
+                            stringResource(R.string.phone_lists_signed_stored, signedMetadata.storedPrefixCount),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        signedMetadata.acceptedSequence?.let {
+                            Text(stringResource(R.string.phone_lists_signed_sequence, it), style = MaterialTheme.typography.bodySmall)
+                        }
+                        signedMetadata.packageId?.let {
+                            Text(stringResource(R.string.phone_lists_signed_package, it), style = MaterialTheme.typography.bodySmall)
+                        }
+                        signedMetadata.issuerId?.let {
+                            Text(stringResource(R.string.phone_lists_signed_issuer, it), style = MaterialTheme.typography.bodySmall)
+                        }
+                        signedMetadata.keyId?.let {
+                            Text(stringResource(R.string.phone_lists_signed_key, it), style = MaterialTheme.typography.bodySmall)
+                        }
+                        signedMetadata.issuedAtMs?.let {
+                            Text(
+                                stringResource(R.string.phone_lists_signed_issued, formatDate(it)),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        signedMetadata.expiresAtMs?.let {
+                            Text(
+                                stringResource(R.string.phone_lists_signed_expires, formatDate(it)),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Text(
+                            stringResource(
+                                if (CallRuleSyncConfig.SYNC_ENABLED && CallRuleSyncConfig.TRUSTED_KEYS.isNotEmpty()) {
+                                    R.string.phone_lists_signed_channel_ready
+                                } else {
+                                    R.string.phone_lists_signed_channel_missing
+                                }
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            stringResource(R.string.phone_lists_signed_disclaimer),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -435,22 +438,26 @@ fun PhoneProtectionListsScreen(navController: NavController) {
                         ),
                         style = MaterialTheme.typography.bodySmall
                     )
-                    Text(
-                        stringResource(R.string.phone_lists_catalog_spam),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                        Text(
+                            stringResource(R.string.phone_lists_catalog_spam),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
-            SectionTitle(stringResource(R.string.phone_lists_community_section))
-            ProtectionListCard(
-                title = stringResource(R.string.phone_lists_community_title),
-                type = stringResource(R.string.phone_lists_type_identify_alert),
-                status = stringResource(R.string.phone_lists_status_not_evaluated),
-                itemCount = 0,
-                details = stringResource(R.string.phone_lists_community_details)
-            )
+            if (!BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                SectionTitle(stringResource(R.string.phone_lists_community_section))
+                ProtectionListCard(
+                    title = stringResource(R.string.phone_lists_community_title),
+                    type = stringResource(R.string.phone_lists_type_identify_alert),
+                    status = stringResource(R.string.phone_lists_status_not_evaluated),
+                    itemCount = 0,
+                    details = stringResource(R.string.phone_lists_community_details)
+                )
+            }
 
             HorizontalDivider()
             SectionTitle(stringResource(R.string.phone_lists_android_section))

@@ -16,6 +16,11 @@ import android.telecom.TelecomManager
 object CallScreeningActivationPolicy {
     enum class State { HELD, AVAILABLE_NOT_HELD, UNAVAILABLE }
 
+    internal fun holdsRuntimeAuthority(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || AndroidRoleReadPolicy.readBoolean {
+            context.getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) == true
+        }
+
     fun read(context: Context): State {
         val serviceDeclaredEnabled = isServiceDeclaredEnabled(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

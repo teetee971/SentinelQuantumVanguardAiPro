@@ -28,7 +28,7 @@ internal class DirectoryPublication {
         return closed
     }
 
-    fun openRefresh(): Int = generation.incrementAndGet()
+    fun openRefresh(): Int = synchronized(lock) { generation.incrementAndGet() }
 
     fun isLatest(ticket: Int): Boolean = generation.get() == ticket
 

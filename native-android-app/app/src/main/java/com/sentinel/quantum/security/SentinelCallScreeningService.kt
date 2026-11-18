@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Android system entrypoint. Decisions are local, synchronous, and user-reversible. */
 class SentinelCallScreeningService : CallScreeningService() {
+    private fun holdsScreeningAuthority() = CallScreeningActivationPolicy.holdsRuntimeAuthority(this)
+
     override fun onScreenCall(callDetails: Call.Details) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
@@ -76,7 +78,8 @@ class SentinelCallScreeningService : CallScreeningService() {
             CallRuleEngine(
                 snapshot.blockedNumberHashes,
                 snapshot.effectiveBlockedPrefixes,
-                reputationSilencePrefixes = snapshot.signedSilencePrefixes,
+                reputationSilencePrefixes = if (com.sentinel.quantum.BuildConfig.COMMERCIAL_PHONE_CORE_V1) emptySet()
+                    else snapshot.signedSilencePrefixes,
                 fingerprintsForNumber = SCREENING_FINGERPRINTER::cachedCandidates,
                 silenceOutsideDirectory = snapshot.silenceOutsideDirectory,
                 directoryReady = directory.ready,
@@ -106,13 +109,21 @@ class SentinelCallScreeningService : CallScreeningService() {
             CallScreeningPlatformEffect.SILENCE -> response.setSilenceCall(true)
             CallScreeningPlatformEffect.ALLOW -> Unit
         }
+        if (!holdsScreeningAuthority()) {
+            responseBoundary.deliverResponse {
+                respondToCall(callDetails, CallResponse.Builder().build())
+            }
+            return
+        }
         responseBoundary.deliverResponse {
             respondToCall(callDetails, response.build())
         }
 
         val appContext = applicationContext
         val submitted = responseBoundary.submitPostResponse {
+            if (!holdsScreeningAuthority()) return@submitPostResponse
             (applicationContext as? SentinelApplication)?.runPostResponseMaintenance()
+            if (!holdsScreeningAuthority()) return@submitPostResponse
 
             // Caller-ID rendering happens only after the mandatory platform response. The profile
             // is computed offline and contains no invented person or company identity.
@@ -141,6 +152,7 @@ class SentinelCallScreeningService : CallScreeningService() {
                 identitySource = null,
                 identityVerified = false
             )
+            if (!holdsScreeningAuthority()) return@submitPostResponse
             runCatching {
                 startActivity(Intent(this, CallerIdActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
@@ -170,6 +182,7 @@ class SentinelCallScreeningService : CallScreeningService() {
 
             // Everything below can touch disk or initialize Room. The boundary guarantees this
             // block cannot run until the mandatory Android response has returned successfully.
+            if (!holdsScreeningAuthority()) return@submitPostResponse
             val logger = LocalLogger(appContext)
             logger.log(
                 LocalLogger.LogLevel.SECURITY,

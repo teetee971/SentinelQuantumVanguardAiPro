@@ -130,12 +130,16 @@ internal object MmsDownloadRecovery {
         val journal = MmsDownloadRecoveryJournal(appContext)
         val record = journal.read(fileName) ?: return Outcome.TERMINAL
         if (nowMs < 0L || record.requestedAtMs > nowMs) return Outcome.RETRY
+        if (record.transportFailed) return finishTerminal(appContext, fileName, allowQuarantine)
 
         val target = stagedFile(appContext, fileName)
         if (target == null) {
-            return recoverWithoutStaging(appContext, journal, record, allowQuarantine, nowMs)
+            return recoverFromPrivate(appContext, journal, record, allowQuarantine, nowMs, stagingPresent = false)
         }
         val sizeBefore = target.length()
+        if (record.digestHex != null && sizeBefore !in 1..MmsDownloadCoordinator.MAX_DOWNLOADED_PDU_BYTES) {
+            return recoverFromPrivate(appContext, journal, record, allowQuarantine, nowMs, stagingPresent = true)
+        }
         if (sizeBefore <= 0L) {
             return if (allowQuarantine) {
                 finishTerminal(appContext, fileName, fromCleanupDeadline = true)
@@ -151,15 +155,8 @@ internal object MmsDownloadRecovery {
         if (modifiedBefore <= 0L || nowMs - modifiedBefore < STABLE_FILE_GRACE_MS) {
             return Outcome.RETRY
         }
-        val data = runCatching { target.readBytes() }.getOrNull() ?: return Outcome.RETRY
-        if (
-            data.isEmpty() ||
-            data.size.toLong() != sizeBefore ||
-            target.length() != sizeBefore ||
-            target.lastModified() != modifiedBefore
-        ) {
-            return Outcome.RETRY
-        }
+        val data = IncomingMmsPduFileReader.read(target, sizeBefore) ?: return Outcome.RETRY
+        if (target.lastModified() != modifiedBefore) return Outcome.RETRY
 
         val digest = IncomingMmsIdentity.sha256Hex(data) ?: return Outcome.RETRY
         val persistence = IncomingMmsPrivateStore.confirmDurableCopy(
@@ -208,12 +205,13 @@ internal object MmsDownloadRecovery {
         )
     }
 
-    private fun recoverWithoutStaging(
+    private fun recoverFromPrivate(
         appContext: Context,
         journal: MmsDownloadRecoveryJournal,
         record: MmsDownloadRecoveryJournal.Record,
         allowQuarantine: Boolean,
-        nowMs: Long
+        nowMs: Long,
+        stagingPresent: Boolean
     ): Outcome {
         val digest = record.digestHex
         val data = digest?.let { IncomingMmsPrivateStore.read(appContext.filesDir, it) }
@@ -247,7 +245,7 @@ internal object MmsDownloadRecovery {
                     ),
                     allowQuarantine = allowQuarantine,
                     nowMs = nowMs,
-                    stagingPresent = false
+                    stagingPresent = stagingPresent
                 )
             }
             MmsDownloadMissingCopyPolicy.Disposition.RETRY_INCONSISTENT,

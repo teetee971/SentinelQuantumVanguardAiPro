@@ -11,6 +11,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.R
 import com.sentinel.quantum.security.BluetoothScanner
 import com.sentinel.quantum.security.NetworkTrustStore
@@ -60,6 +61,7 @@ object TrackerWatchScheduler {
 
 class TrackerWatchWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
     override fun doWork(): Result {
+        if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) return Result.success()
         val preferences = TrackerWatchPreferences(applicationContext)
         if (!preferences.enabled) return Result.success()
         val scanner = BluetoothScanner(applicationContext)

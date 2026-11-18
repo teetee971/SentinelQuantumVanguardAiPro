@@ -15,7 +15,8 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         val requestedAtMs: Long,
         /** Null until a private copy has been reread and this exact record accepted its SHA-256. */
         val digestHex: String? = null,
-        val privateMissCount: Int = 0
+        val privateMissCount: Int = 0,
+        val transportFailed: Boolean = false
     )
 
     private val preferences = context.applicationContext.getSharedPreferences(
@@ -86,6 +87,21 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         }
     }
 
+    /** A known transport failure must never be recovered as a completed download. */
+    fun markTransportFailed(expected: Record): Boolean = synchronized(LOCK) {
+        val recordKey = key(expected.fileName)
+        val raw = preferences.getString(recordKey, null)
+        val current = decode(expected.fileName, raw) ?: return@synchronized false
+        if (
+            current.subscriptionId != expected.subscriptionId ||
+            current.requestedAtMs != expected.requestedAtMs ||
+            current.digestHex != null
+        ) return@synchronized false
+        if (current.transportFailed) return@synchronized true
+        val encoded = MmsDownloadJournalMutation.encode(current.toSnapshot().copy(transportFailed = true))
+        preferences.edit().putString(recordKey, encoded).commit()
+    }
+
     /** Counts a missing private copy without deleting the record or changing its SHA. */
     fun notePrivateUnavailable(
         fileName: String,
@@ -148,7 +164,8 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
             subscriptionId = snapshot.subscriptionId,
             requestedAtMs = snapshot.requestedAtMs,
             digestHex = snapshot.digestHex,
-            privateMissCount = snapshot.privateMissCount
+            privateMissCount = snapshot.privateMissCount,
+            transportFailed = snapshot.transportFailed
         )
     }
 
@@ -157,7 +174,8 @@ internal class MmsDownloadRecoveryJournal(context: Context) {
         subscriptionId = subscriptionId,
         requestedAtMs = requestedAtMs,
         digestHex = digestHex,
-        privateMissCount = privateMissCount
+        privateMissCount = privateMissCount,
+        transportFailed = transportFailed
     )
 
     private fun key(fileName: String) = KEY_PREFIX + fileName

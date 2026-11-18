@@ -12,6 +12,11 @@ const composerSource = fs.readFileSync(
   'utf8'
 );
 
+const submissionOwnerSource = fs.readFileSync(
+  'native-android-app/app/src/main/java/com/sentinel/quantum/SmsComposeSubmissionViewModel.kt',
+  'utf8'
+);
+
 function blockBetween(source, startNeedle, endNeedle) {
   const start = source.indexOf(startNeedle);
   const end = source.indexOf(endNeedle, start);
@@ -126,20 +131,18 @@ test('API 37 limited incoming-answer path is explicit and still tears down befor
   assert.ok(outgoing > teardown, 'outgoing qualification must continue only after bounded teardown');
 });
 
-test('composer acquires the process submission gate only after its lifecycle scope starts', () => {
+test('composer installs process gate release in the retained lifecycle owner before transport', () => {
   const smsBlock = blockBetween(composerSource, 'fun submitSms(', 'fun submitMms(');
-  const mmsBlock = blockBetween(composerSource, 'fun submitMms(', 'DisposableEffect(activationEpoch)');
+  const mmsBlock = blockBetween(composerSource, 'fun submitMms(', 'LaunchedEffect(submission)');
+  const ownerBlock = blockBetween(submissionOwnerSource, 'fun submit(', 'fun blocksDraft(');
+  const resultBlock = blockBetween(composerSource, 'LaunchedEffect(submission)', 'DisposableEffect(activationEpoch)');
 
-  for (const [name, block] of [['SMS', smsBlock], ['MMS', mmsBlock]]) {
-    const launch = block.indexOf('ioScope.launch {');
-    const acquire = block.indexOf('if (!beginSubmission()) return@launch', launch);
-
-    assert.ok(launch >= 0, `${name} submission must run in the lifecycle coroutine scope`);
-    assert.ok(
-      acquire > launch,
-      `${name} must not acquire the process-wide gate before a cancelled lifecycle scope can start`
-    );
-  }
+  assert.match(composerSource, /ViewModelProvider\(this\)\[SmsComposeSubmissionViewModel::class\.java\]/);
+  assert.match(smsBlock, /val subscriptionId = selectedSubscriptionId[\s\S]*submissions\.submit\([\s\S]*sender\.send\(recipient, message, subscriptionId\)/);
+  assert.match(mmsBlock, /val subscriptionId = selectedSubscriptionId[\s\S]*submissions\.submit\([\s\S]*mmsSender\.send\([\s\S]*requestedSubscriptionId = subscriptionId/);
+  assert.match(ownerBlock, /viewModelScope\.launch\(start = CoroutineStart\.UNDISPATCHED\) \{[\s\S]*if \(!isActive \|\| !gate\.tryAcquire\(\)\) return@launch[\s\S]*try \{[\s\S]*withContext\(Dispatchers\.IO\)[\s\S]*finally \{\s*gate\.release\(\)/);
+  assert.match(resultBlock, /if \(receipt\.accepted\)[\s\S]*completed\.target\.revision == composerRevision[\s\S]*completed\.target\.revision == replyRevisions\[threadId\]/);
+  assert.match(resultBlock, /submissions\.receiptDisplayed\(completed\)/);
 });
 
 test('API 24 instrumentation enforces a hard wall-clock timeout instead of a detached watchdog', () => {

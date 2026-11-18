@@ -37,6 +37,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -84,10 +85,10 @@ import com.sentinel.quantum.security.SmsActivationUiModel
 import com.sentinel.quantum.security.SmsActivationRefreshPolicy
 import com.sentinel.quantum.security.SmsSubscriptionState
 import com.sentinel.quantum.security.SmsSubmitReadiness
-import com.sentinel.quantum.security.SmsSubmissionGate
 import com.sentinel.quantum.security.SmsThreadOrganizer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ViewModelProvider
 import java.io.File
 import com.sentinel.quantum.ui.theme.SentinelQuantumTheme
 import com.sentinel.quantum.ui.design.PhoneCoreBrand
@@ -104,6 +105,7 @@ import kotlinx.coroutines.withContext
 import com.sentinel.quantum.ui.design.SentinelTopBar
 import java.text.DateFormat
 import java.util.Date
+import java.util.UUID
 import kotlinx.coroutines.flow.collectLatest
 
 /**
@@ -144,6 +146,7 @@ class SmsComposeActivity : ComponentActivity() {
                         initialBody.isBlank()
                 )
 
+        val submissions = ViewModelProvider(this)[SmsComposeSubmissionViewModel::class.java]
         setContent {
             SentinelQuantumTheme {
                 androidx.compose.runtime.SideEffect {
@@ -160,8 +163,13 @@ class SmsComposeActivity : ComponentActivity() {
                 var status by remember { mutableStateOf<String?>(null) }
                 var activeSendToken by remember { mutableStateOf<Int?>(null) }
                 var activeProviderMessageId by remember { mutableStateOf<Long?>(null) }
-                var submissionInFlight by remember { mutableStateOf(false) }
-                val submissionGate = remember { SmsSubmissionGate() }
+                val submission by submissions.submission.collectAsState()
+                val submissionInFlight = submission?.let { it.receipt == null } ?: false
+                var composerRevision by rememberSaveable { mutableStateOf(UUID.randomUUID().toString()) }
+                fun changeComposerDraft() {
+                    submissions.draftChanged(composerRevision, null)
+                    composerRevision = UUID.randomUUID().toString()
+                }
                 var callbackProgress by remember { mutableStateOf<SmsCallbackProgress.State?>(null) }
                 var providerPersistenceFailed by remember { mutableStateOf(false) }
                 var exportConfirmationPending by remember { mutableStateOf(false) }
@@ -231,11 +239,13 @@ class SmsComposeActivity : ComponentActivity() {
                     ioScope.launch {
                         when (val loaded = withContext(Dispatchers.IO) { attachmentLoader.load(uris) }) {
                             is MmsAttachmentLoader.Result.Loaded -> {
+                                changeComposerDraft()
                                 selectedMmsAttachments = loaded.attachments
                                 val total = loaded.attachments.sumOf { it.sizeBytes }
                                 status = "${loaded.attachments.size} image(s) prête(s) · $total octets"
                             }
                             is MmsAttachmentLoader.Result.Rejected -> {
+                                changeComposerDraft()
                                 selectedMmsAttachments = emptyList()
                                 status = when (loaded.reason) {
                                     "TOO_MANY_ATTACHMENTS" -> "Trop de pièces jointes sélectionnées."
@@ -264,6 +274,13 @@ class SmsComposeActivity : ComponentActivity() {
                         if (id != null && id > 0L && text != null) id to text.take(SentinelSmsSender.MAX_BODY_CHARS) else null
                     }.take(5).toMap() }
                 )) { mutableStateOf(emptyMap<Long, String>()) }
+                var replyRevisions by rememberSaveable(stateSaver = mapSaver(
+                    save = { revisions: Map<Long, String> -> revisions.mapKeys { it.key.toString() } },
+                    restore = { saved -> saved.mapNotNull { (id, revision) ->
+                        val threadId = id.toLongOrNull()
+                        if (threadId != null && threadId > 0L && revision is String) threadId to revision else null
+                    }.take(5).toMap() }
+                )) { mutableStateOf(emptyMap<Long, String>()) }
                 var providerEpoch by remember { mutableStateOf(0) }
                 var threads by remember {
                     mutableStateOf(emptyList<SmsConversationStore.ThreadSummary>())
@@ -275,112 +292,114 @@ class SmsComposeActivity : ComponentActivity() {
                 val visibleThreads = remember(threads, threadCategoryFilter) {
                     threads.filter { SmsThreadOrganizer.matches(threadCategoryFilter, it.latestBody) }
                 }
-                fun beginSubmission(): Boolean {
-                    if (!submissionGate.tryAcquire()) {
-                        status = "Un envoi est déjà en cours ; attendez sa confirmation avant de réessayer."
-                        return false
-                    }
-                    submissionInFlight = true
-                    return true
-                }
-                fun endSubmission() {
-                    submissionInFlight = false
-                    submissionGate.release()
-                }
-                fun submitSms(recipient: String, message: String, onAccepted: () -> Unit) {
-                    ioScope.launch {
-                        if (!beginSubmission()) return@launch
-                        try {
-                            val result = withContext(Dispatchers.IO) {
-                                sender.send(recipient, message, selectedSubscriptionId)
-                            }
-                            status = when (result.reason) {
-                                "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
-                                "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
-                                "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
-                                "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
-                                "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
-                                "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
-                                "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
-                                "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
-                                "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
-                                "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
-                                "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
-                                "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
-                                "INVALID_DESTINATION" -> "Numéro destinataire invalide."
-                                "INVALID_MESSAGE" -> "Message invalide."
-                                "SMS_MULTIPART_LIMIT_EXCEEDED" -> "Ce message nécessite trop de parties SMS. Raccourcissez-le avant l’envoi."
-                                else -> "Échec d’envoi."
-                            }
-                            if (result.accepted) {
-                                callbackProgress = null
-                                providerPersistenceFailed = false
-                                activeSendToken = result.sendToken
-                                activeProviderMessageId = result.providerMessageId
-                                onAccepted()
-                                providerEpoch++
-                            }
-                        } finally {
-                            endSubmission()
+                fun submitSms(recipient: String, message: String, threadId: Long? = null) {
+                    val revision = if (threadId == null) composerRevision else {
+                        replyRevisions[threadId] ?: UUID.randomUUID().toString().also {
+                            replyRevisions = replyRevisions + (threadId to it)
                         }
                     }
+                    val subscriptionId = selectedSubscriptionId
+                    val started = submissions.submit(SmsComposeSubmissionViewModel.Target(revision, threadId, false)) {
+                        val result = sender.send(recipient, message, subscriptionId)
+                        SmsComposeSubmissionViewModel.Receipt(
+                            result.accepted, result.reason, result.providerMessageId, result.sendToken
+                        )
+                    }
+                    if (!started) status = "Vérifiez le statut de l’envoi en cours ou précédent."
                 }
-                fun submitMms(
-                    recipient: String,
-                    message: String,
-                    attachments: List<MmsAttachmentLoader.LoadedAttachment>,
-                    onAccepted: () -> Unit
-                ) {
-                    ioScope.launch {
-                        if (!beginSubmission()) return@launch
-                        try {
-                            val result = withContext(Dispatchers.IO) {
-                                mmsSender.send(
-                                    destination = recipient,
-                                    text = message,
-                                    requestedSubscriptionId = selectedSubscriptionId,
-                                    attachments = attachments.map {
-                                        SentinelMmsSender.Attachment(it.mimeType, it.payload)
-                                    }
-                                )
-                            }
-                            status = when (result.reason) {
-                                "MMS_SUBMITTED_TO_ANDROID" ->
-                                    "MMS confié à Android ; le résultat opérateur arrivera par callback."
-                                "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" ->
-                                    "Choisissez la SIM à utiliser."
-                                "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" ->
-                                    "La SIM sélectionnée n’est plus active."
-                                "NO_ACTIVE_SMS_SUBSCRIPTION" ->
-                                    "Aucune SIM active compatible n’est détectée."
-                                "MMS_SUBSCRIPTION_LOOKUP_FAILED" ->
-                                    "Impossible de vérifier les SIM actives."
-                                "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" ->
-                                    "Permission d’accès à l’état téléphonique non accordée."
-                                "SMS_ROLE_NOT_HELD" ->
-                                    "Sentinel n’est pas l’application SMS par défaut."
-                                "SEND_SMS_PERMISSION_NOT_GRANTED" ->
-                                    "Permission d’envoi non accordée."
-                                "TELEPHONY_MESSAGING_UNAVAILABLE" ->
-                                    "Cet appareil n’expose pas la téléphonie SMS/MMS Android."
-                                "INVALID_DESTINATION" ->
-                                    "Numéro destinataire invalide."
-                                "EMPTY_MMS" ->
-                                    "Ajoutez un message ou une image avant l’envoi."
-                                "TEXT_TOO_LARGE" ->
-                                    "Le texte du MMS dépasse la limite de sécurité."
-                                "MMS_SUBMISSION_OUTCOME_UNKNOWN" ->
-                                    "Android n’a pas confirmé la prise en charge du MMS. Ne le renvoyez pas avant vérification."
-                                else -> "Échec de préparation ou d’envoi du MMS."
-                            }
-                            if (result.accepted) {
-                                onAccepted()
-                                providerEpoch++
-                            }
-                        } finally {
-                            endSubmission()
+
+                fun submitMms() {
+                    val recipient = destination
+                    val message = body
+                    val subscriptionId = selectedSubscriptionId
+                    val attachments = selectedMmsAttachments
+                    val target = SmsComposeSubmissionViewModel.Target(composerRevision, null, true)
+                    val started = submissions.submit(target) {
+                        val result = mmsSender.send(
+                            destination = recipient,
+                            text = message,
+                            requestedSubscriptionId = subscriptionId,
+                            attachments = attachments.map { SentinelMmsSender.Attachment(it.mimeType, it.payload) }
+                        )
+                        SmsComposeSubmissionViewModel.Receipt(result.accepted, result.reason, result.providerMessageId)
+                    }
+                    if (!started) status = "Vérifiez le statut de l’envoi en cours ou précédent."
+                }
+
+                LaunchedEffect(submission) {
+                    val completed = submission ?: return@LaunchedEffect
+                    val receipt = completed.receipt ?: return@LaunchedEffect
+                    status = if (receipt.reason == "COMPOSER_SUBMISSION_INTERRUPTED") {
+                        "Le résultat de la soumission est inconnu. Vérifiez la conversation avant de modifier le brouillon."
+                    } else if (completed.target.mms) {
+                        when (receipt.reason) {
+                            "MMS_SUBMITTED_TO_ANDROID" ->
+                                "MMS confié à Android ; le résultat opérateur arrivera par callback."
+                            "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" ->
+                                "Choisissez la SIM à utiliser."
+                            "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" ->
+                                "La SIM sélectionnée n’est plus active."
+                            "NO_ACTIVE_SMS_SUBSCRIPTION" ->
+                                "Aucune SIM active compatible n’est détectée."
+                            "MMS_SUBSCRIPTION_LOOKUP_FAILED" ->
+                                "Impossible de vérifier les SIM actives."
+                            "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" ->
+                                "Permission d’accès à l’état téléphonique non accordée."
+                            "SMS_ROLE_NOT_HELD" ->
+                                "Sentinel n’est pas l’application SMS par défaut."
+                            "SEND_SMS_PERMISSION_NOT_GRANTED" ->
+                                "Permission d’envoi non accordée."
+                            "TELEPHONY_MESSAGING_UNAVAILABLE" ->
+                                "Cet appareil n’expose pas la téléphonie SMS/MMS Android."
+                            "INVALID_DESTINATION" ->
+                                "Numéro destinataire invalide."
+                            "EMPTY_MMS" ->
+                                "Ajoutez un message ou une image avant l’envoi."
+                            "TEXT_TOO_LARGE" ->
+                                "Le texte du MMS dépasse la limite de sécurité."
+                            "MMS_SUBMISSION_OUTCOME_UNKNOWN" ->
+                                "Android n’a pas confirmé la prise en charge du MMS. Ne le renvoyez pas avant vérification."
+                            else -> "Échec de préparation ou d’envoi du MMS."
+                        }
+                    } else {
+                        when (receipt.reason) {
+                            "SUBMITTED_TO_ANDROID_TELEPHONY" -> "Demande d’envoi confiée à Android ; en attente du statut réseau."
+                            "SMS_SUBSCRIPTION_REQUIRED", "USER_SELECTION_REQUIRED" -> "Choisissez la SIM à utiliser."
+                            "REQUESTED_SUBSCRIPTION_NOT_ACTIVE" -> "La SIM sélectionnée n’est plus active. Actualisez puis choisissez une autre ligne."
+                            "NO_ACTIVE_SMS_SUBSCRIPTION" -> "Aucune SIM SMS active détectée."
+                            "READ_PHONE_STATE_PERMISSION_NOT_GRANTED" -> "Permission d’accès à l’état téléphonique non accordée."
+                            "SMS_SUBSCRIPTION_LOOKUP_FAILED" -> "Impossible de vérifier les SIM actives."
+                            "EMERGENCY_NUMBER_USE_DIALER" -> "Numéro d’urgence détecté : utilisez le composeur téléphonique."
+                            "SMS_ROLE_NOT_HELD" -> "Sentinel n’est pas l’application SMS par défaut."
+                            "SEND_SMS_PERMISSION_NOT_GRANTED" -> "Permission d’envoi SMS non accordée."
+                            "OUTGOING_PROVIDER_PERSIST_FAILED" -> "Impossible d’enregistrer le SMS dans la conversation. Envoi annulé."
+                            "EMERGENCY_NUMBER_CHECK_FAILED" -> "Vérification du numéro d’urgence impossible. Envoi bloqué par sécurité."
+                            "TELEPHONY_SUBMISSION_OUTCOME_UNKNOWN" -> "Android a interrompu la demande d’envoi ; le résultat de soumission n’est pas confirmé. Vérifiez le statut du message avant de réessayer."
+                            "INVALID_DESTINATION" -> "Numéro destinataire invalide."
+                            "INVALID_MESSAGE" -> "Message invalide."
+                            "SMS_MULTIPART_LIMIT_EXCEEDED" -> "Ce message nécessite trop de parties SMS. Raccourcissez-le avant l’envoi."
+                            else -> "Échec d’envoi."
                         }
                     }
+                    if (receipt.providerMessageId != null) providerEpoch++
+                    if (receipt.sendToken != null && receipt.providerMessageId != null) {
+                        callbackProgress = null
+                        providerPersistenceFailed = false
+                        activeSendToken = receipt.sendToken
+                        activeProviderMessageId = receipt.providerMessageId
+                    }
+                    if (receipt.accepted) {
+                        val threadId = completed.target.threadId
+                        if (threadId == null && completed.target.revision == composerRevision) {
+                            body = ""
+                            if (completed.target.mms) selectedMmsAttachments = emptyList()
+                            composerRevision = UUID.randomUUID().toString()
+                        } else if (threadId != null && completed.target.revision == replyRevisions[threadId]) {
+                            replyDrafts = replyDrafts - threadId
+                            replyRevisions = replyRevisions - threadId
+                        }
+                    }
+                    submissions.receiptDisplayed(completed)
                 }
 
                 DisposableEffect(activationEpoch) {
@@ -477,10 +496,15 @@ class SmsComposeActivity : ComponentActivity() {
                                             OutlinedTextField(
                                                 value = draft,
                                                 onValueChange = { text ->
-                                                    if (text.isBlank()) replyDrafts = replyDrafts - threadId
-                                                    else if (threadId in replyDrafts || replyDrafts.size < 5)
+                                                    if (text.isBlank()) {
+                                                        submissions.draftChanged(replyRevisions[threadId], threadId)
+                                                        replyDrafts = replyDrafts - threadId
+                                                        replyRevisions = replyRevisions - threadId
+                                                    } else if (threadId in replyDrafts || replyDrafts.size < 5) {
+                                                        submissions.draftChanged(replyRevisions[threadId], threadId)
                                                         replyDrafts = replyDrafts + (threadId to text.take(SentinelSmsSender.MAX_BODY_CHARS))
-                                                    else status = "Cinq brouillons sont conservés. Terminez-en un avant d’en créer un autre."
+                                                        replyRevisions = replyRevisions + (threadId to UUID.randomUUID().toString())
+                                                    } else status = "Cinq brouillons sont conservés. Terminez-en un avant d’en créer un autre."
                                                 },
                                                 label = { Text(stringResource(R.string.phone_core_reply)) },
                                                 enabled = sanitizeSmsDestination(replyAddress) != null,
@@ -488,7 +512,7 @@ class SmsComposeActivity : ComponentActivity() {
                                                 maxLines = 3
                                             )
                                             Button(
-                                                onClick = { submitSms(replyAddress, draft) { replyDrafts = replyDrafts - threadId } },
+                                                onClick = { submitSms(replyAddress, draft, threadId) },
                                                 modifier = Modifier.phoneCoreTestId("phone_core_sms_reply_send"),
                                                 enabled = SmsSubmitReadiness.canSubmit(
                                                     activationCanSend = activationSnapshot.canSend,
@@ -496,7 +520,8 @@ class SmsComposeActivity : ComponentActivity() {
                                                     selectedSubscriptionId = selectedSubscriptionId,
                                                     destinationPresent = sanitizeSmsDestination(replyAddress) != null,
                                                     bodyPresent = draft.isNotBlank(),
-                                                    submissionInFlight = submissionInFlight
+                                                    submissionInFlight = submissionInFlight ||
+                                                        submissions.blocksDraft(replyRevisions[threadId], threadId)
                                                 )
                                             ) { Icon(Icons.Default.Send, null); Spacer(Modifier.width(4.dp)); Text(stringResource(R.string.phone_core_send)) }
                                         }
@@ -542,7 +567,8 @@ class SmsComposeActivity : ComponentActivity() {
                                 FilterChip(
                                     selected = !mmsComposeMode,
                                     onClick = {
-                                        if (!initialMmsIntent) {
+                                        if (!initialMmsIntent && mmsComposeMode) {
+                                            changeComposerDraft()
                                             mmsComposeMode = false
                                             selectedMmsAttachments = emptyList()
                                         }
@@ -552,7 +578,12 @@ class SmsComposeActivity : ComponentActivity() {
                                 )
                                 FilterChip(
                                     selected = mmsComposeMode,
-                                    onClick = { mmsComposeMode = true },
+                                    onClick = {
+                                        if (!mmsComposeMode) {
+                                            changeComposerDraft()
+                                            mmsComposeMode = true
+                                        }
+                                    },
                                     label = { Text("MMS") }
                                 )
                             }
@@ -638,7 +669,13 @@ class SmsComposeActivity : ComponentActivity() {
                         if (showComposer) {
                             OutlinedTextField(
                                 value = destination,
-                                onValueChange = { destination = it.take(32) },
+                                onValueChange = {
+                                    val edited = it.take(32)
+                                    if (edited != destination) {
+                                        changeComposerDraft()
+                                        destination = edited
+                                    }
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Destinataire") },
                                 supportingText = { Text("Numéro de téléphone, 32 caractères maximum") },
@@ -653,7 +690,11 @@ class SmsComposeActivity : ComponentActivity() {
                                     } else {
                                         SentinelSmsSender.MAX_BODY_CHARS
                                     }
-                                    body = it.take(maxChars)
+                                    val edited = it.take(maxChars)
+                                    if (edited != body) {
+                                        changeComposerDraft()
+                                        body = edited
+                                    }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Message") },
@@ -696,6 +737,7 @@ class SmsComposeActivity : ComponentActivity() {
                                         )
                                         TextButton(
                                             onClick = {
+                                                changeComposerDraft()
                                                 selectedMmsAttachments = selectedMmsAttachments.filterIndexed { itemIndex, _ ->
                                                     itemIndex != index
                                                 }
@@ -742,14 +784,7 @@ class SmsComposeActivity : ComponentActivity() {
 
                             Button(
                                 onClick = {
-                                    if (mmsComposeMode) {
-                                        submitMms(destination, body, selectedMmsAttachments) {
-                                            body = ""
-                                            selectedMmsAttachments = emptyList()
-                                        }
-                                    } else {
-                                        submitSms(destination, body) { body = "" }
-                                    }
+                                    if (mmsComposeMode) submitMms() else submitSms(destination, body)
                                 },
                                 modifier = Modifier.fillMaxWidth().phoneCoreTestId("phone_core_sms_send"),
                                 enabled = SmsSubmitReadiness.canSubmit(
@@ -758,7 +793,8 @@ class SmsComposeActivity : ComponentActivity() {
                                     selectedSubscriptionId = selectedSubscriptionId,
                                     destinationPresent = destination.isNotBlank(),
                                     bodyPresent = body.isNotBlank() || (mmsComposeMode && selectedMmsAttachments.isNotEmpty()),
-                                    submissionInFlight = submissionInFlight
+                                    submissionInFlight = submissionInFlight ||
+                                        submissions.blocksDraft(composerRevision, null)
                                 )
                             ) {
                                 Icon(Icons.Default.Send, contentDescription = null)
@@ -980,12 +1016,12 @@ class SmsComposeActivity : ComponentActivity() {
                                                     selectedThreadId = thread.threadId
                                                     threadMessages = emptyList()
                                                 },
-                                                onWhatsApp = {
+                                                onWhatsApp = if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) null else ({
                                                     val uri = WhatsAppClickToChat.uriFor(thread.address)
                                                     if (uri == null) status = "WhatsApp nécessite un numéro au format international (+code pays)."
                                                     else runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
                                                         .onFailure { status = "Impossible d’ouvrir WhatsApp sur cet appareil." }
-                                                },
+                                                }),
                                                 onDelete = {
                                                     pendingDeleteThread = thread
                                                     status = "Suppression préparée · confirmez ou annulez"

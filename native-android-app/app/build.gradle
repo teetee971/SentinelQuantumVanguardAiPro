@@ -4,6 +4,13 @@ plugins {
     id 'com.google.devtools.ksp'
 }
 
+def commercialPhoneCore = providers.gradleProperty('sentinelCommercialV1').map { value ->
+    if (!(value in ['true', 'false'])) {
+        throw new GradleException('sentinelCommercialV1 must be true or false.')
+    }
+    value == 'true'
+}.getOrElse(false)
+
 android {
     namespace = 'com.sentinel.quantum'
     compileSdk 37
@@ -15,10 +22,14 @@ android {
         versionCode 10
         versionName "1.0.9"
         buildConfigField "String", "WANGIRI_API_BASE_URL", '"https://sentinel-moteur-api.onrender.com"'
+        buildConfigField "boolean", "COMMERCIAL_PHONE_CORE_V1", commercialPhoneCore.toString()
         manifestPlaceholders = [
             auth0Domain: "@string/com_auth0_domain",
             auth0Scheme: "@string/com_auth0_scheme"
         ]
+        if (commercialPhoneCore) {
+            manifestPlaceholders.sentinelV1Label = "Sentinel Phone Core"
+        }
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -56,6 +67,20 @@ android {
         }
         debug {
             minifyEnabled false
+            if (commercialPhoneCore) {
+                applicationIdSuffix '.v1validation'
+                versionNameSuffix '-v1-validation'
+                manifestPlaceholders.sentinelV1Label = "Sentinel V1 - Recette"
+                ndk.abiFilters.add('arm64-v8a')
+            }
+        }
+    }
+
+    if (commercialPhoneCore) {
+        sourceSets {
+            debug.manifest.srcFile 'src/v1Commercial/AndroidManifest.xml'
+            release.manifest.srcFile 'src/v1Commercial/AndroidManifest.xml'
+            releaseUnsigned.manifest.srcFile 'src/v1Commercial/AndroidManifest.xml'
         }
     }
 
@@ -73,6 +98,16 @@ android {
     packaging {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+        if (commercialPhoneCore) {
+            jniLibs.excludes.addAll([
+                '**/liblivekit_uniffi.so',
+                '**/liblkjingle_peerconnection_so.so',
+                '**/libjnidispatch.so',
+                '**/libwg-go.so',
+                '**/libwg-quick.so',
+                '**/libwg.so'
+            ])
         }
     }
 }
@@ -134,7 +169,9 @@ dependencies {
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
 
     debugImplementation 'androidx.compose.ui:ui-tooling'
-    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+    if (!commercialPhoneCore) {
+        debugImplementation 'androidx.compose.ui:ui-test-manifest'
+    }
 }
 
 ksp {

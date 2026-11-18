@@ -1,5 +1,7 @@
 # Play Store Listing — Sentinel Quantum Vanguard AI Pro
 
+The Phone Core V1 submission uses the [separate V1 store draft](../audit/v1-commercial/ANDROID_DISTRIBUTION_COMPLIANCE.md#brouillon-de-fiche-play-phone-core-v1). The expanded development profile below documents roadmap features and stays outside the V1 submission.
+
 Material to prepare the Play Console store entry. All statements below must match the exact release submitted to Play. The repository currently contains call screening, an optional Caller Reputation enrichment path, a fail-closed WireGuard client foundation and a role-gated default-SMS implementation. None of these may be advertised as a distributed production service until the corresponding release, infrastructure, consent flow and physical-device validation exist.
 
 ## Title (30 characters max)

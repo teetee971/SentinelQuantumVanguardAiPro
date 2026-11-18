@@ -174,6 +174,15 @@ internal class MmsConversationStore(private val context: Context) {
     fun markSubmissionUnknown(token: String, providerMessageId: Long): Boolean =
         journal.markSubmissionUnknown(token, providerMessageId)
 
+    fun recordRejectedBeforeTransport(token: String, providerMessageId: Long): Boolean {
+        val nowMs = System.currentTimeMillis()
+        if (!journal.markRejectedBeforeTransport(token, providerMessageId, nowMs)) return false
+        if (holdsSmsRole() && transitionMessageBox(providerMessageId, successful = false, nowMs = nowMs)) {
+            journal.remove(token)
+        }
+        return true
+    }
+
     fun abandonBeforeTransport(token: String, providerMessageId: Long): Boolean {
         if (!holdsSmsRole() || !MmsProviderJournal.validToken(token) || providerMessageId <= 0L) return false
         val deleted = cleanupRoot(providerMessageId, null)
@@ -225,7 +234,8 @@ internal class MmsConversationStore(private val context: Context) {
                     if (cleanupRoot(id, null) && journal.remove(record.token)) repaired++
                 }
                 MmsProviderJournal.Phase.RESULT_SENT,
-                MmsProviderJournal.Phase.RESULT_FAILED -> {
+                MmsProviderJournal.Phase.RESULT_FAILED,
+                MmsProviderJournal.Phase.REJECTED_BEFORE_TRANSPORT -> {
                     val id = record.providerMessageId ?: continue
                     val successful = record.phase == MmsProviderJournal.Phase.RESULT_SENT
                     if (transitionMessageBox(id, successful, record.updatedAtMs) && journal.remove(record.token)) repaired++

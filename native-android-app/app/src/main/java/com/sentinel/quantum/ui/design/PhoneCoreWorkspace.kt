@@ -75,7 +75,7 @@ fun PhoneCoreConversationRow(
     count: Int,
     risk: String?,
     onOpen: () -> Unit,
-    onWhatsApp: () -> Unit,
+    onWhatsApp: (() -> Unit)?,
     onDelete: () -> Unit
 ) {
     var menu by remember { mutableStateOf(false) }
@@ -128,7 +128,9 @@ fun PhoneCoreConversationRow(
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = "Actions de la conversation") }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("Ouvrir dans WhatsApp") }, onClick = { menu = false; onWhatsApp() })
+                        if (onWhatsApp != null) {
+                            DropdownMenuItem(text = { Text("Ouvrir dans WhatsApp") }, onClick = { menu = false; onWhatsApp() })
+                        }
                         DropdownMenuItem(text = { Text("Supprimer la conversation…") }, onClick = { menu = false; onDelete() })
                     }
                 }
