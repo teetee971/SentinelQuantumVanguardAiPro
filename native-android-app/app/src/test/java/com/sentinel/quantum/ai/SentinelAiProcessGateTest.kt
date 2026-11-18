@@ -55,4 +55,39 @@ class SentinelAiProcessGateTest {
         val gate = SentinelAiProcessGate();val lease = gate.capture()
         gate.execute(lease) { assertThrows(IllegalStateException::class.java) { gate.execute(lease) { fail("Nested effect") } } }
     }
+
+    @Test fun requestRevocationBlocksNewWorkBeforeCompletion() {
+        val gate = SentinelAiProcessGate()
+        val old = gate.capture()
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val pool = Executors.newFixedThreadPool(2)
+        try {
+            val effect = pool.submit {
+                gate.execute(old) {
+                    entered.countDown()
+                    check(release.await(5, TimeUnit.SECONDS))
+                }
+            }
+            assertTrue(entered.await(5, TimeUnit.SECONDS))
+
+            // Must invalidate leases without waiting for the running effect.
+            val revocation = gate.requestRevocation()
+            assertFalse(gate.isActive(old))
+
+            assertThrows(IllegalStateException::class.java) {
+                gate.capture()
+            }
+
+            release.countDown()
+            effect.get(5, TimeUnit.SECONDS)
+            gate.awaitRevocation(revocation)
+
+            assertFalse(gate.isActive(old))
+            assertEquals(7, gate.execute(gate.capture()) { 7 })
+        } finally {
+            release.countDown()
+            pool.shutdownNow()
+        }
+    }
 }
