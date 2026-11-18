@@ -2,11 +2,10 @@ package com.sentinel.quantum.security
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 
 /** Explicitly permission-gated, read-only lookup in the current Android profile contact provider. */
 class LocalContactLookup(private val context: Context) {
@@ -255,7 +254,7 @@ class LocalContactLookup(private val context: Context) {
     }
 
     private fun canRead(): Boolean = AndroidRoleReadPolicy.readBoolean {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
-            PackageManager.PERMISSION_GRANTED
+        PermissionChecker.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
+            PermissionChecker.PERMISSION_GRANTED
     }
 }

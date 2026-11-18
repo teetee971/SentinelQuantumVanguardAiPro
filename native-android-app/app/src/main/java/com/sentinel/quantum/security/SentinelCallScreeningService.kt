@@ -19,6 +19,11 @@ import java.util.concurrent.atomic.AtomicLong
 class SentinelCallScreeningService : CallScreeningService() {
     private fun holdsScreeningAuthority() = CallScreeningActivationPolicy.holdsRuntimeAuthority(this)
 
+    override fun onCreate() {
+        super.onCreate()
+        ScreeningProcessWarmup.schedule(this)
+    }
+
     override fun onScreenCall(callDetails: Call.Details) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
             callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
@@ -69,29 +74,34 @@ class SentinelCallScreeningService : CallScreeningService() {
             return
         }
 
-        val decision = runCatching {
+        val engineDecision = runCatching {
+            // Disk and AndroidKeyStore stay on the process warm-up thread. This wait is capped
+            // well under the framework budget and does not open either store itself.
+            ScreeningProcessWarmup.awaitForScreening(ScreeningProcessWarmup.CALLBACK_WAIT_BUDGET_MS)
             // Strict screening boundary: process-memory caches only. Do not instantiate
             // CallBlocklistStore here because its constructor obtains SharedPreferences.
             // The permission check below does not query ContactsContract.
             val snapshot = CallBlocklistStore.cachedSnapshotForScreening()
             val directory = CallDirectoryCache.currentForScreening(this)
-            CallRuleEngine(
-                snapshot.blockedNumberHashes,
-                snapshot.effectiveBlockedPrefixes,
-                reputationSilencePrefixes = if (com.sentinel.quantum.BuildConfig.COMMERCIAL_PHONE_CORE_V1) emptySet()
-                    else snapshot.signedSilencePrefixes,
-                fingerprintsForNumber = SCREENING_FINGERPRINTER::cachedCandidates,
-                silenceOutsideDirectory = snapshot.silenceOutsideDirectory,
-                directoryReady = directory.ready,
-                directoryContains = directory.numbers::contains,
-                homeRegion = ScreeningHomeRegion.current(),
-                userSilencePrefixes = snapshot.userSilencePrefixes,
-                silencePremiumRate = snapshot.silencePremiumRate,
-                silenceNearDirectory = snapshot.silenceNearDirectory,
-                nearDirectory = { candidate ->
-                    NeighborNumberMatcher.isNear(candidate, directory.numbers)
-                }
-            ).evaluate(rawCallerNumber)
+            ScreeningLineRegionPolicy.decide(ScreeningHomeRegion.installedRegions()) { home ->
+                CallRuleEngine(
+                    snapshot.blockedNumberHashes,
+                    snapshot.effectiveBlockedPrefixes,
+                    reputationSilencePrefixes = if (com.sentinel.quantum.BuildConfig.COMMERCIAL_PHONE_CORE_V1) emptySet()
+                        else snapshot.signedSilencePrefixes,
+                    fingerprintsForNumber = SCREENING_FINGERPRINTER::cachedCandidates,
+                    silenceOutsideDirectory = snapshot.silenceOutsideDirectory,
+                    directoryReady = directory.ready,
+                    directoryContains = directory.numbers::contains,
+                    homeRegion = home,
+                    userSilencePrefixes = snapshot.userSilencePrefixes,
+                    silencePremiumRate = snapshot.silencePremiumRate,
+                    silenceNearDirectory = snapshot.silenceNearDirectory,
+                    nearDirectory = { candidate ->
+                        NeighborNumberMatcher.isNear(candidate, directory.numbers)
+                    }
+                ).evaluate(rawCallerNumber)
+            }
         }.getOrElse {
             // The platform response must not depend on local rule storage remaining healthy.
             responseBoundary.deliverResponse {
@@ -99,8 +109,10 @@ class SentinelCallScreeningService : CallScreeningService() {
             }
             return
         }
+        val projected = projectScreeningDecision(engineDecision, Build.VERSION.SDK_INT)
+        val decision = engineDecision.copy(action = projected.action, reason = projected.reason)
         val response = CallResponse.Builder()
-        when (callScreeningPlatformEffect(decision.action, Build.VERSION.SDK_INT)) {
+        when (projected.effect) {
             CallScreeningPlatformEffect.REJECT -> response
                 .setDisallowCall(true)
                 .setRejectCall(true)
