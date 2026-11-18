@@ -6,7 +6,7 @@ allprojects { project ->
                 dsl.defaultConfig.applicationId = 'com.sentinel.quantum.aivalidation.c11'
                 dsl.defaultConfig.ndk.abiFilters.add('arm64-v8a')
             }
-            def overlay = new File(project.rootDir, '../audit/cycle9/validation/AndroidManifest.xml')
+            def overlay = new File(project.rootDir, '../audit/cycle11/validation/AndroidManifest.xml')
             project.android.sourceSets.getByName('debug').manifest.srcFile(overlay)
         }
     }
