@@ -1,6 +1,19 @@
 # Audit contradictoire · Sentinel Phone Core V1
 
-**18 novembre 2026. Verdict : NO-GO production.**
+**18 novembre 2026, mis à jour après les correctifs P0 de code. Verdict : NO-GO production.**
+
+A2 et A3 sont corrigés dans le source : aucun GET de catalogue sans l’interrupteur, y compris la fiche d’appel, le composeur, l’écran de recherche et le worker. Une copie déjà en mémoire reste lisible. Couper l’interrupteur pendant un transfert ignore le document, mais n’annule pas l’appel HTTP déjà parti. A1 reste bloquant : la politique V1 contient encore des champs vides, et Cloudflare Pages ne publie que `main`. A4 : pas d’AAB signé, pas de S24+.
+
+Qualification locale du 18 novembre 2026, profil `-PsentinelCommercialV1=true`, après les tests de course :
+
+- `:app:testDebugUnitTest` : 349 suites, 1 676 tests, 0 échec, 0 erreur, 0 ignoré. Les modules Wear ne sont pas dans cette commande.
+- `:app:lintDebug` : la tâche a réussi. `lint-results-debug.xml` contient 0 `severity="Error"` et 246 `severity="Warning"`.
+- `:app:compileReleaseUnsignedKotlin` : réussi. Ce n’est pas un AAB signé.
+- Manifeste `releaseUnsigned` fusionné : PASS, `com.sentinel.quantum`, versionName 1.0.9, versionCode 10, targetSdk 36. Aucune occurrence auth0, livekit, wireguard, wearable, RECORD_AUDIO ni BILLING dans ce XML.
+- Le graphe `releaseUnsignedRuntimeClasspath` contient encore `io.livekit:livekit-android:2.29.0`, `com.auth0.android:auth0:3.21.1-beta.0`, `com.wireguard.android:tunnel:1.0.20260102` et `com.google.android.gms:play-services-wearable:20.0.1`. Pas de `play-services-ads` ni de Billing dans ce graphe.
+- `KEYSTORE_FILE` est absent. Aucune clé n’a été créée. Aucun envoi Play.
+
+Après l’ajout de `backup_rules.xml`, nouvelle exécution de `:app:testDebugUnitTest` : 350 suites, 1 677 tests, 0 échec. `:app:lintDebug` : 245 avertissements et 19 indications, 0 erreur. `DataExtractionRules` est passé de 1 à 0. Les 9 `ApplySharedPref` restent : `commit()` est volontaire pour une écriture durable. Les 2 `HardwareIds` restent : `line1Number` sert à reconnaître la ligne de l’utilisateur dans un MMS, et `ANDROID_ID` n’est référencé que par le Studio voix et les réglages hors graphe V1. Auth0, LiveKit, WireGuard et Wear restent des dépendances Gradle parce que le source commun les compile encore. Leur retrait casserait cette compilation. Ils n’apparaissent pas dans le manifeste fusionné V1.
 
 Cet audit a lu le dépôt sur `cursor/v1-play-compliance-20261118-c39e` et les pages Play citées. Il n’a pas ouvert la Play Console, pas reconstruit l’AAB, pas capturé le réseau, pas exécuté les tests. Le compte Play n’est pas à recréer. Aucune fusion. La PR #1767 n’est pas modifiée.
 
@@ -14,14 +27,14 @@ Les déclarations du développeur (compte personnel déjà créé, application �
 
 | Id | Gravité | Constat | Preuve | Statut |
 | --- | --- | --- | --- | --- |
-| A1 | P0 | Le bouton « Politique de confidentialité » ouvre la politique de la vitrine, pas la politique V1. | `CommercialPhoneCoreScreens.kt` lignes 134-137, URL `https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html` | Confirmé dans le source. NON CORRIGÉ. |
-| A2 | P0 | Un appel français peut déclencher un GET de catalogue sans l’interrupteur de consentement. | `SentinelCallScreeningService.kt` lignes 157-174 ouvre `CallerIdActivity`. `CallerIdActivity.kt` lignes 172-179 appelle `lookup()` sans test de `COMMERCIAL_PHONE_CORE_V1` ni de l’interrupteur. `ArcepDirectoryClient.kt` lignes 44-54 télécharge si aucune copie fraîche n’est en mémoire. | Confirmé dans le source. NON EXÉCUTÉ sur appareil. |
-| A3 | P0 | La recherche du composeur télécharge aussi hors interrupteur. | `SentinelDialerActivity.kt` lignes 817-855. | Confirmé dans le source. |
+| A1 | P0 | Le bouton ouvre encore la politique de vitrine. La politique V1 n’est pas publiée : les URL candidates répondent par la coquille du site. | `CommercialPrivacyPolicyLink` garde `VERIFIED_V1_URL` nul. Le bouton utilise cette résolution et l’affiche. | BLOQUÉ. Le correctif d’adresse est préparé, pas activé. |
+| A2 | P0 | La fiche d’appel ne télécharge plus sans l’interrupteur. | `CallerIdActivity` passe `isPublishedCatalogRefreshEnabled`. `loadDirectory` lève `CatalogNetworkDisabled` avant tout HTTP. Le service de filtrage n’appelle pas le client. | CORRIGÉ dans le source. NON EXÉCUTÉ sur appareil. |
+| A3 | P0 | La recherche du composeur suit la même règle. | `SentinelDialerActivity.lookup` passe le même interrupteur. | CORRIGÉ dans le source. NON EXÉCUTÉ sur appareil. |
 | A4 | P0 | Pas d’AAB signé revérifié sur l’arbre courant, pas de manifeste fusionné produit dans cette session, pas de recette S24+. | `audit/v1-commercial/TEST_EVIDENCE.md` rattache ses PASS au commit `25c4e2c9`, antérieur à `113862500`. Cette session n’a pas relancé Gradle. | NON EXÉCUTÉ ici. Les PASS anciens ne couvrent pas l’arbre courant. |
 | B1 | P1 | La feuille Data safety classait les SMS et les appels comme collectés par le développeur. | Version corrigée dans `data-safety-v1.md`. Aucun envoi V1 relu vers un serveur Sentinel. | Affirmation précédente retirée. Risque résiduel : lecture large possible du mot « collect ». |
 | B2 | P1 | Auth0, LiveKit, WireGuard et Wear restent des dépendances Gradle. Leurs composants connus sont retirés du manifeste source V1. | `app/build.gradle` dépendances. `src/v1Commercial/AndroidManifest.xml` `tools:node="remove"`. | Absence à l’exécution NON DÉMONTRÉE. |
 | B3 | P1 | Le statut non-trader de novembre n’a pas été revu dans la Console et n’est pas une autorisation permanente. | Déclaration du développeur. Page Play du 18 novembre 2026. | NON VÉRIFIÉ en Console. |
-| B4 | P1 | Identité incomplète pour publier la politique : pays, adresse, téléphone, DPO, base juridique, URL publique. | Champs encore vides dans la politique. | À COMPLÉTER. L’e-mail déclaré est `sentinelquantumvanguardaipro@gmail.com`. La boîte n’a pas été testée. |
+| B4 | P1 | Identité encore incomplète pour publier : DPO, base juridique, URL publique, contrôle de l’adresse. | Téléphone déclaré : +33 6 52 21 58 72. Adresse déclarée : 227 rue du Docteur Ledentu, Morne-à-l’Eau, Guadeloupe, France, code postal de commune 97111. Une recherche publique ne l’a pas retrouvée. | A1 reste bloqué. |
 | B5 | P1 | Le titre Console annoncé (« Sentinel Quantum Pro ») et le libellé V1 (« Sentinel Phone Core ») ne sont pas alignés dans une fiche vérifiée. | `app/build.gradle` ligne 31 : libellé release `Sentinel Phone Core`. Le nom Console n’est pas dans le dépôt. | NON VÉRIFIÉ en Console. |
 | C1 | P2 | `public/terms.html`, `public/cgv.html` et `public/pricing.html` décrivent encore des offres payantes. | Lecture des pages. Le graphe V1 ne les ouvre pas. | Ne pas les copier sur la fiche. |
 | C2 | P2 | `WANGIRI_API_BASE_URL` reste compilé vers `sentinel-moteur-api.onrender.com`. | `app/build.gradle` ligne 24. L’appel de réputation relu est coupé par `COMMERCIAL_PHONE_CORE_V1`. | Pas de capture réseau. |
@@ -43,8 +56,8 @@ Catalogues :
 - Démarrage : `SentinelApplication.onCreate` ne lance pas de réseau. À la reprise d’activité, `launchForegroundMaintenance` appelle `PublishedNumberCatalogScheduler.sync` avec l’interrupteur. S’il est faux, le travail est annulé (`PublishedNumberCatalogScheduler.kt` lignes 21-24).
 - Arrière-plan : seulement si l’interrupteur est vrai. Le worker revérifie l’interrupteur (`PublishedNumberCatalogWorker.kt` lignes 31-32) puis GET. Période 24 h plus un passage immédiat.
 - Refus ou coupure : couper l’interrupteur annule les travaux en file. Un GET déjà parti n’est pas annulé par ce code.
-- Recherche manuelle : `SentinelDialerActivity.lookup` ne lit pas l’interrupteur.
-- Fiche d’appel : `CallerIdActivity` non plus. Ce n’est pas un geste « rechercher ».
+- Recherche manuelle : `SentinelDialerActivity.lookup` passe `isPublishedCatalogRefreshEnabled()`.
+- Fiche d’appel : `CallerIdActivity` passe le même interrupteur. Ce n’est pas un geste « rechercher », mais le téléchargement reste soumis à l’interrupteur.
 - Données dans la requête : `downloadText()` fait un GET de l’URL fixe, en-tête `Accept: application/json`, sans numéro. Le numéro est comparé après, sur l’appareil (`ArcepDirectoryClient.kt` lignes 62-70 et 99-108). L’adresse IP n’est pas lue par le code. Elle est visible par l’hôte. Pas de capture.
 
 Réputation distante : `CallerIdActivity.kt` lignes 116-117 force `enrichmentEnabled` à faux en V1. `CallRuleSyncConfig.SYNC_ENABLED` est `false`.
@@ -104,7 +117,7 @@ Le code n’a pas été modifié par cet audit.
 
 ## 8. Informations juridiques encore ouvertes
 
-Pays, adresse légale, téléphone du compte, orthographe exacte dans le profil Payments, délégué à la protection des données, base juridique, autorité de réclamation, conservation des journaux de `pages.dev`, surveillance réelle de `sentinelquantumvanguardaipro@gmail.com`, vérification d’identité, date de création du compte, nom exact affiché dans la Console. Aucun SIREN ni SIRET n’existe dans ces documents, et aucun ne doit être inventé.
+Déclarés dans les brouillons : Thierry Naud, 227 rue du Docteur Ledentu, Morne-à-l’Eau, Guadeloupe, France, code postal de commune 97111, téléphone +33 6 52 21 58 72, e-mail SentinelQuantumVanguardAiPro@gmail.com. Encore ouverts : orthographe exacte dans le profil Payments, délégué à la protection des données ou « non désigné », base juridique, autorité de réclamation, conservation des journaux de `pages.dev`, surveillance réelle de la boîte, vérification d’identité, date de création du compte, nom exact affiché dans la Console. Aucun SIREN ni SIRET n’existe dans ces documents, et aucun ne doit être inventé.
 
 ## 9. Ordre jusqu’à la publication
 

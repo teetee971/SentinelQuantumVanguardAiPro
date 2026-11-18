@@ -59,6 +59,9 @@ import androidx.compose.ui.unit.sp
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.AndroidRoleReadPolicy
 import com.sentinel.quantum.security.ArcepDirectoryClient
+import com.sentinel.quantum.security.CATALOG_LOCAL_COPY_ABSENT
+import com.sentinel.quantum.security.CatalogNetworkDisabled
+import com.sentinel.quantum.security.PublishedNumberCatalogStore
 import com.sentinel.quantum.security.CallerReputationClient
 import com.sentinel.quantum.security.CommunicationReputationCache
 import com.sentinel.quantum.security.CommunicationReputationWriter
@@ -836,10 +839,12 @@ class SentinelDialerActivity : ComponentActivity() {
                                 "Contact : " + identity.displayName + (identity.organisation?.let { " · $it" } ?: "")
                             }
                         val result = withContext(Dispatchers.IO) {
+                            PublishedNumberCatalogStore.bind(applicationContext)
+                            val networkPermitted = { settings.isPublishedCatalogRefreshEnabled() }
                             runCatching {
                                 val at = RtrDirectoryClient.normalize(lookupNumber)
                                 if (at != null) {
-                                    val r = rtr.lookup(lookupNumber)
+                                    val r = rtr.lookup(lookupNumber, networkPermitted)
                                     when {
                                         r == null -> "Format autrichien non reconnu"
                                         r.status == "ambiguous" -> "RTR : attribution ambiguë — aucune identité déduite"
@@ -850,11 +855,14 @@ class SentinelDialerActivity : ComponentActivity() {
                                         else -> "RTR : " + r.status
                                     }
                                 } else {
-                                    val a = arcep.lookup(lookupNumber)
+                                    val a = arcep.lookup(lookupNumber, networkPermitted)
                                     if (a == null) "ARCEP : aucune attribution correspondante"
                                     else "ARCEP : " + (a.attributedOperator ?: a.operatorCode) + (a.territory?.let { " · $it" } ?: "")
                                 }
-                            }.getOrElse { "Répertoire officiel temporairement indisponible" }
+                            }.getOrElse { error ->
+                                if (error is CatalogNetworkDisabled) CATALOG_LOCAL_COPY_ABSENT
+                                else "Répertoire officiel temporairement indisponible"
+                            }
                         }
                         if (number == lookupNumber) directoryStatus = result
                         if (remoteReputationAllowed && number == lookupNumber) {

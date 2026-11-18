@@ -19,15 +19,20 @@ class RtrDirectoryClient(
     )
     data class Result(val status: String, val matches: List<Allocation>)
 
-    fun lookup(raw: String): Result? {
+    fun lookup(raw: String, networkPermitted: () -> Boolean = { false }): Result? {
         val number = normalize(raw) ?: return null
-        return find(loadDirectory(), number)
+        return find(loadDirectory(networkPermitted), number)
     }
 
-    /** Downloads the official Austrian allocation copy. A rejected document is not cached. */
+    /**
+     * Downloads the official Austrian allocation copy. A rejected document is not cached.
+     * [networkPermitted] is read again after the response so a revocation discards the body.
+     */
     @Synchronized
-    fun refreshFromNetwork(): Boolean = runCatching {
+    fun refreshFromNetwork(networkPermitted: () -> Boolean = { false }): Boolean = runCatching {
+        if (!networkPermitted()) return false
         val text = downloadText()
+        if (!networkPermitted()) return false
         val decision = PublishedCatalogPolicy.evaluate(PublishedCatalogPolicy.Kind.RTR, text)
         if (!decision.accepted) return false
         val parsed = parseAccepted(text) ?: return false
@@ -36,13 +41,15 @@ class RtrDirectoryClient(
     }.getOrDefault(false)
 
     @Synchronized
-    private fun loadDirectory(): JSONObject {
+    private fun loadDirectory(networkPermitted: () -> Boolean): JSONObject {
         cachedDirectory?.let { return it }
         readStored()?.let {
             cachedDirectory = it
             return it
         }
+        if (!networkPermitted()) throw CatalogNetworkDisabled()
         val text = downloadText()
+        if (!networkPermitted()) throw CatalogNetworkDisabled()
         val parsed = parseAccepted(text) ?: throw IllegalStateException("RTR_SCHEMA")
         cachedDirectory = parsed
         PublishedNumberCatalogStore.commit(PublishedCatalogPolicy.Kind.RTR, text)

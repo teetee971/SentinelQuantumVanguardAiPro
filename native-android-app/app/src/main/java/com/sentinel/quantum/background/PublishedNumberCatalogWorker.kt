@@ -28,12 +28,17 @@ class PublishedNumberCatalogWorker(
         val context = applicationContext
         PublishedNumberCatalogStore.bind(context)
         val settings = SettingsStore(context)
-        if (!settings.isPublishedCatalogRefreshEnabled()) return Result.success()
+        val networkPermitted = { settings.isPublishedCatalogRefreshEnabled() }
+        if (!networkPermitted()) return Result.success()
 
         val arcepFresh = PublishedNumberCatalogStore.isFresh(PublishedCatalogPolicy.Kind.ARCEP)
         val rtrFresh = PublishedNumberCatalogStore.isFresh(PublishedCatalogPolicy.Kind.RTR)
-        val arcepOk = arcepFresh || runCatching { ArcepDirectoryClient().refreshFromNetwork() }.getOrDefault(false)
-        val rtrOk = rtrFresh || runCatching { RtrDirectoryClient().refreshFromNetwork() }.getOrDefault(false)
+        val arcepOk = arcepFresh || runCatching {
+            ArcepDirectoryClient().refreshFromNetwork(networkPermitted)
+        }.getOrDefault(false)
+        val rtrOk = rtrFresh || runCatching {
+            RtrDirectoryClient().refreshFromNetwork(networkPermitted)
+        }.getOrDefault(false)
         val catalogsOk = arcepOk && rtrOk
 
         when (

@@ -1,6 +1,6 @@
 # Compte développeur personnel · obligations lues
 
-**18 novembre 2026. Document de préparation.** La personne a confirmé qu’elle n’a ni société ni entreprise individuelle immatriculée. Son nom, son adresse, la date de création du compte Play et le pays ne sont pas dans le dépôt. Ne pas les inventer.
+**18 novembre 2026. Document de préparation.** La personne a confirmé qu’elle n’a ni société ni entreprise individuelle immatriculée. Déclarations inscrites : Thierry Naud, 227 rue du Docteur Ledentu, Morne-à-l’Eau, Guadeloupe, France, téléphone +33 6 52 21 58 72, e-mail SentinelQuantumVanguardAiPro@gmail.com. La date de création du compte Play n’est pas dans le dépôt. Ne pas l’inventer.
 
 La situation décrite correspond au type de compte personnel de Google Play. Un compte organisation est prévu pour une organisation, et il est exigé pour certaines applications financières, de santé, gouvernementales ou qui utilisent `VpnService`. Le profil V1 retire le service VPN. S’il revenait dans l’application publiée, le type de compte devrait être revu. [Choisir le type de compte](https://support.google.com/googleplay/android-developer/answer/13634885).
 
@@ -37,7 +37,7 @@ Même sans paiement ni publicité, la Console demande des formulaires. Réponses
 | Politique de confidentialité | URL publique de la politique V1, après avoir inscrit le nom légal, le pays et l’e-mail qui seront affichés. |
 | Data safety | Voir [data-safety-v1.md](data-safety-v1.md). Les pistes de test fermé, ouvert et production exigent le formulaire. |
 
-Le nom légal affiché par Google doit apparaître dans la politique, ou la politique doit nommer l’application. Les deux sont prévus. Le nom lui-même reste vide dans les brouillons.
+Le nom légal affiché par Google doit apparaître dans la politique, ou la politique doit nommer l’application. Les brouillons nomment Thierry Naud et Sentinel Phone Core. Le nom affiché dans la Console n’a pas été relu.
 
 ## Ce que ce document ne fait pas
 

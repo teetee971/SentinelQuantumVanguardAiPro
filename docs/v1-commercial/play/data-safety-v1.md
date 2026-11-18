@@ -36,7 +36,7 @@ Le client des catalogues ne lit pas l’adresse IP et ne l’écrit pas dans la 
 
 Les URL concernées sont `https://sentinelquantumvanguardaipro.pages.dev/public/data/arcep-numbering.json` et `https://sentinelquantumvanguardaipro.pages.dev/public/data/rtr-numbering.json`. L’en-tête ajouté par le code est `Accept: application/json`. [[À COMPLÉTER : conservation des journaux de l’hôte, et usage ou non de l’adresse IP comme position.]]
 
-L’interrupteur d’actualisation ne coupe pas le GET déclenché par la fiche d’appel ni par la recherche du composeur. Voir l’audit contradictoire.
+Depuis le correctif du 18 novembre 2026, l’interrupteur commande aussi la fiche d’appel, le composeur, l’écran de recherche et le travail en arrière-plan. Un téléchargement déjà parti n’est pas annulé : son document n’est pas conservé si l’interrupteur est coupé au retour.
 
 ## Types à ne pas cocher comme collectés
 

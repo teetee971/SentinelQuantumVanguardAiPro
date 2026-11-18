@@ -22,7 +22,7 @@ Le brouillon de `audit/v1-commercial/ANDROID_DISTRIBUTION_COMPLIANCE.md` décrit
 
 Il ne doit pas reprendre `native-android-app/PLAY_STORE_LISTING.md`, qui documente le profil élargi, ni `public/terms.html`, `public/cgv.html` et `public/pricing.html`, qui décrivent encore des offres payantes de la vitrine. Ces pages n’ont pas été réécrites.
 
-La fiche reste bloquée tant que les captures du binaire final et le nom de la personne ne sont pas fournis.
+La fiche reste bloquée tant que les captures du binaire final manquent. Le nom déclaré est Thierry Naud. Il n’a pas été relu dans la Console.
 
 ## 3. Permissions SMS, MMS, appels et contacts
 
@@ -38,18 +38,18 @@ Le formulaire n’est pas soumis. L’acceptation de Google reste ouverte.
 
 ## 4. Politique et Data safety
 
-La politique et le formulaire Data safety décrivent l’offre gratuite, l’absence de publicité et l’absence de compte. Le nom légal, le pays, l’adresse, les e-mails, le téléphone et le délégué à la protection des données restent des champs vides. La base juridique aussi.
+La politique et le formulaire Data safety décrivent l’offre gratuite, l’absence de publicité et l’absence de compte. Le nom, l’adresse, l’e-mail et le téléphone sont inscrits comme déclarations. Le délégué à la protection des données et la base juridique restent vides.
 
 L’application ouvre encore `https://sentinelquantumvanguardaipro.pages.dev/public/privacy.html`, qui ne contient pas cette politique.
 
 ## 5. Deux écarts techniques
 
-Ils sont toujours ouverts. Cette revue ne modifie pas le code.
+Le téléchargement hors interrupteur est corrigé dans le source de la PR #1769. Le lien public de la politique V1 reste ouvert.
 
 | Écart | Preuve relue | Effet |
 | --- | --- | --- |
-| Lien de confidentialité | `CommercialPhoneCoreScreens.kt` lignes 134-137 ouvrent `public/privacy.html`. | La politique User Data n’est pas satisfaite tant que l’URL publiée et le bouton ne montrent pas la politique V1. |
-| Téléchargement des catalogues | L’interrupteur ne commande que WorkManager. `SentinelDialerActivity.lookup()` et, sans geste de recherche, `CallerIdActivity` lignes 172-179 appellent `ArcepDirectoryClient.lookup()`, qui télécharge la copie si elle n’est pas déjà en mémoire. | Le premier appel français affiché peut provoquer un GET sans le consentement de l’interrupteur. |
+| Lien de confidentialité | `CommercialPrivacyPolicyLink.VERIFIED_V1_URL` est nul. Le bouton ouvre donc `public/privacy.html` et affiche que la politique Phone Core n’est pas encore à une adresse vérifiée. | La politique User Data n’est pas satisfaite tant que l’URL publiée sert le texte V1. |
+| Téléchargement des catalogues | `SentinelDialerActivity`, `CallerIdActivity`, l’écran de recherche et le worker passent `isPublishedCatalogRefreshEnabled()`. | Interrupteur coupé : pas de nouveau GET. Un transfert déjà parti n’est pas annulé ; son document n’est pas conservé. |
 
 ## 6. Compte développeur personnel
 
