@@ -56,8 +56,8 @@ Catalogues :
 - Démarrage : `SentinelApplication.onCreate` ne lance pas de réseau. À la reprise d’activité, `launchForegroundMaintenance` appelle `PublishedNumberCatalogScheduler.sync` avec l’interrupteur. S’il est faux, le travail est annulé (`PublishedNumberCatalogScheduler.kt` lignes 21-24).
 - Arrière-plan : seulement si l’interrupteur est vrai. Le worker revérifie l’interrupteur (`PublishedNumberCatalogWorker.kt` lignes 31-32) puis GET. Période 24 h plus un passage immédiat.
 - Refus ou coupure : couper l’interrupteur annule les travaux en file. Un GET déjà parti n’est pas annulé par ce code.
-- Recherche manuelle : `SentinelDialerActivity.lookup` ne lit pas l’interrupteur.
-- Fiche d’appel : `CallerIdActivity` non plus. Ce n’est pas un geste « rechercher ».
+- Recherche manuelle : `SentinelDialerActivity.lookup` passe `isPublishedCatalogRefreshEnabled()`.
+- Fiche d’appel : `CallerIdActivity` passe le même interrupteur. Ce n’est pas un geste « rechercher », mais le téléchargement reste soumis à l’interrupteur.
 - Données dans la requête : `downloadText()` fait un GET de l’URL fixe, en-tête `Accept: application/json`, sans numéro. Le numéro est comparé après, sur l’appareil (`ArcepDirectoryClient.kt` lignes 62-70 et 99-108). L’adresse IP n’est pas lue par le code. Elle est visible par l’hôte. Pas de capture.
 
 Réputation distante : `CallerIdActivity.kt` lignes 116-117 force `enrichmentEnabled` à faux en V1. `CallRuleSyncConfig.SYNC_ENABLED` est `false`.
@@ -117,7 +117,7 @@ Le code n’a pas été modifié par cet audit.
 
 ## 8. Informations juridiques encore ouvertes
 
-Pays, adresse légale, téléphone du compte, orthographe exacte dans le profil Payments, délégué à la protection des données, base juridique, autorité de réclamation, conservation des journaux de `pages.dev`, surveillance réelle de `sentinelquantumvanguardaipro@gmail.com`, vérification d’identité, date de création du compte, nom exact affiché dans la Console. Aucun SIREN ni SIRET n’existe dans ces documents, et aucun ne doit être inventé.
+Déclarés dans les brouillons : Thierry Naud, 227 rue du Docteur Ledentu, Morne-à-l’Eau, Guadeloupe, France, code postal de commune 97111, téléphone +33 6 52 21 58 72, e-mail SentinelQuantumVanguardAiPro@gmail.com. Encore ouverts : orthographe exacte dans le profil Payments, délégué à la protection des données ou « non désigné », base juridique, autorité de réclamation, conservation des journaux de `pages.dev`, surveillance réelle de la boîte, vérification d’identité, date de création du compte, nom exact affiché dans la Console. Aucun SIREN ni SIRET n’existe dans ces documents, et aucun ne doit être inventé.
 
 ## 9. Ordre jusqu’à la publication
 

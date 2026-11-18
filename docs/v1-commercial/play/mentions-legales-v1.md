@@ -33,4 +33,4 @@ L’hébergeur du site public est Cloudflare Pages, projet `sentinel-quantum-van
 
 ## Publication
 
-Ce brouillon n’est pas servi comme politique publique. Morne-à-l’Eau n’est pas présenté comme une adresse de voie. A1 reste bloqué. `VERIFIED_V1_URL` reste nul.
+Ce brouillon n’est pas servi comme politique publique. La voie déclarée est 227 rue du Docteur Ledentu, à Morne-à-l’Eau. A1 reste bloqué. `VERIFIED_V1_URL` reste nul.

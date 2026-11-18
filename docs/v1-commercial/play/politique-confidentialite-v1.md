@@ -85,10 +85,7 @@ Le journal local de diagnostic peut être affiché, effacé, ou partagé après 
 
 Les copies des plans de numérotation publiés par l’ARCEP (France) et la RTR (Autriche) servent à afficher le titulaire publié d’une tranche. Elles ne prouvent pas l’opérateur actuel après portabilité, ni l’identité de la personne qui appelle.
 
-Deux accès réseau existent :
-
-- une actualisation périodique, désactivée tant que la personne ne l’active pas dans les paramètres ;
-- une recherche manuelle dans le composeur, qui peut télécharger la copie publique si elle n’est pas déjà sur le téléphone, même lorsque l’actualisation périodique est désactivée.
+L’actualisation périodique et la recherche dans le composeur ou la fiche d’appel utilisent le même interrupteur. Il est coupé tant que la personne ne l’active pas. Interrupteur coupé, l’application lit seulement une copie déjà acceptée. Elle ne lance pas de téléchargement. Si aucune copie n’est présente, elle affiche que la copie locale est absente.
 
 La requête est un téléchargement HTTPS, sans numéro de téléphone dans l’adresse :
 
