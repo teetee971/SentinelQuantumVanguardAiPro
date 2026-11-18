@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.sentinel.quantum.BuildConfig
 import com.sentinel.quantum.SentinelDialerActivity
 import com.sentinel.quantum.ui.design.SentinelD1
 import com.sentinel.quantum.ui.design.SentinelHero
@@ -68,7 +69,11 @@ fun NumberSearchScreen() {
                     tint = SentinelD1.Cyan
                 )
                 Text(
-                    "La fiche numéro peut regrouper le pays, le type d’indicatif, les contacts locaux et les signaux de réputation réellement accessibles."
+                    if (BuildConfig.COMMERCIAL_PHONE_CORE_V1) {
+                        "La fiche affiche les informations disponibles issues des indicatifs, des contacts locaux et des catalogues publics d’attribution."
+                    } else {
+                        "La fiche numéro peut regrouper le pays, le type d’indicatif, les contacts locaux et les signaux de réputation réellement accessibles."
+                    }
                 )
                 Button(
                     onClick = {
