@@ -72,9 +72,11 @@ Les gardes suivantes sont inchangées : raccrochage depuis la notification, acti
 
 ## 5. Diff et commits
 
-Le détail des SHA est ajouté dans le commit de documentation qui suit les correctifs. La base du diff est `113862500b9579e2ce476c190ad3195f676ffdda`.
+Base du diff : `113862500b9579e2ce476c190ad3195f676ffdda`.
 
-Volume des correctifs avant ce rapport : 12 fichiers, +168 / −20 lignes. Aucun module exclu du profil V1 n’est réactivé.
+Commit des correctifs, des tests et de la première version de ce rapport : `34e8848041ccb389853c81e6fdb60326ad52a652`.
+
+`git diff --stat 113862500b9579e2ce476c190ad3195f676ffdda 34e8848041ccb389853c81e6fdb60326ad52a652` : 13 fichiers, +328 / −20. Le rapport compte dans ce volume. Les 12 fichiers de code, avant le rapport, faisaient +168 / −20. Aucun module exclu du profil V1 n’est réactivé. Le commit qui inscrit ce SHA dans le rapport est le successeur immédiat sur la même branche.
 
 ## 6. Commandes réellement exécutées
 
