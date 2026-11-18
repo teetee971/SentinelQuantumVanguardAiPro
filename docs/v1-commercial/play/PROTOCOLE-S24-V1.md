@@ -4,6 +4,31 @@
 
 Build : `-PsentinelCommercialV1=true`, paquet de recette `com.sentinel.quantum.v1validation`, `versionName` `1.0.9-v1-validation`, `versionCode` 10. Ne pas installer cet APK debug à la place du paquet Play `com.sentinel.quantum`.
 
+## Commandes Termux ou hôte ADB
+
+À lancer depuis `native-android-app` après avoir choisi le numéro de série. Ne pas coller de secret.
+
+```sh
+export S24_SERIAL="<serial-adb>"
+export PKG=com.sentinel.quantum.v1validation
+adb -s "$S24_SERIAL" devices -l
+adb -s "$S24_SERIAL" install -r <apk-debug-arm64-v1validation>
+adb -s "$S24_SERIAL" shell dumpsys package "$PKG" | head -n 80
+adb -s "$S24_SERIAL" shell cmd role get-role-holders android.app.role.DIALER
+adb -s "$S24_SERIAL" shell cmd role get-role-holders android.app.role.SMS
+adb -s "$S24_SERIAL" shell cmd role get-role-holders android.app.role.CALL_SCREENING
+adb -s "$S24_SERIAL" logcat -c
+adb -s "$S24_SERIAL" logcat -v time Sentinel:V AndroidRuntime:E *:S
+```
+
+Pendant l’essai catalogues, relever les hôtes sans enregistrer le numéro composé :
+
+```sh
+adb -s "$S24_SERIAL" shell dumpsys connectivity | head -n 40
+```
+
+Un résultat n’est PASS que si ces commandes ont été exécutées sur le S24+ et que leur sortie est conservée avec le SHA de l’APK.
+
 ## Préparation
 
 1. Compiler l’APK debug ARM64 et relever son SHA-256.

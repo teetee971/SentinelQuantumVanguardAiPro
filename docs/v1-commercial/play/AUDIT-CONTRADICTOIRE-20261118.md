@@ -13,6 +13,8 @@ Qualification locale du 18 novembre 2026, profil `-PsentinelCommercialV1=true`, 
 - Le graphe `releaseUnsignedRuntimeClasspath` contient encore `io.livekit:livekit-android:2.29.0`, `com.auth0.android:auth0:3.21.1-beta.0`, `com.wireguard.android:tunnel:1.0.20260102` et `com.google.android.gms:play-services-wearable:20.0.1`. Pas de `play-services-ads` ni de Billing dans ce graphe.
 - `KEYSTORE_FILE` est absent. Aucune clé n’a été créée. Aucun envoi Play.
 
+Après l’ajout de `backup_rules.xml`, nouvelle exécution de `:app:testDebugUnitTest` : 350 suites, 1 677 tests, 0 échec. `:app:lintDebug` : 245 avertissements et 19 indications, 0 erreur. `DataExtractionRules` est passé de 1 à 0. Les 9 `ApplySharedPref` restent : `commit()` est volontaire pour une écriture durable. Les 2 `HardwareIds` restent : `line1Number` sert à reconnaître la ligne de l’utilisateur dans un MMS, et `ANDROID_ID` n’est référencé que par le Studio voix et les réglages hors graphe V1. Auth0, LiveKit, WireGuard et Wear restent des dépendances Gradle parce que le source commun les compile encore. Leur retrait casserait cette compilation. Ils n’apparaissent pas dans le manifeste fusionné V1.
+
 Cet audit a lu le dépôt sur `cursor/v1-play-compliance-20261118-c39e` et les pages Play citées. Il n’a pas ouvert la Play Console, pas reconstruit l’AAB, pas capturé le réseau, pas exécuté les tests. Le compte Play n’est pas à recréer. Aucune fusion. La PR #1767 n’est pas modifiée.
 
 Les déclarations du développeur (compte personnel déjà créé, application « Sentinel Quantum Pro », non-trader, Thierry Naud, e-mail, gratuit) sont des déclarations. Elles ne sont pas une preuve de conformité. Le nom « Sentinel Quantum Pro » n’apparaît pas dans le dépôt : il n’a pas été revu dans la Console.
