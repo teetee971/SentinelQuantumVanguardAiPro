@@ -438,8 +438,9 @@ class CallBlocklistStore(context: Context) {
         /**
          * CallScreeningService access point. This method reads process memory only: it does not
          * construct a store, open SharedPreferences, initialize Room, access AndroidKeyStore or
-         * perform network I/O. Until post-response warm-up completes it intentionally returns an
-         * empty snapshot, so the first cold-process call may fail open.
+         * perform network I/O. [com.sentinel.quantum.security.ScreeningProcessWarmup] publishes
+         * the snapshot before the callback when disk answers inside the callback budget. A miss
+         * still returns the empty snapshot and the call fails open.
          */
         internal fun cachedSnapshotForScreening(now: Long = System.currentTimeMillis()): Snapshot =
             SCREENING_SNAPSHOT.activeAt(now)

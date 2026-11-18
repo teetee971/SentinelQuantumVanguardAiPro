@@ -8,6 +8,7 @@ import com.sentinel.quantum.background.WorkScheduler
 import com.sentinel.quantum.data.SettingsStore
 import com.sentinel.quantum.security.CallBlocklistStore
 import com.sentinel.quantum.security.CallDirectoryCache
+import com.sentinel.quantum.security.ScreeningProcessWarmup
 import com.sentinel.quantum.security.MmsSendCleanupWorker
 import com.sentinel.quantum.security.PublishedNumberCatalogStore
 import com.sentinel.quantum.security.SentinelSmsStatusReceiver
@@ -21,12 +22,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Process-level services and lifecycle-safe maintenance for Sentinel.
  *
- * [onCreate] intentionally performs no screening preparation and starts no network refresh.
- * Android creates the Application before CallScreeningService, so disk, WorkManager,
- * AndroidKeyStore and wearable platform work here would extend the cold-start window before the
- * mandatory Telecom response. Maintenance and Wear OS observation start only after a user-facing
- * activity resumes or from the bounded post-response worker. Until one of those paths completes,
- * screening caches may fail open while the process is cold and wearable truth remains unobserved.
+ * [onCreate] starts only the background screening warm-up. It does not read rules, open
+ * AndroidKeyStore, schedule WorkManager or touch the network on this thread. Android creates the
+ * Application before CallScreeningService, so that warm-up can finish before the callback, which
+ * waits at most a short budget and otherwise fail-opens. Maintenance and Wear OS observation
+ * start only after a user-facing activity resumes or from the bounded post-response worker.
  * Unknown-caller silence stays fail-open until the contact directory has been loaded into memory.
  * The directory warm-up does not schedule MMS or SMS repair; that repair stays in
  * [performMaintenance]. Official catalog refresh starts once, from the resumed activity, never
@@ -47,6 +47,7 @@ class SentinelApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        ScreeningProcessWarmup.schedule(this)
     }
 
     /**

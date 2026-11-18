@@ -37,6 +37,7 @@ object PhoneCoreFrenchLabels {
         "IN_DIRECTORY" -> "Numéro présent dans le répertoire"
         "USER_PREFIX_SILENCE" -> "Préfixe mis en silencieux par choix"
         "SILENCE_UNSUPPORTED" -> "Silencieux indisponible sur cette version d’Android ; l’appel sonne"
+        "AMBIGUOUS_LINE" -> "Ligne d’arrivée non identifiable ; l’appel sonne"
         "SIGNED_REPUTATION_PREFIX" -> "Préfixe signalé par la réputation signée Sentinel"
         "USER_PREMIUM_SILENCE" -> "Numéro surtaxé mis en silencieux par choix"
         "NEAR_DIRECTORY_CONTACT" -> "Proche d’un contact, mis en silencieux par choix"

@@ -1,7 +1,11 @@
 /** Source-contract checks complement Android runtime tests; they never replace them. */
 export function validateAndroidStartupContracts(application, service) {
   const errors = [];
-  if (!/override fun onCreate\(\)\s*\{\s*super\.onCreate\(\)\s*\}/.test(application)) {
+  const onCreateBody = application.match(/override fun onCreate\(\)\s*\{([\s\S]*?)\n    \}/)?.[1] ?? '';
+  if (!/^\s*super\.onCreate\(\)\s*ScreeningProcessWarmup\.schedule\(this\)\s*$/.test(onCreateBody)) {
+    errors.push('Application.onCreate must only start the background screening warm-up.');
+  }
+  if (/getSharedPreferences|KeyStore|prepareScreeningSnapshot|prepareFingerprintKeys|CallBlocklistStore\(|launchForegroundMaintenance\(/.test(onCreateBody)) {
     errors.push('Application.onCreate must remain free of storage, Keystore, worker and network startup work.');
   }
   const response = service.indexOf('respondToCall(callDetails, response.build())');
