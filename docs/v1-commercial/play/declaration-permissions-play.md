@@ -2,6 +2,8 @@
 
 **Brouillon au 18 novembre 2026. Non soumis.** À saisir dans le Permissions Declaration Form de la Play Console pour l’AAB `com.sentinel.quantum`, versionCode 10, versionName `1.0.9`, construit avec `-PsentinelCommercialV1=true`.
 
+L’application est gratuite : pas d’abonnement, pas d’achat, pas de paiement, pas de publicité et pas de compte. Les permissions ci-dessous ne servent pas à encaisser, à afficher une annonce, ni à créer un compte.
+
 Google demande de déclarer chaque permission SMS ou Call Log, puis de redéposer le formulaire si l’usage change. Les libellés exacts des champs n’ont pas été relus dans une Console ouverte : l’accès Play est indisponible. Les réponses suivent les rubriques publiques : fonctionnalité essentielle, justification, parcours utilisateur, démonstration vidéo. [Politique SMS et Call Log](https://support.google.com/googleplay/android-developer/answer/10208820).
 
 ## Cas d’usage à cocher

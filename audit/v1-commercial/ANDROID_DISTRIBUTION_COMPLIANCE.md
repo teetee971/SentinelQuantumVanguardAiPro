@@ -32,7 +32,7 @@ Le formulaire de déclaration Play est requis pour les permissions SMS/Call Log 
 | Confidentialité | PARTIEL · brouillon V1 rédigé, non publiable en l’état | Le texte V1 est dans `docs/v1-commercial/play/`. Il reste des placeholders d’éditeur. L’application ouvre encore la politique de la vitrine. Aucun compte n’est proposé dans le graphe V1 : l’URL de suppression de compte ne s’applique que si un compte est ajouté. |
 | Fiche Play et promesses | BLOCKED · périmètre et captures du build final | Limiter la fiche aux parcours observés. Distinguer l’exclusion éventuelle du transport expérimental C11 des preuves publiées sur C11. Exiger une preuve de distribution et d’activation avant toute mention « disponible ». |
 | Support | BLOCKED · adresse de support et accès opérationnel à confirmer | Adresse d’assistance surveillée, responsable d’incident, modèle de diagnostic expurgé et consignes pour rendre les rôles à l’app système. Tester le circuit avant publication. |
-| Accès production Play | BLOCKED · type et ancienneté du compte non vérifiés | Pour un compte personnel créé après le 13 novembre 2023, la documentation actuelle exige au moins 12 testeurs inscrits 14 jours consécutifs en test fermé avant la demande d’accès production. Vérifier l’applicabilité dans la Console. |
+| Accès production Play | BLOCKED · type et ancienneté du compte non vérifiés | La situation déclarée correspond à un compte personnel, parce qu’aucune organisation immatriculée n’est indiquée. L’obligation des 12 testeurs dépend de la date de création du compte. Détail et sources : [compte personnel](../../docs/v1-commercial/play/compte-developpeur-personnel.md). |
 
 [Préparer la revue Play](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en) · [Data safety](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en) · [Politique User Data](https://support.google.com/googleplay/android-developer/answer/10144311?hl=en) · [Coordonnées de support](https://support.google.com/googleplay/android-developer/answer/9859152?hl=en) · [Conditions des nouveaux comptes personnels](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en)
 
@@ -44,10 +44,15 @@ La fiche V1 doit correspondre à l’artefact distribué et à ses services acti
 
 - Titre proposé · Sentinel Phone Core
 - Description courte proposée · Appels, filtrage local et messagerie SMS/MMS sur Android.
+- Prix proposé · Gratuit. Aucun abonnement, aucun achat intégré, aucun paiement dans l’application, aucune publicité. Décision produit du 18 novembre 2026.
+- Compte · Aucun compte utilisateur dans le parcours V1.
+- Éditeur · Personne physique. Aucune société ni entreprise individuelle immatriculée n’est déclarée. Le nom, le pays et l’e-mail affichés restent à compléter.
 - Périmètre de la fiche · Assistant de configuration des rôles Android, téléphonie, règles locales de filtrage, recherche et consultation du répertoire, messagerie SMS/MMS et paramètres de confidentialité. Les attributions de plages de numéros sont des données publiques de référence. Elles peuvent différer de l’opérateur actuel après portabilité.
+- Hors fiche · Qwen, VPN, Mesh, scanners radio, Studio voix, réputation distante, abonnement et paiement.
 - Conditions visibles · La téléphonie et la messagerie dépendent des rôles, des autorisations, d’une ligne active et des fonctionnalités prises en charge par Android et l’opérateur du téléphone. Le consentement à l’actualisation des catalogues publics est séparé.
 - Captures à produire sur la release candidate · Assistant, clavier, appel actif, conversations, contacts, règles locales et paramètres. Employer uniquement des données de recette.
-- Publication · Activer les textes et le téléchargement à l’issue du dossier GO. Le registre commercial reste en attente.
+- Publication · Activer les textes à l’issue du dossier GO. Les CGU de la vitrine décrivent encore des offres payantes : ne pas les copier sur la fiche Play.
+- Déclarations App content proposées, non soumises · Annonces : non. Fonctions financières : aucune. Accès à l’application : aucun identifiant. Ces réponses restent à contrôler sur l’AAB signé.
 
 ### Notice de confidentialité V1 à vérifier sur le candidat signé
 

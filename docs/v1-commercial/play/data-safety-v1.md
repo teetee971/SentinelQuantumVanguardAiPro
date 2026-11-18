@@ -2,6 +2,8 @@
 
 **Brouillon au 18 novembre 2026. Non soumis.** Réponses proposées pour le formulaire Data safety de l’AAB `com.sentinel.quantum`, versionCode 10, construit avec `-PsentinelCommercialV1=true`. La définition utilisée est celle de l’aide Play : collecter signifie transmettre une donnée hors du téléphone, y compris par une bibliothèque. Le traitement seulement local n’est pas une collecte. [Data safety](https://support.google.com/googleplay/android-developer/answer/10787469).
 
+Décision produit du 18 novembre 2026 : lancement public gratuit, sans abonnement, sans achat intégré, sans paiement dans l’application, sans publicité et sans compte. Aucune société ni entreprise individuelle immatriculée n’est déclarée. Cette décision ne vaut pas conformité acquise.
+
 Ce brouillon ne reprend pas `docs/PLAY-DATA-SAFETY.md`. Ce fichier-là décrit le dépôt entier, dont le Studio voix et les appels VoIP, exclus de V1.
 
 ## Questions générales
@@ -11,7 +13,9 @@ Ce brouillon ne reprend pas `docs/PLAY-DATA-SAFETY.md`. Ce fichier-là décrit l
 | L’application collecte-t-elle ou partage-t-elle des types de données du formulaire ? | Oui | Deux transmissions sortent du téléphone : les appels, SMS et MMS remis à l’opérateur, et le téléchargement HTTPS des catalogues. |
 | Toutes les données collectées sont-elles chiffrées en transit ? | Non | Les catalogues sont en HTTPS. Les SMS et la voix passent par l’opérateur. L’application n’ajoute pas de chiffrement de bout en bout. Répondre Oui serait faux. |
 | Les personnes peuvent-elles demander la suppression des données collectées ? | Oui, pour les données détenues sur le téléphone par l’application. Non pour un compte, qui n’existe pas. | Historique de filtrage, journal de diagnostic, préférences et désinstallation. L’éditeur ne détient pas de copie serveur du répertoire, des SMS ou du journal. [[À COMPLÉTER : conservation réelle des journaux d’hébergement des catalogues, et moyen de les effacer.]] |
-| L’application permet-elle de créer un compte ? | Non | Auth0 est retiré du manifeste V1. Aucun écran de compte n’est dans le graphe V1. L’URL de suppression de compte n’est pas exigée tant que cette réponse reste vraie. [Suppression de compte](https://support.google.com/googleplay/android-developer/answer/13327111). |
+| L’application permet-elle de créer un compte ? | Non | Décision produit du 18 novembre 2026. Le graphe V1 n’ouvre pas `SettingsScreen` ni Auth0. Les activités Auth0 sont retirées du manifeste. Le code Auth0 reste compilé : le reconfirmer sur l’AAB signé. L’URL de suppression de compte n’est pas exigée tant qu’aucun compte n’existe. [Suppression de compte](https://support.google.com/googleplay/android-developer/answer/13327111). |
+| L’application contient-elle des annonces ? | Non | Aucun SDK `play-services-ads` ni autre SDK publicitaire dans les fichiers Gradle du module Android. Aucun écran publicitaire dans le graphe V1. [Déclaration Annonces](https://support.google.com/googleplay/android-developer/answer/9859455). |
+| Fonctions financières | L’application ne fournit aucune fonction financière | Pas de bibliothèque Billing, pas d’achat, pas de portefeuille. Les SMS ne servent pas au suivi budgétaire ni au paiement. [Déclaration Financial features](https://support.google.com/googleplay/android-developer/answer/13849271). |
 
 ## Types à déclarer comme collectés
 

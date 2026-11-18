@@ -4,12 +4,16 @@
 
 Ce dossier sert à préparer la Play Console pour le Phone Core commercial. Il ne remplace pas une décision de l’éditeur, un avis juridique, ni le retour de Google Play. Aucune pièce n’a été déposée dans la Console pendant cette revue.
 
+Décision produit du 18 novembre 2026 : lancement public gratuit, sans abonnement, sans achat intégré, sans paiement dans l’application, sans publicité et sans compte. Aucune société ni entreprise individuelle immatriculée n’est déclarée. Les nom, adresse et contacts de la personne restent à compléter. Ce dossier ne déclare pas la conformité acquise.
+
 | Pièce | Fichier | Usage |
 | --- | --- | --- |
 | Politique de confidentialité V1 | [politique-confidentialite-v1.md](politique-confidentialite-v1.md) et [politique-confidentialite-v1.html](politique-confidentialite-v1.html) | Texte à publier sur une URL publique après remplacement des placeholders |
 | Déclaration de permissions | [declaration-permissions-play.md](declaration-permissions-play.md) | Réponses proposées pour le Permissions Declaration Form |
 | Data safety | [data-safety-v1.md](data-safety-v1.md) | Réponses proposées pour le formulaire Data safety |
 | Divulgations visibles | [divulgations-visibles-v1.md](divulgations-visibles-v1.md) | Textes de divulgation et de consentement, avec ce qui est déjà dans l’application |
+| Vérification de l’offre | [verification-offre-v1.md](verification-offre-v1.md) | Paiement, publicité, compte, fiche, permissions et deux écarts techniques |
+| Compte développeur personnel | [compte-developpeur-personnel.md](compte-developpeur-personnel.md) | Obligations lues pour un compte personnel, sans supposer leur applicabilité |
 
 ## Identité du build examiné
 

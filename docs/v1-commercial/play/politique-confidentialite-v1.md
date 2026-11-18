@@ -14,24 +14,43 @@ Dernière mise à jour : 18 novembre 2026.
 
 Sentinel Phone Core est une application Android de téléphone, de filtrage local des appels et de messagerie SMS/MMS. Cette politique explique quelles données l’application utilise, où elles restent, et comment les effacer.
 
+## Offre
+
+Décision produit confirmée le 18 novembre 2026 pour le lancement public de cette version :
+
+- l’application est gratuite ;
+- aucun abonnement ;
+- aucun achat intégré ;
+- aucun paiement dans l’application ;
+- aucune publicité prévue ;
+- aucun compte utilisateur prévu.
+
+Cette décision ne crée pas une société, une entreprise individuelle, ni un autre statut professionnel. Aucune immatriculation de ce type n’est déclarée dans ce document.
+
 ## Qui est responsable
+
+La personne qui publie l’application est une personne physique. Son identité légale n’est pas écrite ici.
 
 | Information | Valeur |
 | --- | --- |
 | Application | Sentinel Phone Core |
-| Éditeur | [[À COMPLÉTER : raison sociale]] |
-| Forme juridique | [[À COMPLÉTER : forme juridique]] |
-| Adresse | [[À COMPLÉTER : adresse postale, code postal, ville, pays]] |
-| Contact confidentialité | [[À COMPLÉTER : adresse e-mail surveillée]] |
-| Support | [[À COMPLÉTER : adresse e-mail de support]] |
-| Délégué à la protection des données | [[À COMPLÉTER : nom et contact, ou « non désigné »]] |
-| Nom affiché sur la fiche Google Play | [[À COMPLÉTER : nom exact de la fiche]] |
+| Statut professionnel déclaré | Aucune société ni entreprise individuelle immatriculée n’est déclarée au 18 novembre 2026 |
+| Nom du développeur affiché sur Google Play | [[À COMPLÉTER : nom choisi pour la fiche, qui peut différer du nom légal]] |
+| Nom légal de la personne | [[À COMPLÉTER : nom figurant sur la pièce d’identité utilisée pour le compte Play]] |
+| Pays de l’adresse légale | [[À COMPLÉTER : pays]] |
+| Adresse postale légale | [[À COMPLÉTER : adresse exigée par le compte développeur. Ne pas l’inventer.]] |
+| E-mail affiché sur Google Play | [[À COMPLÉTER : adresse e-mail surveillée]] |
+| E-mail de support | [[À COMPLÉTER : adresse e-mail de support, si elle est distincte]] |
+| Téléphone du compte développeur | [[À COMPLÉTER : numéro communiqué à Google, s’il ne doit pas être public le préciser]] |
+| Délégué à la protection des données | [[À COMPLÉTER : nom et contact, ou la mention exacte « non désigné »]] |
 
-L’éditeur est le responsable des traitements qu’il réalise. L’opérateur mobile reste responsable de l’acheminement des appels, SMS et MMS sur son réseau. Google est responsable de Google Play et d’Android pour les traitements qui lui sont propres.
+Google indique qu’un compte personnel affiche le nom légal, le pays et l’e-mail développeur. L’adresse complète est affichée si l’application est monétisée. Cette version n’est pas monétisée. Le nom qui apparaîtra sur la fiche doit être le même dans cette politique. [Informations exigées pour un compte personnel](https://support.google.com/googleplay/android-developer/answer/13628312).
+
+La personne qui publie est responsable des traitements qu’elle réalise. L’opérateur mobile reste responsable de l’acheminement des appels, SMS et MMS. Google est responsable de Google Play et d’Android pour les traitements qui lui sont propres.
 
 ## Ce que l’application ne fait pas
 
-Cette version ne fournit pas de compte utilisateur, d’agent conversationnel, de VPN, de réseau mesh, de montre connectée, de studio voix, ni de scan Wi-Fi, Bluetooth ou de traceurs. Elle n’enregistre pas le son des appels. Elle n’envoie pas le répertoire, le journal d’appels, ni le contenu des SMS ou MMS à un serveur de l’éditeur.
+Cette version ne fournit pas de compte utilisateur, d’abonnement, d’achat, de paiement, de publicité, d’agent conversationnel, de VPN, de réseau mesh, de montre connectée, de studio voix, ni de scan Wi-Fi, Bluetooth ou de traceurs. Elle n’enregistre pas le son des appels. Elle n’envoie pas le répertoire, le journal d’appels, ni le contenu des SMS ou MMS à un serveur de la personne qui publie.
 
 ## Données utilisées sur le téléphone
 
@@ -91,9 +110,9 @@ Les empreintes de numéros utilisent HMAC-SHA256 et une clé du coffre Android. 
 | Copies ARCEP et RTR | Tant que la copie locale est conservée par l’application | Désinstallation. Le retrait de l’actualisation périodique stoppe les téléchargements planifiés. |
 | SMS, MMS, contacts, journal d’appels Android | Durée choisie dans les applications et réglages du téléphone | Ces données ne sont pas un compte Sentinel. Les supprimer dans Sentinel, lorsqu’une action de suppression existe, ou via les réglages du téléphone. La désinstallation de Sentinel ne vide pas à elle seule le fournisseur SMS d’Android. |
 
-Il n’y a pas de compte Sentinel dans cette version. La suppression d’un compte en ligne ne s’applique donc pas. [[À COMPLÉTER : confirmer qu’aucun compte n’est proposé sur la fiche Play ni dans une version ultérieure du même `versionCode`.]]
+Aucun compte n’est prévu pour cette version. La suppression d’un compte en ligne ne s’applique donc pas. Cette affirmation vient de la décision produit du 18 novembre 2026 et du graphe V1, qui n’ouvre pas d’écran de connexion. Elle doit être revérifiée sur l’AAB signé soumis : le code Auth0 reste compilé dans le module, même si ses activités sont retirées du manifeste V1.
 
-Pour une demande portant sur une donnée que l’éditeur détiendrait réellement, écrire à [[À COMPLÉTER : e-mail confidentialité]]. L’éditeur ne peut pas, depuis ses serveurs, effacer le répertoire, les SMS ou le journal d’appels qui ne sont présents que sur le téléphone.
+Pour une demande portant sur une donnée que la personne qui publie détiendrait réellement, écrire à [[À COMPLÉTER : e-mail confidentialité]]. Cette personne ne peut pas, depuis un serveur, effacer le répertoire, les SMS ou le journal d’appels qui ne sont présents que sur le téléphone.
 
 ## Base du traitement
 
@@ -108,7 +127,7 @@ Les droits d’accès, de rectification, d’effacement, de limitation, d’oppo
 - l’hébergeur de la page des catalogues publics, pour le téléchargement décrit plus haut ;
 - Google, pour la distribution Play, les rôles Android et les services du téléphone, selon les conditions de Google et du fabricant.
 
-L’éditeur ne vend pas ces données. Aucun identifiant publicitaire n’est demandé par cette version. Aucun outil de rapport de plantage n’est intégré dans les dépendances directes déclarées du module d’application ; cette affirmation doit être revérifiée sur l’AAB signé soumis.
+Les données ne sont pas vendues. Aucune publicité et aucun identifiant publicitaire ne sont prévus. Aucun SDK publicitaire ni bibliothèque de facturation Play n’est déclaré dans `app/build.gradle`. Aucun outil de rapport de plantage n’est intégré dans les dépendances directes du module. Ces trois absences doivent être revérifiées sur l’AAB signé soumis.
 
 ## Modifications
 
