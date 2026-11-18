@@ -81,7 +81,7 @@ Base du diff : `113862500b9579e2ce476c190ad3195f676ffdda`.
 | --- | --- |
 | `34e8848041ccb389853c81e6fdb60326ad52a652` | P1-1 à P1-4, tests et première version du rapport |
 | `bac9e1aa78a45e3aec482f174138efcce6b40325` | SHA du commit précédent inscrit dans le rapport |
-| Commit P1-5 / P1-6 / P1-7 | Préchargement borné, mitigation double SIM, ce tableau mis à jour. Son SHA est ajouté par le commit de documentation suivant. |
+| `9cd8c188065a7fa3c3c86920a47e648d2fe34685` | P1-5 et P1-7 sous budget de 250 ms, mitigation limitée P1-6, rapport |
 
 `git diff --stat 113862500… 34e884804…` : 13 fichiers, +328 / −20. Aucun module exclu du profil V1 n’est réactivé.
 
